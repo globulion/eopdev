@@ -127,7 +127,7 @@ int read_options(std::string name, Options& options)
 extern "C"
 SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
 {
-    preambule();
+    oepdev_libutil::preambule();
 
     int print = options.get_int("PRINT");
 
@@ -135,13 +135,13 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     std::shared_ptr<Wavefunction>    scf_A;
     std::shared_ptr<Wavefunction>    scf_B;
     std::shared_ptr<PSIO>            psio           = PSIO::shared_object();
-    std::shared_ptr<SuperFunctional> functional     = create_superfunctional("HF", options);
+    std::shared_ptr<SuperFunctional> functional     = oepdev_libutil::create_superfunctional("HF", options);
     std::shared_ptr<Molecule>        molecule_dimer = ref_wfn->molecule();
     std::shared_ptr<BasisSet>        primary        = ref_wfn->basisset();
     std::shared_ptr<BasisSet>        primary_A      = ref_wfn->get_basisset("BASIS_SCF_A");
     std::shared_ptr<BasisSet>        primary_B      = ref_wfn->get_basisset("BASIS_SCF_B");
-    std::shared_ptr<Molecule>        molecule_A     = extract_monomer(molecule_dimer, 1);
-    std::shared_ptr<Molecule>        molecule_B     = extract_monomer(molecule_dimer, 2);
+    std::shared_ptr<Molecule>        molecule_A     = oepdev_libutil::extract_monomer(molecule_dimer, 1);
+    std::shared_ptr<Molecule>        molecule_B     = oepdev_libutil::extract_monomer(molecule_dimer, 2);
     molecule_A->set_name("Monomer 1");
     molecule_B->set_name("Monomer 2");
     molecule_dimer->set_name("Aggregate (Dimer)");
@@ -155,9 +155,9 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
 
     // solve SCF for each monomer   
     outfile->Printf("  ====> Computations for Monomer A <====\n");
-    scf_A = solve_scf(molecule_A, primary_A, functional, options, psio);
+    scf_A = oepdev_libutil::solve_scf(molecule_A, primary_A, functional, options, psio);
     outfile->Printf("  ====> Computations for Monomer B <====\n");
-    scf_B = solve_scf(molecule_B, primary_B, functional, options, psio);
+    scf_B = oepdev_libutil::solve_scf(molecule_B, primary_B, functional, options, psio);
 
     return ref_wfn;
 }

@@ -26,11 +26,10 @@
 
 #include "psi4/libscf_solver/rhf.h"
 
+namespace oepdev_libutil{
 
 using namespace psi;
 using namespace std;
-
-//namespace util{
 
 /** \brief Print preambule for module OEPDEV
  */
@@ -72,4 +71,4 @@ solve_scf(std::shared_ptr<Molecule> molecule,
           std::shared_ptr<PSIO> psio);
 
 
-//} // EndNameSpace util
+} // EndNameSpace oepdev_libutil
