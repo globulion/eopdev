@@ -37,5 +37,7 @@ find_package(psi4 1.0 REQUIRED)
 
 add_psi4_plugin(oepdev main.cc 
                        oepdev/libutil/util.cc
+                       oepdev/libutil/diis.cc
+                       oepdev/libutil/cphf.cc
                        oepdev/liboep/oep.cc   
                )
