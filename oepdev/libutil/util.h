@@ -1,9 +1,5 @@
 #include<cstdio>
 #include<string>
-//#include"psi4/libplugin/plugin.h"
-//#include"psi4/libmints/molecule.h"
-//#include"psi4/liboptions/options.h"
-//#include"psi4/libfunctional/superfunctional.h"
 
 #include "psi4/psi4-dec.h"
 #include "psi4/libparallel/parallel.h"
