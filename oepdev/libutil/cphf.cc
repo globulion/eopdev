@@ -189,8 +189,7 @@ void CPHF::compute(void) {
             Pp[z1][z2] = Xmo[z1]->vector_dot(Fmo[z2]);
         }
     }
-    P->print();
-
+    P->set_name("Molecular Polarizability");
     _molecular_polarizability = P;
 
 }

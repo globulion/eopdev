@@ -29,6 +29,8 @@
  * @END LICENSE
  */
 
+#define DIIS_BB
+
 #include <cstdlib>
 #include <cstdio>
 #include <string>
@@ -45,6 +47,7 @@
 #include "psi4/libfunctional/superfunctional.h"
 
 #include "oepdev/libutil/util.h"
+#include "oepdev/libutil/cphf.h"
 
 namespace psi{ 
 namespace oepdev{
@@ -65,6 +68,15 @@ int read_options(std::string name, Options& options)
         options.add_str("BASIS_A", "");
         /*- Basis set for dimer B -*/
         options.add_str("BASIS_B", "");
+        /*- CPHF maximum iterations -*/
+        options.add_int("CPHF_MAXITER", 50);
+        /*- CPHF convergence -*/
+        options.add_double("CPHF_CONVERGENCE", 1.0E-8);
+        /*- whether use DIIS for CPHF -*/
+        options.add_bool("CPHF_DIIS", false);
+        /*- size of DIIS subspace for CPHF -*/
+        options.add_int("CPHF_DIIS_DIM", 3);
+
     }
     return true;
 }
@@ -158,6 +170,18 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     scf_A = oepdev_libutil::solve_scf(molecule_A, primary_A, functional, options, psio);
     outfile->Printf("  ====> Computations for Monomer B <====\n");
     scf_B = oepdev_libutil::solve_scf(molecule_B, primary_B, functional, options, psio);
+
+    // solve CPHF equations for each monomer
+    std::shared_ptr<oepdev_libutil::CPHF> cphf_A(new oepdev_libutil::CPHF(scf_A, options));
+    cphf_A->compute();
+    std::shared_ptr<Matrix> pol_A = cphf_A->get_molecular_polarizability();
+    pol_A->print();
+
+    std::shared_ptr<oepdev_libutil::CPHF> cphf_B(new oepdev_libutil::CPHF(scf_B, options));
+    cphf_B->compute();
+    std::shared_ptr<Matrix> pol_B = cphf_B->get_molecular_polarizability();
+    pol_B->print();
+
 
     return ref_wfn;
 }

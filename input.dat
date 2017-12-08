@@ -24,8 +24,10 @@ set {
     basis_A     sto-3g
     basis_B     sto-3g
     scf_type    direct
-    print 1
-    guess core
+    print            1
+    guess         core
+    cphf_diis_dim    8
+    cphf_maxiter   200
 }
 
 set oepdev {
