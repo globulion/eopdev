@@ -1,0 +1,37 @@
+sys.path.insert(0, './..')
+import oepdev
+
+molecule happy {
+0 1
+C   0.000000  -0.667578  -2.124659
+C   0.000000   0.667578  -2.124659
+H   0.923621  -1.232253  -2.126185
+H  -0.923621  -1.232253  -2.126185
+H  -0.923621   1.232253  -2.126185
+H   0.923621   1.232253  -2.126185
+--
+0 1
+C   0.000000   0.000000   2.900503
+C   0.000000   0.000000   1.693240
+H   0.000000   0.000000   0.627352
+H   0.000000   0.000000   3.963929
+units angstrom
+symmetry c1
+}
+
+set {
+    basis       sto-3g
+    basis_A     sto-3g
+    basis_B     sto-3g
+    scf_type    direct
+    print 1
+    guess core
+}
+
+set oepdev {
+  print 2
+}
+
+energy('oepdev')
+
+oepdev.test(dummy=True)
