@@ -1,0 +1,13 @@
+#!/bin/bash
+#export PSI4PLUGIN_DIR="/usr/local/lib/psi4-plugins"
+#export OEPDEVLIB_DIR="${PSI4PLUGIN_DIR}/oepdev"
+
+cmake_cmd=`psi4 --plugin-compile`
+echo ${cmake_cmd}
+${cmake_cmd}
+make
+#mkdir -p ${OEPDEVLIB_DIR}
+#mv -v oepdev.so ${OEPDEVLIB_DIR}
+
+# test
+psi4
