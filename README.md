@@ -1,15 +1,20 @@
 oep-dev
 =======
 
-Generalized One-Electron Potentials: Development Platform
+Generalized One-Electron Potentials: Development Platform.
 
-Description
------------
+Bartosz Błasiak (blasiak.bartosz@gmail.com)
 
-Created with intention to test various models of the interaction energy 
-between two molecules, described by the Hartree-Fock-Roothaan-Hall theory 
-or the configuration interaction with singles theory. 
+Overwiew
+--------
 
+Test various models of the intermolecular interaction
+that is based on the application of the **One-Electron Potentials (OEP's)**
+technique.
+
+Currently, the interaction between two molecules 
+described by the Hartree-Fock-Roothaan-Hall theory 
+or the configuration interaction with singles theory is considered. 
 In particular, the plugin tests the models of:
 
 *******
@@ -18,37 +23,18 @@ In particular, the plugin tests the models of:
   3. the excitation energy transfer couplings           (Project I  )
 *******
 
-against benchmarks (exact or reference solutions). Detailed list of models 
-is given below:
+against reference solutions (exact or other approximations). 
 
-**Table 1.** Models subject to be implemented and analyzed within oep-dev.
-
- | Pauli energy             | Induction energy         | EET Coupling         |
- |--------------------------|--------------------------|----------------------|
- | EFP2-Pauli               | EFP2-Induced Dipoles     | TrCAMM               |
- | Murrel et al.'s theory   | Density Susceptibility   | OEP-ET/HT            |
- | OEP-Murrel et al.'s      |                          | TDFI-TI              |
- |                          |                          | FED                  |
- | Exact (Stone's)          | Exact (incl. CT)         | Exact (ESD)          |
-
-******
-
-The target models introduced in the Project shall be tested against the
-following benchmarks and compared with the following state-of-the-art models:
-
-**Table 2.** Target models vs benchmarks and competitor models.
-
-| Target Model             | Benchmarks               | Competing Model      |
-|--------------------------|--------------------------|----------------------|
-| OEP-Murrel et al.'s      | Murrel et al.'s          | EFP2-Pauli           |
-|                          | Exact (Stone's)          |                      |
-| OEP-ET/HT + TrCAMM       | Exact (ESD)              | TDFI-TI              |
-|                          | FED                      | FED                  |
-|                          | TDFI-TI                  |                      |
-| Density Susceptibility   | Exact (incl. CT)         | EFP2-Induced Dipoles |
+Places to go:
+ * [OEP Design](https://github.com/globulion/oepdev/blob/master/doc/git/doc_OEP_design.md)
+ * [Implemented Models](https://github.com/globulion/oepdev/blob/master/doc/git/doc_implemented_models.md)
 
 *****
 
 References
 ----------
+
+
+
+
 
