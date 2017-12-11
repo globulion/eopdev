@@ -38,7 +38,7 @@ Structure of OEP-based mathematical expressions is listed below:
 
 | Type  | Matrix Element | 
 |--------|----|
-| Type 1: | <a href="https://www.codecogs.com/eqnedit.php?latex=\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" title="\left( I \left| \hat{v}^A \right| \right K) \quad \text{where } I,K\in A" /></a>
+| Type 1: | <a href="https://www.codecogs.com/eqnedit.phplatex=\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" target="_blank"><img src="https://latex.codecogs.com/gif.latex \left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" title="\left( I \left| \hat{v}^A \right| \right K) \quad \text{where } I,K\in A" /></a>
 |
 | Type 2: | fhdfdhf |
 
