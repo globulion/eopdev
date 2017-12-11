@@ -29,13 +29,18 @@ There are many types of OEP’s, but the underlying principle is the same and in
 type of intermolecular interaction. Therefore OEP’s should be implemented by using a multi-level class design.
 In turn, this design depends on the way OEP`s enter the mathematical expressions, i.e., on the types
 of matrix elements of the one-electron effective operator
-ere, OE://www.codecogs.com/eqnedit.php?latex=\hat{v}^A" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\hat{v}^A" title="\hat{v}^A" /></a>
+<a href="https://www.codecogs.com/eqnedit.php?latex=\hat{v}^A" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\hat{v}^A" title="\hat{v}^A" /></a>
 .
 
 ### Structure of possible OEP-based expressions and their unification
 
 Structure of OEP-based mathematical expressions is listed below:
 
+-------
+| Type 1: | <a href="https://www.codecogs.com/eqnedit.php?latex=\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" title="\left( I \left| \hat{v}^A \right| \right K) \quad \text{where } I,K\in A" /></a>
+
+| Type 2: | fhdfdhf
+-------
  * Type 1: 
    <a href="https://www.codecogs.com/eqnedit.php?latex=\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" title="\left( I \left| \hat{v}^A \right| \right K) \quad \text{where } I,K\in A" /></a>
    Bulaaaa
