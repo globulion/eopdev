@@ -17,7 +17,7 @@ of the molecule *B*. Defining a
  * OEP class
 the universal design of OEP-based approaches can be established and developed.
 
-> Important:
+> **Important:**
 >  OEP and Wavefunction classes should not be restricted to Hartree-Fock; in generall any correlated 
 >  wavefunction and derived OEP`s should be allowed to work with each other
 >
@@ -25,11 +25,19 @@ the universal design of OEP-based approaches can be established and developed.
 OEP Classes
 -----------
 
-There are many types of OEP`s, but the underlying principle is the same and independent of the
-type of intermolecular interaction. Therefore, OEP`s should be implemented by using a multi-level class design.
+There are many types of OEP’s, but the underlying principle is the same and independent of the
+type of intermolecular interaction. Therefore OEP’s should be implemented by using a multi-level class design.
 In turn, this design depends on the way OEP`s enter the mathematical expressions, i.e., on the types
-of matrix elements of the one-electron effective operator.
+of matrix elements of the one-electron effective operator
+ere, OE://www.codecogs.com/eqnedit.php?latex=\hat{v}^A" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\hat{v}^A" title="\hat{v}^A" /></a>
+.
 
 ### Structure of possible OEP-based expressions and their unification
 
-Structure of OEP-based mathematical expressions 
+Structure of OEP-based mathematical expressions is listed below:
+
+ * Type 1: 
+   <a href="https://www.codecogs.com/eqnedit.php?latex=\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" title="\left( I \left| \hat{v}^A \right| \right K) \quad \text{where } I,K\in A" /></a>
+   Bulaaaa
+ * Type 2:
+   Bulaaa
