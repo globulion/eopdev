@@ -36,15 +36,9 @@ of matrix elements of the one-electron effective operator
 
 Structure of OEP-based mathematical expressions is listed below:
 
-| Type  | Matrix Element | 
-|--------|----|
-| Type 1: | <a href="https://www.codecogs.com/eqnedit.phplatex=\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" target="_blank"><img src="https://latex.codecogs.com/gif.latex \left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" title="\left( I \left| \hat{v}^A \right| \right K) \quad \text{where } I,K\in A" /></a>
-|
-| Type 2: | fhdfdhf |
+| Type  | Matrix Element | Comment |
+|--------|----|---|
+| Type 1:| <a href="https://www.codecogs.com/eqnedit.php?latex=\left(&space;I&space;\vert&space;\hat{v}^A&space;\vert&space;\right&space;K)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\left(&space;I&space;\vert&space;\hat{v}^A&space;\vert&space;\right&space;K)" title="\left( I \vert \hat{v}^A \vert \right K)" /></a>    | <a href="https://www.codecogs.com/eqnedit.php?latex=I,K\in&space;A" target="_blank"><img src="https://latex.codecogs.com/gif.latex?I,K\in&space;A" title="I,K\in A" /></a>  |
+| Type 2:| <a href="https://www.codecogs.com/eqnedit.php?latex=\left(&space;I&space;\vert&space;\hat{v}^A&space;\vert&space;\right&space;J)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\left(&space;I&space;\vert&space;\hat{v}^A&space;\vert&space;\right&space;J)" title="\left( I \vert \hat{v}^A \vert \right J)" /></a>    | <a href="https://www.codecogs.com/eqnedit.php?latex=I\in&space;A,&space;J\in&space;B" target="_blank"><img src="https://latex.codecogs.com/gif.latex?I\in&space;A,&space;J\in&space;B" title="I\in A, J\in B" /></a>  |
 
 
- * Type 1: 
-   <a href="https://www.codecogs.com/eqnedit.php?latex=\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\left(&space;I&space;\left|&space;\hat{v}^A&space;\right|&space;\right&space;K)&space;\quad&space;\text{where&space;}&space;I,K\in&space;A" title="\left( I \left| \hat{v}^A \right| \right K) \quad \text{where } I,K\in A" /></a>
-   Bulaaaa
- * Type 2:
-   Bulaaa
