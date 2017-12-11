@@ -15,6 +15,9 @@ CPHF::CPHF(SharedWavefunction ref_wfn, Options& options) :
             _memory(Process::environment.get_memory()),
             _options(options)
 {
+    if (not (_options.get_str("REFERENCE") == (std::string)"RHF")) {
+       throw PSIEXCEPTION("oepdev_util::CPHF now only for RHF wavefunctions!");
+    }
     _no = _eps_occ->dim();
     _nv = _eps_vir->dim();
     _nn = _primary->nbf();
