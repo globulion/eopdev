@@ -26,6 +26,7 @@ set {
     scf_type    direct
     print            1
     guess         core
+    cphf_diis     true
     cphf_diis_dim    8
     cphf_maxiter   200
 }
