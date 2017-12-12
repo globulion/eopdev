@@ -1,3 +1,6 @@
+#ifndef _oepdev_libutil_util_h
+#define _oepdev_libutil_util_h
+
 #include<cstdio>
 #include<string>
 
@@ -68,3 +71,6 @@ solve_scf(std::shared_ptr<Molecule> molecule,
 
 
 } // EndNameSpace oepdev_libutil
+
+#endif // _oepdev_libutil_util_h
+

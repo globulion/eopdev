@@ -1,3 +1,6 @@
+#ifndef _oepdev_libutil_cphf_h
+#define _oepdev_libutil_cphf_h
+
 #include<cstdio>
 #include<string>
 #include<vector>
@@ -119,3 +122,6 @@ class CPHF {
 
 
 }// EndNameSpace oepdev_libutil
+
+#endif // _oepdev_libutil_cphf_h
+

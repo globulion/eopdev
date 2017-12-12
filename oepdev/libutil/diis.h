@@ -1,3 +1,6 @@
+#ifndef _oepdev_libutil_diis_h
+#define _oepdev_libutil_diis_h
+
 #include<cstdio>
 #include<string>
 #include<vector>
@@ -87,3 +90,5 @@ public:
 
 
 } // EndNameSpace oepdev_libutil
+
+#endif // _oepdev_libutil_diis_h
