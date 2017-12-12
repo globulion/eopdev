@@ -16,6 +16,8 @@ The following potentials are derived for the evaluation of the Pauli repulsion e
 
 Matrix forms:
 
+<a href="https://www.codecogs.com/eqnedit.php?latex=v_{\xi&space;i}({S^{-1}})&space;=&space;\sum_{\kappa\in&space;A}&space;C_{i\kappa}&space;\left\{&space;-\sum_{x\in&space;A}&space;V^{(x)}_{\kappa\xi}&space;&plus;&space;\sum_{\mu\nu\in&space;A}&space;\left\{&space;D_{\nu\mu}&space;-&space;C^{*}_{\mu&space;i}&space;C_{\nu&space;i}&space;\right&space;\}&space;\left(&space;\mu\nu&space;\vert&space;\xi\kappa&space;\right&space;)\right&space;\}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?v_{\xi&space;i}({S^{-1}})&space;=&space;\sum_{\kappa\in&space;A}&space;C_{i\kappa}&space;\left\{&space;-\sum_{x\in&space;A}&space;V^{(x)}_{\kappa\xi}&space;&plus;&space;\sum_{\mu\nu\in&space;A}&space;\left\{&space;D_{\nu\mu}&space;-&space;C^{*}_{\mu&space;i}&space;C_{\nu&space;i}&space;\right&space;\}&space;\left(&space;\mu\nu&space;\vert&space;\xi\kappa&space;\right&space;)\right&space;\}" title="v_{\xi i}({S^{-1}}) = \sum_{\kappa\in A} C_{i\kappa} \left\{ -\sum_{x\in A} V^{(x)}_{\kappa\xi} + \sum_{\mu\nu\in A} \left\{ D_{\nu\mu} - C^{*}_{\mu i} C_{\nu i} \right \} \left( \mu\nu \vert \xi\kappa \right )\right \}" /></a>
+
 ### Second-order contribution in overlap matrix expansion.
 
 Excitonic Energy Transfer OEP’s
@@ -35,11 +37,19 @@ The following potentials are derived for the evaluation of the short-range EET c
 
 Matrix forms:
 
+<a href="https://www.codecogs.com/eqnedit.php?latex=v_{\mu\xi}(1)&space;=&space;-C^*_{\mu&space;L}&space;\sum_{x\in&space;A}&space;V^{x}_{\mu\xi}&space;&plus;&space;\sum_{\nu\kappa\in&space;A}&space;\left\{&space;C^*_{\mu&space;L}&space;D_{\nu\kappa}&space;-&space;\frac{1}{2}&space;C^{*}_{\nu&space;L}&space;D_{\mu\kappa}&space;\right&space;\}&space;\left(&space;\nu\kappa&space;\vert&space;\mu\xi&space;\right&space;)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?v_{\mu\xi}(1)&space;=&space;-C^*_{\mu&space;L}&space;\sum_{x\in&space;A}&space;V^{x}_{\mu\xi}&space;&plus;&space;\sum_{\nu\kappa\in&space;A}&space;\left\{&space;C^*_{\mu&space;L}&space;D_{\nu\kappa}&space;-&space;\frac{1}{2}&space;C^{*}_{\nu&space;L}&space;D_{\mu\kappa}&space;\right&space;\}&space;\left(&space;\nu\kappa&space;\vert&space;\mu\xi&space;\right&space;)" title="v_{\mu\xi}(1) = -C^*_{\mu L} \sum_{x\in A} V^{x}_{\mu\xi} + \sum_{\nu\kappa\in A} \left\{ C^*_{\mu L} D_{\nu\kappa} - \frac{1}{2} C^{*}_{\nu L} D_{\mu\kappa} \right \} \left( \nu\kappa \vert \mu\xi \right )" /></a>
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=v_{\mu\xi}(2)=&space;C_{\kappa&space;H}&space;\sum_{\nu\kappa\in&space;A}&space;\left\{&space;2&space;C^*_{\nu&space;L}&space;C_{\mu&space;H}^*&space;-&space;C^{*}_{\nu&space;H}&space;C_{\mu&space;L}^*&space;\right&space;\}&space;\left(&space;\nu\kappa&space;\vert&space;\mu\xi&space;\right&space;)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?v_{\mu\xi}(2)=&space;C_{\kappa&space;H}&space;\sum_{\nu\kappa\in&space;A}&space;\left\{&space;2&space;C^*_{\nu&space;L}&space;C_{\mu&space;H}^*&space;-&space;C^{*}_{\nu&space;H}&space;C_{\mu&space;L}^*&space;\right&space;\}&space;\left(&space;\nu\kappa&space;\vert&space;\mu\xi&space;\right&space;)" title="v_{\mu\xi}(2)= C_{\kappa H} \sum_{\nu\kappa\in A} \left\{ 2 C^*_{\nu L} C_{\mu H}^* - C^{*}_{\nu H} C_{\mu L}^* \right \} \left( \nu\kappa \vert \mu\xi \right )" /></a>
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=v_{\mu\xi}(3)=&space;v_{\mu\xi}(1)&space;&plus;&space;v_{\mu\xi}(2)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?v_{\mu\xi}(3)=&space;v_{\mu\xi}(1)&space;&plus;&space;v_{\mu\xi}(2)" title="v_{\mu\xi}(3)= v_{\mu\xi}(1) + v_{\mu\xi}(2)" /></a>
 
 ### HT contributions.
 
+Do be derived.
+
 ### CT contributions.
 
+To be derived.
 
 Full HF Interaction OEP’s
 -------------------------
