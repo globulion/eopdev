@@ -5,7 +5,7 @@ To get the ab-initio representation of a OEP, one can use a procedure similar to
 the typical density fitting or resolution of identity, both of which are nowadays widely used 
 to compute electron-repulsion integrals (ERI’s) more efficiently. 
 
-An arbitrary one-electron potential of molecule *A* acting on any state vector (not necessarily directly associated with molecule *A*) can be expanded in the *auxiliary space* as
+An arbitrary one-electron potential of molecule *A* acting on any state vector associated with molecule *A* can be expanded in the *auxiliary space* centered on *A* as
 
 <a href="https://www.codecogs.com/eqnedit.php?latex=v\vert&space;i)&space;=&space;\sum_{\xi}&space;v\vert&space;\xi)&space;(&space;\xi&space;\vert&space;i)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?v\vert&space;i)&space;=&space;\sum_{\xi}&space;v\vert&space;\xi)&space;(&space;\xi&space;\vert&space;i)" title="v\vert i) = \sum_{\xi} v\vert \xi) ( \xi \vert i)" /></a>
 
@@ -21,5 +21,9 @@ The expansion coefficients (shown in blue) are the effective matrix elements of 
 
 <a href="https://www.codecogs.com/eqnedit.php?latex=\boxed{&space;G_{i\eta}&space;=&space;\sum_\xi&space;(i&space;\vert&space;v&space;\vert&space;\eta)&space;\left[&space;{\bf&space;S}^{-1}&space;\right]_{\eta\xi}&space;}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\boxed{&space;G_{i\eta}&space;=&space;\sum_\xi&space;(i&space;\vert&space;v&space;\vert&space;\eta)&space;\left[&space;{\bf&space;S}^{-1}&space;\right]_{\eta\xi}&space;}" title="\boxed{ G_{i\eta} = \sum_\xi (i \vert v \vert \eta) \left[ {\bf S}^{-1} \right]_{\eta\xi} }" /></a>
 
-In this way, it is possible to approximately determine the matrix elements of the OEP operator with any other basis function of molecule *A* in case the auxiliary basis set is not complete. This technique is very useful when the basis function *i* is not belonging to molecule *A* but to the (changing) environment. This then forms a basis for fragment-based approach to solve Quantum Chemistry problems related to the extended molecular aggregates.
+In this way, it is possible to approximately determine the matrix elements of the OEP operator with any other basis function of molecule *A* in case the auxiliary basis set is not complete. This technique is very useful when the basis function *j* is not belonging to molecule *A* but to the (changing) environment because such matrix elements are simply given by 
+
+<a href="https://www.codecogs.com/eqnedit.php?latex=(j_{\in&space;B}&space;\vert&space;v^A&space;\vert&space;i_{\in&space;A})&space;=&space;\sum_\xi&space;{\color{DarkOrange}&space;S_{j\xi}}&space;{\color{Blue}&space;G_{i\xi}}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?(j_{\in&space;B}&space;\vert&space;v^A&space;\vert&space;i_{\in&space;A})&space;=&space;\sum_\xi&space;{\color{DarkOrange}&space;S_{j\xi}}&space;{\color{Blue}&space;G_{i\xi}}" title="(j_{\in B} \vert v^A \vert i_{\in A}) = \sum_\xi {\color{DarkOrange} S_{j\xi}} {\color{Blue} G_{i\xi}}" /></a>
+
+This then forms a basis for fragment-based approach to solve Quantum Chemistry problems related to the extended molecular aggregates.
 
