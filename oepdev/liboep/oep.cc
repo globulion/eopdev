@@ -1,3 +1,3 @@
 #include "oep.h"
 
-OEPotential::OEPotential(void) {}
+//OEPotential::OEPotential(void) {}
