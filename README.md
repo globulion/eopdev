@@ -5,7 +5,7 @@ Generalized One-Electron Potentials: Development Platform.
 
 Bartosz Błasiak (blasiak.bartosz@gmail.com)
 
-Overwiew
+Overview
 --------
 
 Test various models of the intermolecular interaction
