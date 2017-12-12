@@ -15,6 +15,7 @@ of the molecule *B*. Defining a
  * Solver class that handles such interaction 
  * Wavefunction class and
  * OEP class
+
 the universal design of OEP-based approaches can be established and developed.
 
 > **Important:**
