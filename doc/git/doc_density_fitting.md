@@ -21,9 +21,11 @@ The expansion coefficients (shown in blue) are the effective matrix elements of 
 
 <a href="https://www.codecogs.com/eqnedit.php?latex=\boxed{&space;G_{i\eta}&space;=&space;\sum_\xi&space;(i&space;\vert&space;v&space;\vert&space;\eta)&space;\left[&space;{\bf&space;S}^{-1}&space;\right]_{\eta\xi}&space;}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\boxed{&space;G_{i\eta}&space;=&space;\sum_\xi&space;(i&space;\vert&space;v&space;\vert&space;\eta)&space;\left[&space;{\bf&space;S}^{-1}&space;\right]_{\eta\xi}&space;}" title="\boxed{ G_{i\eta} = \sum_\xi (i \vert v \vert \eta) \left[ {\bf S}^{-1} \right]_{\eta\xi} }" /></a>
 
-In this way, it is possible to approximately determine the matrix elements of the OEP operator with any other basis function of molecule *A* in case the auxiliary basis set is not complete. This technique is very useful when the basis function *j* is not belonging to molecule *A* but to the (changing) environment because such matrix elements are simply given by 
+In this way, it is possible to approximately determine the matrix elements of the OEP operator with any other basis function in case the auxiliary basis set is not complete. **In particular**, when the other basis function does not belong to molecule *A* but to the (changing) environment, it is straightforward to compute the resulting matrix element, which is simply given as  
 
 <a href="https://www.codecogs.com/eqnedit.php?latex=(j_{\in&space;B}&space;\vert&space;v^A&space;\vert&space;i_{\in&space;A})&space;=&space;\sum_\xi&space;{\color{DarkOrange}&space;S_{j\xi}}&space;{\color{Blue}&space;G_{i\xi}}" target="_blank"><img src="https://latex.codecogs.com/gif.latex?(j_{\in&space;B}&space;\vert&space;v^A&space;\vert&space;i_{\in&space;A})&space;=&space;\sum_\xi&space;{\color{DarkOrange}&space;S_{j\xi}}&space;{\color{Blue}&space;G_{i\xi}}" title="(j_{\in B} \vert v^A \vert i_{\in A}) = \sum_\xi {\color{DarkOrange} S_{j\xi}} {\color{Blue} G_{i\xi}}" /></a>
 
-This then forms a basis for fragment-based approach to solve Quantum Chemistry problems related to the extended molecular aggregates.
+where *j* denotes the other (environmental) basis function.
+
+In the above equation, the OEP-part (fragment parameters for molecule *A* only) are shown in blue whereas the Solver-part (subject to be computed by solver on the fly) is shown in brown. This then forms a basis for fragment-based approach to solve Quantum Chemistry problems related to the extended molecular aggregates.
 
