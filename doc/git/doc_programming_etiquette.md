@@ -104,4 +104,15 @@ Things to remember:
       Avoid also dashes in class names (they are reserved for global functions and class methods). Examples: 
       * good name: `DIISManager`, bad name: `DIIS`.
       * good name: `EETCouplingSolver`, bad name: `EETSolver`, very bad: `EET`.
+      
+      
+Use Object-Oriented Programming
+-------------------------------
+
+Try to organise your creations in objects having special relationships and data structures. Encapsulation
+helps in producing self-maintaining code and is much easier to use. Use: 
+ * **factory design** for creating objects
+ * **container design** for designing data structures
+ * **polymorphysm** when dealing with various flavours of one particular feature in the data structure
+
 *********
