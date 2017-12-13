@@ -7,7 +7,7 @@ oep-dev
 
 Generalized One-Electron Potentials: Development Platform.
 
-Bartosz Błasiak (blasiak.bartosz@gmail.com)
+Contact: Bartosz Błasiak (blasiak.bartosz@gmail.com)
 
 Overview
 --------
