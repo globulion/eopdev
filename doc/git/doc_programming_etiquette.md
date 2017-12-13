@@ -116,7 +116,7 @@ helps in producing self-maintaining code and is much easier to use. Use:
  * **polymorphysm** when dealing with various flavours of one particular feature in the data structure
  
  > *Note:* In Psi4, factories are frequently implemented as static methods of the base classes, 
- > for example `psi::SuperFunctional::blank` static method. It can be followed when building object factories 
+ > for example `psi::BasisSet::build` static method. It can be followed when building object factories 
  > in oep-dev too.
 
 *********
