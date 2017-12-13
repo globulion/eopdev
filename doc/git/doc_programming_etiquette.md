@@ -10,8 +10,9 @@ Main routine and libraries
 
 Oep-dev has only *one* source file in the plugin base directory, i.e., `main.cc`. This is the main
 driver routine that handles the functionality of the whole OEP testing platform: specifies options for 
-Psi4 input file and implemented test routines based on the options. Other sources are stored
-in `oepdev/libNAME*` directories where `NAME` is the name of the library with sources and header files.
+Psi4 input file and implements test routines based on the options. Other sources are stored
+in `MODULE/libNAME*` directories where `NAME` is the name of the library with sources and header files, 
+whereas `MODULE` is the directory of the oep-dev module.
 
 Things to remember:
 
@@ -22,7 +23,7 @@ Things to remember:
      Any additional source code has to be placed in `oepdev/libNAME*` directory (either existing one or a new one; in the 
      latter case remember to add the new `*.cc` files to `CMakeLists.txt` in the plugin base directory.
   3. **Miscellanea in special directories.** 
-     If you want to add documentation, put it in the `doc` directory. 
+     If you want to add additional documentation, put it in the `doc` directory. 
      If you want to add graphics, put it in the `images` directory.
 
 
