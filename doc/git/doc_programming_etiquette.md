@@ -73,9 +73,29 @@ Things to remember:
    1. **Descriptions of classes, structures, global functions, etc**. Each programming object should have a description.
    2. **Documentation for function arguments and return object**. 
       Usage of functions and class methods should be explained by providing the description of all arguments 
-      (use `\param` and `return` Doxygen keywords).
+      (use `\param` and `\return` Doxygen keywords).
    3. **One-line description of class member variables**. Any class member variable should be preceded by 
       a one-liner documentation (starting from `///`).
+   4. **Do not be afraid of long names in the code**. Self-documenting code is a bless!
 
+Naming conventions
+------------------
+
+Naming is important because it helps to create more readable and clear self-documented code. 
+
+Things to remember:
+
+   1. **Do not be afraid of long names in the code, but avoid redundancy**. Examples of good and bad names:
+      * good name: `get_density_matrix`; bad name: `get_matrix`. Unless there is only one type of matrix
+        a particular objects can store, `matrix` is not a good name for a getter method. 
+      * good name: `class Wavefunction`, bad name: `class WFN`
+      * good name: `int numberOfErrorVectors`, bad name: `int nvec`, bad name: `the_number_of_error_vectors`
+      * good name: `class EFPotential`, probably bad name: `class EffectiveFragmentPotential`.
+        The latter might be understood by some people as a class that inherits from `EffectiveFragment` class. 
+        If it is not the case, compromise between abbreviation and long description is OK.
+   2. **Short names are OK in special situations**. In cases meaning of a particular variable is obvious and
+      it is frequently used in the code locally, it can be named shortly. Examples are:
+      * `i` when iterating
+      * `no` number of occupied orbitals, `nv` number of virtual orbitals, etc.
 
 *********
