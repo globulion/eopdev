@@ -18,6 +18,18 @@ OEPotential::OEPotential(const SharedWavefunction& wfn, const SharedBasisSet& au
 {
 }
 
+OEPotential::~OEPotential() {}
+
+void OEPotential::compute(std::string oepType) {}
+void OEPotential::compute(void) {}
+void OEPotential::compute_3D(std::string oepType, std::string fileName) {}
+void OEPotential::rotate(const Matrix& rotmat) {}
+void OEPotential::translate(const Vector& trans) {}
+void OEPotential::superimpose(const Matrix& refGeometry,
+                              const std::vector<int>& supList,
+                              const std::vector<int>& reordList) {}
+
+
 
 
 //OEPotential::compute_3D(std::string oepType, std::string fileName) {
