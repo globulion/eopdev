@@ -32,6 +32,8 @@ against reference solutions (exact or other approximations).
 Places to go:
  * [OEP Design](https://github.com/globulion/oepdev/blob/master/doc/git/doc_oep_design.md)
  * [Implemented Models](https://github.com/globulion/oepdev/blob/master/doc/git/doc_implemented_models.md)
+ * [Programming Etiquette](https://github.com/globulion/oepdev/blob/master/doc/git/doc_programming_etiquette.md)
+ * [Current Issues](https://github.com/globulion/oepdev/issues)
 
 *****
 
