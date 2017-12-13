@@ -20,7 +20,7 @@ the universal design of OEP-based approaches can be established and developed.
 
 > **Important:**
 >  OEP and Wavefunction classes should not be restricted to Hartree-Fock; in generall any correlated 
->  wavefunction and derived OEP`s should be allowed to work with each other
+>  wavefunction and derived OEP`s should be allowed to work with each other.
 >
 
 OEP Classes
