@@ -97,5 +97,11 @@ Things to remember:
       it is frequently used in the code locally, it can be named shortly. Examples are:
       * `i` when iterating
       * `no` number of occupied orbitals, `nv` number of virtual orbitals, etc.
-
+   3. **Clumped names for variables and dashed names for functions**. Try to distinguish between variable name 
+      like `sizeOfOEPTypeList` and a method name `get_matrix()` (neither `size_of_OEP_type_list`, nor `getMatrix()`).
+      This is little bit cosmetics, but helps in managing the code when it grows.
+   4. **Class names start from capital letter**. However, avoid only capital letters in class names, unless it is obvious.
+      Avoid also dashes in class names (they are reserved for global functions and class methods). Examples: 
+      * good name: `DIISManager`, bad name: `DIIS`.
+      * good name: `EETCouplingSolver`, bad name: `EETSolver`, very bad: `EET`.
 *********
