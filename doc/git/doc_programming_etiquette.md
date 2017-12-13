@@ -15,9 +15,15 @@ in `oepdev/libNAME*` directories where `NAME` is the name of the library with so
 
 Things to remember:
 
-  1. It is *not* permitted to place any new source files in the plugin base directory (i.e., where `main.cc` resides).
-  2. Any additional source has to be placed in `oepdev/libNAME*` directory (either existing one or a new one; in the 
+  1. **No other sources in base directory.** 
+     It is not permitted to place any new source or other files in the plugin base directory 
+     (i.e., where `main.cc` resides). 
+  2. **Sources in library directories.** 
+     Any additional source code has to be placed in `oepdev/libNAME*` directory (either existing one or a new one; in the 
      latter case remember to add the new `*.cc` files to `CMakeLists.txt` in the plugin base directory.
+  3. **Miscellanea in special directories.** 
+     If you want to add documentation, put it in the `doc` directory. 
+     If you want to add graphics, put it in the `images` directory.
 
 
 Header files in libraries
@@ -50,5 +56,26 @@ Things to remember:
       } // EndNameSpace MODULE_LIBRARY
       ```
       Example of namespace is `oepdev_liboep` in module `oepdev` and library `liboep`. 
+
+Documenting the code
+--------------------
+
+Code has to be documented (at best at a time it is being created). The place for documentation 
+is always in header files. Additional documentation can be also placed in source files. Leaving a chunk of code
+for a production run without documentation is unacceptable. 
+
+Use Doxygen style for documentation all the time. Remember that it supports markdown which can make the documentation
+even more clear and easy to understand.
+Additionally you can create a nice `.rst` documentation file for Sphinx program.
+
+Things to remember:
+
+   1. **Descriptions of classes, structures, global functions, etc**. Each programming object should have a description.
+   2. **Documentation for function arguments and return object**. 
+      Usage of functions and class methods should be explained by providing the description of all arguments 
+      (use `\param` and `return` Doxygen keywords).
+   3. **One-line description of class member variables**. Any class member variable should be preceded by 
+      a one-liner documentation (starting from `///`).
+
 
 *********
