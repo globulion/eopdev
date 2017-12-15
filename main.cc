@@ -55,8 +55,25 @@
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libtrans/integraltransform.h"
 
+using SharedMolecule           = std::shared_ptr<Molecule>;                            
+using SharedSuperFunctional    = std::shared_ptr<SuperFunctional>;
+using SharedWavefunction       = std::shared_ptr<Wavefunction>;
+using SharedVector             = std::shared_ptr<Vector>;
+using SharedMatrix             = std::shared_ptr<Matrix>;
+using SharedBasisSet           = std::shared_ptr<BasisSet>;
+using SharedUnion              = std::shared_ptr<oepdev_libutil::WavefunctionUnion>; 
+using SharedPSIO               = std::shared_ptr<PSIO>;
+using SharedCPHF               = std::shared_ptr<oepdev_libutil::CPHF>;
+using SharedMOSpace            = std::shared_ptr<MOSpace>;
+using SharedIntegralTransform  = std::shared_ptr<IntegralTransform>;
+using SharedIntegralFactory    = std::shared_ptr<IntegralFactory>;
+using SharedTwoBodyAOInt       = std::shared_ptr<TwoBodyAOInt>;
+using SharedMOSpaceVector      = std::vector<std::shared_ptr<MOSpace>>;
+using intVector                = std::vector<int>;
+
 namespace psi{ 
 namespace oepdev{
+
 
 /** \brief Options for the OEPDEV plugin.
  *
@@ -149,52 +166,43 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
 
     int print = options.get_int("PRINT");
 
+    // Psi4 Input/Output Stream
+    SharedPSIO              psio           = PSIO::shared_object();
+
+    // Create Wavefunction Union of two monomers
+    SharedUnion             wfn_union(     new oepdev_libutil::WavefunctionUnion(ref_wfn, options));
+    SharedWavefunction      wfn_union_base = static_cast<SharedWavefunction>(wfn_union);
+
     // Parse molecules, fragments, basis sets and other primary informations
-    std::shared_ptr<Wavefunction>    scf_A;
-    std::shared_ptr<Wavefunction>    scf_B;
-    std::shared_ptr<PSIO>            psio           = PSIO::shared_object();
-    std::shared_ptr<SuperFunctional> functional     = oepdev_libutil::create_superfunctional("HF", options);
-    std::shared_ptr<Molecule>        molecule_dimer = ref_wfn->molecule();
-    std::shared_ptr<BasisSet>        primary        = ref_wfn->basisset();
-    std::shared_ptr<BasisSet>        primary_A      = ref_wfn->get_basisset("BASIS_SCF_A");
-    std::shared_ptr<BasisSet>        primary_B      = ref_wfn->get_basisset("BASIS_SCF_B");
-    std::shared_ptr<Molecule>        molecule_A     = oepdev_libutil::extract_monomer(molecule_dimer, 1);
-    std::shared_ptr<Molecule>        molecule_B     = oepdev_libutil::extract_monomer(molecule_dimer, 2);
-    molecule_A->set_name("Monomer 1");
-    molecule_B->set_name("Monomer 2");
-    molecule_dimer->set_name("Aggregate (Dimer)");
-
-    outfile->Printf("  ==> Molecules in the aggregate <==\n");
-    molecule_A->print();
-    molecule_B->print();
-
+    SharedBasisSet          primary_1      = wfn_union->primary_1();    
+    SharedBasisSet          primary_2      = wfn_union->primary_2();
+    SharedMolecule          molecule_1     = wfn_union->molecule_1();
+    SharedMolecule          molecule_2     = wfn_union->molecule_2();
+    SharedMolecule          molecule       = wfn_union->molecule();
+    SharedBasisSet          primary        = wfn_union->basisset();
+    SharedWavefunction      scf_1          = wfn_union->wfn_1(); 
+    SharedWavefunction      scf_2          = wfn_union->wfn_2();
+    
     //TRIAL create BasisSet objects
     //TRIAL std::shared_ptr<BasisSet> primary_A = BasisSet::pyconstruct_orbital(molecule_A, options, "BASIS");
 
-    // solve SCF for each monomer   
-    outfile->Printf("  ====> Computations for Monomer A <====\n");
-    scf_A = oepdev_libutil::solve_scf(molecule_A, primary_A, functional, options, psio);
-    outfile->Printf("  ====> Computations for Monomer B <====\n");
-    scf_B = oepdev_libutil::solve_scf(molecule_B, primary_B, functional, options, psio);
-
-    // solve CPHF equations for each monomer
-    std::shared_ptr<oepdev_libutil::CPHF> cphf_A(new oepdev_libutil::CPHF(scf_A, options));
-    cphf_A->compute();
-    std::shared_ptr<Matrix> pol_A = cphf_A->get_molecular_polarizability();
-    pol_A->print();
-
-    std::shared_ptr<oepdev_libutil::CPHF> cphf_B(new oepdev_libutil::CPHF(scf_B, options));
-    cphf_B->compute();
-    std::shared_ptr<Matrix> pol_B = cphf_B->get_molecular_polarizability();
-    pol_B->print();
+    // Solve CPHF equations for each monomer
+    SharedCPHF cphf_1(new oepdev_libutil::CPHF(scf_1, options));
+    SharedCPHF cphf_2(new oepdev_libutil::CPHF(scf_1, options));
+    cphf_1->compute();
+    cphf_2->compute();
+    SharedMatrix pol_1 = cphf_1->get_molecular_polarizability();
+    SharedMatrix pol_2 = cphf_2->get_molecular_polarizability();
+    pol_1->print(); pol_2->print();
 
     // Wavefunction coefficients for isolated monomers
-    std::shared_ptr<Matrix> c_A = scf_A->Ca_subset("AO","ALL");
-    std::shared_ptr<Matrix> c_B = scf_B->Ca_subset("AO","ALL");
+    SharedMatrix c_1 = scf_1->Ca_subset("AO","ALL");
+    SharedMatrix c_2 = scf_2->Ca_subset("AO","ALL");
 
     // compute AO-ERI for the dimer
-    std::shared_ptr<IntegralFactory> ints_dimer(new IntegralFactory(primary, primary, primary, primary));
-    std::shared_ptr<TwoBodyAOInt>    eri_dimer(ints_dimer->eri());
+    if (false) {
+    SharedIntegralFactory ints_dimer(new IntegralFactory(primary, primary, primary, primary));
+    SharedTwoBodyAOInt    eri_dimer(ints_dimer->eri());
     AOShellCombinationsIterator shellIter(primary, primary, primary, primary);
     const double * buffer = eri_dimer->buffer();
     for (shellIter.first(); shellIter.is_done() == false; shellIter.next()) {
@@ -202,51 +210,51 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
          outfile->Printf("( %d %d | %d %d )\n", 
                            shellIter.p(), shellIter.q(), shellIter.r(), shellIter.s());
     }
+    }
 
-    // Towards making union of molecules
-    std::vector<int> orbitals_A;
-    std::vector<int> orbitals_B;
-    std::vector<int> indices;
-    for (int i=0; i<scf_A->nmopi()[0]; i++) orbitals_A.push_back(i);
-    for (int i=0; i<scf_B->nmopi()[0]; i++) orbitals_B.push_back(i);
-    std::shared_ptr<MOSpace> spaceA(new MOSpace('X', orbitals_A, indices));
-    std::shared_ptr<MOSpace> spaceB(new MOSpace('Y', orbitals_B, indices));
+    // Perform the integral transformation to MO basis
+    intVector orbitals_1, orbitals_2, indices;
+    for (int i=0; i<scf_1->nmopi()[0]; i++) orbitals_1.push_back(i);
+    for (int i=0; i<scf_2->nmopi()[0]; i++) orbitals_2.push_back(i);
+    SharedMOSpace space1(new MOSpace('1', orbitals_1, indices));
+    SharedMOSpace space2(new MOSpace('2', orbitals_2, indices));
 
-    std::vector<std::shared_ptr<MOSpace>> spaces;
+    SharedMOSpaceVector spaces;
     spaces.push_back(MOSpace::occ);
     spaces.push_back(MOSpace::vir);
-    spaces.push_back(spaceA);
-    spaces.push_back(spaceB);
-    std::shared_ptr<IntegralTransform> transform(new IntegralTransform(ref_wfn, spaces, IntegralTransform::Restricted));
+    spaces.push_back(space1);
+    spaces.push_back(space2);
+    SharedIntegralTransform transform(new IntegralTransform(wfn_union_base, spaces, IntegralTransform::Restricted));
+
     transform->set_keep_dpd_so_ints(1);
     // Trans (AA|AA)
     timer_on("Trans (AA|AA)");
-    transform->transform_tei(spaceA, spaceA, spaceA, spaceA, IntegralTransform::MakeAndKeep);
+    transform->transform_tei(space1, space1, space1, space1, IntegralTransform::MakeAndKeep);
     timer_off("Trans (AA|AA)");
 
     // Trans (AA|AB)
     timer_on("Trans (AA|AB)");
-    transform->transform_tei(spaceA, spaceA, spaceA, spaceB, IntegralTransform::ReadAndKeep);
+    transform->transform_tei(space1, space1, space1, space2, IntegralTransform::ReadAndKeep);
     timer_off("Trans (AA|AB)");
 
     // Trans (AA|BB)
     timer_on("Trans (AA|BB)");
-    transform->transform_tei(spaceA, spaceA, spaceB, spaceB, IntegralTransform::ReadAndNuke);
+    transform->transform_tei(space1, space1, space2, space2, IntegralTransform::ReadAndNuke);
     timer_off("Trans (AA|BB)");
 
     // Trans (AB|AB)
     timer_on("Trans (AB|AB)");
-    transform->transform_tei(spaceA, spaceB, spaceA, spaceB, IntegralTransform::MakeAndKeep);
+    transform->transform_tei(space1, space2, space1, space2, IntegralTransform::MakeAndKeep);
     timer_off("Trans (AB|AB)");
 
     // Trans (AB|BB)
     timer_on("Trans (AB|BB)");
-    transform->transform_tei(spaceA, spaceB, spaceB, spaceB, IntegralTransform::ReadAndNuke);
+    transform->transform_tei(space1, space2, space2, space2, IntegralTransform::ReadAndNuke);
     timer_off("Trans (AB|BB)");
 
     // Trans (BB|BB)
     timer_on("Trans (BB|BB)");
-    transform->transform_tei(spaceB, spaceB, spaceB, spaceB);
+    transform->transform_tei(space2, space2, space2, space2);
     timer_off("Trans (BB|BB)");
 
 
@@ -256,39 +264,17 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 
     global_dpd_->buf4_init(&ABBB, PSIF_LIBTRANS_DPD, 0, // (AB|BB)
-                           transform->DPD_ID("[X,Y]"), transform->DPD_ID("[Y,Y]"),
-                           transform->DPD_ID("[X,Y]"), transform->DPD_ID("[Y,Y]"), 0, "MO Ints (XY|YY)");
+                           transform->DPD_ID("[1,2]"), transform->DPD_ID("[2,2]"),
+                           transform->DPD_ID("[1,2]"), transform->DPD_ID("[2,2]"), 0, "MO Ints (12|22)");
     global_dpd_->buf4_init(&AAAB, PSIF_LIBTRANS_DPD, 0, // (AA|AB)
-                           transform->DPD_ID("[X,X]"), transform->DPD_ID("[X,Y]"),
-                           transform->DPD_ID("[X,X]"), transform->DPD_ID("[X,Y]"), 0, "MO Ints (XX|XY)");
+                           transform->DPD_ID("[1,1]"), transform->DPD_ID("[1,2]"),
+                           transform->DPD_ID("[1,1]"), transform->DPD_ID("[1,2]"), 0, "MO Ints (11|12)");
 
     //
     global_dpd_->buf4_close(&ABBB);
     global_dpd_->buf4_close(&AAAB);
 
     psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-
-
-
-
-    
-   
-    // compute ERI of the type (AB|BB), (AA|AB) and (AA|BB)
-    //std::shared_ptr<IntegralFactory> factory_ABBB(new IntegralFactory(primary_A, primary_B, primary_B, primary_B));
-    //std::shared_ptr<IntegralFactory> factory_AAAB(new IntegralFactory(primary_A, primary_A, primary_A, primary_B));
-    //std::shared_ptr<IntegralFactory> factory_AABB(new IntegralFactory(primary_A, primary_A, primary_B, primary_B));
-
-    //std::shared_ptr<Matrix> sao_AB(new Matrix("Overlap matrix AB", primary_A->nbf(), primary_B->nbf()));
-    //std::shared_ptr<OneBodyAOInt> ints_AB  (factory_ABBB->ao_overlap());
-    //std::shared_ptr<TwoBodyAOInt> ints_ABBB(factory_ABBB->eri());
-    //ints_AB->compute(sao_AB);
-    //sao_AB->print();
-
-
-    //std::vector<std::shared_ptr<MOSpace> > spaces;
-    //spaces.push_back(MOSpace::all);
-    //IntegralTransform tran(c_A, c_B, c_B, c_B, spaces, IntegralTransform::Restricted);
-    //tran.transform_tei(MOSpace::all, MOSpace::all, MOSpace::all, MOSpace::all);
 
     return ref_wfn;
 }

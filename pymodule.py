@@ -60,8 +60,8 @@ def run_oepdev(name, **kwargs):
     basis_B  = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS_B"),
                                                      puream=ref_wfn.basisset().has_puream())
 
-    ref_wfn.set_basisset("BASIS_SCF_A", basis_A)
-    ref_wfn.set_basisset("BASIS_SCF_B", basis_B)
+    ref_wfn.set_basisset("BASIS_1", basis_A)
+    ref_wfn.set_basisset("BASIS_2", basis_B)
 
     # Ensure IWL files have been written when not using DF/CD
     proc_util.check_iwl_file_from_scf_type(psi4.core.get_option('SCF', 'SCF_TYPE'), ref_wfn)
