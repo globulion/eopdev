@@ -58,6 +58,19 @@ Things to remember:
       ```
       Example of namespace is `oepdev_liboep` in module `oepdev` and library `liboep`. 
 
+Environmental variables
+-----------------------
+
+Defining the set of intrinsic environmental variables can help in code management 
+and conditional compilation. The oep-dev environmental variables are defined in
+`include/oepdev_files.h` file. Remember also about psi4 environmental variables
+defined in `psi4/psifiles.h` header. As a rule, the oep-dev environmental variable
+should have the following format:
+```
+OEPDEV_XXXX
+```
+where XXX is the descriptive name of variable.
+
 Documenting the code
 --------------------
 
