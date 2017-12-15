@@ -5,12 +5,13 @@
 #include<string>
 #include<vector>
 
+#include "../../include/oepdev_files.h"
+
 #include "psi4/psi4-dec.h"
 #include "psi4/libparallel/parallel.h"
 #include "psi4/liboptions/liboptions.h"
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/matrix.h"
-//#include "psi4/libmints/tensor.h"
 #include "psi4/libfock/jk.h"
 #include "psi4/libmints/wavefunction.h"
 #include "psi4/libmints/basisset.h"
@@ -23,7 +24,8 @@
 #include "psi4/libfock/direct_screening.h"
 #include "psi4/libfock/cubature.h"
 #include "psi4/libfock/points.h"
-#ifdef DIIS_BB
+
+#if OEPDEV_USE_PSI4_DIIS_MANAGER == 0
   #include "diis.h"
 #else
   #include "psi4/libdiis/diismanager.h"
@@ -51,11 +53,11 @@ using namespace psi;
 class CPHF {
    protected:
      /// Number of occupied orbitals
-     int _no;
+     const int _no;
      /// Number of virtual orbitals
-     int _nv;
+     const int _nv;
      /// Number of basis functions
-     int _nn;
+     const int _nn;
      /// Memory
      long int _memory;
      /// Maximum number of iterations
@@ -65,7 +67,7 @@ class CPHF {
      /// whether use DIIS or not
      bool _with_diis;
      /// Size of subspace 
-     int _diis_dim;
+     const int _diis_dim;
      /// Primary Basis Set
      std::shared_ptr<BasisSet> _primary;
      /// Occupied orbitals
@@ -77,10 +79,10 @@ class CPHF {
      /// Virtual orbital energies
      std::shared_ptr<Vector> _eps_vir;
      /// the DIIS managers for each perturbation operator x, y and z
-     #ifdef DIIS_BB
-       std::vector<std::shared_ptr<DIIS>> _diis;
+     #if OEPDEV_USE_PSI4_DIIS_MANAGER == 0
+       std::vector<std::shared_ptr<diis::DIISManager>> _diis;
      #else
-       std::vector<std::shared_ptr<DIISManager>> _diis;
+       std::vector<std::shared_ptr<psi::DIISManager>> _diis;
      #endif
      /// Options
      Options _options;

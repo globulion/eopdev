@@ -1,23 +1,38 @@
 #include "diis.h"
 
+namespace std{
+
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args) {
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+
+}
+
 namespace oepdev_libutil{
+namespace diis{
 
 
-DIIS::DIIS (int dim, int na, int nb) :
+DIISManager::DIISManager (int dim, int na, int nb) :
           _dim(dim),
           _dn(dim+1), 
           _na(na),
           _nb(nb), 
           _ndiis(0), 
-          _u("DIIS Updated Vector", na, nb) {}
+          _u(std::make_shared<Matrix>("DIIS Updated Vector", na, nb))
+{
+  outfile->Printf("\n WARNING@oepdev_libutil::diis::DIISManager: Using Intrinsic DIIS Manager\n\n");
+}
 
-void DIIS::update(std::shared_ptr<Matrix>& other) {
+void DIISManager::update(std::shared_ptr<Matrix>& other) {
   if (_ndiis == _dim) other->copy(this->_u);
 }
 
-DIIS::~DIIS() { }
+DIISManager::~DIISManager() 
+ { /* nothing to explicitly do because all memorials are std containers or smart pointers */ }
 
-void DIIS::put(const std::shared_ptr<const Matrix>& error, 
+void DIISManager::put(const std::shared_ptr<const Matrix>& error, 
                   const std::shared_ptr<const Matrix>& vector) {
    _vectors.push_back(std::shared_ptr<Matrix>(new Matrix(*vector)));
    _errors .push_back(std::shared_ptr<Matrix>(new Matrix(*error )));
@@ -28,7 +43,7 @@ void DIIS::put(const std::shared_ptr<const Matrix>& error,
    if (_ndiis < _dim) _ndiis++;
 }
 
-void DIIS::compute(void) {
+void DIISManager::compute(void) {
   if (_ndiis == _dim) {
    std::shared_ptr<Matrix> B(new Matrix("DIIS Covariance Matrix"                 , _dn, _dn));
    std::shared_ptr<Vector> c(new Vector("DIIS Coefficients + Lagrange Multiplier", _dn     ));
@@ -51,8 +66,8 @@ void DIIS::compute(void) {
    C_DGESV(_dn, 1, Bp[0], _dn, ipiv, cp, _dn);
 
    // update vector
-   _u.zero();
-   double** up = _u.pointer();
+   _u->zero();
+   double** up = _u->pointer();
    for (int ina=0; ina<_na; ina++) {
         for (int inb=0; inb<_nb; inb++) { 
              for (int k=0; k<_dim; k++) {
@@ -66,4 +81,5 @@ void DIIS::compute(void) {
    }
 }
 
+} // EndNameSpace diis
 } // EndNameSpace oepdev_libutil

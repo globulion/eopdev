@@ -13,30 +13,30 @@ CPHF::CPHF(SharedWavefunction ref_wfn, Options& options) :
             _eps_occ(ref_wfn->epsilon_a_subset("AO","OCC")),
             _eps_vir(ref_wfn->epsilon_a_subset("AO","VIR")),
             _memory(Process::environment.get_memory()),
-            _options(options)
+            _options(options),
+            _diis_dim(options.get_int("CPHF_DIIS_DIM")),
+            _no(ref_wfn->doccpi()[0]),
+            _nv(ref_wfn->nmo()-ref_wfn->doccpi()[0]),
+            _nn(ref_wfn->basisset()->nbf())
 {
     if (not (_options.get_str("REFERENCE") == (std::string)"RHF")) {
        throw PSIEXCEPTION("oepdev_util::CPHF now only for RHF wavefunctions!");
     }
-    _no = _eps_occ->dim();
-    _nv = _eps_vir->dim();
-    _nn = _primary->nbf();
     _maxiter   = _options.get_int("CPHF_MAXITER");
     _conv      = _options.get_double("CPHF_CONVERGENCE");
     _with_diis = _options.get_bool("CPHF_DIIS");
-    _diis_dim  = _options.get_int("CPHF_DIIS_DIM");
 
     // Initialize DIIS manager
     if (_with_diis) {
         for (unsigned int z=0; z<3; z++) {
-             #ifdef DIIS_BB
-               _diis.push_back(std::shared_ptr<DIIS>(new My_DIIS(_diis_dim, _no, _nv)));
+             #if OEPDEV_USE_PSI4_DIIS_MANAGER == 0
+               _diis.push_back(std::shared_ptr<diis::DIISManager>(new diis::DIISManager(_diis_dim, _no, _nv)));
              #else
-               _diis.push_back(std::shared_ptr<DIISManager>(new DIISManager(_diis_dim, "CPHF DIIS", 
-                                 DIISManager::LargestError, DIISManager::InCore)));
-               _diis[z]->set_error_vector_size(1, DIISEntry::Matrix, 
+               _diis.push_back(std::shared_ptr<psi::DIISManager>(new psi::DIISManager(_diis_dim, "CPHF DIIS", 
+                                 psi::DIISManager::LargestError, psi::DIISManager::InCore)));
+               _diis[z]->set_error_vector_size(1, psi::DIISEntry::Matrix, 
                           std::shared_ptr<Matrix>(new Matrix("Error Vector", _no, _nv)).get());
-               _diis[z]->set_vector_size(1, DIISEntry::Matrix, 
+               _diis[z]->set_vector_size(1, psi::DIISEntry::Matrix, 
                           std::shared_ptr<Matrix>(new Matrix("DIIS Vector", _no, _nv)).get());
              #endif
         }
@@ -149,7 +149,7 @@ void CPHF::compute(void) {
              // use DIIS
              Xmo_old[z]->subtract(Xmo[z]);
              if (_with_diis) {
-                 #ifdef DIIS_BB
+                 #if OEPDEV_USE_PSI4_DIIS_MANAGER == 0
                    _diis[z]->put(Xmo_old[z], Xmo[z]);  
                    _diis[z]->compute();
                    _diis[z]->update(Xmo[z]); 

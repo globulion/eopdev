@@ -13,12 +13,13 @@
 
 
 namespace oepdev_libutil{
+namespace diis{
 
 using namespace psi;
 using namespace std;
 
 
-/** \class DIIS
+/** \class DIISManager
  *  \brief DIIS manager.
  *
  *  Instance can interact directly with the process of solving 
@@ -28,7 +29,7 @@ using namespace std;
  *  and also an estimate of the error vector. The updated DIIS vector
  *  can be copied to an old vector through the Instance.
  */
-class DIIS {
+class DIISManager {
 
   // --- Integers ---
 
@@ -50,7 +51,7 @@ class DIIS {
   /// List of current and previous error vectors
   std::vector<std::shared_ptr<Matrix>> _errors;
   /// Work space
-  Matrix _u;
+  std::shared_ptr<Matrix> _u;
 
 public:
 
@@ -59,10 +60,10 @@ public:
    *  @param na  Number of solution rows
    *  @param nb  Number of solution columns
    */
-  DIIS(int dim, int na, int nb);
+  DIISManager(int dim, int na, int nb);
 
   /// Destructor
- ~DIIS();
+ ~DIISManager();
   
   //  --- Methods ---
 
@@ -88,7 +89,7 @@ public:
 };
 
 
-
+} // EndNameSpace diis
 } // EndNameSpace oepdev_libutil
 
 #endif // _oepdev_libutil_diis_h

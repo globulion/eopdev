@@ -29,8 +29,6 @@
  * @END LICENSE
  */
 
-#define DIIS_BB
-
 #include <cstdlib>
 #include <cstdio>
 #include <string>
@@ -38,6 +36,8 @@
 #include "psi4/psi4-dec.h"
 #include "psi4/psifiles.h"
 #include "psi4/libdpd/dpd.h"
+
+#include "include/oepdev_files.h"
 
 #include "psi4/libparallel/parallel.h"
 #include "psi4/liboptions/liboptions.h"
