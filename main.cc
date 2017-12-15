@@ -36,6 +36,9 @@
 #include <string>
 
 #include "psi4/psi4-dec.h"
+#include "psi4/psifiles.h"
+#include "psi4/libdpd/dpd.h"
+
 #include "psi4/libparallel/parallel.h"
 #include "psi4/liboptions/liboptions.h"
 #include "psi4/libpsio/psio.h"
@@ -48,6 +51,9 @@
 
 #include "oepdev/libutil/util.h"
 #include "oepdev/libutil/cphf.h"
+
+#include "psi4/libtrans/mospace.h"
+#include "psi4/libtrans/integraltransform.h"
 
 namespace psi{ 
 namespace oepdev{
@@ -76,8 +82,8 @@ int read_options(std::string name, Options& options)
         options.add_bool("CPHF_DIIS", false);
         /*- size of DIIS subspace for CPHF -*/
         options.add_int("CPHF_DIIS_DIM", 3);
+     }
 
-    }
     return true;
 }
 
@@ -182,6 +188,107 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     std::shared_ptr<Matrix> pol_B = cphf_B->get_molecular_polarizability();
     pol_B->print();
 
+    // Wavefunction coefficients for isolated monomers
+    std::shared_ptr<Matrix> c_A = scf_A->Ca_subset("AO","ALL");
+    std::shared_ptr<Matrix> c_B = scf_B->Ca_subset("AO","ALL");
+
+    // compute AO-ERI for the dimer
+    std::shared_ptr<IntegralFactory> ints_dimer(new IntegralFactory(primary, primary, primary, primary));
+    std::shared_ptr<TwoBodyAOInt>    eri_dimer(ints_dimer->eri());
+    AOShellCombinationsIterator shellIter(primary, primary, primary, primary);
+    const double * buffer = eri_dimer->buffer();
+    for (shellIter.first(); shellIter.is_done() == false; shellIter.next()) {
+         eri_dimer->compute_shell(shellIter);
+         outfile->Printf("( %d %d | %d %d )\n", 
+                           shellIter.p(), shellIter.q(), shellIter.r(), shellIter.s());
+    }
+
+    // Towards making union of molecules
+    std::vector<int> orbitals_A;
+    std::vector<int> orbitals_B;
+    std::vector<int> indices;
+    for (int i=0; i<scf_A->nmopi()[0]; i++) orbitals_A.push_back(i);
+    for (int i=0; i<scf_B->nmopi()[0]; i++) orbitals_B.push_back(i);
+    std::shared_ptr<MOSpace> spaceA(new MOSpace('X', orbitals_A, indices));
+    std::shared_ptr<MOSpace> spaceB(new MOSpace('Y', orbitals_B, indices));
+
+    std::vector<std::shared_ptr<MOSpace>> spaces;
+    spaces.push_back(MOSpace::occ);
+    spaces.push_back(MOSpace::vir);
+    spaces.push_back(spaceA);
+    spaces.push_back(spaceB);
+    std::shared_ptr<IntegralTransform> transform(new IntegralTransform(ref_wfn, spaces, IntegralTransform::Restricted));
+    transform->set_keep_dpd_so_ints(1);
+    // Trans (AA|AA)
+    timer_on("Trans (AA|AA)");
+    transform->transform_tei(spaceA, spaceA, spaceA, spaceA, IntegralTransform::MakeAndKeep);
+    timer_off("Trans (AA|AA)");
+
+    // Trans (AA|AB)
+    timer_on("Trans (AA|AB)");
+    transform->transform_tei(spaceA, spaceA, spaceA, spaceB, IntegralTransform::ReadAndKeep);
+    timer_off("Trans (AA|AB)");
+
+    // Trans (AA|BB)
+    timer_on("Trans (AA|BB)");
+    transform->transform_tei(spaceA, spaceA, spaceB, spaceB, IntegralTransform::ReadAndNuke);
+    timer_off("Trans (AA|BB)");
+
+    // Trans (AB|AB)
+    timer_on("Trans (AB|AB)");
+    transform->transform_tei(spaceA, spaceB, spaceA, spaceB, IntegralTransform::MakeAndKeep);
+    timer_off("Trans (AB|AB)");
+
+    // Trans (AB|BB)
+    timer_on("Trans (AB|BB)");
+    transform->transform_tei(spaceA, spaceB, spaceB, spaceB, IntegralTransform::ReadAndNuke);
+    timer_off("Trans (AB|BB)");
+
+    // Trans (BB|BB)
+    timer_on("Trans (BB|BB)");
+    transform->transform_tei(spaceB, spaceB, spaceB, spaceB);
+    timer_off("Trans (BB|BB)");
+
+
+    // Read the integrals
+    dpd_set_default(transform->get_dpd_id());
+    dpdbuf4 ABBB, AAAB;
+    psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+    global_dpd_->buf4_init(&ABBB, PSIF_LIBTRANS_DPD, 0, // (AB|BB)
+                           transform->DPD_ID("[X,Y]"), transform->DPD_ID("[Y,Y]"),
+                           transform->DPD_ID("[X,Y]"), transform->DPD_ID("[Y,Y]"), 0, "MO Ints (XY|YY)");
+    global_dpd_->buf4_init(&AAAB, PSIF_LIBTRANS_DPD, 0, // (AA|AB)
+                           transform->DPD_ID("[X,X]"), transform->DPD_ID("[X,Y]"),
+                           transform->DPD_ID("[X,X]"), transform->DPD_ID("[X,Y]"), 0, "MO Ints (XX|XY)");
+
+    //
+    global_dpd_->buf4_close(&ABBB);
+    global_dpd_->buf4_close(&AAAB);
+
+    psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+
+
+
+    
+   
+    // compute ERI of the type (AB|BB), (AA|AB) and (AA|BB)
+    //std::shared_ptr<IntegralFactory> factory_ABBB(new IntegralFactory(primary_A, primary_B, primary_B, primary_B));
+    //std::shared_ptr<IntegralFactory> factory_AAAB(new IntegralFactory(primary_A, primary_A, primary_A, primary_B));
+    //std::shared_ptr<IntegralFactory> factory_AABB(new IntegralFactory(primary_A, primary_A, primary_B, primary_B));
+
+    //std::shared_ptr<Matrix> sao_AB(new Matrix("Overlap matrix AB", primary_A->nbf(), primary_B->nbf()));
+    //std::shared_ptr<OneBodyAOInt> ints_AB  (factory_ABBB->ao_overlap());
+    //std::shared_ptr<TwoBodyAOInt> ints_ABBB(factory_ABBB->eri());
+    //ints_AB->compute(sao_AB);
+    //sao_AB->print();
+
+
+    //std::vector<std::shared_ptr<MOSpace> > spaces;
+    //spaces.push_back(MOSpace::all);
+    //IntegralTransform tran(c_A, c_B, c_B, c_B, spaces, IntegralTransform::Restricted);
+    //tran.transform_tei(MOSpace::all, MOSpace::all, MOSpace::all, MOSpace::all);
 
     return ref_wfn;
 }
