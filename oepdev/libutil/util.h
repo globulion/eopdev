@@ -113,45 +113,58 @@ class WavefunctionUnion : public Wavefunction
   private:
     void common_init(void);
   protected:
-    /// Number of molecular orbitals in isolated monomer 1 and 2
-    int nmo_1_, nmo_2_;
-    /// Numberof SO's in isolated monomer 1 and 2
-    int nso_1_, nso_2_;
-    /// Number of alpha and beta electrons
-    int nalpha_1_, nalpha_2_, nbeta_1_, nbeta_2_;
-    /// Energies of isolated molecules
-    double energy_1_, energy_2_;
+    /// Number of isolated molecules
+    int nIsolatedMolecules_;
+    /// List of molecules
+    std::vector<SharedMolecule> l_molecule_;
+    /// List of primary basis functions per molecule
+    std::vector<SharedBasisSet> l_primary_;
+    /// List of auxiliary basis functions per molecule
+    std::vector<SharedBasisSet> l_auxiliary_;
+    /// List of isolated wavefunctions (electrons unrelaxed)
+    std::vector<SharedWavefunction> l_wfn_;
+    /// List of names of isolated wavefunctions
+    std::vector<std::string> l_name_;
+    /// List of numbers of molecular orbitals (MO's) per molecule
+    std::vector<int> l_nmo_;
+    /// List of numbers of SO's per molecule
+    std::vector<int> l_nso_;
+    /// List of energies of isolated wavefunctions
+    std::vector<double> l_energy_;
+    /// List of frozen-core energies per isolated wavefunction
+    std::vector<double> l_efzc_;
+    /// List of information per wfn whether it was obtained using DF or not
+    std::vector<bool> l_density_fitted_;
+    /// List of numbers of alpha electrons per isolated wavefunction
+    std::vector<int> l_nalpha_; 
+    /// List of numbers of beta electrons per isolated wavefunction
+    std::vector<int> l_nbeta_; 
+    /// List of numbers of frozen-core orbitals per isolated molecule
+    std::vector<int> l_nfrzc_;
+
     /// The wavefunction for a dimer (electrons relaxed in the field of monomers)
     SharedWavefunction dimer_wavefunction_;
-    /// Unrelaxed wavefunctions of monomers
-    SharedWavefunction wfn_1_, wfn_2_;
-    /// Basis functions of monomenrs
-    SharedBasisSet primary_1_, primary_2_;
-    /// Molecules of monomers
-    SharedMolecule molecule_1_, molecule_2_;
 
   public:
+    /* \brief Constructor. 
+     *
+     */
     WavefunctionUnion(SharedWavefunction ref_wfn, Options& options);
+    /// Destructor
     virtual ~WavefunctionUnion();
-    double compute_energy();
+    /// Compute Energy (now blank)
+    virtual double compute_energy();
 
     // <--- Getters ---> //
-    int nmo_1() const {return nmo_1_;}
-    int nso_1() const {return nso_1_;}
-    int nmo_2() const {return nmo_2_;}
-    int nso_2() const {return nso_2_;}
-    int nalpha_1() const {return nalpha_1_;}
-    int nalpha_2() const {return nalpha_2_;}
-    int nbeta_1() const {return nbeta_1_;}
-    int nbeta_2() const {return nbeta_2_;}
-    double energy_1() const {return energy_1_;}
-    double energy_2() const {return energy_2_;}
-    SharedMolecule molecule_1() const {return molecule_1_;}
-    SharedMolecule molecule_2() const {return molecule_2_;}
-    SharedWavefunction wfn_1() const {return wfn_1_;}
-    SharedWavefunction wfn_2() const {return wfn_2_;}
-    SharedBasisSet primary_1() const {return primary_1_;}
-    SharedBasisSet primary_2() const {return primary_2_;}
+    int                  l_nmo       (int n) const {return l_nmo_          [n];}         
+    int                  l_nso       (int n) const {return l_nso_          [n];}
+    int                  l_nalpha    (int n) const {return l_nalpha_       [n];}
+    int                  l_nbeta     (int n) const {return l_nbeta_        [n];}
+    double               l_energy    (int n) const {return l_energy_       [n];}
+    SharedMolecule       l_molecule  (int n) const {return l_molecule_     [n];}
+    SharedBasisSet       l_primary   (int n) const {return l_primary_      [n];}
+    SharedBasisSet       l_auxiliary (int n) const {return l_auxiliary_    [n];}
+    SharedWavefunction   l_wfn       (int n) const {return l_wfn_          [n];}
 
 };
 
