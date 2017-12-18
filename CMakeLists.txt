@@ -39,6 +39,6 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/util.cc
                        oepdev/libutil/diis.cc
                        oepdev/libutil/cphf.cc
-                       oepdev/libutil/wavefunction_dimer.cc
+                       oepdev/libutil/wavefunction_union.cc
                        oepdev/liboep/oep.cc   
                )
