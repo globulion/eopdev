@@ -80,38 +80,41 @@ solve_scf(std::shared_ptr<Molecule> molecule,
 /** \brief Union of two Wavefunction objects.
  *  
  *  The WavefunctionUnion is the exact union of two unperturbed Wavefunctions.
- *  __Note:__ Works only for C1 symmetry!
- *  The following variables are exact deep copies of variables inside Wavefunction object,
+ *  __Note:__ Works only for C1 symmetry! Therefore `this->nirrep() = 1`.
+ *  The following variables are shallow copies of variables inside Wavefunction object,
  *  that is created for the _whole_ molecule cluster:
- *    - *basissets (DF/RI/F12/etc basis sets)_
- *    - *basisset_ (ORBITAL basis set)
- *    - *sobasisset_ (Primary basis set for SO integrals)
- *    - *AO2SO_ (AO2SO conversion matrix (AO in rows, SO in cols)
- *    - *molecule_ (Molecule that this wavefunction is run on)
- *    - *options_ (Options object)
- *    - *psio_ (PSI file access variables)
- *    - *integral_ (Integral factory)
- *    - *factory_ (Matrix factory for creating standard sized matrices)
+ *    - basissets (DF/RI/F12/etc basis sets)_
+ *    - basisset_ (ORBITAL basis set)
+ *    - sobasisset_ (Primary basis set for SO integrals)
+ *    - AO2SO_ (AO2SO conversion matrix (AO in rows, SO in cols)
+ *    - molecule_ (Molecule that this wavefunction is run on)
+ *    - options_ (Options object)
+ *    - psio_ (PSI file access variables)
+ *    - integral_ (Integral factory)
+ *    - factory_ (Matrix factory for creating standard sized matrices)
  *    - memory_ (How much memory you have access to)
- *    - *nalpha_, nbeta_ (Total alpha and beta electrons)
+ *    - nalpha_, nbeta_ (Total alpha and beta electrons)
  *    - nfrzc_ (Total frozen core orbitals)
- *    - *doccpi_ (Number of doubly occupied per irrep)
- *    - *soccpi_ (Number of singly occupied per irrep)
- *    - *frzcpi_ (Number of frozen core per irrep)
- *    - *frzvpi_ (Number of frozen virtuals per irrep)
- *    - *nalphapi_ (Number of alpha electrons per irrep)
- *    - *nbetapi_ (Number of beta electrons per irrep)
- *    - *nsopi_ (Number of so per irrep)
- *    - *nmopi_ (Number of mo per irrep)
- *    - *nso_ (Total number of SOs)
- *    - *nmo_ (Total number of MOs)
- *    - *nirrep_ (Number of irreps)
- *    - 
+ *    - doccpi_ (Number of doubly occupied per irrep)
+ *    - soccpi_ (Number of singly occupied per irrep)
+ *    - frzcpi_ (Number of frozen core per irrep)
+ *    - frzvpi_ (Number of frozen virtuals per irrep)
+ *    - nalphapi_ (Number of alpha electrons per irrep)
+ *    - nbetapi_ (Number of beta electrons per irrep)
+ *    - nsopi_ (Number of so per irrep)
+ *    - nmopi_ (Number of mo per irrep)
+ *    - nso_ (Total number of SOs)
+ *    - nmo_ (Total number of MOs)
+ *    - nirrep_ (Number of irreps)
+ *  The rest is altered so that the Wavefunction parameters reflect
+ *  a cluster of non-interacting (uncoupled, isolated, unrelaxed) 
+ *  molecular electron densities.
  */
-class WavefunctionUnion : public Wavefunction
+class WavefunctionUnion : public Wavefunction//, public std::enable_shared_from_this<WavefunctionUnion>
 {
   private:
-    void common_init(void);
+    void common_init(SharedWavefunction ref_wfn);
+
   protected:
     /// Number of isolated molecules
     int nIsolatedMolecules_;
@@ -148,10 +151,15 @@ class WavefunctionUnion : public Wavefunction
   public:
     /* \brief Constructor. 
      *
+     *  Provide wavefunction with molecule containing at least 2 fragments.
+     *  @param ref_wfn - reference wavefunction
+     *  @param options - Psi4 options
      */
     WavefunctionUnion(SharedWavefunction ref_wfn, Options& options);
+
     /// Destructor
     virtual ~WavefunctionUnion();
+
     /// Compute Energy (now blank)
     virtual double compute_energy();
 
