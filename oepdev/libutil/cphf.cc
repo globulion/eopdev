@@ -95,7 +95,7 @@ void CPHF::compute(void) {
  
     // Set JK object for 2-body part //
 
-    std::shared_ptr<JK> jk = JK::build_JK(_primary, std::shared_ptr<BasisSet>(), _options);
+    std::shared_ptr<JK> jk = JK::build_JK(_primary, BasisSet::zero_ao_basis_set(), _options);
     jk->set_memory(_memory / 8L); 
     jk->initialize();
     jk->print_header();
