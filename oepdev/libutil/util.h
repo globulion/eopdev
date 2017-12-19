@@ -88,6 +88,9 @@ solve_scf(std::shared_ptr<Molecule> molecule,
  *    3. Sets `oeprop_` for the union of uncoupled molecules
  *    4. Performs Hadamard sums on `H_`, `Fa_`, `Da_`, `Ca_` and `S_` 
  *       based on uncoupled wavefunctions. 
+ *    5. Since it is based on shallow copy of the original Wavefunction,
+ *       it __changes__ contents of this wavefunction. Reallocate and copy if 
+ *       you want to keep the original wavefunction.
  *
  *  __Warnings:__
  *    1. Gradients, Hessians and frequencies are not touched, hence they are __wrong__!
