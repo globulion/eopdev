@@ -14,12 +14,12 @@ WavefunctionUnion::WavefunctionUnion(SharedWavefunction ref_wfn, Options& option
        PSIEXCEPTION(" OEPDEV: Error WavefunctionUnion init. Molecule has to have minimum two fragments.\n");
    if (ref_wfn->nirrep()>1) throw 
        PSIEXCEPTION(" OEPDEV: Error WavefunctionUnion init. C1 symmetry must be enforced.\n");
-   // Secondary Sanity-check (unimplemented features)
-   if (ref_wfn->molecule()->multiplicity()!=1) throw
-       PSIEXCEPTION(" OEPDEV: NotImplementedError Wavefunction init. So far only CLOSE SHELLS are supported.\n");
-   // Add sanity check for multiplicity (closed-shells only!)
 
-   // Initialize the object
+   // Secondary Sanity-check (unimplemented features)
+   if (ref_wfn->molecule()->multiplicity()!=1 || !ref_wfn->same_a_b_orbs() || !ref_wfn->same_a_b_dens()) throw
+       PSIEXCEPTION(" OEPDEV: NotImplementedError Wavefunction init. So far only CLOSE SHELLS are supported!\n");
+   
+   // If passed sanity-checks, then initialize the object
    shallow_copy(ref_wfn);
    common_init(ref_wfn);
 }
@@ -85,27 +85,40 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    Ca_->zero() ; Cb_->zero();
    double** pCa = Ca_->pointer(); 
    double** pCb = Cb_->pointer();
+   double*  pea = epsilon_a_->pointer();
+   double*  peb = epsilon_b_->pointer();
 
-   /* below implementation is for CLOSED SHELLS only! */
-   int nOffsetAO = 0, nOffsetMO = 0;
-   int nbf, nmo;
+   /* implementation below is for CLOSED SHELLS only! */
+   int nbf, nmo, nmo_occ, nmo_vir;
+   int nmo_occ_all = ref_wfn->doccpi()[0];
+   int nOffsetAO = 0, nOffsetMOOcc = 0, nOffsetMOVir = nmo_occ_all;
+   //
    for (int nf=0; nf<nIsolatedMolecules_; nf++) {
-        nbf  = l_wfn_[nf]->basisset()->nbf();
-        nmo  = l_wfn_[nf]->nmo();
+        nbf      = l_wfn_[nf]->basisset()->nbf();
+        nmo      = l_wfn_[nf]->nmo();
+        nmo_occ  = l_wfn_[nf]->doccpi()[0];
+        nmo_vir  = nmo - nmo_occ;
         for (int i=0; i<nbf; i++) {      
-             for (int j=0; j<nmo; j++) {
-                  pCa[i+nOffsetAO][j+nOffsetMO] = l_wfn_[nf]->Ca()->get(0, i, j);
+             // <--- Occupied Orbitals ---> //
+             for (int jo=0; jo<nmo_occ; jo++) {
+                  pCa[i+nOffsetAO][jo+nOffsetMOOcc] = l_wfn_[nf]->Ca_subset("AO", "OCC")->get(0, i, jo);
+             }
+             // <--- Virtual Orbitals ---> //
+             for (int jv=0; jv<nmo_vir; jv++) {
+                  pCa[i+nOffsetAO][jv+nOffsetMOVir] = l_wfn_[nf]->Ca_subset("AO", "VIR")->get(0, i, jv);
              }
         }
-        nOffsetAO += nbf;
-        nOffsetMO += nmo;
+        // <--- Occupied orbital Energies ---> //
+        for (int jo=0; jo<nmo_occ; jo++) pea[jo+nOffsetMOOcc] = l_wfn_[nf]->epsilon_a_subset("AO", "OCC")->get(0, jo);
+        // <--- Virtual orbital Energies ---> //
+        for (int jv=0; jv<nmo_vir; jv++) pea[jv+nOffsetMOVir] = l_wfn_[nf]->epsilon_a_subset("AO", "VIR")->get(0, jv);
+        // 
+        nOffsetAO    += nbf;
+        nOffsetMOOcc += nmo_occ;
+        nOffsetMOVir += nmo_vir;
    }
    Cb_       ->copy( Ca_       ); // Because implemented for closed-shell only!
    epsilon_b_->copy(*epsilon_a_); // 
-   //outfile->Printf(" Number of MOs: %d\n", l_wfn_[0]->nmo());
-   //outfile->Printf(" Number of BFs: %d\n", l_wfn_[0]->basisset()->nbf());
-   //l_wfn_[0]->Ca()->print();
-   //Ca_->print();
 
    // <---- AO One-Particle Density Matrices (OPDM's) ----> //
    // <---- AO Fock Matrices                          ----> //
@@ -138,8 +151,15 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    }
    Db_->copy(Da_);
    Fb_->copy(Fa_);
-   //l_wfn_[1]->Db()->print();
-   //Db_->print();
+
+   // <==== Compute One-Electron Property object ====> //
+   //oeprop_ = std::make_shared<OEProp>(static_cast<SharedWavefunction>(shared_from_this()));
+   oeprop_ = std::make_shared<OEProp>(ref_wfn);
+   oeprop_->set_title(" One-Electron Properties of Wavefunction Union");
+   oeprop_->set_Da_ao(Da_);
+   oeprop_->add("DIPOLE");
+   oeprop_->add("MULLIKEN CHARGES");
+   oeprop_->compute();
 }
 
 double WavefunctionUnion::compute_energy() {}

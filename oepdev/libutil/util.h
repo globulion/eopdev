@@ -21,6 +21,7 @@
 #include "psi4/libmints/basisset.h"
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/matrix.h"
+#include "psi4/libmints/oeprop.h"
 #include "psi4/libfunctional/superfunctional.h"
 
 #include "psi4/libscf_solver/rhf.h"
@@ -79,40 +80,54 @@ solve_scf(std::shared_ptr<Molecule> molecule,
 
 /** \brief Union of two Wavefunction objects.
  *  
- *  The WavefunctionUnion is the exact union of two unperturbed Wavefunctions.
- *  __Note:__ Works only for C1 symmetry! Therefore `this->nirrep() = 1`.
- *  The following variables are shallow copies of variables inside Wavefunction object,
- *  that is created for the _whole_ molecule cluster:
- *    - basissets (DF/RI/F12/etc basis sets)_
- *    - basisset_ (ORBITAL basis set)
- *    - sobasisset_ (Primary basis set for SO integrals)
- *    - AO2SO_ (AO2SO conversion matrix (AO in rows, SO in cols)
- *    - molecule_ (Molecule that this wavefunction is run on)
- *    - options_ (Options object)
- *    - psio_ (PSI file access variables)
- *    - integral_ (Integral factory)
- *    - factory_ (Matrix factory for creating standard sized matrices)
- *    - memory_ (How much memory you have access to)
- *    - nalpha_, nbeta_ (Total alpha and beta electrons)
- *    - nfrzc_ (Total frozen core orbitals)
- *    - doccpi_ (Number of doubly occupied per irrep)
- *    - soccpi_ (Number of singly occupied per irrep)
- *    - frzcpi_ (Number of frozen core per irrep)
- *    - frzvpi_ (Number of frozen virtuals per irrep)
- *    - nalphapi_ (Number of alpha electrons per irrep)
- *    - nbetapi_ (Number of beta electrons per irrep)
- *    - nsopi_ (Number of so per irrep)
- *    - nmopi_ (Number of mo per irrep)
- *    - nso_ (Total number of SOs)
- *    - nmo_ (Total number of MOs)
- *    - nirrep_ (Number of irreps)
+ *  The WavefunctionUnion is the union of two unperturbed Wavefunctions.
+ *
+ *  __Notes:__ 
+ *    1. Works only for C1 symmetry! Therefore `this->nirrep() = 1`.
+ *    2. Does not set `reference_wavefunction_`
+ *    3. Sets `oeprop_` for the union of uncoupled molecules
+ *    4. Performs Hadamard sums on `H_`, `Fa_`, `Da_`, `Ca_` and `S_` 
+ *       based on uncoupled wavefunctions. 
+ *
+ *  __Warnings:__
+ *    1. Gradients, Hessians and frequencies are not touched, hence they are __wrong__!
+ *    2. Lagrangian (if present) is not touched, hence its __wrong__!
+ * 
+ *  The following variables are _shallow_ copies of variables inside 
+ *  the Wavefunction object, that is created for the _whole_ molecule cluster:
+ *    - `basissets_` (DF/RI/F12/etc basis sets)_
+ *    - `basisset_` (ORBITAL basis set)
+ *    - `sobasisset_` (Primary basis set for SO integrals)
+ *    - `AO2SO_` (AO2SO conversion matrix (AO in rows, SO in cols)
+ *    - `molecule_` (Molecule that this wavefunction is run on)
+ *    - `options_` (Options object)
+ *    - `psio_` (PSI file access variables)
+ *    - `integral_` (Integral factory)
+ *    - `factory_` (Matrix factory for creating standard sized matrices)
+ *    - `memory_` (How much memory you have access to)
+ *    - `nalpha_`, `nbeta_` (Total alpha and beta electrons)
+ *    - `nfrzc_` (Total frozen core orbitals)
+ *    - `doccpi_` (Number of doubly occupied per irrep)
+ *    - `soccpi_` (Number of singly occupied per irrep)
+ *    - `frzcpi_` (Number of frozen core per irrep)
+ *    - `frzvpi_` (Number of frozen virtuals per irrep)
+ *    - `nalphapi_` (Number of alpha electrons per irrep)
+ *    - `nbetapi_` (Number of beta electrons per irrep)
+ *    - `nsopi_` (Number of so per irrep)
+ *    - `nmopi_` (Number of mo per irrep)
+ *    - `nso_` (Total number of SOs)
+ *    - `nmo_` (Total number of MOs)
+ *    - `nirrep_` (Number of irreps; must be equal to 1 due to symmetry reasons)
+ *    - `same_a_b_dens_` and `same_a_b_orbs_`
  *  The rest is altered so that the Wavefunction parameters reflect
  *  a cluster of non-interacting (uncoupled, isolated, unrelaxed) 
  *  molecular electron densities.
+ *  
  */
-class WavefunctionUnion : public Wavefunction//, public std::enable_shared_from_this<WavefunctionUnion>
+class WavefunctionUnion : public Wavefunction
 {
   private:
+    /// Finish initialising the object
     void common_init(SharedWavefunction ref_wfn);
 
   protected:
