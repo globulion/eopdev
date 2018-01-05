@@ -210,9 +210,7 @@ class WavefunctionUnion : public Wavefunction
     SharedBasisSet          l_auxiliary (int n) const {return l_auxiliary_    [n];}
     SharedWavefunction      l_wfn       (int n) const {return l_wfn_          [n];}
     SharedMOSpace           l_mospace   (int n, const std::string& label) const {return l_mospace_     [n].at(label);}
-    SharedIntegralTransform integrals   (void ) const { if (integrals_) {return integrals_;}
-                                                        else            {throw PSIEXCEPTION("Noo!!!!");}
-                                                      }
+    SharedIntegralTransform integrals   (void ) const;
 
 };
 

@@ -198,6 +198,15 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    oeprop_->compute();
 }
 
+SharedIntegralTransform WavefunctionUnion::integrals() const { 
+   if (integrals_) {return integrals_;}
+   else 
+   {
+       throw PSIEXCEPTION(" OEPDEV: Error. WavefunctionUnion IntegralTransform. Integral Transform was not created!");
+   }
+}
+
+
 double WavefunctionUnion::compute_energy() {}
 
 void WavefunctionUnion::localize_orbitals() {
