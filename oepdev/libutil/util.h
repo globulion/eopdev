@@ -3,6 +3,7 @@
 
 #include<cstdio>
 #include<string>
+#include<map>
 
 #include "psi4/psi4-dec.h"
 #include "psi4/libparallel/parallel.h"
@@ -24,6 +25,7 @@
 #include "psi4/libmints/oeprop.h"
 #include "psi4/libfunctional/superfunctional.h"
 #include "psi4/libtrans/mospace.h"
+#include "psi4/libtrans/integraltransform.h"
 
 #include "psi4/libscf_solver/rhf.h"
 
@@ -33,13 +35,16 @@ using namespace psi;
 using namespace std;
 
 
-using SharedMolecule        = std::shared_ptr<Molecule>;
-using SharedSuperFunctional = std::shared_ptr<SuperFunctional>;
-using SharedWavefunction    = std::shared_ptr<Wavefunction>;
-using SharedVector          = std::shared_ptr<Vector>;
-using SharedMatrix          = std::shared_ptr<Matrix>;
-using SharedBasisSet        = std::shared_ptr<BasisSet>;
-using SharedMOSpace         = std::shared_ptr<MOSpace>;
+using SharedMolecule           = std::shared_ptr<Molecule>;        
+using SharedSuperFunctional    = std::shared_ptr<SuperFunctional>;
+using SharedWavefunction       = std::shared_ptr<Wavefunction>;
+using SharedVector             = std::shared_ptr<Vector>;
+using SharedMatrix             = std::shared_ptr<Matrix>;
+using SharedBasisSet           = std::shared_ptr<BasisSet>;
+using SharedMOSpace            = std::shared_ptr<MOSpace>;
+using SharedMOSpaceVector      = std::vector<std::shared_ptr<MOSpace>>;
+using SharedIntegralTransform  = std::shared_ptr<IntegralTransform>;
+
 
 /** \brief Print preambule for module OEPDEV
  */
@@ -165,7 +170,10 @@ class WavefunctionUnion : public Wavefunction
     /// List of numbers of frozen-core orbitals per isolated molecule
     std::vector<int> l_nfrzc_;
     /// Array of MO spaces
-    std::vector<std::vector<SharedMOSpace>> l_mospace_;
+    std::vector<std::map<const std::string, SharedMOSpace>> l_mospace_;
+
+    /// Integral transform object (2- and 4-index transformations)
+    SharedIntegralTransform integrals_;
 
     /// The wavefunction for a dimer (electrons relaxed in the field of monomers)
     SharedWavefunction dimer_wavefunction_;
@@ -185,17 +193,26 @@ class WavefunctionUnion : public Wavefunction
     /// Compute Energy (now blank)
     virtual double compute_energy();
 
+    /// Localize Molecular Orbitals
+    void localize_orbitals();
+
+    /// Transform Integrals (2- and 4-index transformations)
+    void transform_integrals();
+
     // <--- Getters ---> //
-    int                  l_nmo       (int n) const {return l_nmo_          [n];}         
-    int                  l_nso       (int n) const {return l_nso_          [n];}
-    int                  l_nalpha    (int n) const {return l_nalpha_       [n];}
-    int                  l_nbeta     (int n) const {return l_nbeta_        [n];}
-    double               l_energy    (int n) const {return l_energy_       [n];}
-    SharedMolecule       l_molecule  (int n) const {return l_molecule_     [n];}
-    SharedBasisSet       l_primary   (int n) const {return l_primary_      [n];}
-    SharedBasisSet       l_auxiliary (int n) const {return l_auxiliary_    [n];}
-    SharedWavefunction   l_wfn       (int n) const {return l_wfn_          [n];}
-    SharedMOSpace        l_mospace   (int n, int k) const {return l_mospace_     [n][k];}
+    int                     l_nmo       (int n) const {return l_nmo_          [n];}                                    
+    int                     l_nso       (int n) const {return l_nso_          [n];}
+    int                     l_nalpha    (int n) const {return l_nalpha_       [n];}
+    int                     l_nbeta     (int n) const {return l_nbeta_        [n];}
+    double                  l_energy    (int n) const {return l_energy_       [n];}
+    SharedMolecule          l_molecule  (int n) const {return l_molecule_     [n];}
+    SharedBasisSet          l_primary   (int n) const {return l_primary_      [n];}
+    SharedBasisSet          l_auxiliary (int n) const {return l_auxiliary_    [n];}
+    SharedWavefunction      l_wfn       (int n) const {return l_wfn_          [n];}
+    SharedMOSpace           l_mospace   (int n, const std::string& label) const {return l_mospace_     [n].at(label);}
+    SharedIntegralTransform integrals   (void ) const { if (integrals_) {return integrals_;}
+                                                        else            {throw PSIEXCEPTION("Noo!!!!");}
+                                                      }
 
 };
 

@@ -171,13 +171,13 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    /* as for now for two fragments only */
    if (nIsolatedMolecules_>2) throw 
        PSIEXCEPTION(" OEPDEV: NotImplementedError Wavefunction init. So far only DIMERS (nfrag=2) are supported!\n");
-   SharedMOSpace space_1_occ = std::make_shared<MOSpace>('X', orbitals_occ[0], dummy);
-   SharedMOSpace space_2_occ = std::make_shared<MOSpace>('Y', orbitals_occ[1], dummy);
-   SharedMOSpace space_1_vir = std::make_shared<MOSpace>('x', orbitals_vir[0], dummy);
-   SharedMOSpace space_2_vir = std::make_shared<MOSpace>('y', orbitals_vir[1], dummy);
-   std::vector<SharedMOSpace> spaces_1, spaces_2;
-   spaces_1.push_back(space_1_occ);   spaces_1.push_back(space_1_vir);
-   spaces_2.push_back(space_2_occ);   spaces_2.push_back(space_2_vir);
+   SharedMOSpace space_1_occ = std::make_shared<MOSpace>('1', orbitals_occ[0], dummy);
+   SharedMOSpace space_2_occ = std::make_shared<MOSpace>('2', orbitals_occ[1], dummy);
+   SharedMOSpace space_1_vir = std::make_shared<MOSpace>('X', orbitals_vir[0], dummy);
+   SharedMOSpace space_2_vir = std::make_shared<MOSpace>('Y', orbitals_vir[1], dummy);
+   std::map<const std::string, SharedMOSpace> spaces_1, spaces_2;
+   spaces_1["OCC"] = space_1_occ;   spaces_1["VIR"] = space_1_vir;
+   spaces_2["OCC"] = space_2_occ;   spaces_2["VIR"] = space_2_vir;
    l_mospace_.push_back(spaces_1);
    l_mospace_.push_back(spaces_2);
    if (false) { //debugging
@@ -199,5 +199,55 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
 }
 
 double WavefunctionUnion::compute_energy() {}
+
+void WavefunctionUnion::localize_orbitals() {
+  throw PSIEXCEPTION(" OEPDEV: NotImplementedError. Localization is not yet implemented.\n");
+}
+
+void WavefunctionUnion::transform_integrals() 
+{
+    SharedMOSpaceVector spaces;
+    SharedMOSpace space_1o = l_mospace(0,"OCC");
+    SharedMOSpace space_2o = l_mospace(1,"OCC");
+    spaces.push_back(space_1o);
+    spaces.push_back(space_2o);
+    integrals_ = std::make_shared<IntegralTransform>(shared_from_this(), spaces,
+                                                     IntegralTransform::Restricted,
+                                                     IntegralTransform::DPDOnly,
+                                                     IntegralTransform::QTOrder,
+                                                     IntegralTransform::None);
+
+    integrals_->set_keep_dpd_so_ints(true);
+
+    // Trans (11|11)
+    timer_on("Trans (11|11)");
+    integrals_->transform_tei(space_1o, space_1o, space_1o, space_1o, IntegralTransform::MakeAndKeep);
+    timer_off("Trans (11|11)");
+
+    // Trans (11|12)
+    timer_on("Trans (11|12)");
+    integrals_->transform_tei(space_1o, space_1o, space_1o, space_2o, IntegralTransform::ReadAndKeep);
+    timer_off("Trans (11|12)");
+
+    // Trans (11|22)
+    timer_on("Trans (11|22)");
+    integrals_->transform_tei(space_1o, space_1o, space_2o, space_2o, IntegralTransform::ReadAndNuke);
+    timer_off("Trans (11|22)");
+
+    // Trans (12|12)
+    timer_on("Trans (12|12)");
+    integrals_->transform_tei(space_1o, space_2o, space_1o, space_2o, IntegralTransform::MakeAndKeep);
+    timer_off("Trans (12|12)");
+
+    // Trans (12|22)
+    timer_on("Trans (12|22)");
+    integrals_->transform_tei(space_1o, space_2o, space_2o, space_2o, IntegralTransform::ReadAndNuke);
+    timer_off("Trans (12|22)");
+
+    // Trans (22|22)
+    timer_on("Trans (22|22)");
+    integrals_->transform_tei(space_2o, space_2o, space_2o, space_2o, IntegralTransform::MakeAndNuke);
+    timer_off("Trans (22|22)");
+}
 
 } // EndNameSpace oepdev_libutil
