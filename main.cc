@@ -54,6 +54,7 @@
 
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libtrans/integraltransform.h"
+#include "psi4/libdpd/dpd.h"
 
 using SharedMolecule           = std::shared_ptr<Molecule>;                            
 using SharedSuperFunctional    = std::shared_ptr<SuperFunctional>;
@@ -171,8 +172,11 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
 
     // Create Wavefunction Union of two monomers
     SharedUnion             wfn_union      = std::make_shared<oepdev_libutil::WavefunctionUnion>(ref_wfn, options);
-    //SharedWavefunction      wfn_union_base = static_cast<SharedWavefunction>(wfn_union);
     SharedWavefunction      wfn_union_base = wfn_union;
+
+    // Perform the integral transformation to MO basis
+    wfn_union->transform_integrals();
+    SharedIntegralTransform transform = wfn_union->integrals();
 
     // Parse molecules, fragments, basis sets and other primary informations
     SharedBasisSet          primary_1      = wfn_union->l_primary(0);    
@@ -184,6 +188,10 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedWavefunction      scf_1          = wfn_union->l_wfn(0); 
     SharedWavefunction      scf_2          = wfn_union->l_wfn(1);
     
+
+
+    /* <===== Some tests are here =====> */
+
     // Solve CPHF equations for each monomer
     SharedCPHF cphf_1(new oepdev_libutil::CPHF(scf_1, options));
     SharedCPHF cphf_2(new oepdev_libutil::CPHF(scf_2, options));
@@ -196,6 +204,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     // Wavefunction coefficients for isolated monomers
     SharedMatrix c_1 = scf_1->Ca_subset("AO","ALL");
     SharedMatrix c_2 = scf_2->Ca_subset("AO","ALL");
+
 
     // compute AO-ERI for the dimer
     if (false) {
@@ -210,71 +219,40 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     }
     }
 
-    // Perform the integral transformation to MO basis
-    if (true) {
-    intVector orbitals_1, orbitals_2, indices;
-    for (int i=0; i<scf_1->nmopi()[0]; i++) orbitals_1.push_back(i);
-    for (int i=0; i<scf_2->nmopi()[0]; i++) orbitals_2.push_back(i);
-    SharedMOSpace space_1 = std::make_shared<MOSpace>('1', orbitals_1, indices);
-    SharedMOSpace space_2 = std::make_shared<MOSpace>('2', orbitals_2, indices);
-
-    SharedMOSpaceVector spaces;
-    spaces.push_back(MOSpace::occ);
-    spaces.push_back(MOSpace::vir);
-    spaces.push_back(space_1);
-    spaces.push_back(space_2);
-    SharedIntegralTransform transform(new IntegralTransform(wfn_union_base, spaces, IntegralTransform::Restricted));
-
-    transform->set_keep_dpd_so_ints(1);
-    // Trans (AA|AA)
-    timer_on("Trans (AA|AA)");
-    transform->transform_tei(space_1, space_1, space_1, space_1, IntegralTransform::MakeAndKeep);
-    timer_off("Trans (AA|AA)");
-
-    // Trans (AA|AB)
-    timer_on("Trans (AA|AB)");
-    transform->transform_tei(space_1, space_1, space_1, space_2, IntegralTransform::ReadAndKeep);
-    timer_off("Trans (AA|AB)");
-
-    // Trans (AA|BB)
-    timer_on("Trans (AA|BB)");
-    transform->transform_tei(space_1, space_1, space_2, space_2, IntegralTransform::ReadAndNuke);
-    timer_off("Trans (AA|BB)");
-
-    // Trans (AB|AB)
-    timer_on("Trans (AB|AB)");
-    transform->transform_tei(space_1, space_2, space_1, space_2, IntegralTransform::MakeAndKeep);
-    timer_off("Trans (AB|AB)");
-
-    // Trans (AB|BB)
-    timer_on("Trans (AB|BB)");
-    transform->transform_tei(space_1, space_2, space_2, space_2, IntegralTransform::ReadAndNuke);
-    timer_off("Trans (AB|BB)");
-
-    // Trans (BB|BB)
-    timer_on("Trans (BB|BB)");
-    transform->transform_tei(space_2, space_2, space_2, space_2);
-    timer_off("Trans (BB|BB)");
-
-
     // Read the MO integrals
     dpd_set_default(transform->get_dpd_id());
-    dpdbuf4 ABBB, AAAB;
+    dpdbuf4 buf_1222;//, AAAB;
     psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+    psio->tocprint(PSIF_LIBTRANS_DPD);
 
-    global_dpd_->buf4_init(&ABBB, PSIF_LIBTRANS_DPD, 0, // (AB|BB)
+    global_dpd_->buf4_init(&buf_1222, PSIF_LIBTRANS_DPD, 0,
                            transform->DPD_ID("[1,2]"), transform->DPD_ID("[2,2]"),
-                           transform->DPD_ID("[1,2]"), transform->DPD_ID("[2,2]"), 0, "MO Ints (12|22)");
-    global_dpd_->buf4_init(&AAAB, PSIF_LIBTRANS_DPD, 0, // (AA|AB)
-                           transform->DPD_ID("[1,1]"), transform->DPD_ID("[1,2]"),
-                           transform->DPD_ID("[1,1]"), transform->DPD_ID("[1,2]"), 0, "MO Ints (11|12)");
+                           transform->DPD_ID("[1,2]"), transform->DPD_ID("[2>=2]+"), 0, "MO Ints (12|22)");
+
+    outfile->Printf("\n <=== buf_1222 MO Integrals ===>\n\n");
+    for (int h = 0; h < wfn_union->nirrep(); ++h) {
+         global_dpd_->buf4_mat_irrep_init(&buf_1222, h);
+         global_dpd_->buf4_mat_irrep_rd(&buf_1222, h);
+         for (int pq = 0; pq < buf_1222.params->rowtot[h]; ++pq) {
+              int p = buf_1222.params->roworb[h][pq][0];
+              int q = buf_1222.params->roworb[h][pq][1];
+              for (int rs = 0; rs < buf_1222.params->coltot[h]; ++rs) {
+                   int r = buf_1222.params->colorb[h][rs][0];
+                   int s = buf_1222.params->colorb[h][rs][1];
+                   outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1222.matrix[h][pq][rs]);
+              }
+         }
+         global_dpd_->buf4_mat_irrep_close(&buf_1222, h);
+    }
+    //global_dpd_->buf4_init(&AAAB, PSIF_LIBTRANS_DPD, 0, // (11|12)
+    //                       transform->DPD_ID("[1,1]"), transform->DPD_ID("[1,2]"),
+    //                       transform->DPD_ID("[1,1]"), transform->DPD_ID("[1,2]"), 0, "MO Ints (11|12)");
 
     //
-    global_dpd_->buf4_close(&ABBB);
-    global_dpd_->buf4_close(&AAAB);
+    global_dpd_->buf4_close(&buf_1222);
+    //global_dpd_->buf4_close(&AA12);
 
     psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-    }
 
     return ref_wfn;
 }
