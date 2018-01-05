@@ -23,6 +23,7 @@
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/matrix.h"
 #include "psi4/libmints/oeprop.h"
+#include "psi4/libmints/local.h"
 #include "psi4/libfunctional/superfunctional.h"
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libtrans/integraltransform.h"
@@ -44,6 +45,7 @@ using SharedBasisSet           = std::shared_ptr<BasisSet>;
 using SharedMOSpace            = std::shared_ptr<MOSpace>;
 using SharedMOSpaceVector      = std::vector<std::shared_ptr<MOSpace>>;
 using SharedIntegralTransform  = std::shared_ptr<IntegralTransform>;
+using SharedLocalizer          = std::shared_ptr<Localizer>;
 
 
 /** \brief Print preambule for module OEPDEV
@@ -149,7 +151,7 @@ class WavefunctionUnion : public Wavefunction
     std::vector<SharedBasisSet> l_primary_;
     /// List of auxiliary basis functions per molecule
     std::vector<SharedBasisSet> l_auxiliary_;
-    /// List of isolated wavefunctions (electrons unrelaxed)
+    /// List of original isolated wavefunctions (electrons unrelaxed)
     std::vector<SharedWavefunction> l_wfn_;
     /// List of names of isolated wavefunctions
     std::vector<std::string> l_name_;
@@ -169,6 +171,8 @@ class WavefunctionUnion : public Wavefunction
     std::vector<int> l_nbeta_; 
     /// List of numbers of frozen-core orbitals per isolated molecule
     std::vector<int> l_nfrzc_;
+    /// List of orbital localizers
+    std::vector<SharedLocalizer> l_localizer_;
     /// Array of MO spaces
     std::vector<std::map<const std::string, SharedMOSpace>> l_mospace_;
 
@@ -177,6 +181,10 @@ class WavefunctionUnion : public Wavefunction
 
     /// The wavefunction for a dimer (electrons relaxed in the field of monomers)
     SharedWavefunction dimer_wavefunction_;
+
+    /// whether orbitals of the union were localized (or not)
+    bool isLocalized_;
+
 
   public:
     /* \brief Constructor. 
@@ -210,7 +218,9 @@ class WavefunctionUnion : public Wavefunction
     SharedBasisSet          l_auxiliary (int n) const {return l_auxiliary_    [n];}
     SharedWavefunction      l_wfn       (int n) const {return l_wfn_          [n];}
     SharedMOSpace           l_mospace   (int n, const std::string& label) const {return l_mospace_     [n].at(label);}
+    SharedLocalizer         l_localizer (int n) const;
     SharedIntegralTransform integrals   (void ) const;
+    bool                    is_localized(void ) const {return isLocalized_;}
 
 };
 

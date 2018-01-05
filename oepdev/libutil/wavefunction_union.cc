@@ -7,7 +7,7 @@ using namespace std;
 
 
 WavefunctionUnion::WavefunctionUnion(SharedWavefunction ref_wfn, Options& options) 
-   : Wavefunction(options)
+   : Wavefunction(options), isLocalized_(false)
 {
    // Primary Sanity-check
    if (ref_wfn->molecule()->nfragments()==1) throw 
@@ -206,11 +206,44 @@ SharedIntegralTransform WavefunctionUnion::integrals() const {
    }
 }
 
+SharedLocalizer WavefunctionUnion::l_localizer(int n) const { 
+   if (isLocalized_) {return l_localizer_[n];}
+   else 
+   {
+       throw PSIEXCEPTION(" OEPDEV: Error. WavefunctionUnion Localizer. Union orbitals were not localized yet!");
+   }
+}
+
+
 
 double WavefunctionUnion::compute_energy() {}
 
 void WavefunctionUnion::localize_orbitals() {
-  throw PSIEXCEPTION(" OEPDEV: NotImplementedError. Localization is not yet implemented.\n");
+  // ===> Replace canonical occupied orbitals with localized ones <=== //
+  /* 
+     Note: Updated orbitals are:
+           Matrix::doublet(wfn->Ca_subset("AO","OCC"), localizer->U(), false, false)  
+           which is exactly equal to localizer->L() 
+  */
+  double** pCa = Ca_->pointer();
+  int nbf, nmo_occ;
+  int nOffsetAO = 0, nOffsetMOOcc = 0;
+  for (int nf = 0; nf < nIsolatedMolecules_; ++nf) {
+       l_localizer_.push_back(Localizer::build("BOYS", l_primary_[nf], l_wfn_[nf]->Ca_subset("AO", "OCC"), options_));
+       l_localizer_[nf]->localize();
+       //
+       nbf      = l_wfn_[nf]->basisset()->nbf();
+       nmo_occ  = l_wfn_[nf]->doccpi()[0];
+       for (int i=0; i<nbf; ++i) {
+            for (int jo=0; jo<nmo_occ; ++jo) {
+                 pCa[i+nOffsetAO][jo+nOffsetMOOcc] = l_localizer_[nf]->L()->get(0, i, jo);
+            }
+       }
+       nOffsetAO    += nbf;
+       nOffsetMOOcc += nmo_occ;
+  }
+  Cb_->copy(Ca_);
+  isLocalized_ = true;
 }
 
 void WavefunctionUnion::transform_integrals() 
