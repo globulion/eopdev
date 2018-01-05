@@ -56,7 +56,6 @@ def run_oepdev(name, **kwargs):
 
     basis_A  = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("BASIS_A"),
                                                      puream=ref_wfn.basisset().has_puream())
-
     basis_B  = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS_B"),
                                                      puream=ref_wfn.basisset().has_puream())
 
