@@ -56,6 +56,7 @@
 #include "psi4/libtrans/integraltransform.h"
 #include "psi4/libdpd/dpd.h"
 
+
 using SharedMolecule           = std::shared_ptr<Molecule>;                            
 using SharedSuperFunctional    = std::shared_ptr<SuperFunctional>;
 using SharedWavefunction       = std::shared_ptr<Wavefunction>;
@@ -71,6 +72,7 @@ using SharedIntegralFactory    = std::shared_ptr<IntegralFactory>;
 using SharedTwoBodyAOInt       = std::shared_ptr<TwoBodyAOInt>;
 using SharedMOSpaceVector      = std::vector<std::shared_ptr<MOSpace>>;
 using intVector                = std::vector<int>;
+using SharedLocalizer          = std::shared_ptr<Localizer>;
 
 namespace psi{ 
 namespace oepdev{
@@ -163,20 +165,38 @@ int read_options(std::string name, Options& options)
 extern "C"
 SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
 {
+    // ==> Reference information <== //
     oepdev_libutil::preambule();
 
+    // ==> Determine what to do <== //
     int print = options.get_int("PRINT");
 
-    // Psi4 Input/Output Stream
+    // ==> Psi4 Input/Output Stream <== //
     SharedPSIO              psio           = PSIO::shared_object();
 
-    // Create Wavefunction Union of two monomers
+    // ==> Create Wavefunction Union of two monomers <==
     SharedUnion             wfn_union      = std::make_shared<oepdev_libutil::WavefunctionUnion>(ref_wfn, options);
-    SharedWavefunction      wfn_union_base = wfn_union;
 
-    // Perform the integral transformation to MO basis
+    // ==> Localize Molecular orbitals of the Union (optionally) <== //
+    wfn_union->localize_orbitals();
+
+    // ==> Perform the integral transformation to MO basis <== //
     wfn_union->transform_integrals();
-    SharedIntegralTransform transform = wfn_union->integrals();
+
+
+
+    /* Below there are a few tests needed to develop Initial Version of the Plugin.
+     * At the end of the process, all functionalities of the plugin should be using only:
+     *  - the WavefunctionUnion object
+     *  - the PSIO object and
+     *  - the Options object.
+     * Therefore, these tests shall be removed once particular functionalities
+     * will be developed during the Project. This means that the includes and typedefs 
+     * at the top of `main.cc` shall be removed.
+     */
+
+    SharedWavefunction      wfn_union_base = wfn_union;
+    SharedIntegralTransform transform      = wfn_union->integrals();
 
     // Parse molecules, fragments, basis sets and other primary informations
     SharedBasisSet          primary_1      = wfn_union->l_primary(0);    
@@ -188,10 +208,6 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedWavefunction      scf_1          = wfn_union->l_wfn(0); 
     SharedWavefunction      scf_2          = wfn_union->l_wfn(1);
     
-
-
-    /* <===== Some tests are here =====> */
-
     // Solve CPHF equations for each monomer
     SharedCPHF cphf_1(new oepdev_libutil::CPHF(scf_1, options));
     SharedCPHF cphf_2(new oepdev_libutil::CPHF(scf_2, options));
