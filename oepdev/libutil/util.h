@@ -23,6 +23,7 @@
 #include "psi4/libmints/matrix.h"
 #include "psi4/libmints/oeprop.h"
 #include "psi4/libfunctional/superfunctional.h"
+#include "psi4/libtrans/mospace.h"
 
 #include "psi4/libscf_solver/rhf.h"
 
@@ -38,6 +39,7 @@ using SharedWavefunction    = std::shared_ptr<Wavefunction>;
 using SharedVector          = std::shared_ptr<Vector>;
 using SharedMatrix          = std::shared_ptr<Matrix>;
 using SharedBasisSet        = std::shared_ptr<BasisSet>;
+using SharedMOSpace         = std::shared_ptr<MOSpace>;
 
 /** \brief Print preambule for module OEPDEV
  */
@@ -162,6 +164,8 @@ class WavefunctionUnion : public Wavefunction
     std::vector<int> l_nbeta_; 
     /// List of numbers of frozen-core orbitals per isolated molecule
     std::vector<int> l_nfrzc_;
+    /// Array of MO spaces
+    std::vector<std::vector<SharedMOSpace>> l_mospace_;
 
     /// The wavefunction for a dimer (electrons relaxed in the field of monomers)
     SharedWavefunction dimer_wavefunction_;
@@ -191,6 +195,7 @@ class WavefunctionUnion : public Wavefunction
     SharedBasisSet       l_primary   (int n) const {return l_primary_      [n];}
     SharedBasisSet       l_auxiliary (int n) const {return l_auxiliary_    [n];}
     SharedWavefunction   l_wfn       (int n) const {return l_wfn_          [n];}
+    SharedMOSpace        l_mospace   (int n, int k) const {return l_mospace_     [n][k];}
 
 };
 

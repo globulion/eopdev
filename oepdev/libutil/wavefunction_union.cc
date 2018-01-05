@@ -18,6 +18,8 @@ WavefunctionUnion::WavefunctionUnion(SharedWavefunction ref_wfn, Options& option
    // Secondary Sanity-check (unimplemented features)
    if (ref_wfn->molecule()->multiplicity()!=1 || !ref_wfn->same_a_b_orbs() || !ref_wfn->same_a_b_dens()) throw
        PSIEXCEPTION(" OEPDEV: NotImplementedError Wavefunction init. So far only CLOSE SHELLS are supported!\n");
+   if (ref_wfn->molecule()->nfragments()>2) throw
+       PSIEXCEPTION(" OEPDEV: NotImplementedError Wavefunction init. So far only DIMERS (nfrag=2) are supported!\n");
    
    // If passed sanity-checks, then initialize the object
    shallow_copy(ref_wfn);
@@ -59,7 +61,7 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    l_nalpha_        .push_back(wfn_1->nalpha()          ); l_nalpha_        .push_back(wfn_2->nalpha()             );  
    l_nbeta_         .push_back(wfn_1->nbeta()           ); l_nbeta_         .push_back(wfn_2->nbeta()              );
    l_nfrzc_         .push_back(wfn_1->nfrzc()           ); l_nfrzc_         .push_back(wfn_2->nfrzc()              );
-   
+
   
    //dimer_wavefunction_     = ...; // store the original wavefunction
    //reference_wavefunction_ = reference_wavefunction();
@@ -79,6 +81,7 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    if (!H_  || !wfn_1->H ()) throw PSIEXCEPTION(" OEPDEV: Error WavefunctionUnion CoreH. Core Hamiltonian not available!");
    if (!S_  || !wfn_1->S ()) throw PSIEXCEPTION(" OEPDEV: Error WavefunctionUnion Overlap. Overlap Matrix not available");
 
+
    // <---- Wavefunction Coefficients (LCAO-MO Matrices) ----> //
    // <---- Orbital Energies                             ----> //
    epsilon_a_->zero() ; epsilon_b_->zero();
@@ -88,6 +91,8 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    double*  pea = epsilon_a_->pointer();
    double*  peb = epsilon_b_->pointer();
 
+   std::vector<std::vector<int>> orbitals_occ, orbitals_vir;
+   std::vector<int> dummy;
    /* implementation below is for CLOSED SHELLS only! */
    int nbf, nmo, nmo_occ, nmo_vir;
    int nmo_occ_all = ref_wfn->doccpi()[0];
@@ -108,10 +113,20 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
                   pCa[i+nOffsetAO][jv+nOffsetMOVir] = l_wfn_[nf]->Ca_subset("AO", "VIR")->get(0, i, jv);
              }
         }
-        // <--- Occupied orbital Energies ---> //
-        for (int jo=0; jo<nmo_occ; jo++) pea[jo+nOffsetMOOcc] = l_wfn_[nf]->epsilon_a_subset("AO", "OCC")->get(0, jo);
-        // <--- Virtual orbital Energies ---> //
-        for (int jv=0; jv<nmo_vir; jv++) pea[jv+nOffsetMOVir] = l_wfn_[nf]->epsilon_a_subset("AO", "VIR")->get(0, jv);
+        // <--- Occupied orbital Energies and Indices ---> //
+        for (int jo=0; jo<nmo_occ; jo++) {
+             pea[jo+nOffsetMOOcc] = l_wfn_[nf]->epsilon_a_subset("AO", "OCC")->get(0, jo);
+             dummy.push_back(jo+nOffsetMOOcc);
+        }
+        orbitals_occ.push_back(dummy); dummy.clear();
+
+        // <--- Virtual orbital Energies and Indices ---> //
+        for (int jv=0; jv<nmo_vir; jv++) {
+             pea[jv+nOffsetMOVir] = l_wfn_[nf]->epsilon_a_subset("AO", "VIR")->get(0, jv);
+             dummy.push_back(jv+nOffsetMOVir);
+        }
+        orbitals_vir.push_back(dummy); dummy.clear();
+
         // 
         nOffsetAO    += nbf;
         nOffsetMOOcc += nmo_occ;
@@ -152,12 +167,33 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    Db_->copy(Da_);
    Fb_->copy(Fa_);
 
+   // <---- MO spaces of the union ----> //
+   /* as for now for two fragments only */
+   if (nIsolatedMolecules_>2) throw 
+       PSIEXCEPTION(" OEPDEV: NotImplementedError Wavefunction init. So far only DIMERS (nfrag=2) are supported!\n");
+   SharedMOSpace space_1_occ = std::make_shared<MOSpace>('X', orbitals_occ[0], dummy);
+   SharedMOSpace space_2_occ = std::make_shared<MOSpace>('Y', orbitals_occ[1], dummy);
+   SharedMOSpace space_1_vir = std::make_shared<MOSpace>('x', orbitals_vir[0], dummy);
+   SharedMOSpace space_2_vir = std::make_shared<MOSpace>('y', orbitals_vir[1], dummy);
+   std::vector<SharedMOSpace> spaces_1, spaces_2;
+   spaces_1.push_back(space_1_occ);   spaces_1.push_back(space_1_vir);
+   spaces_2.push_back(space_2_occ);   spaces_2.push_back(space_2_vir);
+   l_mospace_.push_back(spaces_1);
+   l_mospace_.push_back(spaces_2);
+   if (false) { //debugging
+       for (int i=0; i<orbitals_occ[0].size(); ++i) { std::cout << orbitals_occ[0][i] << "  " ;} std::cout << std::endl; 
+       for (int i=0; i<orbitals_occ[1].size(); ++i) { std::cout << orbitals_occ[1][i] << "  " ;} std::cout << std::endl;
+       for (int i=0; i<orbitals_vir[0].size(); ++i) { std::cout << orbitals_vir[0][i] << "  " ;} std::cout << std::endl;
+       for (int i=0; i<orbitals_vir[1].size(); ++i) { std::cout << orbitals_vir[1][i] << "  " ;} std::cout << std::endl;
+   }
+
    // <==== Compute One-Electron Property object ====> //
    //oeprop_ = std::make_shared<OEProp>(static_cast<SharedWavefunction>(shared_from_this()));
    oeprop_ = std::make_shared<OEProp>(ref_wfn);
    oeprop_->set_title(" One-Electron Properties of Wavefunction Union");
    oeprop_->set_Da_ao(Da_);
    oeprop_->add("DIPOLE");
+   oeprop_->add("QUADRUPOLE");
    oeprop_->add("MULLIKEN CHARGES");
    oeprop_->compute();
 }
