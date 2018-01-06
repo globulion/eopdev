@@ -1,8 +1,11 @@
 #
 # @BEGIN LICENSE
 #
-# oepdev by Bartosz Błasiak (email: blasiak.bartosz@gmail.com)
-# A plugin to:
+# oepdev by Bartosz Błasiak (email: blasiak.bartosz@gmail.com).
+# oepdev copy, use and redistribution not allowed without written 
+# consent of the Project Administrator.
+#
+# oepdev: A plugin to:
 #
 # Psi4: an open-source quantum chemistry software package
 #
