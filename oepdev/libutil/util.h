@@ -29,6 +29,7 @@
 #include "psi4/libtrans/integraltransform.h"
 
 #include "psi4/libscf_solver/rhf.h"
+#include "psi4/libdpd/dpd.h"
 
 namespace oepdev_libutil{
 
@@ -222,7 +223,11 @@ class WavefunctionUnion : public Wavefunction
     SharedIntegralTransform integrals   (void ) const;
     bool                    is_localized(void ) const {return isLocalized_;}
 
+    // <--- Printers ---> //
+    void print_mo_integrals(std::shared_ptr<PSIO> psio);
+
 };
+
 
 } // EndNameSpace oepdev_libutil
 

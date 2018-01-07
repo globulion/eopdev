@@ -40,7 +40,7 @@ set {
     basis_A     sto-3g
     basis_B     sto-3g
     scf_type    direct
-    print            1
+    print            3
     guess         core
     cphf_diis     true
     cphf_diis_dim    2

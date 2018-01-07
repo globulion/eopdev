@@ -292,4 +292,100 @@ void WavefunctionUnion::transform_integrals()
     timer_off("Trans (22|22)");
 }
 
+void WavefunctionUnion::print_mo_integrals(std::shared_ptr<PSIO> psio) {
+    if (!integrals_) 
+        throw PSIEXCEPTION(" OEPDEV: Error WavefunctionUnion MO IntegralsPrint. No MO integrals were created yet!\n");
+    if (nIsolatedMolecules_ != 2)
+        throw PSIEXCEPTION(" OEPDEV: Error WavefunctionUnion MO IntegralsPrint. Only 2 fragments are now supported.\n");
+    dpd_set_default(integrals_->get_dpd_id());
+    dpdbuf4 buf_1122, buf_1222, buf_1112, buf_1212;
+    psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+    psio->tocprint(PSIF_LIBTRANS_DPD);
+
+    global_dpd_->buf4_init(&buf_1112, PSIF_LIBTRANS_DPD, 0, 
+                           integrals_->DPD_ID("[1,1]"  ), integrals_->DPD_ID("[1,2]"  ),
+                           integrals_->DPD_ID("[1>=1]+"), integrals_->DPD_ID("[1,2]"  ), 0, "MO Ints (11|12)");
+    global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0, 
+                           integrals_->DPD_ID("[1,1]"  ), integrals_->DPD_ID("[2,2]"  ),
+                           integrals_->DPD_ID("[1>=1]+"), integrals_->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
+    global_dpd_->buf4_init(&buf_1212, PSIF_LIBTRANS_DPD, 0, 
+                           integrals_->DPD_ID("[1,2]"  ), integrals_->DPD_ID("[1,2]"  ),
+                           integrals_->DPD_ID("[1,2]"  ), integrals_->DPD_ID("[1,2]"  ), 0, "MO Ints (12|12)");
+    global_dpd_->buf4_init(&buf_1222, PSIF_LIBTRANS_DPD, 0,
+                           integrals_->DPD_ID("[1,2]"  ), integrals_->DPD_ID("[2,2]"  ),
+                           integrals_->DPD_ID("[1,2]"  ), integrals_->DPD_ID("[2>=2]+"), 0, "MO Ints (12|22)");
+
+    outfile->Printf("\n <=== buf_1112 MO Integrals ===>\n\n");
+    for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
+         global_dpd_->buf4_mat_irrep_init(&buf_1112, h);
+         global_dpd_->buf4_mat_irrep_rd(&buf_1112, h);
+         for (int pq = 0; pq < buf_1112.params->rowtot[h]; ++pq) {
+              int p = buf_1112.params->roworb[h][pq][0];
+              int q = buf_1112.params->roworb[h][pq][1];
+              for (int rs = 0; rs < buf_1112.params->coltot[h]; ++rs) {
+                   int r = buf_1112.params->colorb[h][rs][0];
+                   int s = buf_1112.params->colorb[h][rs][1];
+                   outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1112.matrix[h][pq][rs]);
+              }
+         }
+         global_dpd_->buf4_mat_irrep_close(&buf_1112, h);
+    }
+
+    outfile->Printf("\n <=== buf_1122 MO Integrals ===>\n\n");
+    for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
+         global_dpd_->buf4_mat_irrep_init(&buf_1122, h);
+         global_dpd_->buf4_mat_irrep_rd(&buf_1122, h);
+         for (int pq = 0; pq < buf_1122.params->rowtot[h]; ++pq) {
+              int p = buf_1122.params->roworb[h][pq][0];
+              int q = buf_1122.params->roworb[h][pq][1];
+              for (int rs = 0; rs < buf_1122.params->coltot[h]; ++rs) {
+                   int r = buf_1122.params->colorb[h][rs][0];
+                   int s = buf_1122.params->colorb[h][rs][1];
+                   outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1122.matrix[h][pq][rs]);
+              }
+         }
+         global_dpd_->buf4_mat_irrep_close(&buf_1122, h);
+    }
+
+    outfile->Printf("\n <=== buf_1222 MO Integrals ===>\n\n");
+    for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
+         global_dpd_->buf4_mat_irrep_init(&buf_1222, h);
+         global_dpd_->buf4_mat_irrep_rd(&buf_1222, h);
+         for (int pq = 0; pq < buf_1222.params->rowtot[h]; ++pq) {
+              int p = buf_1222.params->roworb[h][pq][0];
+              int q = buf_1222.params->roworb[h][pq][1];
+              for (int rs = 0; rs < buf_1222.params->coltot[h]; ++rs) {
+                   int r = buf_1222.params->colorb[h][rs][0];
+                   int s = buf_1222.params->colorb[h][rs][1];
+                   outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1222.matrix[h][pq][rs]);
+              }
+         }
+         global_dpd_->buf4_mat_irrep_close(&buf_1222, h);
+    }
+
+    outfile->Printf("\n <=== buf_1222 MO Integrals ===>\n\n");
+    for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
+         global_dpd_->buf4_mat_irrep_init(&buf_1222, h);
+         global_dpd_->buf4_mat_irrep_rd(&buf_1222, h);
+         for (int pq = 0; pq < buf_1222.params->rowtot[h]; ++pq) {
+              int p = buf_1222.params->roworb[h][pq][0];
+              int q = buf_1222.params->roworb[h][pq][1];
+              for (int rs = 0; rs < buf_1222.params->coltot[h]; ++rs) {
+                   int r = buf_1222.params->colorb[h][rs][0];
+                   int s = buf_1222.params->colorb[h][rs][1];
+                   outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1222.matrix[h][pq][rs]);
+              }
+         }
+         global_dpd_->buf4_mat_irrep_close(&buf_1222, h);
+    }
+
+    //
+    global_dpd_->buf4_close(&buf_1122);
+    global_dpd_->buf4_close(&buf_1222);
+    global_dpd_->buf4_close(&buf_1112);
+
+    psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+}
+
+
 } // EndNameSpace oepdev_libutil
