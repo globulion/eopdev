@@ -99,6 +99,8 @@ int read_options(std::string name, Options& options)
         options.add_str("BASIS_A", "");
         /*- Basis set for dimer B -*/
         options.add_str("BASIS_B", "");
+        /*- Basis set DF -*/
+        options.add_str("BASIS_X", "");
         /*- CPHF maximum iterations -*/
         options.add_int("CPHF_MAXITER", 50);
         /*- CPHF convergence -*/
@@ -181,13 +183,14 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
 
     // ==> Create Wavefunction Union of two monomers <==
     SharedUnion wfn_union = std::make_shared<oepdev_libutil::WavefunctionUnion>(ref_wfn, options);
+    wfn_union->print_header();
 
     // ==> Localize Molecular orbitals of the Union (optionally) <== //
     wfn_union->localize_orbitals();
 
     // ==> Perform the integral transformation to MO basis <== //
     wfn_union->transform_integrals();
-    if (print > 2) wfn_union->print_mo_integrals(psio);
+    if (print > 2) wfn_union->print_mo_integrals();
 
 
     /* Below there are a few tests needed to develop Initial Version of the Plugin.
@@ -210,6 +213,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedMolecule          molecule_2     = wfn_union->l_molecule(1);
     SharedMolecule          molecule       = wfn_union->molecule();
     SharedBasisSet          primary        = wfn_union->basisset();
+    SharedBasisSet          auxiliary      = wfn_union->get_basisset("BASIS_X");
     SharedWavefunction      scf_1          = wfn_union->l_wfn(0); 
     SharedWavefunction      scf_2          = wfn_union->l_wfn(1);
     
@@ -235,9 +239,73 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     const double * buffer = eri_dimer->buffer();
     for (shellIter.first(); shellIter.is_done() == false; shellIter.next()) {
          eri_dimer->compute_shell(shellIter);
-         outfile->Printf("( %d %d | %d %d )\n", 
+         psi::outfile->Printf("( %d %d | %d %d )\n", 
                            shellIter.p(), shellIter.q(), shellIter.r(), shellIter.s());
     }
+    }
+    
+    // compute AO-ERI
+    primary->print();
+    auxiliary->print();
+    if (1) {
+        psi::outfile->Printf("  ===> AO ERI: 1222 <===\n\n");
+        unsigned long int count = 0;
+        //SharedIntegralFactory ints = std::make_shared<IntegralFactory>(primary_2, primary_2, primary_1, primary_2);
+        SharedIntegralFactory ints = std::make_shared<IntegralFactory>(primary, primary, primary, auxiliary);
+        SharedTwoBodyAOInt    eri_1222(ints->eri());
+        const double * buffer = eri_1222->buffer();
+        if (1){
+        int nP = primary->nshell(); 
+        int nA = auxiliary->nshell();
+        for (int p=0; p<nP; ++p) {
+        for (int q=0; q<nP; ++q) {
+        for (int r=0; r<nP; ++r) {
+        for (int s=0; s<nA; ++s) {
+        eri_1222->compute_shell(p, q, r, s);
+        psi::outfile->Printf(" ===> Shell ( %d %d | %d %d ) <===\n", p, q, r, s);
+
+        for (int i = 0, index = 0; i < primary->shell(p).nfunction(); i++) {
+        for (int j = 0; j < primary->shell(q).nfunction(); j++) {
+        for (int k = 0; k < primary->shell(r).nfunction(); k++) {
+        for (int l = 0; l < auxiliary->shell(s).nfunction(); l++, index++) {
+        int I = primary->shell(p).function_index() + i + 1;
+        int J = primary->shell(q).function_index() + j + 1;
+        int K = primary->shell(r).function_index() + k + 1;
+        int L = auxiliary->shell(s).function_index() + l + 1;
+
+        psi::outfile->Printf("( %d %d | %d %d )= %20.15f Index: %4d\n", I, J, K, L, buffer[index], index);
+        count += 1;
+        }}}}
+
+        //AOIntegralsIterator intIter = ints->integrals_iterator(p, q, r, s);
+        //for (intIter.first(); intIter.is_done()==false; intIter.next()) {
+        //     int i = intIter.i(); int j = intIter.j();
+        //     int k = intIter.k(); int l = intIter.l();
+        //     psi::outfile->Printf("( %d %d | %d %d )= %20.15f Index: %4d\n", i, j, k, l, buffer[intIter.index()], 
+        //                                                             intIter.index());
+        //     if (i!=j) {count += 2;} else count+=1;
+        //     //count+=1;
+        //}
+        }}}}
+        psi::outfile->Printf(" Total number of Integrals: %d\n", count);
+        } 
+        else {
+
+        AOShellCombinationsIterator shellIter = ints->shells_iterator();
+        for (shellIter.first(); shellIter.is_done() == false; shellIter.next()) {
+             eri_1222->compute_shell(shellIter);
+             psi::outfile->Printf(" ===> Shell ( %d %d | %d %d ) <===\n", 
+                           shellIter.p(), shellIter.q(), shellIter.r(), shellIter.s());
+             AOIntegralsIterator intIter = shellIter.integrals_iterator();
+             for (intIter.first(); intIter.is_done()==false; intIter.next()) {
+                  int i = intIter.i(); int j = intIter.j();
+                  int k = intIter.k(); int l = intIter.l();
+                  psi::outfile->Printf("( %d %d | %d %d )= %20.15f\n", i, j, k, l, buffer[intIter.index()]);
+                  count+=1;
+             }
+        }
+        psi::outfile->Printf(" Total number of Integrals: %d\n", count);
+        }
     }
 
     return ref_wfn;

@@ -7,7 +7,7 @@ using namespace std;
 
 
 WavefunctionUnion::WavefunctionUnion(SharedWavefunction ref_wfn, Options& options) 
-   : Wavefunction(options), isLocalized_(false)
+   : Wavefunction(options), hasLocalizedOrbitals_(false)
 {
    // Primary Sanity-check
    if (ref_wfn->molecule()->nfragments()==1) throw 
@@ -41,6 +41,9 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    SharedBasisSet primary_2  = basissets_["BASIS_2"];
    SharedWavefunction wfn_1  = solve_scf(molecule_1, primary_1, functional, options_, psio_);
    SharedWavefunction wfn_2  = solve_scf(molecule_2, primary_2, functional, options_, psio_);
+   int nvir_1                = wfn_1->nmo() - wfn_1->doccpi()[0];
+   int nvir_2                = wfn_2->nmo() - wfn_2->doccpi()[0];
+
 
    // Properties of the union
    nIsolatedMolecules_ = ref_wfn->molecule()->nfragments();
@@ -54,13 +57,17 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    l_primary_       .push_back(primary_1                ); l_primary_       .push_back(primary_2                   );
  //l_auxiliary_     .push_back(auxiliary_1              ); l_auxiliary_     .push_back(auxiliary_2                 );
    l_name_          .push_back(wfn_1->name()            ); l_name_          .push_back(wfn_2->name()               );
+   l_nbf_           .push_back(primary_1->nbf()         ); l_nbf_           .push_back(primary_2->nbf()            );
    l_nmo_           .push_back(wfn_1->nmo()             ); l_nmo_           .push_back(wfn_2->nmo()                );
    l_nso_           .push_back(wfn_1->nso()             ); l_nso_           .push_back(wfn_2->nso()                );
+   l_ndocc_         .push_back(wfn_1->doccpi()[0]       ); l_ndocc_         .push_back(wfn_2->doccpi()[0]          );
+   l_nvir_          .push_back(nvir_1                   ); l_nvir_          .push_back(nvir_2                      );
    l_efzc_          .push_back(wfn_1->efzc()            ); l_efzc_          .push_back(wfn_2->efzc()               );
    l_density_fitted_.push_back(wfn_1->density_fitted()  ); l_density_fitted_.push_back(wfn_2->density_fitted()     );
    l_nalpha_        .push_back(wfn_1->nalpha()          ); l_nalpha_        .push_back(wfn_2->nalpha()             );  
    l_nbeta_         .push_back(wfn_1->nbeta()           ); l_nbeta_         .push_back(wfn_2->nbeta()              );
    l_nfrzc_         .push_back(wfn_1->nfrzc()           ); l_nfrzc_         .push_back(wfn_2->nfrzc()              );
+   l_noffs_ao_      .push_back(0                        ); l_noffs_ao_      .push_back(primary_1->nbf()            );
 
   
    //dimer_wavefunction_     = ...; // store the original wavefunction
@@ -207,7 +214,7 @@ SharedIntegralTransform WavefunctionUnion::integrals() const {
 }
 
 SharedLocalizer WavefunctionUnion::l_localizer(int n) const { 
-   if (isLocalized_) {return l_localizer_[n];}
+   if (hasLocalizedOrbitals_) {return l_localizer_[n];}
    else 
    {
        throw PSIEXCEPTION(" OEPDEV: Error. WavefunctionUnion Localizer. Union orbitals were not localized yet!");
@@ -243,7 +250,7 @@ void WavefunctionUnion::localize_orbitals() {
        nOffsetMOOcc += nmo_occ;
   }
   Cb_->copy(Ca_);
-  isLocalized_ = true;
+  hasLocalizedOrbitals_ = true;
 }
 
 void WavefunctionUnion::transform_integrals() 
@@ -292,11 +299,15 @@ void WavefunctionUnion::transform_integrals()
     timer_off("Trans (22|22)");
 }
 
-void WavefunctionUnion::print_mo_integrals(std::shared_ptr<PSIO> psio) {
+void WavefunctionUnion::print_mo_integrals(void) { 
+
     if (!integrals_) 
         throw PSIEXCEPTION(" OEPDEV: Error WavefunctionUnion MO IntegralsPrint. No MO integrals were created yet!\n");
     if (nIsolatedMolecules_ != 2)
         throw PSIEXCEPTION(" OEPDEV: Error WavefunctionUnion MO IntegralsPrint. Only 2 fragments are now supported.\n");
+
+    std::shared_ptr<PSIO> psio = PSIO::shared_object();
+
     dpd_set_default(integrals_->get_dpd_id());
     dpdbuf4 buf_1122, buf_1222, buf_1112, buf_1212;
     psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
@@ -315,7 +326,7 @@ void WavefunctionUnion::print_mo_integrals(std::shared_ptr<PSIO> psio) {
                            integrals_->DPD_ID("[1,2]"  ), integrals_->DPD_ID("[2,2]"  ),
                            integrals_->DPD_ID("[1,2]"  ), integrals_->DPD_ID("[2>=2]+"), 0, "MO Ints (12|22)");
 
-    outfile->Printf("\n <=== buf_1112 MO Integrals ===>\n\n");
+    psi::outfile->Printf("\n <=== buf_1112 MO Integrals ===>\n\n");
     for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
          global_dpd_->buf4_mat_irrep_init(&buf_1112, h);
          global_dpd_->buf4_mat_irrep_rd(&buf_1112, h);
@@ -325,13 +336,13 @@ void WavefunctionUnion::print_mo_integrals(std::shared_ptr<PSIO> psio) {
               for (int rs = 0; rs < buf_1112.params->coltot[h]; ++rs) {
                    int r = buf_1112.params->colorb[h][rs][0];
                    int s = buf_1112.params->colorb[h][rs][1];
-                   outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1112.matrix[h][pq][rs]);
+                   psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1112.matrix[h][pq][rs]);
               }
          }
          global_dpd_->buf4_mat_irrep_close(&buf_1112, h);
     }
 
-    outfile->Printf("\n <=== buf_1122 MO Integrals ===>\n\n");
+    psi::outfile->Printf("\n <=== buf_1122 MO Integrals ===>\n\n");
     for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
          global_dpd_->buf4_mat_irrep_init(&buf_1122, h);
          global_dpd_->buf4_mat_irrep_rd(&buf_1122, h);
@@ -341,13 +352,13 @@ void WavefunctionUnion::print_mo_integrals(std::shared_ptr<PSIO> psio) {
               for (int rs = 0; rs < buf_1122.params->coltot[h]; ++rs) {
                    int r = buf_1122.params->colorb[h][rs][0];
                    int s = buf_1122.params->colorb[h][rs][1];
-                   outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1122.matrix[h][pq][rs]);
+                   psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1122.matrix[h][pq][rs]);
               }
          }
          global_dpd_->buf4_mat_irrep_close(&buf_1122, h);
     }
 
-    outfile->Printf("\n <=== buf_1222 MO Integrals ===>\n\n");
+    psi::outfile->Printf("\n <=== buf_1222 MO Integrals ===>\n\n");
     for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
          global_dpd_->buf4_mat_irrep_init(&buf_1222, h);
          global_dpd_->buf4_mat_irrep_rd(&buf_1222, h);
@@ -357,13 +368,13 @@ void WavefunctionUnion::print_mo_integrals(std::shared_ptr<PSIO> psio) {
               for (int rs = 0; rs < buf_1222.params->coltot[h]; ++rs) {
                    int r = buf_1222.params->colorb[h][rs][0];
                    int s = buf_1222.params->colorb[h][rs][1];
-                   outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1222.matrix[h][pq][rs]);
+                   psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1222.matrix[h][pq][rs]);
               }
          }
          global_dpd_->buf4_mat_irrep_close(&buf_1222, h);
     }
 
-    outfile->Printf("\n <=== buf_1222 MO Integrals ===>\n\n");
+    psi::outfile->Printf("\n <=== buf_1222 MO Integrals ===>\n\n");
     for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
          global_dpd_->buf4_mat_irrep_init(&buf_1222, h);
          global_dpd_->buf4_mat_irrep_rd(&buf_1222, h);
@@ -373,7 +384,7 @@ void WavefunctionUnion::print_mo_integrals(std::shared_ptr<PSIO> psio) {
               for (int rs = 0; rs < buf_1222.params->coltot[h]; ++rs) {
                    int r = buf_1222.params->colorb[h][rs][0];
                    int s = buf_1222.params->colorb[h][rs][1];
-                   outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1222.matrix[h][pq][rs]);
+                   psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1222.matrix[h][pq][rs]);
               }
          }
          global_dpd_->buf4_mat_irrep_close(&buf_1222, h);
@@ -385,6 +396,16 @@ void WavefunctionUnion::print_mo_integrals(std::shared_ptr<PSIO> psio) {
     global_dpd_->buf4_close(&buf_1112);
 
     psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+}
+
+void WavefunctionUnion::print_header() {
+    psi::outfile->Printf("\n  ===> Wavefunction Union <===\n\n");
+    psi::outfile->Printf("        nfrag = %4d\n", nIsolatedMolecules_);
+    for (int nf=0; nf<nIsolatedMolecules_; ++nf) {
+    psi::outfile->Printf("        mol %d: nbf = %4d;  nmo = %4d;  docc = %4d;  nvir = %4d\n", 
+                                   nf+1, l_nbf_[nf], l_nmo_[nf], l_ndocc_[nf], l_nvir_[nf] );
+    }
+    psi::outfile->Printf("\n");
 }
 
 

@@ -139,13 +139,22 @@ solve_scf(std::shared_ptr<Molecule> molecule,
  */
 class WavefunctionUnion : public Wavefunction
 {
-  private:
-    /// Finish initialising the object
-    void common_init(SharedWavefunction ref_wfn);
-
   protected:
     /// Number of isolated molecules
     int nIsolatedMolecules_;
+
+    /// The wavefunction for a dimer (electrons relaxed in the field of monomers)
+    SharedWavefunction dimer_wavefunction_;
+
+    /// Integral transform object (2- and 4-index transformations)
+    SharedIntegralTransform integrals_;
+
+    /// whether orbitals of the union were localized (or not)
+    bool hasLocalizedOrbitals_;
+
+
+    // ---> Monomer Lists <--- //
+
     /// List of molecules
     std::vector<SharedMolecule> l_molecule_;
     /// List of primary basis functions per molecule
@@ -156,10 +165,18 @@ class WavefunctionUnion : public Wavefunction
     std::vector<SharedWavefunction> l_wfn_;
     /// List of names of isolated wavefunctions
     std::vector<std::string> l_name_;
+    /// List of basis function numbers per molecule
+    std::vector<int> l_nbf_;
     /// List of numbers of molecular orbitals (MO's) per molecule
     std::vector<int> l_nmo_;
     /// List of numbers of SO's per molecule
     std::vector<int> l_nso_;
+    /// List of numbers of doubly occupied orbitals per molecule
+    std::vector<int> l_ndocc_;
+    /// List of numbers of virtual orbitals per molecule
+    std::vector<int> l_nvir_;
+    /// List of basis set offsets per molecule
+    std::vector<int> l_noffs_ao_;
     /// List of energies of isolated wavefunctions
     std::vector<double> l_energy_;
     /// List of frozen-core energies per isolated wavefunction
@@ -174,17 +191,8 @@ class WavefunctionUnion : public Wavefunction
     std::vector<int> l_nfrzc_;
     /// List of orbital localizers
     std::vector<SharedLocalizer> l_localizer_;
-    /// Array of MO spaces
+    /// List of dictionaries of MO spaces
     std::vector<std::map<const std::string, SharedMOSpace>> l_mospace_;
-
-    /// Integral transform object (2- and 4-index transformations)
-    SharedIntegralTransform integrals_;
-
-    /// The wavefunction for a dimer (electrons relaxed in the field of monomers)
-    SharedWavefunction dimer_wavefunction_;
-
-    /// whether orbitals of the union were localized (or not)
-    bool isLocalized_;
 
 
   public:
@@ -199,6 +207,9 @@ class WavefunctionUnion : public Wavefunction
     /// Destructor
     virtual ~WavefunctionUnion();
 
+
+    // ---> Computers <--- //
+
     /// Compute Energy (now blank)
     virtual double compute_energy();
 
@@ -208,23 +219,36 @@ class WavefunctionUnion : public Wavefunction
     /// Transform Integrals (2- and 4-index transformations)
     void transform_integrals();
 
+
     // <--- Getters ---> //
-    int                     l_nmo       (int n) const {return l_nmo_          [n];}                                    
-    int                     l_nso       (int n) const {return l_nso_          [n];}
-    int                     l_nalpha    (int n) const {return l_nalpha_       [n];}
-    int                     l_nbeta     (int n) const {return l_nbeta_        [n];}
-    double                  l_energy    (int n) const {return l_energy_       [n];}
-    SharedMolecule          l_molecule  (int n) const {return l_molecule_     [n];}
-    SharedBasisSet          l_primary   (int n) const {return l_primary_      [n];}
-    SharedBasisSet          l_auxiliary (int n) const {return l_auxiliary_    [n];}
-    SharedWavefunction      l_wfn       (int n) const {return l_wfn_          [n];}
-    SharedMOSpace           l_mospace   (int n, const std::string& label) const {return l_mospace_     [n].at(label);}
-    SharedLocalizer         l_localizer (int n) const;
-    SharedIntegralTransform integrals   (void ) const;
-    bool                    is_localized(void ) const {return isLocalized_;}
+    int                     l_nmo                 (int n) const {return l_nmo_          [n];}                                     
+    int                     l_nso                 (int n) const {return l_nso_          [n];}
+    int                     l_nbf                 (int n) const {return l_nbf_          [n];}
+    int                     l_ndocc               (int n) const {return l_ndocc_        [n];}
+    int                     l_nvir                (int n) const {return l_nvir_         [n];}
+    int                     l_noffs_ao            (int n) const {return l_noffs_ao_     [n];}
+    int                     l_nalpha              (int n) const {return l_nalpha_       [n];}
+    int                     l_nbeta               (int n) const {return l_nbeta_        [n];}
+    double                  l_energy              (int n) const {return l_energy_       [n];}
+    SharedMolecule          l_molecule            (int n) const {return l_molecule_     [n];}
+    SharedBasisSet          l_primary             (int n) const {return l_primary_      [n];}
+    SharedBasisSet          l_auxiliary           (int n) const {return l_auxiliary_    [n];}
+    SharedWavefunction      l_wfn                 (int n) const {return l_wfn_          [n];}
+    SharedMOSpace           l_mospace             (int n, const std::string& label) 
+                                                          const {return l_mospace_      [n].at(label);}
+    SharedLocalizer         l_localizer           (int n) const;
+    SharedIntegralTransform integrals             (void ) const;
+    bool                    has_localized_orbitals(void ) const {return hasLocalizedOrbitals_;}
+
 
     // <--- Printers ---> //
-    void print_mo_integrals(std::shared_ptr<PSIO> psio);
+    void print_header(void);
+    void print_mo_integrals(void);
+
+
+  private:
+    /// Finish initialising the object
+    void common_init(SharedWavefunction ref_wfn);
 
 };
 

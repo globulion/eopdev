@@ -3,7 +3,7 @@ import oepdev
 
 molecule happy {
 0 1
-O         -3.08471        1.12313        0.00396
+#O         -3.08471        1.12313        0.00396
 H         -2.11791        0.90877        0.01763
 H         -3.12325        2.07922       -0.24921
 --
@@ -39,6 +39,7 @@ set {
     basis       sto-3g
     basis_A     sto-3g
     basis_B     sto-3g
+    basis_x    6-31G
     scf_type    direct
     print            3
     guess         core
