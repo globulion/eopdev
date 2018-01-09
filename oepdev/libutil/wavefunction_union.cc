@@ -1,4 +1,5 @@
 #include "util.h"
+#include "wavefunction_union.h"
 
 namespace oepdev_libutil{
 
