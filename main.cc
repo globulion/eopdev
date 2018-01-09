@@ -56,6 +56,8 @@
 
 #include "oepdev/libutil/util.h"
 #include "oepdev/libutil/cphf.h"
+#include "oepdev/libutil/wavefunction_union.h"
+#include "oepdev/libutil/integrals_iter.h"
 
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libtrans/integraltransform.h"
@@ -247,6 +249,37 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     // compute AO-ERI
     primary->print();
     auxiliary->print();
+    if (0) {
+        unsigned long int count = 0;
+        psi::outfile->Printf("  ===> AO ERI: 1222 <===\n\n");
+        SharedIntegralFactory ints = std::make_shared<IntegralFactory>(primary, primary, primary, auxiliary);
+        SharedTwoBodyAOInt    eri_1222(ints->eri());
+        const double * buffer = eri_1222->buffer();
+
+        //std::shared_ptr<oepdev_libutil::AllAOShellCombinationsIterator> shellIter(
+        //                 new oepdev_libutil::AllAOShellCombinationsIterator(ints));
+        oepdev_libutil::AllAOShellCombinationsIterator shellIter(ints);
+
+        for (shellIter.first(); shellIter.is_done() == false; shellIter.next()) {
+             eri_1222->compute_shell(shellIter.P(), shellIter.Q(), shellIter.R(), shellIter.S());
+             //std::shared_ptr<oepdev_libutil::AllAOIntegralsIterator> intsIter(
+             //                 new oepdev_libutil::AllAOIntegralsIterator(shellIter));
+             oepdev_libutil::AllAOIntegralsIterator intsIter(shellIter);
+             for (intsIter.first(); intsIter.is_done() == false; intsIter.next()) {
+                  psi::outfile->Printf(" ===> Integral ( %d %d | %d %d )= %20.15f Index: %4d\n", 
+                                intsIter.i(), 
+                                intsIter.j(), 
+                                intsIter.k(), 
+                                intsIter.l(), 
+                                buffer[intsIter.index()], intsIter.index());
+                  count++;
+             }
+        }
+        psi::outfile->Printf(" Total number of Integrals: %d\n", count);
+
+        
+    }
+
     if (1) {
         psi::outfile->Printf("  ===> AO ERI: 1222 <===\n\n");
         unsigned long int count = 0;
@@ -264,16 +297,16 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         eri_1222->compute_shell(p, q, r, s);
         psi::outfile->Printf(" ===> Shell ( %d %d | %d %d ) <===\n", p, q, r, s);
 
-        for (int i = 0, index = 0; i < primary->shell(p).nfunction(); i++) {
-        for (int j = 0; j < primary->shell(q).nfunction(); j++) {
-        for (int k = 0; k < primary->shell(r).nfunction(); k++) {
-        for (int l = 0; l < auxiliary->shell(s).nfunction(); l++, index++) {
-        int I = primary->shell(p).function_index() + i + 1;
-        int J = primary->shell(q).function_index() + j + 1;
-        int K = primary->shell(r).function_index() + k + 1;
-        int L = auxiliary->shell(s).function_index() + l + 1;
+        for (int i = 0, index = 0; i < primary->shell(p).nfunction(); ++i) {
+        for (int j = 0;            j < primary->shell(q).nfunction(); ++j) {            
+        for (int k = 0;            k < primary->shell(r).nfunction(); ++k) {
+        for (int l = 0;            l < auxiliary->shell(s).nfunction(); ++l, ++index) {
+        int I = primary->shell(p).function_index() + i  ;
+        int J = primary->shell(q).function_index() + j ;
+        int K = primary->shell(r).function_index() + k ;
+        int L = auxiliary->shell(s).function_index() + l ;
 
-        psi::outfile->Printf("( %d %d | %d %d )= %20.15f Index: %4d\n", I, J, K, L, buffer[index], index);
+        psi::outfile->Printf(" ===> Integral ( %d %d | %d %d )= %20.15f Index: %4d\n", I, J, K, L, buffer[index], index);
         count += 1;
         }}}}
 
