@@ -58,6 +58,7 @@
 #include "oepdev/libutil/cphf.h"
 #include "oepdev/libutil/wavefunction_union.h"
 #include "oepdev/libutil/integrals_iter.h"
+#include "oepdev/liboep/oep.h"
 
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libtrans/integraltransform.h"
@@ -80,6 +81,7 @@ using SharedTwoBodyAOInt       = std::shared_ptr<TwoBodyAOInt>;
 using SharedMOSpaceVector      = std::vector<std::shared_ptr<MOSpace>>;
 using intVector                = std::vector<int>;
 using SharedLocalizer          = std::shared_ptr<Localizer>;
+using SharedOEPotential        = std::shared_ptr<oepdev::OEPotential>;
 
 namespace psi{ 
 
@@ -227,111 +229,11 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedMatrix c_1 = scf_1->Ca_subset("AO","ALL");
     SharedMatrix c_2 = scf_2->Ca_subset("AO","ALL");
 
+    // Create some OEP's
+    SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
+    SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, options);
 
-    // compute AO-ERI for the dimer
-    if (false) {
-    SharedIntegralFactory ints_dimer = std::make_shared<IntegralFactory>(primary, primary, primary, primary);
-    SharedTwoBodyAOInt    eri_dimer(ints_dimer->eri());
-    AOShellCombinationsIterator shellIter(primary, primary, primary, primary);
-    const double * buffer = eri_dimer->buffer();
-    for (shellIter.first(); shellIter.is_done() == false; shellIter.next()) {
-         eri_dimer->compute_shell(shellIter);
-         psi::outfile->Printf("( %d %d | %d %d )\n", 
-                           shellIter.p(), shellIter.q(), shellIter.r(), shellIter.s());
-    }
-    }
     
-    // compute AO-ERI
-    primary->print();
-    auxiliary->print();
-    if (0) {
-        unsigned long int count = 0;
-        psi::outfile->Printf("  ===> AO ERI: 1222 <===\n\n");
-        SharedIntegralFactory ints = std::make_shared<IntegralFactory>(primary, primary, primary, auxiliary);
-        SharedTwoBodyAOInt    eri_1222(ints->eri());
-        const double * buffer = eri_1222->buffer();
-
-        oepdev::AllAOShellCombinationsIterator shellIter(ints);
-
-        for (shellIter.first(); shellIter.is_done() == false; shellIter.next()) {
-             shellIter.compute_shell(eri_1222);
-             oepdev::AllAOIntegralsIterator intsIter(shellIter);
-             for (intsIter.first(); intsIter.is_done() == false; intsIter.next()) {
-                  psi::outfile->Printf(" ===> Integral ( %d %d | %d %d )= %20.15f Index: %4d\n", 
-                                intsIter.i(), 
-                                intsIter.j(), 
-                                intsIter.k(), 
-                                intsIter.l(), 
-                                buffer[intsIter.index()], intsIter.index());
-                  count++;
-             }
-        }
-        psi::outfile->Printf(" Total number of Integrals: %d\n", count);
-
-        
-    }
-
-    if (1) {
-        psi::outfile->Printf("  ===> AO ERI: 1222 <===\n\n");
-        unsigned long int count = 0;
-        //SharedIntegralFactory ints = std::make_shared<IntegralFactory>(primary_2, primary_2, primary_1, primary_2);
-        SharedIntegralFactory ints = std::make_shared<IntegralFactory>(primary, primary, primary, auxiliary);
-        SharedTwoBodyAOInt    eri_1222(ints->eri());
-        const double * buffer = eri_1222->buffer();
-        if (1){
-        int nP = primary->nshell(); 
-        int nA = auxiliary->nshell();
-        for (int p=0; p<nP; ++p) {
-        for (int q=0; q<nP; ++q) {
-        for (int r=0; r<nP; ++r) {
-        for (int s=0; s<nA; ++s) {
-        eri_1222->compute_shell(p, q, r, s);
-        psi::outfile->Printf(" ===> Shell ( %d %d | %d %d ) <===\n", p, q, r, s);
-
-        for (int i = 0, index = 0; i < primary->shell(p).nfunction(); ++i) {
-        for (int j = 0;            j < primary->shell(q).nfunction(); ++j) {            
-        for (int k = 0;            k < primary->shell(r).nfunction(); ++k) {
-        for (int l = 0;            l < auxiliary->shell(s).nfunction(); ++l, ++index) {
-        int I = primary->shell(p).function_index() + i  ;
-        int J = primary->shell(q).function_index() + j ;
-        int K = primary->shell(r).function_index() + k ;
-        int L = auxiliary->shell(s).function_index() + l ;
-
-        psi::outfile->Printf(" ===> Integral ( %d %d | %d %d )= %20.15f Index: %4d\n", I, J, K, L, buffer[index], index);
-        count += 1;
-        }}}}
-
-        //AOIntegralsIterator intIter = ints->integrals_iterator(p, q, r, s);
-        //for (intIter.first(); intIter.is_done()==false; intIter.next()) {
-        //     int i = intIter.i(); int j = intIter.j();
-        //     int k = intIter.k(); int l = intIter.l();
-        //     psi::outfile->Printf("( %d %d | %d %d )= %20.15f Index: %4d\n", i, j, k, l, buffer[intIter.index()], 
-        //                                                             intIter.index());
-        //     if (i!=j) {count += 2;} else count+=1;
-        //     //count+=1;
-        //}
-        }}}}
-        psi::outfile->Printf(" Total number of Integrals: %d\n", count);
-        } 
-        else {
-
-        AOShellCombinationsIterator shellIter = ints->shells_iterator();
-        for (shellIter.first(); shellIter.is_done() == false; shellIter.next()) {
-             eri_1222->compute_shell(shellIter);
-             psi::outfile->Printf(" ===> Shell ( %d %d | %d %d ) <===\n", 
-                           shellIter.p(), shellIter.q(), shellIter.r(), shellIter.s());
-             AOIntegralsIterator intIter = shellIter.integrals_iterator();
-             for (intIter.first(); intIter.is_done()==false; intIter.next()) {
-                  int i = intIter.i(); int j = intIter.j();
-                  int k = intIter.k(); int l = intIter.l();
-                  psi::outfile->Printf("( %d %d | %d %d )= %20.15f\n", i, j, k, l, buffer[intIter.index()]);
-                  count+=1;
-             }
-        }
-        psi::outfile->Printf(" Total number of Integrals: %d\n", count);
-        }
-    }
-
     return ref_wfn;
 }
 
