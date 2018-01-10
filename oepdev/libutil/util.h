@@ -31,7 +31,7 @@
 #include "psi4/libscf_solver/rhf.h"
 #include "psi4/libdpd/dpd.h"
 
-namespace oepdev_libutil{
+namespace oepdev{
 
 using namespace psi;
 using namespace std;
@@ -53,6 +53,7 @@ using SharedLocalizer          = std::shared_ptr<Localizer>;
  */
 extern "C" void preambule(void);
 
+
 /** \brief Set up DFT functional.
  *
  *  Now it accepts only pure HF functional.
@@ -63,6 +64,7 @@ extern "C" void preambule(void);
 extern "C" std::shared_ptr<SuperFunctional> 
 create_superfunctional(std::string name, Options& options);
 
+
 /** \brief Extract molecule from dimer.
  *
  *  @param molecule_dimer psi::SharedMolecule object with dimer
@@ -71,6 +73,7 @@ create_superfunctional(std::string name, Options& options);
  */
 extern "C" std::shared_ptr<Molecule>
 extract_monomer(std::shared_ptr<const Molecule> molecule_dimer, int id);
+
 
 /** \brief Solve RHF-SCF equations for a given molecule in a given basis set.
  *

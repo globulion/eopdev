@@ -32,7 +32,7 @@
   #include "psi4/libdiis/diisentry.h"
 #endif
 
-namespace oepdev_libutil{
+namespace oepdev{
 
 using namespace std;
 using namespace psi;
@@ -80,7 +80,7 @@ class CPHF {
      std::shared_ptr<Vector> _eps_vir;
      /// the DIIS managers for each perturbation operator x, y and z
      #if OEPDEV_USE_PSI4_DIIS_MANAGER == 0
-       std::vector<std::shared_ptr<diis::DIISManager>> _diis;
+       std::vector<std::shared_ptr<oepdev::DIISManager>> _diis;
      #else
        std::vector<std::shared_ptr<psi::DIISManager>> _diis;
      #endif
@@ -123,7 +123,7 @@ class CPHF {
 };
 
 
-}// EndNameSpace oepdev_libutil
+}// EndNameSpace oepdev
 
 #endif // _oepdev_libutil_cphf_h
 

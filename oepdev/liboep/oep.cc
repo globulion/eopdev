@@ -1,5 +1,5 @@
 #include "oep.h"
-namespace oepdev_liboep{
+namespace oepdev{
 
 OEPotential::OEPotential(const SharedWavefunction& wfn, Options& options) 
    : _wfn(new Wavefunction(*wfn)),
@@ -37,4 +37,4 @@ void OEPotential::superimpose(const Matrix& refGeometry,
 //  grid->write_cube_file(v_oep, oepType);
 //}
 
-} // EndNameSpace oepdev_liboep
+} // EndNameSpace oepdev

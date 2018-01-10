@@ -70,9 +70,9 @@ using SharedWavefunction       = std::shared_ptr<Wavefunction>;
 using SharedVector             = std::shared_ptr<Vector>;
 using SharedMatrix             = std::shared_ptr<Matrix>;
 using SharedBasisSet           = std::shared_ptr<BasisSet>;
-using SharedUnion              = std::shared_ptr<oepdev_libutil::WavefunctionUnion>; 
+using SharedUnion              = std::shared_ptr<oepdev::WavefunctionUnion>; 
 using SharedPSIO               = std::shared_ptr<PSIO>;
-using SharedCPHF               = std::shared_ptr<oepdev_libutil::CPHF>;
+using SharedCPHF               = std::shared_ptr<oepdev::CPHF>;
 using SharedMOSpace            = std::shared_ptr<MOSpace>;
 using SharedIntegralTransform  = std::shared_ptr<IntegralTransform>;
 using SharedIntegralFactory    = std::shared_ptr<IntegralFactory>;
@@ -82,7 +82,6 @@ using intVector                = std::vector<int>;
 using SharedLocalizer          = std::shared_ptr<Localizer>;
 
 namespace psi{ 
-namespace oepdev{
 
 
 /** \brief Options for the OEPDEV plugin.
@@ -97,12 +96,8 @@ int read_options(std::string name, Options& options)
     if (name == "OEPDEV" || options.read_globals()) {
         /*- The amount of information printed to the output file -*/
         options.add_int("PRINT", 1);
-        /*- Basis set for dimer A -*/
-        options.add_str("BASIS_A", "");
-        /*- Basis set for dimer B -*/
-        options.add_str("BASIS_B", "");
-        /*- Basis set DF -*/
-        options.add_str("BASIS_X", "");
+        /*- Basis set for OEP density fitting -*/
+        options.add_str("BASIS_DF_OEP", "");
         /*- CPHF maximum iterations -*/
         options.add_int("CPHF_MAXITER", 50);
         /*- CPHF convergence -*/
@@ -175,7 +170,7 @@ extern "C"
 SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
 {
     // ==> Reference information <== //
-    oepdev_libutil::preambule();
+    oepdev::preambule();
 
     // ==> Determine what to do <== //
     int print = options.get_int("PRINT");
@@ -184,7 +179,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedPSIO psio = PSIO::shared_object();
 
     // ==> Create Wavefunction Union of two monomers <==
-    SharedUnion wfn_union = std::make_shared<oepdev_libutil::WavefunctionUnion>(ref_wfn, options);
+    SharedUnion wfn_union = std::make_shared<oepdev::WavefunctionUnion>(ref_wfn, options);
     wfn_union->print_header();
 
     // ==> Localize Molecular orbitals of the Union (optionally) <== //
@@ -215,13 +210,13 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedMolecule          molecule_2     = wfn_union->l_molecule(1);
     SharedMolecule          molecule       = wfn_union->molecule();
     SharedBasisSet          primary        = wfn_union->basisset();
-    SharedBasisSet          auxiliary      = wfn_union->get_basisset("BASIS_X");
+    SharedBasisSet          auxiliary      = wfn_union->get_basisset("BASIS_DF_OEP");
     SharedWavefunction      scf_1          = wfn_union->l_wfn(0); 
     SharedWavefunction      scf_2          = wfn_union->l_wfn(1);
     
     // Solve CPHF equations for each monomer
-    SharedCPHF cphf_1(new oepdev_libutil::CPHF(scf_1, options));
-    SharedCPHF cphf_2(new oepdev_libutil::CPHF(scf_2, options));
+    SharedCPHF cphf_1(new oepdev::CPHF(scf_1, options));
+    SharedCPHF cphf_2(new oepdev::CPHF(scf_2, options));
     cphf_1->compute();
     cphf_2->compute();
     SharedMatrix pol_1 = cphf_1->get_molecular_polarizability();
@@ -256,15 +251,11 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         SharedTwoBodyAOInt    eri_1222(ints->eri());
         const double * buffer = eri_1222->buffer();
 
-        //std::shared_ptr<oepdev_libutil::AllAOShellCombinationsIterator> shellIter(
-        //                 new oepdev_libutil::AllAOShellCombinationsIterator(ints));
-        oepdev_libutil::AllAOShellCombinationsIterator shellIter(ints);
+        oepdev::AllAOShellCombinationsIterator shellIter(ints);
 
         for (shellIter.first(); shellIter.is_done() == false; shellIter.next()) {
-             eri_1222->compute_shell(shellIter.P(), shellIter.Q(), shellIter.R(), shellIter.S());
-             //std::shared_ptr<oepdev_libutil::AllAOIntegralsIterator> intsIter(
-             //                 new oepdev_libutil::AllAOIntegralsIterator(shellIter));
-             oepdev_libutil::AllAOIntegralsIterator intsIter(shellIter);
+             shellIter.compute_shell(eri_1222);
+             oepdev::AllAOIntegralsIterator intsIter(shellIter);
              for (intsIter.first(); intsIter.is_done() == false; intsIter.next()) {
                   psi::outfile->Printf(" ===> Integral ( %d %d | %d %d )= %20.15f Index: %4d\n", 
                                 intsIter.i(), 
@@ -344,6 +335,5 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     return ref_wfn;
 }
 
-} // EndNameSpace oepdev
 } // EndNameSpace psi
 

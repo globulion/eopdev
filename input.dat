@@ -36,18 +36,17 @@ symmetry c1
 }
 
 set {
-    basis       sto-3g
-    basis_A     sto-3g
-    basis_B     sto-3g
-    basis_x    6-31G
-    scf_type    direct
-    print            3
-    guess         core
-    cphf_diis     true
-    cphf_diis_dim    2
-    cphf_maxiter   200
-    #DF_BASIS_SAPT cc-pvDZ
+    scf_type        direct
+    guess           core
+    print           3
+    basis           sto-3g
+    basis_df_oep    6-31G
+    cphf_diis       true
+    cphf_diis_dim   2
+    cphf_maxiter    200
+    #DF_BASIS_SAPT  cc-pvDZ
 }
+
 
 energy('oepdev')
 

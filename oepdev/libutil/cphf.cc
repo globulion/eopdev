@@ -1,6 +1,6 @@
 #include "cphf.h"
 
-namespace oepdev_libutil{
+namespace oepdev{
 
 using namespace std;
 using namespace psi;
@@ -30,7 +30,7 @@ CPHF::CPHF(SharedWavefunction ref_wfn, Options& options) :
     if (_with_diis) {
         for (unsigned int z=0; z<3; z++) {
              #if OEPDEV_USE_PSI4_DIIS_MANAGER == 0
-               _diis.push_back(std::shared_ptr<diis::DIISManager>(new diis::DIISManager(_diis_dim, _no, _nv)));
+               _diis.push_back(std::shared_ptr<oepdev::DIISManager>(new oepdev::DIISManager(_diis_dim, _no, _nv)));
              #else
                _diis.push_back(std::shared_ptr<psi::DIISManager>(new psi::DIISManager(_diis_dim, "CPHF DIIS", 
                                  psi::DIISManager::LargestError, psi::DIISManager::InCore)));
@@ -212,4 +212,4 @@ void CPHF::print(void) const {
    _primary->print();
 }
 
-}// EndNameSpace oepdev_libutil
+}// EndNameSpace oepdev

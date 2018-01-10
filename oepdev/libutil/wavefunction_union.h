@@ -31,7 +31,7 @@
 #include "psi4/libdpd/dpd.h"
 
 
-namespace oepdev_libutil{
+namespace oepdev{
 
 using namespace psi;
 using namespace std;
@@ -212,5 +212,5 @@ class WavefunctionUnion : public Wavefunction
 };
 
 
-}      // EndNameSpace oepdev_libutil
+}      // EndNameSpace oepdev
 #endif //_oepdev_libutil_wavefunction_union_h

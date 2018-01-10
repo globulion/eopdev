@@ -10,8 +10,7 @@ std::unique_ptr<T> make_unique(Args&&... args) {
 
 }
 
-namespace oepdev_libutil{
-namespace diis{
+namespace oepdev{
 
 
 DIISManager::DIISManager (int dim, int na, int nb) :
@@ -81,5 +80,4 @@ void DIISManager::compute(void) {
    }
 }
 
-} // EndNameSpace diis
-} // EndNameSpace oepdev_libutil
+} // EndNameSpace oepdev

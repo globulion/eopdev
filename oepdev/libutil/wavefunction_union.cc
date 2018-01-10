@@ -1,7 +1,7 @@
 #include "util.h"
 #include "wavefunction_union.h"
 
-namespace oepdev_libutil{
+namespace oepdev{
 
 using namespace psi;
 using namespace std;
@@ -410,4 +410,4 @@ void WavefunctionUnion::print_header() {
 }
 
 
-} // EndNameSpace oepdev_libutil
+} // EndNameSpace oepdev

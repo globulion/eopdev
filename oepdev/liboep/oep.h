@@ -15,7 +15,7 @@
 #include "psi4/libthce/thce.h"
 #include "psi4/libcubeprop/csg.h"
 
-namespace oepdev_liboep{
+namespace oepdev{
 
 using namespace psi;
 using namespace std;
@@ -94,6 +94,6 @@ class OEPotential {
 };
 
 
-} // EndNameSpace oepdev_liboep
+} // EndNameSpace oepdev
 
 #endif // _oepdev_liboep_liboep_h_ 

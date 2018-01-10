@@ -1,6 +1,6 @@
 #include "util.h"
 
-namespace oepdev_libutil{
+namespace oepdev{
 
 extern "C" void preambule(void) {
       outfile->Printf("                                                                             \n");
@@ -60,4 +60,4 @@ solve_scf(std::shared_ptr<Molecule> molecule,
     return scf;
 }
 
-} // EndNameSpace oepdev_libutil
+} // EndNameSpace oepdev

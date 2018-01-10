@@ -12,8 +12,7 @@
 #include "psi4/libqt/qt.h"
 
 
-namespace oepdev_libutil{
-namespace diis{
+namespace oepdev{
 
 using namespace psi;
 using namespace std;
@@ -89,7 +88,6 @@ public:
 };
 
 
-} // EndNameSpace diis
-} // EndNameSpace oepdev_libutil
+} // EndNameSpace oepdev
 
 #endif // _oepdev_libutil_diis_h

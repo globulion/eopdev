@@ -1,6 +1,6 @@
 #include "integrals_iter.h"
 
-namespace oepdev_libutil{
+namespace oepdev{
 
 using namespace psi;
 using namespace std;
@@ -123,8 +123,14 @@ void AllAOIntegralsIterator::next() {
    current.j = jj__ + ishell_2;
    current.k = kk__ + ishell_3;
    current.l = ll__ + ishell_4;
-   std::cout << current.i << current.j << current.k << current.l << "\n";
+   // std::cout << current.i << current.j << current.k << current.l << "\n";
    current.index = index__;
 }
 
-} // EndNameSpace oepdev_libutil
+void AllAOShellCombinationsIterator::compute_shell(SharedTwoBodyAOInt tei) const 
+{
+   tei->compute_shell(current.P, current.Q, current.R, current.S);
+}
+
+
+} // EndNameSpace oepdev
