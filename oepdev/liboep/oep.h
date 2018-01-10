@@ -38,18 +38,18 @@ class OEPotential {
     /// Psi4 options
     Options options_;
     /// Wavefunction
-    const SharedWavefunction wfn_;
+    SharedWavefunction wfn_;
     /// Promary Basis set
-    const SharedBasisSet primary_;
+    SharedBasisSet primary_;
     /// Auxiliary Basis set
-    const SharedBasisSet auxiliary_;
+    SharedBasisSet auxiliary_;
 
     /// Name of this OEP;
     std::string name_;
     /// Types of OEP's within the scope of this object
     std::vector<std::string> oepTypes_;
     /// OEP's matrix forms for each OEP type
-    std::map<std::string, SharedTensor> oepMatrices_;
+    std::map<std::string, SharedMatrix> oepMatrices_;
 
   public:
 
@@ -125,7 +125,7 @@ class OEPotential {
     /// Retrieve name of this OEP
     std::string name() const { return name_; }
     /// Retrieve matrix potential
-    SharedTensor matrix(const std::string& oepType) const { return oepMatrices_.at(oepType); }
+    SharedMatrix matrix(const std::string& oepType) const { return oepMatrices_.at(oepType); }
 
 
     // <--- Mutators ---> //

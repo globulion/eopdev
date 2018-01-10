@@ -230,8 +230,8 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedMatrix c_2 = scf_2->Ca_subset("AO","ALL");
 
     // Create some OEP's
-    SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
     SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, options);
+    SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
 
     
     return ref_wfn;
