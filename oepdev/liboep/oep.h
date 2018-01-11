@@ -82,6 +82,7 @@ class OEPotential {
      * @param wfn     - wavefunction
      * @param options - Psi4 options
      */
+
     static std::shared_ptr<OEPotential> build(const std::string& category, SharedWavefunction wfn, Options& options);
     /* \brief DF-based OEP object
      *
@@ -108,8 +109,12 @@ class OEPotential {
     virtual void compute(const std::string& oepType) = 0;
     virtual void compute(void);
     //@}
-    /// Compute 3D potential
+    //@{ Compute 3D potential
+    /** Write potential to a cube file */
     virtual void compute_3D(const std::string& oepType, const std::string& fileName) = 0;
+    /** Compute value of potential in point x, y, z and save at v */
+    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) = 0;
+    //@}
     /// Rotate 
     virtual void rotate(const Matrix& rotmat);
     /// Translate
@@ -139,6 +144,30 @@ class OEPotential {
 };
 
 
+/* \brief Generalized One-Electron Potential for Electrostatic Energy calculations.
+ * 
+ *  Contains the following OEP types:
+ *      "V"
+ */
+class ElectrostaticEnergyOEPotential : public OEPotential 
+{
+  private:
+    /// Set defaults
+    void common_init();
+  protected:
+  public:
+    /// Only ESP-based potential is worth implementing
+    ElectrostaticEnergyOEPotential(SharedWavefunction wfn, Options& options);
+
+    virtual ~ElectrostaticEnergyOEPotential();
+
+    virtual void compute(const std::string& oepType);
+    virtual void compute_3D(const std::string& oepType, const std::string& fileName);
+    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v);
+    virtual void print_header() const;
+
+};
+
 /* \brief Generalized One-Electron Potential for Pauli repulsion energy calculations.
  * 
  *  Contains the following OEP types:
@@ -157,6 +186,7 @@ class RepulsionEnergyOEPotential : public OEPotential
 
     virtual void compute(const std::string& oepType);
     virtual void compute_3D(const std::string& oepType, const std::string& fileName);
+    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v);
     virtual void print_header() const;
 
 };
@@ -180,6 +210,7 @@ class EETCouplingOEPotential : public OEPotential
 
     virtual void compute(const std::string& oepType);
     virtual void compute_3D(const std::string& oepType, const std::string& fileName);
+    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v);
     virtual void print_header() const;
 
 };

@@ -24,8 +24,9 @@ std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, Sha
 {
    std::shared_ptr<OEPotential> oep;
 
-   if      (category == "REPULSION ENERGY")  oep = std::make_shared<RepulsionEnergyOEPotential>(wfn, options);
-   else if (category == "EET COUPLING"    )  oep = std::make_shared<    EETCouplingOEPotential>(wfn, options);
+   if      (category == "ELECTROSTATIC ENERGY")  oep = std::make_shared<ElectrostaticEnergyOEPotential>(wfn, options);
+   else if (category == "REPULSION ENERGY"    )  oep = std::make_shared<    RepulsionEnergyOEPotential>(wfn, options);
+   else if (category == "EET COUPLING"        )  oep = std::make_shared<        EETCouplingOEPotential>(wfn, options);
    else  
             throw PSIEXCEPTION("OEPDEV: OEPotential build. Unrecognized OEP category.");
 
@@ -37,8 +38,9 @@ std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, Sha
 {
    std::shared_ptr<OEPotential> oep;
 
-   if      (category == "REPULSION ENERGY")  oep = std::make_shared<RepulsionEnergyOEPotential>(wfn, auxiliary, options);
-   else if (category == "EET COUPLING"    )  oep = std::make_shared<    EETCouplingOEPotential>(wfn, auxiliary, options);
+   if      (category == "ELECTROSTATIC ENERGY")  throw PSIEXCEPTION("OEPDEV: OEPotential build. DF-based OEP not available for Electrostatic Energy!");
+   else if (category == "REPULSION ENERGY"    )  oep = std::make_shared<RepulsionEnergyOEPotential>(wfn, auxiliary, options);
+   else if (category == "EET COUPLING"        )  oep = std::make_shared<    EETCouplingOEPotential>(wfn, auxiliary, options);
    else  
             throw PSIEXCEPTION("OEPDEV: OEPotential build. Unrecognized OEP category.");
 
@@ -51,16 +53,14 @@ OEPotential::~OEPotential() {}
 
 void OEPotential::common_init(void) 
 {
-   name_ = "default";
+   name_    = "default";
+   primary_ = wfn_->basisset();
 }
 
 void OEPotential::compute(const std::string& oepType) {}
-void OEPotential::compute(void) {
-   for (int i=0; i<oepTypes_.size(); ++i) {
-        this->compute(oepTypes_[i]);
-   }
-}
+void OEPotential::compute(void) { for ( const std::string& type : oepTypes_ ) this->compute(type); }
 void OEPotential::compute_3D(const std::string& oepType, const std::string& fileName) {}
+void OEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
 void OEPotential::rotate(const Matrix& rotmat) {}
 void OEPotential::translate(const Vector& trans) {}
 void OEPotential::superimpose(const Matrix& refGeometry,
@@ -68,6 +68,25 @@ void OEPotential::superimpose(const Matrix& refGeometry,
                               const std::vector<int>& reordList) {}
 void OEPotential::print_header(void) const {}
 
+
+// <============== Electrostatic Energy (demo class) ==============> //
+
+ElectrostaticEnergyOEPotential::ElectrostaticEnergyOEPotential(SharedWavefunction wfn, Options& options) 
+ : OEPotential(wfn, options)
+{ 
+   common_init();
+}
+
+ElectrostaticEnergyOEPotential::~ElectrostaticEnergyOEPotential() {}
+void ElectrostaticEnergyOEPotential::common_init() 
+{
+   oepTypes_.push_back("V");
+}
+
+void ElectrostaticEnergyOEPotential::compute(const std::string& oepType) {}
+void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, const std::string& fileName) {}
+void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
+void ElectrostaticEnergyOEPotential::print_header(void) const {}
 
 
 // <============== Repulsion Energy ==============> //
@@ -88,10 +107,13 @@ RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(SharedWavefunction wfn,
 RepulsionEnergyOEPotential::~RepulsionEnergyOEPotential() {}
 void RepulsionEnergyOEPotential::common_init() 
 {
+   oepTypes_.push_back("S1");
+   oepTypes_.push_back("S2");
 }
 
 void RepulsionEnergyOEPotential::compute(const std::string& oepType) {}
 void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const std::string& fileName) {}
+void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
 void RepulsionEnergyOEPotential::print_header(void) const {}
 
 // <============== EET Coupling ==============> //
@@ -112,15 +134,23 @@ EETCouplingOEPotential::EETCouplingOEPotential(SharedWavefunction wfn,
 EETCouplingOEPotential::~EETCouplingOEPotential() {}
 void EETCouplingOEPotential::common_init() 
 {
+    oepTypes_.push_back("ET1");
+    oepTypes_.push_back("ET2");
+    oepTypes_.push_back("HT1");
+    oepTypes_.push_back("HT2");
+    oepTypes_.push_back("CT1");
+    oepTypes_.push_back("CT2");
 }
 
 void EETCouplingOEPotential::compute(const std::string& oepType) {}
 void EETCouplingOEPotential::compute_3D(const std::string& oepType, const std::string& fileName) {}
+void EETCouplingOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
 void EETCouplingOEPotential::print_header(void) const {}
 
-//OEPotential::compute_3D(std::string oepType, std::string fileName) {
-//  std::shared_ptr<CubicScalarGrid> grid(new CubicScalarGrid(auxiliary_, options_));
-//  grid->write_cube_file(v_oep, oepType);
+
+//OEPotential::compute_3D(const std::string& oepType, const std::string& fileName) {
+//  std::shared_ptr<CubicScalarGrid> grid = std::make_shared<CubicScalarGrid>(primary_, options_);
+//  grid->write_cube_file(v_oep, fileName);
 //}
 
 } // EndNameSpace oepdev
