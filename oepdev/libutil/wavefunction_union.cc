@@ -203,6 +203,7 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    oeprop_->add("DIPOLE");
    oeprop_->add("QUADRUPOLE");
    oeprop_->add("MULLIKEN CHARGES");
+   oeprop_->add("ESP AT NUCLEI");
    oeprop_->compute();
 }
 
