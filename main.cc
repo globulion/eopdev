@@ -59,12 +59,12 @@
 #include "oepdev/libutil/wavefunction_union.h"
 #include "oepdev/libutil/integrals_iter.h"
 #include "oepdev/liboep/oep.h"
+#include "oepdev/libpsi/potential.h"
 
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libtrans/integraltransform.h"
 #include "psi4/libdpd/dpd.h"
 
-#include "oepdev/libpsi/potential.h"
 
 
 using SharedMolecule           = std::shared_ptr<Molecule>;                            
