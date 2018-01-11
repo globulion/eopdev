@@ -237,14 +237,14 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
 
     // Setup the initial field of partial charges
-    SharedMatrix Zxyz = SharedMatrix (new Matrix("Partial Charge Field (Z,x,y,z)", primary_1->molecule()->natom()-2, 4));
+    SharedMatrix Zxyz = SharedMatrix (new Matrix("Partial Charge Field (Z,x,y,z)", primary_1->molecule()->natom(), 4));
     double** Zxyzp = Zxyz->pointer();
 
-    for (int A = 0; A < primary_1->molecule()->natom()-2; A++) {
-        Zxyzp[A][0] = (double) primary_1->molecule()->Z(A) - 7.0;
-        Zxyzp[A][1] = primary_1->molecule()->x(A) + 10.4;
-        Zxyzp[A][2] = primary_1->molecule()->y(A) + 10.2;
-        Zxyzp[A][3] = primary_1->molecule()->z(A) + 11.2;
+    for (int A = 0; A < primary_1->molecule()->natom(); A++) {
+        Zxyzp[A][0] = (double) primary_1->molecule()->Z(A);
+        Zxyzp[A][1] = primary_1->molecule()->x(A);
+        Zxyzp[A][2] = primary_1->molecule()->y(A);
+        Zxyzp[A][3] = primary_1->molecule()->z(A);
     }
     Zxyz->print();
 
@@ -256,22 +256,26 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     double x0 = 0.2; double y0 = 0.4; double z0 = 1.2; double q = 1.0; 
     double d = 0.1542, x, y, z;
     SharedMatrix pot = std::make_shared<Matrix>("POT", primary_1->nbf(), primary_2->nbf()); 
-    for (int i=0; i<100; ++i){
-         for (int j=0; j<100; ++j){
-              for (int k=0; k<100; ++k){
-                   x = (double)i * d + x0;
-                   y = (double)j * d + y0;
-                   z = (double)k * d + z0;
-                   std::shared_ptr<OneBodyAOInt> ints(new oepdev::PotentialInt(fact->spherical_transform(),      
-                                                                               fact->basis1(), fact->basis2(), 
-                                                                               x, y, z));
-                                                                                                                 
-                   ints->compute(pot);
-                   
-              }
-         }
-    }
-    //pot->print();
+    std::shared_ptr<OneBodyAOInt> ints(new oepdev::PotentialInt(fact->spherical_transform(),
+                                                                fact->basis1(), fact->basis2(),
+                                                                Zxyz));
+    ints->compute(pot);
+    pot->print();
+    //for (int i=0; i<10; ++i){
+    //     for (int j=0; j<10; ++j){
+    //          for (int k=0; k<10; ++k){
+    //               x = (double)i * d + x0;
+    //               y = (double)j * d + y0;
+    //               z = (double)k * d + z0;
+    //               std::shared_ptr<OneBodyAOInt> ints(new oepdev::PotentialInt(fact->spherical_transform(),      
+    //                                                                           fact->basis1(), fact->basis2(), 
+    //                                                                           x, y, z));
+    //                                                                                                             
+    //               ints->compute(pot);
+    //               
+    //          }
+    //     }
+    //}
 
     
     return ref_wfn;
