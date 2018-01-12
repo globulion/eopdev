@@ -49,7 +49,7 @@ std::shared_ptr<Potential3D> Potential3D::build(SharedOEPotential oep, const std
    return potential;
 }
 
-void Potential3D::compute() 
+void Potential3D::compute(bool cube) 
 {
 
 }
@@ -86,7 +86,8 @@ void ElectrostaticPotential3D::common_init()
 
 void ElectrostaticPotential3D::compute() 
 {
-
+   
+   // ===> Nuclear Contribution <=== //
 }
 
 
