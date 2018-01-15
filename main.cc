@@ -60,6 +60,7 @@
 #include "oepdev/libutil/integrals_iter.h"
 #include "oepdev/liboep/oep.h"
 #include "oepdev/libpsi/potential.h"
+#include "oepdev/libutil/potential.h"
 
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libtrans/integraltransform.h"
@@ -84,6 +85,7 @@ using SharedMOSpaceVector      = std::vector<std::shared_ptr<MOSpace>>;
 using intVector                = std::vector<int>;
 using SharedLocalizer          = std::shared_ptr<Localizer>;
 using SharedOEPotential        = std::shared_ptr<oepdev::OEPotential>;
+using SharedPotential3D        = std::shared_ptr<oepdev::Potential3D>;
 
 namespace psi{ 
 
@@ -236,46 +238,12 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, primary_1, options);
     SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
 
-    // Setup the initial field of partial charges
-    SharedMatrix Zxyz = SharedMatrix (new Matrix("Partial Charge Field (Z,x,y,z)", primary_1->molecule()->natom(), 4));
-    double** Zxyzp = Zxyz->pointer();
-
-    for (int A = 0; A < primary_1->molecule()->natom(); A++) {
-        Zxyzp[A][0] = (double) primary_1->molecule()->Z(A);
-        Zxyzp[A][1] = primary_1->molecule()->x(A);
-        Zxyzp[A][2] = primary_1->molecule()->y(A);
-        Zxyzp[A][3] = primary_1->molecule()->z(A);
-    }
-    Zxyz->print();
-
-    // Compute potential integrals
-    std::shared_ptr<IntegralFactory> fact = std::make_shared<IntegralFactory>(primary_1, primary_2);
-    //std::shared_ptr<OneBodyAOInt> ints(fact->ao_potential());
-    //std::shared_ptr<OneBodyAOInt> ints(new oepdev::PotentialInt(fact->spherical_transform(), 
-    //                                                            fact->basis1(), fact->basis2(), 0));
-    double x0 = 0.2; double y0 = 0.4; double z0 = 1.2; double q = 1.0; 
-    double d = 0.1542, x, y, z;
-    SharedMatrix pot = std::make_shared<Matrix>("POT", primary_1->nbf(), primary_2->nbf()); 
-    std::shared_ptr<OneBodyAOInt> ints(new oepdev::PotentialInt(fact->spherical_transform(),
-                                                                fact->basis1(), fact->basis2(),
-                                                                Zxyz));
-    ints->compute(pot);
-    pot->print();
-    //for (int i=0; i<10; ++i){
-    //     for (int j=0; j<10; ++j){
-    //          for (int k=0; k<10; ++k){
-    //               x = (double)i * d + x0;
-    //               y = (double)j * d + y0;
-    //               z = (double)k * d + z0;
-    //               std::shared_ptr<OneBodyAOInt> ints(new oepdev::PotentialInt(fact->spherical_transform(),      
-    //                                                                           fact->basis1(), fact->basis2(), 
-    //                                                                           x, y, z));
-    //                                                                                                             
-    //               ints->compute(pot);
-    //               
-    //          }
-    //     }
-    //}
+    // Compute potentials
+    SharedPotential3D potential = oepdev::Potential3D::build("ELECTROSTATIC", 60, 60, 60, 10.0, 10.0, 10.0, scf_1, options);
+    potential->print();
+    //std::shared_ptr<oepdev::CubeDistribution3D> di = std::dynamic_pointer_cast<oepdev::CubeDistribution3D>(potential->distribution());
+    //di->print_header();
+    potential->compute();
 
     
     return ref_wfn;
