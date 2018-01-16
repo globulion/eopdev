@@ -244,6 +244,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     //std::shared_ptr<oepdev::CubeDistribution3D> di = std::dynamic_pointer_cast<oepdev::CubeDistribution3D>(potential->distribution());
     //di->print_header();
     potential->compute();
+    potential->write_cube_file("pot");
 
     
     return ref_wfn;

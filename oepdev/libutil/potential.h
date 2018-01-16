@@ -5,6 +5,8 @@
 #include <memory>
 #include <cstdio>
 #include <stdio.h>
+#include <sstream>
+#include <fstream>
 #include <string>
 #include <random>
 #include <cmath>
@@ -145,13 +147,14 @@ class Distribution3D
                                             const double& px, const double& py, const double& pz,
                                             psi::SharedBasisSet bs, psi::Options& options);
 
-    virtual int npoints() const {return npoints_;}
+    virtual int npoints() const {return np_;}
     virtual shared_ptr<Points3DIterator> points_iterator() const {return pointsIterator_;}
+    virtual Distribution get_type() const {return type_;}
 
     virtual void print() const = 0;
 
   protected:
-    const int npoints_;
+    const int np_;
     Distribution type_;
     shared_ptr<Points3DIterator> pointsIterator_;
 };
@@ -181,6 +184,8 @@ class CubeDistribution3D : public Distribution3D, public psi::CubicScalarGrid
 
     virtual ~CubeDistribution3D();
     virtual void print() const;
+
+    virtual void write_cube_file(psi::SharedMatrix v, const std::string& name);
   protected:
 };
 
@@ -211,6 +216,7 @@ class Potential3D
     virtual std::shared_ptr<Distribution3D> distribution() const {return distribution_;}
 
     virtual void compute();
+    virtual void write_cube_file(const std::string& name);
 
     virtual double compute_xyz(const double& x, const double& y, const double& z) = 0;
     virtual void print() const = 0;

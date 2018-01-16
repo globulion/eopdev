@@ -23,10 +23,10 @@ CubePoints3DIterator::CubePoints3DIterator(
                         const double& dx, const double& dy, const double& dz,
                         const double& ox, const double& oy, const double& oz)
  : Points3DIterator(nx*ny*nz), nx_(nx), ny_(ny), nz_(nz),
-                              dx_(dx), dy_(dy), dz_(dz),
-                              ox_(ox), oy_(oy), oz_(oz),
-                              ii_(0), jj_(0), kk_(0),
-                              ix_max__(nx-1), iy_max__(ny-1), iz_max__(nz-1)
+                               dx_(dx), dy_(dy), dz_(dz),
+                               ox_(ox), oy_(oy), oz_(oz),
+                               ii_(0), jj_(0), kk_(0),
+                               ix_max__(nx-1), iy_max__(ny-1), iz_max__(nz-1)
 {
 
 }
@@ -172,11 +172,11 @@ void RandomPoints3DIterator::next()
    draw_random_point();
 }
 
-Distribution3D::Distribution3D(Distribution distribution, int& np) : type_(distribution), npoints_(np) 
+Distribution3D::Distribution3D(Distribution distribution, int& np) : type_(distribution), np_(np) 
 {
 
 }
-Distribution3D::Distribution3D(Distribution distribution, const int& np) : type_(distribution), npoints_(np) 
+Distribution3D::Distribution3D(Distribution distribution, const int& np) : type_(distribution), np_(np) 
 {
 
 }
@@ -218,7 +218,7 @@ RandomDistribution3D::~RandomDistribution3D()
 
 void RandomDistribution3D::print() const 
 {
-   cout << "I am a RANDOM distribution with np = " << npoints_ << "\n";
+   cout << "I am a RANDOM distribution with np = " << np_ << "\n";
 }
 
 CubeDistribution3D::CubeDistribution3D(Distribution distribution, 
@@ -228,17 +228,17 @@ CubeDistribution3D::CubeDistribution3D(Distribution distribution,
  : Distribution3D(distribution, nx*ny*nz), CubicScalarGrid(bs, options)
 {
   // Determine XYZmax and XYZmin
-  double xmax = bs->molecule()->geometry().get(0,0);
-  double ymax = bs->molecule()->geometry().get(0,1);
-  double zmax = bs->molecule()->geometry().get(0,2);
+  double xmax = mol_->x(0);
+  double ymax = mol_->y(0);
+  double zmax = mol_->z(0);
   double xmin = xmax;
   double ymin = ymax;
   double zmin = zmax;
   double x, y, z;
-  for (int i = 0; i < bs->molecule()->geometry().nrow(); ++i) {
-       x = bs->molecule()->geometry().get(i,0);
-       y = bs->molecule()->geometry().get(i,1);
-       z = bs->molecule()->geometry().get(i,2);
+  for (int i = 0; i < mol_->natom(); ++i) {
+       x = mol_->x(i);
+       y = mol_->y(i);
+       z = mol_->z(i);
        if (x >= xmax) xmax = x;
        if (y >= ymax) ymax = y;
        if (z >= zmax) zmax = z;
@@ -267,7 +267,7 @@ CubeDistribution3D::CubeDistribution3D(Distribution distribution,
   int    N[3] = {nx-1, ny-1, nz-1};
   double D[3] = {dx, dy, dz};
   double O[3] = {ox, oy, oz}; 
-  build_grid("./testcube.cube", N, D, O);
+  build_grid(".", N, D, O);
 }
 
 CubeDistribution3D::~CubeDistribution3D()
@@ -277,6 +277,50 @@ CubeDistribution3D::~CubeDistribution3D()
 
 void CubeDistribution3D::print() const {
   //psi::outfile->Printf(" ===> Cube 3D Collection <===\n");
+}
+
+void CubeDistribution3D::write_cube_file(psi::SharedMatrix v, const std::string& name){
+    // => Drop the grid out <= //
+
+    std::stringstream ss;
+    ss << filepath_ << "/" << name << ".cube";
+
+    // Is filepath a valid directory?
+    std::ifstream infile(filepath_.c_str());
+    if (!infile.good()) {
+    //if (filesystem::path(filepath_).make_absolute().is_directory() == false) {
+        printf("Filepath \"%s\" is not valid.  Please create this directory.\n",filepath_.c_str());
+        outfile->Printf("Filepath \"%s\" is not valid.  Please create this directory.\n",filepath_.c_str());
+        outfile->Flush();
+        exit(EXIT_FAILURE);
+    }
+
+    FILE* fh = fopen(ss.str().c_str(), "w");
+
+    // Two comment lines
+    fprintf(fh, "OepDev Gaussian Cube File.\n");
+    fprintf(fh, "Property: %s\n", name.c_str());
+
+    // Number of atoms plus origin of data
+    fprintf(fh, "%5d %11.6f %11.6f %11.6f\n", mol_->natom(), O_[0], O_[1], O_[2]);
+
+    //// Number of points along axis, displacement along x,y,z
+    fprintf(fh, "%5d %11.6f %11.6f %11.6f\n", N_[0] + 1, D_[0], 0.0, 0.0);
+    fprintf(fh, "%5d %11.6f %11.6f %11.6f\n", N_[1] + 1, 0.0, D_[1], 0.0);
+    fprintf(fh, "%5d %11.6f %11.6f %11.6f\n", N_[2] + 1, 0.0, 0.0, D_[2]);
+
+    //// Atoms of molecule (Z, Q?, x, y, z)
+    for (int A = 0; A < mol_->natom(); A++) {
+        fprintf(fh, "%5d %11.6f %11.6f %11.6f %11.6f\n", (int) mol_->Z(A), 0.0, mol_->x(A), mol_->y(A), mol_->z(A));
+    }
+
+    //// Data, striped (x, y, z)
+    for (int ind = 0; ind < npoints_; ++ind) {
+        fprintf(fh, "%13.5E", v->get(ind,3));
+        if (ind % 6 == 5) fprintf(fh,"\n");
+    }
+
+    fclose(fh);
 }
 
 void Potential3D::compute(){
@@ -301,7 +345,8 @@ Potential3D::Potential3D(const int& np, const double& cx, const double& cy, cons
 
 Potential3D::Potential3D(const int& np, const double& pad, psi::SharedMolecule mol)
  : distribution_(Distribution3D::build(np, pad, mol)),
-   data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", np, 4))
+   data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", np, 4)),
+   geom_(psi::Matrix(mol->geometry()))
 {
 
 }
@@ -318,7 +363,15 @@ Potential3D::Potential3D(const int& nx, const int& ny, const int& nz,
     fact_(std::make_shared<psi::IntegralFactory>(wfn->basisset(), wfn->basisset())),
     pot_(std::make_shared<psi::Matrix>("POT", wfn->basisset()->nbf(), wfn->basisset()->nbf()))
 {
+    
+}
 
+void Potential3D::write_cube_file(const std::string& name)
+{
+   if (distribution()->get_type() == Distribution3D::Cube) {
+       std::shared_ptr<CubeDistribution3D> distr = std::dynamic_pointer_cast<CubeDistribution3D>(distribution());
+       distr->write_cube_file(data(), name);
+   }
 }
 
 
@@ -364,7 +417,7 @@ double EPotential3D::compute_xyz(const double& x, const double& y, const double&
    double val = 0.0;
    // ===> Nuclear contribution <=== //
    for (int i=0; i<wfn_->molecule()->natom(); ++i) {
-        val+= wfn_->molecule()->Z(i) /
+        val+= (double)wfn_->molecule()->Z(i) /
                   sqrt( pow(geom_.get(i,0)-x, 2.0) 
                       + pow(geom_.get(i,1)-y, 2.0) 
                       + pow(geom_.get(i,2)-z, 2.0) );
@@ -377,8 +430,8 @@ double EPotential3D::compute_xyz(const double& x, const double& y, const double&
    for (int i=0; i<nbf_; ++i) {
         for (int j=0; j<=i; ++j) {
              v= (wfn_->Da()->get(i,j) + wfn_->Db()->get(i,j)) * pot_->get(i,j);
-             val -= v;
-             if (i!=j) val -= v;
+             val += 2.0*v;
+             if (i==j) val -= v;
         }
    }
    pot_->zero();
