@@ -15,6 +15,8 @@
 #include "psi4/libthce/thce.h"
 #include "psi4/libcubeprop/csg.h"
 
+#include "../libutil/potential.h"
+
 namespace oepdev{
 
 using namespace psi;
@@ -25,11 +27,13 @@ using SharedTensor       = std::shared_ptr<Tensor>;
 using SharedMatrix       = std::shared_ptr<Matrix>;
 using SharedVector       = std::shared_ptr<Vector>;
 
+//class OEPotential3D<OEPotential>;
+
 /* \brief Generalized One-Electron Potential: Abstract base.
  * 
  *  Contains OEP's in matrix and 3D forms.
  */
-class OEPotential {
+class OEPotential : public std::enable_shared_from_this<OEPotential> {
   private:
     /// Initialize defaults
     void common_init();
@@ -111,7 +115,7 @@ class OEPotential {
     //@}
     //@{ Compute 3D potential
     /** Write potential to a cube file */
-    virtual void compute_3D(const std::string& oepType, const std::string& fileName) = 0;
+    virtual void write_cube(const std::string& oepType, const std::string& fileName);
     /** Compute value of potential in point x, y, z and save at v */
     virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) = 0;
     //@}
@@ -131,6 +135,8 @@ class OEPotential {
     std::string name() const { return name_; }
     /// Retrieve matrix potential
     SharedMatrix matrix(const std::string& oepType) const { return oepMatrices_.at(oepType); }
+    /// Retrieve wavefunction object
+    SharedWavefunction wfn() const {return wfn_;}
 
 
     // <--- Mutators ---> //
@@ -162,7 +168,7 @@ class ElectrostaticEnergyOEPotential : public OEPotential
     virtual ~ElectrostaticEnergyOEPotential();
 
     virtual void compute(const std::string& oepType);
-    virtual void compute_3D(const std::string& oepType, const std::string& fileName);
+    //virtual void compute_3D(const std::string& oepType, const std::string& fileName);
     virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v);
     virtual void print_header() const;
 
@@ -185,7 +191,7 @@ class RepulsionEnergyOEPotential : public OEPotential
     virtual ~RepulsionEnergyOEPotential();
 
     virtual void compute(const std::string& oepType);
-    virtual void compute_3D(const std::string& oepType, const std::string& fileName);
+    //virtual void compute_3D(const std::string& oepType, const std::string& fileName);
     virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v);
     virtual void print_header() const;
 
@@ -209,7 +215,7 @@ class EETCouplingOEPotential : public OEPotential
     virtual ~EETCouplingOEPotential();
 
     virtual void compute(const std::string& oepType);
-    virtual void compute_3D(const std::string& oepType, const std::string& fileName);
+    //virtual void compute_3D(const std::string& oepType, const std::string& fileName);
     virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v);
     virtual void print_header() const;
 

@@ -19,7 +19,8 @@
 #include "psi4/libmints/wavefunction.h"
 #include "psi4/libmints/integral.h"
 #include "psi4/libcubeprop/csg.h"
-#include "../liboep/oep.h"
+#include "psi4/liboptions/liboptions.h"
+//#include "../liboep/oep.h"
 #include "../libpsi/potential.h"
 
 #ifndef _USE_MATH_DEFINES
@@ -117,7 +118,7 @@ class RandomPoints3DIterator : public Points3DIterator
     double radius_;
     double r_, phi_, theta_, x_, y_, z_;
 
-    SharedMatrix excludeSpheres_;
+    psi::SharedMatrix excludeSpheres_;
     std::map<std::string, double> vdwRadius_;
 
     std::default_random_engine randomNumberGenerator_;
@@ -190,7 +191,9 @@ class CubeDistribution3D : public Distribution3D, public psi::CubicScalarGrid
 };
 
 
-// 3D Potential!
+/** \brief 3-dimensional scalar potential manifold: Abstract base.
+ *
+ */
 class Potential3D 
 {
   public:
@@ -252,212 +255,99 @@ class EPotential3D : public Potential3D
 };
 
 
+/** \brief Class template for OEP scalar fields.
+ *
+ *  @tparam T the compatible class (e.g. OEPotential)
+ */
+template<class T>
+class OEPotential3D : public Potential3D
+{
+  public:
+    // <--- Constructors and Destructor ---> //
 
-//--------------------------------------------------------------------------
-//namespace oepdev{
-//
-//using namespace psi;
-//using namespace std;
-//
-//
-//using SharedWavefunction       = std::shared_ptr<Wavefunction>;
-//using SharedMatrix             = std::shared_ptr<Matrix>;
-//using SharedOEPotential        = std::shared_ptr<OEPotential>;
-//
-//// Points3DIterator
-//class Points3DIterator
-//{
-//  public:
-//    Points3DIterator(const int& np);
-//    virtual ~Points3DIterator() {};
-//
-//    static shared_ptr<Points3DIterator> build(const int& nx, const int& ny, const int& nz,
-//                                             const double& dx, const double& dy, const double& dz,
-//                                             const double& ox = 0.0, const double& oy = 0.0, const double& oz = 0.0);
-//    static shared_ptr<Points3DIterator> build(SharedMatrix points);
-//
-//    virtual double x() const {return current_.x;}
-//    virtual double y() const {return current_.y;}
-//    virtual double z() const {return current_.z;}
-//    virtual int index() const {return current_.index;}
-//
-//    virtual bool is_done() {return done_;}
-//
-//    virtual void first() = 0;
-//    virtual void next() = 0;
-//
-//  protected:
-//    struct Point {
-//       double x, y, z;
-//       int index;
-//    };
-//    Point current_;
-//    const int np_;
-//    bool done_;
-//    int ii_, jj_, kk_, index_;
-//};
-//
-//Points3DIterator::Points3DIterator(const int& np)
-// : np_(np), done_(false), 
-//   index_(0), ii_(0), jj_(0), kk_(0)
-//{ 
-//    current_.index = 0;
-//}
-//
-//
-//class CubePoints3DIterator : public Points3DIterator
-//{
-//  public:
-//    CubePoints3DIterator(const int& nx, const int& ny, const int& nz,
-//                         const double& dx, const double& dy, const double& dz,
-//                         const double& ox, const double& oy, const double& oz);
-//
-//    virtual void first();
-//    virtual void next();                        
-//  protected:
-//    const int nx_, ny_, nz_;
-//    const double dx_, dy_, dz_;
-//    const double ox_, oy_, oz_;
-//  private:
-//    const int ix_max__, iy_max__, iz_max__;
-//};
-//
-//
-//CubePoints3DIterator::CubePoints3DIterator(
-//                        const int& nx, const int& ny, const int& nz,
-//                        const double& dx, const double& dy, const double& dz,
-//                        const double& ox, const double& oy, const double& oz)
-// : Points3DIterator(nx*ny*nz), nx_(nx), ny_(ny), nz_(nz),
-//                               dx_(dx), dy_(dy), dz_(dz),
-//                               ox_(ox), oy_(oy), oz_(oz),
-//                               ix_max__(nx-1), iy_max__(ny-1), iz_max__(nz-1)
-//{
-//}
-//
-//void CubePoints3DIterator::first() 
-//{
-//  current_.x = ox_;
-//  current_.y = oy_;
-//  current_.z = oz_;
-//}
-//void CubePoints3DIterator::next() 
-//{
-//  ++kk_; ++index_;
-//  if(kk_ > iz_max__) {
-//     kk_ = 0;
-//     ++jj_;
-//     if(jj_ > iy_max__) {
-//        jj_ = 0;
-//        ++ii_;
-//        if(ii_ > ix_max__) {
-//           done_ = true;
-//        }
-//     }
-//  }
-//  current_.x = ox_ + dx_ * (double)ii_;
-//  current_.y = oy_ + dy_ * (double)jj_;
-//  current_.z = oz_ + dz_ * (double)kk_;
-//  current_.index = index_;
-//}
-//
-//class RandomPoints3DIterator : public Points3DIterator
-//{
-//  public:
-//    RandomPoints3DIterator(const int& np);
-//
-//    virtual void first();
-//    virtual void next();                        
-//  protected:
-//  private:
-//};
-//
-//
-//RandomPoints3DIterator::RandomPoints3DIterator(const int& np)
-// : Points3DIterator(np)
-//{
-//}
-//
-//void RandomPoints3DIterator::first() 
-//{
-//  current_.x = 0.0;
-//  current_.y = 0.0;
-//  current_.z = 0.0;
-//}
-//void RandomPoints3DIterator::next() 
-//{
-//  //current_.x = ox_ + dx_ * (double)ii_;
-//  //current_.y = oy_ + dy_ * (double)jj_;
-//  //current_.z = oz_ + dz_ * (double)kk_;
-//  //current_.index = index_;
-//}
-//
-//
-//
-///** \brief 3-dimensional scalar potential manifold: Abstract base.
-// *
-// */
-//class Potential3D
-//{
-//  public:
-//   /**
-//    * The distribution of points in space.
-//    *
-//    * Random = randomized uniform distribution of points excluding vdW spheres
-//    * Cube   = distribution in a form of a cube grid
-//    */
-//    enum Distribution {Random, Cube};
-//
-//    Potential3D(SharedMatrix pot);
-//    Potential3D(SharedWavefunction wfn, Distribution distribution,
-//                const double& padx, const double& pady, const double& padz);
-//    Potential3D(SharedOEPotential oep, const std::string& oepType, Distribution distribution,
-//                const double& padx, const double& pady, const double& padz);
-//
-//    /// Build RandomBare potential
-//    static std::shared_ptr<Potential3D> build(SharedMatrix pot);
-//    static std::shared_ptr<Potential3D> build(const std::string& potType, SharedWavefunction wfn, 
-//                                              const double& padx, 
-//                                              const double& pady,
-//                                              const double& padz);
-//    static std::shared_ptr<Potential3D> build(SharedOEPotential oep, const std::string& oepType, 
-//                                              Distribution d = Random);
-//
-//    virtual ~Potential3D();
-//
-//    virtual SharedMatrix get(void) const {return pot_;}
-//
-//    virtual void compute() = 0;
-//
-//  protected:
-//    SharedMatrix pot_;
-//  private:
-//    void common_init();
-//};
-//
+    /** \brief Construct random spherical collection of scalar field of type T.
+     *
+     *  The points are drawn according to uniform distrinution in 3D space.
+     *  @param np         - number of points to draw
+     *  @param padding    - spherical padding distance (au)
+     *  @param oep        - OEP object of type T
+     *  @param oepType    - type of OEP
+     */
+    OEPotential3D(const int& np, const double& padding, std::shared_ptr<T> oep, const std::string& oepType);
+
+    /** \brief Construct ordered 3D collection of scalar field of type T.
+     *
+     *  The points are generated according to Gaussian cube file format.
+     *  @param nx         - number of points along x direction
+     *  @param ny         - number of points along y direction
+     *  @param nz         - number of points along z direction
+     *  @param px         - padding distance along p direction
+     *  @param py         - padding distance along p direction
+     *  @param pz         - padding distance along p direction
+     *  @param oep        - OEP object of type T
+     *  @param oepType    - type of OEP
+     *  @param options    - Psi4 options object
+     */
+    OEPotential3D(const int& nx, const int& ny, const int& nz, 
+                  const double& px, const double& py, const double& pz,
+                  std::shared_ptr<T> oep, const std::string& oepType, psi::Options& options);
+
+    /// Destructor
+    virtual ~OEPotential3D();
+    
+    virtual double compute_xyz(const double& x, const double& y, const double& z);
+    virtual void print() const;
+
+  protected:
+    std::shared_ptr<T> oep_;
+    std::string oepType_;
+    
+};
+
+template <class T>
+OEPotential3D<T>::OEPotential3D(const int& np, const double& padding, std::shared_ptr<T> oep, const std::string& oepType)
+ : Potential3D(np, padding, oep->wfn()->molecule()), oep_(oep), oepType_(oepType)
+{
+
+}
+
+template <class T>
+OEPotential3D<T>::OEPotential3D(const int& nx, const int& ny, const int& nz,
+                                const double& px, const double& py, const double& pz,
+                                std::shared_ptr<T> oep, const std::string& oepType, psi::Options& options)
+ : Potential3D(nx, ny, nz, px, py, pz, oep->wfn(), options), oep_(oep), oepType_(oepType)
+{
+
+}
+
+template <class T>
+OEPotential3D<T>::~OEPotential3D() 
+{
+
+}
+
+template <class T>
+void OEPotential3D<T>::print() const 
+{
+
+}
+
+template <class T>
+double OEPotential3D<T>::compute_xyz(const double& x, const double& y, const double& z)
+{
+   double val;
+   oep_->compute_3D(oepType_, x, y, z, val);
+   return val;
+}
+
+
+
+
+
 //class BarePotential3D : public Potential3D
 //{
 //  public:
 //    BarePotential3D(SharedMatrix pot);
-//    virtual void compute();
-//  protected:
-//  private:
-//    void common_init();
-//};
-//
-//class ElectrostaticPotential3D : public Potential3D
-//{
-//  public:
-//    ElectrostaticPotential3D(SharedWavefunction wfn);
-//    virtual void compute();
-//  protected:
-//  private:
-//    void common_init();
-//};
-//
-//class OEPotential3D : public Potential3D
-//{
-//  public:
-//    OEPotential3D(SharedOEPotential oep, const std::string& oepType);
 //    virtual void compute();
 //  protected:
 //  private:

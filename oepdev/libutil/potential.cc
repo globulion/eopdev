@@ -439,6 +439,8 @@ double EPotential3D::compute_xyz(const double& x, const double& y, const double&
    return val;
 }
 
+
+
 //
 // Factory methods
 // 
