@@ -363,12 +363,13 @@ Potential3D::Potential3D(const int& nx, const int& ny, const int& nz,
     fact_(std::make_shared<psi::IntegralFactory>(wfn->basisset(), wfn->basisset())),
     pot_(std::make_shared<psi::Matrix>("POT", wfn->basisset()->nbf(), wfn->basisset()->nbf()))
 {
-    
+    potInt_ = std::make_shared<PotentialInt>(fact_->spherical_transform(), primary_, primary_, 0);
 }
 
 void Potential3D::write_cube_file(const std::string& name)
 {
    if (distribution()->get_type() == Distribution3D::Cube) {
+       compute();
        std::shared_ptr<CubeDistribution3D> distr = std::dynamic_pointer_cast<CubeDistribution3D>(distribution());
        distr->write_cube_file(data(), name);
    }
@@ -425,8 +426,9 @@ double EPotential3D::compute_xyz(const double& x, const double& y, const double&
 
    // ===> Electronic contribution <=== //
    double v;
-   std::unique_ptr<psi::OneBodyAOInt> ints( new PotentialInt(fact_->spherical_transform(), primary_, primary_, x, y, z));
-   ints->compute(pot_);
+   potInt_->set_charge_field(x, y, z);
+   oneInt_ = potInt_;
+   oneInt_->compute(pot_);
    for (int i=0; i<nbf_; ++i) {
         for (int j=0; j<=i; ++j) {
              v= (wfn_->Da()->get(i,j) + wfn_->Db()->get(i,j)) * pot_->get(i,j);

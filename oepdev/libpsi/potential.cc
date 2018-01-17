@@ -31,6 +31,14 @@ namespace oepdev{
 
 PotentialInt::PotentialInt(std::vector<psi::SphericalTransform>& st, 
                            std::shared_ptr<psi::BasisSet> bs1, std::shared_ptr<psi::BasisSet> bs2, 
+                           int deriv)
+ : psi::PotentialInt(st, bs1, bs2, deriv)
+{
+
+}
+
+PotentialInt::PotentialInt(std::vector<psi::SphericalTransform>& st, 
+                           std::shared_ptr<psi::BasisSet> bs1, std::shared_ptr<psi::BasisSet> bs2, 
                            std::shared_ptr<psi::Matrix> Qxyz, int deriv)
  : psi::PotentialInt(st, bs1, bs2, deriv)
 {
@@ -44,6 +52,16 @@ PotentialInt::PotentialInt(std::vector<psi::SphericalTransform>& st,
  : psi::PotentialInt(st, bs1, bs2, deriv) 
 {
     // Setup the initial field of partial charges
+    std::shared_ptr<psi::Matrix> Qxyz = std::make_shared<psi::Matrix>("Probe charge (q,x,y,z)", 1, 4);
+    Qxyz->set(0, 0, q);
+    Qxyz->set(0, 1, x);
+    Qxyz->set(0, 2, y);
+    Qxyz->set(0, 3, z);
+    Zxyz_ = psi::SharedMatrix(new psi::Matrix(Qxyz));
+}
+
+void PotentialInt::set_charge_field(const double& x, const double&y, const double&z, const double& q)
+{
     std::shared_ptr<psi::Matrix> Qxyz = std::make_shared<psi::Matrix>("Probe charge (q,x,y,z)", 1, 4);
     Qxyz->set(0, 0, q);
     Qxyz->set(0, 1, x);

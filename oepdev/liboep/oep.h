@@ -34,9 +34,6 @@ using SharedVector       = std::shared_ptr<Vector>;
  *  Contains OEP's in matrix and 3D forms.
  */
 class OEPotential : public std::enable_shared_from_this<OEPotential> {
-  private:
-    /// Initialize defaults
-    void common_init();
 
   protected:
     /// Psi4 options
@@ -147,6 +144,10 @@ class OEPotential : public std::enable_shared_from_this<OEPotential> {
     virtual void print_header() const = 0;
 
 
+  private:
+    /// Initialize defaults
+    void common_init();
+
 };
 
 
@@ -157,21 +158,20 @@ class OEPotential : public std::enable_shared_from_this<OEPotential> {
  */
 class ElectrostaticEnergyOEPotential : public OEPotential 
 {
-  private:
-    /// Set defaults
-    void common_init();
-  protected:
   public:
     /// Only ESP-based potential is worth implementing
     ElectrostaticEnergyOEPotential(SharedWavefunction wfn, Options& options);
 
     virtual ~ElectrostaticEnergyOEPotential();
 
-    virtual void compute(const std::string& oepType);
-    //virtual void compute_3D(const std::string& oepType, const std::string& fileName);
-    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v);
-    virtual void print_header() const;
+    virtual void compute(const std::string& oepType) override;
+    //virtual void write_cube(const std::string& oepType, const std::string& fileName) override;
+    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) override;
+    virtual void print_header() const override;
 
+  private:
+    /// Set defaults
+    void common_init();
 };
 
 /* \brief Generalized One-Electron Potential for Pauli repulsion energy calculations.
@@ -180,21 +180,20 @@ class ElectrostaticEnergyOEPotential : public OEPotential
  */
 class RepulsionEnergyOEPotential : public OEPotential 
 {
-  private:
-    /// Set defaults
-    void common_init();
-  protected:
   public:
     RepulsionEnergyOEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, Options& options);
     RepulsionEnergyOEPotential(SharedWavefunction wfn, Options& options);
 
     virtual ~RepulsionEnergyOEPotential();
 
-    virtual void compute(const std::string& oepType);
-    //virtual void compute_3D(const std::string& oepType, const std::string& fileName);
-    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v);
-    virtual void print_header() const;
+    virtual void compute(const std::string& oepType) override;
+    //virtual void write_cube(const std::string& oepType, const std::string& fileName) override;
+    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) override;
+    virtual void print_header() const override;
 
+  private:
+    /// Set defaults
+    void common_init();
 };
 
 /* \brief Generalized One-Electron Potential for EET coupling calculations.
@@ -204,21 +203,20 @@ class RepulsionEnergyOEPotential : public OEPotential
  */
 class EETCouplingOEPotential : public OEPotential 
 {
-  private:
-    /// Set defaults
-    void common_init();
-  protected:
   public:
     EETCouplingOEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, Options& options);
     EETCouplingOEPotential(SharedWavefunction wfn, Options& options);
 
     virtual ~EETCouplingOEPotential();
 
-    virtual void compute(const std::string& oepType);
-    //virtual void compute_3D(const std::string& oepType, const std::string& fileName);
-    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v);
-    virtual void print_header() const;
+    virtual void compute(const std::string& oepType) override;
+    //virtual void write_cube(const std::string& oepType, const std::string& fileName) override;
+    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) override;
+    virtual void print_header() const override;
 
+  private:
+    /// Set defaults
+    void common_init();
 };
 
 

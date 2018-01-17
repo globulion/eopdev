@@ -60,7 +60,7 @@ void OEPotential::common_init(void)
 
 void OEPotential::compute(const std::string& oepType) {}
 void OEPotential::compute(void) { for ( const std::string& type : oepTypes_ ) this->compute(type); }
-void OEPotential::write_cube(const std::string& oepType, const std::string& fileName)// {}
+void OEPotential::write_cube(const std::string& oepType, const std::string& fileName) 
 {
    OEPotential3D<OEPotential> cube(60, 60, 60, 10.0, 10.0, 10.0, shared_from_this(), oepType, options_);
    cube.write_cube_file(fileName);
@@ -89,10 +89,9 @@ void ElectrostaticEnergyOEPotential::common_init()
 }
 
 void ElectrostaticEnergyOEPotential::compute(const std::string& oepType) {}
-//void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, const std::string& fileName) {}
 void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) 
 {
-   v = x + y + z;
+   v = 4.0;
 }
 void ElectrostaticEnergyOEPotential::print_header(void) const {}
 
@@ -120,7 +119,6 @@ void RepulsionEnergyOEPotential::common_init()
 }
 
 void RepulsionEnergyOEPotential::compute(const std::string& oepType) {}
-//void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const std::string& fileName) {}
 void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
 void RepulsionEnergyOEPotential::print_header(void) const {}
 
@@ -151,7 +149,6 @@ void EETCouplingOEPotential::common_init()
 }
 
 void EETCouplingOEPotential::compute(const std::string& oepType) {}
-//void EETCouplingOEPotential::compute_3D(const std::string& oepType, const std::string& fileName) {}
 void EETCouplingOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
 void EETCouplingOEPotential::print_header(void) const {}
 

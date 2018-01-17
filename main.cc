@@ -238,15 +238,15 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, primary_1, options);
     SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
 
-    oep_cou->write_cube("V", "oep.cube");
+    //oep_cou->write_cube("V", "oep");
 
     // Compute potentials
     SharedPotential3D potential = oepdev::Potential3D::build("ELECTROSTATIC", 60, 60, 60, 10.0, 10.0, 10.0, scf_1, options);
     potential->print();
     //std::shared_ptr<oepdev::CubeDistribution3D> di = std::dynamic_pointer_cast<oepdev::CubeDistribution3D>(potential->distribution());
     //di->print_header();
-    //potential->compute();
-    //potential->write_cube_file("pot");
+    potential->compute();
+    potential->write_cube_file("pot");
 
     
     return ref_wfn;

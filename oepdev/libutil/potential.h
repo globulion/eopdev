@@ -20,7 +20,6 @@
 #include "psi4/libmints/integral.h"
 #include "psi4/libcubeprop/csg.h"
 #include "psi4/liboptions/liboptions.h"
-//#include "../liboep/oep.h"
 #include "../libpsi/potential.h"
 
 #ifndef _USE_MATH_DEFINES
@@ -232,7 +231,9 @@ class Potential3D
     psi::Matrix geom_;
     std::shared_ptr<psi::IntegralFactory> fact_;
     std::shared_ptr<psi::Matrix> pot_;
-    std::shared_ptr<psi::OneBodyAOInt> ints_;
+    std::shared_ptr<psi::Matrix> Qxyz_;
+    std::shared_ptr<psi::OneBodyAOInt> oneInt_;
+    std::shared_ptr<     PotentialInt> potInt_;
     std::shared_ptr<psi::BasisSet> primary_;
     int nbf_;
     
