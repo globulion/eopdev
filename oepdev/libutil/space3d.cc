@@ -1,4 +1,4 @@
-#include "potential.h"
+#include "space3d.h"
 
 
 namespace oepdev{
@@ -62,8 +62,8 @@ void CubePoints3DIterator::next()
   current_.index = index_;
 }
 
-RandomPoints3DIterator::RandomPoints3DIterator(const int& np, const double& cx, const double& cy, const double& cz,
-                                                              const double& radius)
+RandomPoints3DIterator::RandomPoints3DIterator(const int& np, const double& radius, 
+                                               const double& cx, const double& cy, const double& cz)
  : Points3DIterator(np), cx_(cx), cy_(cy), cz_(cz), radius_(radius),
    randomDistribution_(std::uniform_real_distribution<double>(-1.0, 1.0))
 {
@@ -172,60 +172,59 @@ void RandomPoints3DIterator::next()
    draw_random_point();
 }
 
-Distribution3D::Distribution3D(Distribution distribution, int& np) : type_(distribution), np_(np) 
+PointsCollection3D::PointsCollection3D(Collection collectionType, int& np) : collectionType_(collectionType), np_(np) 
 {
 
 }
-Distribution3D::Distribution3D(Distribution distribution, const int& np) : type_(distribution), np_(np) 
-{
-
-}
-
-
-Distribution3D::~Distribution3D()
+PointsCollection3D::PointsCollection3D(Collection collectionType, const int& np) : collectionType_(collectionType), np_(np) 
 {
 
 }
 
-void Distribution3D::print() const 
+
+PointsCollection3D::~PointsCollection3D()
 {
 
 }
 
-RandomDistribution3D::RandomDistribution3D(Distribution distribution, 
-                                           const int& npoints,                                   
-                                           const double& cx, const double& cy, const double& cz,
-                                           const double& radius)
- : Distribution3D(distribution, npoints)
+void PointsCollection3D::print() const 
 {
-  pointsIterator_ = make_shared<RandomPoints3DIterator>(npoints, cx, cy, cz, radius);
+
 }
 
-RandomDistribution3D::RandomDistribution3D(Distribution distribution, 
+RandomPointsCollection3D::RandomPointsCollection3D(Collection collectionType, 
+                                           const int& npoints, const double& radius,                   
+                                           const double& cx, const double& cy, const double& cz)
+ : PointsCollection3D(collectionType, npoints)
+{
+  pointsIterator_ = make_shared<RandomPoints3DIterator>(npoints, radius, cx, cy, cz);
+}
+
+RandomPointsCollection3D::RandomPointsCollection3D(Collection collectionType, 
                                            const int& npoints,                                   
                                            const double& padding,
                                            psi::SharedMolecule mol)
- : Distribution3D(distribution, npoints)
+ : PointsCollection3D(collectionType, npoints)
 {
   pointsIterator_ = make_shared<RandomPoints3DIterator>(npoints, padding, mol);
 }
 
 
-RandomDistribution3D::~RandomDistribution3D()
+RandomPointsCollection3D::~RandomPointsCollection3D()
 {
 
 }
 
-void RandomDistribution3D::print() const 
+void RandomPointsCollection3D::print() const 
 {
    cout << "I am a RANDOM distribution with np = " << np_ << "\n";
 }
 
-CubeDistribution3D::CubeDistribution3D(Distribution distribution, 
+CubePointsCollection3D::CubePointsCollection3D(Collection collectionType, 
                                        const int& nx, const int& ny, const int& nz,
                                        const double& px, const double& py, const double& pz, 
                                        psi::SharedBasisSet bs, psi::Options& options)
- : Distribution3D(distribution, nx*ny*nz), CubicScalarGrid(bs, options)
+ : PointsCollection3D(collectionType, nx*ny*nz), CubicScalarGrid(bs, options)
 {
   // Determine XYZmax and XYZmin
   double xmax = mol_->x(0);
@@ -265,21 +264,21 @@ CubeDistribution3D::CubeDistribution3D(Distribution distribution,
 
   // Initialize the Grid
   int    N[3] = {nx-1, ny-1, nz-1};
-  double D[3] = {dx, dy, dz};
-  double O[3] = {ox, oy, oz}; 
+  double D[3] = {dx  , dy  , dz  };
+  double O[3] = {ox  , oy  , oz  }; 
   build_grid(".", N, D, O);
 }
 
-CubeDistribution3D::~CubeDistribution3D()
+CubePointsCollection3D::~CubePointsCollection3D()
 {
 
 }
 
-void CubeDistribution3D::print() const {
+void CubePointsCollection3D::print() const {
   //psi::outfile->Printf(" ===> Cube 3D Collection <===\n");
 }
 
-void CubeDistribution3D::write_cube_file(psi::SharedMatrix v, const std::string& name){
+void CubePointsCollection3D::write_cube_file(psi::SharedMatrix v, const std::string& name){
     // => Drop the grid out <= //
 
     std::stringstream ss;
@@ -323,12 +322,10 @@ void CubeDistribution3D::write_cube_file(psi::SharedMatrix v, const std::string&
     fclose(fh);
 }
 
-void Potential3D::compute(){
-  shared_ptr<Points3DIterator> iter = distribution()->points_iterator();
+void ScalarField3D::compute(){
+  shared_ptr<Points3DIterator> iter = points_collection()->points_iterator();
   if (!iter) throw psi::PSIEXCEPTION("ERROR!!! No iterator in Potential3D object!\n");
   for (iter->first(); iter->is_done()==false; iter->next()) {
-       //double val = compute_xyz(iter->x(), iter->y(), iter->z());
-       //cout << "Point: " << iter->x() << "  " << iter->y() << "  " << iter->z() << "\n";
        data_->set(iter->index(), 0, iter->x());
        data_->set(iter->index(), 1, iter->y());
        data_->set(iter->index(), 2, iter->z());
@@ -336,25 +333,25 @@ void Potential3D::compute(){
   }
 }
 
-Potential3D::Potential3D(const int& np, const double& cx, const double& cy, const double& cz, const double& radius) 
- : distribution_(Distribution3D::build(np, cx, cy, cz, radius)), 
+ScalarField3D::ScalarField3D(const int& np, const double& radius, const double& cx, const double& cy, const double& cz) 
+ : pointsCollection_(PointsCollection3D::build(np, radius, cx, cy, cz)), 
    data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", np, 4))
 {
    
 }
 
-Potential3D::Potential3D(const int& np, const double& pad, psi::SharedMolecule mol)
- : distribution_(Distribution3D::build(np, pad, mol)),
+ScalarField3D::ScalarField3D(const int& np, const double& pad, psi::SharedMolecule mol)
+ : pointsCollection_(PointsCollection3D::build(np, pad, mol)),
    data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", np, 4)),
    geom_(psi::Matrix(mol->geometry()))
 {
 
 }
 
-Potential3D::Potential3D(const int& nx, const int& ny, const int& nz,
-                         const double& px, const double& py, const double& pz,
-                         std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options)
-  : distribution_(Distribution3D::build(nx, ny, nz, px, py, pz, wfn->basisset(), options)),
+ScalarField3D::ScalarField3D(const int& nx, const int& ny, const int& nz,
+                             const double& px, const double& py, const double& pz,
+                             std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options)
+  : pointsCollection_(PointsCollection3D::build(nx, ny, nz, px, py, pz, wfn->basisset(), options)),
     data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", nx*ny*nz, 4)),
     wfn_(wfn), 
     nbf_(wfn->basisset()->nbf()), 
@@ -366,54 +363,54 @@ Potential3D::Potential3D(const int& nx, const int& ny, const int& nz,
     potInt_ = std::make_shared<PotentialInt>(fact_->spherical_transform(), primary_, primary_, 0);
 }
 
-void Potential3D::write_cube_file(const std::string& name)
+void ScalarField3D::write_cube_file(const std::string& name)
 {
-   if (distribution()->get_type() == Distribution3D::Cube) {
+   if (points_collection()->get_type() == PointsCollection3D::Cube) {
        compute();
-       std::shared_ptr<CubeDistribution3D> distr = std::dynamic_pointer_cast<CubeDistribution3D>(distribution());
-       distr->write_cube_file(data(), name);
+       std::shared_ptr<CubePointsCollection3D> col = std::dynamic_pointer_cast<CubePointsCollection3D>(points_collection());
+       col->write_cube_file(data(), name);
    }
 }
 
 
-Potential3D::~Potential3D()
+ScalarField3D::~ScalarField3D()
 {
 
 }
 
-EPotential3D::EPotential3D(const int& np, const double& cx, const double& cy, const double& cz, const double& radius) 
- : Potential3D(np, cx, cy, cz, radius)
+ElectrostaticPotential3D::ElectrostaticPotential3D(const int& np, const double& radius, const double& cx, const double& cy, const double& cz) 
+ : ScalarField3D(np, radius, cx, cy, cz)
 {
 
 }
 
-EPotential3D::EPotential3D(const int& npoints, const double& padding, psi::SharedMolecule molecule) 
- : Potential3D(npoints, padding, molecule)
+ElectrostaticPotential3D::ElectrostaticPotential3D(const int& npoints, const double& padding, psi::SharedMolecule molecule) 
+ : ScalarField3D(npoints, padding, molecule)
 {
 
 }
 
 
-EPotential3D::EPotential3D(const int& nx, const int& ny, const int& nz,
-                           const double& px, const double& py, const double& pz,
-                           psi::SharedWavefunction wfn, psi::Options& options)
- : Potential3D(nx, ny, nz, px, py, pz, wfn, options)
+ElectrostaticPotential3D::ElectrostaticPotential3D(const int& nx, const int& ny, const int& nz,
+                                                   const double& px, const double& py, const double& pz,
+                                                   psi::SharedWavefunction wfn, psi::Options& options)
+ : ScalarField3D(nx, ny, nz, px, py, pz, wfn, options)
 { 
 
 }
 
-EPotential3D::~EPotential3D()
+ElectrostaticPotential3D::~ElectrostaticPotential3D()
 {
 
 }
 
-void EPotential3D::print() const 
+void ElectrostaticPotential3D::print() const 
 {
    cout << " I am Electrostatic potential:\n";
-   distribution_->print();
+   pointsCollection_->print();
 }
 
-double EPotential3D::compute_xyz(const double& x, const double& y, const double& z)
+double ElectrostaticPotential3D::compute_xyz(const double& x, const double& y, const double& z)
 {
    double val = 0.0;
    // ===> Nuclear contribution <=== //
@@ -470,61 +467,62 @@ shared_ptr<Points3DIterator> Points3DIterator::build(const int& np, const double
 }
 
 
-shared_ptr<Distribution3D> Distribution3D::build(const int& npoints, 
-           const double& cx, const double& cy, const double& cz, const double& radius)
+shared_ptr<PointsCollection3D> PointsCollection3D::build(const int& npoints, const double& radius,
+           const double& cx, const double& cy, const double& cz)
 {
-  shared_ptr<Distribution3D> distribution = make_shared<RandomDistribution3D>(Distribution3D::Random,npoints,cx,cy,cz,radius);
-  return distribution;
+  shared_ptr<PointsCollection3D> pointsCollection = 
+              make_shared<RandomPointsCollection3D>(PointsCollection3D::Random, npoints, radius, cx, cy, cz);
+  return pointsCollection;
 }
 
-shared_ptr<Distribution3D> Distribution3D::build(const int& npoints, const double& padding, psi::SharedMolecule mol)
+shared_ptr<PointsCollection3D> PointsCollection3D::build(const int& npoints, const double& padding, psi::SharedMolecule mol)
 {
-  shared_ptr<Distribution3D> distribution = make_shared<RandomDistribution3D>(Distribution3D::Random, npoints, padding, mol);
-  return distribution;
+  shared_ptr<PointsCollection3D> pointsCollection = make_shared<RandomPointsCollection3D>(PointsCollection3D::Random, npoints, padding, mol);
+  return pointsCollection;
 }
 
 
-shared_ptr<Distribution3D> Distribution3D::build(const int& nx, const int& ny, const int& nz,
-                                                 const double& px, const double& py, const double& pz,
-                                                 psi::SharedBasisSet bs, psi::Options& options){
-  shared_ptr<Distribution3D> distribution = make_shared<CubeDistribution3D>(Distribution3D::Cube, nx, ny, nz, px, py, pz, bs, options);
-  return distribution;
+shared_ptr<PointsCollection3D> PointsCollection3D::build(const int& nx, const int& ny, const int& nz,
+                                                         const double& px, const double& py, const double& pz,
+                                                         psi::SharedBasisSet bs, psi::Options& options){
+  shared_ptr<PointsCollection3D> pointsCollection = make_shared<CubePointsCollection3D>(PointsCollection3D::Cube, nx, ny, nz, px, py, pz, bs, options);
+  return pointsCollection;
 }
 
 // Build Random without molecule (no vdW radii)
-shared_ptr<Potential3D> Potential3D::build(const std::string& type, 
-                                           const int& np,
-                                           const double& cx, const double& cy, const double& cz,
-                                           const double& radius)
+shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
+                                               const int& np,
+                                               const double& radius,
+                                               const double& cx, const double& cy, const double& cz)
 {
-   shared_ptr<Potential3D> potential;
-   if          (type == "ELECTROSTATIC") potential = make_shared<EPotential3D>(np, cx, cy, cz, radius);
-   else cout << " ERROR! No such potential type <" << type << "> !\n";
-   return potential;
+   shared_ptr<ScalarField3D> field;
+   if          (type == "ELECTROSTATIC") field = make_shared<ElectrostaticPotential3D>(np, radius, cx, cy, cz);
+   else throw psi::PSIEXCEPTION(" ERROR! Incorrect scalar field type requested!\n");
+   return field;
 }
 
 // Build Random with molecule (vdW radii include)
-shared_ptr<Potential3D> Potential3D::build(const std::string& type, 
-                                           const int& np,
-                                           const double& padding,
-                                           psi::SharedMolecule mol)
+shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
+                                               const int& np,
+                                               const double& padding,
+                                               psi::SharedMolecule mol)
 {
-   shared_ptr<Potential3D> potential;
-   if          (type == "ELECTROSTATIC") potential = make_shared<EPotential3D>(np, padding, mol);
-   else cout << " ERROR! No such potential type <" << type << "> !\n";
-   return potential;
+   shared_ptr<ScalarField3D> field;
+   if          (type == "ELECTROSTATIC") field = make_shared<ElectrostaticPotential3D>(np, padding, mol);
+   else throw psi::PSIEXCEPTION(" ERROR! Incorrect scalar field type requested!\n");
+   return field;
 }
 
 // Build CUBE collection with wavefunction
-shared_ptr<Potential3D> Potential3D::build(const std::string& type, 
-                                           const int& nx, const int& ny, const int& nz,
-                                           const double& px, const double& py, const double& pz,
-                                           psi::SharedWavefunction wfn, psi::Options& options)
+shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
+                                               const int& nx, const int& ny, const int& nz,
+                                               const double& px, const double& py, const double& pz,
+                                               psi::SharedWavefunction wfn, psi::Options& options)
 {
-   shared_ptr<Potential3D> potential;
-   if          (type == "ELECTROSTATIC") potential = make_shared<EPotential3D>(nx, ny, nz, px, py, pz, wfn, options);
-   else cout << " ERROR! No such potential type <" << type << "> !\n";
-   return potential;
+   shared_ptr<ScalarField3D> field;
+   if          (type == "ELECTROSTATIC") field = make_shared<ElectrostaticPotential3D>(nx, ny, nz, px, py, pz, wfn, options);
+   else throw psi::PSIEXCEPTION(" ERROR! Incorrect scalar field type requested!\n");
+   return field;
 }
 
 

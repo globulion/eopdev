@@ -15,7 +15,7 @@
 #include "psi4/libthce/thce.h"
 #include "psi4/libcubeprop/csg.h"
 
-#include "../libutil/potential.h"
+#include "../libutil/space3d.h"
 
 namespace oepdev{
 

@@ -58,9 +58,9 @@
 #include "oepdev/libutil/cphf.h"
 #include "oepdev/libutil/wavefunction_union.h"
 #include "oepdev/libutil/integrals_iter.h"
+#include "oepdev/libutil/space3d.h"
 #include "oepdev/liboep/oep.h"
 #include "oepdev/libpsi/potential.h"
-#include "oepdev/libutil/potential.h"
 
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libtrans/integraltransform.h"
@@ -85,7 +85,7 @@ using SharedMOSpaceVector      = std::vector<std::shared_ptr<MOSpace>>;
 using intVector                = std::vector<int>;
 using SharedLocalizer          = std::shared_ptr<Localizer>;
 using SharedOEPotential        = std::shared_ptr<oepdev::OEPotential>;
-using SharedPotential3D        = std::shared_ptr<oepdev::Potential3D>;
+using SharedField3D            = std::shared_ptr<oepdev::ScalarField3D>;
 
 namespace psi{ 
 
@@ -241,7 +241,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     //oep_cou->write_cube("V", "oep");
 
     // Compute potentials
-    SharedPotential3D potential = oepdev::Potential3D::build("ELECTROSTATIC", 60, 60, 60, 10.0, 10.0, 10.0, scf_1, options);
+    SharedField3D potential = oepdev::ScalarField3D::build("ELECTROSTATIC", 60, 60, 60, 10.0, 10.0, 10.0, scf_1, options);
     potential->print();
     //std::shared_ptr<oepdev::CubeDistribution3D> di = std::dynamic_pointer_cast<oepdev::CubeDistribution3D>(potential->distribution());
     //di->print_header();
