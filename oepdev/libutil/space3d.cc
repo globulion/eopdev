@@ -170,6 +170,7 @@ void RandomPoints3DIterator::next()
    ++index_;
    if (index_ == np_) done_ = true;
    draw_random_point();
+   current_.index = index_;
 }
 
 PointsCollection3D::PointsCollection3D(Collection collectionType, int& np) : collectionType_(collectionType), np_(np) 
@@ -331,21 +332,30 @@ void ScalarField3D::compute(){
        data_->set(iter->index(), 2, iter->z());
        data_->set(iter->index(), 3, compute_xyz(iter->x(), iter->y(), iter->z()));
   }
+  isComputed_ = true;
 }
 
 ScalarField3D::ScalarField3D(const int& np, const double& radius, const double& cx, const double& cy, const double& cz) 
  : pointsCollection_(PointsCollection3D::build(np, radius, cx, cy, cz)), 
-   data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", np, 4))
+   data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", np, 4)),
+   isComputed_(false)
 {
    
 }
 
-ScalarField3D::ScalarField3D(const int& np, const double& pad, psi::SharedMolecule mol)
- : pointsCollection_(PointsCollection3D::build(np, pad, mol)),
+ScalarField3D::ScalarField3D(const int& np, const double& pad, psi::SharedWavefunction wfn, psi::Options& opt)
+ : pointsCollection_(PointsCollection3D::build(np, pad, wfn->molecule())),
    data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", np, 4)),
-   geom_(psi::Matrix(mol->geometry()))
+   geom_(psi::Matrix(wfn->molecule()->geometry())), 
+   wfn_(wfn)
+   //nbf_(wfn->basisset()->nbf()),
+   //primary_(wfn_->basisset()),
+   //fact_(std::make_shared<psi::IntegralFactory>(wfn->basisset(), wfn->basisset())),
+   //pot_(std::make_shared<psi::Matrix>("POT", wfn->basisset()->nbf(), wfn->basisset()->nbf())),
+   //isComputed_(false)
 {
-
+   //potInt_ = std::make_shared<PotentialInt>(fact_->spherical_transform(), primary_, primary_, 0);
+   common_init();
 }
 
 ScalarField3D::ScalarField3D(const int& nx, const int& ny, const int& nz,
@@ -353,14 +363,26 @@ ScalarField3D::ScalarField3D(const int& nx, const int& ny, const int& nz,
                              std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options)
   : pointsCollection_(PointsCollection3D::build(nx, ny, nz, px, py, pz, wfn->basisset(), options)),
     data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", nx*ny*nz, 4)),
-    wfn_(wfn), 
-    nbf_(wfn->basisset()->nbf()), 
     geom_(psi::Matrix(wfn->molecule()->geometry())),
-    primary_(wfn_->basisset()),
-    fact_(std::make_shared<psi::IntegralFactory>(wfn->basisset(), wfn->basisset())),
-    pot_(std::make_shared<psi::Matrix>("POT", wfn->basisset()->nbf(), wfn->basisset()->nbf()))
+    wfn_(wfn)
+    //nbf_(wfn->basisset()->nbf()), 
+    //primary_(wfn_->basisset()),
+    //fact_(std::make_shared<psi::IntegralFactory>(wfn->basisset(), wfn->basisset())),
+    //pot_(std::make_shared<psi::Matrix>("POT", wfn->basisset()->nbf(), wfn->basisset()->nbf())),
+    //isComputed_(false)
 {
-    potInt_ = std::make_shared<PotentialInt>(fact_->spherical_transform(), primary_, primary_, 0);
+    //potInt_ = std::make_shared<PotentialInt>(fact_->spherical_transform(), primary_, primary_, 0);
+    common_init();
+}
+
+void ScalarField3D::common_init()
+{
+  primary_= wfn_->basisset();
+  nbf_    = wfn_->basisset()->nbf();
+  fact_   = std::make_shared<psi::IntegralFactory>(primary_, primary_);
+  pot_    = std::make_shared<psi::Matrix>("POT", nbf_, nbf_);
+  potInt_ = std::make_shared<PotentialInt>(fact_->spherical_transform(), primary_, primary_, 0);
+  isComputed_ = false;
 }
 
 void ScalarField3D::write_cube_file(const std::string& name)
@@ -384,8 +406,8 @@ ElectrostaticPotential3D::ElectrostaticPotential3D(const int& np, const double& 
 
 }
 
-ElectrostaticPotential3D::ElectrostaticPotential3D(const int& npoints, const double& padding, psi::SharedMolecule molecule) 
- : ScalarField3D(npoints, padding, molecule)
+ElectrostaticPotential3D::ElectrostaticPotential3D(const int& npoints, const double& padding, psi::SharedWavefunction wfn, psi::Options& options) 
+ : ScalarField3D(npoints, padding, wfn, options)
 {
 
 }
@@ -444,83 +466,84 @@ double ElectrostaticPotential3D::compute_xyz(const double& x, const double& y, c
 // Factory methods
 // 
 
-shared_ptr<Points3DIterator> Points3DIterator::build(const int& nx, const int& ny, const int& nz,
+std::shared_ptr<Points3DIterator> Points3DIterator::build(const int& nx, const int& ny, const int& nz,
                                                      const double& dx, const double& dy, const double& dz,
                                                      const double& ox, const double& oy, const double& oz)
 {
-  shared_ptr<Points3DIterator> iterator = make_shared<CubePoints3DIterator>(nx, ny, nz, dx, dy, dz, ox, oy, oz);
+  std::shared_ptr<Points3DIterator> iterator = std::make_shared<CubePoints3DIterator>(nx, ny, nz, dx, dy, dz, ox, oy, oz);
   return iterator;
 }
 
-shared_ptr<Points3DIterator> Points3DIterator::build(const int& np, 
+std::shared_ptr<Points3DIterator> Points3DIterator::build(const int& np, 
                                                      const double& cx, const double& cy, const double& cz,
                                                      const double& radius)
 {
- shared_ptr<Points3DIterator> iterator = make_shared<RandomPoints3DIterator>(np, cx, cy, cz, radius);
+ std::shared_ptr<Points3DIterator> iterator = std::make_shared<RandomPoints3DIterator>(np, cx, cy, cz, radius);
  return iterator;
 }
 
 shared_ptr<Points3DIterator> Points3DIterator::build(const int& np, const double& pad, psi::SharedMolecule mol)
 {
-   shared_ptr<Points3DIterator> iterator = make_shared<RandomPoints3DIterator>(np, pad, mol);
+   std::shared_ptr<Points3DIterator> iterator = std::make_shared<RandomPoints3DIterator>(np, pad, mol);
    return iterator;
 }
 
 
-shared_ptr<PointsCollection3D> PointsCollection3D::build(const int& npoints, const double& radius,
+std::shared_ptr<PointsCollection3D> PointsCollection3D::build(const int& npoints, const double& radius,
            const double& cx, const double& cy, const double& cz)
 {
-  shared_ptr<PointsCollection3D> pointsCollection = 
-              make_shared<RandomPointsCollection3D>(PointsCollection3D::Random, npoints, radius, cx, cy, cz);
+  std::shared_ptr<PointsCollection3D> pointsCollection = 
+              std::make_shared<RandomPointsCollection3D>(PointsCollection3D::Random, npoints, radius, cx, cy, cz);
   return pointsCollection;
 }
 
-shared_ptr<PointsCollection3D> PointsCollection3D::build(const int& npoints, const double& padding, psi::SharedMolecule mol)
+std::shared_ptr<PointsCollection3D> PointsCollection3D::build(const int& npoints, const double& padding, psi::SharedMolecule mol)
 {
-  shared_ptr<PointsCollection3D> pointsCollection = make_shared<RandomPointsCollection3D>(PointsCollection3D::Random, npoints, padding, mol);
+  std::shared_ptr<PointsCollection3D> pointsCollection = std::make_shared<RandomPointsCollection3D>(PointsCollection3D::Random, npoints, padding, mol);
   return pointsCollection;
 }
 
 
-shared_ptr<PointsCollection3D> PointsCollection3D::build(const int& nx, const int& ny, const int& nz,
+std::shared_ptr<PointsCollection3D> PointsCollection3D::build(const int& nx, const int& ny, const int& nz,
                                                          const double& px, const double& py, const double& pz,
                                                          psi::SharedBasisSet bs, psi::Options& options){
-  shared_ptr<PointsCollection3D> pointsCollection = make_shared<CubePointsCollection3D>(PointsCollection3D::Cube, nx, ny, nz, px, py, pz, bs, options);
+  shared_ptr<PointsCollection3D> pointsCollection = std::make_shared<CubePointsCollection3D>(PointsCollection3D::Cube, nx, ny, nz, px, py, pz, bs, options);
   return pointsCollection;
 }
 
 // Build Random without molecule (no vdW radii)
-shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
+std::shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
                                                const int& np,
                                                const double& radius,
                                                const double& cx, const double& cy, const double& cz)
 {
-   shared_ptr<ScalarField3D> field;
-   if          (type == "ELECTROSTATIC") field = make_shared<ElectrostaticPotential3D>(np, radius, cx, cy, cz);
+   std::shared_ptr<ScalarField3D> field;
+   if          (type == "ELECTROSTATIC") field = std::make_shared<ElectrostaticPotential3D>(np, radius, cx, cy, cz);
    else throw psi::PSIEXCEPTION(" ERROR! Incorrect scalar field type requested!\n");
    return field;
 }
 
 // Build Random with molecule (vdW radii include)
-shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
+std::shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
                                                const int& np,
                                                const double& padding,
-                                               psi::SharedMolecule mol)
+                                               psi::SharedWavefunction wfn,
+                                               psi::Options& options)
 {
-   shared_ptr<ScalarField3D> field;
-   if          (type == "ELECTROSTATIC") field = make_shared<ElectrostaticPotential3D>(np, padding, mol);
+   std::shared_ptr<ScalarField3D> field;
+   if          (type == "ELECTROSTATIC") field = std::make_shared<ElectrostaticPotential3D>(np, padding, wfn, options);
    else throw psi::PSIEXCEPTION(" ERROR! Incorrect scalar field type requested!\n");
    return field;
 }
 
 // Build CUBE collection with wavefunction
-shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
+std::shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
                                                const int& nx, const int& ny, const int& nz,
                                                const double& px, const double& py, const double& pz,
                                                psi::SharedWavefunction wfn, psi::Options& options)
 {
-   shared_ptr<ScalarField3D> field;
-   if          (type == "ELECTROSTATIC") field = make_shared<ElectrostaticPotential3D>(nx, ny, nz, px, py, pz, wfn, options);
+   std::shared_ptr<ScalarField3D> field;
+   if          (type == "ELECTROSTATIC") field = std::make_shared<ElectrostaticPotential3D>(nx, ny, nz, px, py, pz, wfn, options);
    else throw psi::PSIEXCEPTION(" ERROR! Incorrect scalar field type requested!\n");
    return field;
 }

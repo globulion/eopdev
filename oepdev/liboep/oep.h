@@ -27,15 +27,16 @@ using SharedTensor       = std::shared_ptr<Tensor>;
 using SharedMatrix       = std::shared_ptr<Matrix>;
 using SharedVector       = std::shared_ptr<Vector>;
 
-//class OEPotential3D<OEPotential>;
 
 /* \brief Generalized One-Electron Potential: Abstract base.
  * 
- *  Contains OEP's in matrix and 3D forms.
+ *  Manages OEP's in matrix and 3D forms.
  */
-class OEPotential : public std::enable_shared_from_this<OEPotential> {
+class OEPotential : public std::enable_shared_from_this<OEPotential> 
+{
 
   protected:
+
     /// Psi4 options
     Options options_;
     /// Wavefunction
@@ -51,6 +52,15 @@ class OEPotential : public std::enable_shared_from_this<OEPotential> {
     std::vector<std::string> oepTypes_;
     /// OEP's matrix forms for each OEP type
     std::map<std::string, SharedMatrix> oepMatrices_;
+
+    /// Integral factory
+    std::shared_ptr<psi::IntegralFactory> intsFactory_;
+    /// Matrix of potential one-electron integrals
+    std::shared_ptr<psi::Matrix> potMat_;
+    /// One-electron integral shared pointer
+    std::shared_ptr<psi::OneBodyAOInt> OEInt_;
+    /// One-electron potential shared pointer
+    std::shared_ptr<     PotentialInt> potInt_;
 
   public:
 
@@ -145,6 +155,7 @@ class OEPotential : public std::enable_shared_from_this<OEPotential> {
 
 
   private:
+
     /// Initialize defaults
     void common_init();
 
@@ -165,7 +176,6 @@ class ElectrostaticEnergyOEPotential : public OEPotential
     virtual ~ElectrostaticEnergyOEPotential();
 
     virtual void compute(const std::string& oepType) override;
-    //virtual void write_cube(const std::string& oepType, const std::string& fileName) override;
     virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) override;
     virtual void print_header() const override;
 
@@ -187,7 +197,6 @@ class RepulsionEnergyOEPotential : public OEPotential
     virtual ~RepulsionEnergyOEPotential();
 
     virtual void compute(const std::string& oepType) override;
-    //virtual void write_cube(const std::string& oepType, const std::string& fileName) override;
     virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) override;
     virtual void print_header() const override;
 
@@ -210,7 +219,6 @@ class EETCouplingOEPotential : public OEPotential
     virtual ~EETCouplingOEPotential();
 
     virtual void compute(const std::string& oepType) override;
-    //virtual void write_cube(const std::string& oepType, const std::string& fileName) override;
     virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) override;
     virtual void print_header() const override;
 

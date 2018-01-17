@@ -336,8 +336,9 @@ class ScalarField3D
     
     // <--- Constructors and Destructor ---> //
 
+    // TODO!
     ScalarField3D(const int& np, const double& radius, const double& cx, const double& cy, const double& cz);
-    ScalarField3D(const int& np, const double& pad, psi::SharedMolecule mol);
+    ScalarField3D(const int& np, const double& pad, psi::SharedWavefunction wfn, psi::Options& options);
     ScalarField3D(const int& nx, const int& ny, const int& nz,
                   const double& px, const double& py, const double& pz,
                   std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options);
@@ -348,13 +349,14 @@ class ScalarField3D
 
     // <--- Factory Methods ---> //
 
+    // TODO!
     static shared_ptr<ScalarField3D> build(const std::string& type, const int& np, const double& radius,
                                            const double& cx, const double& cy, const double& cz);
     static shared_ptr<ScalarField3D> build(const std::string& type, const int& np,
-                                           const double& pad, psi::SharedMolecule mol);
+                                           const double& pad, psi::SharedWavefunction wfn, psi::Options& options);
     static shared_ptr<ScalarField3D> build(const std::string& type, const int& nx, const int& ny, const int& nz,
                                            const double& px, const double& py, const double& pz,
-                                           psi::SharedWavefunction bs, psi::Options& options);
+                                           psi::SharedWavefunction wfn, psi::Options& options);
 
 
     // <--- Accessors ---> //
@@ -370,6 +372,9 @@ class ScalarField3D
 
     /// Get the wavefunction
     virtual std::shared_ptr<psi::Wavefunction> wfn() const {return wfn_;}
+
+    /// Get the information if data is already computed or not
+    virtual bool is_computed() const {return isComputed_;}
 
 
     // <--- Computers ---> //
@@ -421,14 +426,23 @@ class ScalarField3D
 
     /// Number of basis functions
     int nbf_;
-    
-};
+
+    /// Has data already computed?
+    bool isComputed_;
+
+
+  private:
+
+    /// Initialize common defaults
+    void common_init(void);
+
+}; 
 
 class ElectrostaticPotential3D : public ScalarField3D
 {
   public:
     ElectrostaticPotential3D(const int& np, const double& radius, const double& cx, const double& cy, const double& cz);
-    ElectrostaticPotential3D(const int& np, const double& padding, psi::SharedMolecule mol);
+    ElectrostaticPotential3D(const int& np, const double& padding, psi::SharedWavefunction wfn, psi::Options& options);
     ElectrostaticPotential3D(const int& nx, const int& ny, const int& nz,
                              const double& px, const double& py, const double& pz,
                              psi::SharedWavefunction wfn, psi::Options& options);
@@ -459,6 +473,7 @@ class OEPotential3D : public ScalarField3D
      *  @param oep        - OEP object of type T
      *  @param oepType    - type of OEP
      */
+    //TODO!
     OEPotential3D(const int& np, const double& padding, std::shared_ptr<T> oep, const std::string& oepType);
 
     /** \brief Construct ordered 3D collection of scalar field of type T.
@@ -539,43 +554,6 @@ double OEPotential3D<T>::compute_xyz(const double& x, const double& y, const dou
 //  private:
 //    void common_init();
 //};
-//
-///** \brief Charges from Electrostatic Potential (ESP): abstract base of ESP method.
-// *
-// */
-////class ESP
-////{
-////  public:
-////    //@{ Use atoms as ESP centres
-////    ESP(const Wavefunction& wfn);
-////    ESP(const OEPotential& oep, const std::string& oepType);
-////
-////    static std::shared_ptr<ESP> build(const std::string& method, const Wavefunction& wfn);
-////    static std::shared_ptr<ESP> build(const std::string& method, const OEPotential& oep, const std::string& oepType);
-////    //@}
-////
-////    virtual ~ESP();
-////
-////    virtual void fit();
-////
-////    virtual void compute_potential() = 0;
-////    virtual void print() const = 0;
-////
-////  protected:
-////    SharedPotential3D potRef_;
-////    SharedPotential3D pot_;
-////    
-////  private:
-////    void common_init(void);
-////};
-//
-////class OEPotentialESP : public ESP
-////{
-////  public:
-////    OEPotentialESP(SharedOEPotential oep, const std::string& oepType);
-////  protected:
-////  private:
-////};
 
 } // EndNameSpace oepdev
 #endif //_oepdev_libutil_potential_h

@@ -54,8 +54,11 @@ OEPotential::~OEPotential() {}
 
 void OEPotential::common_init(void) 
 {
-   name_    = "default";
-   primary_ = wfn_->basisset();
+   name_        = "default";
+   primary_     = wfn_->basisset();
+   intsFactory_ = std::make_shared<psi::IntegralFactory>(primary_, primary_);
+   potMat_      = std::make_shared<psi::Matrix>("Potential Integrals", primary_->nbf(), primary_->nbf());
+   potInt_      = std::make_shared<PotentialInt>(intsFactory_->spherical_transform(), primary_, primary_, 0);
 }
 
 void OEPotential::compute(const std::string& oepType) {}
@@ -91,7 +94,36 @@ void ElectrostaticEnergyOEPotential::common_init()
 void ElectrostaticEnergyOEPotential::compute(const std::string& oepType) {}
 void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) 
 {
-   v = 4.0;
+  double val = 0.0;
+  if (oepType == "V" || oepType == "TOTAL") {
+      // ===> Nuclear contribution <=== //
+      for (int i=0; i<wfn_->molecule()->natom(); ++i) {
+           val+= (double)wfn_->molecule()->Z(i) /
+                     sqrt( pow(wfn_->molecule()->x(i)-x, 2.0) 
+                         + pow(wfn_->molecule()->y(i)-y, 2.0) 
+                         + pow(wfn_->molecule()->z(i)-z, 2.0) );
+      }
+
+      // ===> Electronic contribution <=== //
+      double v;
+      potInt_->set_charge_field(x, y, z);
+      OEInt_ = potInt_;
+      OEInt_->compute(potMat_);
+      for (int i=0; i<primary_->nbf(); ++i) {
+           for (int j=0; j<=i; ++j) {
+                v= (wfn_->Da()->get(i,j) + wfn_->Db()->get(i,j)) * potMat_->get(i,j);
+                val += 2.0*v;
+                if (i==j) val -= v;
+           }
+      }
+      potMat_->zero();
+
+   } else {
+      throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
+   }
+
+   // Assign final value
+   v = val;
 }
 void ElectrostaticEnergyOEPotential::print_header(void) const {}
 
