@@ -145,6 +145,11 @@ class Points3DIterator
 };
 
 
+/** \brief Iterator over a collection of points in 3D space. g09 Cube-like order.
+ *
+ *  __Note:__ Always create instances by using static factory method from Points3DIterator.
+ *            Do not use constructor of this class.
+ */
 class CubePoints3DIterator : public Points3DIterator
 {
   public:
@@ -166,6 +171,12 @@ class CubePoints3DIterator : public Points3DIterator
     const int ix_max__, iy_max__, iz_max__;
 };
 
+
+/** \brief Iterator over a collection of points in 3D space. Random collection.
+ *
+ *  __Note:__ Always create instances by using static factory method from Points3DIterator.
+ *            Do not use constructors of this class.
+ */
 class RandomPoints3DIterator : public Points3DIterator
 {
   public:
@@ -276,6 +287,7 @@ class PointsCollection3D
     /// Get the collection type
     virtual Collection get_type() const {return collectionType_;}
 
+    /// Print the information to Psi4 output file
     virtual void print() const = 0;
 
 
@@ -292,12 +304,18 @@ class PointsCollection3D
 };
 
 
+/** \brief Collection of random points in 3D space.
+  *
+  * __Note:__ Do not use constructors of this class explicitly. Instead,
+  * use static factory methods of the superclass to create instances.
+  */
 class RandomPointsCollection3D : public PointsCollection3D
 {
   public:
     RandomPointsCollection3D(Collection collectionType, const int& npoints, const double& radius,
-                         const double& cx, const double& cy, const double& cz);
+                                                        const double& cx, const double& cy, const double& cz);
     RandomPointsCollection3D(Collection collectionType, const int& npoints, const double& padding, psi::SharedMolecule mol);
+
     virtual ~RandomPointsCollection3D();
 
     virtual void print() const;
@@ -306,15 +324,20 @@ class RandomPointsCollection3D : public PointsCollection3D
 };
 
 
-// Cube Distribution
+/** \brief G09 cube-like ordered collection of points in 3D space.
+  *
+  * __Note:__ Do not use constructors of this class explicitly. Instead,
+  * use static factory methods of the superclass to create instances.
+  */
 class CubePointsCollection3D : public PointsCollection3D, public psi::CubicScalarGrid
 {
   public:
     CubePointsCollection3D(Collection collectionType, const int& nx, const int& ny, const int& nz,
-                                                  const double& px, const double& py, const double& pz,
-                                                  psi::SharedBasisSet bs, psi::Options& options);
+                                                      const double& px, const double& py, const double& pz,
+                                                      psi::SharedBasisSet bs, psi::Options& options);
 
     virtual ~CubePointsCollection3D();
+
     virtual void print() const;
 
     virtual void write_cube_file(psi::SharedMatrix v, const std::string& name);
@@ -324,12 +347,15 @@ class CubePointsCollection3D : public PointsCollection3D, public psi::CubicScala
 
 /** \brief Scalar field in 3D space. Abstract base.
  *
- *  Create various scalar fields with points distributed randomly or 
- *  as an ordered g09 cube-like collection.
- *  
- *  __Note:__ Always create instances by using static factory methods.
+ *  Create scalar field defined at points distributed randomly or as an ordered 
+ *  g09 cube-like collection. Currently implemented scalar fields are:
+ *
+ *   - Electrostatic potential     - computes electrostatic potential (requires wavefunction)
+ *   - Template of generic classes - compute custom scalar fields (requires generic object 
+ *                                   that is able to compute the field in 3D space)
+ *
+ *  __Note:__ Always create instances by using static factory methods `build`.
  */
-
 class ScalarField3D
 {
   public:
@@ -438,6 +464,10 @@ class ScalarField3D
 
 }; 
 
+/** \brief Electrostatic potential.
+ *
+ *
+ */
 class ElectrostaticPotential3D : public ScalarField3D
 {
   public:
@@ -456,7 +486,32 @@ class ElectrostaticPotential3D : public ScalarField3D
 
 /** \brief Class template for OEP scalar fields.
  *
- *  @tparam T the compatible class (e.g. OEPotential)
+ *  Used for special type of classes T that contain following public member functions:
+ *
+ *  \begincode{cpp}
+ *   class T : public std::enable_shared_from_this<T> {
+ * 
+ *     public:
+ *        void compute_3D(const std::string& descriptor, 
+ *                        const double& x, const double& y, const double& z,
+ *                        double& v);
+ *                                                                              
+ *        shared_ptr<psi::Wavefunction> wfn() const {return wfn_;}
+ * 
+ *     /// The rest of the declaration of T
+ *   };
+ *  \endcode
+ *
+ *  with the `descriptor` of a certain scalar field type,
+ *  `x`, `y`, `z` the points in 3D space in which the scalar field
+ *  has to be computed and stored at `v`. Instances of `T` should store shared
+ *  pointer to wavefunction object. List of classes `T` that are
+ *  compatible with this class template and are currently implemented in oepdev 
+ *  is given below:
+ *    - `oepdev::OEPotential` abstract base (do not use derived classes as `T`)
+ *
+ *  Template parameters:
+ *  @tparam T the compatible class (e.g. `oepdev::OEPotential`)
  */
 template<class T>
 class OEPotential3D : public ScalarField3D
@@ -500,7 +555,9 @@ class OEPotential3D : public ScalarField3D
     virtual void print() const;
 
   protected:
+    /// Shared pointer to the instance of class `T`
     std::shared_ptr<T> oep_;
+    /// Descriptor of the scalar field type stored in instance of `T`
     std::string oepType_;
     
 };
