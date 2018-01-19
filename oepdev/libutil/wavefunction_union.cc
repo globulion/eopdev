@@ -410,5 +410,20 @@ void WavefunctionUnion::print_header() {
     psi::outfile->Printf("\n");
 }
 
+double WavefunctionUnion::nuclear_repulsion_interaction_energy()
+{
+  double e_nuc_nuc = 0.0;
+  for (int x=0; x < l_molecule_[0]->natom(); ++x) {
+       for (int y=0; y < l_molecule_[1]->natom(); ++y) {
+            double rxy = sqrt(pow(l_molecule_[0]->x(x) - l_molecule_[1]->x(y), 2.0) +
+                              pow(l_molecule_[0]->y(x) - l_molecule_[1]->y(y), 2.0) +
+                              pow(l_molecule_[0]->z(x) - l_molecule_[1]->z(y), 2.0) );
+            e_nuc_nuc += (double)l_molecule_[0]->Z(x) *
+                         (double)l_molecule_[1]->Z(y) / rxy;
+       }
+  }
+  return e_nuc_nuc;
+}
+
 
 } // EndNameSpace oepdev

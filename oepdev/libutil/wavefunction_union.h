@@ -172,6 +172,9 @@ class WavefunctionUnion : public Wavefunction
     /// Compute Energy (now blank)
     virtual double compute_energy();
 
+    /// Compute Nuclear Repulsion Energy between unions
+    virtual double nuclear_repulsion_interaction_energy();
+
     /// Localize Molecular Orbitals
     void localize_orbitals();
 

@@ -46,6 +46,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/integrals_iter.cc
                        oepdev/libutil/space3d.cc
                        oepdev/libutil/esp.cc
+                       oepdev/libutil/solver.cc
                        oepdev/libpsi/potential.cc
                        oepdev/liboep/oep.cc   
                )
