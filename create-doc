@@ -1,0 +1,10 @@
+#!/bin/bash
+dir_latex_doc=./doc/doxygen/latex
+dir_base=$PWD
+doxygen Doxygen.config
+cp -v ./misc/latex/* $dir_latex_doc
+
+cd $dir_latex_doc
+make
+cd $dir_base
+
