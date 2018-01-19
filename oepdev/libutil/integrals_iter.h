@@ -16,7 +16,7 @@ using SharedBasisSet        = std::shared_ptr<BasisSet>;
 using SharedIntegralFactory = std::shared_ptr<IntegralFactory>;
 using SharedTwoBodyAOInt    = std::shared_ptr<TwoBodyAOInt>;
 
-/* \brief Loop over all possible ERI shells.
+/** \brief Loop over all possible ERI shells.
  *
  * Constructed by providing shared pointer to IntegralFactory object or
  * shared pointers to four basis set spaces.
@@ -85,7 +85,7 @@ class AllAOShellCombinationsIterator {
 
 };
 
-/* \brief Loop over all possible ERI within a particular shell.
+/** \brief Loop over all possible ERI within a particular shell.
  *
  * Constructed by providing a const reference or shared pointer 
  * to an AllAOShellCombinationsIterator object.

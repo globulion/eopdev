@@ -52,8 +52,8 @@ class Points3DIterator
     // <--- Constructor and Destructor ---> //
 
     /** \brief Plain constructor. Initializes the abstract features.
-      *  @param np   - number of points this iterator is constructed for
-      */
+     *   @param np   - number of points this iterator is constructed for
+     */
     Points3DIterator(const int& np);
 
     /// Destructor
@@ -62,44 +62,44 @@ class Points3DIterator
 
     // <--- Factory Methods ---> //
 
-    /** \brief G09 Cube collection iterator.
-      *
-      *  The points are generated according to Gaussian cube file format. 
-      *  @param nx         - number of points along x direction
-      *  @param ny         - number of points along y direction
-      *  @param nz         - number of points along z direction
-      *  @param dx         - spacing distance along x direction
-      *  @param dy         - spacing distance along y direction
-      *  @param dz         - spacing distance along y direction
-      *  @param ox         - coordinate x of cube origin 
-      *  @param oy         - coordinate y of cube origin               
-      *  @param oz         - coordinate z of cube origin               
-      */
+    /** \brief Build G09 Cube collection iterator.
+     *
+     *  The points are generated according to Gaussian cube file format. 
+     *  @param nx         - number of points along x direction
+     *  @param ny         - number of points along y direction
+     *  @param nz         - number of points along z direction
+     *  @param dx         - spacing distance along x direction
+     *  @param dy         - spacing distance along y direction
+     *  @param dz         - spacing distance along y direction
+     *  @param ox         - coordinate x of cube origin 
+     *  @param oy         - coordinate y of cube origin               
+     *  @param oz         - coordinate z of cube origin               
+     */
     static shared_ptr<Points3DIterator> build(const int& nx, const int& ny, const int& nz,
                                               const double& dx, const double& dy, const double& dz,
                                               const double& ox, const double& oy, const double& oz);
 
-    /** \brief Random collection iterator.
-      *
-      *  The points are drawn according to uniform distrinution in 3D space.
-      *  @param np         - number of points to draw
-      *  @param radius     - sphere radius inside which points are to be drawn
-      *  @param cx         - coordinate x of sphere's centre
-      *  @param cy         - coordinate y of sphere's centre
-      *  @param cz         - coordinate z of sphere's centre
-      */
+    /** \brief Build random collection iterator.
+     *
+     *  The points are drawn according to uniform distrinution in 3D space.
+     *  @param np         - number of points to draw
+     *  @param radius     - sphere radius inside which points are to be drawn
+     *  @param cx         - coordinate x of sphere's centre
+     *  @param cy         - coordinate y of sphere's centre
+     *  @param cz         - coordinate z of sphere's centre
+     */
     static shared_ptr<Points3DIterator> build(const int& np, const double& radius, 
                                               const double& cx, const double& cy, const double& cz);
 
-    /** \brief Random collection iterator.
-      *
-      *  The points are drawn according to uniform distrinution in 3D space
-      *  enclosing a molecule given. All drawn points lie outside the van der Waals
-      *  volume.
-      *  @param np         - number of points to draw
-      *  @param pad        - radius padding of a minimal sphere enclosing the molecule
-      *  @param mol        - Psi4 molecule object
-      */
+    /** \brief Build random collection iterator.
+     *
+     *  The points are drawn according to uniform distrinution in 3D space
+     *  enclosing a molecule given. All drawn points lie outside the van der Waals
+     *  volume.
+     *  @param np         - number of points to draw
+     *  @param pad        - radius padding of a minimal sphere enclosing the molecule
+     *  @param mol        - Psi4 molecule object
+     */
     static shared_ptr<Points3DIterator> build(const int& np, const double& pad, psi::SharedMolecule mol);
 
 
@@ -224,8 +224,8 @@ class PointsCollection3D
     // <--- Constructors and Destructor ---> //
 
     /** \brief Initialize abstract features.
-      *  @param np   - number of points to be created
-      */
+     *  @param np   - number of points to be created
+     */
     PointsCollection3D(Collection collectionType, int& np);
     PointsCollection3D(Collection collectionType, const int& np);
 
@@ -235,42 +235,42 @@ class PointsCollection3D
 
     // <--- Factories ---> //
 
-    /** \brief Random collection of points.
-      *
-      *  Points uniformly span a sphere.
-      *  @param npoints    - number of points to draw
-      *  @param radius     - sphere radius inside which points are to be drawn
-      *  @param cx         - coordinate x of sphere's centre
-      *  @param cy         - coordinate y of sphere's centre
-      *  @param cz         - coordinate z of sphere's centre
-      */
+    /** @brief Build random collection of points.
+     *
+     *  Points uniformly span a sphere.
+     *  @param npoints    - number of points to draw
+     *  @param radius     - sphere radius inside which points are to be drawn
+     *  @param cx         - coordinate x of sphere's centre
+     *  @param cy         - coordinate y of sphere's centre
+     *  @param cz         - coordinate z of sphere's centre
+     */
     static shared_ptr<PointsCollection3D> build(const int& npoints, const double& radius,
                                                 const double& cx = 0.0, 
                                                 const double& cy = 0.0, 
                                                 const double& cz = 0.0);
 
-    /** \brief Random collection of points.
-      *
-      *  Points uniformly span space inside a sphere enclosing a molecule. 
-      *  exluding the van der Waals volume.
-      *  @param np         - number of points to draw
-      *  @param padding    - radius padding of a minimal sphere enclosing the molecule
-      *  @param mol        - Psi4 molecule object
-      */
+    /** @brief Build random collection of points.
+     *
+     *  Points uniformly span space inside a sphere enclosing a molecule. 
+     *  exluding the van der Waals volume.
+     *  @param np         - number of points to draw
+     *  @param padding    - radius padding of a minimal sphere enclosing the molecule
+     *  @param mol        - Psi4 molecule object
+     */
     static shared_ptr<PointsCollection3D> build(const int& npoints, const double& padding, psi::SharedMolecule mol);
 
-    /** \brief G09 Cube collection of points.
-      *
-      *  The points span a parallelpiped according to Gaussian cube file format. 
-      *  @param nx         - number of points along x direction
-      *  @param ny         - number of points along y direction
-      *  @param nz         - number of points along z direction
-      *  @param px         - padding distance along x direction
-      *  @param py         - padding distance along y direction
-      *  @param pz         - padding distance along z direction
-      *  @param bs         - Psi4 basis set object
-      *  @param options    - Psi4 options object
-      */
+    /** @brief Build G09 Cube collection of points.
+     *
+     *  The points span a parallelpiped according to Gaussian cube file format. 
+     *  @param nx         - number of points along x direction
+     *  @param ny         - number of points along y direction
+     *  @param nz         - number of points along z direction
+     *  @param px         - padding distance along x direction
+     *  @param py         - padding distance along y direction
+     *  @param pz         - padding distance along z direction
+     *  @param bs         - Psi4 basis set object
+     *  @param options    - Psi4 options object
+     */
     static shared_ptr<PointsCollection3D> build(const int& nx, const int& ny, const int& nz,
                                                 const double& px, const double& py, const double& pz,
                                                 psi::SharedBasisSet bs, psi::Options& options);
@@ -305,10 +305,10 @@ class PointsCollection3D
 
 
 /** \brief Collection of random points in 3D space.
-  *
-  * __Note:__ Do not use constructors of this class explicitly. Instead,
-  * use static factory methods of the superclass to create instances.
-  */
+ *
+ * __Note:__ Do not use constructors of this class explicitly. Instead,
+ * use static factory methods of the superclass to create instances.
+ */
 class RandomPointsCollection3D : public PointsCollection3D
 {
   public:
@@ -325,10 +325,10 @@ class RandomPointsCollection3D : public PointsCollection3D
 
 
 /** \brief G09 cube-like ordered collection of points in 3D space.
-  *
-  * __Note:__ Do not use constructors of this class explicitly. Instead,
-  * use static factory methods of the superclass to create instances.
-  */
+ *
+ * __Note:__ Do not use constructors of this class explicitly. Instead,
+ * use static factory methods of the superclass to create instances.
+ */
 class CubePointsCollection3D : public PointsCollection3D, public psi::CubicScalarGrid
 {
   public:
@@ -464,9 +464,30 @@ class ScalarField3D
 
 }; 
 
-/** \brief Electrostatic potential.
+/** \brief Electrostatic potential of a molecule.
  *
- *
+ *  Computes the electrostatic potential of a molecule directly from the wavefunction.
+ *  The electrostatic potential \f$ v({\bf r})\f$ at point \f${\bf r}\f$ is computed 
+ *  from the following formula:
+ *  \f[
+ *     v({\bf r}) = v({\bf r})_{\rm nuc} + v({\bf r})_{\rm el}
+ *  \f]
+ *  where the nuclear and electronic contributions are defined accordingly as
+ *  \f{align*}{
+ *    v({\bf r})_{\rm nuc} &= \sum_x  \frac{Z_x}{\left| {\bf r} - {\bf r}_x \right|} \\
+ *    v({\bf r})_{\rm el}  &= \sum_{\mu\nu} \left\{ D_{\mu\nu}^{(\alpha)} + D_{\mu\nu}^{(\beta)}\right\} 
+ *                              V_{\nu\mu}({\bf r})
+ *  \f}
+ *  In the above equations, \f$ Z_x \f$ denotes the charge of \f$ x \f$th nucleus, 
+ *  \f$ D_{\mu\nu}^{(\omega)} \f$ is the one-particle (relaxed) density matrix element
+ *  in AO basis associated with the \f$ \omega \f$ electron spin, and \f$ V_{\mu\nu}({\bf r}) \f$
+ *  is the potential one-electron integral defined by
+ *  \f[
+ *    V_{\nu\mu}({\bf r}) \equiv \int d{\bf r}' \varphi^{*}_\nu({\bf r}') 
+ *                                               \frac{1}{\left| {\bf r} - {\bf r}' \right|} 
+ *                                               \varphi_\mu({\bf r}')
+ *  \f]
+ *  
  */
 class ElectrostaticPotential3D : public ScalarField3D
 {
@@ -488,7 +509,7 @@ class ElectrostaticPotential3D : public ScalarField3D
  *
  *  Used for special type of classes T that contain following public member functions:
  *
- *  \begincode{cpp}
+ *  \code{.cpp}
  *   class T : public std::enable_shared_from_this<T> {
  * 
  *     public:

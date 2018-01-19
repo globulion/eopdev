@@ -37,7 +37,7 @@ namespace oepdev{
 using namespace std;
 using namespace psi;
 
-/* \brief CPHF solver class.
+/**\brief CPHF solver class.
  *
  * Solves CPHF equations (now only for RHF wavefunction).
  * Computes molecular and orbital-associated polarizabilities.

@@ -18,6 +18,40 @@ using SharedScalarField3D = std::shared_ptr<ScalarField3D>;
 
 /** \brief Charges from Electrostatic Potential (ESP). A solver-type class.
  *
+ *  Solves the least-squares problem to fit the generalized charges \f$ q_m \f$, that reproduce
+ *  the reference generalized potential \f$ v^{\rm ref}({\bf r}) \f$ supplied by the `ScalarField3D` object:
+ *  \f[
+ *     \int d{\bf r}' \left[ v^{\rm ref}({\bf r}') - \sum_m \frac{q_m}{\left| {\bf r}' - {\bf r}_m \right|} 
+ *                    \right]^2  \rightarrow \text{minimize}
+ *  \f]
+ *  The charges are subject to the following constraint:
+ *  \f[
+ *      \sum_m q_m = 0
+ *  \f]
+ *  ### Method description.
+ *  \f$ M \f$ generalized charges is found by solving the matrix equation
+ *  \f[
+ *   \begin{pmatrix}
+ *    {\bf A} & 0 \\
+ *     0      & 1
+ *    \end{pmatrix}^{-1}
+ *    \cdot
+ *    \begin{pmatrix}
+ *    {\bf b}\\ 0
+ *    \end{pmatrix}
+ *    =
+ *    \begin{pmatrix}
+ *    {\bf q}\\ \lambda
+ *    \end{pmatrix} 
+ *  \f]
+ *  where the \f$ {\bf A} \f$ matrix of dimension \f$ M\times M \f$ and \bf b} vector or length \f$ M \f$
+ *  are given as 
+ *  \f{align*}{
+ *    A_{mn} &= \sum_i \frac{1}{r_{im} r_{in}} \\
+ *    b_m    &= \sum_i \frac{v^{\rm ref}({\bf r}_m)}{r_{im}}
+ *  \f}
+ *  In the above equation, summations run over all sample points, at which reference potential
+ *  is known.
  */
 class ESPSolver
 {
@@ -26,18 +60,18 @@ class ESPSolver
     // <--- Constructors and Destructor ---> //
 
     /** \brief Construct from scalar field.
-      *
-      *  Assume that the centres are on atoms associated with the scalar field.
-      *  @param field    - oepdev scalar field object
-      */
+     *
+     *  Assume that the centres are on atoms associated with the scalar field.
+     *  @param field    - oepdev scalar field object
+     */
     ESPSolver(SharedScalarField3D field);
 
     /** \brief Construct from scalar field.
-      *
-      *  Solve ESP equations for a custom set of charge distribution centres.
-      *  @param field    - oepdev scalar field object
-      *  @param centres  - matrix with coordinates of charge distribution centres
-      */
+     *
+     *  Solve ESP equations for a custom set of charge distribution centres.
+     *  @param field    - oepdev scalar field object
+     *  @param centres  - matrix with coordinates of charge distribution centres
+     */
     ESPSolver(SharedScalarField3D field, psi::SharedMatrix centres);
 
     /// Destructor

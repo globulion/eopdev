@@ -155,7 +155,7 @@ class WavefunctionUnion : public Wavefunction
 
 
   public:
-    /* \brief Constructor. 
+    /** \brief Constructor. 
      *
      *  Provide wavefunction with molecule containing at least 2 fragments.
      *  @param ref_wfn - reference wavefunction

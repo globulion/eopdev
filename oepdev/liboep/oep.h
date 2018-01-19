@@ -28,7 +28,7 @@ using SharedMatrix       = std::shared_ptr<Matrix>;
 using SharedVector       = std::shared_ptr<Vector>;
 
 
-/* \brief Generalized One-Electron Potential: Abstract base.
+/** \brief Generalized One-Electron Potential: Abstract base.
  * 
  *  Manages OEP's in matrix and 3D forms.
  */
@@ -66,14 +66,14 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     // <--- Constructors and Destructor ---> //
 
-    /* \brief ESP-based OEP object
+    /**\brief ESP-based OEP object
      * 
      * @param wfn     - wavefunction
      * @param options - Psi4 options
      */
     OEPotential(SharedWavefunction wfn, Options& options);
 
-    /* \brief DF-based OEP object
+    /**\brief DF-based OEP object
      *
      * @param wfn        - wavefunction
      * @param auxiliary  - basis set for density fitting of OEP's
@@ -87,7 +87,7 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     // <--- Factories ---> //      
 
-    /* \brief ESP-based OEP object
+    /**\brief Build ESP-based OEP object
      * 
      * @param type    - OEP category
      * @param wfn     - wavefunction
@@ -95,7 +95,7 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
      */
 
     static std::shared_ptr<OEPotential> build(const std::string& category, SharedWavefunction wfn, Options& options);
-    /* \brief DF-based OEP object
+    /**\brief Build DF-based OEP object
      *
      * @param type       - OEP category
      * @param wfn        - wavefunction
@@ -162,7 +162,7 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 };
 
 
-/* \brief Generalized One-Electron Potential for Electrostatic Energy calculations.
+/**\brief Generalized One-Electron Potential for Electrostatic Energy calculations.
  * 
  *  Contains the following OEP types:
  *      "V"
@@ -184,7 +184,7 @@ class ElectrostaticEnergyOEPotential : public OEPotential
     void common_init();
 };
 
-/* \brief Generalized One-Electron Potential for Pauli repulsion energy calculations.
+/**\brief Generalized One-Electron Potential for Pauli repulsion energy calculations.
  * 
  *  Contains the following OEP types:
  */
@@ -205,7 +205,7 @@ class RepulsionEnergyOEPotential : public OEPotential
     void common_init();
 };
 
-/* \brief Generalized One-Electron Potential for EET coupling calculations.
+/**\brief Generalized One-Electron Potential for EET coupling calculations.
  * 
  *  Contains the following OEP types:
  *    "ET1" "ET2" "HT1" "HT1" "HT2" "CT1" "CT2"

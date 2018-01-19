@@ -10,6 +10,11 @@
  *   11.01.2018     - Adding two new constructors to PotentialInt
  *                    enabling calculations of potential integrals
  *                    for a custom set of probe charges.
+ *   17.01.2018     - Adding mutator setting field of point charges
+ *                    as a single point. This is convenient when 
+ *                    computing potential integrals wrt many points
+ *                    without building shared matrix of Zxyz_ by the
+ *                    user.
  *
  * @END LICENSE
  */
@@ -30,11 +35,14 @@
 #include "psi4/libmints/sointegral_onebody.h"
 #include "psi4/libmints/osrecur.h"
 
+/**
+ * \ingroup Oepdev
+ */
 namespace oepdev{
 
 using namespace std;
 
-/*! \ingroup MINTS_MODIFIED
+/** \ingroup MINTS_MODIFIED
  *  \class PotentialInt
  *  \brief Computes potential integrals.
  */
