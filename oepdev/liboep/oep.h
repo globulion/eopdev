@@ -1,3 +1,178 @@
+/*! \page poepdesign OEP Design.
+    \tableofcontents
+
+OEP (One-Electron Potential) is associated with certain quantum one-electron operator 
+\f$ \hat{v}^A\f$ that defines the ability of molecule \f$ A \f$ to interact in a particular way with other molecules. 
+Technically, OEP can be understood as a __container object__ (associated with the molecule in question)
+that stores the information about the above mentioned quantum operator. 
+Here, it is assumed that similar OEP
+object is also defined for all other molecules in a molecular aggregate. 
+
+In case of interaction between molecules \f$ A \f$ and \f$ B \f$,
+OEP object of molecule \f$ A \f$ interacts directly with wavefunction object
+of the molecule \f$ B \f$. Defining a 
+ * Solver class that handles such interaction 
+ * Wavefunction class and
+ * OEP class
+
+the universal design of OEP-based approaches can be established and developed.
+
+> **Important:**
+>  OEP and Wavefunction classes should not be restricted to Hartree-Fock; in generall any correlated 
+>  wavefunction and derived OEP`s should be allowed to work with each other.
+>
+
+\section soepclasses OEP Classes
+
+There are many types of OEP’s, but the underlying principle is the same and independent of the
+type of intermolecular interaction. Therefore, the OEP’s should be implemented by using a multi-level class design.
+In turn, this design depends on the way OEP’s enter the mathematical expressions, i.e., on the types
+of matrix elements of the one-electron effective operator \f$ \hat{v}^A \f$.
+
+\subsection ssoepunification Structure of possible OEP-based expressions and their unification
+
+Structure of OEP-based mathematical expressions is listed below:
+
+| Type  | Matrix Element | Comment |
+|--------|----|---|
+
+In the above table, \f$ I \f$, \f$ J \f$ and \f$ K \f$ indices correspond 
+to basis functions or molecular orbitals. 
+Basis functions can be primary or auxiliary OEP-specialized density-fitting.
+Depending on the type of function and matrix element, there are many subtypes of resulting matrix elements 
+that differ in their dimensionality. Examples are given below:
+
+| Matrix Element | DF-based form | ESP-based form |
+|----|---|---|
+
+In the formulae above, the OEP-part (stored by OEP instances) is shown in blue 
+whereas the Solver-part (to be computed by the Solver) is shown in brown. 
+It is apparent that all OEP-parts have the form of 2nd- or 3rd-rank tensors 
+with different class of axes (molecular orbitals, primary/auxiliary basis, atomic space). 
+Therefore, they can be uniquely defined by a unified *tensor object* 
+(storing double precision numbers) and unified *dimension object* storing 
+the information of the axes classes.
+
+In Psi4, a perfect candidate for the above is `psi4::Tensor` class declared 
+in `psi4/libthce/thce.h`. Except from the numeric content its instances also 
+store the information of the dimensions in a form of a vector of `psi4::Dimension` instances.
+
+Another possibility is to use `psi::Matrix` objects, instead of `psi4::Tensor` objects, 
+possibly putting them into a `std::vector` container in case there is more than two axes.
+
+*/
+
+/*! \page poeptypes List of One-Electron Potentals
+    \tableofcontents
+
+Here I provide the list of OEP’s that have been already derived within 
+the scope of the OEPDev project. 
+
+\section soepcoulomb Electrostatic Energy OEP’s
+
+For electrostatic energy calculations, OEP is simply the electrostatic potential 
+due to nuclei and electrons. 
+
+3D form:
+
+\f{align*}{
+ v({\bf r}) = \sum_x \frac{Z_x}{\vert {\bf r} - {\bf r}_x \vert}
+             +\sum_{\mu\nu\in A} P_{\nu\mu} 
+              \int d{\bf r'} \frac{\phi^{*}_\mu({\bf r'}) \phi_\nu({\bf r'})}{\vert {\bf r} - {\bf r'} \vert}
+\f}
+
+Matrix form:
+
+\f{align*}{
+ v_{ik}  &= \sum_{x\in A} Z_x V^{(x)}_{ik} 
+           +\sum_{\mu\nu\in A}  P_{\nu\mu} 
+           \left( \mu\nu \vert ik \right)
+\f}
+
+\section soeppauli Pauli Repulsion OEP’s
+
+The following potentials are derived for the evaluation of the Pauli 
+repulsion energy based on Murrel’s expressions.
+
+\subsection ssoeppauli1 First-order contribution in overlap matrix expansion.
+
+This contribution is simply the electrostatic potential coming from all nuclei and electron density
+*except* from electron density from molecular orbital \f$ i \f$ that interacts with the 
+generalized overlap density between \f$ i \f$ of molecule \f$ A \f$ and \f$ j \f$ of molecule \f$ B \f$.
+
+3D forms:
+
+\f{align*}{
+v({\bf r})^{A[i]}_{S^{-1}} &= 
+     -\sum_{x\in A} \frac{Z_x}{\vert {\bf r} - {\bf r}_x\vert} 
+     + \sum_{\mu\nu\in A} \left\{ D_{\nu\mu} - C^{*}_{\mu i} C_{\nu i} \right \} 
+              \int d{\bf r'} \frac{\phi^{*}_\mu({\bf r'}) \phi_\nu({\bf r'})}{\vert {\bf r} - {\bf r'} \vert}
+\f}
+
+Matrix forms:
+
+\f{align*}{
+v_{\xi i}({S^{-1}}) &= \sum_{\kappa\in A} C_{i\kappa} 
+                      \left\{ -\sum_{x\in A} V^{(x)}_{\kappa\xi} 
+                              +\sum_{\mu\nu\in A} \left\{ D_{\nu\mu} - C^{*}_{\mu i} C_{\nu i} \right \} 
+                          \left( \mu\nu \vert \xi\kappa \right )\right \}
+\f}
+
+\subsection ssoeppauli2 Second-order contribution in overlap matrix expansion.
+
+To be added here!
+
+\section soepeet Excitonic Energy Transfer OEP’s
+
+The following potentials are derived for the evaluation of the short-range EET couplings 
+based on Fujimoto’s TDFI-TI method.
+
+\subsection ssoepeet1 ET contributions.
+
+3D forms:
+
+\f{align*}{
+v({\bf r})^{A[\mu]}_{1} &= -C^*_{\mu L} \sum_{x\in A} \frac{Z_x}{\vert {\bf r} 
+                         - {\bf r}_x\vert} + \sum_{\nu\kappa\in A} 
+                         \left\{ C^*_{\mu L} D_{\nu\kappa} - \frac{1}{2} C^{*}_{\nu L} D_{\mu\kappa} \right \} 
+                 \int d{\bf r'} \frac{\phi^{*}_\nu({\bf r'}) \phi_\kappa({\bf r'})}{\vert {\bf r} - {\bf r'} \vert} \\
+v({\bf r})^{A[\mu]}_{2} &= C_{\kappa H} \sum_{\nu\kappa\in A} 
+                          \left\{ 2 C^*_{\nu L} C_{\mu H}^* - C^{*}_{\nu H} C_{\mu L}^* \right \} 
+                          \int d{\bf r'} 
+                          \frac{\phi^{*}_\nu({\bf r'}) \phi_\kappa({\bf r'})}{\vert {\bf r} - {\bf r'} \vert} \\
+v({\bf r})^{A[\mu]}_{3} &= v({\bf r})^{A[\mu]}_{1} + v({\bf r})^{A[\mu]}_{1}
+\f}
+
+Matrix forms:
+
+\f{align*}{
+v_{\mu\xi}(1) &= -C^*_{\mu L} \sum_{x\in A} V^{x}_{\mu\xi} 
+                + \sum_{\nu\kappa\in A} \left\{ C^*_{\mu L} D_{\nu\kappa} 
+                - \frac{1}{2} C^{*}_{\nu L} D_{\mu\kappa} \right \} 
+                \left( \nu\kappa \vert \mu\xi \right ) \\
+v_{\mu\xi}(2) &= C_{\kappa H} \sum_{\nu\kappa\in A} 
+                 \left\{ 2 C^*_{\nu L} C_{\mu H}^* - C^{*}_{\nu H} C_{\mu L}^* \right \} 
+                 \left( \nu\kappa \vert \mu\xi \right) \\
+v_{\mu\xi}(3) &= v_{\mu\xi}(1) + v_{\mu\xi}(2)
+\f}
+
+\subsection ssoepeet2 HT contributions.
+
+Do be derived.
+
+\subsection ssoepeet3 CT contributions.
+
+To be derived.
+
+\section soephf Full HF Interaction OEP’s
+
+The following potentials are derived for the evaluation 
+of the full Hartree-Fock interaction energy based on the OEPDev equations.
+
+
+
+*/
+
 #ifndef _oepdev_liboep_liboep_h_ 
 #define _oepdev_liboep_liboep_h_ 
 
