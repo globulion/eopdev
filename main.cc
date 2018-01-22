@@ -60,6 +60,7 @@
 #include "oepdev/libutil/integrals_iter.h"
 #include "oepdev/libutil/space3d.h"
 #include "oepdev/libutil/esp.h"
+#include "oepdev/libutil/solver.h"
 #include "oepdev/liboep/oep.h"
 #include "oepdev/libpsi/potential.h"
 
@@ -239,9 +240,16 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, primary_1, options);
     SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
 
-    oep_cou->write_cube("V", "oep");
+    //oep_cou->write_cube("V", "oep");
+
+    // Create Solver
+    std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("ELECTROSTATIC ENERGY", wfn_union);
+    double el1 = solver->compute_benchmark();
+    double el2 = solver->compute_oep_based();
+
 
     // Compute potentials
+    if (false) {
     SharedField3D potential_cube = oepdev::ScalarField3D::build("ELECTROSTATIC", 60, 60, 60, 10.0, 10.0, 10.0, scf_1, options);
     SharedField3D potential_random = oepdev::ScalarField3D::build("ELECTROSTATIC", 50000, 10.0, scf_1, options);
 
@@ -255,6 +263,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     //std::shared_ptr<oepdev::CubeDistribution3D> di = std::dynamic_pointer_cast<oepdev::CubeDistribution3D>(potential->distribution());
     //di->print_header();
     //potential->write_cube_file("pot");
+    }
 
     
     return ref_wfn;

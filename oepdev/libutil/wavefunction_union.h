@@ -202,6 +202,8 @@ class WavefunctionUnion : public Wavefunction
     SharedIntegralTransform integrals             (void ) const;
     bool                    has_localized_orbitals(void ) const {return hasLocalizedOrbitals_;}
 
+    SharedBasisSet          primary               (void ) const {return basisset_;}
+
 
     // <--- Printers ---> //
     void print_header(void);

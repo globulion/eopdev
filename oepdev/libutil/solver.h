@@ -10,9 +10,12 @@
 #include "psi4/liboptions/liboptions.h"
 #include "psi4/libpsio/psio.h"
 
-#include "psi4/libmints/wavefunction.h"
+#include "psi4/libmints/potential.h"
+#include "psi4/libmints/integral.h"
 
 #include "wavefunction_union.h"
+#include "integrals_iter.h"
+#include "../liboep/oep.h"
 
 namespace oepdev{
 
@@ -21,6 +24,7 @@ using namespace psi;
 
 using SharedWavefunction       = std::shared_ptr<Wavefunction>;
 using SharedWavefunctionUnion  = std::shared_ptr<WavefunctionUnion>;
+using SharedOEPotential        = std::shared_ptr<OEPotential>;
 
 
 /**\brief Solver of properties of molecular aggregates. Abstract base.
@@ -59,13 +63,13 @@ class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
     * 
     *  @param method - flavour of OEP model
     */
-   virtual double compute_oep_based(const std::string& method) = 0;
+   virtual double compute_oep_based(const std::string& method = "DEFAULT") = 0;
 
    /**\brief Compute property by using benchmark method
     *
     *  @param method - benchmark method
     */
-   virtual double compute_benchmark(const std::string& method) = 0;
+   virtual double compute_benchmark(const std::string& method = "DEFAULT") = 0;
 
 
  protected:
@@ -88,8 +92,8 @@ class ElectrostaticEnergySolver : public OEPDevSolver
     ElectrostaticEnergySolver(SharedWavefunctionUnion wfn_union);
     virtual ~ElectrostaticEnergySolver();
 
-    virtual double compute_oep_based(const std::string& method);
-    virtual double compute_benchmark(const std::string& method);
+    virtual double compute_oep_based(const std::string& method = "DEFAULT");
+    virtual double compute_benchmark(const std::string& method = "DEFAULT");
    
 };
 
