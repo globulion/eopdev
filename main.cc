@@ -103,17 +103,21 @@ int read_options(std::string name, Options& options)
 {
     if (name == "OEPDEV" || options.read_globals()) {
         /*- The amount of information printed to the output file -*/
-        options.add_int("PRINT", 1);
+        options.add_int    ("PRINT"                 , 1           );
         /*- Basis set for OEP density fitting -*/
-        options.add_str("BASIS_DF_OEP", "");
+        options.add_str    ("BASIS_DF_OEP"          , ""          );
         /*- CPHF maximum iterations -*/
-        options.add_int("CPHF_MAXITER", 50);
+        options.add_int    ("CPHF_MAXITER"          , 50          );
         /*- CPHF convergence -*/
-        options.add_double("CPHF_CONVERGENCE", 1.0E-8);
+        options.add_double ("CPHF_CONVER"           , 1.0E-8      );
         /*- whether use DIIS for CPHF -*/
-        options.add_bool("CPHF_DIIS", false);
+        options.add_bool   ("CPHF_DIIS"             , false       );
         /*- size of DIIS subspace for CPHF -*/
-        options.add_int("CPHF_DIIS_DIM", 3);
+        options.add_int    ("CPHF_DIIS_DIM"         , 3           );
+        /*- ESP: number of points per atom -*/
+        options.add_int    ("ESP_NPOINTS_PER_ATOM"  , 1500        );
+        /*- ESP: padding of a sphere enclosing the molecule -*/
+        options.add_double ("ESP_PAD_SPHERE"        , 10.0        );
      }
 
     return true;

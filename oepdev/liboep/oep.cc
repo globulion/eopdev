@@ -1,6 +1,12 @@
 #include "oep.h"
+#include "../libutil/space3d.h"
+#include "../libutil/esp.h"
+#include "psi4/libqt/qt.h"
 
-namespace oepdev{
+
+using namespace oepdev;
+
+using SharedField3D = std::shared_ptr<oepdev::ScalarField3D>;
 
 OEPotential::OEPotential(SharedWavefunction wfn, Options& options) 
    : wfn_(wfn),
@@ -58,7 +64,7 @@ void OEPotential::common_init(void)
    primary_     = wfn_->basisset();
    intsFactory_ = std::make_shared<psi::IntegralFactory>(primary_, primary_);
    potMat_      = std::make_shared<psi::Matrix>("Potential Integrals", primary_->nbf(), primary_->nbf());
-   potInt_      = std::make_shared<PotentialInt>(intsFactory_->spherical_transform(), primary_, primary_, 0);
+   potInt_      = std::make_shared<oepdev::PotentialInt>(intsFactory_->spherical_transform(), primary_, primary_, 0);
 }
 
 void OEPotential::compute(const std::string& oepType) {}
@@ -91,7 +97,30 @@ void ElectrostaticEnergyOEPotential::common_init()
    oepTypes_.push_back("V");
 }
 
-void ElectrostaticEnergyOEPotential::compute(const std::string& oepType) {}
+void ElectrostaticEnergyOEPotential::compute(const std::string& oepType) 
+{
+  if (oepType == "V" || oepType == "TOTAL") {
+
+      psi::timer_on("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
+      SharedField3D potential = oepdev::ScalarField3D::build("ELECTROSTATIC", 
+                                                   options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
+                                                   options_.get_double("ESP_PAD_SPHERE"      ), 
+                                                   wfn_, options_);
+      potential->compute();
+      oepdev::ESPSolver esp(potential);
+      esp.compute();
+     
+      oepMatrices_["V"] = std::make_shared<Matrix>("V", esp.charges()->dim(), 1);
+      for (int i=0; i<esp.charges()->dim(); ++i) {
+           oepMatrices_["V"]->set(i, 0, esp.charges()->get(i));
+      }
+      psi::timer_off("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
+
+  } else {
+      throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
+  }
+
+}
 void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) 
 {
   double val = 0.0;
@@ -125,7 +154,11 @@ void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, cons
    // Assign final value
    v = val;
 }
-void ElectrostaticEnergyOEPotential::print_header(void) const {}
+void ElectrostaticEnergyOEPotential::print_header(void) const 
+{
+   psi::outfile->Printf("  ==> OEPotential: %s <==\n\n", name_.c_str());
+   oepMatrices_.at("V")->print();
+}
 
 
 // <============== Repulsion Energy ==============> //
@@ -183,11 +216,3 @@ void EETCouplingOEPotential::common_init()
 void EETCouplingOEPotential::compute(const std::string& oepType) {}
 void EETCouplingOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
 void EETCouplingOEPotential::print_header(void) const {}
-
-
-//OEPotential::compute_3D(const std::string& oepType, const std::string& fileName) {
-//  std::shared_ptr<CubicScalarGrid> grid = std::make_shared<CubicScalarGrid>(primary_, options_);
-//  grid->write_cube_file(v_oep, fileName);
-//}
-
-} // EndNameSpace oepdev

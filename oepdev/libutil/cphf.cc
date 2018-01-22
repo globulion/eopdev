@@ -23,7 +23,7 @@ CPHF::CPHF(SharedWavefunction ref_wfn, Options& options) :
        throw PSIEXCEPTION("oepdev_util::CPHF now only for RHF wavefunctions!");
     }
     _maxiter   = _options.get_int("CPHF_MAXITER");
-    _conv      = _options.get_double("CPHF_CONVERGENCE");
+    _conv      = _options.get_double("CPHF_CONVER");
     _with_diis = _options.get_bool("CPHF_DIIS");
 
     // Initialize DIIS manager

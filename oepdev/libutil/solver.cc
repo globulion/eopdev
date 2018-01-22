@@ -38,19 +38,85 @@ double ElectrostaticEnergySolver::compute_oep_based(const std::string& method)
   double e_mol_el  = 0.0;
 
   if (method == "DEFAULT") {
-
-     psi::timer_on("SOLVER: Electrostatic Energy Calculations (OEP-BASED)");
-
-     SharedWavefunction wfn_1 = wfn_union_->l_wfn(0);
-     SharedWavefunction wfn_2 = wfn_union_->l_wfn(1);
-     SharedOEPotential oep_1 = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", wfn_1, wfn_union_->options());
-     SharedOEPotential oep_2 = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", wfn_2, wfn_union_->options());
-                                                                     
+ 
      // ===> Nuc(A) --- Nuc(B) <=== //
      e_nuc_nuc = wfn_union_->nuclear_repulsion_interaction_energy();
 
      // ===> [Nuc+El](A) --- El(B) <=== //
-     
+     SharedWavefunction wfn_1 = wfn_union_->l_wfn(0);
+     SharedWavefunction wfn_2 = wfn_union_->l_wfn(1);
+     SharedOEPotential oep_1 = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", wfn_1, wfn_union_->options());
+     SharedOEPotential oep_2 = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", wfn_2, wfn_union_->options());
+
+     oep_1->compute();
+     oep_2->compute();
+
+     oep_1->print_header();
+     oep_2->print_header();
+
+     psi::timer_on("SOLVER: Electrostatic Energy Calculations (OEP-BASED)");
+
+     int nbf_1 = wfn_union_->l_primary(0)->nbf();
+     int nbf_2 = wfn_union_->l_primary(1)->nbf();
+
+     std::shared_ptr<psi::Matrix> V1 = std::make_shared<psi::Matrix>("V1", nbf_1, nbf_1);
+     std::shared_ptr<psi::Matrix> V2 = std::make_shared<psi::Matrix>("V2", nbf_2, nbf_2);
+
+     psi::IntegralFactory fact_1(wfn_union_->l_primary(0), wfn_union_->l_primary(0));
+     psi::IntegralFactory fact_2(wfn_union_->l_primary(1), wfn_union_->l_primary(1));
+
+     std::shared_ptr<psi::OneBodyAOInt> oneInt;
+     std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_1.spherical_transform(),
+                                                                                       wfn_union_->l_primary(0),
+                                                                                       wfn_union_->l_primary(0));
+     std::shared_ptr<psi::PotentialInt> potInt_2 = std::make_shared<psi::PotentialInt>(fact_2.spherical_transform(),
+                                                                                       wfn_union_->l_primary(1),
+                                                                                       wfn_union_->l_primary(1));
+
+     std::shared_ptr<psi::Matrix> Qxyz_1 = std::make_shared<psi::Matrix>("Q OEP 1", oep_1->matrix("V")->nrow(), 4);
+     std::shared_ptr<psi::Matrix> Qxyz_2 = std::make_shared<psi::Matrix>("Q OEP 2", oep_2->matrix("V")->nrow(), 4);
+     for (int i=0; i < Qxyz_1->nrow(); ++i) {
+          Qxyz_1->set(i, 0, oep_1->matrix("V")->get(i,0));
+          Qxyz_1->set(i, 1, oep_1->wfn()->molecule()->x(i));
+          Qxyz_1->set(i, 2, oep_1->wfn()->molecule()->y(i));
+          Qxyz_1->set(i, 3, oep_1->wfn()->molecule()->z(i));
+     }
+     for (int i=0; i < Qxyz_2->nrow(); ++i) {
+          Qxyz_2->set(i, 0, oep_2->matrix("V")->get(i,0));
+          Qxyz_2->set(i, 1, oep_2->wfn()->molecule()->x(i));
+          Qxyz_2->set(i, 2, oep_2->wfn()->molecule()->y(i));
+          Qxyz_2->set(i, 3, oep_2->wfn()->molecule()->z(i));
+     }
+     double t = 0.0;
+     for (int i=0; i < Qxyz_1->nrow(); ++i) {
+     for (int j=0; j < Qxyz_2->nrow(); ++j) {
+          t += Qxyz_1->get(i, 0) * Qxyz_2->get(j, 0) /
+               sqrt( pow( Qxyz_1->get(i,1) - Qxyz_2->get(j,1), 2.0) +
+                     pow( Qxyz_1->get(i,2) - Qxyz_2->get(j,2), 2.0) +
+                     pow( Qxyz_1->get(i,3) - Qxyz_2->get(j,3), 2.0) );
+     }
+     }
+     cout << t << endl;
+     //Qxyz_1->print();
+     //Qxyz_2->print();
+     potInt_1->set_charge_field(Qxyz_2);
+     potInt_2->set_charge_field(Qxyz_1);
+
+     oneInt = potInt_1;
+     oneInt->compute(V1);
+     oneInt = potInt_2;
+     oneInt->compute(V2);
+
+     //V1->print();
+     //V2->print();
+
+     e_mol_el += wfn_1->Da()->vector_dot(V1);
+     e_mol_el += wfn_1->Db()->vector_dot(V1);
+     e_mol_el += wfn_2->Da()->vector_dot(V2);
+     e_mol_el += wfn_2->Db()->vector_dot(V2);
+
+     e_mol_el /= 2.0;
+
      // Finish
      e = e_nuc_nuc + e_mol_el;
 
@@ -172,6 +238,7 @@ double ElectrostaticEnergySolver::compute_benchmark(const std::string& method)
      oepdev::AllAOShellCombinationsIterator shellIter(ints);
      int i, j, k, l;
      double integral;
+
      for (shellIter.first(); shellIter.is_done() == false; shellIter.next())
      {
           shellIter.compute_shell(tei);
