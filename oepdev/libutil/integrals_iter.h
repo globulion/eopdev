@@ -149,8 +149,8 @@ class AllAOIntegralsIterator {
    /// Grab the current integral *i* index
    int i() const { return current.i; }
    /// Grab the current integral *j* index
-   int j() const { return current.k; }
-   /// Grab the current integral *i* index
+   int j() const { return current.j; }
+   /// Grab the current integral *k* index
    int k() const { return current.k; }
    /// Grab the current integral *l* index
    int l() const { return current.l; }
