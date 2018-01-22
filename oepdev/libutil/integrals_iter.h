@@ -70,17 +70,22 @@ class AllAOShellCombinationsIterator {
    /// Check status of iterations
    bool is_done() {return done;}
 
-   //@{ Grab the current shell indices 
+   /// Grab the current shell *P* index
    int P() const { return current.P; }
+   /// Grab the current shell *Q* index
    int Q() const { return current.Q; }
+   /// Grab the current shell *R* index
    int R() const { return current.R; }
+   /// Grab the current shell *S* index
    int S() const { return current.S; }
-   //@}
 
-   
+   /// Grab the basis set of axis 1
    SharedBasisSet bs_1() const { return bs_1_;}
+   /// Grab the basis set of axis 2
    SharedBasisSet bs_2() const { return bs_2_;}
+   /// Grab the basis set of axis 3
    SharedBasisSet bs_3() const { return bs_3_;}
+   /// Grab the basis set of axis 4
    SharedBasisSet bs_4() const { return bs_4_;}
 
    /**\brief Compute ERI's for the current shell.
@@ -101,12 +106,14 @@ class AllAOShellCombinationsIterator {
    const int nshell_1, nshell_2, nshell_3, nshell_4;
    int pp, qq, rr, ss;
 
-   //@{ Basis set objects 
+   /// Basis set of axis 1
    SharedBasisSet bs_1_;
+   /// Basis set of axis 2
    SharedBasisSet bs_2_;
+   /// Basis set of axis 3
    SharedBasisSet bs_3_;
+   /// Basis set of axis 4
    SharedBasisSet bs_4_;
-   //@}
 
 };
 
@@ -139,13 +146,14 @@ class AllAOIntegralsIterator {
    /// Check status of iterations
    bool is_done() {return done;}
 
-   //@{ 
-   /** Grab the current integral indices */
+   /// Grab the current integral *i* index
    int i() const { return current.i; }
-   int j() const { return current.j; }
+   /// Grab the current integral *j* index
+   int j() const { return current.k; }
+   /// Grab the current integral *i* index
    int k() const { return current.k; }
+   /// Grab the current integral *l* index
    int l() const { return current.l; }
-   //@}
 
    /** Grab the current index of integral value stored in the buffer */
    int index() const { return current.index;}
