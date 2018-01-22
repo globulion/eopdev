@@ -76,13 +76,13 @@ void ESPSolver::compute_matrices(void)
     }
 
     for (int m=0; m < nCentres_; ++m) {
-         ap[nCentres_][m] = ap[m][nCentres_] = 0.0;
+         ap[nCentres_][m] = ap[m][nCentres_] = 1.0;
          for (int n=0; n <= m; ++n) {
              ap[n][m] = ap[m][n];
          }
     }
     bp[nCentres_]            = 0.0;
-    ap[nCentres_][nCentres_] = 1.0;
+    ap[nCentres_][nCentres_] = 0.0;
 }
 
 void ESPSolver::fit(void)
