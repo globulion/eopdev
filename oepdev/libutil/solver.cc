@@ -34,14 +34,14 @@ ElectrostaticEnergySolver::~ElectrostaticEnergySolver()
 double ElectrostaticEnergySolver::compute_oep_based(const std::string& method) 
 {
   double e = 0.0;
-  double e_nuc_nuc = 0.0;
+  double e_nuc_mol = 0.0;
+  double e_mol_nuc = 0.0;
+  double e_el_mol  = 0.0;
   double e_mol_el  = 0.0;
+  double qq        = 0.0;
 
   if (method == "DEFAULT") {
  
-     // ===> Nuc(A) --- Nuc(B) <=== //
-     e_nuc_nuc = wfn_union_->nuclear_repulsion_interaction_energy();
-
      // ===> [Nuc+El](A) --- El(B) <=== //
      SharedWavefunction wfn_1 = wfn_union_->l_wfn(0);
      SharedWavefunction wfn_2 = wfn_union_->l_wfn(1);
@@ -87,18 +87,27 @@ double ElectrostaticEnergySolver::compute_oep_based(const std::string& method)
           Qxyz_2->set(i, 2, oep_2->wfn()->molecule()->y(i));
           Qxyz_2->set(i, 3, oep_2->wfn()->molecule()->z(i));
      }
-     double t = 0.0;
+
+     // ===> ESP(A) --- NUC(B) <=== //
      for (int i=0; i < Qxyz_1->nrow(); ++i) {
+     for (int j=0; j < oep_2->wfn()->molecule()->natom(); ++j) {
+          e_mol_nuc += Qxyz_1->get(i, 0) * oep_2->wfn()->molecule()->Z(j) /
+               sqrt( pow( Qxyz_1->get(i,1) - oep_2->wfn()->molecule()->x(j), 2.0) +
+                     pow( Qxyz_1->get(i,2) - oep_2->wfn()->molecule()->y(j), 2.0) +
+                     pow( Qxyz_1->get(i,3) - oep_2->wfn()->molecule()->z(j), 2.0) );
+     }
+     }
+     // ===> Nuc(A) --- ESP(B) <=== //
+     double qe = 0.0;
+     for (int i=0; i < oep_1->wfn()->molecule()->natom(); ++i) {
      for (int j=0; j < Qxyz_2->nrow(); ++j) {
-          t += Qxyz_1->get(i, 0) * Qxyz_2->get(j, 0) /
-               sqrt( pow( Qxyz_1->get(i,1) - Qxyz_2->get(j,1), 2.0) +
-                     pow( Qxyz_1->get(i,2) - Qxyz_2->get(j,2), 2.0) +
-                     pow( Qxyz_1->get(i,3) - Qxyz_2->get(j,3), 2.0) );
+          e_nuc_mol += Qxyz_2->get(j, 0) * oep_1->wfn()->molecule()->Z(i) /
+               sqrt( pow( Qxyz_2->get(j,1) - oep_1->wfn()->molecule()->x(i), 2.0) +
+                     pow( Qxyz_2->get(j,2) - oep_1->wfn()->molecule()->y(i), 2.0) +
+                     pow( Qxyz_2->get(j,3) - oep_1->wfn()->molecule()->z(i), 2.0) );
      }
      }
-     cout << t << endl;
-     //Qxyz_1->print();
-     //Qxyz_2->print();
+
      potInt_1->set_charge_field(Qxyz_2);
      potInt_2->set_charge_field(Qxyz_1);
 
@@ -107,29 +116,44 @@ double ElectrostaticEnergySolver::compute_oep_based(const std::string& method)
      oneInt = potInt_2;
      oneInt->compute(V2);
 
-     //V1->print();
-     //V2->print();
-
-     e_mol_el += wfn_1->Da()->vector_dot(V1);
-     e_mol_el += wfn_1->Db()->vector_dot(V1);
+     e_el_mol += wfn_1->Da()->vector_dot(V1);
+     e_el_mol += wfn_1->Db()->vector_dot(V1);
      e_mol_el += wfn_2->Da()->vector_dot(V2);
      e_mol_el += wfn_2->Db()->vector_dot(V2);
 
-     e_mol_el /= 2.0;
-
      // Finish
-     e = e_nuc_nuc + e_mol_el;
+     e = 0.5*(e_mol_nuc + e_mol_el + e_nuc_mol + e_el_mol);
 
      psi::timer_off("SOLVER: Electrostatic Energy Calculations (OEP-BASED)");
+
+     // ===> ESP(A) ---- ESP(B) <=== //
+     psi::timer_on ("SOLVER: Electrostatic Energy Calculations (ESP-ESP)");
+
+     for (int i=0; i < Qxyz_1->nrow(); ++i) {
+     for (int j=0; j < Qxyz_2->nrow(); ++j) {
+          qq += Qxyz_1->get(i, 0) * Qxyz_2->get(j, 0) /
+               sqrt( pow( Qxyz_1->get(i,1) - Qxyz_2->get(j,1), 2.0) +
+                     pow( Qxyz_1->get(i,2) - Qxyz_2->get(j,2), 2.0) +
+                     pow( Qxyz_1->get(i,3) - Qxyz_2->get(j,3), 2.0) );
+     }
+     }
+     psi::timer_off("SOLVER: Electrostatic Energy Calculations (ESP-ESP)");
+
 
      // Print
      if (wfn_union_->options().get_int("PRINT") > 0) {
         psi::outfile->Printf("  ==> SOLVER: Enectrostatic energy calculations <==\n");
         psi::outfile->Printf("  ==>         OEP-based Model (DEFAULT)         <==\n\n");
-        psi::outfile->Printf("     NUC NUC   = %13.6f\n", e_nuc_nuc);
-        psi::outfile->Printf("     MOL EL    = %13.6f\n", e_mol_el );
+        psi::outfile->Printf("     ESP NUC   = %13.6f\n", e_mol_nuc);
+        psi::outfile->Printf("     ESP EL    = %13.6f\n", e_mol_el );
+        psi::outfile->Printf("     NUC ESP   = %13.6f\n", e_nuc_mol);
+        psi::outfile->Printf("     EL  ESP   = %13.6f\n", e_el_mol );
         psi::outfile->Printf("     -------------------------------\n");
-        psi::outfile->Printf("     TOTAL     = %13.6f\n", e        );
+        psi::outfile->Printf("     ESP ESP   = %13.6f\n", qq       );
+        psi::outfile->Printf("     -------------------------------\n");
+        psi::outfile->Printf("     TOTAL VD  = %13.6f\n", e_mol_nuc + e_mol_el);
+        psi::outfile->Printf("     TOTAL DV  = %13.6f\n", e_nuc_mol + e_el_mol);
+        psi::outfile->Printf("     TOTAL SYM = %13.6f\n", e                   );
         psi::outfile->Printf("\n");
      }
 
