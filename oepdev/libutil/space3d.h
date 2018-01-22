@@ -470,12 +470,12 @@ class ScalarField3D
  *  The electrostatic potential \f$ v({\bf r})\f$ at point \f${\bf r}\f$ is computed 
  *  from the following formula:
  *  \f[
- *     v({\bf r}) = v({\bf r})_{\rm nuc} + v({\bf r})_{\rm el}
+ *     v({\bf r}) = v_{\rm nuc}({\bf r}) + v_{\rm el}({\bf r})
  *  \f]
  *  where the nuclear and electronic contributions are defined accordingly as
  *  \f{align*}{
- *    v({\bf r})_{\rm nuc} &= \sum_x  \frac{Z_x}{\left| {\bf r} - {\bf r}_x \right|} \\
- *    v({\bf r})_{\rm el}  &= \sum_{\mu\nu} \left\{ D_{\mu\nu}^{(\alpha)} + D_{\mu\nu}^{(\beta)}\right\} 
+ *    v_{\rm nuc} ({\bf r})&= \sum_x  \frac{Z_x}{\left| {\bf r} - {\bf r}_x \right|} \\
+ *    v_{\rm el}  ({\bf r})&= \sum_{\mu\nu} \left\{ D_{\mu\nu}^{(\alpha)} + D_{\mu\nu}^{(\beta)}\right\} 
  *                              V_{\nu\mu}({\bf r})
  *  \f}
  *  In the above equations, \f$ Z_x \f$ denotes the charge of \f$ x \f$th nucleus, 
@@ -484,7 +484,7 @@ class ScalarField3D
  *  is the potential one-electron integral defined by
  *  \f[
  *    V_{\nu\mu}({\bf r}) \equiv \int d{\bf r}' \varphi^{*}_\nu({\bf r}') 
- *                                               \frac{1}{\left| {\bf r} - {\bf r}' \right|} 
+ *                                              \frac{1}{\left| {\bf r} - {\bf r}' \right|} 
  *                                               \varphi_\mu({\bf r}')
  *  \f]
  *  
