@@ -103,21 +103,27 @@ int read_options(std::string name, Options& options)
 {
     if (name == "OEPDEV" || options.read_globals()) {
         /*- The amount of information printed to the output file -*/
-        options.add_int    ("PRINT"                 , 1           );
-        /*- Basis set for OEP density fitting -*/
-        options.add_str    ("BASIS_DF_OEP"          , ""          );
-        /*- CPHF maximum iterations -*/
-        options.add_int    ("CPHF_MAXITER"          , 50          );
-        /*- CPHF convergence -*/
-        options.add_double ("CPHF_CONVER"           , 1.0E-8      );
-        /*- whether use DIIS for CPHF -*/
-        options.add_bool   ("CPHF_DIIS"             , false       );
-        /*- size of DIIS subspace for CPHF -*/
-        options.add_int    ("CPHF_DIIS_DIM"         , 3           );
-        /*- ESP: number of points per atom -*/
-        options.add_int    ("ESP_NPOINTS_PER_ATOM"  , 1500        );
-        /*- ESP: padding of a sphere enclosing the molecule -*/
-        options.add_double ("ESP_PAD_SPHERE"        , 10.0        );
+        options.add_int    ("PRINT"                 , 1                          );
+        /*- Basis set for OEP density fitting -*/                                   
+        options.add_str    ("BASIS_DF_OEP"          , ""                         );
+        /*- CPHF maximum iterations -*/                                             
+        options.add_int    ("CPHF_MAXITER"          , 50                         );
+        /*- CPHF convergence -*/                                                    
+        options.add_double ("CPHF_CONVER"           , 1.0E-8                     );
+        /*- Whether use DIIS for CPHF -*/                                           
+        options.add_bool   ("CPHF_DIIS"             , false                      );
+        /*- Size of DIIS subspace for CPHF -*/                                      
+        options.add_int    ("CPHF_DIIS_DIM"         , 3                          );
+        /*- ESP: number of points per atom -*/                                      
+        options.add_int    ("ESP_NPOINTS_PER_ATOM"  , 1500                       );
+        /*- ESP: padding of a sphere enclosing the molecule -*/                     
+        options.add_double ("ESP_PAD_SPHERE"        , 10.0                       );
+        /*- Target: What to do? -*/
+        options.add_str    ("OEPDEV_TARGET"         , "ELECTROSTATIC_ENERGY"     );
+        /*- Whether localize MO's or not -*/
+        options.add_bool   ("OEPDEV_LOCALIZE"       , false                      );
+        /*- Whether enable trial tests in main.cc or not -*/
+        options.add_bool   ("OEPDEV_ENABLE_TRIAL"   , false                      );
      }
 
     return true;
@@ -185,7 +191,10 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     oepdev::preambule();
 
     // ==> Determine what to do <== //
-    int print = options.get_int("PRINT");
+    std::string o_task          = options.get_str  ("OEPDEV_TARGET"       );
+    bool        o_local         = options.get_bool ("OEPDEV_LOCALIZE"     );
+    bool        o_enable_trial  = options.get_bool ("OEPDEV_ENABLE_TRIAL" );
+    int         o_print         = options.get_int  ("PRINT"               );
 
     // ==> Psi4 Input/Output Stream <== //
     SharedPSIO psio = PSIO::shared_object();
@@ -195,22 +204,32 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     wfn_union->print_header();
 
     // ==> Localize Molecular orbitals of the Union (optionally) <== //
-    wfn_union->localize_orbitals();
+    if (o_local) wfn_union->localize_orbitals();
 
     // ==> Perform the integral transformation to MO basis <== //
     wfn_union->transform_integrals();
-    if (print > 2) wfn_union->print_mo_integrals();
+    if (o_print > 2) wfn_union->print_mo_integrals();
+
+    // ==> Perform the work <== //
+    if (o_task == "ELECTROSTATIC_ENERGY") {
+        std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("ELECTROSTATIC ENERGY", wfn_union); 
+        double el1 = solver->compute_benchmark();
+        double el2 = solver->compute_oep_based();
+    } else {
+      throw PSIEXCEPTION("Incorrect target for oepdev program!\n");
+    }
+
 
 
     /* Below there are a few tests needed to develop Initial Version of the Plugin.
      * At the end of the process, all functionalities of the plugin should be using only:
      *  - the WavefunctionUnion object
-     *  - the PSIO object and
      *  - the Options object.
      * Therefore, these tests shall be removed once particular functionalities
      * will be developed during the Project. This means that the includes and typedefs 
      * at the top of `main.cc` shall be removed.
      */
+    if (o_enable_trial) {
 
     SharedWavefunction      wfn_union_base = wfn_union;
     SharedIntegralTransform transform      = wfn_union->integrals();
@@ -244,13 +263,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, primary_1, options);
     SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
 
-    //oep_cou->write_cube("V", "oep");
-
-    // Create Solver
-    std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("ELECTROSTATIC ENERGY", wfn_union);
-    double el1 = solver->compute_benchmark();
-    double el2 = solver->compute_oep_based();
-
+    oep_cou->write_cube("V", "oep");
 
     // Compute potentials
     if (false) {
@@ -269,7 +282,9 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     //potential->write_cube_file("pot");
     }
 
-    
+
+    } // End of trial
+
     return ref_wfn;
 }
 

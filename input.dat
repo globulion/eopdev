@@ -3,7 +3,7 @@ sys.path.insert(0, './..')
 import oepdev
 
 molecule happy {
-0 1
+#0 1
 #O         -3.08471        1.12313        0.00396
 #H         -2.11791        0.90877        0.01763
 #H         -3.12325        2.07922       -0.24921
@@ -11,7 +11,8 @@ molecule happy {
 #0 1
 #H          0.37920        1.49870       -0.00210
 #H          0.16921        2.17489       -0.00147
-#
+#================================================
+0 1
 C   0.000000  -0.667578  -2.124659
 C   0.000000   0.667578  -2.124659
 H   0.923621  -1.232253  -2.126185
@@ -24,13 +25,6 @@ C   0.000000   0.000000   2.900503
 C   0.000000   0.000000   1.693240
 H   0.000000   0.000000   0.627352
 H   0.000000   0.000000   3.963929
-#0 1
-#H  0.000  0.000 0.000
-#H  0.000  0.000 1.000
-#--
-#0 1
-#H 3.000  1.200 0.000
-#H 3.000  0.000 1.000
 
 units angstrom
 symmetry c1
@@ -39,21 +33,34 @@ nocom
 }
 
 set {
-    scf_type        direct
-    guess           core
-    print           3
-    basis           sto-3g
-    basis_df_oep    6-31G
-    cphf_diis       true
-    cphf_diis_dim   2
-    cphf_maxiter    200
-    #DF_BASIS_SAPT   cc-pVDZ
+    # ==> OEPDEV Routine Specification <== #
+    oepdev_target                 electrostatic_energy 
+    oepdev_localize               True
+    oepdev_enable_trial           False
+    # ==> General Psi4 Options <== #
+    scf_type                      direct 
+    guess                         core
+    print                         3
+    # ==> Basis Sets <== #
+    basis                         6-31G    
+    basis_df_oep                  6-31G
+    #df_basis_sapt                 cc-pVDZ
+    # ==> CPHF <== #
+    cphf_diis                     True 
+    cphf_diis_dim                 2
+    cphf_maxiter                  200
+    cphf_conver                   1e-8
+    # ==> ESP <== #                    
+    esp_npoints_per_atom          4000
+    esp_pad_sphere                12.0
 }
 
 
+# run oepdev
 energy('oepdev')
 
-# benchmarks
-#energy('sapt0')
+# run psi4 benchmarks
+energy('sapt0')
 
+# run oepdev python test
 oepdev.test(dummy=True)

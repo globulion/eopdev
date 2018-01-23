@@ -10,4 +10,4 @@ make
 #mv -v oepdev.so ${OEPDEVLIB_DIR}
 
 # test
-psi4
+#psi4
