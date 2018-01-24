@@ -22,8 +22,9 @@ double OEPDevSolver::compute_benchmark(const std::string& method) {}
 ElectrostaticEnergySolver::ElectrostaticEnergySolver(SharedWavefunctionUnion wfn_union)
  : OEPDevSolver(wfn_union)
 {
-  methods_oepBased_.push_back("DEFAULT");
-  methods_benchmark_.push_back("DEFAULT");
+  methods_oepBased_ .push_back("ESP_SYMMETRIZED");
+  methods_benchmark_.push_back("AO_EXPANDED"    );
+  methods_benchmark_.push_back("MO_EXPANDED"    );
 }
 
 ElectrostaticEnergySolver::~ElectrostaticEnergySolver() 
@@ -40,7 +41,7 @@ double ElectrostaticEnergySolver::compute_oep_based(const std::string& method)
   double e_mol_el  = 0.0;
   double qq        = 0.0;
 
-  if (method == "DEFAULT") {
+  if (method == "DEFAULT" || method == "ESP_SYMMETRIZED") {
  
      // ===> [Nuc+El](A) --- El(B) <=== //
      SharedWavefunction wfn_1 = wfn_union_->l_wfn(0);
@@ -172,7 +173,7 @@ double ElectrostaticEnergySolver::compute_benchmark(const std::string& method)
   double e_nuc_el  = 0.0; 
   double e_el_el   = 0.0;
 
-  if (method == "DEFAULT") {
+  if (method == "DEFAULT" || method == "AO_EXPANDED") {
                             
      psi::timer_on("SOLVER: Electrostatic Energy Calculations (BENCHMARK)");
                                          
