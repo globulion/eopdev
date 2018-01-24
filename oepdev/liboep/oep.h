@@ -33,10 +33,10 @@ of matrix elements of the one-electron effective operator \f$ \hat{v}^A \f$.
 
 Structure of OEP-based mathematical expressions is listed below:
 
-| Type  | Matrix Element | Comment |
-|--------|----|---|
+| Type   |                 Matrix Element                     |       Comment            |
+|--------|----------------------------------------------------|--------------------------|
 | Type 1 | \f$ \left( I \lvert \hat{v}^A \rvert J \right) \f$ | \f$ I\in A,\; J\in B\f$  |
-| Type 2 | \f$ \left( J \lvert \hat{v}^A \rvert L \right) \f$ | \f$ J,L\in B\f$  |
+| Type 2 | \f$ \left( J \lvert \hat{v}^A \rvert L \right) \f$ | \f$ J,L\in B\f$          |
 
 
 In the above table, \f$ I \f$, \f$ J \f$ and \f$ K \f$ indices correspond 
@@ -46,10 +46,13 @@ Depending on the type of function and matrix element, there are many subtypes of
 that differ in their dimensionality. Examples are given below:
 
 | Matrix Element | DF-based form | ESP-based form |
-|----|---|---|
+|----------------|---------------|----------------|
+| \f$ \left(\mu \lvert \hat{v}^{A[\mu]} \rvert \sigma \right) \f$ | \f$ \sum_{\iota\in A} v_{\mu\iota}^AS_{\iota\sigma} \f$ |  \f$ \sum_{\alpha\in A} q_\alpha^{A[\mu]} V_{\mu\sigma}^{(\alpha)}\f$ |
+| \f$ \left( i  \lvert \hat{v}^{A[i  ]} \rvert j      \right) \f$ | \f$ \sum_{\iota\in A} v_{i  \iota}^AS_{\iota j    } \f$ |  \f$ \sum_{\alpha\in A} q_\alpha^{A[i  ]} V_{i  j     }^{(\alpha)}\f$ |
+| \f$ \left(j   \lvert \hat{v}^{A[i  ]} \rvert l      \right) \f$ | \f$ \sum_{\iota\kappa\in A} S_{j \iota} v_{\iota\kappa}^{A[i]}S_{\kappa l} \f$ |  \f$ \sum_{\alpha\in A} q_\alpha^{A[i]} V_{jl}^{(\alpha)}\f$ |
 
-In the formulae above, the OEP-part (stored by OEP instances) is shown in blue 
-whereas the Solver-part (to be computed by the Solver) is shown in brown. 
+In the formulae above, the OEP-part (stored by OEP instances) and
+the Solver-part (to be computed by the Solver) are separated.
 It is apparent that all OEP-parts have the form of 2nd- or 3rd-rank tensors 
 with different class of axes (molecular orbitals, primary/auxiliary basis, atomic space). 
 Therefore, they can be uniquely defined by a unified *tensor object* 

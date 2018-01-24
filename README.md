@@ -25,6 +25,7 @@ In particular, the plugin tests the models of:
   1. the Pauli exchange-repulsion interaction energy    (Project II ) 
   2. the Induction interaction energy                   (Project III)
   3. the excitation energy transfer couplings           (Project I  )
+
 *******
 
 against reference solutions (exact or other approximations). 
