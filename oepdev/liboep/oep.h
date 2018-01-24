@@ -35,6 +35,9 @@ Structure of OEP-based mathematical expressions is listed below:
 
 | Type  | Matrix Element | Comment |
 |--------|----|---|
+| Type 1 | \f$ \left( I \lvert \hat{v}^A \rvert J \right) \f$ | \f$ I\in A,\; J\in B\f$  |
+| Type 2 | \f$ \left( J \lvert \hat{v}^A \rvert L \right) \f$ | \f$ J,L\in B\f$  |
+
 
 In the above table, \f$ I \f$, \f$ J \f$ and \f$ K \f$ indices correspond 
 to basis functions or molecular orbitals. 
@@ -171,6 +174,59 @@ of the full Hartree-Fock interaction energy based on the OEPDev equations.
 
 
 
+*/
+
+/*!\page pdensityfitting Density-fitting specialized for OEP’s
+   \tableofcontents
+
+To get the ab-initio representation of a OEP, one can use a procedure similar to
+the typical density fitting or resolution of identity, both of which are nowadays widely used 
+to compute electron-repulsion integrals (ERI’s) more efficiently. 
+
+An arbitrary one-electron potential of molecule *A* acting on any state vector 
+associated with molecule *A* can be expanded in the *auxiliary space* centered 
+on *A* as
+\f[
+   v\vert i) = \sum_{\xi} v\vert \xi) ( \xi \vert i)
+\f]
+under the necessary assumption that the auxiliary basis set is *complete*. 
+In that case, formally one can write the following identity
+\f[
+ (\eta\vert v\vert i) = \sum_{\xi} (\eta\vert v\vert \xi) S_{\xi i}
+\f]
+The matrix elements of the OEP operator in auxiliary space can be computed 
+in the same way as the matrix elements with any other basis function. 
+In reality, it is almost impossible to reach the completness of the basis set, 
+however, but it is possible to obtain the **effective** matrix elements of 
+the OEP operator in auxiliary space, rather than compute them as they are 
+in the above equation explicitly. We expand the LHS of the first equation 
+on this page in a series of the auxiliary basis functions scaled by the 
+undetermined expansion coefficients: 
+\f[
+  v\vert i) = \sum_{\xi} {G_{i\xi}} \vert \xi)
+\f]
+The expansion coefficients are the effective matrix elements 
+of the OEP operator in auxiliary basis set. Now, multiplying both sides 
+by another auxiliary basis function and subsequently inverting the equation 
+one obtains the expansion coefficients:
+\f[
+   \boxed{ G_{i\eta} = \sum_\xi (i \vert v \vert \eta) \left[ {\bf S}^{-1} \right]_{\eta\xi} }
+\f]
+In this way, it is possible to approximately determine the matrix elements 
+of the OEP operator with any other basis function in case the auxiliary 
+basis set is not complete. **In particular**, when the other basis function 
+does not belong to molecule *A* but to the (changing) environment, it is 
+straightforward to compute the resulting matrix element, which is simply given as  
+\f[
+   (j_{\in B} \vert v^A \vert i_{\in A}) = \sum_\xi {S_{j\xi}} {G_{i\xi}}
+\f]
+where *j* denotes the other (environmental) basis function.
+
+In the above equation, the OEP-part (fragment parameters for molecule *A* only) 
+and the Solver-part (subject to be computed by solver 
+on the fly) are separated. This then forms a basis for fragment-based 
+approach to solve Quantum Chemistry problems related to the extended molecular aggregates.
+  
 */
 
 #ifndef _oepdev_liboep_liboep_h_ 
