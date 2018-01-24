@@ -49,14 +49,15 @@ Things to remember:
            name of the module directory)
         * `LIBRARY` is the name of the library (e.g. `libutil`, should be the same as library directory name)
         * `HEADER` is the name of the header in library directory (e.g. `diis` for `diis.h` header file)
-   2. **Set local namespace**. To prevent naming clashes with other modules and with Psi4 remember to specify
-      *only one* local namespace per library of the following format:
+   2. **Set module namespace**. To prevent naming clashes with other modules and with Psi4 it is important to operate
+      in separate namespace (e.g. for a module). 
       ```c++
-      namespace MODULE_LIBRARY {
+      namespace MODULE {
       // your code goes here
-      } // EndNameSpace MODULE_LIBRARY
+      } // EndNameSpace MODULE
       ```
-      Example of namespace is `oepdev_liboep` in module `oepdev` and library `liboep`. 
+      For instance, all classes and functions in `oepdev` module are implemented within the namespace of the same label.
+      Considering addition of other local namespaces within a module can also be useful in certain cases.
 
 Environmental variables
 -----------------------
@@ -81,6 +82,7 @@ for a production run without documentation is unacceptable.
 Use Doxygen style for documentation all the time. Remember that it supports markdown which can make the documentation
 even more clear and easy to understand.
 Additionally you can create a nice `.rst` documentation file for Sphinx program.
+If you are coding equations, always include formulae in the documentation!
 
 Things to remember:
 
@@ -97,7 +99,7 @@ Naming conventions
 
 Naming is important because it helps to create more readable and clear self-documented code. 
 
-Things to remember:
+Some loose suggestions:
 
    1. **Do not be afraid of long names in the code, but avoid redundancy**. Examples of good and bad names:
       * good name: `get_density_matrix`; bad name: `get_matrix`. Unless there is only one type of matrix
