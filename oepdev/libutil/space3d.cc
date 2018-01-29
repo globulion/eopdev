@@ -335,26 +335,12 @@ void ScalarField3D::compute(){
   isComputed_ = true;
 }
 
-ScalarField3D::ScalarField3D(const int& np, const double& radius, const double& cx, const double& cy, const double& cz) 
- : pointsCollection_(PointsCollection3D::build(np, radius, cx, cy, cz)), 
-   data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", np, 4)),
-   isComputed_(false)
-{
-   
-}
-
 ScalarField3D::ScalarField3D(const int& np, const double& pad, psi::SharedWavefunction wfn, psi::Options& opt)
  : pointsCollection_(PointsCollection3D::build(np, pad, wfn->molecule())),
    data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", np, 4)),
    geom_(psi::Matrix(wfn->molecule()->geometry())), 
    wfn_(wfn)
-   //nbf_(wfn->basisset()->nbf()),
-   //primary_(wfn_->basisset()),
-   //fact_(std::make_shared<psi::IntegralFactory>(wfn->basisset(), wfn->basisset())),
-   //pot_(std::make_shared<psi::Matrix>("POT", wfn->basisset()->nbf(), wfn->basisset()->nbf())),
-   //isComputed_(false)
 {
-   //potInt_ = std::make_shared<PotentialInt>(fact_->spherical_transform(), primary_, primary_, 0);
    common_init();
 }
 
@@ -365,13 +351,7 @@ ScalarField3D::ScalarField3D(const int& nx, const int& ny, const int& nz,
     data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", nx*ny*nz, 4)),
     geom_(psi::Matrix(wfn->molecule()->geometry())),
     wfn_(wfn)
-    //nbf_(wfn->basisset()->nbf()), 
-    //primary_(wfn_->basisset()),
-    //fact_(std::make_shared<psi::IntegralFactory>(wfn->basisset(), wfn->basisset())),
-    //pot_(std::make_shared<psi::Matrix>("POT", wfn->basisset()->nbf(), wfn->basisset()->nbf())),
-    //isComputed_(false)
 {
-    //potInt_ = std::make_shared<PotentialInt>(fact_->spherical_transform(), primary_, primary_, 0);
     common_init();
 }
 
@@ -396,12 +376,6 @@ void ScalarField3D::write_cube_file(const std::string& name)
 
 
 ScalarField3D::~ScalarField3D()
-{
-
-}
-
-ElectrostaticPotential3D::ElectrostaticPotential3D(const int& np, const double& radius, const double& cx, const double& cy, const double& cz) 
- : ScalarField3D(np, radius, cx, cy, cz)
 {
 
 }
@@ -511,18 +485,6 @@ std::shared_ptr<PointsCollection3D> PointsCollection3D::build(const int& nx, con
   return pointsCollection;
 }
 
-// Build Random without molecule (no vdW radii)
-std::shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
-                                               const int& np,
-                                               const double& radius,
-                                               const double& cx, const double& cy, const double& cz)
-{
-   std::shared_ptr<ScalarField3D> field;
-   if          (type == "ELECTROSTATIC") field = std::make_shared<ElectrostaticPotential3D>(np, radius, cx, cy, cz);
-   else throw psi::PSIEXCEPTION(" ERROR! Incorrect scalar field type requested!\n");
-   return field;
-}
-
 // Build Random with molecule (vdW radii include)
 std::shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
                                                const int& np,
@@ -531,7 +493,7 @@ std::shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type,
                                                psi::Options& options)
 {
    std::shared_ptr<ScalarField3D> field;
-   if          (type == "ELECTROSTATIC") field = std::make_shared<ElectrostaticPotential3D>(np, padding, wfn, options);
+   if          (type == "ELECTROSTATIC POTENTIAL") field = std::make_shared<ElectrostaticPotential3D>(np, padding, wfn, options);
    else throw psi::PSIEXCEPTION(" ERROR! Incorrect scalar field type requested!\n");
    return field;
 }
@@ -543,7 +505,7 @@ std::shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type,
                                                psi::SharedWavefunction wfn, psi::Options& options)
 {
    std::shared_ptr<ScalarField3D> field;
-   if          (type == "ELECTROSTATIC") field = std::make_shared<ElectrostaticPotential3D>(nx, ny, nz, px, py, pz, wfn, options);
+   if          (type == "ELECTROSTATIC POTENTIAL") field = std::make_shared<ElectrostaticPotential3D>(nx, ny, nz, px, py, pz, wfn, options);
    else throw psi::PSIEXCEPTION(" ERROR! Incorrect scalar field type requested!\n");
    return field;
 }

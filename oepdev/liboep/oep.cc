@@ -102,7 +102,7 @@ void ElectrostaticEnergyOEPotential::compute(const std::string& oepType)
   if (oepType == "V" || oepType == "TOTAL") {
 
       psi::timer_on("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
-      SharedField3D potential = oepdev::ScalarField3D::build("ELECTROSTATIC", 
+      SharedField3D potential = oepdev::ScalarField3D::build("ELECTROSTATIC POTENTIAL", 
                                                    options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
                                                    options_.get_double("ESP_PAD_SPHERE"      ), 
                                                    wfn_, options_);

@@ -355,6 +355,8 @@ class CubePointsCollection3D : public PointsCollection3D, public psi::CubicScala
  *                                   that is able to compute the field in 3D space)
  *
  *  __Note:__ Always create instances by using static factory methods `build`.
+ *  The following types of scalar field are currently implemented:
+ *   - `ELECTROSTATIC POTENTIAL`
  */
 class ScalarField3D
 {
@@ -362,9 +364,10 @@ class ScalarField3D
     
     // <--- Constructors and Destructor ---> //
 
-    // TODO!
-    ScalarField3D(const int& np, const double& radius, const double& cx, const double& cy, const double& cz);
+    /// Construct potential on random grid by providing wavefunction
     ScalarField3D(const int& np, const double& pad, psi::SharedWavefunction wfn, psi::Options& options);
+
+    /// Construct potential on cube grid by providing wavefunction
     ScalarField3D(const int& nx, const int& ny, const int& nz,
                   const double& px, const double& py, const double& pz,
                   std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options);
@@ -375,11 +378,29 @@ class ScalarField3D
 
     // <--- Factory Methods ---> //
 
-    // TODO!
-    static shared_ptr<ScalarField3D> build(const std::string& type, const int& np, const double& radius,
-                                           const double& cx, const double& cy, const double& cz);
+    /**\brief Build scalar field of random points.
+     *
+     *  @param type    - type of scalar field                                      
+     *  @param np      - number of points 
+     *  @param pad     - radius padding of a minimal sphere enclosing the molecule
+     *  @param wfn     - Psi4 Wavefunction containing the molecule
+     *  @param options - Psi4 options
+     */
     static shared_ptr<ScalarField3D> build(const std::string& type, const int& np,
                                            const double& pad, psi::SharedWavefunction wfn, psi::Options& options);
+
+    /**\brief Build scalar field of points on a g09-cube grid.
+     *
+     *  @param type    - type of scalar field                                      
+     *  @param nx      - number of points along x direction
+     *  @param ny      - number of points along y direction
+     *  @param nz      - number of points along z direction
+     *  @param px      - padding distance along x direction
+     *  @param py      - padding distance along y direction
+     *  @param pz      - padding distance along z direction
+     *  @param wfn     - Psi4 Wavefunction containing the molecule
+     *  @param options - Psi4 options
+     */
     static shared_ptr<ScalarField3D> build(const std::string& type, const int& nx, const int& ny, const int& nz,
                                            const double& px, const double& py, const double& pz,
                                            psi::SharedWavefunction wfn, psi::Options& options);
@@ -492,7 +513,6 @@ class ScalarField3D
 class ElectrostaticPotential3D : public ScalarField3D
 {
   public:
-    ElectrostaticPotential3D(const int& np, const double& radius, const double& cx, const double& cy, const double& cz);
     ElectrostaticPotential3D(const int& np, const double& padding, psi::SharedWavefunction wfn, psi::Options& options);
     ElectrostaticPotential3D(const int& nx, const int& ny, const int& nz,
                              const double& px, const double& py, const double& pz,
