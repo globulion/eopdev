@@ -1,3 +1,6 @@
+//#include "psi4/libtrans/integraltransform.h"
+//#include "psi4/libdpd/dpd.h"
+
 #include "solver.h"
 
 using namespace std;
@@ -336,7 +339,6 @@ double RepulsionEnergySolver::compute_oep_based(const std::string& method)
 double RepulsionEnergySolver::compute_benchmark(const std::string& method) 
 {
   double e = 0.0;
-
   if      (method == "DEFAULT" ||
            method == "HAYES_STONE" ) e = compute_benchmark_hayes_stone();
   else if (method == "MURRELL_ETAL") e = compute_benchmark_murrell_etal();
@@ -348,74 +350,181 @@ double RepulsionEnergySolver::compute_benchmark(const std::string& method)
   return e;
 }
 double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
+
+  // ===> Start computations <=== //
   psi::timer_on ("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
-  // ===> One electron part <=== //
-     int nbf_1 = wfn_union_->l_primary(0)->nbf();
-     int nbf_2 = wfn_union_->l_primary(1)->nbf();
-     int nbf   = wfn_union_->basisset()->nbf();
 
-     std::shared_ptr<psi::Matrix> VaoA      = std::make_shared<psi::Matrix>("VaoA" , nbf, nbf);
-     std::shared_ptr<psi::Matrix> VaoB      = std::make_shared<psi::Matrix>("VaoB" , nbf, nbf);
-     std::shared_ptr<psi::Matrix> Sao       = std::make_shared<psi::Matrix>("Sao"  , nbf, nbf);
-     std::shared_ptr<psi::Matrix> Tao       = std::make_shared<psi::Matrix>("Tao"  , nbf, nbf);
-     psi::IntegralFactory fact(wfn_union_->basisset(), wfn_union_->basisset());
-
-     //std::shared_ptr<psi::Matrix> VaoA21    = std::make_shared<psi::Matrix>("VaoA(2,1)" , nbf_2, nbf_1);
-     //std::shared_ptr<psi::Matrix> VaoB12    = std::make_shared<psi::Matrix>("VaoB(1,2)" , nbf_1, nbf_2);
-     //std::shared_ptr<psi::Matrix> Sao12     = std::make_shared<psi::Matrix>("Sao(1,2)"  , nbf_1, nbf_2);
-     //std::shared_ptr<psi::Matrix> Tao12     = std::make_shared<psi::Matrix>("Tao(1,2)"  , nbf_1, nbf_2);
-
-     psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1));
-     psi::IntegralFactory fact_21(wfn_union_->l_primary(1), wfn_union_->l_primary(0));
-
-     std::shared_ptr<psi::OneBodyAOInt> oneInt;
-     std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(),
-                                                                                       wfn_union_->l_primary(0),
-                                                                                       wfn_union_->l_primary(1));
-     std::shared_ptr<psi::PotentialInt> potInt_2 = std::make_shared<psi::PotentialInt>(fact_21.spherical_transform(),
-                                                                                       wfn_union_->l_primary(1),
-                                                                                       wfn_union_->l_primary(0));
-     std::shared_ptr<psi::PotentialInt> potInt_1n= std::make_shared<psi::PotentialInt>(fact.spherical_transform(),
-                                                                                       wfn_union_->basisset(),
-                                                                                       wfn_union_->basisset());
-     std::shared_ptr<psi::PotentialInt> potInt_2n= std::make_shared<psi::PotentialInt>(fact.spherical_transform(),
-                                                                                       wfn_union_->basisset(),
-                                                                                       wfn_union_->basisset());
-
-     std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact.ao_overlap());
-     std::shared_ptr<psi::OneBodyAOInt> kinInt(fact.ao_kinetic());
-
-     std::shared_ptr<psi::Matrix> Zxyz_1 = std::make_shared<psi::Matrix>(potInt_1->charge_field());
-     std::shared_ptr<psi::Matrix> Zxyz_2 = std::make_shared<psi::Matrix>(potInt_2->charge_field());
-
-     potInt_1n->set_charge_field(Zxyz_2);
-     potInt_2n->set_charge_field(Zxyz_1);
-
-     oneInt = potInt_1n;
-     oneInt->compute(VaoB);
-     oneInt = potInt_2n;
-     oneInt->compute(VaoA);
-     ovlInt->compute(Sao);
-     kinInt->compute(Tao);
-
-     Tao->add(VaoA);
-     Tao->add(VaoB);
-     Tao->scale(2.0);
-
-     // ===> Transform overlap matrix to MO basis <=== //
-     wfn_union_->Ca()->print();
-     wfn_union_->Ca_subset("AO","OCC")->print();
-     std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(wfn_union_->Ca_subset("AO","OCC"), 
-                                                             Sao, 
-                                                             wfn_union_->Ca_subset("AO","OCC"),
-                                                             true, false, false);
-     Smo->print();
-     Smo->invert();
-     Smo->print();
-
+  double e_1, e_2, e_ex;
 
   // ===> One electron part <=== //
+
+  int nbf   = wfn_union_->basisset()->nbf();
+
+  // ---> Allocate <--- //
+  std::shared_ptr<psi::Matrix> VaoA      = std::make_shared<psi::Matrix>("VaoA" , nbf, nbf);
+  std::shared_ptr<psi::Matrix> VaoB      = std::make_shared<psi::Matrix>("VaoB" , nbf, nbf);
+  std::shared_ptr<psi::Matrix> Sao       = std::make_shared<psi::Matrix>("Sao"  , nbf, nbf);
+  std::shared_ptr<psi::Matrix> Tao       = std::make_shared<psi::Matrix>("Tao"  , nbf, nbf);
+  psi::IntegralFactory fact(wfn_union_->basisset(), wfn_union_->basisset());
+
+  //std::shared_ptr<psi::Matrix> VaoA21    = std::make_shared<psi::Matrix>("VaoA(2,1)" , nbf_2, nbf_1);
+  //std::shared_ptr<psi::Matrix> VaoB12    = std::make_shared<psi::Matrix>("VaoB(1,2)" , nbf_1, nbf_2);
+  //std::shared_ptr<psi::Matrix> Sao12     = std::make_shared<psi::Matrix>("Sao(1,2)"  , nbf_1, nbf_2);
+  //std::shared_ptr<psi::Matrix> Tao12     = std::make_shared<psi::Matrix>("Tao(1,2)"  , nbf_1, nbf_2);
+
+  psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_21(wfn_union_->l_primary(1), wfn_union_->l_primary(0));
+
+  std::shared_ptr<psi::OneBodyAOInt> oneInt;
+  std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(),
+                                                                                    wfn_union_->l_primary(0),
+                                                                                    wfn_union_->l_primary(1));
+  std::shared_ptr<psi::PotentialInt> potInt_2 = std::make_shared<psi::PotentialInt>(fact_21.spherical_transform(),
+                                                                                    wfn_union_->l_primary(1),
+                                                                                    wfn_union_->l_primary(0));
+  std::shared_ptr<psi::PotentialInt> potInt_1n= std::make_shared<psi::PotentialInt>(fact.spherical_transform(),
+                                                                                    wfn_union_->basisset(),
+                                                                                    wfn_union_->basisset());
+  std::shared_ptr<psi::PotentialInt> potInt_2n= std::make_shared<psi::PotentialInt>(fact.spherical_transform(),
+                                                                                    wfn_union_->basisset(),
+                                                                                    wfn_union_->basisset());
+
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact.ao_overlap());
+  std::shared_ptr<psi::OneBodyAOInt> kinInt(fact.ao_kinetic());
+
+  std::shared_ptr<psi::Matrix> Zxyz_1 = std::make_shared<psi::Matrix>(potInt_1->charge_field());
+  std::shared_ptr<psi::Matrix> Zxyz_2 = std::make_shared<psi::Matrix>(potInt_2->charge_field());
+
+  potInt_1n->set_charge_field(Zxyz_2);
+  potInt_2n->set_charge_field(Zxyz_1);
+
+  // ---> Compute one-electron integrals <--- //
+  oneInt = potInt_1n;
+  oneInt->compute(VaoB);
+  oneInt = potInt_2n;
+  oneInt->compute(VaoA);
+  ovlInt->compute(Sao);
+  kinInt->compute(Tao);
+
+  // ---> Accumulate one electron part <--- //
+  Tao->add(VaoA);
+  Tao->add(VaoB);
+  Tao->scale(2.0);
+
+  // ---> Transform one electron and overlap matrices to MO basis <--- //
+  std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(wfn_union_->Ca_subset("AO","OCC"), 
+                                                          Sao, 
+                                                          wfn_union_->Ca_subset("AO","OCC"),
+                                                          true, false, false);
+  std::shared_ptr<psi::Matrix> Tmo = psi::Matrix::triplet(wfn_union_->Ca_subset("AO","OCC"), 
+                                                          Tao, 
+                                                          wfn_union_->Ca_subset("AO","OCC"),
+                                                          true, false, false);
+
+  // ---> Invert the overlap matrix in MO basis <--- //
+  Smo->invert();
+
+  // ---> Finalize with one-electron term <--- //  
+  std::shared_ptr<psi::Matrix> Imo = std::make_shared<psi::Matrix>(Smo);
+  Imo->identity();
+  Smo->subtract(Imo);
+  e_1 = Tmo->vector_dot(Smo);
+
+  // ===> Two electron part <=== //
+  Smo->add(Imo);
+  e_2 = 0.0;
+  // ---> Loop over ERI's in MO space <--- //
+
+  std::shared_ptr<psi::IntegralTransform> integrals = wfn_union_->integrals(); 
+  dpd_set_default(integrals->get_dpd_id());
+  dpdbuf4 buf;
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                          integrals->DPD_ID("[O,O]"  ), integrals->DPD_ID("[O,O]"  ),
+                          integrals->DPD_ID("[O>=O]+"), integrals->DPD_ID("[O>=O]+"), 0, "MO Ints (OO|OO)");
+
+  double integral, v;
+  double** t = Smo->pointer();
+  for (int h = 0; h < wfn_union_->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+       for (int kl = 0; kl < buf.params->rowtot[h]; ++kl) {
+            int k = buf.params->roworb[h][kl][0];
+            int l = buf.params->roworb[h][kl][1];
+            for (int mn = 0; mn < buf.params->coltot[h]; ++mn) {
+                 int m = buf.params->colorb[h][mn][0];
+                 int n = buf.params->colorb[h][mn][1];
+                 //psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", k, l, m, n, buf.matrix[h][kl][mn]);
+
+                 integral = buf.matrix[h][kl][mn];
+
+                 v = 2.0*t[k][l]*t[m][n] - t[k][n]*t[m][l];
+                 if (k != l) v+= 2.0*t[k][l]*t[m][n] - t[l][n]*t[k][m];
+                 if (m != n) v+= 2.0*t[k][l]*t[m][n] - t[l][m]*t[k][n];
+                 if ((k != l) && (m != n)) v+= 2.0*t[k][l]*t[m][n] - t[k][m]*t[l][n];
+
+                 if ((k == l) && (m == n)) v -= 2.0;
+                 if ((k == n) && (l == m)) v += 2.0;
+
+                 e_2 += integral * v;
+            }
+       }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+
   psi::timer_off("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
+
+  // ===> Compute Exchange Energy <=== //
+  psi::timer_on ("SOLVER: HF Exchange Energy Calculations");
+
+  dpdbuf4 buf_1212;
+
+  global_dpd_->buf4_init(&buf_1212, PSIF_LIBTRANS_DPD, 0, 
+                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[1,2]"  ),
+                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[1,2]"  ), 0, "MO Ints (12|12)");
+
+  e_ex = 0.0;
+  for (int h = 0; h < wfn_union_->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf_1212, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf_1212, h);
+       for (int pq = 0; pq < buf_1212.params->rowtot[h]; ++pq) {
+            int p = buf_1212.params->roworb[h][pq][0];
+            int q = buf_1212.params->roworb[h][pq][1];
+            for (int rs = 0; rs < buf_1212.params->coltot[h]; ++rs) {
+                 int r = buf_1212.params->colorb[h][rs][0];
+                 int s = buf_1212.params->colorb[h][rs][1];
+                 e_ex += buf_1212.matrix[h][pq][rs];
+                 //psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_1212.matrix[h][pq][rs]);
+            }
+       }
+       global_dpd_->buf4_mat_irrep_close(&buf_1212, h);
+  }
+  global_dpd_->buf4_close(&buf_1212);
+  e_ex *= -2.0;
+
+  psi::timer_off("SOLVER: HF Exchange Energy Calculations");
+
+  // ---> Print <--- //
+  if (wfn_union_->options().get_int("PRINT") > 0) {
+     psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n");
+     psi::outfile->Printf("  ==>         Benchmark (Hayes-Stone)                <==\n\n");
+     psi::outfile->Printf("     E_REP_1   = %13.6f\n", e_1      );
+     psi::outfile->Printf("     E_REP_2   = %13.6f\n", e_2      );
+     psi::outfile->Printf("     E_REP     = %13.6f\n", e_1+e_2  );
+     psi::outfile->Printf("     E_EX      = %13.6f\n", e_ex     );
+     psi::outfile->Printf("     -------------------------------\n");
+     psi::outfile->Printf("     E_EXREP   = %13.6f\n", e_1+e_2+e_ex);
+     psi::outfile->Printf("\n");
+  }
+
+  // ---> Close the DPD file <--- //
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  return e_1+e_2+e_ex;
 }
 double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell et al.)");

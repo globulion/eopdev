@@ -378,10 +378,10 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * For a closed-shell system, equation of Hayes and Stone (1984)
  * becomes
  * \f[
- *    E^{\rm Rep} = 2\sum_{a\in A} \sum_{b\in B} 
+ *    E^{\rm Rep} = 2\sum_{ab} 
                     \left( V^A_{ab} + V^B_{ab} + T_{ab} \right) 
                     \left[ [{\bf S}^{-1}]_{ab} - \delta_{ab} \right]
-                +   \sum_{ac\in A} \sum_{bd\in B}
+                +   \sum_{abcd} 
                     (ac \vert bd) 
                     \left\{ 
        [{\bf S}^{-1}]_{ab} [{\bf S}^{-1}]_{cd} - 

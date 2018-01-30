@@ -260,8 +260,10 @@ void WavefunctionUnion::transform_integrals()
     SharedMOSpaceVector spaces;
     SharedMOSpace space_1o = l_mospace(0,"OCC");
     SharedMOSpace space_2o = l_mospace(1,"OCC");
+    SharedMOSpace space_12o= MOSpace::occ;
     spaces.push_back(space_1o);
     spaces.push_back(space_2o);
+    spaces.push_back(space_12o);
     integrals_ = std::make_shared<IntegralTransform>(shared_from_this(), 
                                                      spaces,
                                                      IntegralTransform::Restricted,
@@ -300,6 +302,11 @@ void WavefunctionUnion::transform_integrals()
     timer_on("Trans (22|22)");
     integrals_->transform_tei(space_2o, space_2o, space_2o, space_2o, IntegralTransform::MakeAndNuke);
     timer_off("Trans (22|22)");
+
+    // Trans (OO|OO)
+    timer_on("Trans (OO|OO)");
+    integrals_->transform_tei(space_12o, space_12o, space_12o, space_12o, IntegralTransform::MakeAndNuke);
+    timer_off("Trans (OO|OO)");
 }
 
 void WavefunctionUnion::print_mo_integrals(void) { 
