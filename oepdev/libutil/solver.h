@@ -266,10 +266,10 @@ class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
  * <caption id="Tab.1">Methods available in the Solver</caption>
  * <tr><th> Keyword  <th>Method Description  
  * <tr><td colspan=2> <center><strong>Benchmark Methods</strong></center>
- * <tr><td> `AO_EXPANDED`  <td>Default. Exact Coulombic energy from atomic orbital expansions.
+ * <tr><td> `AO_EXPANDED`  <td>*Default*. Exact Coulombic energy from atomic orbital expansions.
  * <tr><td> `MO_EXPANDED`  <td>Exact Coulombic energy from molecular orbital expansions
  * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
- * <tr><td> `ESP_SYMMETRIZED` <td>Default. Coulombic energy from ESP charges interacting with nuclei and electronic density.
+ * <tr><td> `ESP_SYMMETRIZED` <td>*Default*. Coulombic energy from ESP charges interacting with nuclei and electronic density.
  *                                Symmetrized with respect to monomers.
  * </table>
  *
@@ -345,6 +345,104 @@ class ElectrostaticEnergySolver : public OEPDevSolver
     virtual double compute_oep_based(const std::string& method = "DEFAULT");
     virtual double compute_benchmark(const std::string& method = "DEFAULT");
    
+};
+
+/**\brief Compute the Pauli-Repulsion interaction energy between unperturbed wavefunctions.
+ *
+ * The implemented methods are shown below
+ * <table>
+ * <caption id="Tab.1">Methods available in the Solver</caption>
+ * <tr><th> Keyword  <th>Method Description  
+ * <tr><td colspan=2> <center><strong>Benchmark Methods</strong></center>
+ * <tr><td> `HAYES_STONE`       <td>*Default*. Exact Pauli Repulsion energy at HF level from Hayes and Stone (1984). 
+ * <tr><td> `MURRELL_ETAL`      <td>Approximate Pauli Repulsion energy at HF level from Murrell et al.
+ * <tr><td> `EFP2`              <td>Approximate Pauli Repulsion energy at HF level from EFP2 model.
+ * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
+ * <tr><td> `MURRELL_ETAL_MIX`  <td>*Default*. OEP-Murrell et al's: S1 term via DF-OEP, S2 term via ESP-OEP.
+ * <tr><td> `MURRELL_ETAL_ESP`  <td>OEP-Murrell et al's: S1 and S2 via ESP-OEP
+ * </table>
+ *
+ * Below the detailed description of the above methods is given.
+ * In the formulae, the Coulomb notation for 
+ * electron repulsion integrals (ERI's) in MO basis is adopted; i.e,
+ * \f[
+ *  (ac \vert bd) = \iint d{\bf r}_1 d{\bf r}_2 
+ *   \phi_a({\bf r}_1) \phi_c({\bf r}_1) \frac{1}{r_{12}} \phi_b({\bf r}_2) \phi_d({\bf r}_2)
+ * \f]
+ * It is also assumed that the orbitals are real.
+ *
+ * # Benchmark Methods
+ * ## Exact Pauli Repulsion energy at HF level.
+ *    
+ * For a closed-shell system, equation of Hayes and Stone (1984)
+ * become
+ * \f[
+ *    E^{\rm Rep} = 2\sum_{ac\in A} \sum_{bd\in B} 
+                    \left( V^A_{ab} + V^B_{ab} + T_{ab} \right) 
+                    \left[ [{\bf S}^{-1}]_{ab} - \delta_{ab} \right]
+                +   \sum_{ac\in A} \sum_{bd\in B}
+                    (ac \vert bd) 
+                    \left\{ 
+       [{\bf S}^{-1}]_{ab} [{\bf S}^{-1}]_{cd} - 
+       [{\bf S}^{-1}]_{ad} [{\bf S}^{-1}]_{bc} -
+      2\delta_{ab} \delta_{cd} +
+      2\delta_{ad} \delta_{bc}
+                    \right\}
+ * \f]
+ * where \f$ {\bf S} \f$ is the overlap matrix between the doubly-occupied
+ * orbitals.
+ * The exact exchange energy is for a closed shell case given as
+ * \f[
+     E^{\rm Ex} = -2\sum_{a\in A} \sum_{b\in B} (ab \vert ab)
+ * \f]
+ * Similarity transformation of molecular orbitals does not affect the resulting energies.
+ *
+ * ## Approximate Pauli Repulsion energy at HF level from Murrell et al.
+ * 
+ * By expanding the overlap matrix in a Taylor series one can show that 
+ * the Pauli repulsion energy is approximately given as
+ * \f[
+ *    E^{\rm Rep} = E^{\rm Rep}(\mathcal{O}(S)) + E^{\rm Rep}(\mathcal{O}(S^2))
+ * \f]
+ * where the first-order term is 
+ * \f[
+ *    E^{\rm Rep}(\mathcal{O}(S)) = -2\sum_{a\in A} \sum_{b\in B}
+ *                S_{ab} \left\{
+ *            V^A_{ab} + \sum_{c\in A} \left[ 2(ab \vert cc) - (ac \vert bc) \right]
+ *          + V^B_{ab} + \sum_{d\in B} \left[ 2(ab \vert dd) - (ad \vert bd) \right]
+ *                 \right\}
+ * \f]
+ * whereas the second-order term is
+ * \f[
+ *    E^{\rm Rep}(\mathcal{O}(S^2)) = 2\sum_{a\in A} \sum_{b\in B} S_{ab} \left\{
+ *                  \sum_{c\in A} S_{bc}
+ *                \left[ V^B + 2\sum_{d\in B} (ac \vert dd) \right]
+ *           +      \sum_{d\in B} S_{ad}
+ *                \left[ V^A + 2\sum_{x\in A} (bd \vert cc) \right]
+ *                - \sum_{c\in A} \sum_{d\in B} S_{cd} (ac \vert bd)
+ *         \right\}
+ * \f] 
+ * By using OEP technique, the above theory can be exactly re-cast *without* any further approximations.
+ *
+ * # OEP-Based Methods
+ * The Murrell et al's theory of Pauli repulsion is here re-cast by introducing OEP's.
+ * 
+ * ## S1 term via DF-OEP, S2 term via ESP-OEP.
+ * ## S1 and S2 terms via ESP-OEP.
+ *
+ * *Notes:* 
+ *   - This solver also computes and prints the exchange energy at HF level (formula is given above)
+ *     for reference purposes.
+ *   - In order to construct this solver, **always** use the `OEPDevSolver::build` static factory method.
+ */
+class RepulsionEnergySolver : public OEPDevSolver
+{
+  public:
+    RepulsionEnergySolver(SharedWavefunctionUnion wfn_union);
+    virtual ~RepulsionEnergySolver();
+
+    virtual double compute_oep_based(const std::string& method = "DEFAULT");
+    virtual double compute_benchmark(const std::string& method = "DEFAULT");
 };
 
 

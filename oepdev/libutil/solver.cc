@@ -161,7 +161,7 @@ double ElectrostaticEnergySolver::compute_oep_based(const std::string& method)
   } 
   else 
   {
-     throw psi::PSIEXCEPTION("Error. Incorrect benchmark method specified for electrostatic calculations!\n");
+     throw psi::PSIEXCEPTION("Error. Incorrect OEP-based method specified for electrostatic energy calculations!\n");
   }
   return e;
 
@@ -308,17 +308,68 @@ double ElectrostaticEnergySolver::compute_benchmark(const std::string& method)
   } 
   else 
   {
-     throw psi::PSIEXCEPTION("Error. Incorrect benchmark method specified for electrostatic calculations!\n");
+     throw psi::PSIEXCEPTION("Error. Incorrect benchmark method specified for electrostatic energy calculations!\n");
   }
   return e;
 }
 
+/// ===> Repulsion Energy <=== ///
 
+RepulsionEnergySolver::RepulsionEnergySolver(SharedWavefunctionUnion wfn_union)
+ : OEPDevSolver(wfn_union)
+{
+  // Benchmarks
+  methods_benchmark_.push_back("HAYES_STONE"     );
+  methods_benchmark_.push_back("MURRELL_ETAL"    );
+  methods_benchmark_.push_back("EFP2"            );
+  // OEP-based
+  methods_oepBased_ .push_back("MURRELL_ETAL_MIX");
+  methods_oepBased_ .push_back("MURRELL_ETAL_ESP");
+}
 
+RepulsionEnergySolver::~RepulsionEnergySolver() 
+{
+
+}
+
+double RepulsionEnergySolver::compute_oep_based(const std::string& method) 
+{
+  double e = 0.0;
+
+  if (method == "DEFAULT" || method == "MURRELL_ETAL_MIX") {
+                         
+  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
+  psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
+  }
+  else 
+  {
+     throw psi::PSIEXCEPTION("Error. Incorrect OEP-based method specified for repulsion energy calculations!\n");
+  }
+  return e;
+}
+double RepulsionEnergySolver::compute_benchmark(const std::string& method) 
+{
+  double e = 0.0;
+
+  if (method == "DEFAULT" || method == "HAYES_STONE") {
+                         
+  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
+  psi::timer_off("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
+  }
+  else 
+  {
+     throw psi::PSIEXCEPTION("Error. Incorrect benchmark method specified for repulsion energy calculations!\n");
+  }
+  return e;
+
+}
+
+/// Build: factory static method 
 std::shared_ptr<OEPDevSolver> OEPDevSolver::build(const std::string& target, SharedWavefunctionUnion wfn_union)
 {
    std::shared_ptr<OEPDevSolver> solver;
-   if     (target == "ELECTROSTATIC ENERGY") solver = std::make_shared<ElectrostaticEnergySolver>(wfn_union);
+   if      (target == "ELECTROSTATIC ENERGY") solver = std::make_shared<ElectrostaticEnergySolver>(wfn_union);
+   else if (target == "REPULSION ENERGY"    ) solver = std::make_shared<    RepulsionEnergySolver>(wfn_union);
    else throw psi::PSIEXCEPTION("OEPDEV: Error. OEPDevSolver: Incorrect targer property chosen!\n");
    return solver;
 }
