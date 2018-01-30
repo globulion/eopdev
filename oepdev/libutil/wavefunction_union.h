@@ -64,6 +64,9 @@ using SharedLocalizer          = std::shared_ptr<Localizer>;
  *  __Warnings:__
  *    1. Gradients, Hessians and frequencies are not touched, hence they are __wrong__!
  *    2. Lagrangian (if present) is not touched, hence its __wrong__!
+ *    3. Ca/Cb and epsilon subsets were reimplemented from psi::Wavefunction to remove sorting of orbitals.
+ *       However, the corresponding member functions are not virtual in psi::Wavefunction.
+ *       This could bring problems when upcasting.
  * 
  *  The following variables are _shallow_ copies of variables inside 
  *  the Wavefunction object, that is created for the _whole_ molecule cluster:
