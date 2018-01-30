@@ -223,6 +223,7 @@ class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
     *
     * Implemented target properties:
     *  - `ELECTROSTATIC_ENERGY` - Coulombic interaction energy between unperturbed wavefunctions.
+    *  - `REPULSION_ENERGY`     - Pauli repulsion interaction energy between unperturbed wavefunctions.
     *
     * \see ElectrostaticEnergySolver
     */
@@ -375,7 +376,7 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * ## Exact Pauli Repulsion energy at HF level.
  *    
  * For a closed-shell system, equation of Hayes and Stone (1984)
- * become
+ * becomes
  * \f[
  *    E^{\rm Rep} = 2\sum_{a\in A} \sum_{b\in B} 
                     \left( V^A_{ab} + V^B_{ab} + T_{ab} \right) 

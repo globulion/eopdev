@@ -215,7 +215,12 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("ELECTROSTATIC ENERGY", wfn_union); 
         double el1 = solver->compute_benchmark();
         double el2 = solver->compute_oep_based();
-    } else {
+    }
+    else if (o_task == "REPULSION_ENERGY") {
+        std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("REPULSION ENERGY", wfn_union);
+        double e_stone = solver->compute_benchmark("HAYES_STONE");
+    } 
+    else {
       throw PSIEXCEPTION("Incorrect target for oepdev program!\n");
     }
 

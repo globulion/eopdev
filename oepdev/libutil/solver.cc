@@ -350,6 +350,69 @@ double RepulsionEnergySolver::compute_benchmark(const std::string& method)
 double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
   psi::timer_on ("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
   // ===> One electron part <=== //
+     int nbf_1 = wfn_union_->l_primary(0)->nbf();
+     int nbf_2 = wfn_union_->l_primary(1)->nbf();
+     int nbf   = wfn_union_->basisset()->nbf();
+
+     std::shared_ptr<psi::Matrix> VaoA      = std::make_shared<psi::Matrix>("VaoA" , nbf, nbf);
+     std::shared_ptr<psi::Matrix> VaoB      = std::make_shared<psi::Matrix>("VaoB" , nbf, nbf);
+     std::shared_ptr<psi::Matrix> Sao       = std::make_shared<psi::Matrix>("Sao"  , nbf, nbf);
+     std::shared_ptr<psi::Matrix> Tao       = std::make_shared<psi::Matrix>("Tao"  , nbf, nbf);
+     psi::IntegralFactory fact(wfn_union_->basisset(), wfn_union_->basisset());
+
+     //std::shared_ptr<psi::Matrix> VaoA21    = std::make_shared<psi::Matrix>("VaoA(2,1)" , nbf_2, nbf_1);
+     //std::shared_ptr<psi::Matrix> VaoB12    = std::make_shared<psi::Matrix>("VaoB(1,2)" , nbf_1, nbf_2);
+     //std::shared_ptr<psi::Matrix> Sao12     = std::make_shared<psi::Matrix>("Sao(1,2)"  , nbf_1, nbf_2);
+     //std::shared_ptr<psi::Matrix> Tao12     = std::make_shared<psi::Matrix>("Tao(1,2)"  , nbf_1, nbf_2);
+
+     psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1));
+     psi::IntegralFactory fact_21(wfn_union_->l_primary(1), wfn_union_->l_primary(0));
+
+     std::shared_ptr<psi::OneBodyAOInt> oneInt;
+     std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(),
+                                                                                       wfn_union_->l_primary(0),
+                                                                                       wfn_union_->l_primary(1));
+     std::shared_ptr<psi::PotentialInt> potInt_2 = std::make_shared<psi::PotentialInt>(fact_21.spherical_transform(),
+                                                                                       wfn_union_->l_primary(1),
+                                                                                       wfn_union_->l_primary(0));
+     std::shared_ptr<psi::PotentialInt> potInt_1n= std::make_shared<psi::PotentialInt>(fact.spherical_transform(),
+                                                                                       wfn_union_->basisset(),
+                                                                                       wfn_union_->basisset());
+     std::shared_ptr<psi::PotentialInt> potInt_2n= std::make_shared<psi::PotentialInt>(fact.spherical_transform(),
+                                                                                       wfn_union_->basisset(),
+                                                                                       wfn_union_->basisset());
+
+     std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact.ao_overlap());
+     std::shared_ptr<psi::OneBodyAOInt> kinInt(fact.ao_kinetic());
+
+     std::shared_ptr<psi::Matrix> Zxyz_1 = std::make_shared<psi::Matrix>(potInt_1->charge_field());
+     std::shared_ptr<psi::Matrix> Zxyz_2 = std::make_shared<psi::Matrix>(potInt_2->charge_field());
+
+     potInt_1n->set_charge_field(Zxyz_2);
+     potInt_2n->set_charge_field(Zxyz_1);
+
+     oneInt = potInt_1n;
+     oneInt->compute(VaoB);
+     oneInt = potInt_2n;
+     oneInt->compute(VaoA);
+     ovlInt->compute(Sao);
+     kinInt->compute(Tao);
+
+     Tao->add(VaoA);
+     Tao->add(VaoB);
+     Tao->scale(2.0);
+
+     // ===> Transform overlap matrix to MO basis <=== //
+     wfn_union_->Ca()->print();
+     wfn_union_->Ca_subset("AO","OCC")->print();
+     std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(wfn_union_->Ca_subset("AO","OCC"), 
+                                                             Sao, 
+                                                             wfn_union_->Ca_subset("AO","OCC"),
+                                                             true, false, false);
+     Smo->print();
+     Smo->invert();
+     Smo->print();
+
 
   // ===> One electron part <=== //
   psi::timer_off("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");

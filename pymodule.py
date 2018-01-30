@@ -50,9 +50,12 @@ def run_oepdev(name, **kwargs):
     psi4.core.set_local_option('MYPLUGIN', 'PRINT', 1)
 
     ref_wfn = kwargs.get('ref_wfn', None)
-    if ref_wfn is None: ref_wfn = psi4.driver.scf_helper(name, **kwargs)
+    if ref_wfn is None: 
+       print " [1] Computing HF/SCF for the dimer."
+       ref_wfn = psi4.driver.scf_helper(name, **kwargs)
 
     # grab molecule aggregate and all fragments (now only for dimer)
+    print " [2] Preparing basis sets for the monomers."
     molecule      = ref_wfn.molecule()
     molecule_A    = molecule.extract_subsets(1)
     molecule_B    = molecule.extract_subsets(2)
@@ -72,6 +75,7 @@ def run_oepdev(name, **kwargs):
     proc_util.check_iwl_file_from_scf_type(psi4.core.get_option('SCF', 'SCF_TYPE'), ref_wfn)
 
     # Call the Psi4 plugin
+    print " [3] Running OEPDev plugin."
     oepdev_wfn = psi4.core.plugin('oepdev.so', ref_wfn)
 
     return oepdev_wfn
