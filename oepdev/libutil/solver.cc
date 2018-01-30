@@ -9,16 +9,12 @@ OEPDevSolver::OEPDevSolver(SharedWavefunctionUnion wfn_union)
 {
   
 }
-
 OEPDevSolver::~OEPDevSolver()
 {
 
 }
-
 double OEPDevSolver::compute_oep_based(const std::string& method) {}
 double OEPDevSolver::compute_benchmark(const std::string& method) {}
-
-
 ElectrostaticEnergySolver::ElectrostaticEnergySolver(SharedWavefunctionUnion wfn_union)
  : OEPDevSolver(wfn_union)
 {
@@ -26,12 +22,10 @@ ElectrostaticEnergySolver::ElectrostaticEnergySolver(SharedWavefunctionUnion wfn
   methods_benchmark_.push_back("AO_EXPANDED"    );
   methods_benchmark_.push_back("MO_EXPANDED"    );
 }
-
 ElectrostaticEnergySolver::~ElectrostaticEnergySolver() 
 {
 
 }
-
 double ElectrostaticEnergySolver::compute_oep_based(const std::string& method) 
 {
   double e = 0.0;
@@ -183,7 +177,6 @@ double ElectrostaticEnergySolver::compute_benchmark(const std::string& method)
      // ===> Nuc(A) --- Nuc(B) <=== //
      e_nuc_nuc = wfn_union_->nuclear_repulsion_interaction_energy();
                                                                     
-
      // ===> Nuc(A) --- Nuc(B)  AND   Nuc(A) --- Nuc(B) <=== //
      int nbf_1 = wfn_union_->l_primary(0)->nbf();
      int nbf_2 = wfn_union_->l_primary(1)->nbf();
@@ -312,9 +305,7 @@ double ElectrostaticEnergySolver::compute_benchmark(const std::string& method)
   }
   return e;
 }
-
-/// ===> Repulsion Energy <=== ///
-
+// ===> Repulsion Energy <=== //
 RepulsionEnergySolver::RepulsionEnergySolver(SharedWavefunctionUnion wfn_union)
  : OEPDevSolver(wfn_union)
 {
@@ -326,21 +317,16 @@ RepulsionEnergySolver::RepulsionEnergySolver(SharedWavefunctionUnion wfn_union)
   methods_oepBased_ .push_back("MURRELL_ETAL_MIX");
   methods_oepBased_ .push_back("MURRELL_ETAL_ESP");
 }
-
 RepulsionEnergySolver::~RepulsionEnergySolver() 
 {
 
 }
-
 double RepulsionEnergySolver::compute_oep_based(const std::string& method) 
 {
   double e = 0.0;
-
-  if (method == "DEFAULT" || method == "MURRELL_ETAL_MIX") {
-                         
-  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
-  psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
-  }
+  if      (method == "DEFAULT" || 
+           method == "MURRELL_ETAL_MIX")  e = compute_oep_based_murrell_etal_mix();
+  else if (method == "MURRELL_ETAL_ESP")  e = compute_oep_based_murrell_etal_esp();
   else 
   {
      throw psi::PSIEXCEPTION("Error. Incorrect OEP-based method specified for repulsion energy calculations!\n");
@@ -351,20 +337,46 @@ double RepulsionEnergySolver::compute_benchmark(const std::string& method)
 {
   double e = 0.0;
 
-  if (method == "DEFAULT" || method == "HAYES_STONE") {
-                         
-  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
-  psi::timer_off("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
-  }
+  if      (method == "DEFAULT" ||
+           method == "HAYES_STONE" ) e = compute_benchmark_hayes_stone();
+  else if (method == "MURRELL_ETAL") e = compute_benchmark_murrell_etal();
+  else if (method == "EFP2")         e = compute_benchmark_efp2();
   else 
   {
      throw psi::PSIEXCEPTION("Error. Incorrect benchmark method specified for repulsion energy calculations!\n");
   }
   return e;
-
 }
+double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
+  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
+  // ===> One electron part <=== //
 
-/// Build: factory static method 
+  // ===> One electron part <=== //
+  psi::timer_off("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
+}
+double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
+  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell et al.)");
+  // ===> One electron part <=== //
+  // ===> One electron part <=== //
+  psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell et al.)");
+  throw psi::PSIEXCEPTION("ERROR: MURRELL_ETAL is not yet implemented!\n");
+}
+double RepulsionEnergySolver::compute_benchmark_efp2() {
+  psi::timer_on ("SOLVER: Repulsion Energy Calculations (EFP2)");
+  psi::timer_off("SOLVER: Repulsion Energy Calculations (EFP2)");
+  throw psi::PSIEXCEPTION("ERROR: EFP2 is not yet implemented!\n");
+}
+double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
+  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
+  psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
+  throw psi::PSIEXCEPTION("ERROR: MURRELL_ETAL_MIX is not yet implemented!\n");
+}
+double RepulsionEnergySolver::compute_oep_based_murrell_etal_esp() {
+  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");
+  psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");
+  throw psi::PSIEXCEPTION("ERROR: MURRELL_ETAL_ESP is not yet implemented!\n");
+}
+// Build: factory static method 
 std::shared_ptr<OEPDevSolver> OEPDevSolver::build(const std::string& target, SharedWavefunctionUnion wfn_union)
 {
    std::shared_ptr<OEPDevSolver> solver;

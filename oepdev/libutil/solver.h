@@ -377,7 +377,7 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * For a closed-shell system, equation of Hayes and Stone (1984)
  * become
  * \f[
- *    E^{\rm Rep} = 2\sum_{ac\in A} \sum_{bd\in B} 
+ *    E^{\rm Rep} = 2\sum_{a\in A} \sum_{b\in B} 
                     \left( V^A_{ab} + V^B_{ab} + T_{ab} \right) 
                     \left[ [{\bf S}^{-1}]_{ab} - \delta_{ab} \right]
                 +   \sum_{ac\in A} \sum_{bd\in B}
@@ -443,6 +443,18 @@ class RepulsionEnergySolver : public OEPDevSolver
 
     virtual double compute_oep_based(const std::string& method = "DEFAULT");
     virtual double compute_benchmark(const std::string& method = "DEFAULT");
+
+  private:
+    /// Hayes-Stone (1984) method
+    double compute_benchmark_hayes_stone();
+    /// Murrell et al's method (1967)
+    double compute_benchmark_murrell_etal();
+    /// EFP2 method
+    double compute_benchmark_efp2();
+    /// Murrell et al's/OEP: S1-DF, S2-ESP
+    double compute_oep_based_murrell_etal_mix();
+    /// Murrell et al's/OEP: S1-ESP, S2-ESP
+    double compute_oep_based_murrell_etal_esp();
 };
 
 
