@@ -179,11 +179,11 @@ class WavefunctionUnion : public Wavefunction
     void localize_orbitals();
 
     /// Transform Integrals (2- and 4-index transformations)
-    void transform_integrals();
+    void transform_integrals(); 
 
 
     // <--- Getters ---> //
-    int                     l_nmo                 (int n) const {return l_nmo_          [n];}                                     
+    int                     l_nmo                 (int n) const {return l_nmo_          [n];}
     int                     l_nso                 (int n) const {return l_nso_          [n];}
     int                     l_nbf                 (int n) const {return l_nbf_          [n];}
     int                     l_ndocc               (int n) const {return l_ndocc_        [n];}
@@ -203,6 +203,34 @@ class WavefunctionUnion : public Wavefunction
     bool                    has_localized_orbitals(void ) const {return hasLocalizedOrbitals_;}
 
     SharedBasisSet          primary               (void ) const {return basisset_;}
+
+    /**
+    * Return a subset of the Ca matrix in a desired basis
+    * @param basis the symmetry basis to use
+    *  AO, SO
+    * @param subset the subset of orbitals to return
+    *  ALL, ACTIVE, FROZEN, OCC, VIR, FROZEN_OCC, ACTIVE_OCC, ACTIVE_VIR, FROZEN_VIR
+    * @return the matrix in Pitzer order in the desired basis
+    **/
+    SharedMatrix Ca_subset(const std::string& basis = "SO", const std::string& subset = "ALL");
+
+    /**
+    * Return a subset of the Cb matrix in a desired basis
+    * @param basis the symmetry basis to use
+    *  AO, SO
+    * @param subset the subset of orbitals to return
+    *  ALL, ACTIVE, FROZEN, OCC, VIR, FROZEN_OCC, ACTIVE_OCC, ACTIVE_VIR, FROZEN_VIR
+    * @return the matrix in Pitzer order in the desired basis
+    **/
+    SharedMatrix Cb_subset(const std::string& basis = "SO", const std::string& subset = "ALL");
+
+    /// Helpers for Ca_ and Cb_ matrix transformers
+    SharedMatrix C_subset_helper(SharedMatrix C, const Dimension& noccpi, SharedVector epsilon, 
+                                 const std::string& basis, const std::string& subset);
+
+    /// Helper for epsilon transformer
+    SharedVector epsilon_subset_helper(SharedVector epsilon, const Dimension& noccpi, 
+                                       const std::string& basis, const std::string& subset);
 
 
     // <--- Printers ---> //

@@ -262,7 +262,8 @@ void WavefunctionUnion::transform_integrals()
     SharedMOSpace space_2o = l_mospace(1,"OCC");
     spaces.push_back(space_1o);
     spaces.push_back(space_2o);
-    integrals_ = std::make_shared<IntegralTransform>(shared_from_this(), spaces,
+    integrals_ = std::make_shared<IntegralTransform>(shared_from_this(), 
+                                                     spaces,
                                                      IntegralTransform::Restricted,
                                                      IntegralTransform::DPDOnly,
                                                      IntegralTransform::QTOrder,
@@ -424,6 +425,116 @@ double WavefunctionUnion::nuclear_repulsion_interaction_energy()
   }
   return e_nuc_nuc;
 }
+
+// Copied from psi::Wavefunction
+SharedMatrix WavefunctionUnion::Ca_subset(const std::string &basis, const std::string &subset)
+{
+    return C_subset_helper(Ca_, nalphapi_, epsilon_a_, basis, subset);
+}
+// Copied from psi::Wavefunction
+SharedMatrix WavefunctionUnion::Cb_subset(const std::string &basis, const std::string &subset)
+{
+    return C_subset_helper(Cb_, nalphapi_, epsilon_b_, basis, subset);
+}
+
+// Copied from psi::Wavefunction. One line (sorting of orbitals according to energy) was removed.
+SharedMatrix WavefunctionUnion::C_subset_helper(SharedMatrix C, const Dimension &noccpi, SharedVector epsilon, const std::string &basis, const std::string &subset)
+{
+    std::vector <std::vector<int>> positions = subset_occupation(noccpi, subset);
+
+    Dimension nmopi(nirrep_);
+    for (int h = 0; h < (int) positions.size(); h++) {
+        nmopi[h] = positions[h].size();
+    }
+    SharedMatrix C2(new Matrix("C " + basis + " " + subset, nsopi_, nmopi));
+    for (int h = 0; h < (int) positions.size(); h++) {
+        for (int i = 0; i < (int) positions[h].size(); i++) {
+            C_DCOPY(nsopi_[h], &C->pointer(h)[0][positions[h][i]], nmopi_[h], &C2->pointer(h)[0][i], nmopi[h]);
+        }
+    }
+
+    if (basis == "AO") {
+
+        SharedMatrix C3(new Matrix("C " + basis + " " + subset, nso_, nmopi.sum()));
+        std::swap(C2, C3);
+
+        std::vector <std::tuple<double, int, int>> order;
+        for (int h = 0; h < nirrep_; h++) {
+            for (int i = 0; i < (int) positions[h].size(); i++) {
+                order.push_back(std::tuple<double, int, int>(epsilon->get(h, positions[h][i]), i, h));
+            }
+        }
+
+        // The following line of code has to be erased - sorting cannot be used in WavefunctionUnion!
+        // std::sort(order.begin(), order.end(), std::less < std::tuple < double, int, int > > ());
+
+        for (int index = 0; index < (int) order.size(); index++) {
+            int i = std::get<1>(order[index]);
+            int h = std::get<2>(order[index]);
+
+            int nao = nso_;
+            int nso = nsopi_[h];
+
+            if (!nso) continue;
+
+            C_DGEMV('N', nao, nso, 1.0, AO2SO_->pointer(h)[0], nso, &C3->pointer(h)[0][i], nmopi[h], 0.0, &C2->pointer()[0][index], nmopi.sum());
+        }
+
+    } else if (basis == "SO" || basis == "MO") {
+        // Already done
+    } else {
+        throw PSIEXCEPTION("Invalid basis requested, use AO, SO, or MO");
+    }
+
+    return C2;
+}
+
+// Copied from psi::Wavefunction. One line (sorting of orbitals according to energy) was removed.
+SharedVector WavefunctionUnion::epsilon_subset_helper(SharedVector epsilon, const Dimension &noccpi, const std::string &basis, const std::string &subset)
+{
+    std::vector <std::vector<int>> positions = subset_occupation(noccpi, subset);
+
+    Dimension nmopi(nirrep_);
+    for (int h = 0; h < (int) positions.size(); h++) {
+        nmopi[h] = positions[h].size();
+    }
+
+    SharedVector C2;
+
+    if (basis == "AO") {
+
+        C2 = SharedVector(new Vector("Epsilon " + basis + " " + subset, nmopi.sum()));
+
+        std::vector <std::tuple<double, int, int>> order;
+        for (int h = 0; h < nirrep_; h++) {
+            for (int i = 0; i < (int) positions[h].size(); i++) {
+                order.push_back(std::tuple<double, int, int>(epsilon->get(h, positions[h][i]), i, h));
+            }
+        }
+
+        // This line was removed because WavefunctionUnion cannot have sorted orbital energies 
+        // std::sort(order.begin(), order.end(), std::less < std::tuple < double, int, int > > ());
+
+        for (int index = 0; index < (int) order.size(); index++) {
+            C2->set(0, index, std::get<0>(order[index]));
+        }
+
+    } else if (basis == "SO" || basis == "MO") {
+
+        C2 = SharedVector(new Vector("Epsilon " + basis + " " + subset, nmopi));
+        for (int h = 0; h < (int) positions.size(); h++) {
+            for (int i = 0; i < (int) positions[h].size(); i++) {
+                C2->set(h, i, epsilon->get(h, positions[h][i]));
+            }
+        }
+
+    } else {
+        throw PSIEXCEPTION("Invalid basis requested, use AO, SO, or MO");
+    }
+
+    return C2;
+}
+
 
 
 } // EndNameSpace oepdev
