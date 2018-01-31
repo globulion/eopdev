@@ -527,7 +527,7 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
   dpdbuf4 buf;
   std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
   psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-  psio->tocprint(PSIF_LIBTRANS_DPD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
 
   global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
                           integrals->DPD_ID("[O,O]"  ), integrals->DPD_ID("[O,O]"  ),
