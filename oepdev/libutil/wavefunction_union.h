@@ -114,6 +114,10 @@ class WavefunctionUnion : public Wavefunction
     /// whether orbitals of the union were localized (or not)
     bool hasLocalizedOrbitals_;
 
+    /// Dictionary of MO spaces for the entire union (`OCC` and `VIR`)
+    std::map<const std::string, SharedMOSpace> mospacesUnion_;
+
+
 
     // ---> Monomer Lists <--- //
 
@@ -206,6 +210,8 @@ class WavefunctionUnion : public Wavefunction
     bool                    has_localized_orbitals(void ) const {return hasLocalizedOrbitals_;}
 
     SharedBasisSet          primary               (void ) const {return basisset_;}
+    SharedMOSpace           mospace               (const std::string& label) 
+                                                          const {return mospacesUnion_.at(label);}
 
     /**
     * Return a subset of the Ca matrix in a desired basis

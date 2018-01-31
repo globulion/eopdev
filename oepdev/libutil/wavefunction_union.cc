@@ -100,6 +100,7 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    double*  peb = epsilon_b_->pointer();
 
    std::vector<std::vector<int>> orbitals_occ, orbitals_vir;
+   std::vector<int> orbitals_occ_all, orbitals_vir_all;
    std::vector<int> dummy;
    /* implementation below is for CLOSED SHELLS only! */
    int nbf, nmo, nmo_occ, nmo_vir;
@@ -125,6 +126,7 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
         for (int jo=0; jo<nmo_occ; jo++) {
              pea[jo+nOffsetMOOcc] = l_wfn_[nf]->epsilon_a_subset("AO", "OCC")->get(0, jo);
              dummy.push_back(jo+nOffsetMOOcc);
+             orbitals_occ_all.push_back(jo+nOffsetMOOcc);
         }
         orbitals_occ.push_back(dummy); dummy.clear();
 
@@ -132,6 +134,7 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
         for (int jv=0; jv<nmo_vir; jv++) {
              pea[jv+nOffsetMOVir] = l_wfn_[nf]->epsilon_a_subset("AO", "VIR")->get(0, jv);
              dummy.push_back(jv+nOffsetMOVir);
+             orbitals_vir_all.push_back(jv+nOffsetMOVir);
         }
         orbitals_vir.push_back(dummy); dummy.clear();
 
@@ -194,6 +197,9 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
        for (int i=0; i<orbitals_vir[0].size(); ++i) { std::cout << orbitals_vir[0][i] << "  " ;} std::cout << std::endl;
        for (int i=0; i<orbitals_vir[1].size(); ++i) { std::cout << orbitals_vir[1][i] << "  " ;} std::cout << std::endl;
    }
+   mospacesUnion_["OCC"] = std::make_shared<MOSpace>('F', orbitals_occ_all, dummy); // (F)illed
+   mospacesUnion_["VIR"] = std::make_shared<MOSpace>('E', orbitals_vir_all, dummy); // (E)mpty
+
 
    // <==== Compute One-Electron Property object ====> //
    //oeprop_ = std::make_shared<OEProp>(static_cast<SharedWavefunction>(shared_from_this()));
@@ -260,6 +266,7 @@ void WavefunctionUnion::transform_integrals()
     SharedMOSpaceVector spaces;
     SharedMOSpace space_1o = l_mospace(0,"OCC");
     SharedMOSpace space_2o = l_mospace(1,"OCC");
+    //SharedMOSpace space_12o=   mospace(  "OCC");//MOSpace::occ; //--> equivalent
     SharedMOSpace space_12o= MOSpace::occ;
     spaces.push_back(space_1o);
     spaces.push_back(space_2o);

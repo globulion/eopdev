@@ -213,8 +213,9 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     // ==> Perform the work <== //
     if (o_task == "ELECTROSTATIC_ENERGY") {
         std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("ELECTROSTATIC ENERGY", wfn_union); 
-        double el1 = solver->compute_benchmark();
-        double el2 = solver->compute_oep_based();
+        double el1 = solver->compute_benchmark("AO_EXPANDED"    );
+        double el2 = solver->compute_benchmark("MO_EXPANDED"    );
+        double el3 = solver->compute_oep_based("ESP_SYMMETRIZED");
     }
     else if (o_task == "REPULSION_ENERGY") {
         std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("REPULSION ENERGY", wfn_union);

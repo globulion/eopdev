@@ -345,7 +345,11 @@ class ElectrostaticEnergySolver : public OEPDevSolver
 
     virtual double compute_oep_based(const std::string& method = "DEFAULT");
     virtual double compute_benchmark(const std::string& method = "DEFAULT");
-   
+
+  private:
+    double compute_oep_based_esp_symmetrized();
+    double compute_benchmark_ao_expanded(); 
+    double compute_benchmark_mo_expanded();
 };
 
 /**\brief Compute the Pauli-Repulsion interaction energy between unperturbed wavefunctions.
