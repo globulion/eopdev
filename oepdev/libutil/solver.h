@@ -307,7 +307,27 @@ class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
  *                                             {\lvert {\bf r} - {\bf r}_x\rvert} d{\bf r} 
  * \f]
  *
+ * ## Exact Coulombic energy from molecular orbital expansion.
  * 
+ * This approach is fully equivalent to the atomic orbital expansion shown above.
+ * For the closed shell case, the Coulombic interaction energy is given by
+ * \f[
+ *    E^{\rm Coul} = E^{\rm Nuc-Nuc} + E^{\rm Nuc-El} + E^{\rm El-El}
+ * \f]
+ * where the nuclear-nuclear repulsion energy is
+ * \f[
+ *     E^{\rm Nuc-Nuc} = \sum_{x\in A}\sum_{y\in B} \frac{Z_xZ_y}{\lvert {\bf r}_x - {\bf r}_y\rvert}
+ * \f]
+ * the nuclear-electronic attraction energy is
+ * \f[
+ *     E^{\rm Nuc-El } = 2\sum_{i\in A} \sum_{y\in B} V_{ii}^{(y)} +
+ *                       2\sum_{j\in B} \sum_{x\in A} V_{jj}^{(x)}
+ * \f]
+ * and the electron-electron repulsion energy is
+ * \f[
+ *     E^{\rm El-El  } = 4\sum_{i\in A}\sum_{j\in B} (ii \vert jj)
+ * \f]
+ *
  * # OEP-Based Methods
  * ## Coulombic energy from ESP charges interacting with nuclei and electronic density.
  * 
@@ -360,6 +380,7 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * <tr><th> Keyword  <th>Method Description  
  * <tr><td colspan=2> <center><strong>Benchmark Methods</strong></center>
  * <tr><td> `HAYES_STONE`       <td>*Default*. Exact Pauli Repulsion energy at HF level from Hayes and Stone (1984). 
+ * <tr><td> `DENSITY_BASED`     <td>Approximate Pauli Repulsion energy at HF level from Mandado and Hermida-Ramon (2012).
  * <tr><td> `MURRELL_ETAL`      <td>Approximate Pauli Repulsion energy at HF level from Murrell et al.
  * <tr><td> `EFP2`              <td>Approximate Pauli Repulsion energy at HF level from EFP2 model.
  * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
@@ -382,23 +403,23 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * For a closed-shell system, equation of Hayes and Stone (1984)
  * becomes
  * \f[
- *    E^{\rm Rep} = 2\sum_{ab} 
-                    \left( V^A_{ab} + V^B_{ab} + T_{ab} \right) 
-                    \left[ [{\bf S}^{-1}]_{ab} - \delta_{ab} \right]
-                +   \sum_{abcd} 
-                    (ac \vert bd) 
+ *    E^{\rm Rep} = 2\sum_{kl} 
+                    \left( V^A_{kl} + V^B_{kl} + T_{kl} \right) 
+                    \left[ [{\bf S}^{-1}]_{lk} - \delta_{lk} \right]
+                +   \sum_{klmn} 
+                    (kl \vert mn) 
                     \left\{ 
-       [{\bf S}^{-1}]_{ab} [{\bf S}^{-1}]_{cd} - 
-       [{\bf S}^{-1}]_{ad} [{\bf S}^{-1}]_{bc} -
-      2\delta_{ab} \delta_{cd} +
-      2\delta_{ad} \delta_{bc}
+      2[{\bf S}^{-1}]_{kl} [{\bf S}^{-1}]_{mn} - 
+       [{\bf S}^{-1}]_{kn} [{\bf S}^{-1}]_{lm} -
+      2\delta_{kl} \delta_{mn} +
+       \delta_{kn} \delta_{lm}
                     \right\}
  * \f]
  * where \f$ {\bf S} \f$ is the overlap matrix between the doubly-occupied
  * orbitals.
  * The exact exchange energy is for a closed shell case given as
  * \f[
-     E^{\rm Ex} = -2\sum_{a\in A} \sum_{b\in B} (ab \vert ab)
+     E^{\rm Ex} = -2\sum_{a\in A} \sum_{b\in B} (ab \vert ba)
  * \f]
  * Similarity transformation of molecular orbitals does not affect the resulting energies.
  *
@@ -452,14 +473,20 @@ class RepulsionEnergySolver : public OEPDevSolver
   private:
     /// Hayes-Stone (1984) method
     double compute_benchmark_hayes_stone();
+    /// Mandado and Hermida-Ramon (2012)
+    double compute_benchmark_density_based();
     /// Murrell et al's method (1967)
     double compute_benchmark_murrell_etal();
-    /// EFP2 method
+    /// EFP2 method (1996)
     double compute_benchmark_efp2();
-    /// Murrell et al's/OEP: S1-DF, S2-ESP
+
+    /// Murrell et al's/OEP: S1-DF, S2-ESP (2017-2018)
     double compute_oep_based_murrell_etal_mix();
-    /// Murrell et al's/OEP: S1-ESP, S2-ESP
+    /// Murrell et al's/OEP: S1-ESP, S2-ESP (2017-2018)
     double compute_oep_based_murrell_etal_esp();
+
+    /// Exchange energy at HF level
+    double compute_auxiliary_exchange();
 };
 
 

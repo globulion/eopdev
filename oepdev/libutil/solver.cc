@@ -440,6 +440,7 @@ RepulsionEnergySolver::RepulsionEnergySolver(SharedWavefunctionUnion wfn_union)
 {
   // Benchmarks
   methods_benchmark_.push_back("HAYES_STONE"     );
+  methods_benchmark_.push_back("DENSITY_BASED"   );
   methods_benchmark_.push_back("MURRELL_ETAL"    );
   methods_benchmark_.push_back("EFP2"            );
   // OEP-based
@@ -466,13 +467,117 @@ double RepulsionEnergySolver::compute_benchmark(const std::string& method)
 {
   double e = 0.0;
   if      (method == "DEFAULT" ||
-           method == "HAYES_STONE" ) e = compute_benchmark_hayes_stone();
-  else if (method == "MURRELL_ETAL") e = compute_benchmark_murrell_etal();
-  else if (method == "EFP2")         e = compute_benchmark_efp2();
+           method == "HAYES_STONE" )  e = compute_benchmark_hayes_stone();
+  else if (method == "DENSITY_BASED") e = compute_benchmark_density_based();
+  else if (method == "MURRELL_ETAL")  e = compute_benchmark_murrell_etal();
+  else if (method == "EFP2")          e = compute_benchmark_efp2();
   else 
   {
      throw psi::PSIEXCEPTION("Error. Incorrect benchmark method specified for repulsion energy calculations!\n");
   }
+  return e;
+}
+double RepulsionEnergySolver::compute_benchmark_density_based() {
+  double e             = 0.0;
+  double e_Pauli_nuc   = 0.0;
+  double e_Pauli_Pauli = 0.0;
+  double e_Pauli_el    = 0.0;
+  double e_Pauli_kin   = 0.0;
+  double e_exch        = 0.0;
+
+  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Density-Based (2012))");
+
+  // ---> Allocate <--- //
+  int nbf   = wfn_union_->basisset()->nbf();
+  psi::IntegralFactory fact(wfn_union_->basisset(), wfn_union_->basisset());
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact.ao_overlap());
+  std::shared_ptr<psi::OneBodyAOInt> kinInt(fact.ao_kinetic());
+  std::shared_ptr<psi::OneBodyAOInt> potInt(fact.ao_potential());
+
+  std::shared_ptr<psi::Matrix> Sao = std::make_shared<psi::Matrix>("Sao", nbf, nbf);
+  std::shared_ptr<psi::Matrix> Tao = std::make_shared<psi::Matrix>("Tao", nbf, nbf);
+  std::shared_ptr<psi::Matrix> Vao = std::make_shared<psi::Matrix>("Vao", nbf, nbf);
+
+  // ---> Compute One-Electron Integrals <--- //
+  ovlInt->compute(Sao);
+  kinInt->compute(Tao);
+  potInt->compute(Vao);
+
+  // ---> Compute Density Matrix after Orthogonalization <--- //
+  std::shared_ptr<psi::Matrix> Ca_occ = wfn_union_->Ca_subset("AO", "OCC");
+  std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(Ca_occ, Sao, Ca_occ, true, false, false);
+  Smo->invert();
+  std::shared_ptr<psi::Matrix> Da_ao_oo = psi::Matrix::triplet(Ca_occ, Smo, Ca_occ, false, false, true);
+
+  // ---> Compute Difference Pauli Density Matrix <--- //
+  std::shared_ptr<psi::Matrix> Imo = Smo->clone();
+  Imo->identity();
+  Smo->subtract(Imo);
+  std::shared_ptr<psi::Matrix> DeltaDa_ao = psi::Matrix::triplet(Ca_occ, Smo, Ca_occ, false, false, true);
+
+  // ---> One-Electron Contribution <--- //
+  e_Pauli_nuc = 2.0 * DeltaDa_ao->vector_dot(Vao);
+  e_Pauli_kin = 2.0 * DeltaDa_ao->vector_dot(Tao);
+
+  // ---> Two-Electron Contribution <--- //
+  std::shared_ptr<psi::IntegralFactory> ints = std::make_shared<psi::IntegralFactory>
+                                               (wfn_union_->basisset(), wfn_union_->basisset(),
+                                                wfn_union_->basisset(), wfn_union_->basisset());
+
+  std::shared_ptr<psi::TwoBodyAOInt> tei(ints->eri());
+  const double * buffer = tei->buffer();
+  oepdev::AllAOShellCombinationsIterator shellIter(ints);
+  int i, j, k, l;
+  double integral;
+  double** dD  = DeltaDa_ao->pointer();
+  double** da  = Da_ao_oo->pointer();
+  double** Da  = wfn_union_->Da()->pointer();
+  for (shellIter.first(); shellIter.is_done() == false; shellIter.next())
+  {
+       shellIter.compute_shell(tei);
+       oepdev::AllAOIntegralsIterator intsIter(shellIter);
+       for (intsIter.first(); intsIter.is_done() == false; intsIter.next())
+       {
+            i = intsIter.i();
+            j = intsIter.j();
+            k = intsIter.k();
+            l = intsIter.l();
+
+            integral = buffer[intsIter.index()];
+            e_Pauli_el    += dD[i][j] * Da[k][l] * integral;
+            e_Pauli_Pauli += dD[i][j] * dD[k][l] * integral;
+            e_exch        -=(da[i][k] * da[j][l] - Da[i][k] * Da[j][l]) 
+                                                 * integral;
+       }
+  }
+  e_Pauli_el    *= 4.0;
+  e_Pauli_Pauli *= 2.0;
+  //e_exch        *= 2.0; //???
+
+  // ---> Finish <--- //
+  psi::timer_off("SOLVER: Repulsion Energy Calculations (Density-Based (2012))");
+  e = e_Pauli_nuc + e_Pauli_kin + e_Pauli_el + e_Pauli_Pauli;
+
+  // ---> Print <--- //
+  if (wfn_union_->options().get_int("PRINT") > 0) {
+     psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
+     psi::outfile->Printf("  ==>         Benchmark (Density-Based)              <==\n\n");
+     psi::outfile->Printf("     PAU NUC   = %13.6f\n", e_Pauli_nuc                      );
+     psi::outfile->Printf("     PAU KIN   = %13.6f\n", e_Pauli_kin                      );
+     psi::outfile->Printf("     PAU EL    = %13.6f\n", e_Pauli_el                       );
+     psi::outfile->Printf("     PAU PAU   = %13.6f\n", e_Pauli_Pauli                    );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     E REP_1   = %13.6f\n", e_Pauli_nuc+e_Pauli_kin          );
+     psi::outfile->Printf("     E REP_2   = %13.6f\n", e_Pauli_Pauli+e_Pauli_el         );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     E REP     = %13.6f\n", e                                );
+     psi::outfile->Printf("     E EX      = %13.6f\n", e_exch                           );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     EXREP     = %13.6f\n", e+e_exch                         );
+     psi::outfile->Printf("\n");
+  }
+
+  // ---> Return Total Pauli Repulsion Energy <--- //
   return e;
 }
 double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
@@ -565,8 +670,36 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
 
   psi::timer_off("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
 
+  // ---> Close the DPD file <--- //
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
   // ===> Compute Exchange Energy <=== //
+  e_ex = compute_auxiliary_exchange();
+
+  // ---> Print <--- //
+  if (wfn_union_->options().get_int("PRINT") > 0) {
+     psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
+     psi::outfile->Printf("  ==>         Benchmark (Hayes-Stone)                <==\n\n");
+     psi::outfile->Printf("     E_REP_1   = %13.6f\n", e_1                              );
+     psi::outfile->Printf("     E_REP_2   = %13.6f\n", e_2                              );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     E_REP     = %13.6f\n", e_1+e_2                          );
+     psi::outfile->Printf("     E_EX      = %13.6f\n", e_ex                             );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     E_EXREP   = %13.6f\n", e_1+e_2+e_ex                     );
+     psi::outfile->Printf("\n");
+  }
+
+  // ---> Return Total Repulsion Energy <--- //
+  return e_1+e_2+e_ex;
+}
+double RepulsionEnergySolver::compute_auxiliary_exchange() {
   psi::timer_on ("SOLVER: HF Exchange Energy Calculations");
+
+  std::shared_ptr<psi::IntegralTransform> integrals = wfn_union_->integrals(); 
+  dpd_set_default(integrals->get_dpd_id());
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 
   dpdbuf4 buf_1212;
 
@@ -574,7 +707,7 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
                           integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[1,2]"  ),
                           integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[1,2]"  ), 0, "MO Ints (12|12)");
 
-  e_ex = 0.0;
+  double e_ex = 0.0;
   for (int h = 0; h < wfn_union_->nirrep(); ++h) {
        global_dpd_->buf4_mat_irrep_init(&buf_1212, h);
        global_dpd_->buf4_mat_irrep_rd(&buf_1212, h);
@@ -595,23 +728,10 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
 
   psi::timer_off("SOLVER: HF Exchange Energy Calculations");
 
-  // ---> Print <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) {
-     psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n");
-     psi::outfile->Printf("  ==>         Benchmark (Hayes-Stone)                <==\n\n");
-     psi::outfile->Printf("     E_REP_1   = %13.6f\n", e_1      );
-     psi::outfile->Printf("     E_REP_2   = %13.6f\n", e_2      );
-     psi::outfile->Printf("     E_REP     = %13.6f\n", e_1+e_2  );
-     psi::outfile->Printf("     E_EX      = %13.6f\n", e_ex     );
-     psi::outfile->Printf("     -------------------------------\n");
-     psi::outfile->Printf("     E_EXREP   = %13.6f\n", e_1+e_2+e_ex);
-     psi::outfile->Printf("\n");
-  }
-
   // ---> Close the DPD file <--- //
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 
-  return e_1+e_2+e_ex;
+  return e_ex;
 }
 double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell et al.)");
