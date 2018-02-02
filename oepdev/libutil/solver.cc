@@ -527,11 +527,12 @@ double RepulsionEnergySolver::compute_benchmark_density_based() {
   std::shared_ptr<psi::TwoBodyAOInt> tei(ints->eri());
   const double * buffer = tei->buffer();
   oepdev::AllAOShellCombinationsIterator shellIter(ints);
-  int i, j, k, l;
+  int i, j, k, l; int nbf_1 = wfn_union_->l_nbf(0); int nbf_m = nbf_1-1;
   double integral;
   double** dD  = DeltaDa_ao->pointer();
   double** da  = Da_ao_oo->pointer();
   double** Da  = wfn_union_->Da()->pointer();
+
   for (shellIter.first(); shellIter.is_done() == false; shellIter.next())
   {
        shellIter.compute_shell(tei);
@@ -546,13 +547,14 @@ double RepulsionEnergySolver::compute_benchmark_density_based() {
             integral = buffer[intsIter.index()];
             e_Pauli_el    += dD[i][j] * Da[k][l] * integral;
             e_Pauli_Pauli += dD[i][j] * dD[k][l] * integral;
-            e_exch        -=(da[i][l] * da[j][k] - Da[i][l] * Da[j][k]) 
-                                                 * integral;
+            e_exch        -= da[i][l] * da[j][k] * integral;
+            if (((i < nbf_1) && (j < nbf_1) && (k < nbf_1) && (l < nbf_1)) ||
+                ((i > nbf_m) && (j > nbf_m) && (k > nbf_m) && (l > nbf_m)))
+                  e_exch  += Da[i][l] * Da[j][k] * integral;
        }
   }
   e_Pauli_el    *= 4.0;
   e_Pauli_Pauli *= 2.0;
-  //e_exch        *= 2.0; //???
 
   // ---> Finish <--- //
   psi::timer_off("SOLVER: Repulsion Energy Calculations (Density-Based (2012))");

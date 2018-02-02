@@ -379,8 +379,8 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * <caption id="Tab.1">Methods available in the Solver</caption>
  * <tr><th> Keyword  <th>Method Description  
  * <tr><td colspan=2> <center><strong>Benchmark Methods</strong></center>
- * <tr><td> `HAYES_STONE`       <td>*Default*. Exact Pauli Repulsion energy at HF level from Hayes and Stone (1984). 
- * <tr><td> `DENSITY_BASED`     <td>Approximate Pauli Repulsion energy at HF level from Mandado and Hermida-Ramon (2012).
+ * <tr><td> `HAYES_STONE`       <td>*Default*. Pauli Repulsion energy at HF level from Hayes and Stone (1984). 
+ * <tr><td> `DENSITY_BASED`     <td>Pauli Repulsion energy at HF level from Mandado and Hermida-Ramon (2012).
  * <tr><td> `MURRELL_ETAL`      <td>Approximate Pauli Repulsion energy at HF level from Murrell et al.
  * <tr><td> `EFP2`              <td>Approximate Pauli Repulsion energy at HF level from EFP2 model.
  * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
@@ -398,7 +398,7 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * It is also assumed that the orbitals are real.
  *
  * # Benchmark Methods
- * ## Exact Pauli Repulsion energy at HF level.
+ * ## Pauli Repulsion energy at HF level by Hayes and Stone (1984).
  *    
  * For a closed-shell system, equation of Hayes and Stone (1984)
  * becomes
@@ -417,12 +417,77 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * \f]
  * where \f$ {\bf S} \f$ is the overlap matrix between the doubly-occupied
  * orbitals.
- * The exact exchange energy is for a closed shell case given as
+ * The exact, pure exchange energy is for a closed shell case given as
  * \f[
-     E^{\rm Ex} = -2\sum_{a\in A} \sum_{b\in B} (ab \vert ba)
+     E^{\rm Ex,pure} = -2\sum_{a\in A} \sum_{b\in B} (ab \vert ba)
  * \f]
  * Similarity transformation of molecular orbitals does not affect the resulting energies.
+ * The overall exchange-repulsion interaction energy is then (always net repulsive)
+ * \f[ 
+ *  E^{\rm Ex-Rep} = E^{\rm Ex,pure} + E^{\rm Rep} 
+ * \f]
  *
+ * ## Repulsion energy of Mandado and Hermida-Ramon (2011)
+ *
+ * At the Hartree-Fock level, the exchange-repulsion energy from the density-based scheme 
+ * of Mandado and Hermida-Ramon (2011) is fully equivalent to the method by Hayes and Stone (1984).
+ * However, density-based method enables to compute exchange-repulsion energy 
+ * at any level of theory. It is derived based on the Pauli deformation density matrix,
+ * \f[
+ *   \Delta {\bf D}^{\rm Pauli} \equiv {\bf D}^{oo} - {\bf D}
+ * \f]
+ * where \f$ {\bf D}^{oo}\f$ and \f$ {\bf D}\f$ are the density matrix formed from
+ * mutually orthogonal sets of molecular orbitals within the entire aggregate (formed
+ * by symmetric orthogonalization of MO's) and the density matrix of the unperturbed
+ * system (that can be understood as a Hadamard sum \f$ {\bf D} \equiv {\bf D}^A \oplus {\bf D}^B\f$).
+ *
+ * At HF level, the Pauli deformation density matrix is given by
+ * \f[
+ *   \Delta {\bf D}^{\rm Pauli} = {\bf C} \left[ {\bf S}^{-1} - {\bf 1} \right] {\bf C}^\dagger
+ * \f]
+ * whereas the density matrix constructed from mutually orthogonal orbitals is
+ * \f[
+ *    {\bf D}^{oo} = {\bf C} {\bf S}^{-1} {\bf C}^\dagger
+ * \f]
+ * In the above equations, \f$ {\bf S} \f$ is the overlap matrix between doubly occupied molecular orbitals
+ * of the entire aggregate.
+ * 
+ * Here, the expressions for the exchange-repulsion energy
+ * at any level of theory are shown for the case of open-shell system.
+ * The net repulsive energy is given as
+ * \f[
+     E^{\rm Ex-Rep} = E^{\rm Rep,1} + E^{\rm Rep,2} + E^{\rm Ex}
+ * \f]
+ * where the one- and two-electron part of the repulsion energy is
+ * \f{align*}{
+      E^{\rm Rep,1} &= E^{\rm Rep,Kin} + E^{\rm Rep,Nuc} \\
+      E^{\rm Rep,2} &= E^{\rm Rep,el-\Delta} + E^{\rm Rep,\Delta-\Delta}
+ * \f}
+ * The kinetic and nuclear contributions are
+ * \f{align*}{
+     E^{\rm Rep,Kin} &= 2\sum_{\alpha\beta \in A,B} \Delta D_{\alpha\beta}^{\rm Pauli} T_{\alpha\beta}  \\
+     E^{\rm Rep,Nuc} &= 2\sum_{\alpha\beta \in A,B} \Delta D_{\alpha\beta}^{\rm Pauli} \sum_{z\in A,B} V_{\alpha\beta}^{(z)} 
+ * \f}
+ * whereas the electron-deformation and deformation-deformation interaction contributions are
+ * \f{align*}{
+     E^{\rm Rep,el-\Delta} &= 4\sum_{\alpha\beta\gamma\delta \in A,B}
+                              \Delta D_{\alpha\beta}^{\rm Pauli} D_{\gamma\delta}
+                              (\alpha\beta \vert \gamma\delta) \\
+     E^{\rm Rep,\Delta-\Delta} &= 2\sum_{\alpha\beta\gamma\delta \in A,B}
+                              \Delta D_{\alpha\beta}^{\rm Pauli} \Delta D_{\gamma\delta}^{\rm Pauli}
+                              (\alpha\beta \vert \gamma\delta) 
+ * \f}
+ * The associated exchange energy is given by
+ * \f[
+ *   E^{\rm Ex} = -\sum_{\alpha\beta\gamma\delta \in A,B} 
+ *                \left[
+ *                 D_{\alpha\delta}^{oo} D_{\beta\gamma}^{oo}
+ *                -D_{\alpha\delta}^A    D_{\beta\gamma}^A
+ *                -D_{\alpha\delta}^B    D_{\beta\gamma}^B
+ *                \right]
+ *                (\alpha\beta \vert \gamma\delta)
+ * \f]
+ * 
  * ## Approximate Pauli Repulsion energy at HF level from Murrell et al.
  * 
  * By expanding the overlap matrix in a Taylor series one can show that 
