@@ -676,7 +676,7 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 
   // ===> Compute Exchange Energy <=== //
-  e_ex = compute_auxiliary_exchange();
+  e_ex = compute_pure_exchange_energy();
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {
@@ -695,7 +695,7 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
   // ---> Return Total Repulsion Energy <--- //
   return e_1+e_2+e_ex;
 }
-double RepulsionEnergySolver::compute_auxiliary_exchange() {
+double RepulsionEnergySolver::compute_pure_exchange_energy() {
   psi::timer_on ("SOLVER: HF Exchange Energy Calculations");
 
   std::shared_ptr<psi::IntegralTransform> integrals = wfn_union_->integrals(); 
@@ -736,11 +736,74 @@ double RepulsionEnergySolver::compute_auxiliary_exchange() {
   return e_ex;
 }
 double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
+  double e_s1 = 0.0, e_s2 = 0.0, e = 0;
+
   psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell et al.)");
+  int nbf_1 = wfn_union_->l_nbf(0);
+  int nbf_2 = wfn_union_->l_nbf(1);
+
   // ===> One electron part <=== //
-  // ===> One electron part <=== //
+  std::shared_ptr<psi::Matrix> VaoA21    = std::make_shared<psi::Matrix>("VaoA(2,1)" , nbf_2, nbf_1);
+  std::shared_ptr<psi::Matrix> VaoB12    = std::make_shared<psi::Matrix>("VaoB(1,2)" , nbf_1, nbf_2);
+  std::shared_ptr<psi::Matrix> Sao12     = std::make_shared<psi::Matrix>("Sao(1,2)"  , nbf_1, nbf_2);
+  psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_21(wfn_union_->l_primary(1), wfn_union_->l_primary(0));
+  std::shared_ptr<psi::OneBodyAOInt> oneInt, ovlInt(fact_12.ao_overlap());
+  std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(),
+                                                                                    wfn_union_->l_primary(0),
+                                                                                    wfn_union_->l_primary(1));
+  std::shared_ptr<psi::PotentialInt> potInt_2 = std::make_shared<psi::PotentialInt>(fact_21.spherical_transform(),
+                                                                                    wfn_union_->l_primary(1),
+                                                                                    wfn_union_->l_primary(0));
+  std::shared_ptr<psi::Matrix> Zxyz_1 = std::make_shared<psi::Matrix>(potInt_1->charge_field());
+  std::shared_ptr<psi::Matrix> Zxyz_2 = std::make_shared<psi::Matrix>(potInt_2->charge_field());
+
+  potInt_1->set_charge_field(Zxyz_2);
+  potInt_2->set_charge_field(Zxyz_1);
+  oneInt = potInt_1;
+  oneInt->compute(VaoB12);
+  oneInt = potInt_2;
+  oneInt->compute(VaoA21);
+  ovlInt->compute(Sao12);
+  std::shared_ptr<psi::Matrix> VaoA12 = VaoA21->transpose();
+  //VaoA21.reset();
+
+  std::shared_ptr<psi::Matrix> Ca_occ_A = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
+  std::shared_ptr<psi::Matrix> Ca_occ_B = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
+
+  std::shared_ptr<psi::Matrix> Smo12  = psi::Matrix::triplet(Ca_occ_A, Sao12 , Ca_occ_B, true, false, false);
+  std::shared_ptr<psi::Matrix> VmoA12 = psi::Matrix::triplet(Ca_occ_A, VaoA12, Ca_occ_B, true, false, false);
+  std::shared_ptr<psi::Matrix> VmoB12 = psi::Matrix::triplet(Ca_occ_A, VaoB12, Ca_occ_B, true, false, false);
+
+  VmoA12->add(VmoB12);
+
+  e_s1 = -2.0 * Smo12->vector_dot(VmoA12);
+
+  // ===> Two-electron part <=== //
   psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell et al.)");
-  throw psi::PSIEXCEPTION("ERROR: MURRELL_ETAL is not yet implemented!\n");
+
+  // ===> Compute the Exchange Energy <=== //
+  double e_exch = compute_pure_exchange_energy();
+
+  // ===> Finish <=== //
+  e = e_s1 + e_s2;
+
+  // ---> Print <--- //
+  if (wfn_union_->options().get_int("PRINT") > 0) {
+     psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
+     psi::outfile->Printf("  ==>         Benchmark (Murrell et al.)             <==\n\n");
+     psi::outfile->Printf("     E S^-1    = %13.6f\n", e_s1                             );
+     psi::outfile->Printf("     E S^-2    = %13.6f\n", e_s2                             );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     E REP     = %13.6f\n", e                                );
+     psi::outfile->Printf("     E EX      = %13.6f\n", e_exch                           );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     EXREP     = %13.6f\n", e+e_exch                         );
+     psi::outfile->Printf("\n");
+  }
+ 
+  // Return the Total Repulsion Energy
+  return e; 
 }
 double RepulsionEnergySolver::compute_benchmark_efp2() {
   psi::timer_on ("SOLVER: Repulsion Energy Calculations (EFP2)");

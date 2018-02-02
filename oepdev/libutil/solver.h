@@ -487,6 +487,14 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  *                \right]
  *                (\alpha\beta \vert \gamma\delta)
  * \f]
+ * It is important to emphasise that, although, at HF level, the particular 
+ * 'repulsive' and 'exchange' energies
+ * computed by using either Hayes and Stone or Mandado and Hermida-Ramon methods
+ * are not equal to each other, they sum up to exactly the same exchange-repulsion
+ * energy, \f$ E^{\rm Ex-Rep}\f$. Therefore, these methods at HF level are fully equivalent but the 
+ * nature of partitioning of repulsive and exchange parts is different. It is also
+ * noted that the orbital localization does *not* affect the resulting energies, as 
+ * opposed to the next approximate methods described below.
  * 
  * ## Approximate Pauli Repulsion energy at HF level from Murrell et al.
  * 
@@ -551,7 +559,7 @@ class RepulsionEnergySolver : public OEPDevSolver
     double compute_oep_based_murrell_etal_esp();
 
     /// Exchange energy at HF level
-    double compute_auxiliary_exchange();
+    double compute_pure_exchange_energy();
 };
 
 
