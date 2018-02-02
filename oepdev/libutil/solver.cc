@@ -546,7 +546,7 @@ double RepulsionEnergySolver::compute_benchmark_density_based() {
             integral = buffer[intsIter.index()];
             e_Pauli_el    += dD[i][j] * Da[k][l] * integral;
             e_Pauli_Pauli += dD[i][j] * dD[k][l] * integral;
-            e_exch        -=(da[i][k] * da[j][l] - Da[i][k] * Da[j][l]) 
+            e_exch        -=(da[i][l] * da[j][k] - Da[i][l] * Da[j][k]) 
                                                  * integral;
        }
   }

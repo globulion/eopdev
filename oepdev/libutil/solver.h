@@ -491,5 +491,5 @@ class RepulsionEnergySolver : public OEPDevSolver
 
 
 }      // EndNameSpace oepdev
-#endif //_oepdev_libutil_wavefunction_union_h
+#endif //_oepdev_libutil_solver_h
 

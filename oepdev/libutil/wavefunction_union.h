@@ -31,7 +31,7 @@
 #include "psi4/libdpd/dpd.h"
 
 
-namespace oepdev{
+namespace oepdev {
 
 using namespace psi;
 using namespace std;
@@ -102,6 +102,7 @@ using SharedLocalizer          = std::shared_ptr<Localizer>;
 class WavefunctionUnion : public Wavefunction
 {
   protected:
+
     /// Number of isolated molecules
     int nIsolatedMolecules_;
 
@@ -116,7 +117,6 @@ class WavefunctionUnion : public Wavefunction
 
     /// Dictionary of MO spaces for the entire union (`OCC` and `VIR`)
     std::map<const std::string, SharedMOSpace> mospacesUnion_;
-
 
 
     // ---> Monomer Lists <--- //
@@ -189,29 +189,67 @@ class WavefunctionUnion : public Wavefunction
     void transform_integrals(); 
 
 
-    // <--- Getters ---> //
-    int                     l_nmo                 (int n) const {return l_nmo_          [n];}
-    int                     l_nso                 (int n) const {return l_nso_          [n];}
-    int                     l_nbf                 (int n) const {return l_nbf_          [n];}
-    int                     l_ndocc               (int n) const {return l_ndocc_        [n];}
-    int                     l_nvir                (int n) const {return l_nvir_         [n];}
-    int                     l_noffs_ao            (int n) const {return l_noffs_ao_     [n];}
-    int                     l_nalpha              (int n) const {return l_nalpha_       [n];}
-    int                     l_nbeta               (int n) const {return l_nbeta_        [n];}
-    double                  l_energy              (int n) const {return l_energy_       [n];}
-    SharedMolecule          l_molecule            (int n) const {return l_molecule_     [n];}
-    SharedBasisSet          l_primary             (int n) const {return l_primary_      [n];}
-    SharedBasisSet          l_auxiliary           (int n) const {return l_auxiliary_    [n];}
-    SharedWavefunction      l_wfn                 (int n) const {return l_wfn_          [n];}
-    SharedMOSpace           l_mospace             (int n, const std::string& label) 
-                                                          const {return l_mospace_      [n].at(label);}
-    SharedLocalizer         l_localizer           (int n) const;
-    SharedIntegralTransform integrals             (void ) const;
-    bool                    has_localized_orbitals(void ) const {return hasLocalizedOrbitals_;}
+    // ---> Accessors <--- //
+    // ---> Properties of Particular Fragments <--- //
 
-    SharedBasisSet          primary               (void ) const {return basisset_;}
-    SharedMOSpace           mospace               (const std::string& label) 
-                                                          const {return mospacesUnion_.at(label);}
+    /// Get number of molecular orbitals of the *n*th fragment
+    int l_nmo (int n) const {return l_nmo_[n];}
+
+    /// Get number of symmetry orbitals of the *n*th fragment
+    int l_nso (int n) const {return l_nso_[n];}
+
+    /// Get number of doubly occupied orbitals of the *n*th fragment
+    int l_ndocc (int n) const {return l_ndocc_[n];}
+
+    /// Get number of virtual orbitals of the *n*th fragment
+    int l_nvir (int n) const {return l_nvir_[n];}
+
+    /// Get the number of the alpha electrons of the *n*th fragment
+    int l_nalpha (int n) const {return l_nalpha_[n];}
+
+    /// Get the number of the beta electrons of the *n*th fragment
+    int l_nbeta (int n) const {return l_nbeta_[n];}
+
+    /// Get number of basis functions of the *n*th fragment
+    int l_nbf (int n) const {return l_nbf_[n];}
+
+    /// Get the basis set offset of the *n*th fragment
+    int l_noffs_ao (int n) const {return l_noffs_ao_[n];}
+
+    /// Get the reference energy of the *n*th fragment
+    double l_energy (int n) const {return l_energy_[n];}
+
+    /// Get the molecule object of the *n*th fragment
+    SharedMolecule l_molecule (int n) const {return l_molecule_[n];}
+
+    /// Get the primary basis set object of the *n*th fragment
+    SharedBasisSet l_primary (int n) const {return l_primary_[n];}
+
+    /// Get the auxiliary basis set object of the *n*th fragment
+    SharedBasisSet l_auxiliary (int n) const {return l_auxiliary_[n];}
+
+    /// Get the wavefunction object of the *n*th fragment
+    SharedWavefunction l_wfn (int n) const {return l_wfn_[n];}
+
+    /// Get the MO space named `label` (either `OCC` or `VIR`) of the *n*th fragment 
+    SharedMOSpace l_mospace (int n, const std::string& label) const {return l_mospace_[n].at(label);}
+
+    /// Get the orbital localizer object of the *n*th fragment
+    SharedLocalizer l_localizer (int n) const;
+
+    // ---> Properties of Entire Union <--- //
+
+    /// Get the integral transform object of the entire union
+    SharedIntegralTransform integrals (void ) const;
+
+    /// If union got its molecular orbital localized or not
+    bool has_localized_orbitals(void ) const {return hasLocalizedOrbitals_;}
+
+    /// Get the primary basis set for the entire union
+    SharedBasisSet primary (void ) const {return basisset_;}
+
+    /// Get the MO space named `label` (either `OCC` or `VIR`) 
+    SharedMOSpace mospace (const std::string& label) const {return mospacesUnion_.at(label);}
 
     /**
     * Return a subset of the Ca matrix in a desired basis
@@ -243,7 +281,11 @@ class WavefunctionUnion : public Wavefunction
 
 
     // <--- Printers ---> //
+
+    /// Print information about this wavefunction union
     void print_header(void);
+
+    /// Print the MO ingegrals
     void print_mo_integrals(void);
 
 
