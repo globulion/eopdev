@@ -682,13 +682,13 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
      psi::outfile->Printf("  ==>         Benchmark (Hayes-Stone)                <==\n\n");
-     psi::outfile->Printf("     E_REP_1   = %13.6f\n", e_1                              );
-     psi::outfile->Printf("     E_REP_2   = %13.6f\n", e_2                              );
+     psi::outfile->Printf("     E REP 1   = %13.6f\n", e_1                              );
+     psi::outfile->Printf("     E REP 2   = %13.6f\n", e_2                              );
      psi::outfile->Printf("     -------------------------------\n"                      );
-     psi::outfile->Printf("     E_REP     = %13.6f\n", e_1+e_2                          );
-     psi::outfile->Printf("     E_EX      = %13.6f\n", e_ex                             );
+     psi::outfile->Printf("     E REP     = %13.6f\n", e_1+e_2                          );
+     psi::outfile->Printf("     E EX      = %13.6f\n", e_ex                             );
      psi::outfile->Printf("     -------------------------------\n"                      );
-     psi::outfile->Printf("     E_EXREP   = %13.6f\n", e_1+e_2+e_ex                     );
+     psi::outfile->Printf("     EXREP     = %13.6f\n", e_1+e_2+e_ex                     );
      psi::outfile->Printf("\n");
   }
 
@@ -745,9 +745,13 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   // ===> One electron part <=== //
   std::shared_ptr<psi::Matrix> VaoA21    = std::make_shared<psi::Matrix>("VaoA(2,1)" , nbf_2, nbf_1);
   std::shared_ptr<psi::Matrix> VaoB12    = std::make_shared<psi::Matrix>("VaoB(1,2)" , nbf_1, nbf_2);
+  std::shared_ptr<psi::Matrix> VaoA22    = std::make_shared<psi::Matrix>("VaoA(2,1)" , nbf_2, nbf_2);
+  std::shared_ptr<psi::Matrix> VaoB11    = std::make_shared<psi::Matrix>("VaoB(1,2)" , nbf_1, nbf_1);
   std::shared_ptr<psi::Matrix> Sao12     = std::make_shared<psi::Matrix>("Sao(1,2)"  , nbf_1, nbf_2);
   psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1));
   psi::IntegralFactory fact_21(wfn_union_->l_primary(1), wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_11(wfn_union_->l_primary(0), wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_22(wfn_union_->l_primary(1), wfn_union_->l_primary(1));
   std::shared_ptr<psi::OneBodyAOInt> oneInt, ovlInt(fact_12.ao_overlap());
   std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(),
                                                                                     wfn_union_->l_primary(0),
@@ -755,15 +759,28 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   std::shared_ptr<psi::PotentialInt> potInt_2 = std::make_shared<psi::PotentialInt>(fact_21.spherical_transform(),
                                                                                     wfn_union_->l_primary(1),
                                                                                     wfn_union_->l_primary(0));
+  std::shared_ptr<psi::PotentialInt> potInt_11= std::make_shared<psi::PotentialInt>(fact_11.spherical_transform(),
+                                                                                    wfn_union_->l_primary(0),
+                                                                                    wfn_union_->l_primary(0));
+  std::shared_ptr<psi::PotentialInt> potInt_22= std::make_shared<psi::PotentialInt>(fact_22.spherical_transform(),
+                                                                                    wfn_union_->l_primary(1),
+                                                                                    wfn_union_->l_primary(1));
+
   std::shared_ptr<psi::Matrix> Zxyz_1 = std::make_shared<psi::Matrix>(potInt_1->charge_field());
   std::shared_ptr<psi::Matrix> Zxyz_2 = std::make_shared<psi::Matrix>(potInt_2->charge_field());
 
   potInt_1->set_charge_field(Zxyz_2);
   potInt_2->set_charge_field(Zxyz_1);
+  potInt_11->set_charge_field(Zxyz_2);
+  potInt_22->set_charge_field(Zxyz_1);
   oneInt = potInt_1;
   oneInt->compute(VaoB12);
   oneInt = potInt_2;
   oneInt->compute(VaoA21);
+  oneInt = potInt_11;
+  oneInt->compute(VaoB11);
+  oneInt = potInt_22;
+  oneInt->compute(VaoA22);
   ovlInt->compute(Sao12);
   std::shared_ptr<psi::Matrix> VaoA12 = VaoA21->transpose();
   //VaoA21.reset();
@@ -774,13 +791,105 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   std::shared_ptr<psi::Matrix> Smo12  = psi::Matrix::triplet(Ca_occ_A, Sao12 , Ca_occ_B, true, false, false);
   std::shared_ptr<psi::Matrix> VmoA12 = psi::Matrix::triplet(Ca_occ_A, VaoA12, Ca_occ_B, true, false, false);
   std::shared_ptr<psi::Matrix> VmoB12 = psi::Matrix::triplet(Ca_occ_A, VaoB12, Ca_occ_B, true, false, false);
+  std::shared_ptr<psi::Matrix> VmoA22 = psi::Matrix::triplet(Ca_occ_B, VaoA22, Ca_occ_B, true, false, false);
+  std::shared_ptr<psi::Matrix> VmoB11 = psi::Matrix::triplet(Ca_occ_A, VaoB11, Ca_occ_A, true, false, false);
 
   VmoA12->add(VmoB12);
 
-  e_s1 = -2.0 * Smo12->vector_dot(VmoA12);
+  e_s1 = Smo12->vector_dot(VmoA12);
+  std::shared_ptr<psi::Matrix> SVS11 = psi::Matrix::triplet(Smo12, VmoA22, Smo12, false,false, true );
+  std::shared_ptr<psi::Matrix> SVS22 = psi::Matrix::triplet(Smo12, VmoB11, Smo12, true ,false, false);
+  e_s2 = SVS11->trace() + SVS22->trace();
 
   // ===> Two-electron part <=== //
   psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell et al.)");
+  std::shared_ptr<psi::IntegralTransform> integrals = wfn_union_->integrals(); 
+  dpd_set_default(integrals->get_dpd_id());
+  dpdbuf4 buf_1222, buf_1112, buf_1122;
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  double integral;
+  double** S = Smo12->pointer();
+
+  global_dpd_->buf4_init(&buf_1112, PSIF_LIBTRANS_DPD, 0, 
+                          integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[1,2]"  ),
+                          integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[1,2]"  ), 0, "MO Ints (11|12)");
+  global_dpd_->buf4_init(&buf_1222, PSIF_LIBTRANS_DPD, 0, 
+                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[2,2]"  ),
+                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (12|22)");
+  global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0, 
+                          integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
+                          integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
+
+  for (int h = 0; h < wfn_union_->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf_1112, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf_1112, h);
+       for (int ac = 0; ac < buf_1112.params->rowtot[h]; ++ac) {
+            int a = buf_1112.params->roworb[h][ac][0];
+            int c = buf_1112.params->roworb[h][ac][1];
+            for (int kb = 0; kb < buf_1112.params->coltot[h]; ++kb) {
+                 int k = buf_1112.params->colorb[h][kb][0];
+                 int b = buf_1112.params->colorb[h][kb][1];
+                 //psi::outfile->Printf(" Yint: (%2d %2d | %2d %2d) = %16.10f\n", k, l, m, n, buf.matrix[h][kl][mn]);
+                 integral = buf_1112.matrix[h][ac][kb]; // ( a_A c_A | k_A b_B )
+                 if (a==c) e_s1+= 2.0 * integral * S[k][b];
+                 if (c==k) e_s1-=       integral * S[a][b];
+            }
+       }
+       global_dpd_->buf4_mat_irrep_close(&buf_1112, h);
+  }
+  global_dpd_->buf4_close(&buf_1112);
+
+  for (int h = 0; h < wfn_union_->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf_1222, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf_1222, h);
+       for (int ac = 0; ac < buf_1222.params->rowtot[h]; ++ac) {
+            int a = buf_1222.params->roworb[h][ac][0];
+            int c = buf_1222.params->roworb[h][ac][1];
+            for (int kb = 0; kb < buf_1222.params->coltot[h]; ++kb) {
+                 int k = buf_1222.params->colorb[h][kb][0];
+                 int b = buf_1222.params->colorb[h][kb][1];
+                 //psi::outfile->Printf(" Yint: (%2d %2d | %2d %2d) = %16.10f\n", k, l, m, n, buf.matrix[h][kl][mn]);
+                 integral = buf_1222.matrix[h][ac][kb]; // ( a_A c_B | k_B b_B )
+                 if (k==b) e_s1+= 2.0 * integral * S[a][c];
+                 if (c==b) e_s1-=       integral * S[a][k];
+            }
+       }
+       global_dpd_->buf4_mat_irrep_close(&buf_1222, h);
+  }
+  global_dpd_->buf4_close(&buf_1222);
+
+  std::shared_ptr<psi::Matrix> SSmo11 = psi::Matrix::doublet(Smo12, Smo12, false, true );
+  std::shared_ptr<psi::Matrix> SSmo22 = psi::Matrix::doublet(Smo12, Smo12, true , false);
+  double** SS11 = SSmo11->pointer();
+  double** SS22 = SSmo22->pointer();
+  for (int h = 0; h < wfn_union_->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf_1122, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf_1122, h);
+       for (int ac = 0; ac < buf_1122.params->rowtot[h]; ++ac) {
+            int a = buf_1122.params->roworb[h][ac][0];
+            int c = buf_1122.params->roworb[h][ac][1];
+            for (int kb = 0; kb < buf_1122.params->coltot[h]; ++kb) {
+                 int k = buf_1122.params->colorb[h][kb][0];
+                 int b = buf_1122.params->colorb[h][kb][1];
+                 //psi::outfile->Printf(" Yint: (%2d %2d | %2d %2d) = %16.10f\n", k, l, m, n, buf.matrix[h][kl][mn]);
+                 integral = buf_1122.matrix[h][ac][kb]; // ( a_A c_A | k_B b_B )
+                 if (k==b) e_s2+= 2.0 * integral * SS11[a][c];
+                 if (c==a) e_s2+= 2.0 * integral * SS22[k][b];
+                 e_s2 -= integral * S[a][k] * S[c][b];
+            }
+       }
+       global_dpd_->buf4_mat_irrep_close(&buf_1122, h);
+  }
+  global_dpd_->buf4_close(&buf_1122);
+
+
+  e_s1 *=-2.0;
+  e_s2 *= 2.0;
+
+  // ---> Close the DPD file <--- //
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 
   // ===> Compute the Exchange Energy <=== //
   double e_exch = compute_pure_exchange_energy();
