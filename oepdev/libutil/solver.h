@@ -381,7 +381,8 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * <tr><td colspan=2> <center><strong>Benchmark Methods</strong></center>
  * <tr><td> `HAYES_STONE`       <td>*Default*. Pauli Repulsion energy at HF level from Hayes and Stone (1984). 
  * <tr><td> `DENSITY_BASED`     <td>Pauli Repulsion energy at HF level from Mandado and Hermida-Ramon (2012).
- * <tr><td> `MURRELL_ETAL`      <td>Approximate Pauli Repulsion energy at HF level from Murrell et al.
+ * <tr><td> `MURRELL_ETAL`      <td>Approximate Pauli Repulsion energy at HF level from Murrell et al (1967).
+ * <tr><td> `OTTO_LADIK`        <td>Approximate Pauli Repulsion energy at HF level from Otto and Ladik (1975).
  * <tr><td> `EFP2`              <td>Approximate Pauli Repulsion energy at HF level from EFP2 model.
  * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
  * <tr><td> `MURRELL_ETAL_MIX`  <td>*Default*. OEP-Murrell et al's: S1 term via DF-OEP, S2 term via ESP-OEP.
@@ -494,7 +495,7 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * energy, \f$ E^{\rm Ex-Rep}\f$. Therefore, these methods at HF level are fully equivalent but the 
  * nature of partitioning of repulsive and exchange parts is different. It is also
  * noted that the orbital localization does *not* affect the resulting energies, as 
- * opposed to the next approximate methods described below.
+ * opposed to the few approximate methods described below (Otto-Ladik and EFP2 methods).
  * 
  * ## Approximate Pauli Repulsion energy at HF level from Murrell et al.
  * 
@@ -521,7 +522,84 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  *                - \sum_{c\in A} \sum_{d\in B} S_{cd} (ac \vert bd)
  *         \right\}
  * \f] 
+ * Thus derived repulsion energy is invariant with respect to transformation of molecular
+ * orbitals, similarly as Hayes-Stone's method and density-based method.
  * By using OEP technique, the above theory can be exactly re-cast *without* any further approximations.
+ *
+ * ## Approximate Pauli Repulsion energy at HF level from Otto and Ladik (1975).
+ * 
+ * The Pauli repulsion energy is approximately given as
+ * \f[
+ *    E^{\rm Rep} = E^{\rm Rep}(\mathcal{O}(S)) + E^{\rm Rep}(\mathcal{O}(S^2))
+ * \f]
+ * where the first-order term is 
+ * \f[
+ *    E^{\rm Rep}(\mathcal{O}(S)) = -2\sum_{a\in A} \sum_{b\in B}
+ *                S_{ab} \left\{
+ *            V^A_{ab} + 2\sum_{c\in A} (ab \vert cc) - (ab \vert aa)
+ *          + V^B_{ab} + 2\sum_{d\in B} (ab \vert dd) - (ab \vert bb)
+ *                 \right\}
+ * \f]
+ * whereas the second-order term is
+ * \f[
+ *    E^{\rm Rep}(\mathcal{O}(S^2)) = 2\sum_{a\in A} \sum_{b\in B} S_{ab}^2 
+ *         \left\{
+ *                  V_{aa}^B + V_{bb}^A 
+ *                 + 2\sum_{c\in A} (cc \vert bb) 
+ *                 + 2\sum_{d\in B} (aa \vert dd)
+ *                 -                (aa \vert bb)
+ *         \right\}
+ * \f] 
+ * Thus derived repulsion energy is *not* invariant with respect to transformation of molecular
+ * orbitals, in contrast to Hayes-Stone's method and density-based method.
+ * It was shown that good results are obtained when using localized molecular orbitals,
+ * whereas using canonical molecular orbitals brings poor results.
+ * By using OEP technique, the above theory can be exactly re-cast *without* any further approximations.
+ *
+ * ## Approximate Pauli Repulsion energy at HF level from Jensen and Gordon (1996).
+ * 
+ * The Pauli repulsion energy used within the EFP2 approach is approximately given as
+ * \f[
+ *    E^{\rm Rep} = E^{\rm Rep}(\mathcal{O}(S)) + E^{\rm Rep}(\mathcal{O}(S^2))
+ * \f]
+ * where the first-order term is 
+ * \f[
+ *    E^{\rm Rep}(\mathcal{O}(S)) = -2\sum_{a\in A} \sum_{b\in B}
+ *                S_{ab} \left\{
+ *            \sum_{c\in A} F^A_{ac} S_{cb} 
+ *          + \sum_{d\in B} F^B_{bd} S_{da}
+ *          - 2 T_{ab}
+ *                 \right\}
+ * \f]
+ * whereas the second-order term is
+ * \f[
+ *    E^{\rm Rep}(\mathcal{O}(S^2)) = 2\sum_{a\in A} \sum_{b\in B} S_{ab}^2 
+ *         \left\{
+ *                   \sum_{x\in A} \frac{-Z_x}{R_{xb}}
+ *                 + \sum_{y\in B} \frac{-Z_y}{R_{ya}}
+ *                 + \sum_{c\in A} \frac{2}{R_{bc}}
+ *                 + \sum_{d\in B} \frac{2}{R_{ad}}
+ *                 -\frac{1}{R_{ab}}
+ *         \right\}
+ * \f] 
+ * Thus derived repulsion energy is *not* invariant with respect to transformation of molecular
+ * orbitals, in contrast to Hayes-Stone's method and density-based method.
+ * It was shown that good results are obtained when using localized molecular orbitals,
+ * whereas using canonical molecular orbitals brings poor results.
+ * 
+ * In EFP2, exchange energy is approximated by spherical Gaussian approximation (SGO).
+ * The result of this is the following formula for the exchange energy:
+ * \f[
+ *  E^{\rm Ex} \approx -4 \sum_{a\in A} \sum_{b\in B}
+            \sqrt{\frac{-2 \ln{\vert S_{ab} \vert} }{\pi}}
+            \frac{S_{ab}^2}{R_{ab}}
+ * \f]
+ * In all the above formulas, \f$ R_{ij} \f$ are distances between position vectors
+ * of *i*th and *j*th point. The LMO centroids are defined by
+ * \f[
+ *   {\bf r}_a = (a \vert {\bf r} \vert a)
+ * \f]
+ * where *a* denotes the occupied molecular orbital.
  *
  * # OEP-Based Methods
  * The Murrell et al's theory of Pauli repulsion is here re-cast by introducing OEP's.
@@ -550,6 +628,8 @@ class RepulsionEnergySolver : public OEPDevSolver
     double compute_benchmark_density_based();
     /// Murrell et al's method (1967)
     double compute_benchmark_murrell_etal();
+    /// Otto-Ladik method (1975)
+    double compute_benchmark_otto_ladik();
     /// EFP2 method (1996)
     double compute_benchmark_efp2();
 
@@ -560,6 +640,8 @@ class RepulsionEnergySolver : public OEPDevSolver
 
     /// Exchange energy at HF level
     double compute_pure_exchange_energy();
+    /// Exchange energy at EFP2 level (SGO-approximated version of the above)
+    double compute_efp2_exchange_energy(psi::SharedMatrix, std::vector<psi::SharedVector>, std::vector<psi::SharedVector>);
 };
 
 

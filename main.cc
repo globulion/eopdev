@@ -222,6 +222,8 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         double e_stone = solver->compute_benchmark("HAYES_STONE");
       //double e_dens  = solver->compute_benchmark("DENSITY_BASED");
         double e_murr  = solver->compute_benchmark("MURRELL_ETAL");
+        double e_otla  = solver->compute_benchmark("OTTO_LADIK");
+        double e_efp2  = solver->compute_benchmark("EFP2");        
     } 
     else {
       throw PSIEXCEPTION("Incorrect target for oepdev program!\n");
