@@ -239,6 +239,7 @@ void WavefunctionUnion::localize_orbitals() {
      Note: Updated orbitals are:
            Matrix::doublet(wfn->Ca_subset("AO","OCC"), localizer->U(), false, false)  
            which is exactly equal to localizer->L() 
+           Orbitals of the monomers are also changed to localized ones.
   */
   double** pCa = Ca_->pointer();
   int nbf, nmo_occ;
@@ -249,13 +250,20 @@ void WavefunctionUnion::localize_orbitals() {
        //
        nbf      = l_wfn_[nf]->basisset()->nbf();
        nmo_occ  = l_wfn_[nf]->doccpi()[0];
+       //
+       double** pca = l_wfn_[nf]->Ca()->pointer();
+       double** pcb = l_wfn_[nf]->Cb()->pointer();
+       // 
        for (int i=0; i<nbf; ++i) {
             for (int jo=0; jo<nmo_occ; ++jo) {
                  pCa[i+nOffsetAO][jo+nOffsetMOOcc] = l_localizer_[nf]->L()->get(0, i, jo);
+                 pca[i][jo] = l_localizer_[nf]->L()->get(0, i, jo);
+                 pcb[i][jo] = pca[i][jo];
             }
        }
        nOffsetAO    += nbf;
        nOffsetMOOcc += nmo_occ;
+
   }
   Cb_->copy(Ca_);
   hasLocalizedOrbitals_ = true;
