@@ -822,19 +822,20 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
                           integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
                           integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
 
+  int i, j, k, l;
   for (int h = 0; h < wfn_union_->nirrep(); ++h) {
        global_dpd_->buf4_mat_irrep_init(&buf_1112, h);
        global_dpd_->buf4_mat_irrep_rd(&buf_1112, h);
-       for (int ac = 0; ac < buf_1112.params->rowtot[h]; ++ac) {
-            int a = buf_1112.params->roworb[h][ac][0];
-            int c = buf_1112.params->roworb[h][ac][1];
-            for (int kb = 0; kb < buf_1112.params->coltot[h]; ++kb) {
-                 int k = buf_1112.params->colorb[h][kb][0];
-                 int b = buf_1112.params->colorb[h][kb][1];
+       for (int ij = 0; ij < buf_1112.params->rowtot[h]; ++ij) {
+            i = buf_1112.params->roworb[h][ij][0];
+            j = buf_1112.params->roworb[h][ij][1];
+            for (int kl = 0; kl < buf_1112.params->coltot[h]; ++kl) {
+                 k = buf_1112.params->colorb[h][kl][0];
+                 l = buf_1112.params->colorb[h][kl][1];
                  //psi::outfile->Printf(" Yint: (%2d %2d | %2d %2d) = %16.10f\n", k, l, m, n, buf.matrix[h][kl][mn]);
-                 integral = buf_1112.matrix[h][ac][kb]; // ( a_A c_A | k_A b_B )
-                 if (a==c) e_s1+= 2.0 * integral * S[k][b];
-                 if (c==k) e_s1-=       integral * S[a][b];
+                 integral = buf_1112.matrix[h][ij][kl]; // ( i_A j_A | k_A l_B )
+                 if (i==j) e_s1+= 2.0 * integral * S[k][l];
+                 if (j==k) e_s1-=       integral * S[i][l];
             }
        }
        global_dpd_->buf4_mat_irrep_close(&buf_1112, h);
@@ -844,16 +845,16 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   for (int h = 0; h < wfn_union_->nirrep(); ++h) {
        global_dpd_->buf4_mat_irrep_init(&buf_1222, h);
        global_dpd_->buf4_mat_irrep_rd(&buf_1222, h);
-       for (int ac = 0; ac < buf_1222.params->rowtot[h]; ++ac) {
-            int a = buf_1222.params->roworb[h][ac][0];
-            int c = buf_1222.params->roworb[h][ac][1];
-            for (int kb = 0; kb < buf_1222.params->coltot[h]; ++kb) {
-                 int k = buf_1222.params->colorb[h][kb][0];
-                 int b = buf_1222.params->colorb[h][kb][1];
+       for (int ij = 0; ij < buf_1222.params->rowtot[h]; ++ij) {
+            i = buf_1222.params->roworb[h][ij][0];
+            j = buf_1222.params->roworb[h][ij][1];
+            for (int kl = 0; kl < buf_1222.params->coltot[h]; ++kl) {
+                 k = buf_1222.params->colorb[h][kl][0];
+                 l = buf_1222.params->colorb[h][kl][1];
                  //psi::outfile->Printf(" Yint: (%2d %2d | %2d %2d) = %16.10f\n", k, l, m, n, buf.matrix[h][kl][mn]);
-                 integral = buf_1222.matrix[h][ac][kb]; // ( a_A c_B | k_B b_B )
-                 if (k==b) e_s1+= 2.0 * integral * S[a][c];
-                 if (c==b) e_s1-=       integral * S[a][k];
+                 integral = buf_1222.matrix[h][ij][kl]; // ( i_A j_B | k_B l_B )
+                 if (k==l) e_s1+= 2.0 * integral * S[i][j];
+                 if (j==k) e_s1-=       integral * S[i][l];
             }
        }
        global_dpd_->buf4_mat_irrep_close(&buf_1222, h);
@@ -867,17 +868,17 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   for (int h = 0; h < wfn_union_->nirrep(); ++h) {
        global_dpd_->buf4_mat_irrep_init(&buf_1122, h);
        global_dpd_->buf4_mat_irrep_rd(&buf_1122, h);
-       for (int ac = 0; ac < buf_1122.params->rowtot[h]; ++ac) {
-            int a = buf_1122.params->roworb[h][ac][0];
-            int c = buf_1122.params->roworb[h][ac][1];
-            for (int kb = 0; kb < buf_1122.params->coltot[h]; ++kb) {
-                 int k = buf_1122.params->colorb[h][kb][0];
-                 int b = buf_1122.params->colorb[h][kb][1];
+       for (int ij = 0; ij < buf_1122.params->rowtot[h]; ++ij) {
+            i = buf_1122.params->roworb[h][ij][0];
+            j = buf_1122.params->roworb[h][ij][1];
+            for (int kl = 0; kl < buf_1122.params->coltot[h]; ++kl) {
+                 k = buf_1122.params->colorb[h][kl][0];
+                 l = buf_1122.params->colorb[h][kl][1];
                  //psi::outfile->Printf(" Yint: (%2d %2d | %2d %2d) = %16.10f\n", k, l, m, n, buf.matrix[h][kl][mn]);
-                 integral = buf_1122.matrix[h][ac][kb]; // ( a_A c_A | k_B b_B )
-                 if (k==b) e_s2+= 2.0 * integral * SS11[a][c];
-                 if (c==a) e_s2+= 2.0 * integral * SS22[k][b];
-                 e_s2 -= integral * S[a][k] * S[c][b];
+                 integral = buf_1122.matrix[h][ij][kl]; // ( i_A j_A | k_B l_B )
+                 if (k==l) e_s2+= 2.0 * integral * SS11[i][j];
+                 if (i==j) e_s2+= 2.0 * integral * SS22[k][l];
+                 e_s2 -= integral * S[i][k] * S[j][l];
             }
        }
        global_dpd_->buf4_mat_irrep_close(&buf_1122, h);

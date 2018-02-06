@@ -220,7 +220,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     else if (o_task == "REPULSION_ENERGY") {
         std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("REPULSION ENERGY", wfn_union);
         double e_stone = solver->compute_benchmark("HAYES_STONE");
-        double e_dens  = solver->compute_benchmark("DENSITY_BASED");
+      //double e_dens  = solver->compute_benchmark("DENSITY_BASED");
         double e_murr  = solver->compute_benchmark("MURRELL_ETAL");
     } 
     else {
