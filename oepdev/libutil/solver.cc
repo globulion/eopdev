@@ -1330,16 +1330,55 @@ double RepulsionEnergySolver::compute_efp2_exchange_energy(psi::SharedMatrix S,
 double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
   double e = 0.0, e_s1 = 0.0, e_s2 = 0.0;
 
-  SharedOEPotential oep_1 = oepdev::OEPotential::build(wfn_union_->l_wfn(0), 
+  SharedOEPotential oep_1 = oepdev::OEPotential::build("REPULSION ENERGY",
+                                                       wfn_union_->l_wfn(0), 
                                                        wfn_union_->l_auxiliary(0), 
                                                        wfn_union_->options());
-  SharedOEPotential oep_2 = oepdev::OEPotential::build(wfn_union_->l_wfn(1), 
+  SharedOEPotential oep_2 = oepdev::OEPotential::build("REPULSION ENERGY", 
+                                                       wfn_union_->l_wfn(1), 
                                                        wfn_union_->l_auxiliary(1), 
                                                        wfn_union_->options());
+  oep_1->compute();
+  oep_2->compute();
 
   psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
+
+  // ===> Compute Overlap Matrices <=== //
+  int nbf_p1 = wfn_union_->l_nbf(0);
+  int nbf_p2 = wfn_union_->l_nbf(1);
+  int nbf_a1 = wfn_union_->l_auxiliary(0)->nbf();
+  int nbf_a2 = wfn_union_->l_auxiliary(1)->nbf();
+
+  std::shared_ptr<psi::Matrix> Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_p1, nbf_p2);
+  std::shared_ptr<psi::Matrix> Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
+  std::shared_ptr<psi::Matrix> Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_p1, nbf_a2);
+
+  psi::IntegralFactory fact_1p2p(wfn_union_->l_primary  (0), wfn_union_->l_primary  (1));
+  psi::IntegralFactory fact_1a2p(wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1));
+  psi::IntegralFactory fact_1p2a(wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1));
+
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2a(fact_1p2a.ao_overlap());
+
+  ovlInt_1p2p->compute(Sao_1p2p);
+  ovlInt_1a2p->compute(Sao_1a2p);
+  ovlInt_1p2a->compute(Sao_1p2a);
+
+  std::shared_ptr<psi::Matrix> Ca_occ_1 = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
+  std::shared_ptr<psi::Matrix> Ca_occ_2 = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
+
+  std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(Ca_occ_1, Sao_1p2p, Ca_occ_2, true, false, false);
+  std::shared_ptr<psi::Matrix> Sba = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true);
+  std::shared_ptr<psi::Matrix> Sab = psi::Matrix::doublet(Ca_occ_1, Sao_1p2a, true, false);
   // ===> Compute S^-1 term <=== //
-  
+
+  std::shared_ptr<psi::Matrix> SSG1= psi::Matrix::triplet(Smo, Sba, oep_1->matrix("Murrell-etal.S1"), 
+                                                          false, false, false);
+  std::shared_ptr<psi::Matrix> SSG2= psi::Matrix::triplet(Smo, Sab, oep_2->matrix("Murrell-etal.S1"), 
+                                                          true, false, false);
+  e_s1  = SSG1->trace() + SSG2->trace();
+
   // ===> Compute S^-1 term <=== //
 
   e_s1 *= -2.0;
@@ -1349,7 +1388,7 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
 
   // ===> Compute the Exchange Energy <=== //
   double e_exch_pure = compute_pure_exchange_energy();
-  double e_exch_efp2 = compute_efp2_exchange_energy(Smo12, R1mo, R2mo);
+  double e_exch_efp2 = 0.0;//compute_efp2_exchange_energy(Smo12, R1mo, R2mo);
 
   // ===> Finish <=== //
   e = e_s1 + e_s2;

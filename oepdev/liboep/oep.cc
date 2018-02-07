@@ -3,6 +3,7 @@
 #include "../libutil/esp.h"
 #include "../libutil/integrals_iter.h"
 #include "psi4/libqt/qt.h"
+#include "psi4/libciomr/libciomr.h"
 
 
 using namespace oepdev;
@@ -211,12 +212,14 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    potInt->compute(Vao);
    ovlInt->compute(Sao);
 
-   Sao->invert();
+   //psi::shared_ptr<psi::Matrix> I = psi::Matrix::doublet(Sao, Sao, false, false);
+   //I->print();
 
    // ===> Compute Nuclear Contribution to DF Vector <=== //
    std::shared_ptr<psi::Matrix> V = psi::Matrix::doublet(Vao, Ca_occ, true, false);
 
    // ===> Compute Electronic Contribution to DF Vector <=== //
+   if (true) {
    std::shared_ptr<psi::TwoBodyAOInt> tei(fact_2.eri());                                           
    const double * buffer = tei->buffer();
                                                                                                   
@@ -236,25 +239,38 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
              i = intsIter.i();  // \mu      : n
              j = intsIter.j();  // \nu      : n
              k = intsIter.k();  // \alpha   : n
-             l = intsIter.l();  // \eta     : Q
+             l = intsIter.l();  // \xi      : Q
 
              integral = buffer[intsIter.index()];
 
-             dij = d[i][j]; dij = d[i][k];
-             for (int a = 0; a <wfn_->doccpi()[0]; ++a) 
+             dij = d[i][j]; dik = d[i][k];
+             for (int a = 0; a < wfn_->doccpi()[0]; ++a) 
              {
                 v[l][a] += (2.0 * c[k][a]*dij - c[j][a]*dik) * integral;
              }
         }
    }
+   }
 
-   // ===> Perform Generalized Density Fitting <=== // 
+   //// ===> Perform Generalized Density Fitting <=== // 
+   Sao->invert();
    std::shared_ptr<psi::Matrix> G = psi::Matrix::doublet(Sao, V, false, false);
    G->set_name("G(S^{-1})");
+   //double** pS = Sao->pointer();
+   //double** v = V->pointer();  
+   //int Q = auxiliary_->nbf();
+   //int N = wfn_->doccpi()[0];
+   //int* ipiv = init_int_array(Q);
+   ////C_DGESV(Q, N, &(pS[0][0]), Q, &(ipiv[0]), &(v[0][0]), Q);
+   //int info = C_DGESV(Q, N, Sao->pointer()[0], Q, ipiv, V->pointer()[0], Q);
+   //cout << info << endl;
+
+   //free(ipiv);
+   //V->print();
    
    // ===> Save and Finish <=== //
    oepMatrices_["Murrell-etal.S1"] = G;
-   G->print();
+   //G->print();
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s2() 
 {
