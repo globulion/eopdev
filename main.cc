@@ -124,6 +124,8 @@ int read_options(std::string name, Options& options)
         options.add_bool   ("OEPDEV_LOCALIZE"       , false                      );
         /*- Whether enable trial tests in main.cc or not -*/
         options.add_bool   ("OEPDEV_ENABLE_TRIAL"   , false                      );
+        /*- Which OEP to build? -*/
+        options.add_str    ("OEPDEV_OEP_BUILD_TYPE" , "ELECTROSTATIC_ENERGY"     );
      }
 
     return true;
@@ -191,110 +193,135 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     oepdev::preambule();
 
     // ==> Determine what to do <== //
-    std::string o_task          = options.get_str  ("OEPDEV_TARGET"       );
-    bool        o_local         = options.get_bool ("OEPDEV_LOCALIZE"     );
-    bool        o_enable_trial  = options.get_bool ("OEPDEV_ENABLE_TRIAL" );
-    int         o_print         = options.get_int  ("PRINT"               );
+    std::string o_task          = options.get_str  ("OEPDEV_TARGET"        );
+    std::string o_oep_build_type= options.get_str  ("OEPDEV_OEP_BUILD_TYPE");
+    bool        o_local         = options.get_bool ("OEPDEV_LOCALIZE"      );
+    bool        o_enable_trial  = options.get_bool ("OEPDEV_ENABLE_TRIAL"  );
+    int         o_print         = options.get_int  ("PRINT"                );
 
     // ==> Psi4 Input/Output Stream <== //
     SharedPSIO psio = PSIO::shared_object();
 
+    // ==> Create OEP's <==
+    if (o_task == "OEP_BUILD") 
+    {
+
+        SharedOEPotential oep;
+
+        if      (o_oep_build_type == "ELECTROSTATIC_ENERGY") 
+                   oep = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", ref_wfn, options);        
+        else if (o_oep_build_type == "REPULSION_ENERGY")
+                   oep = oepdev::OEPotential::build("REPULSION ENERGY"    , ref_wfn, ref_wfn->basisset(), options);
+        else if (o_oep_build_type == "EET_COUPLING")
+                   oep = oepdev::OEPotential::build("EET COUPLING"        , ref_wfn, options);
+        else 
+             throw psi::PSIEXCEPTION("OEPDEV: Invalid OEP build category selected!");
+
+    }
     // ==> Create Wavefunction Union of two monomers <==
-    SharedUnion wfn_union = std::make_shared<oepdev::WavefunctionUnion>(ref_wfn, options);
-    wfn_union->print_header();
+    else
+    {
 
-    // ==> Localize Molecular orbitals of the Union (optionally) <== //
-    if (o_local) wfn_union->localize_orbitals();
+        SharedUnion wfn_union = std::make_shared<oepdev::WavefunctionUnion>(ref_wfn, options); 
+        wfn_union->print_header();
 
-    // ==> Perform the integral transformation to MO basis <== //
-    wfn_union->transform_integrals();
-    if (o_print > 2) wfn_union->print_mo_integrals();
+        // ==> Localize Molecular orbitals of the Union (optionally) <== //                                                 
+        if (o_local) wfn_union->localize_orbitals();
+                                                                                                                            
+        // ==> Perform the integral transformation to MO basis <== //
+        wfn_union->transform_integrals();
+        if (o_print > 2) wfn_union->print_mo_integrals();
+                                                                                                                            
+        // ==> Perform the work <== //
+        if (o_task == "ELECTROSTATIC_ENERGY") 
+        {
+            std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("ELECTROSTATIC ENERGY", wfn_union); 
+                                                                                                                            
+            double el1 = solver->compute_benchmark("AO_EXPANDED"    );
+            double el2 = solver->compute_benchmark("MO_EXPANDED"    );
+            double el3 = solver->compute_oep_based("ESP_SYMMETRIZED");
+        }
+        else if (o_task == "REPULSION_ENERGY") 
+        {
+            std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("REPULSION ENERGY", wfn_union);
+                                                                                                                            
+            double e_stone = solver->compute_benchmark("HAYES_STONE"  );
+          //double e_dens  = solver->compute_benchmark("DENSITY_BASED");
+            double e_murr  = solver->compute_benchmark("MURRELL_ETAL" );
+            double e_otla  = solver->compute_benchmark("OTTO_LADIK"   );
+            double e_efp2  = solver->compute_benchmark("EFP2"         );        
+        } 
+        else 
+           throw PSIEXCEPTION("Incorrect target for oepdev program!\n");
 
-    // ==> Perform the work <== //
-    if (o_task == "ELECTROSTATIC_ENERGY") {
-        std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("ELECTROSTATIC ENERGY", wfn_union); 
-        double el1 = solver->compute_benchmark("AO_EXPANDED"    );
-        double el2 = solver->compute_benchmark("MO_EXPANDED"    );
-        double el3 = solver->compute_oep_based("ESP_SYMMETRIZED");
+
+
+
+        /* Below there are a few tests needed to develop Initial Version of the Plugin.                                                      
+         * At the end of the process, all functionalities of the plugin should be using only:
+         *  - the WavefunctionUnion object
+         *  - the Options object.
+         * Therefore, these tests shall be removed once particular functionalities
+         * will be developed during the Project. This means that the includes and typedefs 
+         * at the top of `main.cc` shall be removed.
+         */
+        if (o_enable_trial) {
+                                                                                                                                             
+        SharedWavefunction      wfn_union_base = wfn_union;
+        SharedIntegralTransform transform      = wfn_union->integrals();
+                                                                                                                                             
+        // Parse molecules, fragments, basis sets and other primary informations
+        SharedBasisSet          primary_1      = wfn_union->l_primary(0);    
+        SharedBasisSet          primary_2      = wfn_union->l_primary(1);
+        SharedMolecule          molecule_1     = wfn_union->l_molecule(0);
+        SharedMolecule          molecule_2     = wfn_union->l_molecule(1);
+        SharedMolecule          molecule       = wfn_union->molecule();
+        SharedBasisSet          primary        = wfn_union->basisset();
+        SharedBasisSet          auxiliary      = wfn_union->get_basisset("BASIS_DF_OEP");
+        SharedWavefunction      scf_1          = wfn_union->l_wfn(0); 
+        SharedWavefunction      scf_2          = wfn_union->l_wfn(1);
+        
+        // Solve CPHF equations for each monomer
+        SharedCPHF cphf_1(new oepdev::CPHF(scf_1, options));
+        SharedCPHF cphf_2(new oepdev::CPHF(scf_2, options));
+        cphf_1->compute();
+        cphf_2->compute();
+        SharedMatrix pol_1 = cphf_1->get_molecular_polarizability();
+        SharedMatrix pol_2 = cphf_2->get_molecular_polarizability();
+        pol_1->print(); pol_2->print();
+                                                                                                                                             
+        // Wavefunction coefficients for isolated monomers
+        SharedMatrix c_1 = scf_1->Ca_subset("AO","ALL");
+        SharedMatrix c_2 = scf_2->Ca_subset("AO","ALL");
+                                                                                                                                             
+        // Create some OEP's
+        SharedOEPotential oep_cou = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", scf_1, options);
+        SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, primary_1, options);
+        SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
+                                                                                                                                             
+        oep_cou->write_cube("V", "oep");
+                                                                                                                                             
+        // Compute potentials
+        if (false) {
+        SharedField3D potential_cube = oepdev::ScalarField3D::build("ELECTROSTATIC", 60, 60, 60, 10.0, 10.0, 10.0, scf_1, options);
+        SharedField3D potential_random = oepdev::ScalarField3D::build("ELECTROSTATIC", 50000, 10.0, scf_1, options);
+                                                                                                                                             
+        potential_cube->print();
+        potential_random->print();
+        potential_random->compute();
+                                                                                                                                             
+        oepdev::ESPSolver esp(potential_random);
+        esp.compute();
+        esp.charges()->print();
+        //std::shared_ptr<oepdev::CubeDistribution3D> di = std::dynamic_pointer_cast<oepdev::CubeDistribution3D>(potential->distribution());
+        //di->print_header();
+        //potential->write_cube_file("pot");
+        }
+                                                                                                                                             
+                                                                                                                                             
+        } // End of trial
+
     }
-    else if (o_task == "REPULSION_ENERGY") {
-        std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("REPULSION ENERGY", wfn_union);
-        double e_stone = solver->compute_benchmark("HAYES_STONE");
-      //double e_dens  = solver->compute_benchmark("DENSITY_BASED");
-        double e_murr  = solver->compute_benchmark("MURRELL_ETAL");
-        double e_otla  = solver->compute_benchmark("OTTO_LADIK");
-        double e_efp2  = solver->compute_benchmark("EFP2");        
-    } 
-    else {
-      throw PSIEXCEPTION("Incorrect target for oepdev program!\n");
-    }
-
-
-
-    /* Below there are a few tests needed to develop Initial Version of the Plugin.
-     * At the end of the process, all functionalities of the plugin should be using only:
-     *  - the WavefunctionUnion object
-     *  - the Options object.
-     * Therefore, these tests shall be removed once particular functionalities
-     * will be developed during the Project. This means that the includes and typedefs 
-     * at the top of `main.cc` shall be removed.
-     */
-    if (o_enable_trial) {
-
-    SharedWavefunction      wfn_union_base = wfn_union;
-    SharedIntegralTransform transform      = wfn_union->integrals();
-
-    // Parse molecules, fragments, basis sets and other primary informations
-    SharedBasisSet          primary_1      = wfn_union->l_primary(0);    
-    SharedBasisSet          primary_2      = wfn_union->l_primary(1);
-    SharedMolecule          molecule_1     = wfn_union->l_molecule(0);
-    SharedMolecule          molecule_2     = wfn_union->l_molecule(1);
-    SharedMolecule          molecule       = wfn_union->molecule();
-    SharedBasisSet          primary        = wfn_union->basisset();
-    SharedBasisSet          auxiliary      = wfn_union->get_basisset("BASIS_DF_OEP");
-    SharedWavefunction      scf_1          = wfn_union->l_wfn(0); 
-    SharedWavefunction      scf_2          = wfn_union->l_wfn(1);
-    
-    // Solve CPHF equations for each monomer
-    SharedCPHF cphf_1(new oepdev::CPHF(scf_1, options));
-    SharedCPHF cphf_2(new oepdev::CPHF(scf_2, options));
-    cphf_1->compute();
-    cphf_2->compute();
-    SharedMatrix pol_1 = cphf_1->get_molecular_polarizability();
-    SharedMatrix pol_2 = cphf_2->get_molecular_polarizability();
-    pol_1->print(); pol_2->print();
-
-    // Wavefunction coefficients for isolated monomers
-    SharedMatrix c_1 = scf_1->Ca_subset("AO","ALL");
-    SharedMatrix c_2 = scf_2->Ca_subset("AO","ALL");
-
-    // Create some OEP's
-    SharedOEPotential oep_cou = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", scf_1, options);
-    SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, primary_1, options);
-    SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
-
-    oep_cou->write_cube("V", "oep");
-
-    // Compute potentials
-    if (false) {
-    SharedField3D potential_cube = oepdev::ScalarField3D::build("ELECTROSTATIC", 60, 60, 60, 10.0, 10.0, 10.0, scf_1, options);
-    SharedField3D potential_random = oepdev::ScalarField3D::build("ELECTROSTATIC", 50000, 10.0, scf_1, options);
-
-    potential_cube->print();
-    potential_random->print();
-    potential_random->compute();
-
-    oepdev::ESPSolver esp(potential_random);
-    esp.compute();
-    esp.charges()->print();
-    //std::shared_ptr<oepdev::CubeDistribution3D> di = std::dynamic_pointer_cast<oepdev::CubeDistribution3D>(potential->distribution());
-    //di->print_header();
-    //potential->write_cube_file("pot");
-    }
-
-
-    } // End of trial
-
     return ref_wfn;
 }
 

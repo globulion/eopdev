@@ -57,19 +57,33 @@ def run_oepdev(name, **kwargs):
     # grab molecule aggregate and all fragments (now only for dimer)
     print " [2] Preparing basis sets for the monomers."
     molecule      = ref_wfn.molecule()
-    molecule_A    = molecule.extract_subsets(1)
-    molecule_B    = molecule.extract_subsets(2)
 
-    basis_A      = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("BASIS"),
-                                            puream=ref_wfn.basisset().has_puream())
-    basis_B      = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS"),
-                                            puream=ref_wfn.basisset().has_puream())
-    basis_df_oep = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("BASIS_DF_OEP"),
-                                            puream=ref_wfn.basisset().has_puream())
+    # case when OEP build is requested
+    if psi4.core.get_global_option("OEPDEV_TARGET") == "OEP_BUILD":
 
-    ref_wfn.set_basisset("BASIS_1"     , basis_A)
-    ref_wfn.set_basisset("BASIS_2"     , basis_B)
-    ref_wfn.set_basisset("BASIS_DF_OEP", basis_df_oep)
+       basis_df_oep = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("BASIS_DF_OEP"),
+                                               puream=ref_wfn.basisset().has_puream())
+       ref_wfn.set_basisset("BASIS_DF_OEP", basis_df_oep)
+
+    # case when solver tast on wavefunction union is requested
+    else:
+      
+       molecule_A     = molecule.extract_subsets(1)                                                               
+       molecule_B     = molecule.extract_subsets(2)
+                                                                                                                 
+       basis_A        = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("BASIS"),
+                                                 puream=ref_wfn.basisset().has_puream())
+       basis_B        = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS"),
+                                                 puream=ref_wfn.basisset().has_puream())
+       basis_df_oep_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("BASIS_DF_OEP"),
+                                                 puream=ref_wfn.basisset().has_puream())
+       basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS_DF_OEP"),
+                                                 puream=ref_wfn.basisset().has_puream())
+                                                                                                                 
+       ref_wfn.set_basisset("BASIS_1"       , basis_A       )
+       ref_wfn.set_basisset("BASIS_2"       , basis_B       )
+       ref_wfn.set_basisset("BASIS_DF_OEP_1", basis_df_oep_A)
+       ref_wfn.set_basisset("BASIS_DF_OEP_2", basis_df_oep_B)
 
     # Ensure IWL files have been written when not using DF/CD
     proc_util.check_iwl_file_from_scf_type(psi4.core.get_option('SCF', 'SCF_TYPE'), ref_wfn)
