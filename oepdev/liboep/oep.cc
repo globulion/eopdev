@@ -121,10 +121,8 @@ void ElectrostaticEnergyOEPotential::compute(const std::string& oepType)
   }
 
 }
-void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) 
-{
-  double val = 0.0;
-  if (oepType == "V" || oepType == "TOTAL") {
+double ElectrostaticEnergyOEPotential::compute_3D_V(const double& x, const double& y, const double& z){
+      double val = 0.0;
       // ===> Nuclear contribution <=== //
       for (int i=0; i<wfn_->molecule()->natom(); ++i) {
            val+= (double)wfn_->molecule()->Z(i) /
@@ -146,8 +144,13 @@ void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, cons
            }
       }
       potMat_->zero();
-
-   } else {
+ return val;
+}
+void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) 
+{
+   double val;
+   if (oepType == "V" || oepType == "TOTAL") val = compute_3D_V(x, y, z);
+   else {
       throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
    }
 
@@ -179,11 +182,22 @@ RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(SharedWavefunction wfn,
 RepulsionEnergyOEPotential::~RepulsionEnergyOEPotential() {}
 void RepulsionEnergyOEPotential::common_init() 
 {
-   oepTypes_.push_back("S1");
-   oepTypes_.push_back("S2");
+   oepTypes_.push_back("Murrell-etal.S1");
+   oepTypes_.push_back("Murrell-etal.S2");
 }
 
-void RepulsionEnergyOEPotential::compute(const std::string& oepType) {}
+void RepulsionEnergyOEPotential::compute(const std::string& oepType) 
+{
+  if      (oepType == "Murrell-etal.S1") compute_murrell_etal_s1();
+  else if (oepType == "Murrell-etal.S2") compute_murrell_etal_s2();
+  else throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
+}
+void RepulsionEnergyOEPotential::compute_murrell_etal_s1() 
+{
+}
+void RepulsionEnergyOEPotential::compute_murrell_etal_s2() 
+{
+}
 void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
 void RepulsionEnergyOEPotential::print_header(void) const {}
 

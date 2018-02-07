@@ -416,6 +416,9 @@ class ElectrostaticEnergyOEPotential : public OEPotential
   private:
     /// Set defaults
     void common_init();
+
+    /// Auxilary computers
+    double compute_3D_V(const double& x, const double& y, const double& z);
 };
 
 /**\brief Generalized One-Electron Potential for Pauli repulsion energy calculations.
@@ -437,6 +440,10 @@ class RepulsionEnergyOEPotential : public OEPotential
   private:
     /// Set defaults
     void common_init();
+
+    /// Auxiliary computers
+    void compute_murrell_etal_s1();
+    void compute_murrell_etal_s2();
 };
 
 /**\brief Generalized One-Electron Potential for EET coupling calculations.
