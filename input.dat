@@ -3,14 +3,24 @@ sys.path.insert(0, './..')
 import oepdev
 
 molecule happy {
+#0 1
+#O         -3.08471        1.12313        0.00396
+#H         -2.11791        0.90877        0.01763
+#H         -3.12325        2.07922       -0.24921
+#--
+#0 1
+#H          0.37920        1.49870       -0.00210
+#H          0.16921        2.17489       -0.00147
+#===============================================
 0 1
-O         -3.08471        1.12313        0.00396
-H         -2.11791        0.90877        0.01763
-H         -3.12325        2.07922       -0.24921
+O          0.96944       -4.30612       -2.18132
+H          1.33485       -5.15965       -1.90564
+H          0.84646       -3.85901       -1.31466
 --
 0 1
-H          0.37920        1.49870       -0.00210
-H          0.16921        2.17489       -0.00147
+O          0.67961       -3.28639        0.35954
+H          1.28440       -2.98969        1.06083
+H         -0.15242       -2.83702        0.58835
 #================================================
 #0 1
 #C   0.000000  -0.667578  -2.124659
@@ -36,15 +46,17 @@ set {
     # ==> OEPDEV Routine Specification <== #
     oepdev_target                 repulsion_energy 
     oepdev_localize               True
-    oepdev_enable_trial           True
+    oepdev_enable_trial           False
     oepdev_oep_build_type         electrostatic_energy
     # ==> General Psi4 Options <== #
     scf_type                      direct 
     guess                         core
     print                         2
     # ==> Basis Sets <== #
-    basis                         sto-3g #6-311++G**
-    df_basis_oep                  6-31G
+    basis                         6-311++G** 
+    #basis                         6-31G*
+    #df_basis_oep                  aug-cc-pVDZ-jkfit
+    df_basis_oep                  aug-cc-pVDZ-jkfit
     #df_basis_sapt                 cc-pVDZ
     # ==> CPHF <== #
     cphf_diis                     True 
