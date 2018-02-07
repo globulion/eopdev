@@ -1,6 +1,7 @@
 #include "oep.h"
 #include "../libutil/space3d.h"
 #include "../libutil/esp.h"
+#include "../libutil/integrals_iter.h"
 #include "psi4/libqt/qt.h"
 
 
@@ -194,6 +195,66 @@ void RepulsionEnergyOEPotential::compute(const std::string& oepType)
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s1() 
 {
+   // ===> Allocate <=== //
+   std::shared_ptr<psi::Matrix> Vao = std::make_shared<psi::Matrix>("Vao" , primary_->nbf(), auxiliary_->nbf());
+   std::shared_ptr<psi::Matrix> Sao = std::make_shared<psi::Matrix>("Sao" , auxiliary_->nbf(), auxiliary_->nbf());
+   std::shared_ptr<psi::Matrix> Ca_occ = wfn_->Ca_subset("AO","OCC");
+
+   psi::IntegralFactory fact_a(auxiliary_, auxiliary_);
+   psi::IntegralFactory fact_1(primary_, auxiliary_);
+   psi::IntegralFactory fact_2(primary_, primary_, primary_, auxiliary_);
+  
+   std::shared_ptr<psi::OneBodyAOInt> potInt(fact_1.ao_potential());
+   std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact_a.ao_overlap());
+
+   // ===> Compute One-Electron Integrals <=== //
+   potInt->compute(Vao);
+   ovlInt->compute(Sao);
+
+   Sao->invert();
+
+   // ===> Compute Nuclear Contribution to DF Vector <=== //
+   std::shared_ptr<psi::Matrix> V = psi::Matrix::doublet(Vao, Ca_occ, true, false);
+
+   // ===> Compute Electronic Contribution to DF Vector <=== //
+   std::shared_ptr<psi::TwoBodyAOInt> tei(fact_2.eri());                                           
+   const double * buffer = tei->buffer();
+                                                                                                  
+   oepdev::AllAOShellCombinationsIterator shellIter(fact_2);
+   int i, j, k, l;
+   double integral, dij, dik;
+   
+   double** v = V->pointer();  
+   double** c = Ca_occ->pointer();
+   double** d = wfn_->Da()->pointer();                                                                                 
+   for (shellIter.first(); shellIter.is_done() == false; shellIter.next())
+   {
+        shellIter.compute_shell(tei);
+        oepdev::AllAOIntegralsIterator intsIter(shellIter);
+        for (intsIter.first(); intsIter.is_done() == false; intsIter.next())
+        {
+             i = intsIter.i();  // \mu      : n
+             j = intsIter.j();  // \nu      : n
+             k = intsIter.k();  // \alpha   : n
+             l = intsIter.l();  // \eta     : Q
+
+             integral = buffer[intsIter.index()];
+
+             dij = d[i][j]; dij = d[i][k];
+             for (int a = 0; a <wfn_->doccpi()[0]; ++a) 
+             {
+                v[l][a] += (2.0 * c[k][a]*dij - c[j][a]*dik) * integral;
+             }
+        }
+   }
+
+   // ===> Perform Generalized Density Fitting <=== // 
+   std::shared_ptr<psi::Matrix> G = psi::Matrix::doublet(Sao, V, false, false);
+   G->set_name("G(S^{-1})");
+   
+   // ===> Save and Finish <=== //
+   oepMatrices_["Murrell-etal.S1"] = G;
+   G->print();
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s2() 
 {

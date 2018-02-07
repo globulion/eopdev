@@ -216,6 +216,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
                    oep = oepdev::OEPotential::build("EET COUPLING"        , ref_wfn, options);
         else 
              throw psi::PSIEXCEPTION("OEPDEV: Invalid OEP build category selected!");
+        oep->compute();
 
     }
     // ==> Create Wavefunction Union of two monomers <==

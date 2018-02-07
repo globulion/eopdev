@@ -62,6 +62,7 @@ class AllAOShellCombinationsIterator {
     *  @param integrals - integral factory object
     */  
    AllAOShellCombinationsIterator(SharedIntegralFactory integrals);
+   AllAOShellCombinationsIterator(psi::IntegralFactory integrals);
    
    /// First iteration 
    void first();

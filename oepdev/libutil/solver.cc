@@ -1328,9 +1328,50 @@ double RepulsionEnergySolver::compute_efp2_exchange_energy(psi::SharedMatrix S,
  return e;
 }
 double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
+  double e = 0.0, e_s1 = 0.0, e_s2 = 0.0;
+
+  SharedOEPotential oep_1 = oepdev::OEPotential::build(wfn_union_->l_wfn(0), 
+                                                       wfn_union_->l_auxiliary(0), 
+                                                       wfn_union_->options());
+  SharedOEPotential oep_2 = oepdev::OEPotential::build(wfn_union_->l_wfn(1), 
+                                                       wfn_union_->l_auxiliary(1), 
+                                                       wfn_union_->options());
+
   psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
+  // ===> Compute S^-1 term <=== //
+  
+  // ===> Compute S^-1 term <=== //
+
+  e_s1 *= -2.0;
+  e_s2 *=  2.0; 
+
   psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
-  throw psi::PSIEXCEPTION("ERROR: MURRELL_ETAL_MIX is not yet implemented!\n");
+
+  // ===> Compute the Exchange Energy <=== //
+  double e_exch_pure = compute_pure_exchange_energy();
+  double e_exch_efp2 = compute_efp2_exchange_energy(Smo12, R1mo, R2mo);
+
+  // ===> Finish <=== //
+  e = e_s1 + e_s2;
+
+  // ---> Print <--- //
+  if (wfn_union_->options().get_int("PRINT") > 0) {
+     psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
+     psi::outfile->Printf("  ==>         OEP-Based (Murrell-etal; MIX)          <==\n\n");
+     psi::outfile->Printf("     E S^-1    = %13.6f\n", e_s1                             );
+     psi::outfile->Printf("     E S^-2    = %13.6f\n", e_s2                             );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     E REP     = %13.6f\n", e                                );
+     psi::outfile->Printf("     E EX      = %13.6f\n", e_exch_pure                      );
+     psi::outfile->Printf("     E EX(SGO) = %13.6f\n", e_exch_efp2                      );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     EXREP     = %13.6f\n", e+e_exch_pure                    );
+     psi::outfile->Printf("     EXREP(SGO)= %13.6f\n", e+e_exch_efp2                    );
+     psi::outfile->Printf("\n");
+  }
+ 
+  // Return the Total Repulsion Energy
+  return e; 
 }
 double RepulsionEnergySolver::compute_oep_based_murrell_etal_esp() {
   psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");

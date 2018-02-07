@@ -23,6 +23,14 @@ AllAOShellCombinationsIterator::AllAOShellCombinationsIterator(SharedIntegralFac
 
 }
 
+AllAOShellCombinationsIterator::AllAOShellCombinationsIterator(psi::IntegralFactory ints) 
+ : AllAOShellCombinationsIterator(ints.basis1(), ints.basis2(), 
+                                  ints.basis3(), ints.basis4())
+{
+
+}
+
+
 AllAOIntegralsIterator::AllAOIntegralsIterator(std::shared_ptr<AllAOShellCombinationsIterator> shellIter) 
  : done(false), nishell_1(shellIter->bs_1()->shell(shellIter->P()).nfunction()-1), 
                 nishell_2(shellIter->bs_2()->shell(shellIter->Q()).nfunction()-1), 
