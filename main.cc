@@ -105,7 +105,7 @@ int read_options(std::string name, Options& options)
         /*- The amount of information printed to the output file -*/
         options.add_int    ("PRINT"                 , 1                          );
         /*- Basis set for OEP density fitting -*/                                   
-        options.add_str    ("BASIS_DF_OEP"          , ""                         );
+        options.add_str    ("DF_BASIS_OEP"          , "sto-3g"                   );
         /*- CPHF maximum iterations -*/                                             
         options.add_int    ("CPHF_MAXITER"          , 50                         );
         /*- CPHF convergence -*/                                                    
@@ -277,7 +277,8 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         SharedMolecule          molecule_2     = wfn_union->l_molecule(1);
         SharedMolecule          molecule       = wfn_union->molecule();
         SharedBasisSet          primary        = wfn_union->basisset();
-        SharedBasisSet          auxiliary      = wfn_union->get_basisset("BASIS_DF_OEP");
+        SharedBasisSet          auxiliary_1    = wfn_union->l_auxiliary(0);
+        SharedBasisSet          auxiliary_2    = wfn_union->l_auxiliary(1);
         SharedWavefunction      scf_1          = wfn_union->l_wfn(0); 
         SharedWavefunction      scf_2          = wfn_union->l_wfn(1);
         

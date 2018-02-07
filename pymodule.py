@@ -60,8 +60,8 @@ def run_oepdev(name, **kwargs):
 
     # case when OEP build is requested
     if psi4.core.get_global_option("OEPDEV_TARGET") == "OEP_BUILD":
-
-       basis_df_oep = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("BASIS_DF_OEP"),
+           
+       basis_df_oep = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                puream=ref_wfn.basisset().has_puream())
        ref_wfn.set_basisset("BASIS_DF_OEP", basis_df_oep)
 
@@ -75,9 +75,9 @@ def run_oepdev(name, **kwargs):
                                                  puream=ref_wfn.basisset().has_puream())
        basis_B        = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS"),
                                                  puream=ref_wfn.basisset().has_puream())
-       basis_df_oep_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("BASIS_DF_OEP"),
+       basis_df_oep_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                  puream=ref_wfn.basisset().has_puream())
-       basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS_DF_OEP"),
+       basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                  puream=ref_wfn.basisset().has_puream())
                                                                                                                  
        ref_wfn.set_basisset("BASIS_1"       , basis_A       )
