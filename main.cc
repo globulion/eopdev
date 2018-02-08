@@ -250,7 +250,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
           //double e_dens  = solver->compute_benchmark("DENSITY_BASED");
             double e_murr  = solver->compute_benchmark("MURRELL_ETAL" );
             double e_oep1  = solver->compute_oep_based("MURRELL_ETAL_MIX");
-          //double e_otla  = solver->compute_benchmark("OTTO_LADIK"   );
+            double e_otla  = solver->compute_benchmark("OTTO_LADIK"   );
             double e_efp2  = solver->compute_benchmark("EFP2"         );        
         } 
         else 
