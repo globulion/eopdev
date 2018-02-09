@@ -92,7 +92,7 @@ using SharedField3D            = std::shared_ptr<oepdev::ScalarField3D>;
 namespace psi{ 
 
 
-/** \brief Options for the OEPDEV plugin.
+/** \brief Options for the OEPDev plugin.
  *
  *  @param name name of driver function
  *  @param options psi::Options object
@@ -131,7 +131,7 @@ int read_options(std::string name, Options& options)
     return true;
 }
 
-/** \brief Main routine of the OEPDEV plugin.
+/** \brief Main routine of the OEPDev plugin.
  *
  *  Created with intention to test various models of the interaction energy 
  *  between two molecules, described by the Hartree-Fock-Roothaan-Hall theory 
@@ -139,52 +139,16 @@ int read_options(std::string name, Options& options)
  *
  *  In particular, the plugin tests the models of:
  *
- *   1. the Pauli exchange-repulsion interaction energy    (Project II ) 
+ *   1. the Pauli repulsion and CT interaction energy      (Project II ) 
  *   2. the Induction interaction energy                   (Project III)
  *   3. the excitation energy transfer couplings           (Project I  )
  *
- *  against benchmarks (exact or reference solutions). Detailed list of models 
- *  is given below:
- *
- *  +----------------------------------------------------------------------------+
- *  |                              Interaction Property                          |
- *  +--------------------------+--------------------------+----------------------+
- *  | Pauli energy             | Induction energy         | EET Coupling         |
- *  +--------------------------+--------------------------+----------------------+
- *  |                                    Methods                                 |       
- *  +==========================+==========================+======================+
- *  | EFP2-Pauli               | EFP2-Induced Dipoles     | TrCAMM               |
- *  +--------------------------+--------------------------+----------------------+
- *  | Murrel et al.'s theory   | Density Susceptibility   | OEP-ET/HT            |
- *  +--------------------------+--------------------------+----------------------+
- *  | OEP-Murrel et al.'s      |                          | TDFI-TI              |
- *  +--------------------------+--------------------------+----------------------+ 
- *  |                          |                          | FED                  |
- *  +--------------------------+--------------------------+----------------------+ 
- *  | Exact (Stone's)          | Exact (incl. CT)         | Exact (ESD)          |
- *  +--------------------------+--------------------------+----------------------+
- *
- *  The target models introduced in the Project shall be tested against the
- *  following benchmarks and compared with the following state-of-the-art models:
- *
- *  +--------------------------+--------------------------+----------------------+
- *  | Target Model             | Benchmarks               | Competing Model      |
- *  +==========================+==========================+======================+
- *  | OEP-Murrel et al.'s      | Murrel et al.'s          | EFP2-Pauli           |
- *  |                          | Exact (Stone's)          |                      |
- *  +--------------------------+--------------------------+----------------------+
- *  | OEP-ET/HT + TrCAMM       | Exact (ESD)              | TDFI-TI              |
- *  |                          | FED                      | FED                  |
- *  |                          | TDFI-TI                  |                      |
- *  +--------------------------+--------------------------+----------------------+
- *  | Density Susceptibility   | Exact (incl. CT)         | EFP2-Induced Dipoles |
- *  +--------------------------+--------------------------+----------------------+
- *
- *  Parameters of the plugin driver:
+ *  against benchmarks (exact or reference solutions). 
+ *  The list of implemented models can be found in \ref pimplementedmodels .
  *
  *  @param ref_wfn shared wavefunction of a dimer
  *  @param options psi::Options object
- *  @return psi::SharedWavefunction (as for now the same as ref_wfn)
+ *  @return psi::SharedWavefunction (either ref_wfn or wavefunction union)
  */
 extern "C"
 SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
