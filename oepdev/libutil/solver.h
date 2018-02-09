@@ -388,15 +388,22 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * <tr><td> `MURRELL_ETAL_MIX`  <td>*Default*. OEP-Murrell et al's: S1 term via DF-OEP, S2 term via ESP-OEP.
  * <tr><td> `MURRELL_ETAL_ESP`  <td>OEP-Murrell et al's: S1 and S2 via ESP-OEP
  * </table>
+ * *Note:*
+ *   - This solver also computes and prints the exchange energy at HF level (formulae are given below)
+ *     for reference purposes.
+ *   - In order to construct this solver, **always** use the `OEPDevSolver::build` static factory method.
  *
- * Below the detailed description of the above methods is given.
- * In the formulae, the Coulomb notation for 
- * electron repulsion integrals (ERI's) in MO basis is adopted; i.e,
+ * Below the detailed description of the implemented equations is given 
+ * for each of the above provided methods.
+ * In the formulae across, it is assumed that the orbitals are real.
+ * The Coulomb notation for 
+ * electron repulsion integrals (ERI's) is adopted; i.e,
  * \f[
  *  (ac \vert bd) = \iint d{\bf r}_1 d{\bf r}_2 
  *   \phi_a({\bf r}_1) \phi_c({\bf r}_1) \frac{1}{r_{12}} \phi_b({\bf r}_2) \phi_d({\bf r}_2)
  * \f]
- * It is also assumed that the orbitals are real.
+ * Greek subscripts denote basis set orbitals whereas Italic subscripts denote the occupied
+ * molecular orbitals.
  *
  * # Benchmark Methods
  * ## Pauli Repulsion energy at HF level by Hayes and Stone (1984).
@@ -516,9 +523,9 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * \f[
  *    E^{\rm Rep}(\mathcal{O}(S^2)) = 2\sum_{a\in A} \sum_{b\in B} S_{ab} \left\{
  *                  \sum_{c\in A} S_{bc}
- *                \left[ V^B + 2\sum_{d\in B} (ac \vert dd) \right]
+ *                \left[ V_{ac}^B + 2\sum_{d\in B} (ac \vert dd) \right]
  *           +      \sum_{d\in B} S_{ad}
- *                \left[ V^A + 2\sum_{x\in A} (bd \vert cc) \right]
+ *                \left[ V_{bd}^A + 2\sum_{x\in A} (bd \vert cc) \right]
  *                - \sum_{c\in A} \sum_{d\in B} S_{cd} (ac \vert bd)
  *         \right\}
  * \f] 
@@ -602,15 +609,62 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * where *a* denotes the occupied molecular orbital.
  *
  * # OEP-Based Methods
- * The Murrell et al's theory of Pauli repulsion is here re-cast by introducing OEP's.
- * 
- * ## S1 term via DF-OEP, S2 term via ESP-OEP.
- * ## S1 and S2 terms via ESP-OEP.
  *
- * *Notes:* 
- *   - This solver also computes and prints the exchange energy at HF level (formula is given above)
- *     for reference purposes.
- *   - In order to construct this solver, **always** use the `OEPDevSolver::build` static factory method.
+ * The Murrell et al's theory of Pauli repulsion for S-1 term
+ * and the Otto-Ladik's theory for S-2 term is here re-cast by introducing OEP's.
+ * The S-1 term is expressed via DF-OEP, whereas the S-2 term via ESP-OEP.
+ *
+ * ## S-1 term (Murrell et al.)
+ *
+ * The OEP reduction without any approximations leads to the following formula
+ * \f[
+ *  E^{\rm Rep}(\mathcal{O}(S^{1})) = -2\sum_{a\in A} \sum_{b\in B}
+ *                S_{ab}
+ *                \left\{
+ *                        \sum_{\xi \in A} S_{b \xi } G_{\xi  a}^A
+ *                      + \sum_{\eta\in B} S_{a \eta} G_{\eta b}^B
+ *                \right\}
+ * \f]
+ * where the OEP matrices are given as
+ * \f[
+ *  G_{\xi a}^A = \sum_{\xi' \in A} [{\bf S}^{-1}]_{\xi\xi'} 
+ *                \sum_{\alpha\in A} \left\{
+ *                  C_{\alpha a} V_{\alpha\xi'}^A 
+ *                + \sum_{\mu\nu\in A}
+ *                  \left[
+ *                   2C_{\alpha a}D_{\mu\nu} - C_{\nu a}D_{\alpha\mu}
+ *                  \right] 
+ *                  (\alpha\xi'\vert\mu\nu)
+ *                                \right\}
+ * \f]
+ * and analogously for molecule *B*.
+ * Here, the nuclear attraction integrals are denoted by \f$ V_{\alpha\xi'}^A\f$.
+ *
+ * ## S-2 term (Otto-Ladik)
+ *
+ * After the OEP reduction, this contribution under Otto-Ladik approximation has the following form:
+ * \f[
+ *  E^{\rm Rep}(\mathcal{O}(S^{2})) = 2\sum_{a\in A} \sum_{b\in B}
+ *                S_{ab}^2 
+ *                \left\{
+ *                        \sum_{x\in A} q_{xa} V^{(x)}_{bb} 
+ *                      + \sum_{y\in B} q_{yb} V^{(y)}_{aa} 
+ *                \right\}
+ * \f]
+ * where the ESP charges associated with each occupied molecular orbital 
+ * reproduce the *effective potential*
+ * of molecule in question, i.e.,
+ * \f[ 
+ *   \sum_{x\in A} \frac{q_{xa}}{\vert {\rm r} - {\rm r}_x \vert} \cong v_a^A({\bf r})
+ * \f]
+ * where the potential is given by
+ * \f[
+ *    v_a^A({\bf r}) = \sum_{x\in A} 
+ *                      \frac{Z_x}{\vert {\rm r} - {\rm r}_x \vert}
+ *                   + 2\sum_{c\in A}\int\frac{\phi_c({\rm r}')\phi_c({\rm r}')}{\vert {\rm r} - {\rm r}' \vert}\; d{\bf r}'
+ *          -\frac{1}{2}             \int\frac{\phi_a({\rm r}')\phi_a({\rm r}')}{\vert {\rm r} - {\rm r}' \vert}\; d{\bf r}'
+ * \f]
+ *
  */
 class RepulsionEnergySolver : public OEPDevSolver
 {
