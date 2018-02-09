@@ -185,13 +185,13 @@ RepulsionEnergyOEPotential::~RepulsionEnergyOEPotential() {}
 void RepulsionEnergyOEPotential::common_init() 
 {
    oepTypes_.push_back("Murrell-etal.S1");
-   oepTypes_.push_back("Murrell-etal.S2");
+   oepTypes_.push_back("Otto-Ladik.S2");
 }
 
 void RepulsionEnergyOEPotential::compute(const std::string& oepType) 
 {
   if      (oepType == "Murrell-etal.S1") compute_murrell_etal_s1();
-  else if (oepType == "Murrell-etal.S2") compute_murrell_etal_s2();
+  else if (oepType ==   "Otto-Ladik.S2") compute_murrell_etal_s2();
   else throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s1() 
@@ -278,6 +278,33 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s2()
 void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
 void RepulsionEnergyOEPotential::print_header(void) const {}
 
+// <============== CT Energy ===============> //
+ChargeTransferEnergyOEPotential::ChargeTransferEnergyOEPotential(SharedWavefunction wfn, Options& options) 
+ : OEPotential(wfn, options)
+{ 
+   throw psi::PSIEXCEPTION("OEPDEV: Construction of Charge Transfer Energy OEP requires auxiliary basis set!\n");
+   common_init();
+}
+
+ChargeTransferEnergyOEPotential::ChargeTransferEnergyOEPotential(SharedWavefunction wfn, 
+                                                                 SharedBasisSet auxiliary, Options& options) 
+ : OEPotential(wfn, auxiliary, options)
+{ 
+   common_init();
+}
+
+ChargeTransferEnergyOEPotential::~ChargeTransferEnergyOEPotential() {}
+void ChargeTransferEnergyOEPotential::common_init() 
+{
+    oepTypes_.push_back("Otto-Ladik.V1");
+    oepTypes_.push_back("Otto-Ladik.V2");
+    oepTypes_.push_back("Otto-Ladik.V3");
+}
+
+void ChargeTransferEnergyOEPotential::compute(const std::string& oepType) {}
+void ChargeTransferEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
+void ChargeTransferEnergyOEPotential::print_header(void) const {}
+
 // <============== EET Coupling ==============> //
 
 EETCouplingOEPotential::EETCouplingOEPotential(SharedWavefunction wfn, Options& options) 
@@ -296,12 +323,12 @@ EETCouplingOEPotential::EETCouplingOEPotential(SharedWavefunction wfn,
 EETCouplingOEPotential::~EETCouplingOEPotential() {}
 void EETCouplingOEPotential::common_init() 
 {
-    oepTypes_.push_back("ET1");
-    oepTypes_.push_back("ET2");
-    oepTypes_.push_back("HT1");
-    oepTypes_.push_back("HT2");
-    oepTypes_.push_back("CT1");
-    oepTypes_.push_back("CT2");
+    oepTypes_.push_back("Fujimoto.ET1");
+    oepTypes_.push_back("Fujimoto.ET2");
+    oepTypes_.push_back("Fujimoto.HT1");
+    oepTypes_.push_back("Fujimoto.HT2");
+    oepTypes_.push_back("Fujimoto.CT1");
+    oepTypes_.push_back("Fujimoto.CT2");
 }
 
 void EETCouplingOEPotential::compute(const std::string& oepType) {}

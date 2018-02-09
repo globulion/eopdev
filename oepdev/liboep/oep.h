@@ -396,10 +396,10 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 };
 
 
-/**\brief Generalized One-Electron Potential for Electrostatic Energy calculations.
+/**\brief Generalized One-Electron Potential for Electrostatic Energy.
  * 
  *  Contains the following OEP types:
- *      "V"
+ *     - `V` 
  */
 class ElectrostaticEnergyOEPotential : public OEPotential 
 {
@@ -421,9 +421,11 @@ class ElectrostaticEnergyOEPotential : public OEPotential
     double compute_3D_V(const double& x, const double& y, const double& z);
 };
 
-/**\brief Generalized One-Electron Potential for Pauli repulsion energy calculations.
+/**\brief Generalized One-Electron Potential for Pauli Repulsion Energy.
  * 
  *  Contains the following OEP types:
+ *   - `Murrell-etal.S1`
+ *   - `Otto-Ladik.S2`
  */
 class RepulsionEnergyOEPotential : public OEPotential 
 {
@@ -446,10 +448,46 @@ class RepulsionEnergyOEPotential : public OEPotential
     void compute_murrell_etal_s2();
 };
 
+/**\brief Generalized One-Electron Potential for Charge-Transfer Interaction Energy.
+ * 
+ *  Contains the following OEP types:
+ *   - `Otto-Ladik.V1` - DF-based term
+ *   - `Otto-Ladik.V2` - ESP-based term
+ *   - `Otto-Ladik.V3` - ESP-based term
+ */
+class ChargeTransferEnergyOEPotential : public OEPotential 
+{
+  public:
+    ChargeTransferEnergyOEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, Options& options);
+    ChargeTransferEnergyOEPotential(SharedWavefunction wfn, Options& options);
+
+    virtual ~ChargeTransferEnergyOEPotential();
+
+    virtual void compute(const std::string& oepType) override;
+    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) override;
+    virtual void print_header() const override;
+
+  private:
+    /// Set defaults
+    void common_init();
+
+    /// Auxiliary computers
+    void compute_otto_ladik_v1();
+    void compute_otto_ladik_v2();
+    void compute_otto_ladik_v3();
+};
+
+
 /**\brief Generalized One-Electron Potential for EET coupling calculations.
  * 
  *  Contains the following OEP types:
- *    "ET1" "ET2" "HT1" "HT1" "HT2" "CT1" "CT2"
+ *    - `Fujimoto.ET1` 
+ *    - `Fujimoto.ET2` 
+ *    - `Fujimoto.HT1` 
+ *    - `Fujimoto.HT1`
+ *    - `Fujimoto.HT2` 
+ *    - `Fujimoto.CT1` 
+ *    - `Fujimoto.CT2`
  */
 class EETCouplingOEPotential : public OEPotential 
 {
