@@ -197,6 +197,10 @@ using SharedOEPotential        = std::shared_ptr<OEPotential>;
 /**\brief Solver of properties of molecular aggregates. Abstract base.
  *
  * Uses only a wavefunction union object to initialize.
+ * Available solvers:
+ *  - `ELECTROSTATIC ENERGY`
+ *  - `REPULSION ENERGY`
+ *  - `CHARGE TRANSFER ENERGY`
  */
 class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
 {
@@ -660,7 +664,7 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * where the potential is given by
  * \f[
  *    v_a^A({\bf r}) = \sum_{x\in A} 
- *                      \frac{Z_x}{\vert {\rm r} - {\rm r}_x \vert}
+ *                      \frac{-Z_x}{\vert {\rm r} - {\rm r}_x \vert}
  *                   + 2\sum_{c\in A}\int\frac{\phi_c({\rm r}')\phi_c({\rm r}')}{\vert {\rm r} - {\rm r}' \vert}\; d{\bf r}'
  *          -\frac{1}{2}             \int\frac{\phi_a({\rm r}')\phi_a({\rm r}')}{\vert {\rm r} - {\rm r}' \vert}\; d{\bf r}'
  * \f]
@@ -697,6 +701,152 @@ class RepulsionEnergySolver : public OEPDevSolver
     /// Exchange energy at EFP2 level (SGO-approximated version of the above)
     double compute_efp2_exchange_energy(psi::SharedMatrix, std::vector<psi::SharedVector>, std::vector<psi::SharedVector>);
 };
+
+/**\brief Compute the Charge-Transfer interaction energy between unperturbed wavefunctions.
+ *
+ * The implemented methods are shown below
+ * <table>
+ * <caption id="Tab.1">Methods available in the Solver</caption>
+ * <tr><th> Keyword  <th>Method Description  
+ * <tr><td colspan=2> <center><strong>Benchmark Methods</strong></center>
+ * <tr><td> `OTTO_LADIK`        <td>*Default*. CT energy at HF level from Otto and Ladik (1975). 
+ * <tr><td> `EFP2`              <td>CT energy at HF level from EFP2 model.
+ * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
+ * <tr><td> `OTTO_LADIK`       <td>*Default*. OEP-based Otto-Ladik expressions.
+ * </table>
+ *
+ *   > In order to construct this solver, **always** use the `OEPDevSolver::build` static factory method.
+ *
+ * Below the detailed description of the implemented equations is given 
+ * for each of the above provided methods.
+ * In the formulae across, it is assumed that the orbitals are real.
+ * The Coulomb notation for 
+ * electron repulsion integrals (ERI's) is adopted; i.e,
+ * \f[
+ *  (ac \vert bd) = \iint d{\bf r}_1 d{\bf r}_2 
+ *   \phi_a({\bf r}_1) \phi_c({\bf r}_1) \frac{1}{r_{12}} \phi_b({\bf r}_2) \phi_d({\bf r}_2)
+ * \f]
+ * Greek subscripts denote basis set orbitals whereas Italic subscripts denote the occupied
+ * molecular orbitals.
+ *
+ * The CT energy between molecules *A* and *B* is given by
+ * \f[
+ *   E^{\rm CT} = E^{\rm A^+B^-} + E^{\rm A^-B^+}
+ * \f]
+ * 
+ * # Benchmark Methods
+ * ## CT energy at HF level by Otto and Ladik (1975).
+ *    
+ * For a closed-shell system, CT energy equation of Otto and Ladik
+ * becomes
+ * \f[
+ *   E^{\rm A^+B^-} \approx 
+ *                2\sum_{i\in A}^{\rm Occ_A}\sum_{n\in B}^{\rm Vir_B}
+ *     \frac{V^2_{in}}{\varepsilon_i - \varepsilon_n}
+ * \f]
+ * where
+ * \f{multline*}{
+ *   V_{in} = V^B_{in} + 2\sum_{j\in B}^{\rm Occ_B} (in \vert jj)
+ *           -\sum_{k\in A}^{\rm Occ_A} S_{kn} 
+ *             \left\{
+ *                    V^B_{ik} + 2\sum_{j\in B}^{\rm Occ_B} (ik \vert jj)
+ *             \right\} \\
+ *           -\sum_{j\in B}^{\rm Occ_B} \left[ S_{ij}
+ *            \left\{
+ *               V^A_{nj} + 2\sum_{k\in A}^{\rm Occ_A} (1-\delta_{ik})(nj \vert kk)
+ *            \right\}
+ *            -(nj \vert ij)
+ *            \right]
+ *            + \sum_{k\in A}^{\rm Occ_A}\sum_{j\in B}^{\rm Occ_B}
+ *            S_{kj}(1-\delta_{ik}) (ik \vert nj)
+ * \f}
+ * and analogously the twin term.
+ *
+ * ## CT energy at HF level by EFP2.
+ *
+ * In EFP2 method, CT energy is given as
+ * \f[
+ *   E^{\rm A^+B^-} \approx 
+ *                2\sum_{i\in A}^{\rm Occ_A}\sum_{n\in B}^{\rm Vir_B}
+ *     \frac{V^2_{in}}{F_{ii} - T_{nn}}
+ * \f]
+ * where 
+ * \f[
+ *   V^2_{in} = \frac{V^B_{in} - \sum_{m\in A}^{\rm All_A} V_{im}S_{mn}^B}
+ *                   {1-\sum_{m\in A}^{\rm All_A} S_{mn}^2}
+ *          \left\{
+ *             V^B_{in} - \sum_{m\in A}^{\rm All_A} V_{im}^BS_{mn}
+ *            + \sum_{j\in B}^{\rm Occ_B} S_{ij} \left( T_{nj} - \sum_{m\in A}^{\rm All_A} S_{nm} T_{mj} \right)
+ *          \right\}
+ * \f]
+ * and analogously the twin term.
+ *
+ * 
+ * # OEP-Based Methods
+ * ## OEP-Based Otto-Ladik's theory
+ * 
+ * After introducing OEP's, the original Otto-Ladik's theory is reformulated *without*
+ * approximation as
+ * \f[
+ *   E^{\rm A^+B^-} \approx 
+ *                2\sum_{i\in A}^{\rm Occ_A}\sum_{n\in B}^{\rm Vir_B}
+ *     \frac{\left( V_{in}^{\rm DF} + V_{in}^{\rm ESP,A} + V_{in}^{\rm ESP,B}\right)^2}{\varepsilon_i - \varepsilon_n}
+ * \f]
+ * where
+ * \f{align*}{
+ *   V_{in}^{\rm DF}    &= \sum_{\eta\in B}^{\rm Aux_B} S_{i\eta} G_{\eta n}^B \\
+ *   V_{in}^{\rm ESP,A} &= \sum_{k\in A}^{\rm Occ_A} \sum_{j\in B}^{\rm Occ_B} S_{kj}
+ *                         \sum_{x\in A} V_{nj}^{(x)} q_{ik}^{(x)} \\
+ *   V_{in}^{\rm ESP,B} &=-\sum_{k\in A}^{\rm Occ_A} S_{kn} V_{ik}^B
+ * \f}
+ * The OEP matrix for density fitted part is given by
+ * \f[
+ *   G^B_{\eta n} = \sum_{\eta'\in B}^{\rm Aux_B}
+ *                [{\bf S}^{-1}]_{\eta\eta'} 
+ *                \left\{
+ *                 V^B_{\eta' n} + \sum_{j\in B}^{\rm Occ_B}
+ *                    \left[
+ *                       2(\eta' n \vert jj) - (\eta' j \vert n j)
+ *                    \right]
+ *                \right\}
+ * \f] 
+ * The OEP ESP-A charges are fit to reproduce the OEP potential
+ * \f[
+ *    v_{ik}^A({\bf r}) \equiv 
+ *      (1-\delta_{ik}) \int \frac{\phi_i({\bf r}')\phi_k({\bf r}')}{\vert {\bf r} - {\bf r}' \vert} \; d{\bf r}'
+ *       -\delta_{ik} \left(
+ *        \sum_{x\in A} \frac{-Z_x}{\vert {\bf r} - {\bf r}_x \vert}
+ *        + 2\sum_{k\in A}^{\rm Occ_A} 
+ *         \int \frac{\phi_k({\bf r}')\phi_k({\bf r}')}{\vert {\bf r} - {\bf r}' \vert} \; d{\bf r}'
+ *        - 2                          
+ *         \int \frac{\phi_i({\bf r}')\phi_i({\bf r}')}{\vert {\bf r} - {\bf r}' \vert} \; d{\bf r}'
+ *       \right)
+ * \f]
+ * so that 
+ * \f[
+ *   v_{ik}^A({\bf r}) \cong \sum_{x\in A} \frac{q_{ik}^{(x)}}{\vert {\bf r} - {\bf r}_x \vert}
+ * \f]
+ * The OEP ESP-B charges are fit to reproduce the electrostatic potential
+ * of molecule *B* (they are standard ESP charges).
+ */
+class ChargeTransferEnergySolver : public OEPDevSolver
+{
+  public:
+    ChargeTransferEnergySolver(SharedWavefunctionUnion wfn_union);
+    virtual ~ChargeTransferEnergySolver();
+
+    virtual double compute_oep_based(const std::string& method = "DEFAULT");
+    virtual double compute_benchmark(const std::string& method = "DEFAULT");
+
+  private:
+    /// Otto-Ladik method (1975)
+    double compute_benchmark_otto_ladik();
+    /// EFP2 method (1996)
+    double compute_benchmark_efp2();
+    /// OEP-based Otto-Ladik (2018)
+    double compute_oep_based_otto_ladik();
+};
+
 
 
 }      // EndNameSpace oepdev

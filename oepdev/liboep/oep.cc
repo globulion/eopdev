@@ -33,9 +33,10 @@ std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, Sha
 {
    std::shared_ptr<OEPotential> oep;
 
-   if      (category == "ELECTROSTATIC ENERGY")  oep = std::make_shared<ElectrostaticEnergyOEPotential>(wfn, options);
-   else if (category == "REPULSION ENERGY"    )  oep = std::make_shared<    RepulsionEnergyOEPotential>(wfn, options);
-   else if (category == "EET COUPLING"        )  oep = std::make_shared<        EETCouplingOEPotential>(wfn, options);
+   if      (category == "ELECTROSTATIC ENERGY"  )  oep = std::make_shared< ElectrostaticEnergyOEPotential>(wfn, options);
+   else if (category == "REPULSION ENERGY"      )  oep = std::make_shared<     RepulsionEnergyOEPotential>(wfn, options);
+   else if (category == "CHARGE TRANSFER ENERGY")  oep = std::make_shared<ChargeTransferEnergyOEPotential>(wfn, options);
+   else if (category == "EET COUPLING CONSTANT" )  oep = std::make_shared<         EETCouplingOEPotential>(wfn, options);
    else  
             throw PSIEXCEPTION("OEPDEV: OEPotential build. Unrecognized OEP category.");
 
@@ -47,9 +48,10 @@ std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, Sha
 {
    std::shared_ptr<OEPotential> oep;
 
-   if      (category == "ELECTROSTATIC ENERGY")  throw PSIEXCEPTION("OEPDEV: OEPotential build. DF-based OEP not available for Electrostatic Energy!");
-   else if (category == "REPULSION ENERGY"    )  oep = std::make_shared<RepulsionEnergyOEPotential>(wfn, auxiliary, options);
-   else if (category == "EET COUPLING"        )  oep = std::make_shared<    EETCouplingOEPotential>(wfn, auxiliary, options);
+   if      (category == "ELECTROSTATIC ENERGY"  )  throw PSIEXCEPTION("OEPDEV: OEPotential build. DF-based OEP not available for Electrostatic Energy!");
+   else if (category == "REPULSION ENERGY"      )  oep = std::make_shared< RepulsionEnergyOEPotential>(wfn, auxiliary, options);
+   else if (category == "CHARGE TRANSFER ENERGY")  oep = std::make_shared< ChargeTransferEnergyOEPotential>(wfn, auxiliary, options);
+   else if (category == "EET COUPLING CONSTANT" )  oep = std::make_shared<    EETCouplingOEPotential>(wfn, auxiliary, options);
    else  
             throw PSIEXCEPTION("OEPDEV: OEPotential build. Unrecognized OEP category.");
 
@@ -304,6 +306,10 @@ void ChargeTransferEnergyOEPotential::common_init()
 void ChargeTransferEnergyOEPotential::compute(const std::string& oepType) {}
 void ChargeTransferEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
 void ChargeTransferEnergyOEPotential::print_header(void) const {}
+
+void ChargeTransferEnergyOEPotential::compute_otto_ladik_v1() {}
+void ChargeTransferEnergyOEPotential::compute_otto_ladik_v2() {}
+void ChargeTransferEnergyOEPotential::compute_otto_ladik_v3() {}
 
 // <============== EET Coupling ==============> //
 

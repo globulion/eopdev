@@ -209,13 +209,16 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         SharedOEPotential oep;
 
         if      (o_oep_build_type == "ELECTROSTATIC_ENERGY") 
-                   oep = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", ref_wfn, options);        
+                   oep = oepdev::OEPotential::build("ELECTROSTATIC ENERGY"  , ref_wfn, options);        
         else if (o_oep_build_type == "REPULSION_ENERGY")
-                   oep = oepdev::OEPotential::build("REPULSION ENERGY"    , ref_wfn, ref_wfn->basisset(), options);
+                   oep = oepdev::OEPotential::build("REPULSION ENERGY"      , ref_wfn, ref_wfn->basisset(), options);
+        else if (o_oep_build_type == "CT_ENERGY")
+                   oep = oepdev::OEPotential::build("CHARGE TRANSFER ENERGY", ref_wfn, ref_wfn->basisset(), options);
         else if (o_oep_build_type == "EET_COUPLING")
-                   oep = oepdev::OEPotential::build("EET COUPLING"        , ref_wfn, options);
+                   oep = oepdev::OEPotential::build("EET COUPLING CONSTANT" , ref_wfn, options);
         else 
              throw psi::PSIEXCEPTION("OEPDEV: Invalid OEP build category selected!");
+
         oep->compute();
 
     }

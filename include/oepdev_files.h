@@ -8,7 +8,7 @@
 
 /**
  * \namespace oepdev
- * \brief oepdev module namespace.
+ * \brief OEPDev module namespace.
  * 
  * Contains:
  */

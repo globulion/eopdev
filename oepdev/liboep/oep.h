@@ -265,6 +265,11 @@ using SharedVector       = std::shared_ptr<Vector>;
 /** \brief Generalized One-Electron Potential: Abstract base.
  * 
  *  Manages OEP's in matrix and 3D forms.
+ *  Available OEP categories:
+ *   - `ELECTROSTATIC ENERGY`
+ *   - `REPULSION ENERGY`
+ *   - `CHARGE TRANSFER ENERGY`
+ *   - `EET COUPLING CONSTANT`
  */
 class OEPotential : public std::enable_shared_from_this<OEPotential> 
 {
