@@ -49,4 +49,6 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/solver.cc
                        oepdev/libpsi/potential.cc
                        oepdev/liboep/oep.cc   
+                       oepdev/libints/recurr.cc
+                       oepdev/libints/eri_symm.cc
                )
