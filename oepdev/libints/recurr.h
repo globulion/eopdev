@@ -33,18 +33,20 @@ double boys(int v, double x);
 inline double d_N_n1_n2(int N, int n1, int n2, double PA, double PB, double aP = 1.0);
 
 /**\brief Compute the McMurchie-Davidson-Hermite coefficients for binomial expansion.
+ * @param ix     - Cartesian component
  * @param N      - increment in the summation of MDH series 
  * @param n1     - angular momentum of first function
  * @param n2     - angular momentum of second function
  * @param PA     - cartesian component of P-A distance 
  * @param PB     - cartesian component of P-B distance
- * @param buffer - the McMurchie-Davidson-Hermite 3-dimensional array (raveled to vector):
+ * @param buffer - the McMurchie-Davidson-Hermite 4-dimensional array (raveled to vector):
+ *         - axis 0: dimension 3 (x, y or z Cartesian component)
  *         - axis 1: dimension n1+1 (0 to n1)
  *         - axis 2: dimension n2+1 (0 to n2)
  *         - axis 3: dimension n1+n2+1 (0 to n1+n2)
  *  \see N1_N2_N_TO_D
  */
-void make_mdh_coeff(int N, int n1, int n2, double PA, double PB, double* buffer);
+void make_mdh_coeff(int ix, int N, int n1, int n2, double PA, double PB, double* buffer);
 
 } // EndNameSpace oepdev
 #endif //_oepdev_libints_recurr_h

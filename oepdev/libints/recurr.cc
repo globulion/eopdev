@@ -26,12 +26,15 @@ double d_N_n1_n2(int N, int n1, int n2, double PA, double PB, double aP)
   }
 }
 
-void make_mdh_coeff(int N, int n1, int n2, double PA, double PB, double* buffer)
+void make_mdh_coeff(int ix, int N, int n1, int n2, double PA, double PB, double* buffer)
 {
+   int offs = (n1+1)*(n2+1)*(n1+n2+1);
+   double xPA = PA[x];
+   double xPB = PB[x];
    for (int i = 0; i < n1+1; ++i) {
         for (int j = 0; j < n2+1; ++j) {
              for (int n = 0; n < n1+n2+1; ++n) {
-                  buffer[N1_N2_N_TO_D(i,j,n)] = d_N_n1_n2(N, i, j, PA, PB);
+                  buffer[offs * ix + N1_N2_N_TO_D(i,j,n)] = d_N_n1_n2(N, i, j, xPA, xPB);
              }
         }
    }

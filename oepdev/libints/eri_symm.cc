@@ -88,7 +88,7 @@ ERI_2_2::ERI_2_2(const psi::IntegralFactory *integral, int deriv, bool use_shell
                                deriv_+1, 1e-15);
 
     // Allocate the buffer for McMurchie-Davidson-Hermite coefficients
-    size_t size = max_am_ * max_am_;
+    size_t size = (max_am_+1) * (max_am_+1) * (max_am_*max_am_+1) * 3;
     try {
         mdh_buffer_12_ = new double[size];
         mdh_buffer_34_ = new double[size];
@@ -104,7 +104,8 @@ ERI_2_2::ERI_2_2(const psi::IntegralFactory *integral, int deriv, bool use_shell
 ERI_2_2::~ERI_2_2()
 {
     delete fjt_;
-    delete[] mdh_buffer_;
+    delete[] mdh_buffer_12_;
+    delete[] mdh_buffer_34_;
 }
 
 
