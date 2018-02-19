@@ -41,13 +41,13 @@ class TwoElectronInt : public psi::TwoBodyAOInt
     /// Get the (N,L,M)th McMurchie-Davidson coefficient
     inline double get_R(int N, int L, int M) {return mdh_buffer_R_[R_INDEX(N,L,M,0)];}
 
-    /// Computes the ERIs between four shells.
+    /// Computes the ERI's between four shells.
     virtual size_t compute_quartet(int, int, int, int);
 
-    /// Computes the ERIs between three shells.
+    /// Computes the ERI's between three shells.
     virtual size_t compute_triplet(int, int, int);
 
-    /// Computes the ERIs between three shells.
+    /// Computes the ERI's between three shells.
     virtual size_t compute_doublet(int, int);
 
     /// Buffer for McMurchie-Davidson-Hermite R coefficents
@@ -59,14 +59,21 @@ class TwoElectronInt : public psi::TwoBodyAOInt
 
    virtual ~TwoElectronInt();
 
+   /// Compute ERI's between 4 shells. Result is stored in buffer.
+   virtual size_t compute_shell(int, int, int, int);
+
+   /// Compute ERI's between 3 shells. Result is stored in buffer.
+   virtual size_t compute_shell(int, int, int);
+
+   /// Compute ERI's between 2 shells. Result is stored in buffer.
+   virtual size_t compute_shell(int, int);
+
    /// Compute ERIs between 4 shells. Result is stored in buffer.
-   size_t compute_shell(int, int, int, int);
+   virtual size_t compute_shell(const psi::AOShellCombinationsIterator&) {};
 
-   /// Compute ERIs between 3 shells. Result is stored in buffer.
-   size_t compute_shell(int, int, int);
+   virtual size_t compute_shell_deriv1(int, int, int, int) {};
+   virtual size_t compute_shell_deriv2(int, int, int, int) {};
 
-   /// Compute ERIs between 2 shells. Result is stored in buffer.
-   size_t compute_shell(int, int);
 };
 
 /**\brief 4-centre ERI of the form (ab|cd).
@@ -89,6 +96,7 @@ class ERI_2_2 : public TwoElectronInt
    ERI_2_2(const psi::IntegralFactory* integral, int deriv=0, bool use_shell_pairs=false);
    /// Destructor
   ~ERI_2_2();
+
 
  private:
    double get_D(int, int, int);
