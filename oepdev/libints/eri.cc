@@ -1,6 +1,6 @@
 #include "psi4/libmints/gshell.h"
 #include "../../include/oepdev_files.h"
-#include "eri_symm.h"
+#include "eri.h"
 
 namespace oepdev{
 using namespace std;
@@ -97,6 +97,9 @@ size_t TwoElectronInt::compute_triplet(int sh1, int sh2, int sh3)
 size_t TwoElectronInt::compute_doublet(int sh1, int sh2)
 {
  return 0;
+}
+size_t TwoElectronInt::compute_shell(const psi::AOShellCombinationsIterator &shellIter) {
+   return compute_quartet(shellIter.p(), shellIter.q(), shellIter.r(), shellIter.s());
 }
 //double TwoElectronInt::get_R(int N, int L, int M) {
 // //n_am_;//2.0*max+am_+1;
@@ -281,6 +284,7 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                         make_mdh_R_coeff(am, am, am, alpha, xPQ, yPQ, zPQ, F, mdh_buffer_R_);
 
                         // Compute the intermediate ERI's
+                        int iint = 0;
                         for (int ni = 0; ni < nam1; ++ni) {
                              int nx1 = get_cart_am(am1, ni, 0);
                              int ny1 = get_cart_am(am1, ni, 1);
@@ -319,7 +323,9 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                                                  }
                                             }
                                             }
-                                            put_int(integral*pref, target_full_);
+                                            //put_int(integral*pref, target_full_);
+                                            target_full_[iint]+= integral*pref;
+                                            ++iint;
                                        }
                                   }
                              }

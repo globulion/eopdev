@@ -51,5 +51,5 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libpsi/integral.cc
                        oepdev/liboep/oep.cc   
                        oepdev/libints/recurr.cc
-                       oepdev/libints/eri_symm.cc
+                       oepdev/libints/eri.cc
                )

@@ -1,5 +1,5 @@
-#ifndef _oepdev_libints_eri_symm_h
-#define _oepdev_libints_eri_symm_h
+#ifndef _oepdev_libints_eri_h
+#define _oepdev_libints_eri_h
 
 #include "psi4/libpsi4util/exception.h"
 #include "psi4/libmints/integral.h"
@@ -69,14 +69,17 @@ class TwoElectronInt : public psi::TwoBodyAOInt
    virtual size_t compute_shell(int, int);
 
    /// Compute ERIs between 4 shells. Result is stored in buffer.
-   virtual size_t compute_shell(const psi::AOShellCombinationsIterator&) {};
+   virtual size_t compute_shell(const psi::AOShellCombinationsIterator&);
 
+   /// Compute first derivatives of ERI's
    virtual size_t compute_shell_deriv1(int, int, int, int) {};
+
+   /// Compute second derivatives of ERI's
    virtual size_t compute_shell_deriv2(int, int, int, int) {};
 
 };
 
-/**\brief 4-centre ERI of the form (ab|cd).
+/**\brief 4-centre ERI of the form (ab|O(2)|cd) where O(2) = 1/r12.
   *
   */
 class ERI_2_2 : public TwoElectronInt
@@ -105,4 +108,4 @@ class ERI_2_2 : public TwoElectronInt
 };
 
 } // EndNameSpace oepdev
-#endif //_oepdev_libints_eri_symm_h
+#endif //_oepdev_libints_eri_h

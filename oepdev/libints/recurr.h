@@ -52,13 +52,13 @@ double d_N_n1_n2(int N, int n1, int n2, double PA, double PB, double aP = 1.0);
 void make_mdh_D_coeff(int N, int n1, int n2, double* PA, double* PB, double* buffer);
 
 /**\brief Compute the McMurchie-Davidson R coefficients.
- * @param N      - increment in the summation of MDH series along *x*th direction
- * @param L      - increment in the summation of MDH series along *x*th direction
- * @param M      - increment in the summation of MDH series along *x*th direction
+ * @param N      - increment in the summation of MDH series along *x* direction
+ * @param L      - increment in the summation of MDH series along *y* direction
+ * @param M      - increment in the summation of MDH series along *z* direction
  * @param alpha  - alpha parameter of R coefficient
- * @param a      - *x*th component of PQ vector of R coefficient
- * @param b      - *y*th component of PQ vector of R coefficient
- * @param c      - *z*th component of PQ vector of R coefficient
+ * @param a      - *x* component of PQ vector of R coefficient
+ * @param b      - *y* component of PQ vector of R coefficient
+ * @param c      - *z* component of PQ vector of R coefficient
  * @param F      - array of Boys function values for given alpha and PQ
  * @param buffer - the McMurchie-Davidson 4-dimensional array (raveled to vector):
  *         - axis 0: dimension N+1

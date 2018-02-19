@@ -1,6 +1,6 @@
 #include "psi4/libpsi4util/exception.h"
 #include "integral.h"
-#include "../libints/eri_symm.h"
+#include "../libints/eri.h"
 
 using namespace std;
 
