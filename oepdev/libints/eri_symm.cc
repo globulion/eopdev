@@ -1,5 +1,5 @@
 #include "psi4/libmints/gshell.h"
-#include "recurr.h"
+#include "../../include/oepdev_files.h"
 #include "eri_symm.h"
 
 namespace oepdev{
@@ -17,8 +17,8 @@ TwoElectronInt::TwoElectronInt(const psi::IntegralFactory* integral, int deriv, 
    max_am_(std::max({basis1()->max_am(),
                      basis2()->max_am(),
                      basis3()->max_am(),
-                     basis4()->max_am()}))
-
+                     basis4()->max_am()})),
+   n_max_am_(2*max_am_+1)
 {
     size_t size = INT_NCART(basis1()->max_am()) * INT_NCART(basis2()->max_am()) *
                   INT_NCART(basis3()->max_am()) * INT_NCART(basis4()->max_am());
@@ -43,6 +43,18 @@ TwoElectronInt::TwoElectronInt(const psi::IntegralFactory* integral, int deriv, 
     }
     memset(source_, 0, sizeof(double) * size);
 
+    // Allocate the buffer for McMurchie-Davidson R coefficients
+    size_t nt = OEPDEV_N_MAX_AM;
+    size = nt*nt*nt*(3*nt);
+    try {
+        mdh_buffer_R_ = new double[size];
+    }
+    catch (std::bad_alloc &e) {
+        psi::outfile->Printf("Error allocating mdh_buffer_R_.\n%s\n", e.what());
+        exit(EXIT_FAILURE);
+    }
+    memset(mdh_buffer_R_, 0, sizeof(double) * size);
+
 }
 
 TwoElectronInt::~TwoElectronInt()
@@ -62,16 +74,37 @@ int TwoElectronInt::get_cart_am(int am, int n, int x)
   else throw psi::PSIEXCEPTION("oepdev::TwoElectronInt: wrong AM chosen!");
   return n_prev + 3*n + x;
 }
-
 size_t TwoElectronInt::compute_shell(int sh1, int sh2, int sh3, int sh4)
 {
  return compute_quartet(sh1, sh2, sh3, sh4);
 }
-
+size_t TwoElectronInt::compute_shell(int sh1, int sh2, int sh3)
+{
+ return compute_triplet(sh1, sh2, sh3);
+}
+size_t TwoElectronInt::compute_shell(int sh1, int sh2)
+{
+ return compute_doublet(sh1, sh2);
+}
 size_t TwoElectronInt::compute_quartet(int sh1, int sh2, int sh3, int sh4)
 {
  return 0;
 }
+size_t TwoElectronInt::compute_triplet(int sh1, int sh2, int sh3)
+{
+ return 0;
+}
+size_t TwoElectronInt::compute_doublet(int sh1, int sh2)
+{
+ return 0;
+}
+//double TwoElectronInt::get_R(int N, int L, int M) {
+// //n_am_;//2.0*max+am_+1;
+// return mdh_buffer_R_[3*n_am_*n_am_*n_am_*N + 3*n_am_*n_am_*L + 3*n_am_*M];
+//}
+
+
+
 
 
 //////
@@ -88,7 +121,7 @@ ERI_2_2::ERI_2_2(const psi::IntegralFactory *integral, int deriv, bool use_shell
                                deriv_+1, 1e-15);
 
     // Allocate the buffer for McMurchie-Davidson-Hermite coefficients
-    size_t size = (max_am_+1) * (max_am_+1) * (max_am_*max_am_+1) * 3;
+    size_t size = (max_am_+1) * (max_am_+1) * (max_am_+max_am_+1) * 3;
     try {
         mdh_buffer_12_ = new double[size];
         mdh_buffer_34_ = new double[size];
@@ -108,7 +141,6 @@ ERI_2_2::~ERI_2_2()
     delete[] mdh_buffer_34_;
 }
 
-
 size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
 {
     // Shells
@@ -125,10 +157,10 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
     int am  = am1 + am2 + am3 + am4; // total am
 
     // Number of Cartesian functions
-    int nam1= INT_CART(am1);
-    int nam2= INT_CART(am2);
-    int nam3= INT_CART(am3);
-    int nam4= INT_CART(am4);
+    int nam1= INT_NCART(am1);
+    int nam2= INT_NCART(am2);
+    int nam3= INT_NCART(am3);
+    int nam4= INT_NCART(am4);
 
     // Number of primitives
     int nprim1 = s1.nprimitive();
@@ -177,7 +209,7 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
     // Iterate over primitives
     size_t nprim = 0;
 
-    double PA[3], PB[3], QC[3], QD[3];
+    double PA[3], PB[3], QC[3], QD[3], PQ[3];
     double P[3], Q[3];
 
     for (int p1 = 0; p1 < nprim1; ++p1) {
@@ -222,12 +254,15 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                         QD[1] = Q[1] - D[1];
                         QD[2] = Q[2] - D[2];
 
+                        double E34 = exp(-(a3*a4*oox)*rCD2);
+
                         double xPQ = P[0]-Q[0];
                         double yPQ = P[1]-Q[1];
                         double zPQ = P[2]-Q[2];
                         double rPQ2= xPQ*xPQ+yPQ*yPQ+zPQ*zPQ;
-
-                        double E34 = exp(-(a3*a4*oox)*rCD2);
+                        //PQ[0] = xPQ;
+                        //PQ[1] = yPQ;
+                        //PQ[2] = zPQ;
 
                         double apq = a12 + a34;
                         double ooy = 1.0/apq;
@@ -237,29 +272,31 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                         double T = alpha*rPQ2;
 
                         // Compute McMurchie-Davidson-Hermite coefficients        
-                        make_mdh_coeff(am1+am2, am1, am2, PA, PB, mdh_buffer_12_);
-                        make_mdh_coeff(am3+am4, am3, am4, PC, PD, mdh_buffer_34_);
+                        make_mdh_D_coeff(am1+am2, am1, am2, PA, PB, mdh_buffer_12_);
+                        make_mdh_D_coeff(am3+am4, am3, am4, QC, QD, mdh_buffer_34_);
 
                         // Compute McMurchie-Davidson R-coefficients
-                        make_mdh_R(...)
+                        fjt_->set_rho(alpha);
+                        double* F = fjt_->values(am, T);
+                        make_mdh_R_coeff(am, am, am, alpha, xPQ, yPQ, zPQ, F, mdh_buffer_R_);
 
                         // Compute the intermediate ERI's
                         for (int ni = 0; ni < nam1; ++ni) {
                              int nx1 = get_cart_am(am1, ni, 0);
                              int ny1 = get_cart_am(am1, ni, 1);
-                             int nx1 = get_cart_am(am1, ni, 2);
+                             int nz1 = get_cart_am(am1, ni, 2);
                              for (int nj = 0; nj < nam2; ++nj) {
                                   int nx2 = get_cart_am(am2, nj, 0); 
                                   int ny2 = get_cart_am(am2, nj, 1);
-                                  int nx2 = get_cart_am(am2, nj, 2);
+                                  int nz2 = get_cart_am(am2, nj, 2);
                                   for (int nk = 0; nk < nam3; ++nk) {
                                        int nx3 = get_cart_am(am3, nk, 0);  
                                        int ny3 = get_cart_am(am3, nk, 1);
-                                       int nx3 = get_cart_am(am3, nk, 2);
+                                       int nz3 = get_cart_am(am3, nk, 2);
                                        for (int nl = 0; nl < nam4; ++nl) {
-                                            int nx4 = get_cart_am(am4, n4, 0);   
-                                            int ny4 = get_cart_am(am4, n4, 1);
-                                            int nx4 = get_cart_am(am4, n4, 2);
+                                            int nx4 = get_cart_am(am4, nl, 0);   
+                                            int ny4 = get_cart_am(am4, nl, 1);
+                                            int nz4 = get_cart_am(am4, nl, 2);
 
                                             double integral = 0.0;
 
@@ -287,7 +324,6 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                                   }
                              }
                         }
-
                         //
                         ++nprim;
                    }
@@ -297,6 +333,11 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
 
     // Finish
     return size;
+}
+double ERI_2_2::get_D(int n1, int n2, int N){
+ return 0.0;
+}
+void ERI_2_2::put_int(double integral, double* buffer) {
 }
 
 } // EndNameSpace oepdev

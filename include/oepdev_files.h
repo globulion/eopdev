@@ -4,6 +4,10 @@
 /// Compiling options
 #define OEPDEV_USE_PSI4_DIIS_MANAGER      0
 
+/// 2L_max+1
+#define OEPDEV_N_MAX_AM 17
+
+
 #endif // oepdev_include_oepdev_files_h
 
 /**
