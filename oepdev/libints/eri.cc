@@ -277,6 +277,7 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                         // Compute McMurchie-Davidson-Hermite coefficients        
                         make_mdh_D_coeff(am1+am2, am1, am2, PA, PB, mdh_buffer_12_);
                         make_mdh_D_coeff(am3+am4, am3, am4, QC, QD, mdh_buffer_34_);
+                        cout << "HERE" << endl;
 
                         // Compute McMurchie-Davidson R-coefficients
                         fjt_->set_rho(alpha);

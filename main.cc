@@ -68,6 +68,8 @@
 #include "psi4/libtrans/integraltransform.h"
 #include "psi4/libdpd/dpd.h"
 
+#include "oepdev/libints/eri.h"
+#include "oepdev/libpsi/integral.h"
 
 
 using SharedMolecule           = std::shared_ptr<Molecule>;                            
@@ -223,6 +225,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         else 
            throw PSIEXCEPTION("Incorrect target for oepdev program!\n");
 
+    }
 
 
 
@@ -235,63 +238,65 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
          * at the top of `main.cc` shall be removed.
          */
         if (o_enable_trial) {
-                                                                                                                                             
-        SharedWavefunction      wfn_union_base = wfn_union;
-        SharedIntegralTransform transform      = wfn_union->integrals();
-                                                                                                                                             
-        // Parse molecules, fragments, basis sets and other primary informations
-        SharedBasisSet          primary_1      = wfn_union->l_primary(0);    
-        SharedBasisSet          primary_2      = wfn_union->l_primary(1);
-        SharedMolecule          molecule_1     = wfn_union->l_molecule(0);
-        SharedMolecule          molecule_2     = wfn_union->l_molecule(1);
-        SharedMolecule          molecule       = wfn_union->molecule();
-        SharedBasisSet          primary        = wfn_union->basisset();
-        SharedBasisSet          auxiliary_1    = wfn_union->l_auxiliary(0);
-        SharedBasisSet          auxiliary_2    = wfn_union->l_auxiliary(1);
-        SharedWavefunction      scf_1          = wfn_union->l_wfn(0); 
-        SharedWavefunction      scf_2          = wfn_union->l_wfn(1);
         
-        // Solve CPHF equations for each monomer
-        SharedCPHF cphf_1(new oepdev::CPHF(scf_1, options));
-        SharedCPHF cphf_2(new oepdev::CPHF(scf_2, options));
-        cphf_1->compute();
-        cphf_2->compute();
-        SharedMatrix pol_1 = cphf_1->get_molecular_polarizability();
-        SharedMatrix pol_2 = cphf_2->get_molecular_polarizability();
-        pol_1->print(); pol_2->print();
-                                                                                                                                             
-        // Wavefunction coefficients for isolated monomers
-        SharedMatrix c_1 = scf_1->Ca_subset("AO","ALL");
-        SharedMatrix c_2 = scf_2->Ca_subset("AO","ALL");
-                                                                                                                                             
-        // Create some OEP's
-        SharedOEPotential oep_cou = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", scf_1, options);
-        SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, primary_1, options);
-        SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
-                                                                                                                                             
-        oep_cou->write_cube("V", "oep");
-                                                                                                                                             
-        // Compute potentials
-        if (false) {
-        SharedField3D potential_cube = oepdev::ScalarField3D::build("ELECTROSTATIC", 60, 60, 60, 10.0, 10.0, 10.0, scf_1, options);
-        SharedField3D potential_random = oepdev::ScalarField3D::build("ELECTROSTATIC", 50000, 10.0, scf_1, options);
-                                                                                                                                             
-        potential_cube->print();
-        potential_random->print();
-        potential_random->compute();
-                                                                                                                                             
-        oepdev::ESPSolver esp(potential_random);
-        esp.compute();
-        esp.charges()->print();
-        //std::shared_ptr<oepdev::CubeDistribution3D> di = std::dynamic_pointer_cast<oepdev::CubeDistribution3D>(potential->distribution());
-        //di->print_header();
-        //potential->write_cube_file("pot");
-        }
-                                                                                                                                             
-                                                                                                                                             
+        oepdev::IntegralFactory fact(ref_wfn->basisset());
+        std::shared_ptr<psi::TwoBodyAOInt> eri_2_2(fact.eri_2_2());
+        eri_2_2->compute_shell(0,0,0,0);
+        //cout << "First integral in (0,0,0,0) shell= " << eri_2_2->buffer()[0] << endl;
+
+        //SharedWavefunction      wfn_union_base = wfn_union;
+        //SharedIntegralTransform transform      = wfn_union->integrals();
+        //                                                                                                                                     
+        //// Parse molecules, fragments, basis sets and other primary informations
+        //SharedBasisSet          primary_1      = wfn_union->l_primary(0);    
+        //SharedBasisSet          primary_2      = wfn_union->l_primary(1);
+        //SharedMolecule          molecule_1     = wfn_union->l_molecule(0);
+        //SharedMolecule          molecule_2     = wfn_union->l_molecule(1);
+        //SharedMolecule          molecule       = wfn_union->molecule();
+        //SharedBasisSet          primary        = wfn_union->basisset();
+        //SharedBasisSet          auxiliary_1    = wfn_union->l_auxiliary(0);
+        //SharedBasisSet          auxiliary_2    = wfn_union->l_auxiliary(1);
+        //SharedWavefunction      scf_1          = wfn_union->l_wfn(0); 
+        //SharedWavefunction      scf_2          = wfn_union->l_wfn(1);
+        //
+        //// Solve CPHF equations for each monomer
+        //SharedCPHF cphf_1(new oepdev::CPHF(scf_1, options));
+        //SharedCPHF cphf_2(new oepdev::CPHF(scf_2, options));
+        //cphf_1->compute();
+        //cphf_2->compute();
+        //SharedMatrix pol_1 = cphf_1->get_molecular_polarizability();
+        //SharedMatrix pol_2 = cphf_2->get_molecular_polarizability();
+        //pol_1->print(); pol_2->print();
+        //                                                                                                                                     
+        //// Wavefunction coefficients for isolated monomers
+        //SharedMatrix c_1 = scf_1->Ca_subset("AO","ALL");
+        //SharedMatrix c_2 = scf_2->Ca_subset("AO","ALL");
+        //                                                                                                                                     
+        //// Create some OEP's
+        //SharedOEPotential oep_cou = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", scf_1, options);
+        //SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, primary_1, options);
+        //SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
+        //                                                                                                                                     
+        //oep_cou->write_cube("V", "oep");
+        //                                                                                                                                     
+        //// Compute potentials
+        //if (false) {
+        //SharedField3D potential_cube = oepdev::ScalarField3D::build("ELECTROSTATIC", 60, 60, 60, 10.0, 10.0, 10.0, scf_1, options);
+        //SharedField3D potential_random = oepdev::ScalarField3D::build("ELECTROSTATIC", 50000, 10.0, scf_1, options);
+        //                                                                                                                                     
+        //potential_cube->print();
+        //potential_random->print();
+        //potential_random->compute();
+        //                                                                                                                                     
+        //oepdev::ESPSolver esp(potential_random);
+        //esp.compute();
+        //esp.charges()->print();
+        ////std::shared_ptr<oepdev::CubeDistribution3D> di = std::dynamic_pointer_cast<oepdev::CubeDistribution3D>(potential->distribution());
+        ////di->print_header();
+        ////potential->write_cube_file("pot");
+        //}
         } // End of trial
 
-    }
     return ref_wfn;
 }
 
