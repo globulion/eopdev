@@ -66,12 +66,10 @@ set {
     scf_type                      direct 
     guess                         core
     print                         2
+    puream                        False
     # ==> Basis Sets <== #
     basis                         6-311++G** 
-    #basis                         6-31G*
-    #df_basis_oep                  aug-cc-pVDZ-jkfit
     df_basis_oep                  aug-cc-pVDZ-jkfit
-    #df_basis_sapt                 cc-pVDZ
     # ==> CPHF <== #
     cphf_diis                     True 
     cphf_diis_dim                 2
