@@ -5,7 +5,9 @@
     Get the index of McMurchie-Davidson-Hermite coefficient stored in the `mdh_buffer_`
     from angular momenta *i*, *j* of function 1 and 2, and the Hermite index *n*.
 */
-#define N1_N2_N_TO_D(i,j,n) (((n1+n2+1)*(n2+1)*(i))+((n1+n2+1)*(j))+(n))
+//#define N1_N2_N_TO_D(i,j,n) (((n1+n2+1)*(n2+1)*(i))+((n1+n2+1)*(j))+(n))
+#define N1_N2_N_TO_D(i,j,n) ((153*(i))+(17*(j))+(n))
+#define D2_INDEX(x,i,j,n) ((1377*(x))+(153*(i))+(17*(j))+(n))
 
 /*! \def R_INDEX(n,l,m,j)
     Get the index of McMurchie-Davidson R coefficient stored in the `mdh_buffer_R_`
@@ -15,14 +17,6 @@
 
 namespace oepdev{
 using namespace std;
-
-/**\brief Compute Boys function value at *x* for degree *v*.
-  *
-  * @param v - degree of the Boys function
-  * @param x - argument of the Boys function
-  * @return the value of the Boys function
-  */
-double boys(int v, double x);
 
 /**\brief Compute McMurchie-Davidson-Hermite (MDH) coefficient for binomial expansion.
  *

@@ -26,7 +26,7 @@ class TwoElectronInt : public psi::TwoBodyAOInt
     /// Maximum number of angular momentum functions
     const int n_max_am_; 
 
-    /// Computes the fundamental
+    /// Computes the fundamental: Boys function value at *T* for degree *v*.
     psi::Fjt *fjt_;
 
     /// Should we use shell pair information?
@@ -102,7 +102,8 @@ class ERI_2_2 : public TwoElectronInt
 
 
  private:
-   double get_D(int, int, int);
+   double get_D12(int, int, int, int);
+   double get_D34(int, int, int, int);
    void put_int(double, double*);
 
 };

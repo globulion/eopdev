@@ -238,11 +238,50 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
          * at the top of `main.cc` shall be removed.
          */
         if (o_enable_trial) {
-        
-        oepdev::IntegralFactory fact(ref_wfn->basisset());
-        std::shared_ptr<psi::TwoBodyAOInt> eri_2_2(fact.eri_2_2());
-        eri_2_2->compute_shell(0,0,0,0);
+       
+        cout << " Computing OepDev ERI_2_2\n";
+        oepdev::IntegralFactory fact_oepdev(ref_wfn->basisset());
+        std::shared_ptr<psi::TwoBodyAOInt> eri_2_2(fact_oepdev.eri_2_2());
+        //eri_2_2->compute_shell(1,1,1,1);
+        //cout << "OepDev: First integral in (0,0,0,0) shell= " << eri_2_2->buffer()[0] << endl;
+        const double * buffer_2_2 = eri_2_2->buffer();
+
+        oepdev::AllAOShellCombinationsIterator shellIter(fact_oepdev);
+        int i, j, k, l; 
+        double integral;
+        for (shellIter.first(); shellIter.is_done() == false; shellIter.next())
+        {
+             shellIter.compute_shell(eri_2_2);
+             oepdev::AllAOIntegralsIterator intsIter(shellIter);
+             for (intsIter.first(); intsIter.is_done() == false; intsIter.next())
+             {
+                  i = intsIter.i();j = intsIter.j();k = intsIter.k();l = intsIter.l();
+                  integral = buffer_2_2[intsIter.index()];
+                  psi::outfile->Printf(" OepDev: (%2d %2d | %2d %2d) = %13.6f\n", i,j,k,l,integral);
+             }
+        }
+
+        cout << " Computing Psi4 ERI\n";
+        psi::IntegralFactory    fact_psi(ref_wfn->basisset());
+        std::shared_ptr<psi::TwoBodyAOInt> eri(fact_psi.eri());
+        const double * buffer = eri->buffer();
+        //eri->compute_shell(1,1,1,1);
+        //cout << "Psi4  : First integral in (0,0,0,0) shell= " << eri->buffer()[0] << endl;
         //cout << "First integral in (0,0,0,0) shell= " << eri_2_2->buffer()[0] << endl;
+
+        oepdev::AllAOShellCombinationsIterator sIter(fact_psi);
+        for (sIter.first(); sIter.is_done() == false; sIter.next())
+        {
+             sIter.compute_shell(eri);
+             oepdev::AllAOIntegralsIterator intsIter(sIter);
+             for (intsIter.first(); intsIter.is_done() == false; intsIter.next())
+             {
+                  i = intsIter.i();j = intsIter.j();k = intsIter.k();l = intsIter.l();
+                  integral = buffer[intsIter.index()];
+                  psi::outfile->Printf(" Psi4  : (%2d %2d | %2d %2d) = %13.6f\n", i,j,k,l,integral);
+             }
+        }
+
 
         //SharedWavefunction      wfn_union_base = wfn_union;
         //SharedIntegralTransform transform      = wfn_union->integrals();
