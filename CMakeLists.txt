@@ -38,6 +38,8 @@ project(oepdev CXX)
 
 find_package(psi4 1.0 REQUIRED)
 
+include (CTest)
+
 add_psi4_plugin(oepdev main.cc 
                        oepdev/libutil/util.cc
                        oepdev/libutil/diis.cc
