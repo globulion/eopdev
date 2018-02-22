@@ -1,5 +1,6 @@
 #ifndef _oepdev_libutil_wavefunction_union_h
 #define _oepdev_libutil_wavefunction_union_h
+/** @file wavefunction_union.h */
 
 #include<cstdio>
 #include<string>
@@ -46,6 +47,9 @@ using SharedMOSpace            = std::shared_ptr<MOSpace>;
 using SharedMOSpaceVector      = std::vector<std::shared_ptr<MOSpace>>;
 using SharedIntegralTransform  = std::shared_ptr<IntegralTransform>;
 using SharedLocalizer          = std::shared_ptr<Localizer>;
+/** \addtogroup OEPDEV_UTILITIES 
+ * @{
+ */
 
 /** \brief Union of two Wavefunction objects.
  *  
@@ -295,6 +299,6 @@ class WavefunctionUnion : public Wavefunction
 
 };
 
-
+/** @}*/
 }      // EndNameSpace oepdev
 #endif //_oepdev_libutil_wavefunction_union_h

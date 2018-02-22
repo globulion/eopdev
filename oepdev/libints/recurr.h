@@ -1,12 +1,20 @@
 #ifndef _oepdev_libints_recurr_h
 #define _oepdev_libints_recurr_h
+/** @file recurr.h */
 
-/*! \def N1_N2_N_TO_D(i,j,n)
-    Get the index of McMurchie-Davidson-Hermite coefficient stored in the `mdh_buffer_`
-    from angular momenta *i*, *j* of function 1 and 2, and the Hermite index *n*.
+
+namespace oepdev{
+using namespace std;
+
+/** \addtogroup OEPDEV_LIBINTS 
+ * @{
+ */
+
+/*! \def D2_INDEX(x,i,j,n)
+    Get the index of McMurchie-Davidson-Hermite coefficient stored in the `mdh_buffer_`, 
+    that is attributed to the *x* Cartesian coordinate from angular momenta *i*, *j* 
+    of function 1 and 2, and the Hermite index *n*.
 */
-//#define N1_N2_N_TO_D(i,j,n) (((n1+n2+1)*(n2+1)*(i))+((n1+n2+1)*(j))+(n))
-#define N1_N2_N_TO_D(i,j,n) ((153*(i))+(17*(j))+(n))
 #define D2_INDEX(x,i,j,n) ((1377*(x))+(153*(i))+(17*(j))+(n))
 
 /*! \def R_INDEX(n,l,m,j)
@@ -14,9 +22,6 @@
     from angular momenta *n*, *l* and *m* and the Boys index *j*.
 */
 #define R_INDEX(n,l,m,j) ((14739*(n))+(867*(l))+(51*(m))+(j))
-
-namespace oepdev{
-using namespace std;
 
 /**\brief Compute McMurchie-Davidson-Hermite (MDH) coefficient for binomial expansion.
  *
@@ -57,9 +62,11 @@ void make_mdh_D_coeff(int n1, int n2, double aP, double* PA, double* PB, double*
  *         - axis 0: dimension N+1
  *         - axis 1: dimension L+1
  *         - axis 2: dimension M+1 
- *         - axis 3: dimension N+L+M+1 (*j*th element)
+ *         - axis 3: dimension N+L+M+1 (*j*-th element)
  */
 void make_mdh_R_coeff(int N, int L, int M, double alpha, double a, double b, double c, double* F, double* buffer);
+
+/** @}*/
 
 } // EndNameSpace oepdev
 #endif //_oepdev_libints_recurr_h

@@ -234,6 +234,7 @@ approach to solve Quantum Chemistry problems related to the extended molecular a
 
 #ifndef _oepdev_liboep_liboep_h_ 
 #define _oepdev_liboep_liboep_h_ 
+/** @file oep.h */
 
 #include<cstdio>
 #include<string>
@@ -260,7 +261,9 @@ using SharedBasisSet     = std::shared_ptr<BasisSet>;
 using SharedTensor       = std::shared_ptr<Tensor>;
 using SharedMatrix       = std::shared_ptr<Matrix>;
 using SharedVector       = std::shared_ptr<Vector>;
-
+/** \addtogroup OEPDEV_OEPS
+ * @{
+ */
 
 /** \brief Generalized One-Electron Potential: Abstract base.
  * 
@@ -511,7 +514,7 @@ class EETCouplingOEPotential : public OEPotential
     void common_init();
 };
 
-
+/** @}*/
 } // EndNameSpace oepdev
 
 #endif // _oepdev_liboep_liboep_h_ 

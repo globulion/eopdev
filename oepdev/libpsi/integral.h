@@ -16,18 +16,19 @@
 
 #ifndef _oepdev_libpsi_integral_h_
 #define _oepdev_libpsi_integral_h_
+/** @file integral.h */
 
 #include "psi4/libmints/integral.h"
 #include "psi4/libmints/basisset.h"
 
-/**
- * \ingroup Oepdev
- */
 namespace oepdev{
 
 using namespace std;
+/** \addtogroup OEPDEV_LIBINTS
+ * @{
+ */
 
-/** \ingroup MINTS_MODIFIED
+/** 
  *  \class IntegralFactory
  *  \brief Extended IntegralFactory for computing integrals.
  *
@@ -78,6 +79,7 @@ class IntegralFactory : public psi::IntegralFactory
 
 };
 
+/** @}*/
 } // EndNameSpace oepdev
 
 #endif

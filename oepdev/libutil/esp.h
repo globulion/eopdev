@@ -1,5 +1,6 @@
 #ifndef _oepdev_libutil_esp_h
 #define _oepdev_libutil_esp_h
+/** @file esp.h */
 
 #include "psi4/libmints/vector.h"
 #include "space3d.h"
@@ -11,6 +12,9 @@ namespace psi{
 
 
 namespace oepdev{
+/** \addtogroup OEPDEV_ESP
+ * @{
+ */
  
 using namespace std;
 
@@ -124,6 +128,8 @@ class ESPSolver
     /// Perform fitting
     void fit(void);
 };
+
+/** @}*/
 
 } // EndNameSpace oepdev
 #endif //_oepdev_libutil_esp_h

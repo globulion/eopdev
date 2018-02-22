@@ -1,5 +1,6 @@
 #ifndef _oepdev_libutil_potential_h
 #define _oepdev_libutil_potential_h
+/** @file spce3d.h */
 
 #include <iostream>
 #include <memory>
@@ -35,7 +36,11 @@ namespace psi{
 }
 
 namespace oepdev{
- 
+/** \addtogroup OEPDEV_3DFIELDS
+ * @{
+ */
+
+
 using namespace std;
 
 /** \brief Iterator over a collection of points in 3D space. Abstract base.
@@ -641,6 +646,7 @@ double OEPotential3D<T>::compute_xyz(const double& x, const double& y, const dou
 
 
 
+/** @}*/ 
 
 
 //class BarePotential3D : public Potential3D
@@ -654,4 +660,6 @@ double OEPotential3D<T>::compute_xyz(const double& x, const double& y, const dou
 //};
 
 } // EndNameSpace oepdev
+
+
 #endif //_oepdev_libutil_potential_h

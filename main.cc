@@ -33,6 +33,7 @@
  *
  * @END LICENSE
  */
+/** @file main.cc */
 
 #include <cstdlib>
 #include <cstdio>

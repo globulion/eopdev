@@ -1,5 +1,6 @@
 #ifndef _oepdev_libutil_util_h
 #define _oepdev_libutil_util_h
+/** @file util.h */
 
 #include<cstdio>
 #include<string>
@@ -36,7 +37,6 @@ namespace oepdev{
 using namespace psi;
 using namespace std;
 
-
 using SharedMolecule           = std::shared_ptr<Molecule>;        
 using SharedSuperFunctional    = std::shared_ptr<SuperFunctional>;
 using SharedWavefunction       = std::shared_ptr<Wavefunction>;
@@ -47,7 +47,9 @@ using SharedMOSpace            = std::shared_ptr<MOSpace>;
 using SharedMOSpaceVector      = std::vector<std::shared_ptr<MOSpace>>;
 using SharedIntegralTransform  = std::shared_ptr<IntegralTransform>;
 using SharedLocalizer          = std::shared_ptr<Localizer>;
-
+/** \addtogroup OEPDEV_UTILITIES 
+ * @{
+ */
 
 /** \brief Print preambule for module OEPDEV
  */
@@ -91,7 +93,7 @@ solve_scf(std::shared_ptr<Molecule> molecule,
           Options& options,
           std::shared_ptr<PSIO> psio);
 
-
+/** @}*/
 
 } // EndNameSpace oepdev_libutil
 

@@ -36,6 +36,9 @@ namespace oepdev{
 
 using namespace std;
 using namespace psi;
+/** \addtogroup OEPDEV_UTILITIES
+ * @{
+ @/
 
 /**\brief CPHF solver class.
  *
@@ -122,7 +125,7 @@ class CPHF {
 
 };
 
-
+/** @}*/
 }// EndNameSpace oepdev
 
 #endif // _oepdev_libutil_cphf_h

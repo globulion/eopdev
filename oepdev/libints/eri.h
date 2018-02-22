@@ -1,5 +1,6 @@
 #ifndef _oepdev_libints_eri_h
 #define _oepdev_libints_eri_h
+/** @file eri.h */
 
 #include "psi4/libpsi4util/exception.h"
 #include "psi4/libmints/integral.h"
@@ -10,7 +11,9 @@
 namespace oepdev{
 using namespace std;
 
-/*! \ingroup OEPDEV_LIBINTS */
+/** \addtogroup OEPDEV_LIBINTS 
+ * @{
+ */
 
 /**\brief General Two Electron Integral. 
  *
@@ -109,6 +112,8 @@ class ERI_2_2 : public TwoElectronInt
    double get_D34(int, int, int, int);
 
 };
+
+/** @}*/ 
 
 } // EndNameSpace oepdev
 #endif //_oepdev_libints_eri_h

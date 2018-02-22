@@ -21,6 +21,7 @@
 
 #ifndef _oepdev_libpsi_potential_h_
 #define _oepdev_libpsi_potential_h_
+/** @file potential.h */
 
 #include <vector>
 
@@ -35,14 +36,14 @@
 #include "psi4/libmints/sointegral_onebody.h"
 #include "psi4/libmints/osrecur.h"
 
-/**
- * \ingroup Oepdev
- */
 namespace oepdev{
 
 using namespace std;
+/** \addtogroup OEPDEV_LIBINTS
+ * @{
+ */
 
-/** \ingroup MINTS_MODIFIED
+/** 
  *  \class PotentialInt
  *  \brief Computes potential integrals.
  */
@@ -97,6 +98,7 @@ class PotentialInt : public psi::PotentialInt
     void set_charge_field(const double& x, const double&y, const double&z, const double& q = 1.0);
 };
 
+/** @}*/
 } // EndNameSpace oepdev
 
 #endif

@@ -167,6 +167,7 @@ helps in producing self-maintaining code and is much easier to use. Use:
 
 #ifndef _oepdev_libutil_solver_h
 #define _oepdev_libutil_solver_h
+/** @file solver.h */
 
 #include<cstdio>
 #include<string>
@@ -192,7 +193,9 @@ using namespace psi;
 using SharedWavefunction       = std::shared_ptr<Wavefunction>;
 using SharedWavefunctionUnion  = std::shared_ptr<WavefunctionUnion>;
 using SharedOEPotential        = std::shared_ptr<OEPotential>;
-
+/** \addtogroup OEPDEV_SOLVERS
+ * @{
+ */
 
 /**\brief Solver of properties of molecular aggregates. Abstract base.
  *
@@ -848,7 +851,7 @@ class ChargeTransferEnergySolver : public OEPDevSolver
 };
 
 
-
+/** @}*/
 }      // EndNameSpace oepdev
 #endif //_oepdev_libutil_solver_h
 

@@ -1,5 +1,6 @@
 #ifndef _oepdev_libutil_diis_h
 #define _oepdev_libutil_diis_h
+/** @file diis.h */
 
 #include<cstdio>
 #include<string>
@@ -16,7 +17,9 @@ namespace oepdev{
 
 using namespace psi;
 using namespace std;
-
+/** \addtogroup OEPDEV_UTILITIES 
+ * @{
+ */
 
 /** \class DIISManager
  *  \brief DIIS manager.
@@ -87,7 +90,7 @@ public:
   void update(std::shared_ptr<Matrix>& other);
 };
 
-
+/** @}*/
 } // EndNameSpace oepdev
 
 #endif // _oepdev_libutil_diis_h

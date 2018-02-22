@@ -1,5 +1,6 @@
 #ifndef _oepdev_libutil_integrals_iter_h
 #define _oepdev_libutil_integrals_iter_h
+/** @file integrals_iter.h */
 
 #include<cstdio>
 
@@ -15,6 +16,9 @@ using namespace std;
 using SharedBasisSet        = std::shared_ptr<BasisSet>;
 using SharedIntegralFactory = std::shared_ptr<IntegralFactory>;
 using SharedTwoBodyAOInt    = std::shared_ptr<TwoBodyAOInt>;
+/** \addtogroup OEPDEV_INTEGRAL_HELPERS
+ * @{
+ */
 
 /** \brief Loop over all possible ERI shells.
  *
@@ -181,6 +185,6 @@ class AllAOIntegralsIterator {
    int index__;
 };
 
-
+/** @}*/
 }      // EndNameSpace oepdev
 #endif //_oepdev_libutil_integrals_iter_h
