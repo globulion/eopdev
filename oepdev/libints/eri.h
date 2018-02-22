@@ -35,6 +35,9 @@ class TwoElectronInt : public psi::TwoBodyAOInt
     /// Map of Cartesian components per each am
     const double cartMap_[60];
 
+    /// Double factorial array
+    const double df_[8];
+
     /// Get the angular momentum per Cartesian component
     inline int get_cart_am(int am, int n, int x);
 
@@ -104,7 +107,6 @@ class ERI_2_2 : public TwoElectronInt
  private:
    double get_D12(int, int, int, int);
    double get_D34(int, int, int, int);
-   void put_int(double, double*);
 
 };
 

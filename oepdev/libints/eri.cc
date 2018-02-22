@@ -12,8 +12,9 @@ TwoElectronInt::TwoElectronInt(const psi::IntegralFactory* integral, int deriv, 
    use_shell_pairs_(use_shell_pairs),
    cartMap_{0,0,0,
             1,0,0, 0,1,0, 0,0,1,
-            2,0,0, 0,2,0, 0,0,2, 1,1,0, 1,0,1, 0,1,1,
+            2,0,0, 1,1,0, 1,0,1, 0,2,0, 0,1,1, 0,0,2,
             3,0,0, 0,3,0, 0,0,3, 1,2,0, 2,1,0, 2,0,1, 1,0,2, 0,1,2, 0,2,1, 1,1,1},
+   df_{1.0,1.0,3.0,15.0,105.0,945.0,10395.0,135135.0},
    max_am_(std::max({basis1()->max_am(),
                      basis2()->max_am(),
                      basis3()->max_am(),
@@ -240,14 +241,15 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
               PB[1] = P[1] - B[1];
               PB[2] = P[2] - B[2];
 
-              double E12 = exp(-(a1*a2*ooz)*rAB2);
-              if (E12>1e-10) {
+
+              double E12 = exp(-a1*a2*ooz*rAB2);
+//if (E12>OEPDEV_CRIT_ERI) {
               for (int p3 = 0; p3 < nprim3; ++p3) {
                    double a3 = a3s[p3];
-                   double c3 = c3s[p3];
+                   double c3 = c3s[p3] ;
                    for (int p4 = 0; p4 < nprim4; ++p4) { 
                         double a4 = a4s[p4];
-                        double c4 = c4s[p4];
+                        double c4 = c4s[p4] ;
 
                         double a34 = a3 + a4;                 
                         double oox = 1.0 / a34;
@@ -262,36 +264,34 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                         QD[1] = Q[1] - D[1];
                         QD[2] = Q[2] - D[2];
 
-                        double E34 = exp(-(a3*a4*oox)*rCD2);
+                        double E34 = exp(-a3*a4*oox*rCD2);
 
                         double xPQ = P[0]-Q[0];
                         double yPQ = P[1]-Q[1];
                         double zPQ = P[2]-Q[2];
                         double rPQ2= xPQ*xPQ+yPQ*yPQ+zPQ*zPQ;
-                        //PQ[0] = xPQ;
-                        //PQ[1] = yPQ;
-                        //PQ[2] = zPQ;
 
                         double apq = a12 + a34;
                         double ooy = 1.0/apq;
-                        double pref = c1*c2*c3*c4*E12*E34;
                         double lambda = LOCAL_2PI52 * (1.0/(a12*a34)) * sqrt(ooy);
+//if (lambda*E34>OEPDEV_CRIT_ERI) {
+                        double pref = c1*c2*c3*c4*E12*E34;
                         double alpha = a12*a34*ooy;
                         double T = alpha*rPQ2;
-                        if (lambda*E34>1e-10) {
 
-                        //cout << pref << " " << lambda << endl;
+                        // Free the R and D2 buffers
+                        memset(mdh_buffer_R_ , 0, sizeof(double) * OEPDEV_SIZE_BUFFER_R );
+                        memset(mdh_buffer_12_, 0, sizeof(double) * OEPDEV_SIZE_BUFFER_D2);
+                        memset(mdh_buffer_34_, 0, sizeof(double) * OEPDEV_SIZE_BUFFER_D2);
+
                         // Compute McMurchie-Davidson R-coefficients
                         fjt_->set_rho(alpha);
                         double* F = fjt_->values(am, T);
                         make_mdh_R_coeff(am, am, am, alpha, xPQ, yPQ, zPQ, F, mdh_buffer_R_);
 
-                        //for (int i=0; i<am+1; ++i) cout << F[i] << endl;
-
                         // Compute McMurchie-Davidson-Hermite coefficients        
-                        make_mdh_D_coeff(am1+am2, am1, am2, PA, PB, mdh_buffer_12_);
-                        make_mdh_D_coeff(am3+am4, am3, am4, QC, QD, mdh_buffer_34_);
-
+                        make_mdh_D_coeff(am1, am2, a12, PA, PB, mdh_buffer_12_);
+                        make_mdh_D_coeff(am3, am4, a34, QC, QD, mdh_buffer_34_);
 
                         // Compute the intermediate ERI's
                         int iint = 0;
@@ -323,13 +323,10 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                                                       for (int M2 = 0; M2 < (nz3+nz4+1); ++M2) {
                                                            double i1 = ((N2+L2+M2)%2) ? -1.0 : 1.0;
                                                            integral += get_D12(0,nx1,nx2,N1) * get_D34(0,nx3,nx4,N2)
-                                                                     * get_D12(1,ny1,ny2,L1) * get_D34(1,ny3,ny4,N2)
+                                                                     * get_D12(1,ny1,ny2,L1) * get_D34(1,ny3,ny4,L2)
                                                                      * get_D12(2,nz1,nz2,M1) * get_D34(2,nz3,nz4,M2)
                                                                      * get_R(N1+N2,L1+L2,M1+M2)
                                                                      * lambda * i1;
-                                                           //cout << "d: " << get_D12(1,ny1,ny2,L1) << endl;
-                                                           //cout << "d: " << get_D12(2,nz1,nz2,M1) << endl;
-                                                           //cout << "r: " << get_R(N1+N2,L1+L2,M1+M2) << endl;
                                                            //integral += D2_INDEX(0,nx1,nx2,N1) * D2_INDEX(0,nx3,nx4,N2) 
                                                            //          * D2_INDEX(1,ny1,ny2,L1) * D2_INDEX(1,ny3,ny4,N2)
                                                            //          * D2_INDEX(2,nz1,nz2,M1) * D2_INDEX(2,nz3,nz4,M2)
@@ -341,22 +338,19 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                                                  }
                                             }
                                             }
-                                            //put_int(integral*pref, target_full_);
                                             target_full_[iint]+= integral*pref;
                                             ++iint;
-                                            //cout << "iint: " << iint << endl;
                                        }
                                   }
                              }
-                        }}
+                        }//}
                         //
                         ++nprim;
                    }
-              }}
+              }//}
          }
     }
 
-    //for (int i=0; i<size; ++i) cout << " Int: " << target_full_[i] << endl;
     // Finish
     return size;
 }
@@ -365,8 +359,6 @@ double ERI_2_2::get_D12(int x, int n1, int n2, int N){
 }
 double ERI_2_2::get_D34(int x, int n1, int n2, int N){
  return mdh_buffer_34_[D2_INDEX(x,n1,n2,N)];
-}
-void ERI_2_2::put_int(double integral, double* buffer) {
 }
 
 } // EndNameSpace oepdev

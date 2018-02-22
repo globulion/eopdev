@@ -28,10 +28,9 @@ using namespace std;
  * @param aP - free parameter of MDH expansion
  * @return the McMurchie-Davidson-Hermite coefficient
  */
-double d_N_n1_n2(int N, int n1, int n2, double PA, double PB, double aP = 1.0);
+double d_N_n1_n2(int N, int n1, int n2, double PA, double PB, double aP);
 
 /**\brief Compute the McMurchie-Davidson-Hermite coefficients for binomial expansion.
- * @param N      - increment in the summation of MDH series 
  * @param n1     - angular momentum of first function
  * @param n2     - angular momentum of second function
  * @param PA     - cartesian components of P-A distance 
@@ -43,7 +42,7 @@ double d_N_n1_n2(int N, int n1, int n2, double PA, double PB, double aP = 1.0);
  *         - axis 3: dimension n1+n2+1 (0 to n1+n2)
  *  \see N1_N2_N_TO_D
  */
-void make_mdh_D_coeff(int N, int n1, int n2, double* PA, double* PB, double* buffer);
+void make_mdh_D_coeff(int n1, int n2, double aP, double* PA, double* PB, double* buffer);
 
 /**\brief Compute the McMurchie-Davidson R coefficients.
  * @param N      - increment in the summation of MDH series along *x* direction
