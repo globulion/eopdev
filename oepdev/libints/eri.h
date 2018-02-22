@@ -87,6 +87,47 @@ class TwoElectronInt : public psi::TwoBodyAOInt
 
 /**\brief 4-centre ERI of the form (ab|O(2)|cd) where O(2) = 1/r12.
   *
+  * ERI's are computed for a shell quartet (PQ|RS) and stored in the
+  * `target_full_` buffer, accessible through `buffer()` method:
+  * \f{align*}{
+  *  & \text{For each }  {(n_1,l_1,m_1)\in P}: \\
+  *  & \quad\text{For each } {(n_2,l_2,m_2)\in Q}: \\
+  *  & \quad\quad\text{For each } {(n_3,l_3,m_3)\in R}: \\
+  *  & \quad\quad\quad\text{For each } {(n_4,l_4,m_4)\in S}: \\
+  *  & \quad\quad\quad\quad{\rm ERI} = (AB\vert CD)[\{\alpha\},{\bf n},{\bf l},{\bf m}]
+  * \f}
+  * For detailed description of the McMurchie-Davidson scheme, refer to \ref OEPDEV_LIBINTS.
+  *
+  * \section seri22implementation Implementation
+  * 
+  * A set of ERI's in a shell is decontracted as
+  * \f[
+  *  (AB\vert CD)[\{\alpha\},{\bf n},{\bf l},{\bf m}] = \sum_{ijkl} c_i(\alpha_1)c_j(\alpha_2)c_k(\alpha_3)c_l(\alpha_4)
+  *   (ij\vert kl)[\{\alpha\},{\bf n},{\bf l},{\bf m}]
+  * \f]
+  * where the primitive ERI is given by
+  * \f{multline*}{
+  *  (ij\vert kl)[\{\alpha\},{\bf n},{\bf l},{\bf m}] = E_{ij}(\alpha_1,\alpha_2) E_{kl}(\alpha_3,\alpha_4) \\
+  * \times
+  *     \sum_{N_1=0}^{n_1+n_2} 
+  *     \sum_{L_1=0}^{l_1+l_2} 
+  *     \sum_{M_1=0}^{m_1+m_2} 
+  *     \sum_{N_2=0}^{n_3+n_4} 
+  *     \sum_{L_2=0}^{l_3+l_4} 
+  *     \sum_{M_2=0}^{m_3+m_4}
+  *      d_{N_1}^{n_1n_2}  
+  *      d_{L_1}^{l_1l_2}
+  *      d_{M_1}^{m_1m_2}
+  *      d_{N_2}^{n_3n_4}
+  *      d_{L_2}^{l_3l_4}
+  *      d_{M_2}^{m_3m_4}
+  *     \left[N_1L_1M_1 \vert N_2L_2M_2\right]
+  * \f}
+  * In the above equation, the miltiplicative constants are given as
+  * \f{align*}{
+  *  E_{ij}(\alpha_1,\alpha_2) &= \exp{-\frac{\alpha_1\alpha_2}{\alpha_1+\alpha_2}\vert {\bf A}-{\bf B}\vert^2} \\
+  *  E_{kl}(\alpha_3,\alpha_4) &= \exp{-\frac{\alpha_3\alpha_4}{\alpha_3+\alpha_4}\vert {\bf C}-{\bf D}\vert^2} \\
+  * \f}
   */
 class ERI_2_2 : public TwoElectronInt
 {
@@ -108,7 +149,9 @@ class ERI_2_2 : public TwoElectronInt
 
 
  private:
+   /// Get the D2 coefficient 
    double get_D12(int, int, int, int);
+   /// Get the D2 coefficient
    double get_D34(int, int, int, int);
 
 };
