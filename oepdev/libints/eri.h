@@ -6,6 +6,7 @@
 #include "psi4/libmints/integral.h"
 #include "psi4/libmints/basisset.h"
 #include "psi4/libmints/fjt.h"
+#include "../libpsi/integral.h"
 #include "recurr.h"
 
 namespace oepdev{

@@ -186,8 +186,10 @@ class AllAOIntegralsIterator {
 };
 
 /** \example example_integrals_iter.cc
- * This is an example of how to use the Example_Test class.
- * More details about this example.
+ * Iterations over electron repulsion integrals in AO basis.
+ * This is an example of how to use
+ *   - the AllAOShellCombinationsIterator class
+ *   - the AllAOIntegralsIterator class.
  */
 
 /** @}*/
