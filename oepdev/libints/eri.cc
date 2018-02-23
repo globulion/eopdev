@@ -139,6 +139,13 @@ ERI_2_2::ERI_2_2(const IntegralFactory *integral, int deriv, bool use_shell_pair
     }
     memset(mdh_buffer_12_, 0, sizeof(double) * size);
     memset(mdh_buffer_34_, 0, sizeof(double) * size);
+    // Initialize the first (constant) elements of the buffers
+    mdh_buffer_12_[D2_INDEX(0,0,0,0)] = 1.0;
+    mdh_buffer_12_[D2_INDEX(1,0,0,0)] = 1.0;
+    mdh_buffer_12_[D2_INDEX(2,0,0,0)] = 1.0;
+    mdh_buffer_34_[D2_INDEX(0,0,0,0)] = 1.0;
+    mdh_buffer_34_[D2_INDEX(1,0,0,0)] = 1.0;
+    mdh_buffer_34_[D2_INDEX(2,0,0,0)] = 1.0;
 }
 
 ERI_2_2::~ERI_2_2()
@@ -162,6 +169,12 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
     int am3 = s3.am();
     int am4 = s4.am();
     int am  = am1 + am2 + am3 + am4; // total am
+
+    // Offsets for Cartesian angular momenta buffer
+    int nn1 = am1*(am1+1)*(am1+2)/2;
+    int nn2 = am2*(am2+1)*(am2+2)/2;
+    int nn3 = am3*(am3+1)*(am3+2)/2;
+    int nn4 = am4*(am4+1)*(am4+2)/2;
 
     // Number of Cartesian functions
     int nam1= INT_NCART(am1);
@@ -214,7 +227,8 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
     size_t size = nam1 * nam2 * nam3 * nam4;
 
     // Clean ERI buffer after previous quartet
-    memset(target_full_, 0, sizeof(double) * size);
+    //memset(target_full_, 0, sizeof(double) * size);
+    for (int i=0; i<size; ++i) target_full_[i] = 0.0;
 
     // Iterate over primitives
     size_t nprim = 0;
@@ -244,7 +258,7 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
 
 
               double E12 = exp(-a1*a2*ooz*rAB2);
-//if (E12>OEPDEV_CRIT_ERI) {
+if (E12>OEPDEV_CRIT_ERI) {
               for (int p3 = 0; p3 < nprim3; ++p3) {
                    double a3 = a3s[p3];
                    double c3 = c3s[p3] ;
@@ -275,15 +289,15 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                         double apq = a12 + a34;
                         double ooy = 1.0/apq;
                         double lambda = LOCAL_2PI52 * (1.0/(a12*a34)) * sqrt(ooy);
-//if (lambda*E34>OEPDEV_CRIT_ERI) {
+if (lambda*E34>OEPDEV_CRIT_ERI) {
                         double pref = c1*c2*c3*c4*E12*E34;
                         double alpha = a12*a34*ooy;
                         double T = alpha*rPQ2;
 
-                        // Free the R and D2 buffers
-                        memset(mdh_buffer_R_ , 0, sizeof(double) * OEPDEV_SIZE_BUFFER_R );
-                        memset(mdh_buffer_12_, 0, sizeof(double) * OEPDEV_SIZE_BUFFER_D2);
-                        memset(mdh_buffer_34_, 0, sizeof(double) * OEPDEV_SIZE_BUFFER_D2);
+                        // Free the R and D2 buffers (VERY slow: not necessary - only for debugging)
+                        //memset(mdh_buffer_R_ , 0, sizeof(double) * OEPDEV_SIZE_BUFFER_R );
+                        //memset(mdh_buffer_12_, 0, sizeof(double) * OEPDEV_SIZE_BUFFER_D2);
+                        //memset(mdh_buffer_34_, 0, sizeof(double) * OEPDEV_SIZE_BUFFER_D2);
 
                         // Compute McMurchie-Davidson R-coefficients
                         fjt_->set_rho(alpha);
@@ -291,64 +305,82 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                         make_mdh_R_coeff(am, am, am, alpha, xPQ, yPQ, zPQ, F, mdh_buffer_R_);
 
                         // Compute McMurchie-Davidson-Hermite coefficients        
-                        make_mdh_D_coeff(am1, am2, a12, PA, PB, mdh_buffer_12_);
-                        make_mdh_D_coeff(am3, am4, a34, QC, QD, mdh_buffer_34_);
+                        make_mdh_D2_coeff(am1, am2, 0.5/a12, PA, PB, mdh_buffer_12_);
+                        make_mdh_D2_coeff(am3, am4, 0.5/a34, QC, QD, mdh_buffer_34_);
 
                         // Compute the intermediate ERI's
                         int iint = 0;
                         for (int ni = 0; ni < nam1; ++ni) {
-                             int nx1 = get_cart_am(am1, ni, 0);
-                             int ny1 = get_cart_am(am1, ni, 1);
-                             int nz1 = get_cart_am(am1, ni, 2);
-                             for (int nj = 0; nj < nam2; ++nj) {
-                                  int nx2 = get_cart_am(am2, nj, 0); 
-                                  int ny2 = get_cart_am(am2, nj, 1);
-                                  int nz2 = get_cart_am(am2, nj, 2);
-                                  for (int nk = 0; nk < nam3; ++nk) {
-                                       int nx3 = get_cart_am(am3, nk, 0);  
-                                       int ny3 = get_cart_am(am3, nk, 1);
-                                       int nz3 = get_cart_am(am3, nk, 2);
-                                       for (int nl = 0; nl < nam4; ++nl) {
-                                            int nx4 = get_cart_am(am4, nl, 0);   
-                                            int ny4 = get_cart_am(am4, nl, 1);
-                                            int nz4 = get_cart_am(am4, nl, 2);
+                          int inx1 = nn1 + 3*ni;
+                          int nx1 = cartMap_[inx1  ];
+                          int ny1 = cartMap_[inx1+1];
+                          int nz1 = am1 - nx1 - ny1;
+                          for (int nj = 0; nj < nam2; ++nj) {
+                            int inx2 = nn2 + 3*nj; 
+                            int nx2 = cartMap_[inx2  ];
+                            int ny2 = cartMap_[inx2+1];
+                            int nz2 = am2 - nx2 - ny2;
+                            for (int nk = 0; nk < nam3; ++nk) {
+                              int inx3 = nn3 + 3*nk;
+                              int nx3 = cartMap_[inx3  ];
+                              int ny3 = cartMap_[inx3+1];
+                              int nz3 = am3 - nx3 - ny3;
+                              for (int nl = 0; nl < nam4; ++nl) {
+                                int inx4 = nn4 + 3*nl;
+                                int nx4 = cartMap_[inx4  ];
+                                int ny4 = cartMap_[inx4+1];
+                                int nz4 = am4 - nx4 - ny4;
 
-                                            double integral = 0.0;
+                                double integral = 0.0;
 
-                                            // Iterate over Hermite functions
-                                            for (int N1 = 0; N1 < (nx1+nx2+1); ++N1) {
-                                            for (int N2 = 0; N2 < (nx3+nx4+1); ++N2) {
-                                                 for (int L1 = 0; L1 < (ny1+ny2+1); ++L1) {
-                                                 for (int L2 = 0; L2 < (ny3+ny4+1); ++L2) {
-                                                      for (int M1 = 0; M1 < (nz1+nz2+1); ++M1) {
-                                                      for (int M2 = 0; M2 < (nz3+nz4+1); ++M2) {
-                                                           double i1 = ((N2+L2+M2)%2) ? -1.0 : 1.0;
-                                                           integral += get_D12(0,nx1,nx2,N1) * get_D34(0,nx3,nx4,N2)
-                                                                     * get_D12(1,ny1,ny2,L1) * get_D34(1,ny3,ny4,L2)
-                                                                     * get_D12(2,nz1,nz2,M1) * get_D34(2,nz3,nz4,M2)
-                                                                     * get_R(N1+N2,L1+L2,M1+M2)
-                                                                     * lambda * i1;
-                                                           //integral += D2_INDEX(0,nx1,nx2,N1) * D2_INDEX(0,nx3,nx4,N2) 
-                                                           //          * D2_INDEX(1,ny1,ny2,L1) * D2_INDEX(1,ny3,ny4,N2)
-                                                           //          * D2_INDEX(2,nz1,nz2,M1) * D2_INDEX(2,nz3,nz4,M2)
-                                                           //          * R_INDEX(N1+N2,L1+L2,M1+M2,0) 
-                                                           //          *
-                                                      }
-                                                      }
-                                                 }
-                                                 }
-                                            }
-                                            }
-                                            target_full_[iint]+= integral*pref;
-                                            ++iint;
-                                       }
+                                // Iterate over Hermite functions
+                                for (int N1 = 0; N1 < (nx1+nx2+1); ++N1) {
+                                  double Dnx1nx2N1 = get_D12(0,nx1,nx2,N1);
+                                  for (int N2 = 0; N2 < (nx3+nx4+1); ++N2) {
+                                    double Dnx3nx4N2 = get_D34(0,nx3,nx4,N2);
+                                    for (int L1 = 0; L1 < (ny1+ny2+1); ++L1) {
+                                      double Dny1ny2L1 = get_D12(1,ny1,ny2,L1);
+                                      for (int L2 = 0; L2 < (ny3+ny4+1); ++L2) {
+                                        double Dny3ny4L2 = get_D34(1,ny3,ny4,L2);
+                                        for (int M1 = 0; M1 < (nz1+nz2+1); ++M1) {
+                                          for (int M2 = 0; M2 < (nz3+nz4+1); ++M2) {                       
+                                            double i1 = ((N2+L2+M2)%2) ? -1.0 : 1.0;
+                                            //integral += get_D12(0,nx1,nx2,N1) * get_D34(0,nx3,nx4,N2)
+                                            //          * get_D12(1,ny1,ny2,L1) * get_D34(1,ny3,ny4,L2)
+                                            //          * get_D12(2,nz1,nz2,M1) * get_D34(2,nz3,nz4,M2)
+                                            //          * get_R(N1+N2,L1+L2,M1+M2)
+                                            //          * lambda * i1;
+                                            integral += Dnx1nx2N1 * Dnx3nx4N2
+                                                      * Dny1ny2L1 * Dny3ny4L2
+                                                      * get_D12(2,nz1,nz2,M1) * get_D34(2,nz3,nz4,M2)
+                                                      * get_R(N1+N2,L1+L2,M1+M2)
+                                                      * lambda * i1;
+                                            //integral += mdh_buffer_12_[D2_INDEX(0,nx1,nx2,N1)] 
+                                            //          * mdh_buffer_34_[D2_INDEX(0,nx3,nx4,N2)]
+                                            //          * mdh_buffer_12_[D2_INDEX(1,ny1,ny2,L1)] 
+                                            //          * mdh_buffer_34_[D2_INDEX(1,ny3,ny4,L2)]
+                                            //          * mdh_buffer_12_[D2_INDEX(2,nz1,nz2,M1)] 
+                                            //          * mdh_buffer_34_[D2_INDEX(2,nz3,nz4,M2)]
+                                            //          * mdh_buffer_R_[R_INDEX(N1+N2,L1+L2,M1+M2,0)]
+                                            //          * lambda * i1;
+                                          }
+                                        }
+                                      }
+                                    }
                                   }
-                             }
-                        }//}
+                                }
+                                target_full_[iint]+= integral*pref;
+                                ++iint;
+                              }
+                            }
+                          }
+                        }}
                         //
                         ++nprim;
                    }
-              }//}
+              }} else {
+              nprim+=nprim3*nprim4;
+              }
          }
     }
 
@@ -464,7 +496,8 @@ size_t ERI_3_1::compute_quartet(int sh1, int sh2, int sh3, int sh4)
     size_t size = nam1 * nam2 * nam3 * nam4;
 
     // Clean ERI buffer after previous quartet
-    memset(target_full_, 0, sizeof(double) * size);
+    //memset(target_full_, 0, sizeof(double) * size);
+    for (int i=0; i<size; ++i) target_full_[i] = 0.0;
 
     // Iterate over primitives
     size_t nprim = 0;

@@ -45,9 +45,27 @@ double d_N_n1_n2(int N, int n1, int n2, double PA, double PB, double aP);
  *         - axis 1: dimension n1+1 (0 to n1)
  *         - axis 2: dimension n2+1 (0 to n2)
  *         - axis 3: dimension n1+n2+1 (0 to n1+n2)
- *  \see N1_N2_N_TO_D
+ *  \see D2_INDEX
  */
-void make_mdh_D_coeff(int n1, int n2, double aP, double* PA, double* PB, double* buffer);
+void make_mdh_D2_coeff(int n1, int n2, double aPd, double* PA, double* PB, double* buffer);
+
+/**\brief Compute the McMurchie-Davidson-Hermite coefficients for binomial expansion by explicit recursion.
+ * This function makes the same changes to buffers as oepdev::make_mdh_D2_coeff, but
+ * implements it through explicit recursion by calls to oepdev::d_N_n1_n2. Therefore,
+ * it is slightly slower. Here for debugging purposes.
+ * @param n1     - angular momentum of first function
+ * @param n2     - angular momentum of second function
+ * @param aPd    - parameter equal to 0.500/Pa where Pa is exponent
+ * @param PA     - cartesian components of P-A distance 
+ * @param PB     - cartesian components of P-B distance
+ * @param buffer - the McMurchie-Davidson-Hermite 4-dimensional array (raveled to vector):
+ *         - axis 0: dimension 3 (x, y or z Cartesian component)
+ *         - axis 1: dimension n1+1 (0 to n1)
+ *         - axis 2: dimension n2+1 (0 to n2)
+ *         - axis 3: dimension n1+n2+1 (0 to n1+n2)
+ *  \see D2_INDEX
+ */
+void make_mdh_D2_coeff_explicit_recursion(int n1, int n2, double aP, double* PA, double* PB, double* buffer);
 
 /**\brief Compute the McMurchie-Davidson R coefficients.
  * @param N      - increment in the summation of MDH series along *x* direction

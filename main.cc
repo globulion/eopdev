@@ -241,6 +241,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         if (o_enable_trial) {
        
         cout << " Computing OepDev ERI_2_2\n";
+        timer_on(" Computation of OEPDEV ERI");
         oepdev::IntegralFactory fact_oepdev(ref_wfn->basisset());
         std::shared_ptr<psi::TwoBodyAOInt> eri_2_2(fact_oepdev.eri_2_2());
         //int s = 2; int n = 8;
@@ -262,12 +263,14 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
              {
                   i = intsIter.i();j = intsIter.j();k = intsIter.k();l = intsIter.l();
                   integral = buffer_2_2[intsIter.index()];
-                  //psi::outfile->Printf(" OepDev: (%2d %2d | %2d %2d) = %13.6f\n", i,j,k,l,integral);
+                  //psi::outfile->Printf(" IntOepDev: (%2d %2d | %2d %2d) = %13.6f\n", i,j,k,l,integral);
              }
         }
+        timer_off(" Computation of OEPDEV ERI");
 
         cout << " Computing Psi4 ERI\n";
-        psi::IntegralFactory    fact_psi(ref_wfn->basisset());
+        timer_on(" Computation of PSI4 ERI");
+        oepdev::IntegralFactory    fact_psi(ref_wfn->basisset());
         std::shared_ptr<psi::TwoBodyAOInt> eri(fact_psi.eri());
         const double * buffer = eri->buffer();
         //num = eri->compute_shell(s,s,s,n);
@@ -287,10 +290,10 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
              {
                   i = intsIter.i();j = intsIter.j();k = intsIter.k();l = intsIter.l();
                   integral = buffer[intsIter.index()];
-                  //psi::outfile->Printf(" Psi4  : (%2d %2d | %2d %2d) = %13.6f\n", i,j,k,l,integral);
+                  //psi::outfile->Printf(" IntPsi4  : (%2d %2d | %2d %2d) = %13.6f\n", i,j,k,l,integral);
              }
         }
-
+        timer_off(" Computation of PSI4 ERI");
 
         //SharedWavefunction      wfn_union_base = wfn_union;
         //SharedIntegralTransform transform      = wfn_union->integrals();

@@ -12,7 +12,7 @@
 /// 2L_max+1
 #define OEPDEV_N_MAX_AM                   17
 /// ERI criterion for E12, E34, E123 and lambda*EXY coefficients
-#define OEPDEV_CRIT_ERI                   1e-8
+#define OEPDEV_CRIT_ERI                   1e-9
 /// Size of R buffer (OEPDEV_N_MAX_AM*OEPDEV_N_MAX_AM*OEPDEV_N_MAX_AM*OEPDEV_N_MAX_AM*3)
 #define OEPDEV_SIZE_BUFFER_R              250563 
 /// Size of D2 buffer (3*(OEPDEV_MAX_AM+1)*(OEPDEV_MAX_AM+1)*OEPDEV_N_MAX_AM)
