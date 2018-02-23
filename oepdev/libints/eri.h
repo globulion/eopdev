@@ -61,7 +61,7 @@ class TwoElectronInt : public psi::TwoBodyAOInt
 
 
  public:
-   TwoElectronInt(const psi::IntegralFactory* integral, int deriv, bool use_shell_pairs);
+   TwoElectronInt(const IntegralFactory* integral, int deriv, bool use_shell_pairs);
 
    virtual ~TwoElectronInt();
 
@@ -145,7 +145,7 @@ class ERI_2_2 : public TwoElectronInt
 
   public:
    /// Constructor. Use oepdev::IntegralFactory to generate this object
-   ERI_2_2(const psi::IntegralFactory* integral, int deriv=0, bool use_shell_pairs=false);
+   ERI_2_2(const IntegralFactory* integral, int deriv=0, bool use_shell_pairs=false);
    /// Destructor
   ~ERI_2_2();
 
@@ -219,7 +219,7 @@ class ERI_3_1 : public TwoElectronInt
 
   public:
    /// Constructor. Use oepdev::IntegralFactory to generate this object
-   ERI_3_1(const psi::IntegralFactory* integral, int deriv=0, bool use_shell_pairs=false);
+   ERI_3_1(const IntegralFactory* integral, int deriv=0, bool use_shell_pairs=false);
    /// Destructor
   ~ERI_3_1();
 

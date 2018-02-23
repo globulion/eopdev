@@ -26,7 +26,7 @@ psi::TwoBodyAOInt* oepdev::IntegralFactory::eri_2_2(int deriv, bool use_shell_pa
 }
 psi::TwoBodyAOInt* oepdev::IntegralFactory::eri_3_1(int deriv, bool use_shell_pairs)
 {
-  throw psi::PSIEXCEPTION("ERI 3_1 is not implemented yet!");
+  return new oepdev::ERI_3_1(this, deriv, use_shell_pairs);
 }
 psi::TwoBodyAOInt* oepdev::IntegralFactory::eri_2_1(int deriv, bool use_shell_pairs)
 {

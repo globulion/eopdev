@@ -7,7 +7,7 @@ using namespace std;
 
 #define LOCAL_2PI52 34.986836655249724969962699105963
 
-TwoElectronInt::TwoElectronInt(const psi::IntegralFactory* integral, int deriv, bool use_shell_pairs) :
+TwoElectronInt::TwoElectronInt(const IntegralFactory* integral, int deriv, bool use_shell_pairs) :
    psi::TwoBodyAOInt(integral, deriv), 
    use_shell_pairs_(use_shell_pairs),
    cartMap_{0,0,0,
@@ -113,7 +113,7 @@ size_t TwoElectronInt::compute_shell(const psi::AOShellCombinationsIterator &she
 
 
 //////
-ERI_2_2::ERI_2_2(const psi::IntegralFactory *integral, int deriv, bool use_shell_pairs)
+ERI_2_2::ERI_2_2(const IntegralFactory *integral, int deriv, bool use_shell_pairs)
     : TwoElectronInt(integral, deriv, use_shell_pairs)
 {
     if (deriv_>0) throw psi::PSIEXCEPTION("oepdev::ERI_2_2: Derivatives are not implemented yet!");
@@ -363,7 +363,7 @@ double ERI_2_2::get_D34(int x, int n1, int n2, int N){
 }
 
 //////
-ERI_3_1::ERI_3_1(const psi::IntegralFactory *integral, int deriv, bool use_shell_pairs)
+ERI_3_1::ERI_3_1(const IntegralFactory *integral, int deriv, bool use_shell_pairs)
     : TwoElectronInt(integral, deriv, use_shell_pairs)
 {
     if (deriv_>0) throw psi::PSIEXCEPTION("oepdev::ERI_2_2: Derivatives are not implemented yet!");

@@ -33,11 +33,14 @@ using namespace std;
  *  \brief Extended IntegralFactory for computing integrals.
  *
  *  In addition to integrals available in Psi4, oepdev::IntegralFactory 
- *  enables to compute additionally:
- *   - `ERI_2_2` integrals
- *   - `ERI_3_1` integrals
- *   - `ERI_2_1` integrals
- *   - `ERI_1_1` integrals
+ *  enables to compute also:
+ *  - OEI's:
+ *    - none at that moment
+ *  - ERI's:
+ *    - integrals of type (a|b)   - `oepdev::ERI_1_1` 
+ *    - integrals of type (ab|c)  - `oepdev::ERI_2_1` 
+ *    - integrals of type (abc|d) - `oepdev::ERI_3_1` 
+ *    - integrals of type (ab|cd) - `oepdev::ERI_2_2` (also in Psi4 as `psi::ERI`)
  */
 class IntegralFactory : public psi::IntegralFactory
 {
@@ -65,17 +68,17 @@ class IntegralFactory : public psi::IntegralFactory
 
   // ---> Computers <--- //
 
+  /// Returns an ERI_1_1 integral object
+  virtual psi::TwoBodyAOInt* eri_1_1(int deriv=0, bool use_shell_pairs=false);
+
+  /// Returns an ERI_2_1 integral object
+  virtual psi::TwoBodyAOInt* eri_2_1(int deriv=0, bool use_shell_pairs=false);
+
   /// Returns an ERI_2_2 integral object
   virtual psi::TwoBodyAOInt* eri_2_2(int deriv=0, bool use_shell_pairs=false);
 
   /// Returns an ERI_3_1 integral object
   virtual psi::TwoBodyAOInt* eri_3_1(int deriv=0, bool use_shell_pairs=false);
-
-  /// Returns an ERI_2_1 integral object
-  virtual psi::TwoBodyAOInt* eri_2_1(int deriv=0, bool use_shell_pairs=false);
-
-  /// Returns an ERI_1_1 integral object
-  virtual psi::TwoBodyAOInt* eri_1_1(int deriv=0, bool use_shell_pairs=false);
 
 };
 

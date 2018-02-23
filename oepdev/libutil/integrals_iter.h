@@ -185,6 +185,11 @@ class AllAOIntegralsIterator {
    int index__;
 };
 
+/** \example example_integrals_iter.cc
+ * This is an example of how to use the Example_Test class.
+ * More details about this example.
+ */
+
 /** @}*/
 }      // EndNameSpace oepdev
 #endif //_oepdev_libutil_integrals_iter_h
