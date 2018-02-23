@@ -54,4 +54,9 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/liboep/oep.cc   
                        oepdev/libints/recurr.cc
                        oepdev/libints/eri.cc
+                       oepdev/libtest/test.cc
                )
+
+add_test (NAME ERI_2_2 COMMAND "psi4" "tests/oepdev/eri_2_2.inp" "tests/oepdev/eri_2_2.out")
+set_tests_properties (ERI_2_2 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
+

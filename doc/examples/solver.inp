@@ -58,10 +58,10 @@ nocom
 
 set {
     # ==> OEPDEV Routine Specification <== #
-    oepdev_target                 repulsion_energy 
+    oepdev_target                 solver
+    oepdev_solver_type            repulsion_energy
     oepdev_localize               True
     oepdev_enable_trial           False
-    oepdev_oep_build_type         electrostatic_energy
     # ==> General Psi4 Options <== #
     scf_type                      direct 
     guess                         core

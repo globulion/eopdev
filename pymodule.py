@@ -59,7 +59,8 @@ def run_oepdev(name, **kwargs):
     molecule      = ref_wfn.molecule()
 
     # case when OEP build is requested
-    if psi4.core.get_global_option("OEPDEV_TARGET") == "OEP_BUILD":
+    if psi4.core.get_global_option("OEPDEV_TARGET").startswith("OEP") \
+    or psi4.core.get_global_option("OEPDEV_TARGET") == "TEST":
            
        basis_df_oep = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                puream=ref_wfn.basisset().has_puream())

@@ -2,7 +2,7 @@
 sys.path.insert(0, './..')
 import oepdev
 
-molecule happy {
+molecule h2o {
 0 1
 O         -3.08471        1.12313        0.00396
 H         -2.11791        0.90877        0.01763
@@ -16,32 +16,19 @@ nocom
 
 set {
     # ==> OEPDEV Routine Specification <== #
-    oepdev_target                 oep_build
-    oepdev_oep_build_type         repulsion_energy
+    oepdev_target                 test
+    oepdev_test_name              eri_2_2
     oepdev_localize               False
     oepdev_enable_trial           False
     # ==> General Psi4 Options <== #
     scf_type                      direct 
     guess                         core
-    print                         4
+    print                         1
     puream                        False
     # ==> Basis Sets <== #
     basis                         sto-3g
-    df_basis_oep                  sto-3g
-    #df_basis_sapt                 cc-pVDZ
-    # ==> CPHF <== #
-    cphf_diis                     True 
-    cphf_diis_dim                 2
-    cphf_maxiter                  200
-    cphf_conver                   1e-8
-    # ==> ESP <== #                    
-    esp_npoints_per_atom          4000
-    esp_pad_sphere                12.0
 }
 
 
 # run oepdev
-energy('oepdev', molecule=happy)
-
-# run oepdev python test
-oepdev.test(dummy=True)
+energy('oepdev', molecule=h2o)

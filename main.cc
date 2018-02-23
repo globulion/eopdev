@@ -72,6 +72,8 @@
 #include "oepdev/libints/eri.h"
 #include "oepdev/libpsi/integral.h"
 
+#include "oepdev/libtest/test.h"
+
 
 using SharedMolecule           = std::shared_ptr<Molecule>;                            
 using SharedSuperFunctional    = std::shared_ptr<SuperFunctional>;
@@ -122,13 +124,17 @@ int read_options(std::string name, Options& options)
         /*- ESP: padding of a sphere enclosing the molecule -*/                     
         options.add_double ("ESP_PAD_SPHERE"        , 10.0                       );
         /*- Target: What to do? -*/
-        options.add_str    ("OEPDEV_TARGET"         , "ELECTROSTATIC_ENERGY"     );
+        options.add_str    ("OEPDEV_TARGET"         , "SOLVER"                   );
         /*- Whether localize MO's or not -*/
         options.add_bool   ("OEPDEV_LOCALIZE"       , false                      );
         /*- Whether enable trial tests in main.cc or not -*/
         options.add_bool   ("OEPDEV_ENABLE_TRIAL"   , false                      );
         /*- Which OEP to build? -*/
         options.add_str    ("OEPDEV_OEP_BUILD_TYPE" , "ELECTROSTATIC_ENERGY"     );
+        /*- Which Solver to use? -*/
+        options.add_str    ("OEPDEV_SOLVER_TYPE"    , "REPULSION_ENERGY"         );
+        /*- OEPDev test to perform -*/
+        options.add_str    ("OEPDEV_TEST_NAME"      , ""                         );
      }
 
     return true;
@@ -162,6 +168,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     // ==> Determine what to do <== //
     std::string o_task          = options.get_str  ("OEPDEV_TARGET"        );
     std::string o_oep_build_type= options.get_str  ("OEPDEV_OEP_BUILD_TYPE");
+    std::string o_solver_type   = options.get_str  ("OEPDEV_SOLVER_TYPE"   );
     bool        o_local         = options.get_bool ("OEPDEV_LOCALIZE"      );
     bool        o_enable_trial  = options.get_bool ("OEPDEV_ENABLE_TRIAL"  );
     int         o_print         = options.get_int  ("PRINT"                );
@@ -170,7 +177,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     SharedPSIO psio = PSIO::shared_object();
 
     // ==> Create OEP's <==
-    if (o_task == "OEP_BUILD") 
+    if (o_task == "OEP_BUILD" || o_task == "OEP") 
     {
 
         SharedOEPotential oep;
@@ -190,7 +197,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
 
     }
     // ==> Create Wavefunction Union of two monomers <==
-    else
+    else if (o_task == "SOLVER")
     {
 
         SharedUnion wfn_union = std::make_shared<oepdev::WavefunctionUnion>(ref_wfn, options); 
@@ -204,7 +211,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         if (o_print > 2) wfn_union->print_mo_integrals();
                                                                                                                             
         // ==> Perform the work <== //
-        if (o_task == "ELECTROSTATIC_ENERGY") 
+        if (o_solver_type == "ELECTROSTATIC_ENERGY") 
         {
             std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("ELECTROSTATIC ENERGY", wfn_union); 
                                                                                                                             
@@ -212,7 +219,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
             double el2 = solver->compute_benchmark("MO_EXPANDED"    );
             double el3 = solver->compute_oep_based("ESP_SYMMETRIZED");
         }
-        else if (o_task == "REPULSION_ENERGY") 
+        else if (o_solver_type == "REPULSION_ENERGY") 
         {
             std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("REPULSION ENERGY", wfn_union);
                                                                                                                             
@@ -224,9 +231,13 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
             double e_efp2  = solver->compute_benchmark("EFP2"         );        
         } 
         else 
-           throw PSIEXCEPTION("Incorrect target for oepdev program!\n");
+           throw PSIEXCEPTION("Incorrect solver type chosen!\n");
 
-    }
+    } else if (o_task == "TEST") {
+            oepdev::test::Test test(ref_wfn, options);
+            double result = test.run();
+    } else 
+           throw PSIEXCEPTION("Incorrect target for oepdev program!\n");
 
 
 
