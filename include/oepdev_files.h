@@ -262,4 +262,8 @@
  *  to the output file, class for wavefunction union etc.
  */
 
-
+/**
+ *  @defgroup OEPDEV_TESTS The OEPDev Testing Platform Library
+ *  Testing platform at C++ level of code. You can add more tests
+ *  here when developing new functionalities.
+ */

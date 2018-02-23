@@ -21,7 +21,7 @@ namespace oepdev{
 namespace test{
 
 using namespace std;
-/** \addtogroup OEPDEV_TEST
+/** \addtogroup OEPDEV_TESTS
  * @{
  */
 
@@ -31,20 +31,26 @@ using namespace std;
  */
 class Test 
 {
+  public:
+   /// Construct the tester
+   Test(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options);
+
+   /// Destructor
+  ~Test();
+
+   /// Pefrorm the test
+   double run(void);
+
   protected: 
    /// Wavefunction object
    std::shared_ptr<psi::Wavefunction> wfn_;
+
    /// Psi4 Options
    psi::Options options_;
 
    /// Test the oepdev::ERI_2_2 class against psi::ERI
    double test_eri_2_2(void);
 
-  public:
-   Test(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options);
-  ~Test();
-   /// Pefrorm the test
-   double run(void);
 };
 
 /** @}*/
