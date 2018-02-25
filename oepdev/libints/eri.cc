@@ -259,6 +259,8 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
 
               double E12 = exp(-a1*a2*ooz*rAB2);
 if (E12>OEPDEV_CRIT_ERI) {
+              // Compute McMurchie-Davidson-Hermite coefficients for first doublet
+              make_mdh_D2_coeff(am1, am2, 0.5/a12, PA, PB, mdh_buffer_12_);
               for (int p3 = 0; p3 < nprim3; ++p3) {
                    double a3 = a3s[p3];
                    double c3 = c3s[p3] ;
@@ -304,8 +306,7 @@ if (lambda*E34>OEPDEV_CRIT_ERI) {
                         double* F = fjt_->values(am, T);
                         make_mdh_R_coeff(am, am, am, alpha, xPQ, yPQ, zPQ, F, mdh_buffer_R_);
 
-                        // Compute McMurchie-Davidson-Hermite coefficients        
-                        make_mdh_D2_coeff(am1, am2, 0.5/a12, PA, PB, mdh_buffer_12_);
+                        // Compute McMurchie-Davidson-Hermite coefficients for second doublet
                         make_mdh_D2_coeff(am3, am4, 0.5/a34, QC, QD, mdh_buffer_34_);
 
                         // Compute the intermediate ERI's
