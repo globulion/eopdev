@@ -60,10 +60,15 @@
  *  By using the previous relation, it is possible to express the following expansions
  *  in Hermite series:
  *  \f{align*}{
+ *    x_A^{n_1} &= \sum_{N=0}^{n_1} d_N^{n_1} \Lambda_N(x_A;\alpha_A) \\
  *    x_A^{n_1} x_B^{n_2} &= \sum_{N=0}^{n_1+n_2} d_N^{n_1n_2} \Lambda_N(x_P;\alpha_P) \\
  *    x_A^{n_1} x_B^{n_2} x_C^{n_3} &= \sum_{N=0}^{n_1+n_2+n_3} d_N^{n_1n_2n_3} \Lambda_N(x_R;\alpha_R) 
  *  \f}
  *  The recurrence relationships can be easily found and they read
+ *  \f[
+ *   d_N^{n_1+1} = \frac{1}{2\alpha_A}d_{N-1}^{n_1} + (N+1) d_{N+1}^{n_1}
+ *  \f]
+ *  as well as
  *  \f{align*}{
  *   d_N^{n_1+1,n_2} &= \frac{1}{2\alpha_P} d_{N-1}^{n_1n_2} 
  *                              + \vert {\bf P} - {\bf A}\vert_x d_N^{n_1n_2} + (N+1) d_{N+1}^{n_1n_2} \\
@@ -82,6 +87,7 @@
  *  respectively.
  *  The first elements are given by
  *  \f{align*}{
+     d_0^{0}   &= 1\\
      d_0^{00}  &= 1\\
      d_0^{000} &= 1
  *  \f}
@@ -98,6 +104,16 @@
  *          d_N^{n_1n_2n_3} d_L^{l_1l_2l_3} d_M^{m_1m_2m_3}
  *          \Lambda_N(x_R)\Lambda_L(y_R)\Lambda_M(z_R)e^{-\alpha_Rr_R^2}
  *  \f]
+ *  The multiplicative constants are given by
+ *  \f{align*}{
+ *  E_{ij}(\alpha_1,\alpha_2) &= \exp{\left[-\frac{\alpha_1\alpha_2}
+ *                                       {\alpha_1+\alpha_2}\vert {\bf A}-{\bf B}\vert^2\right]} \\
+ *  E_{ijk}(\alpha_1,\alpha_2,\alpha_3)  &= \exp{\left[-\frac{\alpha_1\alpha_2}
+ *                                        {\alpha_1+\alpha_2}\vert {\bf A}-{\bf B}\vert^2\right]} 
+ *                                         \exp{\left[-\frac{(\alpha_1+\alpha_2)\alpha_3}
+ *                                        {\alpha_1+\alpha_2+\alpha_3}
+ *                                         \vert {\bf P}-{\bf C}\vert^2\right]} 
+ *  \f}
  *  \section libints_s3 One-Body Integrals over Hermite Functions
  *  The fundamental Hermite integrals that appear during computations
  *  of any kind of one-body integrals over GTO's are as follows

@@ -162,14 +162,12 @@ ERI_2_2::ERI_2_2(const IntegralFactory *integral, int deriv, bool use_shell_pair
     mdh_buffer_34_[D2_INDEX(1,0,0,0)] = 1.0;
     mdh_buffer_34_[D2_INDEX(2,0,0,0)] = 1.0;
 }
-
 ERI_2_2::~ERI_2_2()
 {
     delete fjt_;
     delete[] mdh_buffer_12_;
     delete[] mdh_buffer_34_;
 }
-
 size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
 {
     // Shells
@@ -419,31 +417,37 @@ ERI_3_1::ERI_3_1(const IntegralFactory *integral, int deriv, bool use_shell_pair
                                deriv_+1, 1e-15);
 
     // Allocate the buffer for McMurchie-Davidson-Hermite D3 coefficients (raveled 5-dimensional array)
-    //     DIM:   3  Lmax+1            Lmax+1            Lmax+1           2*Lmax+1        
-    size_t size = 3*(OEPDEV_MAX_AM+1)*(OEPDEV_MAX_AM+1)*(OEPDEV_MAX_AM+1)*OEPDEV_N_MAX_AM;
+    //     DIM:   3    Lmax+1            Lmax+1             Lmax+1           3*Lmax+1        
+    size_t size_1 = 3*(OEPDEV_MAX_AM+1)*(OEPDEV_MAX_AM+1)*(OEPDEV_MAX_AM+1)*(3*OEPDEV_MAX_AM+1);
+    // Allocate the buffer for McMurchie-Davidson-Hermite D1 coefficients (raveled 3-dimensional array)
+    //     DIM:   3    Lmax+1            Lmax+1
+    size_t size_2 = 3*(OEPDEV_MAX_AM+1)*(OEPDEV_MAX_AM+1);
     try {
-        mdh_buffer_123_ = new double[size];
+        mdh_buffer_123_ = new double[size_1];
+        mdh_buffer_4_   = new double[size_2];
     }
     catch (std::bad_alloc &e) {
         psi::outfile->Printf("Error allocating mdh_buffer_.\n%s\n", e.what());
         exit(EXIT_FAILURE);
     }
-    memset(mdh_buffer_123_, 0, sizeof(double) * size);
+    memset(mdh_buffer_123_, 0, sizeof(double) * size_1);
+    memset(mdh_buffer_4_  , 0, sizeof(double) * size_2);
 
     // Initialize the first (constant) elements of the buffers
+    mdh_buffer_4_[D1_INDEX(0,0,0)] = 1.0;
+    mdh_buffer_4_[D1_INDEX(1,0,0)] = 1.0;
+    mdh_buffer_4_[D1_INDEX(2,0,0)] = 1.0;
     mdh_buffer_123_[D3_INDEX(0,0,0,0,0)] = 1.0;
     mdh_buffer_123_[D3_INDEX(1,0,0,0,0)] = 1.0;
     mdh_buffer_123_[D3_INDEX(2,0,0,0,0)] = 1.0;
 
 }
-
 ERI_3_1::~ERI_3_1()
 {
     delete fjt_;
     delete[] mdh_buffer_123_;
     delete[] mdh_buffer_4_;
 }
-
 size_t ERI_3_1::compute_quartet(int sh1, int sh2, int sh3, int sh4)
 {
     // Shells
@@ -507,10 +511,6 @@ size_t ERI_3_1::compute_quartet(int sh1, int sh2, int sh3, int sh4)
     double yAB = A[1]-B[1];
     double zAB = A[2]-B[2];
     double rAB2= xAB*xAB+yAB*yAB+zAB*zAB;
-    double xCD = C[0]-D[0];
-    double yCD = C[1]-D[1];
-    double zCD = C[2]-D[2];
-    double rCD2= xCD*xCD+yCD*yCD+zCD*zCD;
 
     // How many integrals to compute?
     size_t size = nam1 * nam2 * nam3 * nam4;
@@ -521,8 +521,8 @@ size_t ERI_3_1::compute_quartet(int sh1, int sh2, int sh3, int sh4)
     // Iterate over primitives
     size_t nprim = 0;
 
-    double PA[3], PB[3], QC[3], QD[3], PQ[3];
-    double P[3], Q[3];
+    double PA[3], PB[3], RA[3], RB[3], RC[3];
+    double P[3], R[3];
 
     for (int p1 = 0; p1 < nprim1; ++p1) {
          double a1 = a1s[p1];
@@ -544,55 +544,64 @@ size_t ERI_3_1::compute_quartet(int sh1, int sh2, int sh3, int sh4)
               PB[1] = P[1] - B[1];
               PB[2] = P[2] - B[2];
 
-
               double E12 = exp(-a1*a2*ooz*rAB2);
               if (E12>OEPDEV_CRIT_ERI) {
-
-              // Compute McMurchie-Davidson-Hermite coefficients for first doublet
-              make_mdh_D2_coeff(am1, am2, 0.5/a12, PA, PB, mdh_buffer_123_);
 
               for (int p3 = 0; p3 < nprim3; ++p3) {
                    double a3 = a3s[p3];
                    double c3 = c3s[p3] ;
+                   double a123 = a12 + a3;
+                   double ooo  = 1.0/a123;
+
+                   R[0] = (a3 * C[0] + a12 * P[0]) * ooo;
+                   R[1] = (a3 * C[1] + a12 * P[1]) * ooo;
+                   R[2] = (a3 * C[2] + a12 * P[2]) * ooo;
+
+                   RA[0] = R[0] - A[0];
+                   RA[1] = R[1] - A[1];
+                   RA[2] = R[2] - A[2];
+                   RB[0] = R[0] - B[0];
+                   RB[1] = R[1] - B[1];
+                   RB[2] = R[2] - B[2];
+                   RC[0] = R[0] - C[0];
+                   RC[1] = R[1] - C[1];
+                   RC[2] = R[2] - C[2];
+
+                   double xPC = P[0] - C[0];
+                   double yPC = P[1] - C[1];
+                   double zPC = P[2] - C[2];
+                   double rPC2 = xPC*xPC + yPC*yPC + zPC*zPC;
+                   double E123 = E12*exp(-a12*a3*ooo*rPC2);
+
+                   if (E123 > OEPDEV_CRIT_ERI) {
+
+                   // Compute McMurchie-Davidson-Hermite coefficients for triplet
+                   make_mdh_D3_coeff(am1, am2, am3, 0.5*ooo, RA, RB, RC, mdh_buffer_123_);
+
                    for (int p4 = 0; p4 < nprim4; ++p4) { 
                         double a4 = a4s[p4];
                         double c4 = c4s[p4] ;
 
-                        double a34 = a3 + a4;                 
-                        double oox = 1.0 / a34;
-                                                              
-                        Q[0] = (a3 * C[0] + a4 * D[0]) * oox;
-                        Q[1] = (a3 * C[1] + a4 * D[1]) * oox;
-                        Q[2] = (a3 * C[2] + a4 * D[2]) * oox;
-                        QC[0] = Q[0] - C[0];
-                        QC[1] = Q[1] - C[1];
-                        QC[2] = Q[2] - C[2];
-                        QD[0] = Q[0] - D[0];
-                        QD[1] = Q[1] - D[1];
-                        QD[2] = Q[2] - D[2];
+                        double xRD = R[0] - D[0];
+                        double yRD = R[1] - D[1];
+                        double zRD = R[2] - D[2];
 
-                        double E34 = exp(-a3*a4*oox*rCD2);
+                        double rRD2= xRD*xRD+yRD*yRD+zRD*zRD;
+                        double oxo = 1.0/(a123+a4);
 
-                        double xPQ = P[0]-Q[0];
-                        double yPQ = P[1]-Q[1];
-                        double zPQ = P[2]-Q[2];
-                        double rPQ2= xPQ*xPQ+yPQ*yPQ+zPQ*zPQ;
+                        double lambda = LOCAL_2PI52 * (1.0/(a123*a4)) * sqrt(oxo);
 
-                        double apq = a12 + a34;
-                        double ooy = 1.0/apq;
-                        double lambda = LOCAL_2PI52 * (1.0/(a12*a34)) * sqrt(ooy);
-                        if (E34>OEPDEV_CRIT_ERI) {
-                        double pref = c1*c2*c3*c4*E12*E34;
-                        double alpha = a12*a34*ooy;
-                        double T = alpha*rPQ2;
+                        double pref = c1*c2*c3*c4*E123;
+                        double alpha = a123*a4*oxo;
+                        double T = alpha*rRD2;
 
-                        // Compute McMurchie-Davidson-Hermite coefficients for second doublet
-                        make_mdh_D2_coeff(am3, am4, 0.5/a34, QC, QD, mdh_buffer_4_);
+                        // Compute McMurchie-Davidson-Hermite coefficients for 4-th shell
+                        make_mdh_D1_coeff(am3, 0.5/a4, mdh_buffer_4_);
 
                         // Compute McMurchie-Davidson R-coefficients
                         fjt_->set_rho(alpha);
                         double* F = fjt_->values(am, T);
-                        make_mdh_R_coeff(am, am, am, alpha, xPQ, yPQ, zPQ, F, mdh_buffer_R_);
+                        make_mdh_R_coeff(am, am, am, alpha, xRD, yRD, zRD, F, mdh_buffer_R_);
 
                         // Compute the intermediate ERI's
                         int iint = 0;
@@ -620,35 +629,22 @@ size_t ERI_3_1::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                                 double integral = 0.0;
 
                                 // Iterate over Hermite functions
-                                for (int N1 = 0; N1 < (nx1+nx2+1); ++N1) {
-                                  //double Dnx1nx2N1 = get_D12(0,nx1,nx2,N1);
-                                  for (int N2 = 0; N2 < (nx3+nx4+1); ++N2) {
-                                    //double Dnx3nx4N2 = get_D34(0,nx3,nx4,N2);
-                                    for (int L1 = 0; L1 < (ny1+ny2+1); ++L1) {
-                                      //double Dny1ny2L1 = get_D12(1,ny1,ny2,L1);
-                                      for (int L2 = 0; L2 < (ny3+ny4+1); ++L2) {
-                                        //double Dny3ny4L2 = get_D34(1,ny3,ny4,L2);
-                                        for (int M1 = 0; M1 < (nz1+nz2+1); ++M1) {
-                                          for (int M2 = 0; M2 < (nz3+nz4+1); ++M2) {                       
+                                for (int N1 = 0; N1 < (nx1+nx2+nx3+1); ++N1) {
+                                  double Dnx1nx2nx3N1 = get_D123(0,nx1,nx2,nx3,N1);
+                                  for (int N2 = 0; N2 < (nx4+1); ++N2) {
+                                    double Dnx4N2 = get_D4(0,nx4,N2);
+                                    for (int L1 = 0; L1 < (ny1+ny2+ny3+1); ++L1) {
+                                      double Dny1ny2ny3L1 = get_D123(1,ny1,ny2,ny3,L1);
+                                      for (int L2 = 0; L2 < (ny4+1); ++L2) {
+                                        double Dny4L2 = get_D4(1,ny4,L2);
+                                        for (int M1 = 0; M1 < (nz1+nz2+nz3+1); ++M1) {
+                                          for (int M2 = 0; M2 < (nz4+1); ++M2) {                       
                                             double i1 = ((N2+L2+M2)%2) ? -1.0 : 1.0;
-                                            //integral += get_D12(0,nx1,nx2,N1) * get_D34(0,nx3,nx4,N2)
-                                            //          * get_D12(1,ny1,ny2,L1) * get_D34(1,ny3,ny4,L2)
-                                            //          * get_D12(2,nz1,nz2,M1) * get_D34(2,nz3,nz4,M2)
-                                            //          * get_R(N1+N2,L1+L2,M1+M2)
-                                            //          * lambda * i1;
-                                            //integral += Dnx1nx2N1 * Dnx3nx4N2
-                                            //          * Dny1ny2L1 * Dny3ny4L2
-                                            //          * get_D12(2,nz1,nz2,M1) * get_D34(2,nz3,nz4,M2)
-                                            //          * get_R(N1+N2,L1+L2,M1+M2)
-                                            //          * lambda * i1;
-                                            //integral += mdh_buffer_12_[D2_INDEX(0,nx1,nx2,N1)] 
-                                            //          * mdh_buffer_34_[D2_INDEX(0,nx3,nx4,N2)]
-                                            //          * mdh_buffer_12_[D2_INDEX(1,ny1,ny2,L1)] 
-                                            //          * mdh_buffer_34_[D2_INDEX(1,ny3,ny4,L2)]
-                                            //          * mdh_buffer_12_[D2_INDEX(2,nz1,nz2,M1)] 
-                                            //          * mdh_buffer_34_[D2_INDEX(2,nz3,nz4,M2)]
-                                            //          * mdh_buffer_R_[R_INDEX(N1+N2,L1+L2,M1+M2,0)]
-                                            //          * lambda * i1;
+                                            integral += Dnx1nx2nx3N1 * Dnx4N2
+                                                      * Dny1ny2ny3L1 * Dny4L2
+                                                      * get_D123(2,nz1,nz2,nz3,M1) * get_D4(2,nz4,M2)
+                                                      * get_R(N1+N2,L1+L2,M1+M2)
+                                                      * lambda * i1;
                                           }
                                         }
                                       }
@@ -660,17 +656,17 @@ size_t ERI_3_1::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                               }
                             }
                           }
-                        }}
+                        }//}
                         //
                         ++nprim;
-                   }
+                   }} else {
+                   nprim+= nprim4;
+                }
               }} else {
               nprim+=nprim3*nprim4;
               }
          }
     }
-
-
 
     // Finish
     return size;
@@ -678,8 +674,8 @@ size_t ERI_3_1::compute_quartet(int sh1, int sh2, int sh3, int sh4)
 double ERI_3_1::get_D123(int x, int n1, int n2, int n3, int N){
  return mdh_buffer_123_[D3_INDEX(x,n1,n2,n3,N)];
 }
-double ERI_3_1::get_D4(int x, int n2, int N){
- return 0.0; //mdh_buffer_34_[D2_INDEX(x,n1,n2,N)];
+double ERI_3_1::get_D4(int x, int n1, int N){
+ return mdh_buffer_4_[D1_INDEX(x,n1,N)];
 }
 
 

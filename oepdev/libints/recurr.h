@@ -10,6 +10,13 @@ using namespace std;
  * @{
  */
 
+/*! \def D1_INDEX(x,i,n)
+    Get the index of McMurchie-Davidson-Hermite D1 coefficient stored in the `mdh_buffer_`, 
+    that is attributed to the *x* Cartesian coordinate from angular momentum *i*
+    of function 1, and the Hermite index *n*.
+*/
+#define D1_INDEX(x,i,n) ((81*(x))+(9*(i))+(n))
+
 /*! \def D2_INDEX(x,i,j,n)
     Get the index of McMurchie-Davidson-Hermite D2 coefficient stored in the `mdh_buffer_`, 
     that is attributed to the *x* Cartesian coordinate from angular momenta *i*, *j* 
@@ -22,7 +29,7 @@ using namespace std;
     that is attributed to the *x* Cartesian coordinate from angular momenta *i*, *j* and *k* 
     of function 1, 2 and 3, and the Hermite index *n*.
 */
-#define D3_INDEX(x,i,j,k,n) ((12393*(x))+(1377*(i))+(153*(j))+(17*(k))+(n))
+#define D3_INDEX(x,i,j,k,n) ((18225*(x))+(2025*(i))+(225*(j))+(25*(k))+(n))
 
 /*! \def R_INDEX(n,l,m,j)
     Get the index of McMurchie-Davidson R coefficient stored in the `mdh_buffer_R_`
@@ -42,9 +49,21 @@ using namespace std;
  */
 double d_N_n1_n2(int N, int n1, int n2, double PA, double PB, double aP);
 
+/**\brief Compute the McMurchie-Davidson-Hermite coefficients for monomial expansion.
+ * @param n1     - angular momentum of first function
+ * @param aPd    - parameter equal to 0.500/Pa where Pa is exponent
+ * @param buffer - the McMurchie-Davidson-Hermite 3-dimensional array (raveled to vector):
+ *         - axis 0: dimension 3 (x, y or z Cartesian component)
+ *         - axis 1: dimension n1+1 (0 to n1)
+ *         - axis 2: dimension n1+1 (0 to n1)
+ *  \see D1_INDEX
+ */
+void make_mdh_D1_coeff(int n1, double aPd, double* buffer);
+
 /**\brief Compute the McMurchie-Davidson-Hermite coefficients for binomial expansion.
  * @param n1     - angular momentum of first function
  * @param n2     - angular momentum of second function
+ * @param aPd    - parameter equal to 0.500/Pa where Pa is exponent
  * @param PA     - cartesian components of P-A distance 
  * @param PB     - cartesian components of P-B distance
  * @param buffer - the McMurchie-Davidson-Hermite 4-dimensional array (raveled to vector):
@@ -55,6 +74,24 @@ double d_N_n1_n2(int N, int n1, int n2, double PA, double PB, double aP);
  *  \see D2_INDEX
  */
 void make_mdh_D2_coeff(int n1, int n2, double aPd, double* PA, double* PB, double* buffer);
+
+/**\brief Compute the McMurchie-Davidson-Hermite coefficients for trinomial expansion.
+ * @param n1     - angular momentum of first function
+ * @param n2     - angular momentum of second function
+ * @param n3     - angular momentum of third function
+ * @param aPd    - parameter equal to 0.500/Pa where Pa is exponent
+ * @param PA     - cartesian components of P-A distance 
+ * @param PB     - cartesian components of P-B distance
+ * @param PC     - cartesian components of P-C distance
+ * @param buffer - the McMurchie-Davidson-Hermite 5-dimensional array (raveled to vector):
+ *         - axis 0: dimension 3 (x, y or z Cartesian component)
+ *         - axis 1: dimension n1+1 (0 to n1)
+ *         - axis 2: dimension n2+1 (0 to n2)
+ *         - axis 3: dimension n3+1 (0 to n3)
+ *         - axis 4: dimension n1+n2+n3+1 (0 to n1+n2+n3)
+ *  \see D3_INDEX
+ */
+void make_mdh_D3_coeff(int n1, int n2, int n3, double aPd, double* PA, double* PB, double* PC, double* buffer);
 
 /**\brief Compute the McMurchie-Davidson-Hermite coefficients for binomial expansion by explicit recursion.
  * This function makes the same changes to buffers as oepdev::make_mdh_D2_coeff, but

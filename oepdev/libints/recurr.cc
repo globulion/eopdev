@@ -37,6 +37,24 @@ void make_mdh_D2_coeff_explicit_recursion(int n1, int n2, double aP, double* PA,
         }
    }
 }
+void make_mdh_D1_coeff(int n1, double aPd, double* buffer)
+{
+   for (int i=1; i < n1+1; ++i) {
+        for (int n = 0; n < n1+1; ++n) {
+             double   valx= double(n+1)*buffer[D1_INDEX(0,i-1,n+1)]; 
+             double   valy= double(n+1)*buffer[D1_INDEX(1,i-1,n+1)]; 
+             double   valz= double(n+1)*buffer[D1_INDEX(2,i-1,n+1)]; 
+             if (n>0) {
+                 valx += aPd * buffer[D1_INDEX(0,i-1,n-1)];
+                 valy += aPd * buffer[D1_INDEX(1,i-1,n-1)];
+                 valz += aPd * buffer[D1_INDEX(2,i-1,n-1)];
+             }
+             buffer[D1_INDEX(0,i,n)] = valx;
+             buffer[D1_INDEX(1,i,n)] = valy;
+             buffer[D1_INDEX(2,i,n)] = valz;
+        }
+   }
+}
 void make_mdh_D2_coeff(int n1, int n2, double aPd, double* PA, double* PB, double* buffer)
 {
    double xPA = PA[0];
@@ -100,6 +118,80 @@ void make_mdh_D2_coeff(int n1, int n2, double aPd, double* PA, double* PB, doubl
         }
    }
 }
+void make_mdh_D3_coeff(int n1, int n2, int n3, double aPd, double* PA, double* PB, double* PC, double* buffer)
+{
+   double xPA = PA[0];
+   double yPA = PA[1];
+   double zPA = PA[2];
+   double xPB = PB[0];
+   double yPB = PB[1];
+   double zPB = PB[2];
+   double xPC = PC[0];
+   double yPC = PC[1];
+   double zPC = PC[2];
+
+   for (int k=1; k < n3+1; ++k) {
+        for (int n = 0; n < n3+1; ++n) {
+             double   valx= double(n+1)*buffer[D3_INDEX(0,0,0,k-1,n+1)] 
+                          + xPC        *buffer[D3_INDEX(0,0,0,k-1,n  )];
+             double   valy= double(n+1)*buffer[D3_INDEX(1,0,0,k-1,n+1)] 
+                          + yPC        *buffer[D3_INDEX(1,0,0,k-1,n  )];
+             double   valz= double(n+1)*buffer[D3_INDEX(2,0,0,k-1,n+1)] 
+                          + zPC        *buffer[D3_INDEX(2,0,0,k-1,n  )];
+             if (n>0) {
+                 valx += aPd     *buffer[D3_INDEX(0,0,0,k-1,n-1)];
+                 valy += aPd     *buffer[D3_INDEX(1,0,0,k-1,n-1)];
+                 valz += aPd     *buffer[D3_INDEX(2,0,0,k-1,n-1)];
+             }
+             buffer[D3_INDEX(0,0,0,k,n)] = valx;
+             buffer[D3_INDEX(1,0,0,k,n)] = valy;
+             buffer[D3_INDEX(2,0,0,k,n)] = valz;
+        }
+   }
+   for (int j = 1; j < n2+1; ++j) {
+        for (int k = 0; k < n3+1; ++k) {
+             for (int n = 0; n < n2+n3+1; ++n) {
+                  double   valx= double(n+1)*buffer[D3_INDEX(0,0,j-1,k,n+1)] 
+                               + xPB        *buffer[D3_INDEX(0,0,j-1,k,n  )];
+                  double   valy= double(n+1)*buffer[D3_INDEX(1,0,j-1,k,n+1)] 
+                               + yPB        *buffer[D3_INDEX(1,0,j-1,k,n  )];
+                  double   valz= double(n+1)*buffer[D3_INDEX(2,0,j-1,k,n+1)] 
+                               + zPB        *buffer[D3_INDEX(2,0,j-1,k,n  )];
+                  if (n>0) {
+                      valx += aPd     *buffer[D3_INDEX(0,0,j-1,k,n-1)];
+                      valy += aPd     *buffer[D3_INDEX(1,0,j-1,k,n-1)];
+                      valz += aPd     *buffer[D3_INDEX(2,0,j-1,k,n-1)];
+                  }
+                  buffer[D3_INDEX(0,0,j,k,n)] = valx;
+                  buffer[D3_INDEX(1,0,j,k,n)] = valy;
+                  buffer[D3_INDEX(2,0,j,k,n)] = valz;
+             }
+        }
+   }
+   for (int i = 1; i < n1+1; ++i) {
+        for (int j = 0; j < n2+1; ++j) {
+             for (int k = 0; k < n3+1; ++k) {
+                  for (int n = 0; n < n1+n2+n3+1; ++n) {
+                       double   valx= double(n+1)*buffer[D3_INDEX(0,i-1,j,k,n+1)] 
+                                    + xPB        *buffer[D3_INDEX(0,i-1,j,k,n  )];
+                       double   valy= double(n+1)*buffer[D3_INDEX(1,i-1,j,k,n+1)] 
+                                    + yPB        *buffer[D3_INDEX(1,i-1,j,k,n  )];
+                       double   valz= double(n+1)*buffer[D3_INDEX(2,i-1,j,k,n+1)] 
+                                    + zPB        *buffer[D3_INDEX(2,i-1,j,k,n  )];
+                       if (n>0) {
+                           valx += aPd     *buffer[D3_INDEX(0,i-1,j,k,n-1)];
+                           valy += aPd     *buffer[D3_INDEX(1,i-1,j,k,n-1)];
+                           valz += aPd     *buffer[D3_INDEX(2,i-1,j,k,n-1)];
+                       }
+                       buffer[D3_INDEX(0,i,j,k,n)] = valx;
+                       buffer[D3_INDEX(1,i,j,k,n)] = valy;
+                       buffer[D3_INDEX(2,i,j,k,n)] = valz;
+                  }
+             }
+        }
+   }
+}
+
 
 void make_mdh_R_coeff(int N, int L, int M, double alpha, double a, double b, double c, double* F, double* buffer)
 {
