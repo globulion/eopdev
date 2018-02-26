@@ -57,7 +57,7 @@ class TwoElectronInt : public psi::TwoBodyAOInt
     /// Computes the ERI's between three shells.
     virtual size_t compute_doublet(int, int);
 
-    /// Buffer for McMurchie-Davidson-Hermite R coefficents
+    /// Buffer for the McMurchie-Davidson-Hermite R coefficents
     double* mdh_buffer_R_;
 
 
@@ -66,23 +66,36 @@ class TwoElectronInt : public psi::TwoBodyAOInt
 
    virtual ~TwoElectronInt();
 
-   /// Compute ERI's between 4 shells. Result is stored in buffer.
-   virtual size_t compute_shell(int, int, int, int);
+   /// Compute ERI's between 2 shells. Result is stored in buffer.
+   virtual size_t compute_shell(int, int);
 
    /// Compute ERI's between 3 shells. Result is stored in buffer.
    virtual size_t compute_shell(int, int, int);
 
-   /// Compute ERI's between 2 shells. Result is stored in buffer.
-   virtual size_t compute_shell(int, int);
+   /// Compute ERI's between 4 shells. Result is stored in buffer.
+   virtual size_t compute_shell(int, int, int, int);
 
-   /// Compute ERIs between 4 shells. Result is stored in buffer.
+   /// Compute ERIs between 4 shells. Result is stored in buffer. 
+   /// Only for use with ERI_2_2 and the same basis sets, otherwise shell pairs won't be compatible.
    virtual size_t compute_shell(const psi::AOShellCombinationsIterator&);
 
-   /// Compute first derivatives of ERI's
-   virtual size_t compute_shell_deriv1(int, int, int, int) {};
+   /// Compute first derivatives of ERI's between 2 shells
+   virtual size_t compute_shell_deriv1(int, int);
 
-   /// Compute second derivatives of ERI's
-   virtual size_t compute_shell_deriv2(int, int, int, int) {};
+   /// Compute second derivatives of ERI's between 2 shells
+   virtual size_t compute_shell_deriv2(int, int);
+
+   /// Compute first derivatives of ERI's between 3 shells
+   virtual size_t compute_shell_deriv1(int, int, int);
+
+   /// Compute second derivatives of ERI's between 3 shells
+   virtual size_t compute_shell_deriv2(int, int, int);
+
+   /// Compute first derivatives of ERI's between 4 shells
+   virtual size_t compute_shell_deriv1(int, int, int, int);
+
+   /// Compute second derivatives of ERI's between 4 shells
+   virtual size_t compute_shell_deriv2(int, int, int, int);
 
 };
 

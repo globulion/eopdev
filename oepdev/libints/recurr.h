@@ -11,11 +11,18 @@ using namespace std;
  */
 
 /*! \def D2_INDEX(x,i,j,n)
-    Get the index of McMurchie-Davidson-Hermite coefficient stored in the `mdh_buffer_`, 
+    Get the index of McMurchie-Davidson-Hermite D2 coefficient stored in the `mdh_buffer_`, 
     that is attributed to the *x* Cartesian coordinate from angular momenta *i*, *j* 
     of function 1 and 2, and the Hermite index *n*.
 */
 #define D2_INDEX(x,i,j,n) ((1377*(x))+(153*(i))+(17*(j))+(n))
+
+/*! \def D3_INDEX(x,i,j,k,n)
+    Get the index of McMurchie-Davidson-Hermite D3 coefficient stored in the `mdh_buffer_`, 
+    that is attributed to the *x* Cartesian coordinate from angular momenta *i*, *j* and *k* 
+    of function 1, 2 and 3, and the Hermite index *n*.
+*/
+#define D3_INDEX(x,i,j,k,n) ((12393*(x))+(1377*(i))+(153*(j))+(17*(k))+(n))
 
 /*! \def R_INDEX(n,l,m,j)
     Get the index of McMurchie-Davidson R coefficient stored in the `mdh_buffer_R_`
