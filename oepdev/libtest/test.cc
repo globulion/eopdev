@@ -89,3 +89,6 @@ double oepdev::test::Test::test_eri_2_2(void)
         // Return
         return r_sum;
 }
+double oepdev::test::Test::test_eri_1_1(void)
+{
+}
