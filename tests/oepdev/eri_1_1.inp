@@ -26,7 +26,7 @@ set {
     print                         1
     puream                        False
     # ==> Basis Sets <== #
-    basis                         sto-3g
+    basis                         6-311++G(3df)
 }
 
 
