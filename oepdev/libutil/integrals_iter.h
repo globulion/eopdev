@@ -26,6 +26,7 @@ class AOIntegralsIterator;
 
 /** \brief Iterator for Shell Combinations. Abstract Base.
  *
+ *  \date 2018/03/01 17:22:00
  */
 class ShellCombinationsIterator
 {
@@ -34,34 +35,51 @@ class ShellCombinationsIterator
     *  @param nshell - number of shells this iterator is for
     */
    ShellCombinationsIterator(int nshell);
+
    /// Destructor
    virtual ~ShellCombinationsIterator();
-   /** \brief Build shell iterator from integral factory.
+
+   /** \brief Build shell iterator from oepdev::IntegralFactory.
     *  @param ints    - integral factory
-    *  @param nshell  - number of shells to iterate through
     *  @param mode    - mode of iteration (either `ALL` or `UNIQUE`)
+    *  @param nshell  - number of shells to iterate through
     *  @return shell iterator
     */
    static std::shared_ptr<ShellCombinationsIterator> build(const IntegralFactory& ints, 
-                                                           std::string mode = "ALL", int nshell = 4,
-                                                           int ib1 = 0, int ib2 = 1, int ib3 = 2, int ib4 = 3);
+                                                           std::string mode = "ALL", int nshell = 4);
+   /*!
+    * \overload
+    */
    static std::shared_ptr<ShellCombinationsIterator> build(std::shared_ptr<IntegralFactory> ints, 
-                                                           std::string mode = "ALL", int nshell = 4,
-                                                           int ib1 = 0, int ib2 = 1, int ib3 = 2, int ib4 = 3);
+                                                           std::string mode = "ALL", int nshell = 4);
+   /** \brief Build shell iterator from psi::IntegralFactory.
+    *  @param ints    - integral factory
+    *  @param mode    - mode of iteration (either `ALL` or `UNIQUE`)
+    *  @param nshell  - number of shells to iterate through
+    *  @return shell iterator
+    */
    static std::shared_ptr<ShellCombinationsIterator> build(const psi::IntegralFactory& ints, 
-                                                           std::string mode = "ALL", int nshell = 4,
-                                                           int ib1 = 0, int ib2 = 1, int ib3 = 2, int ib4 = 3);
+                                                           std::string mode = "ALL", int nshell = 4);
+   /*!
+    * \overload
+    */
    static std::shared_ptr<ShellCombinationsIterator> build(std::shared_ptr<psi::IntegralFactory> ints, 
-                                                           std::string mode = "ALL", int nshell = 4,
-                                                           int ib1 = 0, int ib2 = 1, int ib3 = 2, int ib4 = 3);
+                                                           std::string mode = "ALL", int nshell = 4);
 
    /// First iteration
    virtual void first(void) = 0;
+
    /// Next iteration
    virtual void next(void) = 0;
-   /// Compute integrals in a current shell
-   virtual void compute_shell(std::shared_ptr<oepdev::TwoBodyAOInt>) const = 0;
-   virtual void compute_shell(std::shared_ptr<psi   ::TwoBodyAOInt>) const = 0;
+
+   //!@{ 
+   /** Compute integrals in a current shell.
+    *  Works both for oepdev::TwoBodyAOInt and psi::TwoBodyAOInt
+    *  @param tei - two body integral object
+    */
+   virtual void compute_shell(std::shared_ptr<oepdev::TwoBodyAOInt> tei) const = 0;
+   virtual void compute_shell(std::shared_ptr<psi   ::TwoBodyAOInt> tei) const = 0;
+   //!@}
 
    /// Grab the basis set of axis 1
    virtual std::shared_ptr<psi::BasisSet> bs_1(void) const {return bs_1_;}
@@ -83,10 +101,13 @@ class ShellCombinationsIterator
 
    /// Return status of an iterator
    virtual bool is_done(void) {return done;}
+
    /// Return number of shells this iterator is for
    virtual const int nshell(void) const {return nshell_;}
-   /// Make an AO integral iterator based on current shell
-   /// @return iterator over AO integrals
+
+   /** Make an AO integral iterator based on current shell
+    * @param mode - either "ALL" or "UNIQUE" (iterate over all or unique integrals)
+    * @return iterator over AO integrals */
    virtual std::shared_ptr<AOIntegralsIterator> ao_iterator(std::string mode = "ALL") const;
 
   protected:
@@ -111,23 +132,43 @@ class ShellCombinationsIterator
 class AOIntegralsIterator
 {
   public:
+   /// Base Constructor
    AOIntegralsIterator();
+   /// Base Destructor
    virtual ~AOIntegralsIterator();
+   /** Build AO integrals iterator from current state of iterator over shells
+    *  @param shellIter - iterator over shells
+    *  @mode - either "ALL" or "UNIQUE" (iterate over all or unique integrals)
+    *  @return iterator over AO integrals
+    */
    static std::shared_ptr<AOIntegralsIterator> build(const ShellCombinationsIterator* shellIter, std::string mode = "ALL");
+   /**
+    \overload
+    */
    static std::shared_ptr<AOIntegralsIterator> build(std::shared_ptr<ShellCombinationsIterator> shellIter,  
                                                      std::string mode = "ALL");
+
+   /// Do the first iteration
    virtual void first(void) = 0;
+   /// Do the next iteration
    virtual void next(void) = 0;
 
+   /// Grab *i*-th index
    virtual int i(void) const;
+   /// Grab *j*-th index
    virtual int j(void) const;
+   /// Grab *k*-th index
    virtual int k(void) const;
+   /// Grab *l*-th index
    virtual int l(void) const;
+   /// Grab index in the integral buffer
    virtual int index(void) const = 0;
 
+   /// Returns the status of an iterator
    virtual bool is_done(void) {return done;}
 
   protected:
+   /// The status of an iterator
    bool done;
 };
 
@@ -136,7 +177,6 @@ class AOIntegralsIterator
  *
  * Constructed by providing IntegralFactory object or
  * shared pointers to four basis set spaces.
- *
  */
 class AllAOShellCombinationsIterator_4 : public ShellCombinationsIterator
 {
@@ -155,21 +195,27 @@ class AllAOShellCombinationsIterator_4 : public ShellCombinationsIterator
 
    /**\brief Construct by providing integral factory.
     *  
-    *  @param integrals - integral factory object
+    *  @param integrals - OepDev integral factory object
     */  
    AllAOShellCombinationsIterator_4(std::shared_ptr<IntegralFactory> integrals);
-   AllAOShellCombinationsIterator_4(const IntegralFactory& integrals);
-   AllAOShellCombinationsIterator_4(std::shared_ptr<psi::IntegralFactory> integrals);
-   AllAOShellCombinationsIterator_4(const psi::IntegralFactory& integrals);
-   
-   /// First iteration 
-   void first();
-   /// Next iteration
-   void next();
-   /**\brief Compute ERI's for the current shell.
-    * The eris are stored in the buffer of the argument object.
-    * @param tei - two electron AO integral
+   /**
+    * \overload
     */
+   AllAOShellCombinationsIterator_4(const IntegralFactory& integrals);
+   /**\brief Construct by providing integral factory.
+    *  
+    *  @param integrals - OepDev integral factory object
+    */  
+   AllAOShellCombinationsIterator_4(std::shared_ptr<psi::IntegralFactory> integrals);
+   /**
+    * \overload
+    */
+   AllAOShellCombinationsIterator_4(const psi::IntegralFactory& integrals);
+
+   /// Do the first iteration   
+   void first();
+   /// Do the next iteration   
+   void next();
    void compute_shell(std::shared_ptr<oepdev::TwoBodyAOInt> tei) const;
    void compute_shell(std::shared_ptr<psi   ::TwoBodyAOInt> tei) const;
 

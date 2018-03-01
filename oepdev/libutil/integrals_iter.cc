@@ -17,17 +17,16 @@ void ShellCombinationsIterator::first() {}
 void ShellCombinationsIterator::next() {}
 void ShellCombinationsIterator::compute_shell(std::shared_ptr<oepdev::TwoBodyAOInt> tei) const {}
 void ShellCombinationsIterator::compute_shell(std::shared_ptr<psi   ::TwoBodyAOInt> tei) const {}
-int ShellCombinationsIterator::P() const {}
-int ShellCombinationsIterator::Q() const {}
-int ShellCombinationsIterator::R() const {}
-int ShellCombinationsIterator::S() const {}
+int ShellCombinationsIterator::P() const { throw psi::PSIEXCEPTION("Wrong usage of ShellCombinationsIterator!");}
+int ShellCombinationsIterator::Q() const { throw psi::PSIEXCEPTION("Wrong usage of ShellCombinationsIterator!");}
+int ShellCombinationsIterator::R() const { throw psi::PSIEXCEPTION("Wrong usage of ShellCombinationsIterator!");}
+int ShellCombinationsIterator::S() const { throw psi::PSIEXCEPTION("Wrong usage of ShellCombinationsIterator!");}
 std::shared_ptr<AOIntegralsIterator> ShellCombinationsIterator::ao_iterator(std::string mode) const
 {
   return AOIntegralsIterator::build(this, mode);
 }
 std::shared_ptr<ShellCombinationsIterator> ShellCombinationsIterator::build(const oepdev::IntegralFactory& ints,
-                                                                            std::string mode, int nshell,
-                                                                            int ib1, int ib2, int ib3, int ib4)
+                                                                            std::string mode, int nshell)
 {
     std::shared_ptr<ShellCombinationsIterator> iterator;
     if (mode == "ALL") {
@@ -46,8 +45,7 @@ std::shared_ptr<ShellCombinationsIterator> ShellCombinationsIterator::build(cons
     return iterator;
 }
 std::shared_ptr<ShellCombinationsIterator> ShellCombinationsIterator::build(const psi::IntegralFactory& ints,
-                                                                            std::string mode, int nshell,
-                                                                            int ib1, int ib2, int ib3, int ib4)
+                                                                            std::string mode, int nshell)
 {
     std::shared_ptr<ShellCombinationsIterator> iterator;
     if (mode == "ALL") {
@@ -65,16 +63,14 @@ std::shared_ptr<ShellCombinationsIterator> ShellCombinationsIterator::build(cons
     return iterator;
 }
 std::shared_ptr<ShellCombinationsIterator> ShellCombinationsIterator::build(std::shared_ptr<oepdev::IntegralFactory> ints,
-                                                                            std::string mode, int nshell,
-                                                                            int ib1, int ib2, int ib3, int ib4)
+                                                                            std::string mode, int nshell)
 {
-   return ShellCombinationsIterator::build(*ints, mode, nshell, ib1, ib2, ib3, ib4);
+   return ShellCombinationsIterator::build(*ints, mode, nshell);
 }
 std::shared_ptr<ShellCombinationsIterator> ShellCombinationsIterator::build(std::shared_ptr<psi::IntegralFactory> ints,
-                                                                            std::string mode, int nshell,
-                                                                            int ib1, int ib2, int ib3, int ib4)
+                                                                            std::string mode, int nshell)
 {
-   return ShellCombinationsIterator::build(*ints, mode, nshell, ib1, ib2, ib3, ib4);
+   return ShellCombinationsIterator::build(*ints, mode, nshell);
 }
 AllAOShellCombinationsIterator_4::AllAOShellCombinationsIterator_4(SharedBasisSet bs_1, SharedBasisSet bs_2,
                                                                    SharedBasisSet bs_3, SharedBasisSet bs_4) 
@@ -282,13 +278,10 @@ void AllAOIntegralsIterator_4::next() {
       }
    }
    //
-   //std::cout << ii__ << jj__ << kk__ << ll__ << " " << ishell_1 << ishell_2 << ishell_3 << ishell_4 << "\n";
-   //std::cout << " Debug: " << nishell_1 << nishell_2 << nishell_3 << nishell_4 << " "  << ishell_1 << ishell_2 << ishell_3 << ishell_4 << "\n";
    current.i = ii__ + ishell_1;
    current.j = jj__ + ishell_2;
    current.k = kk__ + ishell_3;
    current.l = ll__ + ishell_4;
-   // std::cout << current.i << current.j << current.k << current.l << "\n";
    current.index = index__;
 }
 //-------------------------------------------------------------------------------------------------------
@@ -325,5 +318,3 @@ void AllAOIntegralsIterator_2::next() {
    current.j = jj__ + ishell_2;
    current.index = index__;
 }
-
-

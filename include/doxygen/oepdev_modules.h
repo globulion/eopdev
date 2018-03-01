@@ -1,22 +1,26 @@
-/**
- *  @defgroup OEPDEV_SOLVERS The OEPDev solver library
- *  Implementations various solvers for molecular properties
- *  as a functions of unperturbed monomeric wavefunctions.
- *  This is the place all target OEP-based models are implemented
- *  and compared with benchmark models.
- */
-
 /** 
- *  @defgroup OEPDEV_OEPS The Generalized One-Electron Potentials library
+ *  @defgroup OEPDEV_OEPS The Generalized One-Electron Potentials Library
+ *  @brief
  *  Implements the goal of this project: The Generalized One-Electron Potentials
  *  (OEP's). You will find here OEP's for computation of Pauli repulsion energy,
  *  charge-transfer energy and others.
  */
 
 /**
+ *  @defgroup OEPDEV_SOLVERS The OEPDev solver Library
+ *  @brief 
+ *  Implementations of various solvers for molecular properties
+ *  as a functions of unperturbed monomeric wavefunctions.
+ *  This is the place all target OEP-based models are implemented
+ *  and compared with benchmark models.
+ */
+
+/**
  *  @defgroup OEPDEV_LIBINTS The Integral Package Library
+ *  @brief
  *  Implementations of various one- and two-body
  *  integrals via McMurchie-Davidson recurrence scheme.
+ *
  *  Here, we define the primitive Gaussian type functions (GTO's)
  *  \f{align*}{
  *    \phi_i({\bf r}) &\equiv x_A^{n_1} y_A^{l_1} z_A^{m_1} e^{-\alpha_1r_A^2} \\
@@ -214,12 +218,14 @@
 
 /**
  *  @defgroup OEPDEV_INTEGRAL_HELPERS The Integral Helper Library
+ *  @brief
  *  You will find here various iterators to go through shells
  *  while computing ERI, or iterators over ERI itself.
  */
 
 /**
  *  @defgroup OEPDEV_3DFIELDS The Three-Dimensional Scalar Fields Library
+ *  @brief
  *  Handles all sorts of scalar distributions in 3D Euclidean space,
  *  such as potentials defined at particular collection of points.
  *  In this Module, you will also find handling both random and ordered
@@ -229,6 +235,7 @@
 
 /**
  *  @defgroup OEPDEV_ESP The Multipole Fitting Library
+ *  @brief
  *  Implements methods to fit the generalized multipole moments
  *  of a generalized density distribution based on the input generalized
  *  potential scalar field. Among others, you will find here the 
@@ -237,12 +244,14 @@
 
 /**
  *  @defgroup OEPDEV_UTILITIES The OEPDev Utilities
+ *  @brief
  *  Contains utility functions such as printing OEPDev preambule 
  *  to the output file, class for wavefunction union etc.
  */
 
 /**
  *  @defgroup OEPDEV_TESTS The OEPDev Testing Platform Library
- *  Testing platform at C++ level of code. You can add more tests
- *  here when developing new functionalities.
+ *  @brief
+ *  Testing platform at C++ level of code. You should add more tests
+ *  here when developing new functionalities, theories or models.
  */
