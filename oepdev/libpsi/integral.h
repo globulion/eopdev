@@ -20,6 +20,7 @@
 
 #include "psi4/libmints/integral.h"
 #include "psi4/libmints/basisset.h"
+#include "psi4/libmints/matrix.h"
 
 namespace oepdev{
 
@@ -38,6 +39,17 @@ class TwoBodyAOInt : public psi::TwoBodyAOInt
 
   public:
    virtual ~TwoBodyAOInt();
+   /** \brief Compute two-body two-centre integral and put it into matrix
+    *  @param result - matrix where to store (i||j) two-body integrals
+    *  @param ibs1   - first basis set axis
+    *  @param ibs2   - second basis set axis
+    */
+   virtual void compute(std::shared_ptr<psi::Matrix>& result, int ibs1 = 0, int ibs2 = 2);
+   /**
+    * \overload
+    */
+   virtual void compute(psi::Matrix& result, int ibs1 = 0, int ibs2 = 2);
+
    virtual size_t compute_shell(int, int, int, int) = 0;  
    virtual size_t compute_shell(int, int, int) = 0;  
    virtual size_t compute_shell(int, int) = 0;  

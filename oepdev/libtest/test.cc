@@ -108,20 +108,22 @@ double oepdev::test::Test::test_eri_1_1(void)
         oepdev::IntegralFactory fact_oepdev(wfn_->basisset());
         std::shared_ptr<oepdev::TwoBodyAOInt> eri_1_1(fact_oepdev.eri_1_1());
 
-        oepdev::SharedShellsIterator shellIter = oepdev::ShellCombinationsIterator::build(fact_oepdev, "ALL", 2);
-        const double * buffer_1_1 = eri_1_1->buffer();
+        oepdev::SharedShellsIterator shellIter; 
+        eri_1_1->compute(eri_1_1_oepdev);
+        //oepdev::SharedShellsIterator shellIter = oepdev::ShellCombinationsIterator::build(fact_oepdev, "ALL", 2);
+        //const double * buffer_1_1 = eri_1_1->buffer();
 
-        for (shellIter->first(); shellIter->is_done() == false; shellIter->next())
-        {
-             shellIter->compute_shell(eri_1_1);
-             oepdev::SharedAOIntsIterator intsIter = shellIter->ao_iterator("ALL");
-             for (intsIter->first(); intsIter->is_done() == false; intsIter->next())
-             {
-                  int i = intsIter->i();int j = intsIter->j();
-                  double integral = buffer_1_1[intsIter->index()];
-                  eri_1_1_oepdev.set(i,j,integral);
-             }
-        }
+        //for (shellIter->first(); shellIter->is_done() == false; shellIter->next())
+        //{
+        //     shellIter->compute_shell(eri_1_1);
+        //     oepdev::SharedAOIntsIterator intsIter = shellIter->ao_iterator("ALL");
+        //     for (intsIter->first(); intsIter->is_done() == false; intsIter->next())
+        //     {
+        //          int i = intsIter->i();int j = intsIter->j();
+        //          double integral = buffer_1_1[intsIter->index()];
+        //          eri_1_1_oepdev.set(i,j,integral);
+        //     }
+        //}
         psi::timer_off(" Test: Computation of OepDev ERI_1_1");
 
         // Psi4 implementation of ERI's
