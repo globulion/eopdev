@@ -58,8 +58,9 @@ add_psi4_plugin(oepdev main.cc
                )
 
 add_test (NAME ERI_1_1 COMMAND "psi4" "tests/oepdev/eri_1_1.inp" "tests/oepdev/eri_1_1.out")
-set_tests_properties (ERI_1_1 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
 add_test (NAME ERI_2_2 COMMAND "psi4" "tests/oepdev/eri_2_2.inp" "tests/oepdev/eri_2_2.out")
+add_test (NAME ERI_3_1 COMMAND "psi4" "tests/oepdev/eri_3_1.inp" "tests/oepdev/eri_3_1.out")
+
+set_tests_properties (ERI_1_1 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
 set_tests_properties (ERI_2_2 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
-
-
+set_tests_properties (ERI_3_1 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")

@@ -56,6 +56,9 @@ class Test
    /// Test the oepdev::ERI_2_2 class against psi::ERI
    double test_eri_2_2(void);
 
+   /// Test the oepdev::ERI_3_1 class against psi::ERI
+   double test_eri_3_1(void);
+
 };
 
 /** @}*/

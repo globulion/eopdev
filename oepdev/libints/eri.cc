@@ -429,12 +429,12 @@ ERI_3_1::ERI_3_1(const IntegralFactory *integral, int deriv, bool use_shell_pair
     memset(mdh_buffer_4_  , 0, sizeof(double) * size_2);
 
     // Initialize the first (constant) elements of the buffers
-    mdh_buffer_4_[D1_INDEX(0,0,0)] = 1.0;
-    mdh_buffer_4_[D1_INDEX(1,0,0)] = 1.0;
-    mdh_buffer_4_[D1_INDEX(2,0,0)] = 1.0;
     mdh_buffer_123_[D3_INDEX(0,0,0,0,0)] = 1.0;
     mdh_buffer_123_[D3_INDEX(1,0,0,0,0)] = 1.0;
     mdh_buffer_123_[D3_INDEX(2,0,0,0,0)] = 1.0;
+    mdh_buffer_4_[D1_INDEX(0,0,0)] = 1.0;
+    mdh_buffer_4_[D1_INDEX(1,0,0)] = 1.0;
+    mdh_buffer_4_[D1_INDEX(2,0,0)] = 1.0;
 
 }
 ERI_3_1::~ERI_3_1()
@@ -589,7 +589,7 @@ size_t ERI_3_1::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                         double T = alpha*rRD2;
 
                         // Compute McMurchie-Davidson-Hermite coefficients for 4-th shell
-                        make_mdh_D1_coeff(am3, 0.5/a4, mdh_buffer_4_);
+                        make_mdh_D1_coeff(am4, 0.5/a4, mdh_buffer_4_);
 
                         // Compute McMurchie-Davidson R-coefficients
                         fjt_->set_rho(alpha);

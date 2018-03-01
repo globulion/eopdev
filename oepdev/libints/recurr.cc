@@ -173,11 +173,11 @@ void make_mdh_D3_coeff(int n1, int n2, int n3, double aPd, double* PA, double* P
              for (int k = 0; k < n3+1; ++k) {
                   for (int n = 0; n < n1+n2+n3+1; ++n) {
                        double   valx= double(n+1)*buffer[D3_INDEX(0,i-1,j,k,n+1)] 
-                                    + xPB        *buffer[D3_INDEX(0,i-1,j,k,n  )];
+                                    + xPA        *buffer[D3_INDEX(0,i-1,j,k,n  )];
                        double   valy= double(n+1)*buffer[D3_INDEX(1,i-1,j,k,n+1)] 
-                                    + yPB        *buffer[D3_INDEX(1,i-1,j,k,n  )];
+                                    + yPA        *buffer[D3_INDEX(1,i-1,j,k,n  )];
                        double   valz= double(n+1)*buffer[D3_INDEX(2,i-1,j,k,n+1)] 
-                                    + zPB        *buffer[D3_INDEX(2,i-1,j,k,n  )];
+                                    + zPA        *buffer[D3_INDEX(2,i-1,j,k,n  )];
                        if (n>0) {
                            valx += aPd     *buffer[D3_INDEX(0,i-1,j,k,n-1)];
                            valy += aPd     *buffer[D3_INDEX(1,i-1,j,k,n-1)];
