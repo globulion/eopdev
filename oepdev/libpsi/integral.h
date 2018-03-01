@@ -23,10 +23,31 @@
 
 namespace oepdev{
 
+class IntegralFactory;
+
 using namespace std;
 /** \addtogroup OEPDEV_LIBINTS
  * @{
  */
+
+class TwoBodyAOInt : public psi::TwoBodyAOInt
+{
+  protected:
+   TwoBodyAOInt(const IntegralFactory* intsfactory, int deriv=0);
+   TwoBodyAOInt(const TwoBodyAOInt & rhs);
+
+  public:
+   virtual ~TwoBodyAOInt();
+   virtual size_t compute_shell(int, int, int, int) = 0;  
+   virtual size_t compute_shell(int, int, int) = 0;  
+   virtual size_t compute_shell(int, int) = 0;  
+   virtual size_t compute_shell_deriv1(int, int, int, int) = 0;
+   virtual size_t compute_shell_deriv2(int, int, int, int) = 0;
+   virtual size_t compute_shell_deriv1(int, int, int) = 0;
+   virtual size_t compute_shell_deriv2(int, int, int) = 0;
+   virtual size_t compute_shell_deriv1(int, int) = 0;
+   virtual size_t compute_shell_deriv2(int, int) = 0;
+};
 
 /** 
  *  \class IntegralFactory
@@ -69,16 +90,16 @@ class IntegralFactory : public psi::IntegralFactory
   // ---> Computers <--- //
 
   /// Returns an ERI_1_1 integral object
-  virtual psi::TwoBodyAOInt* eri_1_1(int deriv=0, bool use_shell_pairs=false);
+  virtual oepdev::TwoBodyAOInt* eri_1_1(int deriv=0, bool use_shell_pairs=false);
 
   /// Returns an ERI_2_1 integral object
-  virtual psi::TwoBodyAOInt* eri_2_1(int deriv=0, bool use_shell_pairs=false);
+  virtual oepdev::TwoBodyAOInt* eri_2_1(int deriv=0, bool use_shell_pairs=false);
 
   /// Returns an ERI_2_2 integral object
-  virtual psi::TwoBodyAOInt* eri_2_2(int deriv=0, bool use_shell_pairs=false);
+  virtual oepdev::TwoBodyAOInt* eri_2_2(int deriv=0, bool use_shell_pairs=false);
 
   /// Returns an ERI_3_1 integral object
-  virtual psi::TwoBodyAOInt* eri_3_1(int deriv=0, bool use_shell_pairs=false);
+  virtual oepdev::TwoBodyAOInt* eri_3_1(int deriv=0, bool use_shell_pairs=false);
 
 };
 

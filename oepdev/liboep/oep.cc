@@ -225,25 +225,25 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    std::shared_ptr<psi::TwoBodyAOInt> tei(fact_2.eri());                                           
    const double * buffer = tei->buffer();
                                                                                                   
-   oepdev::AllAOShellCombinationsIterator shellIter(fact_2);
+   std::shared_ptr<oepdev::ShellCombinationsIterator> shellIter = oepdev::ShellCombinationsIterator::build(fact_2, "ALL");
    int i, j, k, l;
    double integral, dij, dik;
    
    double** v = V->pointer();  
    double** c = Ca_occ->pointer();
-   double** d = wfn_->Da()->pointer();                                                                                 
-   for (shellIter.first(); shellIter.is_done() == false; shellIter.next())
+   double** d = wfn_->Da()->pointer();
+   for (shellIter->first(); shellIter->is_done() == false; shellIter->next())
    {
-        shellIter.compute_shell(tei);
-        oepdev::AllAOIntegralsIterator intsIter(shellIter);
-        for (intsIter.first(); intsIter.is_done() == false; intsIter.next())
+        shellIter->compute_shell(tei);
+        std::shared_ptr<oepdev::AOIntegralsIterator> intsIter = shellIter->ao_iterator("ALL");
+        for (intsIter->first(); intsIter->is_done() == false; intsIter->next())
         {
-             i = intsIter.i();  // \mu      : n
-             j = intsIter.j();  // \nu      : n
-             k = intsIter.k();  // \alpha   : n
-             l = intsIter.l();  // \xi      : Q
+             i = intsIter->i();  // \mu      : n
+             j = intsIter->j();  // \nu      : n
+             k = intsIter->k();  // \alpha   : n
+             l = intsIter->l();  // \xi      : Q
 
-             integral = buffer[intsIter.index()];
+             integral = buffer[intsIter->index()];
 
              dij = d[i][j]; dik = d[i][k];
              for (int a = 0; a < wfn_->doccpi()[0]; ++a) 

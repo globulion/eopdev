@@ -16,6 +16,7 @@
 
 #include "wavefunction_union.h"
 #include "integrals_iter.h"
+#include "../libpsi/integral.h"
 #include "../liboep/oep.h"
 
 namespace oepdev{

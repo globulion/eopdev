@@ -18,10 +18,17 @@ using namespace std;
 
 /**\brief General Two Electron Integral. 
  *
- * The integral can be defined for any number of Gaussian centres,
- * thus it is not limited to 2-by-2 four-centre ERI. 
+ * Implements the McMurchie-Davidson recursive scheme for all integral
+ * types. The integral can be defined for any number of Gaussian centres,
+ * thus it is not limited to 2-by-2 four-centre ERI. Currently implemented
+ * subtypes are:
+ *  - oepdev::ERI_1_1 - 2-centre electron-repulsion integral (i|j)
+ *  - oepdev::ERI_2_2 - 4-centre electron-repulsion integral (ij|kl)
+ *  - oepdev::ERI_3_1 - 4-centre electron-repulsion integral (ijk|l)
+ *
+ * \see OEPDEV_LIBINTS
  */
-class TwoElectronInt : public psi::TwoBodyAOInt
+class TwoElectronInt : public TwoBodyAOInt
 {
  protected:
     /// Maximum angular momentum
@@ -48,14 +55,14 @@ class TwoElectronInt : public psi::TwoBodyAOInt
     /// Get the (N,L,M)th McMurchie-Davidson coefficient
     inline double get_R(int N, int L, int M) {return mdh_buffer_R_[R_INDEX(N,L,M,0)];}
 
-    /// Computes the ERI's between four shells.
-    virtual size_t compute_quartet(int, int, int, int);
+    /// Computes the ERI's between three shells.
+    virtual size_t compute_doublet(int, int);
 
     /// Computes the ERI's between three shells.
     virtual size_t compute_triplet(int, int, int);
 
-    /// Computes the ERI's between three shells.
-    virtual size_t compute_doublet(int, int);
+    /// Computes the ERI's between four shells.
+    virtual size_t compute_quartet(int, int, int, int);
 
     /// Buffer for the McMurchie-Davidson-Hermite R coefficents
     double* mdh_buffer_R_;
@@ -98,6 +105,69 @@ class TwoElectronInt : public psi::TwoBodyAOInt
    virtual size_t compute_shell_deriv2(int, int, int, int);
 
 };
+
+/**\brief 2-centre ERI of the form (a|O(2)|b) where O(2) = 1/r12.
+  *
+  * ERI's are computed for a shell doublet (P|Q) and stored in the
+  * `target_full_` buffer, accessible through `buffer()` method:
+  * \f{align*}{
+  *  & \text{For each }  {(n_1,l_1,m_1)\in P}: \\
+  *  & \quad\text{For each } {(n_2,l_2,m_2)\in Q}: \\
+  *  & \quad\quad{\rm ERI} = (A\vert B)[\{\alpha\},{\bf n},{\bf l},{\bf m}]
+  * \f}
+  * For detailed description of the McMurchie-Davidson scheme, refer to \ref OEPDEV_LIBINTS.
+  *
+  * \section seri11implementation Implementation
+  * 
+  * A set of ERI's in a shell is decontracted as
+  * \f[
+  *  (A\vert B)[\{\alpha\},{\bf n},{\bf l},{\bf m}] = \sum_{ij} c_i(\alpha_1)c_j(\alpha_2)
+  *   (i\vert j)[\{\alpha\},{\bf n},{\bf l},{\bf m}]
+  * \f]
+  * where the primitive ERI is given by
+  * \f{multline*}{
+  *  (i\vert j)[\{\alpha\},{\bf n},{\bf l},{\bf m}] = 
+  *     \sum_{N_1=0}^{n_1} 
+  *     \sum_{L_1=0}^{l_1} 
+  *     \sum_{M_1=0}^{m_1} 
+  *     \sum_{N_2=0}^{n_2} 
+  *     \sum_{L_2=0}^{l_2} 
+  *     \sum_{M_2=0}^{m_2} 
+  *      d_{N_1}^{n_1}  
+  *      d_{L_1}^{l_1}
+  *      d_{M_1}^{m_1}
+  *      d_{N_2}^{n_2}
+  *      d_{L_2}^{l_2}
+  *      d_{M_2}^{m_2}
+  *     \left[N_1L_1M_1 \vert N_2L_2M_2\right]
+  * \f}
+  */
+class ERI_1_1 : public TwoElectronInt
+{
+  protected:
+   /// Compute ERI's between 2 shells
+   size_t compute_doublet(int, int);
+
+   /// Buffer for McMurchie-Davidson-Hermite coefficents for monomial expansion (shell 1)
+   double* mdh_buffer_1_;
+
+   /// Buffer for McMurchie-Davidson-Hermite coefficents for monomial expansion (shell 2)
+   double* mdh_buffer_2_;
+
+  public:
+   /// Constructor. Use oepdev::IntegralFactory to generate this object
+   ERI_1_1(const IntegralFactory* integral, int deriv=0, bool use_shell_pairs=false);
+   /// Destructor
+  ~ERI_1_1();
+
+
+ private:
+   /// Get the D1 coefficient
+   double get_D1(int, int, int);
+   double get_D2(int, int, int);
+
+};
+
 
 /**\brief 4-centre ERI of the form (ab|O(2)|cd) where O(2) = 1/r12.
   *

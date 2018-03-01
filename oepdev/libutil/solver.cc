@@ -375,26 +375,26 @@ double ElectrostaticEnergySolver::compute_benchmark_ao_expanded(){
   std::shared_ptr<psi::TwoBodyAOInt> tei(ints->eri());
   const double * buffer = tei->buffer();
 
-  oepdev::AllAOShellCombinationsIterator shellIter(ints);
+  std::shared_ptr<oepdev::ShellCombinationsIterator> shellIter = oepdev::ShellCombinationsIterator::build(ints, "ALL");
   int i, j, k, l;
   double integral;
 
-  for (shellIter.first(); shellIter.is_done() == false; shellIter.next())
+  for (shellIter->first(); shellIter->is_done() == false; shellIter->next())
   {
-       shellIter.compute_shell(tei);
-       oepdev::AllAOIntegralsIterator intsIter(shellIter);
-       for (intsIter.first(); intsIter.is_done() == false; intsIter.next())
+       shellIter->compute_shell(tei);
+       std::shared_ptr<oepdev::AOIntegralsIterator> intsIter = shellIter->ao_iterator("ALL");
+       for (intsIter->first(); intsIter->is_done() == false; intsIter->next())
        {
-            i = intsIter.i();                    
-            j = intsIter.j();
-            k = intsIter.k();
-            l = intsIter.l();
+            i = intsIter->i();                    
+            j = intsIter->j();
+            k = intsIter->k();
+            l = intsIter->l();
 
             if (i < nbf_1) {
             if (j < nbf_1) {
             if (k >= nbf_1) {
             if (l >= nbf_1) {
-                integral = buffer[intsIter.index()];
+                integral = buffer[intsIter->index()];
                 e_el_el += (Da1p[i][j] + Db1p[i][j]) * 
                            (Da2p[k - nbf_1][l - nbf_1] + Db2p[k - nbf_1][l - nbf_1]) * integral;
             }
@@ -528,25 +528,25 @@ double RepulsionEnergySolver::compute_benchmark_density_based() {
 
   std::shared_ptr<psi::TwoBodyAOInt> tei(ints->eri());
   const double * buffer = tei->buffer();
-  oepdev::AllAOShellCombinationsIterator shellIter(ints);
+  std::shared_ptr<oepdev::ShellCombinationsIterator> shellIter = oepdev::ShellCombinationsIterator::build(ints, "ALL");
   int i, j, k, l; int nbf_1 = wfn_union_->l_nbf(0); int nbf_m = nbf_1-1;
   double integral;
   double** dD  = DeltaDa_ao->pointer();
   double** da  = Da_ao_oo->pointer();
   double** Da  = wfn_union_->Da()->pointer();
 
-  for (shellIter.first(); shellIter.is_done() == false; shellIter.next())
+  for (shellIter->first(); shellIter->is_done() == false; shellIter->next())
   {
-       shellIter.compute_shell(tei);
-       oepdev::AllAOIntegralsIterator intsIter(shellIter);
-       for (intsIter.first(); intsIter.is_done() == false; intsIter.next())
+       shellIter->compute_shell(tei);
+       std::shared_ptr<oepdev::AOIntegralsIterator> intsIter = shellIter->ao_iterator("ALL");
+       for (intsIter->first(); intsIter->is_done() == false; intsIter->next())
        {
-            i = intsIter.i();
-            j = intsIter.j();
-            k = intsIter.k();
-            l = intsIter.l();
+            i = intsIter->i();
+            j = intsIter->j();
+            k = intsIter->k();
+            l = intsIter->l();
 
-            integral = buffer[intsIter.index()];
+            integral = buffer[intsIter->index()];
             e_Pauli_el    += dD[i][j] * Da[k][l] * integral;
             e_Pauli_Pauli += dD[i][j] * dD[k][l] * integral;
             e_exch        -= da[i][l] * da[j][k] * integral;

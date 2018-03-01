@@ -48,10 +48,13 @@ class Test
    /// Psi4 Options
    psi::Options options_;
 
-   /// Test the oepdev::ERI_2_2 class against psi::ERI
-   double test_eri_2_2(void);
+   // ---> Tests <--- //
+
    /// Test the oepdev::ERI_1_1 class against psi::ERI
    double test_eri_1_1(void);
+
+   /// Test the oepdev::ERI_2_2 class against psi::ERI
+   double test_eri_2_2(void);
 
 };
 

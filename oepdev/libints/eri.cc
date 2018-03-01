@@ -8,7 +8,7 @@ using namespace std;
 #define LOCAL_2PI52 34.986836655249724969962699105963
 
 TwoElectronInt::TwoElectronInt(const IntegralFactory* integral, int deriv, bool use_shell_pairs) :
-   psi::TwoBodyAOInt(integral, deriv), 
+   TwoBodyAOInt(integral, deriv), 
    use_shell_pairs_(use_shell_pairs),
    cartMap_{0,0,0,
             1,0,0, 0,1,0, 0,0,1,
@@ -243,8 +243,6 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
     for (int i=0; i<size; ++i) target_full_[i] = 0.0;
 
     // Iterate over primitives
-    size_t nprim = 0;
-
     double PA[3], PB[3], QC[3], QD[3], PQ[3];
     double P[3], Q[3];
 
@@ -386,11 +384,8 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                           }
                         }}
                         //
-                        ++nprim;
                    }
-              }} else {
-              nprim+=nprim3*nprim4;
-              }
+              }} 
          }
     }
 
@@ -519,8 +514,6 @@ size_t ERI_3_1::compute_quartet(int sh1, int sh2, int sh3, int sh4)
     for (int i=0; i<size; ++i) target_full_[i] = 0.0;
 
     // Iterate over primitives
-    size_t nprim = 0;
-
     double PA[3], PB[3], RA[3], RB[3], RC[3];
     double P[3], R[3];
 
@@ -656,15 +649,10 @@ size_t ERI_3_1::compute_quartet(int sh1, int sh2, int sh3, int sh4)
                               }
                             }
                           }
-                        }//}
+                        }
                         //
-                        ++nprim;
-                   }} else {
-                   nprim+= nprim4;
-                }
-              }} else {
-              nprim+=nprim3*nprim4;
-              }
+                   }} 
+              }}
          }
     }
 
@@ -676,6 +664,181 @@ double ERI_3_1::get_D123(int x, int n1, int n2, int n3, int N){
 }
 double ERI_3_1::get_D4(int x, int n1, int N){
  return mdh_buffer_4_[D1_INDEX(x,n1,N)];
+}
+//--//////////////////////////////////////////////////////////////////////////////
+ERI_1_1::ERI_1_1(const IntegralFactory *integral, int deriv, bool use_shell_pairs)
+    : TwoElectronInt(integral, deriv, use_shell_pairs)
+{
+    if (deriv_>0) throw psi::PSIEXCEPTION("oepdev::ERI_1_1: Derivatives are not implemented yet!");
+
+    // Boys functor. The +1 is needed for derivatives to work.
+    fjt_ = new psi::Taylor_Fjt(basis1()->max_am() +
+                               basis2()->max_am() +
+                               basis3()->max_am() +
+                               basis4()->max_am() +
+                               deriv_+1, 1e-15);
+
+    // Allocate the buffer for McMurchie-Davidson-Hermite D1 coefficients (raveled 3-dimensional array)
+    //     DIM:   3    Lmax+1            Lmax+1
+    size_t size = 3*(OEPDEV_MAX_AM+1)*(OEPDEV_MAX_AM+1);
+    try {
+        mdh_buffer_1_ = new double[size];
+        mdh_buffer_2_ = new double[size];
+    }
+    catch (std::bad_alloc &e) {
+        psi::outfile->Printf("Error allocating mdh_buffer_.\n%s\n", e.what());
+        exit(EXIT_FAILURE);
+    }
+    memset(mdh_buffer_1_, 0, sizeof(double) * size);
+    memset(mdh_buffer_2_, 0, sizeof(double) * size);
+
+    // Initialize the first (constant) elements of the buffers
+    mdh_buffer_1_[D1_INDEX(0,0,0)] = 1.0;
+    mdh_buffer_1_[D1_INDEX(1,0,0)] = 1.0;
+    mdh_buffer_1_[D1_INDEX(2,0,0)] = 1.0;
+    mdh_buffer_2_[D1_INDEX(0,0,0)] = 1.0;
+    mdh_buffer_2_[D1_INDEX(1,0,0)] = 1.0;
+    mdh_buffer_2_[D1_INDEX(2,0,0)] = 1.0;
+
+}
+ERI_1_1::~ERI_1_1()
+{
+    delete fjt_;
+    delete[] mdh_buffer_1_;
+    delete[] mdh_buffer_2_;
+}
+size_t ERI_1_1::compute_doublet(int sh1, int sh2)
+{
+    // Shells
+    const psi::GaussianShell &s1 = bs1_->shell(sh1);
+    const psi::GaussianShell &s2 = bs2_->shell(sh2);
+
+    // Angular momenta
+    int am1 = s1.am();
+    int am2 = s2.am();
+    int am  = am1 + am2; // total am
+
+    // Offsets for Cartesian angular momenta buffer
+    int nn1 = am1*(am1+1)*(am1+2)/2;
+    int nn2 = am2*(am2+1)*(am2+2)/2;
+
+    // Number of Cartesian functions
+    int nam1= INT_NCART(am1);
+    int nam2= INT_NCART(am2);
+
+    // Number of primitives
+    int nprim1 = s1.nprimitive();
+    int nprim2 = s2.nprimitive();
+
+    // Exponents and contraction coefficients
+    const double* a1s = s1.exps();
+    const double* a2s = s2.exps();
+    const double* c1s = s1.coefs();
+    const double* c2s = s2.coefs();
+
+    // Coordinates of atomic centres
+    double A[3], B[3];
+
+    A[0] = s1.center()[0];
+    A[1] = s1.center()[1];
+    A[2] = s1.center()[2];
+    B[0] = s2.center()[0];
+    B[1] = s2.center()[1];
+    B[2] = s2.center()[2];
+
+    double xAB = A[0]-B[0];
+    double yAB = A[1]-B[1];
+    double zAB = A[2]-B[2];
+    double rAB2= xAB*xAB+yAB*yAB+zAB*zAB;
+
+    // How many integrals to compute?
+    size_t size = nam1 * nam2;
+
+    // Clean ERI buffer after previous quartet
+    for (int i=0; i<size; ++i) target_full_[i] = 0.0;
+
+    // Iterate over primitives
+    for (int p1 = 0; p1 < nprim1; ++p1) {
+         double a1 = a1s[p1];
+         double c1 = c1s[p1];
+
+         // Compute McMurchie-Davidson-Hermite D1 coefficients for first shell
+         make_mdh_D1_coeff(am1, 0.5/a1, mdh_buffer_1_);
+
+         for (int p2 = 0; p2 < nprim2; ++p2) {
+              double a2 = a2s[p2];
+              double c2 = c2s[p2];
+
+              double a12 = a1 + a2;
+              double oxo = 1.0 / a12;
+
+              double lambda = LOCAL_2PI52 * (1.0/(a1*a2)) * sqrt(oxo);
+
+              double pref = c1*c2;
+              double alpha = a1*a2*oxo;
+              double T = alpha*rAB2;
+
+              // Compute McMurchie-Davidson-Hermite D1 coefficients for second shell
+              make_mdh_D1_coeff(am2, 0.5/a2, mdh_buffer_2_);
+
+              // Compute McMurchie-Davidson R-coefficients
+              fjt_->set_rho(alpha);
+              double* F = fjt_->values(am, T);
+              make_mdh_R_coeff(am, am, am, alpha, xAB, yAB, zAB, F, mdh_buffer_R_);
+
+              // Compute the intermediate ERI's
+              int iint = 0;
+              for (int ni = 0; ni < nam1; ++ni) {
+                int inx1 = nn1 + 3*ni;
+                int nx1 = cartMap_[inx1  ];
+                int ny1 = cartMap_[inx1+1];
+                int nz1 = am1 - nx1 - ny1;
+                for (int nj = 0; nj < nam2; ++nj) {
+                  int inx2 = nn2 + 3*nj; 
+                  int nx2 = cartMap_[inx2  ];
+                  int ny2 = cartMap_[inx2+1];
+                  int nz2 = am2 - nx2 - ny2;
+
+                  double integral = 0.0;
+
+                  // Iterate over Hermite functions
+                  for (int N1 = 0; N1 < (nx1+1); ++N1) {
+                    double Dnx1N1 = get_D1(0,nx1,N1);
+                    for (int N2 = 0; N2 < (nx2+1); ++N2) {
+                      double Dnx2N2 = get_D2(0,nx2,N2);
+                      for (int L1 = 0; L1 < (ny1+1); ++L1) {
+                        double Dny1L1 = get_D1(1,ny1,L1);
+                        for (int L2 = 0; L2 < (ny2+1); ++L2) {
+                          double Dny2L2 = get_D2(1,ny2,L2);
+                          for (int M1 = 0; M1 < (nz1+1); ++M1) {
+                            for (int M2 = 0; M2 < (nz2+1); ++M2) {                       
+                              double i1 = ((N2+L2+M2)%2) ? -1.0 : 1.0;
+                              integral += Dnx1N1 * Dnx2N2
+                                        * Dny1L1 * Dny2L2
+                                        * get_D1(2,nz1,M1) * get_D2(2,nz2,M2)
+                                        * get_R(N1+N2,L1+L2,M1+M2)
+                                        * lambda * i1;
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                  target_full_[iint]+= integral*pref;
+                  ++iint;
+                }
+              }
+         }
+    }
+
+    // Finish
+    return size;
+}
+double ERI_1_1::get_D1(int x, int n1, int N){
+ return mdh_buffer_1_[D1_INDEX(x,n1,N)];
+}
+double ERI_1_1::get_D2(int x, int n2, int N){
+ return mdh_buffer_2_[D1_INDEX(x,n2,N)];
 }
 
 
