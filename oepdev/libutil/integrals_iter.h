@@ -261,13 +261,21 @@ class AllAOShellCombinationsIterator_2 : public ShellCombinationsIterator
 
    /**\brief Construct by providing integral factory.
     *  
-    *  @param integrals - integral factory object 
-    *  @param ib1       - BasisSet axis in integral factory for *P* shell
-    *  @param ib2       - BasisSet axis in integral factory for *Q* shell
+    *  @param integrals - OepDev integral factory object 
     */  
    AllAOShellCombinationsIterator_2(std::shared_ptr<IntegralFactory> integrals);
+   /**
+    * \overload
+    */
    AllAOShellCombinationsIterator_2(const IntegralFactory& integrals);
+   /**\brief Construct by providing integral factory.
+    *  
+    *  @param integrals - Psi4 integral factory object 
+    */  
    AllAOShellCombinationsIterator_2(std::shared_ptr<psi::IntegralFactory> integrals);
+   /**
+    * \overload
+    */
    AllAOShellCombinationsIterator_2(const psi::IntegralFactory& integrals);
   
    /// First iteration 
@@ -314,13 +322,11 @@ class AllAOIntegralsIterator_4 : public AOIntegralsIterator
    /**\brief Construct by shell iterator (const object)
     *  @param shellIter - shell iterator object
     */  
-   //AllAOIntegralsIterator(const AllAOShellCombinationsIterator& shellIter);
    AllAOIntegralsIterator_4(const ShellCombinationsIterator* shellIter);
 
    /**\brief Construct by shell iterator (pointed by shared pointer)
     *  @param shellIter - shell iterator object
     */  
-   //AllAOIntegralsIterator(std::shared_ptr<AllAOShellCombinationsIterator> shellIter);
    AllAOIntegralsIterator_4(std::shared_ptr<ShellCombinationsIterator> shellIter);
   
    /// First iteration 
