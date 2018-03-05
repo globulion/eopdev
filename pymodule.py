@@ -49,6 +49,18 @@ def run_oepdev(name, **kwargs):
     kwargs = p4util.kwargs_lower(kwargs)
     psi4.core.set_local_option('MYPLUGIN', 'PRINT', 1)
 
+    # check if Cartesian basis sets are used
+    msg = """\
+ OEPDev info:
+ ------------
+ Currently only Cartesian basis sets are allowed to be used in OEPDev. 
+ Although spherical basis sets can be used for Psi4 integral factories,
+ oepdev::ERI_3_1 electron repulsion integrals, that are needed for the 
+ generalized density fitting of OEP's, are implemented only for Cartesian
+ GTO's, therefore using spherical harmonics is temporarily disabled in OEPDev.
+ -> To continue, set PUREAM to False in your input file. <-"""
+    assert (psi4.core.get_global_option("PUREAM")==False), msg
+
     ref_wfn = kwargs.get('ref_wfn', None)
     if ref_wfn is None: 
        print " [1] Computing HF/SCF for the dimer."
