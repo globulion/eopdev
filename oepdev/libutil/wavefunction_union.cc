@@ -276,10 +276,14 @@ void WavefunctionUnion::transform_integrals()
     SharedMOSpaceVector spaces;
     SharedMOSpace space_1o = l_mospace(0,"OCC");
     SharedMOSpace space_2o = l_mospace(1,"OCC");
+    SharedMOSpace space_1v = l_mospace(0,"VIR");
+    SharedMOSpace space_2v = l_mospace(1,"VIR");
     //SharedMOSpace space_12o=   mospace(  "OCC");//MOSpace::occ; //--> equivalent
     SharedMOSpace space_12o= MOSpace::occ;
     spaces.push_back(space_1o);
     spaces.push_back(space_2o);
+    spaces.push_back(space_1v);
+    spaces.push_back(space_2v);
     spaces.push_back(space_12o);
     integrals_ = std::make_shared<IntegralTransform>(shared_from_this(), 
                                                      spaces,
@@ -324,6 +328,37 @@ void WavefunctionUnion::transform_integrals()
     timer_on("Trans (OO|OO)");
     integrals_->transform_tei(space_12o, space_12o, space_12o, space_12o, IntegralTransform::MakeAndNuke);
     timer_off("Trans (OO|OO)");
+
+    // Trans (X2|11)
+    timer_on("Trans (X2|11)");
+    integrals_->transform_tei(space_1v, space_2o, space_1o, space_1o, IntegralTransform::MakeAndNuke);
+    timer_off("Trans (X2|11)");
+
+    // Trans (X1|22)
+    timer_on("Trans (X1|22)");
+    integrals_->transform_tei(space_1v, space_1o, space_2o, space_2o, IntegralTransform::MakeAndNuke);
+    timer_off("Trans (X1|22)");
+
+    // Trans (X1|21)
+    timer_on("Trans (X1|21)");
+    integrals_->transform_tei(space_1v, space_1o, space_2o, space_1o, IntegralTransform::MakeAndNuke);
+    timer_off("Trans (X1|21)");
+
+    // Trans (Y1|22)
+    timer_on("Trans (Y1|22)");
+    integrals_->transform_tei(space_2v, space_1o, space_2o, space_2o, IntegralTransform::MakeAndNuke);
+    timer_off("Trans (Y1|22)");
+
+    // Trans (Y2|11)
+    timer_on("Trans (Y2|11)");
+    integrals_->transform_tei(space_2v, space_2o, space_1o, space_1o, IntegralTransform::MakeAndNuke);
+    timer_off("Trans (Y2|11)");
+
+    // Trans (Y2|12)
+    timer_on("Trans (Y2|12)");
+    integrals_->transform_tei(space_2v, space_2o, space_1o, space_2o, IntegralTransform::MakeAndNuke);
+    timer_off("Trans (Y2|12)");
+
 }
 
 void WavefunctionUnion::print_mo_integrals(void) { 

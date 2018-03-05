@@ -224,7 +224,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
             std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("REPULSION ENERGY", wfn_union);
                                                                                                                             
             double e_stone = solver->compute_benchmark("HAYES_STONE"  );
-          //double e_dens  = solver->compute_benchmark("DENSITY_BASED");
+            double e_dens  = solver->compute_benchmark("DENSITY_BASED");
             double e_murr  = solver->compute_benchmark("MURRELL_ETAL" );
             double e_oep1  = solver->compute_oep_based("MURRELL_ETAL_MIX");
             double e_otla  = solver->compute_benchmark("OTTO_LADIK"   );
@@ -251,91 +251,6 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
          */
         if (o_enable_trial) {
 
-        cout << " Computing OepDev ERI_1_1\n";
-        timer_on(" Computation of OEPDEV ERI_1_1");
-        oepdev::IntegralFactory fact(ref_wfn->basisset());
-        std::shared_ptr<oepdev::TwoBodyAOInt> eri_1_1(fact.eri_1_1());
-        cout << " OepDev ERI_1_1 Constructed\n";
-        timer_off(" Computation of OEPDEV ERI_1_1");
-        //  cout << " Computing OepDev ERI_3_1\n";
-        //  timer_on(" Computation of OEPDEV ERI_3_1");
-        //  oepdev::IntegralFactory fact_oepdev(ref_wfn->basisset());
-        //  std::shared_ptr<psi::TwoBodyAOInt> eri_3_1(fact_oepdev.eri_3_1());
-
-        //  oepdev::AllAOShellCombinationsIterator shellIter(fact_oepdev);
-        //  int i, j, k, l; 
-        //  double integral;
-        //  const double * buffer_3_1 = eri_3_1->buffer();
-        //  for (shellIter.first(); shellIter.is_done() == false; shellIter.next())
-        //  {
-        //       shellIter.compute_shell(eri_3_1);
-        //       oepdev::AllAOIntegralsIterator intsIter(shellIter);
-        //       for (intsIter.first(); intsIter.is_done() == false; intsIter.next())
-        //       {
-        //            i = intsIter.i();j = intsIter.j();k = intsIter.k();l = intsIter.l();
-        //            integral = buffer_3_1[intsIter.index()];
-        //            psi::outfile->Printf(" IntOepDev: (%2d %2d %2d | %2d) = %13.6f\n", i,j,k,l,integral);
-        //       }
-        //  }
-        //  timer_off(" Computation of OEPDEV ERI_3_1");
-
-
-        //if (0) {       
-        //  cout << " Computing OepDev ERI_2_2\n";                                                                 
-        //  timer_on(" Computation of OEPDEV ERI");
-        //  oepdev::IntegralFactory fact_oepdev(ref_wfn->basisset());
-        //  std::shared_ptr<psi::TwoBodyAOInt> eri_2_2(fact_oepdev.eri_2_2());
-        //  //int s = 2; int n = 8;
-        //  //size_t num = eri_2_2->compute_shell(s,s,s,n);
-        //  //cout << "OepDev: First integral in shell= " << eri_2_2->buffer()[0] << " Number: " << num<< endl;
-        //  //if (num>1){
-        //  //for (int i=1;i<num;++i) cout << "OepDev: Next  integral in shell= " << eri_2_2->buffer()[i] << endl;
-        //  //}
-        //                                                                                                         
-        //  oepdev::AllAOShellCombinationsIterator shellIter(fact_oepdev);
-        //  int i, j, k, l; 
-        //  double integral;
-        //  const double * buffer_2_2 = eri_2_2->buffer();
-        //  for (shellIter.first(); shellIter.is_done() == false; shellIter.next())
-        //  {
-        //       shellIter.compute_shell(eri_2_2);
-        //       oepdev::AllAOIntegralsIterator intsIter(shellIter);
-        //       for (intsIter.first(); intsIter.is_done() == false; intsIter.next())
-        //       {
-        //            i = intsIter.i();j = intsIter.j();k = intsIter.k();l = intsIter.l();
-        //            integral = buffer_2_2[intsIter.index()];
-        //            //psi::outfile->Printf(" IntOepDev: (%2d %2d | %2d %2d) = %13.6f\n", i,j,k,l,integral);
-        //       }
-        //  }
-        //  timer_off(" Computation of OEPDEV ERI");
-        //                                                                                                         
-        //  cout << " Computing Psi4 ERI\n";
-        //  timer_on(" Computation of PSI4 ERI");
-        //  oepdev::IntegralFactory    fact_psi(ref_wfn->basisset());
-        //  std::shared_ptr<psi::TwoBodyAOInt> eri(fact_psi.eri());
-        //  const double * buffer = eri->buffer();
-        //  //num = eri->compute_shell(s,s,s,n);
-        //  //cout << "Psi4  : First integral in shell= " << eri->buffer()[0] << " Number: " << num<< endl;
-        //  //if (num>1){
-        //  //for (int i=1;i<num;++i) cout << "Psi4  : Next  integral in shell= " << eri->buffer()[i] << endl;
-        //  //}
-        //                                                                                                         
-        //  //cout << "First integral in (0,0,0,0) shell= " << eri_2_2->buffer()[0] << endl;
-        //                                                                                                         
-        //  oepdev::AllAOShellCombinationsIterator sIter(fact_psi);
-        //  for (sIter.first(); sIter.is_done() == false; sIter.next())
-        //  {
-        //       sIter.compute_shell(eri);
-        //       oepdev::AllAOIntegralsIterator intsIter(sIter);
-        //       for (intsIter.first(); intsIter.is_done() == false; intsIter.next())
-        //       {
-        //            i = intsIter.i();j = intsIter.j();k = intsIter.k();l = intsIter.l();
-        //            integral = buffer[intsIter.index()];
-        //            //psi::outfile->Printf(" IntPsi4  : (%2d %2d | %2d %2d) = %13.6f\n", i,j,k,l,integral);
-        //       }
-        //  }
-        //  timer_off(" Computation of PSI4 ERI");
-        //}
 
         //SharedWavefunction      wfn_union_base = wfn_union;
         //SharedIntegralTransform transform      = wfn_union->integrals();
