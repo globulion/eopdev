@@ -31,6 +31,21 @@ using SharedVector       = std::shared_ptr<Vector>;
  * @{
  */
 
+/**
+ *  Container to handle the type of One-Electron Potentials.
+ */
+struct OEPType
+{
+    /// Name of this type of OEP
+    std::string name;
+    /// Is this OEP DF-based? 
+    bool is_density_fitted;
+    /// Number of OEP's within a type
+    int n;
+    /// All OEP's of this type gathered in a matrix form
+    SharedMatrix matrix;
+};
+
 /** \brief Generalized One-Electron Potential: Abstract base.
  * 
  *  Manages OEP's in matrix and 3D forms.
@@ -57,9 +72,7 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     /// Name of this OEP;
     std::string name_;
     /// Types of OEP's within the scope of this object
-    std::vector<std::string> oepTypes_;
-    /// OEP's matrix forms for each OEP type
-    std::map<std::string, SharedMatrix> oepMatrices_;
+    std::map<std::string, OEPType> oepTypes_;
 
     /// Integral factory
     std::shared_ptr<psi::IntegralFactory> intsFactory_;
@@ -114,26 +127,21 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
                                               SharedBasisSet auxiliary, Options& options);
 
 
-    // <--- Characterizers ---> //
-
-    /// Is this OEP density-fitted? 
-    const bool is_density_fitted;
-    /// Is this OEP ESP-based? 
-    const bool is_esp_based;
-
-
     // <--- Methods/Computers ---> //
 
-    //@{ Compute One Electron Effective Coefficients
-    virtual void compute(const std::string& oepType) = 0;
+    /// Compute matrix forms of all OEP's within all OEP types
     virtual void compute(void);
-    //@}
-    //@{ Compute 3D potential
-    /** Write potential to a cube file */
-    virtual void write_cube(const std::string& oepType, const std::string& fileName);
-    /** Compute value of potential in point x, y, z and save at v */
+
+    /** \brief Compute matrix forms of all OEP's within a specified OEP type
+     */
+    virtual void compute(const std::string& oepType) = 0;
+
+    /// Compute value of potential in point x, y, z and save at v
     virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) = 0;
-    //@}
+
+    /// Write potential to a cube file
+    virtual void write_cube(const std::string& oepType, const std::string& fileName);
+
     /// Rotate 
     virtual void rotate(const Matrix& rotmat);
     /// Translate
@@ -148,8 +156,13 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     /// Retrieve name of this OEP
     std::string name() const { return name_; }
-    /// Retrieve matrix potential
-    SharedMatrix matrix(const std::string& oepType) const { return oepMatrices_.at(oepType); }
+
+    /// Retrieve the potentials
+    OEPType oep(const std::string& oepType) const {return oepTypes_.at(oepType);}
+
+    /// Retrieve the potentials in a matrix form
+    SharedMatrix matrix(const std::string& oepType) const { return oepTypes_.at(oepType).matrix; }
+
     /// Retrieve wavefunction object
     SharedWavefunction wfn() const {return wfn_;}
 

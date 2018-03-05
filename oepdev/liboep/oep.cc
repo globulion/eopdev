@@ -12,23 +12,25 @@ using SharedField3D = std::shared_ptr<oepdev::ScalarField3D>;
 
 OEPotential::OEPotential(SharedWavefunction wfn, Options& options) 
    : wfn_(wfn),
-     options_(options),
-     is_density_fitted(false),
-     is_esp_based(true)
+     options_(options)
 {
     common_init();
 }
-
 OEPotential::OEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, Options& options) 
    : wfn_(wfn),
      auxiliary_(auxiliary),
-     options_(options),
-     is_density_fitted(true),
-     is_esp_based(false)
+     options_(options)
 {
     common_init();
 }
-
+void OEPotential::common_init(void) 
+{
+   name_        = "default";
+   primary_     = wfn_->basisset();
+   intsFactory_ = std::make_shared<psi::IntegralFactory>(primary_, primary_);
+   potMat_      = std::make_shared<psi::Matrix>("Potential Integrals", primary_->nbf(), primary_->nbf());
+   potInt_      = std::make_shared<oepdev::PotentialInt>(intsFactory_->spherical_transform(), primary_, primary_, 0);
+}
 std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, SharedWavefunction wfn, Options& options)
 {
    std::shared_ptr<OEPotential> oep;
@@ -42,7 +44,6 @@ std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, Sha
 
    return oep;
 }
-
 std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, SharedWavefunction wfn, 
                                                                            SharedBasisSet auxiliary, Options& options)
 {
@@ -57,22 +58,9 @@ std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, Sha
 
    return oep;
 }
-
-
-
 OEPotential::~OEPotential() {}
-
-void OEPotential::common_init(void) 
-{
-   name_        = "default";
-   primary_     = wfn_->basisset();
-   intsFactory_ = std::make_shared<psi::IntegralFactory>(primary_, primary_);
-   potMat_      = std::make_shared<psi::Matrix>("Potential Integrals", primary_->nbf(), primary_->nbf());
-   potInt_      = std::make_shared<oepdev::PotentialInt>(intsFactory_->spherical_transform(), primary_, primary_, 0);
-}
-
 void OEPotential::compute(const std::string& oepType) {}
-void OEPotential::compute(void) { for ( const std::string& type : oepTypes_ ) this->compute(type); }
+void OEPotential::compute(void) { for ( auto const& oepType : oepTypes_ ) this->compute(oepType.second.name); }
 void OEPotential::write_cube(const std::string& oepType, const std::string& fileName) 
 {
    OEPotential3D<OEPotential> cube(60, 60, 60, 10.0, 10.0, 10.0, shared_from_this(), oepType, options_);
@@ -98,7 +86,11 @@ ElectrostaticEnergyOEPotential::ElectrostaticEnergyOEPotential(SharedWavefunctio
 ElectrostaticEnergyOEPotential::~ElectrostaticEnergyOEPotential() {}
 void ElectrostaticEnergyOEPotential::common_init() 
 {
-   oepTypes_.push_back("V");
+   // In this demo OEPotential, there is only one OEP type. In addition,
+   // only one OEP exists within this type: the electrostatic potential of entire molecule
+   SharedMatrix mat = std::make_shared<psi::Matrix>("OEP V", wfn_->molecule()->natom(), 1);
+   OEPType type = {"V", false, 1, mat};
+   oepTypes_["V"] = type;
 }
 
 void ElectrostaticEnergyOEPotential::compute(const std::string& oepType) 
@@ -114,9 +106,8 @@ void ElectrostaticEnergyOEPotential::compute(const std::string& oepType)
       oepdev::ESPSolver esp(potential);
       esp.compute();
      
-      oepMatrices_["V"] = std::make_shared<Matrix>("V", esp.charges()->dim(), 1);
       for (int i=0; i<esp.charges()->dim(); ++i) {
-           oepMatrices_["V"]->set(i, 0, esp.charges()->get(i));
+           oepTypes_["V"].matrix->set(i, 0, esp.charges()->get(i));
       }
       psi::timer_off("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
 
@@ -164,7 +155,7 @@ void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, cons
 void ElectrostaticEnergyOEPotential::print_header(void) const 
 {
    psi::outfile->Printf("  ==> OEPotential: %s <==\n\n", name_.c_str());
-   oepMatrices_.at("V")->print();
+   oepTypes_.at("V").matrix->print();
 }
 
 
@@ -186,8 +177,20 @@ RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(SharedWavefunction wfn,
 RepulsionEnergyOEPotential::~RepulsionEnergyOEPotential() {}
 void RepulsionEnergyOEPotential::common_init() 
 {
-   oepTypes_.push_back("Murrell-etal.S1");
-   oepTypes_.push_back("Otto-Ladik.S2");
+   int n1 = wfn_->Ca_subset("AO","OCC")->ncol();
+   int n2 = auxiliary_->nbf();
+   int n3 = wfn_->molecule()->natom();
+
+   SharedMatrix mat_1 = std::make_shared<psi::Matrix>("G(S^{-1})", n2, n1);
+   SharedMatrix mat_2 = std::make_shared<psi::Matrix>("G(S^{-2})", n3, n1);
+
+   OEPType type_1 = {"Murrell-etal.S1", true , n1, mat_1};
+   OEPType type_2 = {"Otto-Ladik.S2"  , false, n1, mat_2};
+
+   oepTypes_[type_1.name] = type_1; 
+   oepTypes_[type_2.name] = type_2;
+   //oepTypes_.push_back("Murrell-etal.S1");
+   //oepTypes_.push_back("Otto-Ladik.S2");
 }
 
 void RepulsionEnergyOEPotential::compute(const std::string& oepType) 
@@ -257,7 +260,7 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    //// ===> Perform Generalized Density Fitting <=== // 
    Sao->invert();
    std::shared_ptr<psi::Matrix> G = psi::Matrix::doublet(Sao, V, false, false);
-   G->set_name("G(S^{-1})");
+   //G->set_name("G(S^{-1})");
    //double** pS = Sao->pointer();
    //double** v = V->pointer();  
    //int Q = auxiliary_->nbf();
@@ -271,7 +274,7 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    //V->print();
    
    // ===> Save and Finish <=== //
-   oepMatrices_["Murrell-etal.S1"] = G;
+   oepTypes_.at("Murrell-etal.S1").matrix->copy(G);
    //G->print();
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s2() 
@@ -298,9 +301,21 @@ ChargeTransferEnergyOEPotential::ChargeTransferEnergyOEPotential(SharedWavefunct
 ChargeTransferEnergyOEPotential::~ChargeTransferEnergyOEPotential() {}
 void ChargeTransferEnergyOEPotential::common_init() 
 {
-    oepTypes_.push_back("Otto-Ladik.V1");
-    oepTypes_.push_back("Otto-Ladik.V2");
-    oepTypes_.push_back("Otto-Ladik.V3");
+    int n1 = primary_->nbf();
+    int n2 = auxiliary_->nbf();
+    int n3 = wfn_->molecule()->natom();
+
+    SharedMatrix mat_1 = std::make_shared<psi::Matrix>("G ", n2, n1);
+    SharedMatrix mat_2 = std::make_shared<psi::Matrix>("Q1", n3, n1);
+    SharedMatrix mat_3 = std::make_shared<psi::Matrix>("Q2", n3, 1);
+
+    OEPType type_1 = {"Otto-Ladik.V1", true , n1, mat_1};
+    OEPType type_2 = {"Otto-Ladik.V2", false, n1, mat_2};
+    OEPType type_3 = {"Otto-Ladik.V3", false,  1, mat_3};
+
+    oepTypes_[type_1.name] = type_1;
+    oepTypes_[type_2.name] = type_2;
+    oepTypes_[type_3.name] = type_3;
 }
 
 void ChargeTransferEnergyOEPotential::compute(const std::string& oepType) {}
@@ -329,12 +344,32 @@ EETCouplingOEPotential::EETCouplingOEPotential(SharedWavefunction wfn,
 EETCouplingOEPotential::~EETCouplingOEPotential() {}
 void EETCouplingOEPotential::common_init() 
 {
-    oepTypes_.push_back("Fujimoto.ET1");
-    oepTypes_.push_back("Fujimoto.ET2");
-    oepTypes_.push_back("Fujimoto.HT1");
-    oepTypes_.push_back("Fujimoto.HT2");
-    oepTypes_.push_back("Fujimoto.CT1");
-    oepTypes_.push_back("Fujimoto.CT2");
+    int n1 = primary_->nbf();
+    int n2 = auxiliary_->nbf();
+    int n3 = wfn_->molecule()->natom();
+
+    // Implement these matrices (here provide correct dimensions)
+    SharedMatrix mat_1 = std::make_shared<psi::Matrix>("ET1-NotImplemented", 1, 1);  
+    SharedMatrix mat_2 = std::make_shared<psi::Matrix>("ET2-NotImplemented", 1, 1);  
+    SharedMatrix mat_3 = std::make_shared<psi::Matrix>("ET1-NotImplemented", 1, 1);  
+    SharedMatrix mat_4 = std::make_shared<psi::Matrix>("ET2-NotImplemented", 1, 1);  
+    SharedMatrix mat_5 = std::make_shared<psi::Matrix>("ET1-NotImplemented", 1, 1);  
+    SharedMatrix mat_6 = std::make_shared<psi::Matrix>("ET2-NotImplemented", 1, 1);  
+
+    // Provide correct classes (DF- or ESP-based) and number of OEP's involved in each type
+    OEPType type_1 = {"Fujimoto.ET1", false,  0, mat_1};
+    OEPType type_2 = {"Fujimoto.ET2", false,  0, mat_2};
+    OEPType type_3 = {"Fujimoto.HT1", false,  0, mat_3};
+    OEPType type_4 = {"Fujimoto.HT2", false,  0, mat_4};
+    OEPType type_5 = {"Fujimoto.CT1", false,  0, mat_5};
+    OEPType type_6 = {"Fujimoto.CT2", false,  0, mat_6};
+
+    oepTypes_[type_1.name] = type_1;
+    oepTypes_[type_2.name] = type_2;
+    oepTypes_[type_3.name] = type_3;
+    oepTypes_[type_4.name] = type_4;
+    oepTypes_[type_5.name] = type_5;
+    oepTypes_[type_6.name] = type_6;
 }
 
 void EETCouplingOEPotential::compute(const std::string& oepType) {}
