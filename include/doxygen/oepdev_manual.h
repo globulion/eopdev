@@ -201,37 +201,57 @@ to compute electron-repulsion integrals (ERI’s) more efficiently.
 \section sdensfitcompl Fitting in Complete Space
 
 An arbitrary one-electron potential of molecule *A* acting on any state vector 
-associated with molecule *A* can be expanded in the *auxiliary space* centered 
+associated with molecule *A* can be expanded in an *auxiliary space* centered 
 on *A* as
+\f[
+   v\vert i) = \sum_{\xi\eta} v\vert \xi) [{\bf S}^{-1}]_{\xi\eta} ( \eta \vert i)
+\f]
+under the necessary assumption that the auxiliary basis set is *complete*. 
+In a special case when the basis set is orthogonal (e.g., molecular orbitals)
+the above relation simplifies to
 \f[
    v\vert i) = \sum_{\xi} v\vert \xi) ( \xi \vert i)
 \f]
-under the necessary assumption that the auxiliary basis set is *complete*. 
-In that case, formally one can write the following identity
-\f[
- (\eta\vert v\vert i) = \sum_{\xi} (\eta\vert v\vert \xi) S_{\xi i}
-\f]
-The matrix elements of the OEP operator in auxiliary space can be computed 
-in the same way as the matrix elements with any other basis function. 
-In reality, it is almost impossible to reach the completness of the basis set, 
-however, but it is possible to obtain the **effective** matrix elements of 
-the OEP operator in auxiliary space, rather than compute them as they are 
-in the above equation explicitly. We expand the LHS of the first equation 
-on this page in a series of the auxiliary basis functions scaled by the 
-undetermined expansion coefficients: 
+It can be easily shown that the above general and exact expansion can be obtained by 
+performing a density fitting in the complete space. We expand the LHS of the first equation 
+on this page in a series of the auxiliary basis functions scaled by the undetermined expansion coefficients:
 \f[
   v\vert i) = \sum_{\xi} {G_{i\xi}} \vert \xi)
 \f]
-The expansion coefficients are the effective matrix elements 
-of the OEP operator in auxiliary basis set. Now, multiplying both sides 
-by another auxiliary basis function and subsequently inverting the equation 
-one obtains the expansion coefficients:
+which we shall refer here as to the matrix form of the OEP operator.
+By constructing the least-squares objective function 
 \f[
-   \boxed{ G_{i\eta} = \sum_\xi (i \vert v \vert \eta) \left[ {\bf S}^{-1} \right]_{\eta\xi} }
+ Z[\{G^{(i)}_\xi\}] = \int d{\bf r}_1
+                     \left[    v({\bf r}_1) \phi_i({\bf r}_1) - \sum_\xi G^{(i)}_\xi \varphi_\xi({\bf r}_1) \right]^2
 \f]
-In this way, it is possible to approximately determine the matrix elements 
-of the OEP operator with any other basis function in case the auxiliary 
-basis set is not complete. **In particular**, when the other basis function 
+and requiring that
+\f[
+ \frac{\partial Z[\{G^{(i)}_\xi\}]}{\partial G^{(i)}_\mu} = 0 \text{ for all $\mu$}
+\f]
+we find the coefficients \f$ G^{(i)}_\xi \f$ to be
+\f[
+ {\bf G}^{(i)} = {\bf v}^{(i)} \cdot {\bf S}^{-1}
+\f]
+where 
+\f{align*}{
+ v^{(i)}_\eta &= (\eta \vert vi) \\
+ S_{\eta\xi}  &= (\eta \vert \xi)
+\f}
+or explitictly
+\f[
+  {G_{i\xi}} = \sum_\eta [{\bf S}^{-1}]_{\xi\eta} (\eta\vert v\vert i)
+\f]
+identical to what we obtained from application of the resolution of identity 
+in space spanned by non-orthogonal complete set of basis vectors.
+
+Since matrix elements of an OEP operator in auxiliary space can be computed 
+in the same way as the matrix elements with any other basis function, 
+one can formally write the following identity
+\f[
+ (X \vert v\vert i) = \sum_{\xi\eta} S_{X \xi} [{\bf S}^{-1}]_{\xi\eta} (\eta\vert v\vert i)
+\f]
+where \f$ X \f$ is an arbitrary orbital.
+When the other orbital
 does not belong to molecule *A* but to the (changing) environment, it is 
 straightforward to compute the resulting matrix element, which is simply given as  
 \f[
@@ -244,12 +264,14 @@ and the Solver-part (subject to be computed by solver
 on the fly) are separated. This then forms a basis for fragment-based 
 approach to solve Quantum Chemistry problems related to the extended molecular aggregates.
 
-\section sdensfittrunc Fitting in Truncated Space
+\section sdensfitincompl Fitting in Incomplete Space
 
-Density fitting scheme from previous section has practical disadvantage of a complete space
-being usually very large (spanned by large amoung of basis set vectors). Any non-complete basis set
-won't work in the above example. Since most of basis sets used in quantum chemistry do not form a complete
-set, is beneficial to design a modified scheme. This can be achieved by minimizing the following objective function
+Density fitting scheme from previous section has practical disadvantage of a nearly-complete basis set
+being usually very large (spanned by large amount of basis set vectors). Any non-complete basis set
+won't work in the previous example. Since most of basis sets used in quantum chemistry do not form a complete
+set, it is beneficial to design a modified scheme in which it is possible to obtain the **effective** 
+matrix elements of the OEP operator in a **incomplete** auxiliary space. This can be achieved by minimizing 
+the following objective function
 \f[
  Z[\{G^{(i)}_\xi\}] = \iint d{\bf r}_1 d{\bf r}_2
                       \frac{
@@ -267,10 +289,10 @@ we find the coefficients \f$ G^{(i)}_\xi \f$ to be
 \f]
 where 
 \f{align*}{
- b^{(i)}_\eta &= (\eta || vi) \\
- A_{\eta\xi}  &= (\eta || \xi)
+ b^{(i)}_\eta &= (\eta \vert\vert vi) \\
+ A_{\eta\xi}  &= (\eta \vert\vert \xi)
 \f}
-The symbol \f$ || \f$ is to denote the operator \f$ r_{12}^{-1}\f$ and double integration over \f$ {\bf r}_1 \f$
+The symbol \f$ \vert\vert \f$ is to denote the operator \f$ r_{12}^{-1}\f$ and double integration over \f$ {\bf r}_1 \f$
 and \f$ {\bf r}_2 \f$. Thus, it is clear that in order to use this generalized density fitting scheme
 one must to compute two-centre electron repulsion integrals (implemented in oepdev::ERI_1_1) 
 as well as four-centre asymmetric electron repulsion integrals of the type \f$ (\alpha\beta\gamma||\eta) \f$
