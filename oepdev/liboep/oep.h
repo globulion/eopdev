@@ -1,5 +1,5 @@
-#ifndef _oepdev_liboep_liboep_h_ 
-#define _oepdev_liboep_liboep_h_ 
+#ifndef _oepdev_liboep_oep_h_ 
+#define _oepdev_liboep_oep_h_ 
 /** @file oep.h */
 
 #include<cstdio>
@@ -32,7 +32,7 @@ using SharedVector       = std::shared_ptr<Vector>;
  */
 
 /**
- *  Container to handle the type of One-Electron Potentials.
+ *  \brief Container to handle the type of One-Electron Potentials.
  */
 struct OEPType
 {
@@ -87,14 +87,14 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     // <--- Constructors and Destructor ---> //
 
-    /**\brief ESP-based OEP object
+    /**\brief Fully ESP-based OEP object
      * 
      * @param wfn     - wavefunction
      * @param options - Psi4 options
      */
     OEPotential(SharedWavefunction wfn, Options& options);
 
-    /**\brief DF-based OEP object
+    /**\brief General OEP object
      *
      * @param wfn        - wavefunction
      * @param auxiliary  - basis set for density fitting of OEP's
@@ -108,7 +108,7 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     // <--- Factories ---> //      
 
-    /**\brief Build ESP-based OEP object
+    /**\brief Build fully ESP-based OEP object
      * 
      * @param type    - OEP category
      * @param wfn     - wavefunction
@@ -116,7 +116,8 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
      */
 
     static std::shared_ptr<OEPotential> build(const std::string& category, SharedWavefunction wfn, Options& options);
-    /**\brief Build DF-based OEP object
+
+    /**\brief Build general OEP object
      *
      * @param type       - OEP category
      * @param wfn        - wavefunction
@@ -197,7 +198,8 @@ class ElectrostaticEnergyOEPotential : public OEPotential
     virtual ~ElectrostaticEnergyOEPotential();
 
     virtual void compute(const std::string& oepType) override;
-    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) override;
+    virtual void compute_3D(const std::string& oepType, 
+                            const double& x, const double& y, const double& z, double& v) override;
     virtual void print_header() const override;
 
   private:
@@ -223,7 +225,8 @@ class RepulsionEnergyOEPotential : public OEPotential
     virtual ~RepulsionEnergyOEPotential();
 
     virtual void compute(const std::string& oepType) override;
-    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) override;
+    virtual void compute_3D(const std::string& oepType, 
+                            const double& x, const double& y, const double& z, double& v) override;
     virtual void print_header() const override;
 
   private:
@@ -251,7 +254,8 @@ class ChargeTransferEnergyOEPotential : public OEPotential
     virtual ~ChargeTransferEnergyOEPotential();
 
     virtual void compute(const std::string& oepType) override;
-    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) override;
+    virtual void compute_3D(const std::string& oepType, 
+                            const double& x, const double& y, const double& z, double& v) override;
     virtual void print_header() const override;
 
   private:
@@ -285,7 +289,8 @@ class EETCouplingOEPotential : public OEPotential
     virtual ~EETCouplingOEPotential();
 
     virtual void compute(const std::string& oepType) override;
-    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) override;
+    virtual void compute_3D(const std::string& oepType, 
+                            const double& x, const double& y, const double& z, double& v) override;
     virtual void print_header() const override;
 
   private:
@@ -296,4 +301,4 @@ class EETCouplingOEPotential : public OEPotential
 /** @}*/
 } // EndNameSpace oepdev
 
-#endif // _oepdev_liboep_liboep_h_ 
+#endif // _oepdev_liboep_oep_h_ 
