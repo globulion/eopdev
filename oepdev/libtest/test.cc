@@ -111,10 +111,10 @@ double oepdev::test::Test::test_basic(void)
 
   for (int i=0; i<nbf; ++i) {
        for (int j=0; j<nbf; ++j) {
-            r_sum += pow(pD[i][j] - *pref_D, 2.0);
-            r_sum += pow(pF[i][j] - *pref_F, 2.0);
-            r_sum += pow(pS[i][j] - *pref_S, 2.0);
-            r_sum += pow(pH[i][j] - *pref_H, 2.0);
+            r_sum += sqrt(pow(pD[i][j] - *pref_D, 2.0));
+            r_sum += sqrt(pow(pF[i][j] - *pref_F, 2.0));
+            r_sum += sqrt(pow(pS[i][j] - *pref_S, 2.0));
+            r_sum += sqrt(pow(pH[i][j] - *pref_H, 2.0));
             pref_D++;
             pref_F++;
             pref_S++;
