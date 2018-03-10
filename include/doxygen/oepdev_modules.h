@@ -16,6 +16,14 @@
  */
 
 /**
+ *  @defgroup OEPDEV_GEFP The Generalized Effective Fragment Potentials Library
+ *  @brief
+ *  Implements the GEFP method, the far goal of the OEPDev project.
+ *  Here you will find the containers for GEFP parameters, the density matrix
+ *  susceptibility tensors and GEFP solvers.
+ */
+
+/**
  *  @defgroup OEPDEV_LIBINTS The Integral Package Library
  *  @brief
  *  Implementations of various one- and two-body
@@ -240,6 +248,12 @@
  *  of a generalized density distribution based on the input generalized
  *  potential scalar field. Among others, you will find here the 
  *  electrostatic potential (ESP) fitting method.
+ */
+
+/**
+ *  @defgroup OEPDEV_DFT The Density Functional Theory Library
+ *  @brief
+ *  Implements the OEPDev ab initio DFT methods.
  */
 
 /**

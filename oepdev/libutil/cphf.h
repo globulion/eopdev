@@ -106,7 +106,7 @@ class CPHF {
        std::vector<std::shared_ptr<psi::DIISManager>> _diis;
      #endif
      /// Options
-     Options _options;
+     Options& _options;
 
      // <--- target quantities ---> //
 
@@ -140,6 +140,12 @@ class CPHF {
 
      /// get the number of occupied orbitals
      int nocc(void) const {return _no;}
+
+     /// grab the wavefunction
+     std::shared_ptr<Wavefunction> wfn(void) const {return _wfn;}
+
+     /// grab the Psi4 options
+     Options& options(void) const {return _options;}
 
      /// retrieve the molecular (total) polarizability
      std::shared_ptr<Matrix> polarizability(void) const {return _molecularPolarizability;}

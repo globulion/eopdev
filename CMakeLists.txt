@@ -55,6 +55,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libints/recurr.cc
                        oepdev/libints/eri.cc
                        oepdev/libtest/test.cc
+                       oepdev/libgefp/gefp.cc
                )
 
 add_test (NAME BASIC   COMMAND "psi4" "tests/oepdev/basic.inp"   "tests/oepdev/basic.out"  )
