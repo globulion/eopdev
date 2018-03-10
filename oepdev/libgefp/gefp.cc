@@ -1,0 +1,188 @@
+#include <iostream>
+#include "gefp.h"
+#include "psi4/libmints/matrix.h"
+using namespace std;
+
+oepdev::GenEffFrag::GenEffFrag() {}
+oepdev::GenEffFrag::~GenEffFrag() {}
+void oepdev::GenEffFrag::rotate(std::shared_ptr<psi::Matrix> R)
+{
+  throw psi::NOT_IMPLEMENTED_EXCEPTION();
+}
+void oepdev::GenEffFrag::translate(std::shared_ptr<psi::Vector> T)
+{
+  throw psi::NOT_IMPLEMENTED_EXCEPTION();
+}
+void oepdev::GenEffFrag::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList)
+{
+  throw psi::NOT_IMPLEMENTED_EXCEPTION();
+}
+//-- GenEffFragFactory --////////////////////////////////////////////////////////////////////////////////
+oepdev::GenEffFragFactory::GenEffFragFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt) :
+ wfn_(wfn),
+ options_(opt)
+{
+
+}
+oepdev::GenEffFragFactory::~GenEffFragFactory()
+{
+
+}
+void oepdev::GenEffFragFactory::compute()
+{
+
+}
+//-- PolarGEFactory --////////////////////////////////////////////////////////////////////////////////
+oepdev::PolarGEFactory::PolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
+ oepdev::GenEffFragFactory(cphf->wfn(), opt),
+ cphfSolver_(cphf)
+{
+
+}
+oepdev::PolarGEFactory::PolarGEFactory(std::shared_ptr<CPHF> cphf) :
+ oepdev::GenEffFragFactory(cphf->wfn(), cphf->options()),
+ cphfSolver_(cphf)
+{
+
+}
+oepdev::PolarGEFactory::~PolarGEFactory()
+{
+
+}
+void oepdev::PolarGEFactory::compute()
+{
+  // Sizing
+  int nbf = wfn_->basisset()->nbf();
+  int nocc= cphfSolver_->nocc();
+
+  // Allocate
+  std::shared_ptr<MatrixFactory> matrixFactory = std::make_shared<psi::MatrixFactory>();
+  psi::IntegralFactory integrals(wfn_->basisset());
+  std::shared_ptr<psi::Matrix> Sao = std::make_shared<psi::Matrix>("Overlap AO Ints", nbf, nbf);
+  std::shared_ptr<psi::Matrix> X   = std::make_shared<psi::Matrix>("Lowdin Symmetric Orthogonalizer: S^{-1/2}", nbf, nbf);
+  std::shared_ptr<psi::Matrix> Y   = std::make_shared<psi::Matrix>("Lowdin Symmetric Deorthogonalizer: S^{+1/2}", nbf, nbf);
+  std::vector<std::shared_ptr<psi::Matrix>> Mao, Mao_bar, Mmo_ao_bar, L, G;
+  for (int z = 0; z<3; ++z) {
+       Mao.push_back(std::make_shared<psi::Matrix>("Dipole AO Ints", nbf, nbf));
+       G  .push_back(std::make_shared<psi::Matrix>("Left Inverse L Tensor", nocc, nbf));
+  }
+  std::shared_ptr<psi::Matrix> eigvec   = matrixFactory->create_shared_matrix("Eigenvectors of Sao");
+  std::shared_ptr<psi::Matrix> eigval_m = matrixFactory->create_shared_matrix("Eigenvalues of Sao");
+  std::shared_ptr<psi::Matrix> temp     = matrixFactory->create_shared_matrix("Temporary");
+  std::shared_ptr<psi::Vector> eigval    (matrixFactory->create_vector());
+
+  // Compute Dipole Integrals
+  std::shared_ptr<psi::OneBodyAOInt> dipInt(integrals.ao_dipole());
+  dipInt->compute(Mao);
+
+  // Compute Overlap Integrals
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt(integrals.ao_overlap());
+  ovlInt->compute(Sao);
+
+  // Compute Lowdin Symmetric Orthogonalizer
+  Sao->diagonalize(eigvec, eigval);
+  double min_S = fabs(eigval->get(0,0));
+  for (int i=0; i<nbf; ++i) {
+       if (min_S > eigval->get(0, i)) 
+           min_S = eigval->get(0, i);
+       double v = 1.0 / sqrt(eigval->get(0, i));
+       eigval->set(0, i, v);
+  }
+  outfile->Printf("  Minimum eigenvalue in the overlap matrix is %14.10E.\n", min_S);
+
+  eigval_m->set_diagonal(eigval);
+  temp->gemm(false, true, 1.0, eigval_m, eigvec, 0.0);
+  X->gemm(false, false, 1.0, eigvec, temp, 0.0);
+
+  // Compute Deorthogonalizer
+  Y->copy(X);
+  Y->invert();
+
+  // LCAO-LMO Coefficients in Non-Orthogonal AO Basis
+  std::shared_ptr<psi::Matrix> U = psi::Matrix::doublet(wfn_->Ca_subset("AO","OCC"), cphfSolver_->localizer()->U(), false, false);
+
+  // LCAO-LMO Coefficients in Orthogonal AO Basis
+  std::shared_ptr<psi::Matrix> Ubar = psi::Matrix::doublet(Y, U, false, false);
+
+  // One-Particle Density Matrix in Orthogonal AO Basis
+  std::shared_ptr<psi::Matrix> Dbar = psi::Matrix::doublet(Ubar, Ubar, false, true);
+
+  // Transform Dipole Integrals to Orthogonal Basis
+  for (int z = 0; z<3; ++z) {
+       Mao_bar.push_back(psi::Matrix::triplet(X, Mao[z], X, true, false, false));
+  }
+
+  // Transform Left Axis of Dipole AO Integrals to LMO Basis
+  for (int z = 0; z<3; ++z) {
+       Mmo_ao_bar.push_back(psi::Matrix::doublet(Ubar, Mao_bar[z], true, false));
+  }
+
+  // Compute L Vector of Matrices
+  std::shared_ptr<psi::Matrix> proj = std::make_shared<psi::Matrix>("",nbf, nbf);
+  proj->identity();
+  proj->subtract(Dbar);
+  for (int z = 0; z<3; ++z) {
+       L.push_back(psi::Matrix::doublet(Mao_bar[z], proj, false, false));
+  }
+
+  // Compute Collection of Left L Inverse Matrces
+  for (int o = 0; o < nocc; ++o) {
+       std::shared_ptr<psi::Matrix> Li = std::make_shared<psi::Matrix>("", nbf, 3);
+       for (int z = 0; z < 3; ++z) {
+            for (int n = 0; n < nbf; ++n) {
+                 double v = L[z]->get(o, n);
+                 Li->set(n, z, v);
+            }
+       }
+       std::shared_ptr<psi::Matrix> Q  = psi::Matrix::doublet(Li, Li, true, false);
+       Q->invert();
+       std::shared_ptr<psi::Matrix> Li_left = psi::Matrix::doublet(Q, Li, false, true);
+       for (int z = 0; z < 3; ++z) {
+            for (int n = 0; n < nbf; ++n) {
+                 double v = Li_left->get(z, n);
+                 G[z]->set(o, n, v);
+            }
+       }
+  }
+
+  // Transform G by Distributed Polarizabilities
+  for (int o = 0; o < nocc; ++o) {
+       std::shared_ptr<psi::Matrix> pol = cphfSolver_->polarizability(o);
+       for (int n = 0; n < nbf; ++n) {
+            double v_x = pol->get(0, 0) * G[0]->get(o, n) + 
+                         pol->get(0, 1) * G[1]->get(o, n) +
+                         pol->get(0, 2) * G[2]->get(o, n);
+            double v_y = pol->get(1, 0) * G[0]->get(o, n) + 
+                         pol->get(1, 1) * G[1]->get(o, n) +
+                         pol->get(1, 2) * G[2]->get(o, n);
+            double v_z = pol->get(2, 0) * G[0]->get(o, n) + 
+                         pol->get(2, 1) * G[1]->get(o, n) +
+                         pol->get(2, 2) * G[2]->get(o, n);
+            G[0]->set(o, n, v_x);
+            G[1]->set(o, n, v_y);
+            G[2]->set(o, n, v_z);
+       }
+  }
+
+  // Compute The Density Matrix Susceptibility Tensors 
+  for (int o = 0; o < nocc; ++o) {
+       std::vector<std::shared_ptr<psi::Matrix>> Bi;
+       for (int z = 0; z < 3; ++z) {
+            Bi.push_back(std::make_shared<psi::Matrix>("", nbf, nbf)); 
+            for (int i = 0; i < nbf; ++i) { 
+                 for (int j = 0; j < nbf; ++j) {
+                      double v =  G[z]->get(o, i) * Ubar->get(j, o) + 
+                                  G[z]->get(o, j) * Ubar->get(i, o) ;
+                      for (int k = 0; k < nbf; ++k) {
+                           v += G[z]->get(o, k) * (Dbar->get(i, k) * Ubar->get(j, o) +
+                                                   Dbar->get(k, j) * Ubar->get(i, o) );
+                      }
+                      Bi[z]->set(i, j, v);
+                 }
+            }
+            Bi[z]->scale(-0.25000000);
+       }
+       densityMatrixSusceptibility_.push_back(Bi);
+  }
+}
+
