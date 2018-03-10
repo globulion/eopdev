@@ -116,9 +116,11 @@ int read_options(std::string name, Options& options)
         /*- CPHF convergence -*/                                                    
         options.add_double ("CPHF_CONVER"           , 1.0E-8                     );
         /*- Whether use DIIS for CPHF -*/                                           
-        options.add_bool   ("CPHF_DIIS"             , false                      );
+        options.add_bool   ("CPHF_DIIS"             , true                       );
         /*- Size of DIIS subspace for CPHF -*/                                      
         options.add_int    ("CPHF_DIIS_DIM"         , 3                          );
+        /*- Localizer for CPHF routine -*/                                          
+        options.add_str    ("CPHF_LOCALIZER"        , "BOYS"                     );
         /*- ESP: number of points per atom -*/                                      
         options.add_int    ("ESP_NPOINTS_PER_ATOM"  , 1500                       );
         /*- ESP: padding of a sphere enclosing the molecule -*/                     

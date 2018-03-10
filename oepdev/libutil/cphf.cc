@@ -7,6 +7,7 @@ using namespace psi;
 
 
 CPHF::CPHF(SharedWavefunction ref_wfn, Options& options) :
+            _wfn(ref_wfn),
             _primary(ref_wfn->basisset()),
             _cocc(ref_wfn->Ca_subset("AO","OCC")),
             _cvir(ref_wfn->Ca_subset("AO","VIR")),
@@ -52,6 +53,7 @@ void CPHF::compute(void) {
     // Setup dipole perturbations //
 
     std::vector<std::shared_ptr<Matrix>> Fmo;
+    std::vector<std::shared_ptr<Matrix>> Rmo;
     std::vector<std::shared_ptr<Matrix>> Fao;
 
     for (unsigned int z = 0; z < 3; z++) {
@@ -65,6 +67,7 @@ void CPHF::compute(void) {
 
     for (unsigned int z=0; z<3; z++) {
       Fmo.push_back(Matrix::triplet(_cocc,Fao[z],_cvir,true,false,false));
+      Rmo.push_back(Matrix::triplet(_cocc,Fao[z],_cocc,true,false,false));
       Fmo[z]->scale(-2.0);
     }
 
@@ -183,8 +186,30 @@ void CPHF::compute(void) {
         outfile->Printf("\n CPHF Failed.\n\n");
     }
 
+    // Transform the Xmo and Fmo vectors to a localized MO basis
+    _localizer = Localizer::build(_options.get_str("CPHF_LOCALIZER"), 
+                 _wfn->basisset(), _wfn->Ca_subset("AO", "OCC"), _options);
+    _localizer->localize();
+
+    // Compute LMO centroids
+    std::vector<std::shared_ptr<Matrix>> Rmo_LMO;
+    for (unsigned int z=0; z<3; z++) {
+         Rmo_LMO.push_back(Matrix::triplet(_localizer->U(), Rmo[z], _localizer->U(), true, false, false));
+         Rmo_LMO[z]->scale(-1.0);
+         Rmo[z].reset();
+    }
+
+    for (unsigned int z=0; z<3; z++) {
+         std::shared_ptr<Matrix> m;
+         m = Matrix::doublet(_localizer->U(), Xmo[z], true, false);
+         Xmo[z]->copy(m);
+         m = Matrix::doublet(_localizer->U(), Fmo[z], true, false);
+         Fmo[z]->copy(m);
+    }
+    _localizer->U()->print();
+
     // Compute and print the dipole polarizability tensor
-    
+
     std::shared_ptr<Matrix> P(new Matrix("Polarizability", 3, 3));
     double** Pp = P->pointer();
     for (unsigned int z1=0; z1<3; z1++) {
@@ -193,7 +218,27 @@ void CPHF::compute(void) {
         }
     }
     P->set_name("Molecular Polarizability");
-    _molecular_polarizability = P;
+    _molecularPolarizability = P;
+    
+    for (int o = 0; o < _no; ++o) {
+         std::shared_ptr<Vector> Ro(new Vector("", 3));
+         std::shared_ptr<Matrix> Po(new Matrix("Polarizability", 3, 3));
+         for (unsigned int z1=0; z1<3; z1++) {
+              for (unsigned int z2=0; z2<3; z2++) {
+                   double v = Xmo[z1]->get_row(0,o)->vector_dot(Fmo[z2]->get_row(0,o));
+                   Po->set(z1, z2, v);
+              }
+              Ro->set(z1, Rmo_LMO[z1]->get(o,o));
+         }
+         Po->set_name("Orbital -" + string_sprintf("%d", o+1) + "- Polarizability");
+         Ro->set_name("Orbital -" + string_sprintf("%d", o+1) + "- Centroid");
+         _orbitalPolarizabilities.push_back(Po);
+         _orbitalCentroids.push_back(Ro);
+
+    }
+
+    // Compute the molecular orbital centroids
+    
 
 }
 
