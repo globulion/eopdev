@@ -1,7 +1,8 @@
 #include <iostream>
 #include "test.h"
-#include "../libutil/cphf.h"
 #include "psi4/libmints/matrix.h"
+#include "../libutil/cphf.h"
+#include "../libgefp/gefp.h"
 using namespace std;
 
 oepdev::test::Test::Test(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options) :
@@ -16,6 +17,7 @@ double oepdev::test::Test::run(void)
   double result;
   if      (options_.get_str("OEPDEV_TEST_NAME")=="BASIC"  ) result = test_basic  ();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CPHF"   ) result = test_cphf   ();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="DMATPOL") result = test_dmatPol();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="ERI_1_1") result = test_eri_1_1();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="ERI_2_2") result = test_eri_2_2();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="ERI_3_1") result = test_eri_3_1();
@@ -162,6 +164,27 @@ double oepdev::test::Test::test_cphf(void)
             r++;
        }
   }
+
+  // Print
+  std::cout << std::fixed;
+  std::cout.precision(8);
+  std::cout << " Test result= " << r_sum << std::endl;
+
+  // Return
+  return r_sum;
+}
+double oepdev::test::Test::test_dmatPol(void)
+{
+  std::shared_ptr<oepdev::CPHF> solver = std::make_shared<oepdev::CPHF>(wfn_, options_);
+  solver->compute();
+
+  psi::timer_on (" Test: Computation of Dmat Susc");
+  std::shared_ptr<oepdev::GenEffFragFactory> factory = std::make_shared<oepdev::PolarGEFactory>(solver, options_);
+  factory->compute();
+  psi::timer_off(" Test: Computation of Dmat Susc");
+
+  // Accumulate errors
+  double r_sum = 0.0;
 
   // Print
   std::cout << std::fixed;

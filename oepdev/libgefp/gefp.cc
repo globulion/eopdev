@@ -57,6 +57,7 @@ void oepdev::PolarGEFactory::compute()
 
   // Allocate
   std::shared_ptr<MatrixFactory> matrixFactory = std::make_shared<psi::MatrixFactory>();
+  matrixFactory->init_with(1, &nbf, &nbf);
   psi::IntegralFactory integrals(wfn_->basisset());
   std::shared_ptr<psi::Matrix> Sao = std::make_shared<psi::Matrix>("Overlap AO Ints", nbf, nbf);
   std::shared_ptr<psi::Matrix> X   = std::make_shared<psi::Matrix>("Lowdin Symmetric Orthogonalizer: S^{-1/2}", nbf, nbf);
