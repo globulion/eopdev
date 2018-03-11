@@ -240,6 +240,7 @@ size_t ERI_2_2::compute_quartet(int sh1, int sh2, int sh3, int sh4)
     size_t size = nam1 * nam2 * nam3 * nam4;
 
     // Clean ERI buffer after previous quartet
+    #pragma omp parallel for
     for (int i=0; i<size; ++i) target_full_[i] = 0.0;
 
     // Iterate over primitives

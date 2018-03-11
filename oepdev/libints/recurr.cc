@@ -63,6 +63,7 @@ void make_mdh_D2_coeff(int n1, int n2, double aPd, double* PA, double* PB, doubl
    double xPB = PB[0];
    double yPB = PB[1];
    double zPB = PB[2];
+
    for (int j=1; j < n2+1; ++j) {
         for (int n = 0; n < n2+1; ++n) {
              //int I = 17*(j-1) + n;
