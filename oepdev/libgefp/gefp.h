@@ -121,7 +121,7 @@ class GenEffFrag
  * Describes the GEFP fragment that is in principle designed to work
  * at correlated levels of theory.
  */
-class GenEffParFactory
+class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
 {
   public: 
    /// Construct from wavefunction and Psi4 options
@@ -153,7 +153,7 @@ class GenEffParFactory
  *
  * Implements creation of the density matrix susceptibility tensors.
  */
-class PolarGEFactory : public GenEffParFactory
+class PolarGEFactory : public GenEffParFactory, public std::enable_shared_from_this<PolarGEFactory>
 {
   public:
    /// Construct from CPHF object and Psi4 options
@@ -166,12 +166,39 @@ class PolarGEFactory : public GenEffParFactory
    virtual ~PolarGEFactory();
 
    /// Compute the density matrix susceptibility tensors
-   std::shared_ptr<GenEffPar> compute(void);
+   virtual std::shared_ptr<GenEffPar> compute(void);
 
   protected:
    /// The CPHF object
    std::shared_ptr<CPHF> cphfSolver_;
 
+
+};
+
+/** \brief Polarization GEFP Factory with Least-Squares Scaling.
+ *
+ */
+class ScaledPolarGEFactory : public PolarGEFactory
+{
+  public:
+   /// Construct from CPHF object and Psi4 options
+   ScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+
+   /// Construct from CPHF object only (options will be read from CPHF object)
+   ScaledPolarGEFactory(std::shared_ptr<CPHF> cphf);
+
+   /// Destruct
+   virtual ~ScaledPolarGEFactory();
+
+   /// Pefrorm Least-Squares Fit
+   std::shared_ptr<GenEffPar> compute(void);
+
+  private:
+   /// Randomly draw electric field value
+   std::shared_ptr<psi::Vector> draw_field();
+
+   /// Solve SCF equations to find perturbed one-particle density matrix
+   std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& field);
 
 };
 
