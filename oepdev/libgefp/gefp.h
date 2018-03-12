@@ -17,6 +17,35 @@ using namespace std;
  * @{
  */
 
+/** \brief Generalized Effective Fragment Parameters. Container Class.
+ *
+ */
+class GenEffPar
+{
+  public:
+   /// Create with name of this parameter type
+   GenEffPar(std::string name) : name_(name) {};
+   /// Destruct
+  ~GenEffPar() {};
+
+   /// Set The Density Matrix Susceptibility Tensors  
+   void set_susceptibility(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixSusceptibility_=susc;};
+
+   /// Grab the density matrix susceptibility tensor for the *i*-th LMO
+   std::vector<std::shared_ptr<psi::Matrix>> susceptibility(int i) const {return densityMatrixSusceptibility_[i];}
+
+   /// Grab the density matrix susceptibility tensor *x*-th component for the *i*-th LMO
+   std::shared_ptr<psi::Matrix> susceptibility(int i, int x) const {return densityMatrixSusceptibility_[i][x];}
+
+
+  protected:
+   /// The Name of Parameter Type
+   std::string name_;
+
+   /// The Density Matrix Susceptibility Tensors
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixSusceptibility_;
+};
+
 /** \brief Generalized Effective Fragment. Container Class.
  *
  * Describes the GEFP fragment that is in principle designed to work
@@ -24,11 +53,23 @@ using namespace std;
  */
 class GenEffFrag
 {
+  protected: 
+   /// Name of GEFP
+   std::string name_;
+
   public:
-   /// Initialize
+   /// Initialize with default name of GEFP (Default)
    GenEffFrag();
+   /// Initialize with custom name of GEFP
+   GenEffFrag(std::string name);
    /// Destruct
   ~GenEffFrag();
+
+   /// Dictionary of All GEF Parameters
+   std::map<std::string, std::shared_ptr<GenEffPar>> parameters;
+
+
+   // ---> Mutators <--- //
 
    /// Rotate
    void rotate(std::shared_ptr<psi::Matrix> R);
@@ -39,41 +80,58 @@ class GenEffFrag
    /// Superimpose
    void superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList);
 
+   /// Set the Density Matrix Susceptibility Tensors
+   void set_gefp_polarization(const std::shared_ptr<GenEffPar>& par) {densityMatrixSusceptibilityGEF_=par;}
+
+   void set_dmat_susceptibility(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) 
+        { if (densityMatrixSusceptibilityGEF_) 
+              densityMatrixSusceptibilityGEF_->set_susceptibility(susc); }
+
+   //void set_lmo_centroids();
+
+   /// Grab the density matrix susceptibility tensor for the *i*-th LMO
+   std::vector<std::shared_ptr<psi::Matrix>> susceptibility(int i) const {return densityMatrixSusceptibilityGEF_->susceptibility(i);}
+
+   /// Grab the density matrix susceptibility tensor *x*-th component for the *i*-th LMO
+   std::shared_ptr<psi::Matrix> susceptibility(int i, int x) const {return densityMatrixSusceptibilityGEF_->susceptibility(i,x);}
+
+
   protected:
    // ===> Generalized Fragment Parameters <=== //
 
    /// Density Matrix Susceptibility Tensor
-   std::shared_ptr<GenEffFrag> densityMatrixSusceptibilityGEF_;
+   std::shared_ptr<GenEffPar> densityMatrixSusceptibilityGEF_;
 
    /// Electrostatic Energy Effective One-Electron Potential
-   std::shared_ptr<GenEffFrag> electrostaticEnergyGEF_;
+   std::shared_ptr<GenEffPar> electrostaticEnergyGEF_;
 
    /// Exchange-Repulsion Effective One-Electron Potential
-   std::shared_ptr<GenEffFrag> repulsionEnergyGEF_;
+   std::shared_ptr<GenEffPar> repulsionEnergyGEF_;
 
    /// Charge-Transfer Effective One-Electron Potential
-   std::shared_ptr<GenEffFrag> chargeTransferEnergyGEF_;
+   std::shared_ptr<GenEffPar> chargeTransferEnergyGEF_;
 
    /// EET Coupling Effective One-Electron Potential
-   std::shared_ptr<GenEffFrag> EETCouplingConstantGEF_;
+   std::shared_ptr<GenEffPar> EETCouplingConstantGEF_;
 };
+
 
 /** \brief Generalized Effective Fragment Factory. Abstract Base.
  *
  * Describes the GEFP fragment that is in principle designed to work
  * at correlated levels of theory.
  */
-class GenEffFragFactory
+class GenEffParFactory
 {
   public: 
    /// Construct from wavefunction and Psi4 options
-   GenEffFragFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   GenEffParFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
 
    /// Destruct
-   virtual ~GenEffFragFactory();
+   virtual ~GenEffParFactory();
 
    /// Compute the fragment parameters
-   virtual void compute(void) = 0;
+   virtual std::shared_ptr<GenEffPar> compute(void) = 0;
 
    /// Grab wavefunction
    virtual std::shared_ptr<psi::Wavefunction> wfn(void) const {return wfn_;}
@@ -88,8 +146,6 @@ class GenEffFragFactory
    /// Psi4 Options
    psi::Options& options_;
 
-
-  
   private:
 };
 
@@ -97,7 +153,7 @@ class GenEffFragFactory
  *
  * Implements creation of the density matrix susceptibility tensors.
  */
-class PolarGEFactory : public GenEffFragFactory
+class PolarGEFactory : public GenEffParFactory
 {
   public:
    /// Construct from CPHF object and Psi4 options
@@ -110,23 +166,13 @@ class PolarGEFactory : public GenEffFragFactory
    virtual ~PolarGEFactory();
 
    /// Compute the density matrix susceptibility tensors
-   void compute(void);
-
-   /// Grab the density matrix susceptibility tensor for the *i*-th LMO
-   std::vector<std::shared_ptr<psi::Matrix>> susceptibility(int i) const {return densityMatrixSusceptibility_[i];}
-
-   /// Grab the density matrix susceptibility tensor *x*-th component for the *i*-th LMO
-   std::shared_ptr<psi::Matrix> susceptibility(int i, int x) const {return densityMatrixSusceptibility_[i][x];}
-
-   /// Grab the CPHF solver
-   std::shared_ptr<CPHF> cphf_solver(void) const {return cphfSolver_;}
+   std::shared_ptr<GenEffPar> compute(void);
 
   protected:
    /// The CPHF object
    std::shared_ptr<CPHF> cphfSolver_;
 
-   /// The density matrix susceptibility tensors
-   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixSusceptibility_;
+
 };
 
 /** @}*/

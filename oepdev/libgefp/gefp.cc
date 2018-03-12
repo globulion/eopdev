@@ -5,7 +5,21 @@
 
 using namespace std;
 
-oepdev::GenEffFrag::GenEffFrag() {}
+oepdev::GenEffFrag::GenEffFrag(std::string name) : 
+  name_(name),
+  densityMatrixSusceptibilityGEF_(nullptr),
+  electrostaticEnergyGEF_(nullptr),
+  repulsionEnergyGEF_(nullptr),
+  chargeTransferEnergyGEF_(nullptr),
+  EETCouplingConstantGEF_(nullptr)
+
+{
+  parameters["POLARIZATION"   ] = densityMatrixSusceptibilityGEF_;
+  parameters["COULOMBIC   "   ] = electrostaticEnergyGEF_;
+  parameters["REPULSION"      ] = repulsionEnergyGEF_;
+  parameters["CHARGE_TRANSFER"] = chargeTransferEnergyGEF_;
+  parameters["EET_COUPLING"   ] = EETCouplingConstantGEF_;
+}
 oepdev::GenEffFrag::~GenEffFrag() {}
 void oepdev::GenEffFrag::rotate(std::shared_ptr<psi::Matrix> R)
 {
@@ -19,30 +33,30 @@ void oepdev::GenEffFrag::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std
 {
   throw psi::NOT_IMPLEMENTED_EXCEPTION();
 }
-//-- GenEffFragFactory --////////////////////////////////////////////////////////////////////////////////
-oepdev::GenEffFragFactory::GenEffFragFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt) :
+//-- GenEffParFactory --////////////////////////////////////////////////////////////////////////////////
+oepdev::GenEffParFactory::GenEffParFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt) :
  wfn_(wfn),
  options_(opt)
 {
 
 }
-oepdev::GenEffFragFactory::~GenEffFragFactory()
+oepdev::GenEffParFactory::~GenEffParFactory()
 {
 
 }
-void oepdev::GenEffFragFactory::compute()
+std::shared_ptr<oepdev::GenEffPar> oepdev::GenEffParFactory::compute()
 {
 
 }
 //-- PolarGEFactory --////////////////////////////////////////////////////////////////////////////////
 oepdev::PolarGEFactory::PolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
- oepdev::GenEffFragFactory(cphf->wfn(), opt),
+ oepdev::GenEffParFactory(cphf->wfn(), opt),
  cphfSolver_(cphf)
 {
 
 }
 oepdev::PolarGEFactory::PolarGEFactory(std::shared_ptr<CPHF> cphf) :
- oepdev::GenEffFragFactory(cphf->wfn(), cphf->options()),
+ oepdev::GenEffParFactory(cphf->wfn(), cphf->options()),
  cphfSolver_(cphf)
 {
 
@@ -51,7 +65,7 @@ oepdev::PolarGEFactory::~PolarGEFactory()
 {
 
 }
-void oepdev::PolarGEFactory::compute()
+std::shared_ptr<oepdev::GenEffPar> oepdev::PolarGEFactory::compute()
 {
   // Sizing
   int nbf = wfn_->basisset()->nbf();
@@ -115,6 +129,7 @@ void oepdev::PolarGEFactory::compute()
 
   // Transform Dipole Integrals to Orthogonal Basis
   for (int z = 0; z<3; ++z) {
+       Mao[z]->scale(-1.0);
        Mao_bar.push_back(psi::Matrix::triplet(X, Mao[z], X, true, false, false));
   }
 
@@ -170,6 +185,8 @@ void oepdev::PolarGEFactory::compute()
   }
 
   // Compute The Density Matrix Susceptibility Tensors 
+  std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixSusceptibility;
+
   for (int o = 0; o < nocc; ++o) {
        std::vector<std::shared_ptr<psi::Matrix>> Bi;
        for (int z = 0; z < 3; ++z) {
@@ -190,7 +207,14 @@ void oepdev::PolarGEFactory::compute()
             Biz_t->scale(-0.25000000);
             Bi.push_back(Biz_t);
        }
-       densityMatrixSusceptibility_.push_back(Bi);
+       densityMatrixSusceptibility.push_back(Bi);
   }
+
+  // Construct The Effective Fragment Parameters Object
+  std::shared_ptr<oepdev::GenEffPar> par = std::make_shared<oepdev::GenEffPar>("Polarization");
+  par->set_susceptibility(densityMatrixSusceptibility);
+
+  // Return
+  return par;
 }
 

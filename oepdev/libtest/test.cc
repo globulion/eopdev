@@ -179,9 +179,11 @@ double oepdev::test::Test::test_dmatPol(void)
   solver->compute();
 
   psi::timer_on (" Test: Computation of Dmat Susc");
-  std::shared_ptr<oepdev::GenEffFragFactory> factory = std::make_shared<oepdev::PolarGEFactory>(solver, options_);
-  factory->compute();
+  std::shared_ptr<oepdev::GenEffParFactory> factory = std::make_shared<oepdev::PolarGEFactory>(solver, options_);
+  std::shared_ptr<oepdev::GenEffPar> par = factory->compute();
   psi::timer_off(" Test: Computation of Dmat Susc");
+
+  par->susceptibility(0, 0)->print();
 
   // Accumulate errors
   double r_sum = 0.0;
