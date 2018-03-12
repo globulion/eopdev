@@ -1,6 +1,8 @@
 #include <iostream>
-#include "gefp.h"
 #include "psi4/libmints/matrix.h"
+#include "gefp.h"
+#include "../libutil/util.h"
+
 using namespace std;
 
 oepdev::GenEffFrag::GenEffFrag() {}
@@ -70,6 +72,7 @@ void oepdev::PolarGEFactory::compute()
   std::shared_ptr<psi::Matrix> eigvec   = matrixFactory->create_shared_matrix("Eigenvectors of Sao");
   std::shared_ptr<psi::Matrix> eigval_m = matrixFactory->create_shared_matrix("Eigenvalues of Sao");
   std::shared_ptr<psi::Matrix> temp     = matrixFactory->create_shared_matrix("Temporary");
+  std::shared_ptr<psi::Matrix> proj     = matrixFactory->create_shared_matrix("Projector in Orthogonal AO Space");
   std::shared_ptr<psi::Vector> eigval    (matrixFactory->create_vector());
 
   // Compute Dipole Integrals
@@ -104,9 +107,11 @@ void oepdev::PolarGEFactory::compute()
 
   // LCAO-LMO Coefficients in Orthogonal AO Basis
   std::shared_ptr<psi::Matrix> Ubar = psi::Matrix::doublet(Y, U, false, false);
+  Ubar->set_name("LCAO-LMO Coefficients in Orthogonal AO Basis");
 
   // One-Particle Density Matrix in Orthogonal AO Basis
   std::shared_ptr<psi::Matrix> Dbar = psi::Matrix::doublet(Ubar, Ubar, false, true);
+  Dbar->set_name("One-Particle Density Matrix in Orthogonal AO Basis");
 
   // Transform Dipole Integrals to Orthogonal Basis
   for (int z = 0; z<3; ++z) {
@@ -119,11 +124,10 @@ void oepdev::PolarGEFactory::compute()
   }
 
   // Compute L Vector of Matrices
-  std::shared_ptr<psi::Matrix> proj = std::make_shared<psi::Matrix>("",nbf, nbf);
   proj->identity();
   proj->subtract(Dbar);
   for (int z = 0; z<3; ++z) {
-       L.push_back(psi::Matrix::doublet(Mao_bar[z], proj, false, false));
+       L.push_back(psi::Matrix::doublet(Mmo_ao_bar[z], proj, false, false));
   }
 
   // Compute Collection of Left L Inverse Matrces
@@ -169,7 +173,7 @@ void oepdev::PolarGEFactory::compute()
   for (int o = 0; o < nocc; ++o) {
        std::vector<std::shared_ptr<psi::Matrix>> Bi;
        for (int z = 0; z < 3; ++z) {
-            Bi.push_back(std::make_shared<psi::Matrix>("", nbf, nbf)); 
+            std::shared_ptr<psi::Matrix> Biz = matrixFactory->create_shared_matrix("Bi[z] Orthogonal AO Basis"); 
             for (int i = 0; i < nbf; ++i) { 
                  for (int j = 0; j < nbf; ++j) {
                       double v =  G[z]->get(o, i) * Ubar->get(j, o) + 
@@ -178,10 +182,13 @@ void oepdev::PolarGEFactory::compute()
                            v += G[z]->get(o, k) * (Dbar->get(i, k) * Ubar->get(j, o) +
                                                    Dbar->get(k, j) * Ubar->get(i, o) );
                       }
-                      Bi[z]->set(i, j, v);
+                      Biz->set(i, j, v);
                  }
             }
-            Bi[z]->scale(-0.25000000);
+            std::shared_ptr<psi::Matrix> Biz_t = psi::Matrix::triplet(X, Biz, X, false, false, false);
+            Biz_t->set_name(oepdev::string_sprintf("B(%d)[%d] in Non-Orthogonal AO Basis", o+1, z+1));
+            Biz_t->scale(-0.25000000);
+            Bi.push_back(Biz_t);
        }
        densityMatrixSusceptibility_.push_back(Bi);
   }

@@ -1,4 +1,5 @@
 #include "cphf.h"
+#include "../libutil/util.h"
 
 namespace oepdev{
 
@@ -210,19 +211,18 @@ void CPHF::compute(void) {
 
     // Compute and print the dipole polarizability tensor
 
-    std::shared_ptr<Matrix> P(new Matrix("Polarizability", 3, 3));
+    std::shared_ptr<Matrix> P(new Matrix("Molecular Polarizability", 3, 3));
     double** Pp = P->pointer();
     for (unsigned int z1=0; z1<3; z1++) {
         for (unsigned int z2=0; z2<3; z2++) {
             Pp[z1][z2] = Xmo[z1]->vector_dot(Fmo[z2]);
         }
     }
-    P->set_name("Molecular Polarizability");
     _molecularPolarizability = P;
     
     for (int o = 0; o < _no; ++o) {
          std::shared_ptr<Vector> Ro(new Vector("", 3));
-         std::shared_ptr<Matrix> Po(new Matrix("Polarizability", 3, 3));
+         std::shared_ptr<Matrix> Po(new Matrix("", 3, 3));
          for (unsigned int z1=0; z1<3; z1++) {
               for (unsigned int z2=0; z2<3; z2++) {
                    double v = Xmo[z1]->get_row(0,o)->vector_dot(Fmo[z2]->get_row(0,o));
@@ -230,8 +230,8 @@ void CPHF::compute(void) {
               }
               Ro->set(z1, Rmo_LMO[z1]->get(o,o));
          }
-         Po->set_name("Orbital -" + string_sprintf("%d", o+1) + "- Polarizability");
-         Ro->set_name("Orbital -" + string_sprintf("%d", o+1) + "- Centroid");
+         Po->set_name(string_sprintf("Orbital -%d- Polarizability", o+1));
+         Ro->set_name(string_sprintf("Orbital -%d- Centroid"      , o+1));
          _orbitalPolarizabilities.push_back(Po);
          _orbitalCentroids.push_back(Ro);
 

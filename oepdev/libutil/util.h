@@ -55,6 +55,21 @@ using SharedLocalizer          = std::shared_ptr<Localizer>;
  */
 extern "C" void preambule(void);
 
+/** \brief Format string output.
+ *  Example: std::string text = oepdev::string_sprinff("Test %3d, %13.5f", 5, -10.5425);
+ */
+template< typename... Args >
+std::string string_sprintf( const char* format, Args... args ) {
+  int length = std::snprintf( nullptr, 0, format, args... );
+  assert( length >= 0 );
+
+  char* buf = new char[length + 1];
+  std::snprintf( buf, length + 1, format, args... );
+
+  std::string str( buf );
+  delete[] buf;
+  return std::move(str);
+}
 
 /** \brief Set up DFT functional.
  *
