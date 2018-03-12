@@ -219,7 +219,8 @@ void CPHF::compute(void) {
         }
     }
     _molecularPolarizability = P;
-    
+
+    // Compute distributed polarizabilities and LMO centroids     
     for (int o = 0; o < _no; ++o) {
          std::shared_ptr<Vector> Ro(new Vector("", 3));
          std::shared_ptr<Matrix> Po(new Matrix("", 3, 3));
@@ -234,12 +235,7 @@ void CPHF::compute(void) {
          Ro->set_name(string_sprintf("Orbital -%d- Centroid"      , o+1));
          _orbitalPolarizabilities.push_back(Po);
          _orbitalCentroids.push_back(Ro);
-
     }
-
-    // Compute the molecular orbital centroids
-    
-
 }
 
 void CPHF::print(void) const {

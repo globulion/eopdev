@@ -46,7 +46,7 @@ class Test
    std::shared_ptr<psi::Wavefunction> wfn_;
 
    /// Psi4 Options
-   psi::Options options_;
+   psi::Options& options_;
 
    // ---> Tests <--- //
 
