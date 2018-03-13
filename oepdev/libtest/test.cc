@@ -184,6 +184,8 @@ double oepdev::test::Test::test_dmatPol(void)
   std::shared_ptr<oepdev::GenEffPar> par = factory->compute();
   psi::timer_off(" Test: Computation of Dmat Susc");
 
+  par->susceptibility(0,0)->print();
+
   // Accumulate errors
   double r_sum = 0.0;
 
@@ -191,6 +193,7 @@ double oepdev::test::Test::test_dmatPol(void)
   double Fx = 0.002;
   double Fy = 0.04;
   double Fz =-0.01;
+  double F[3] = {Fx, Fy, Fz};
 
   std::shared_ptr<psi::Wavefunction> scf_base = solve_scf(wfn_->molecule(),wfn_->basisset(),
                       oepdev::create_superfunctional("HF", options_),
@@ -235,7 +238,7 @@ double oepdev::test::Test::test_dmatPol(void)
   dD_m->set_name("Difference Density Matrix: Model");
 
   std::vector<std::shared_ptr<psi::Vector>> ind_dipoles;
-  std::shared_ptr<psi::Vector> ind_dipole = std::make_shared<psi::Vector>("IndDip TOTAL",3);
+  std::shared_ptr<psi::Vector> ind_dipole = std::make_shared<psi::Vector>("INDUCED DIPOLE REFERENCE",3);
 
   for (int o=0; o<solver->nocc(); ++o) {
        ind_dipoles.push_back(std::make_shared<psi::Vector>(oepdev::string_sprintf("IndDip -%d-", o+1),3));
@@ -273,21 +276,31 @@ double oepdev::test::Test::test_dmatPol(void)
   dD->print();
   dD_m->print();
 
+  cout << " Traces with Hcore" << endl;
   cout << dD  ->vector_dot(wfn_->H()) << endl;
   cout << dD_m->vector_dot(wfn_->H()) << endl;
+  cout << " Traces with Da" << endl;
+  cout << dD  ->vector_dot(wfn_->Da()) << endl;
+  cout << dD_m->vector_dot(wfn_->Da()) << endl;
+  cout << " Traces with Fa" << endl;
+  cout << dD  ->vector_dot(wfn_->Fa()) << endl;
+  cout << dD_m->vector_dot(wfn_->Fa()) << endl;
+  cout << " Traces with S" << endl;
+  cout << dD  ->vector_dot(wfn_->S ()) << endl;
+  cout << dD_m->vector_dot(wfn_->S ()) << endl;
+  cout << " Traces with MF" << endl;
   cout << dD  ->vector_dot(MF)        << endl;
   cout << dD_m->vector_dot(MF)        << endl;
 
-  double e_coul_0 = 4.0 * wfn_->Da()->vector_dot(MF);
-  //for (int i=0; i<wfn_->molecule()->natom(); ++i) {
-  //     e_coul_0 -= (double)wfn_->molecule()->Z(i) * (
-  //                         wfn_->molecule()->x(i) * Fx +
-  //                         wfn_->molecule()->y(i) * Fy +
-  //                         wfn_->molecule()->z(i) * Fz
-  //                 );
-  //}
-  cout << e_coul_0 << endl;
-
+  //double e_coul_0 = 4.0 * wfn_->Da()->vector_dot(MF);
+  ////for (int i=0; i<wfn_->molecule()->natom(); ++i) {
+  ////     e_coul_0 -= (double)wfn_->molecule()->Z(i) * (
+  ////                         wfn_->molecule()->x(i) * Fx +
+  ////                         wfn_->molecule()->y(i) * Fy +
+  ////                         wfn_->molecule()->z(i) * Fz
+  ////                 );
+  ////}
+  //cout << e_coul_0 << endl;
 
   // Print
   std::cout << std::fixed;

@@ -236,6 +236,31 @@ void CPHF::compute(void) {
          _orbitalPolarizabilities.push_back(Po);
          _orbitalCentroids.push_back(Ro);
     }
+
+    // Compute distributed LMO-LMO charge-transfer susceptibilities
+    for (int o1 = 0; o1 < _no; ++o1) {
+         std::vector<std::shared_ptr<Matrix>> ct;
+         for (int o2 = 0; o2 < _no; ++o2) {
+              std::shared_ptr<Matrix> Pij(new Matrix("", 3, 3));
+              for (unsigned int z1=0; z1<3; z1++) {
+                   for (unsigned int z2=0; z2<3; z2++) {
+                        double v = Xmo[z1]->get_row(0,o1)->vector_dot(Fmo[z2]->get_row(0,o2));
+                        Pij->set(z1, z2, v);
+                   }
+              }
+              Pij->set_name(string_sprintf("Charge-Transfer -%d,%d- Polarizability", o1+1, o2+1));
+              ct.push_back(Pij);
+         }
+         _orbitalChargeTransferPolarizabilities.push_back(ct);
+    }
+
+    // Compute the X_OV matrix in AO basis 
+    std::map<int, char> m;
+    m[0] = 'X'; m[1] = 'Y'; m[2] = 'Z';
+    for (int z=0; z<3; ++z) {
+         _X_OV_ao_matrices.push_back(psi::Matrix::triplet(_cocc, Xmo[z], _cvir, false, false, true));
+         _X_OV_ao_matrices[z]->set_name(string_sprintf("Perturbation of Operator -%c- (subscpace OCC:VIR, AO basis)", m[z]));
+    }
 }
 
 void CPHF::print(void) const {

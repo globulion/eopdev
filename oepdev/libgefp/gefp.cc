@@ -72,6 +72,8 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::PolarGEFactory::compute()
   int nocc= cphfSolver_->nocc();
 
   // Allocate
+  std::map<int, char> mm;
+  mm[0] = 'X'; mm[1] = 'Y'; mm[2] = 'Z';
   std::shared_ptr<MatrixFactory> matrixFactory = std::make_shared<psi::MatrixFactory>();
   matrixFactory->init_with(1, &nbf, &nbf);
   psi::IntegralFactory integrals(wfn_->basisset());
@@ -187,7 +189,6 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::PolarGEFactory::compute()
 
   // Compute The Density Matrix Susceptibility Tensors 
   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixSusceptibility;
-
   for (int o = 0; o < nocc; ++o) {
        std::vector<std::shared_ptr<psi::Matrix>> Bi;
        for (int z = 0; z < 3; ++z) {
@@ -204,7 +205,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::PolarGEFactory::compute()
                  }
             }
             std::shared_ptr<psi::Matrix> Biz_t = psi::Matrix::triplet(X, Biz, X, false, false, false);
-            Biz_t->set_name(oepdev::string_sprintf("B(%d)[%d] in Non-Orthogonal AO Basis", o+1, z+1));
+            Biz_t->set_name(oepdev::string_sprintf("B[%c](%d) in Non-Orthogonal AO Basis", mm[z], o+1));
             Biz_t->scale(-0.25000000);
             Bi.push_back(Biz_t);
        }

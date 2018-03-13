@@ -101,11 +101,17 @@ class CPHF {
      /// Total (molecular) polarizability tensor
      std::shared_ptr<Matrix> _molecularPolarizability;
 
-     /// orbital-associated polarizabilities tensors
-     std::vector<std::shared_ptr<Matrix>> _orbitalPolarizabilities;
-
      /// LMO centroids
      std::vector<std::shared_ptr<Vector>> _orbitalCentroids;
+
+     /// orbital-associated polarizability tensors
+     std::vector<std::shared_ptr<Matrix>> _orbitalPolarizabilities;
+
+     /// orbital-orbital charge-transfer polarizability tensors
+     std::vector<std::vector<std::shared_ptr<Matrix>>> _orbitalChargeTransferPolarizabilities;
+
+     /// Perturbation X Operator O->V matrices in AO basis
+     std::vector<std::shared_ptr<Matrix>> _X_OV_ao_matrices;
  
    public:
      /// \brief Constructor
@@ -140,6 +146,12 @@ class CPHF {
 
      /// retrieve the *i*-th orbital-associated polarizability
      std::shared_ptr<Matrix> polarizability(int i) const {return _orbitalPolarizabilities[i];}
+
+     /// retrieve the charge-transfer polarizability associated with orbitals *i* and *j*
+     std::shared_ptr<Matrix> polarizability(int i, int j) const {return _orbitalChargeTransferPolarizabilities[i][j];}
+
+     /// retrieve the X operator O-V perturbation matrix in AO basis for *x*-th component
+     std::shared_ptr<Matrix> X(int x) const {return _X_OV_ao_matrices[x];}
 
      /// retrieve the *i*-th orbital (LMO) centroid 
      std::shared_ptr<Vector> lmo_centroid(int i) const {return _orbitalCentroids[i];}
