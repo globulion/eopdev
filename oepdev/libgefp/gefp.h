@@ -175,20 +175,20 @@ class PolarGEFactory : public GenEffParFactory, public std::enable_shared_from_t
 
 };
 
-/** \brief Polarization GEFP Factory with Least-Squares Scaling.
+/** \brief Polarization GEFP Factory with Least-Squares Scaling of MO Space.
  *
  */
-class ScaledPolarGEFactory : public PolarGEFactory
+class MOScaledPolarGEFactory : public PolarGEFactory
 {
   public:
    /// Construct from CPHF object and Psi4 options
-   ScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   MOScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
 
    /// Construct from CPHF object only (options will be read from CPHF object)
-   ScaledPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   MOScaledPolarGEFactory(std::shared_ptr<CPHF> cphf);
 
    /// Destruct
-   virtual ~ScaledPolarGEFactory();
+   virtual ~MOScaledPolarGEFactory();
 
    /// Pefrorm Least-Squares Fit
    std::shared_ptr<GenEffPar> compute(void);
@@ -201,6 +201,34 @@ class ScaledPolarGEFactory : public PolarGEFactory
    std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& field);
 
 };
+
+/** \brief Polarization GEFP Factory with Least-Squares Scaling of Cartesian Degrees of freedom.
+ *
+ */
+class FieldScaledPolarGEFactory : public PolarGEFactory
+{
+  public:
+   /// Construct from CPHF object and Psi4 options
+   FieldScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+
+   /// Construct from CPHF object only (options will be read from CPHF object)
+   FieldScaledPolarGEFactory(std::shared_ptr<CPHF> cphf);
+
+   /// Destruct
+   virtual ~FieldScaledPolarGEFactory();
+
+   /// Pefrorm Least-Squares Fit
+   std::shared_ptr<GenEffPar> compute(void);
+
+  private:
+   /// Randomly draw electric field value
+   std::shared_ptr<psi::Vector> draw_field();
+
+   /// Solve SCF equations to find perturbed one-particle density matrix
+   std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& field);
+
+};
+
 
 /** @}*/
 } // EndNameSpace oepdev

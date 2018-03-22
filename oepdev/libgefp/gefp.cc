@@ -219,22 +219,22 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::PolarGEFactory::compute()
   // Return
   return par;
 }
-//-- ScaledPolarGEFactory --////////////////////////////////////////////////////////////////////////////////
-oepdev::ScaledPolarGEFactory::ScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
+//-- MOScaledPolarGEFactory --////////////////////////////////////////////////////////////////////////////////
+oepdev::MOScaledPolarGEFactory::MOScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
  oepdev::PolarGEFactory(cphf, opt)
 {
 
 }
-oepdev::ScaledPolarGEFactory::ScaledPolarGEFactory(std::shared_ptr<CPHF> cphf) :
+oepdev::MOScaledPolarGEFactory::MOScaledPolarGEFactory(std::shared_ptr<CPHF> cphf) :
  oepdev::PolarGEFactory(cphf)
 {
 
 }
-oepdev::ScaledPolarGEFactory::~ScaledPolarGEFactory()
+oepdev::MOScaledPolarGEFactory::~MOScaledPolarGEFactory()
 {
 
 }
-std::shared_ptr<oepdev::GenEffPar> oepdev::ScaledPolarGEFactory::compute()
+std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
 {
   // Sizing
   int npoints = 150;
@@ -275,13 +275,82 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::ScaledPolarGEFactory::compute()
 
   return par_0;
 }
-std::shared_ptr<psi::Vector> oepdev::ScaledPolarGEFactory::draw_field()
+std::shared_ptr<psi::Vector> oepdev::MOScaledPolarGEFactory::draw_field()
 {
   std::shared_ptr<psi::Vector> field = std::make_shared<psi::Vector>("", 3);
   //TODO Add here random pick up of the field values!
   return field;
 }
-std::shared_ptr<psi::Matrix> oepdev::ScaledPolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& field)
+std::shared_ptr<psi::Matrix> oepdev::MOScaledPolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& field)
+{
+  std::shared_ptr<psi::Matrix> dmat;
+  // TODO
+  return dmat;
+}
+
+//-- FieldScaledPolarGEFactory --////////////////////////////////////////////////////////////////////////////////
+oepdev::FieldScaledPolarGEFactory::FieldScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
+ oepdev::PolarGEFactory(cphf, opt)
+{
+
+}
+oepdev::FieldScaledPolarGEFactory::FieldScaledPolarGEFactory(std::shared_ptr<CPHF> cphf) :
+ oepdev::PolarGEFactory(cphf)
+{
+
+}
+oepdev::FieldScaledPolarGEFactory::~FieldScaledPolarGEFactory()
+{
+
+}
+std::shared_ptr<oepdev::GenEffPar> oepdev::FieldScaledPolarGEFactory::compute()
+{
+  // Sizing
+  int npoints = 150;
+  int nbf = wfn_->basisset()->nbf();
+  int no = cphfSolver_->nocc();
+
+  // Compute the ab-initio (unscaled) B tensors
+  std::shared_ptr<oepdev::PolarGEFactory> factory_0 = shared_from_this();
+  std::shared_ptr<oepdev::GenEffPar> par_0 = factory_0->compute();
+
+  // Compute the scales:
+
+  // --> Set up the trial electric fields and compute perturbed density matrices <-- //
+  std::vector<std::shared_ptr<psi::Vector>> fields;
+  std::vector<std::shared_ptr<psi::Matrix>> dmats;
+  for (int i=0; i<npoints; ++i) {
+       fields.push_back(draw_field());
+
+       std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
+       dmat->copy(perturbed_dmat(fields[i]));
+       dmat->subtract(wfn_->Da());
+       dmats.push_back(dmat);
+  }
+
+  // --> Allocate data <-- //
+  std::shared_ptr<psi::Matrix> A = std::make_shared<psi::Matrix>("", 3*no, 3*no);
+  std::shared_ptr<psi::Matrix> a = std::make_shared<psi::Matrix>("", 1, 3*no);
+
+  // --> Compute the least-squares matrices <-- //
+  // TODO 
+
+  // --> Perform the fit <-- //
+  A->invert();
+  std::shared_ptr<psi::Matrix> s = psi::Matrix::doublet(a, A, false, false);
+
+  // --> Scale the ab-initio B tensors by scale values
+  // TODO 
+
+  return par_0;
+}
+std::shared_ptr<psi::Vector> oepdev::FieldScaledPolarGEFactory::draw_field()
+{
+  std::shared_ptr<psi::Vector> field = std::make_shared<psi::Vector>("", 3);
+  //TODO Add here random pick up of the field values!
+  return field;
+}
+std::shared_ptr<psi::Matrix> oepdev::FieldScaledPolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& field)
 {
   std::shared_ptr<psi::Matrix> dmat;
   // TODO
