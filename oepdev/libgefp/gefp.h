@@ -172,7 +172,11 @@ class PolarGEFactory : public GenEffParFactory, public std::enable_shared_from_t
    /// The CPHF object
    std::shared_ptr<CPHF> cphfSolver_;
 
+   /// Randomly draw electric field value
+   std::shared_ptr<psi::Vector> draw_field();
 
+   /// Solve SCF equations to find perturbed one-particle density matrix
+   std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& field);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Scaling of MO Space.
@@ -193,13 +197,6 @@ class MOScaledPolarGEFactory : public PolarGEFactory
    /// Pefrorm Least-Squares Fit
    std::shared_ptr<GenEffPar> compute(void);
 
-  private:
-   /// Randomly draw electric field value
-   std::shared_ptr<psi::Vector> draw_field();
-
-   /// Solve SCF equations to find perturbed one-particle density matrix
-   std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& field);
-
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Scaling of Cartesian Degrees of freedom.
@@ -219,13 +216,6 @@ class FieldScaledPolarGEFactory : public PolarGEFactory
 
    /// Pefrorm Least-Squares Fit
    std::shared_ptr<GenEffPar> compute(void);
-
-  private:
-   /// Randomly draw electric field value
-   std::shared_ptr<psi::Vector> draw_field();
-
-   /// Solve SCF equations to find perturbed one-particle density matrix
-   std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& field);
 
 };
 

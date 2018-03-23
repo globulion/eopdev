@@ -219,6 +219,19 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::PolarGEFactory::compute()
   // Return
   return par;
 }
+std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::draw_field()
+{
+  std::shared_ptr<psi::Vector> field = std::make_shared<psi::Vector>("", 3);
+  //TODO Add here random pick up of the field values!
+  return field;
+}
+std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& field)
+{
+  std::shared_ptr<psi::Matrix> dmat;
+  // TODO
+  return dmat;
+}
+
 //-- MOScaledPolarGEFactory --////////////////////////////////////////////////////////////////////////////////
 oepdev::MOScaledPolarGEFactory::MOScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
  oepdev::PolarGEFactory(cphf, opt)
@@ -275,19 +288,6 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
 
   return par_0;
 }
-std::shared_ptr<psi::Vector> oepdev::MOScaledPolarGEFactory::draw_field()
-{
-  std::shared_ptr<psi::Vector> field = std::make_shared<psi::Vector>("", 3);
-  //TODO Add here random pick up of the field values!
-  return field;
-}
-std::shared_ptr<psi::Matrix> oepdev::MOScaledPolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& field)
-{
-  std::shared_ptr<psi::Matrix> dmat;
-  // TODO
-  return dmat;
-}
-
 //-- FieldScaledPolarGEFactory --////////////////////////////////////////////////////////////////////////////////
 oepdev::FieldScaledPolarGEFactory::FieldScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
  oepdev::PolarGEFactory(cphf, opt)
@@ -344,16 +344,3 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::FieldScaledPolarGEFactory::compute()
 
   return par_0;
 }
-std::shared_ptr<psi::Vector> oepdev::FieldScaledPolarGEFactory::draw_field()
-{
-  std::shared_ptr<psi::Vector> field = std::make_shared<psi::Vector>("", 3);
-  //TODO Add here random pick up of the field values!
-  return field;
-}
-std::shared_ptr<psi::Matrix> oepdev::FieldScaledPolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& field)
-{
-  std::shared_ptr<psi::Matrix> dmat;
-  // TODO
-  return dmat;
-}
-
