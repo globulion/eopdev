@@ -2,9 +2,12 @@
 #include <stdio.h>
 #include <iostream>
 #include <Eigen/Dense>
-#include "optimizer.h"
+#include "unitary_optimizer.h"
+#include "psi4/psi4-dec.h"
 
-UnitaryOptimizer::UnitaryOptimizer(double* R, double* P, int n, double conv, int maxiter, bool verbose) :
+using namespace oepdev;
+
+UnitaryOptimizer::UnitaryOptimizer(int n, double conv, int maxiter, bool verbose) :
  n_(n),
  R_(nullptr),
  P_(nullptr),
@@ -21,6 +24,43 @@ UnitaryOptimizer::UnitaryOptimizer(double* R, double* P, int n, double conv, int
  conv_current_(1.0e+18),
  success_(false)
 {
+}
+UnitaryOptimizer::UnitaryOptimizer(double* R, double* P, int n, double conv, int maxiter, bool verbose) 
+ : UnitaryOptimizer::UnitaryOptimizer(n, conv, maxiter, verbose)
+{
+  this->common_init_();
+
+  for (int i = 0; i < n_   ; ++i) {
+      P0_[i] = P[i];
+      P_ [i] = P[i];
+  }
+  for (int i = 0; i < n_*n_; ++i) {
+      R0_[i] = R[i];
+      R_ [i] = R[i];
+  }
+
+  this->Zinit_ = this->eval_Z_(X_, R0_, P0_);
+  this->Zold_  = this->Zinit_;
+}
+UnitaryOptimizer::UnitaryOptimizer(std::shared_ptr<psi::Matrix> R, std::shared_ptr<psi::Vector> P, double conv, int maxiter, bool verbose)
+ : UnitaryOptimizer::UnitaryOptimizer(R->ncol(), conv, maxiter, verbose)
+{
+  this->common_init_();
+
+  for (int i = 0; i < n_; ++i) {
+       P0_[i] = P->get(i);
+       P_ [i] = P->get(i);
+       for (int j = 0; j < n_; ++j) {
+            R0_[IDX(i,j,n_)] = R->get(i,j);
+            R_ [IDX(i,j,n_)] = R->get(i,j);
+       }
+  }
+
+  this->Zinit_ = this->eval_Z_(X_, R0_, P0_);
+  this->Zold_  = this->Zinit_;
+}
+void UnitaryOptimizer::common_init_()
+{
   // Allocate and initialize
   std::memset(S_, 0, 4*sizeof(double));
   P_  = new double[n_];
@@ -31,27 +71,13 @@ UnitaryOptimizer::UnitaryOptimizer(double* R, double* P, int n, double conv, int
   W_  = new double[n_*n_];
   Xold_ = new double[n_*n_];
   Xnew_ = new double[n_*n_];
-  for (int i = 0; i < n_   ; ++i) {
-      P0_[i] = P[i];
-      P_ [i] = P[i];
-  }
-  for (int i = 0; i < n_*n_; ++i) {
-      R0_[i] = R[i];
-      R_ [i] = R[i];
-  }
-  this->common_init_();
-}
-void UnitaryOptimizer::common_init_()
-{
+
   for (int i = 0; i < n_; ++i) {
        X_[IDX(i,i,n_)] = 1.0;
        for (int j = 0; j < n_; ++j) {
             if (i!=j) X_[IDX(i,j,n_)] = 0.0;
        }
   }
-  // Compute initial Z value
-  this->Zinit_ = this->eval_Z_(X_, R0_, P0_);
-  this->Zold_  = this->Zinit_;
 }
 UnitaryOptimizer::~UnitaryOptimizer() 
 {
@@ -84,7 +110,7 @@ void UnitaryOptimizer::update_iter_()
 void UnitaryOptimizer::optimize_(const std::string& opt) 
 {
   if (verbose_) 
-     printf(" Start  : Z[1] = %15.6f\n", Zold_);
+     psi::outfile->Printf(" Start  : Z[1] = %15.6f\n", Zold_);
   while (conv_current_ > conv_) {
      this->form_next_X_(opt);
      this->update_RP_();
@@ -93,17 +119,17 @@ void UnitaryOptimizer::optimize_(const std::string& opt)
      this->update_conv_();
      this->update_iter_();
      if (verbose_) 
-         printf(" Iter %2d: Z[X] = %15.6f  Conv= %15.6f\n", niter_, Znew_, conv_current_);
+         psi::outfile->Printf(" Iter %2d: Z[X] = %15.6f  Conv= %15.6f\n", niter_, Znew_, conv_current_);
      if (niter_ > maxiter_) {
-         printf(" Optimization unsuccesfull! Maximum iteration number %d exceeded!\n", maxiter_);
+         psi::outfile->Printf(" Optimization unsuccesfull! Maximum iteration number %d exceeded!\n", maxiter_);
          success_ = false;
          break;
      }
   }
   success_ = ((niter_ <= maxiter_) ? true : false );
   if (verbose_ && success_) {
-      printf(" Optimization succesfull!\n");
-      printf(" Optimized Z[X] value: %15.6f\n", this->Z());
+      psi::outfile->Printf(" Optimization succesfull!\n");
+      psi::outfile->Printf(" Optimized Z[X] value: %15.6f\n", this->Z());
   }
   
 }
@@ -169,11 +195,17 @@ void UnitaryOptimizer::refresh_()
    for (int i = 0; i < n_   ; ++i) {
         P_[i] = P0_[i];
         X_[IDX(i,i,n_)] = 1.0; 
-        for (int j = 0; j < n_; ++j) X_[IDX(i,j,n_)] = 0.0;
+        for (int j = 0; j < n_; ++j) {
+             if (i!=j) X_[IDX(i,j,n_)] = 0.0;
+        }
    }
+   std::memset(S_, 0, 4*sizeof(double));
+   // Compute initial Z value
+   this->Zinit_ = this->eval_Z_(X_, R0_, P0_);
+   this->Zold_  = this->Zinit_;
    this->niter_ = 0;
    this->conv_current_ = 1.0e+18;
-   this->common_init_();
+   this->success_ = false;
 }
 ABCD UnitaryOptimizer::get_ABCD_(int i, int j)
 {
@@ -384,11 +416,11 @@ void UnitaryOptimizer::find_roots_boyd_(const ABCD& abcd)
     Eigen::ComplexEigenSolver<Eigen::Matrix4cd> eigen;
 
     // Build up B matrix
-    std::complex<double> a1= -(abcd.D + abcd.C * 1i);
-    std::complex<double> a2= -(abcd.B + abcd.A * 1i);
-    std::complex<double> a3=   0.0 + 0.0 * 1i;
-    std::complex<double> a4= -(abcd.B - abcd.A * 1i);
-    std::complex<double> d =   abcd.D - abcd.C * 1i ;
+    std::complex<double> a1= -(abcd.D + abcd.C * 1_i);
+    std::complex<double> a2= -(abcd.B + abcd.A * 1_i);
+    std::complex<double> a3=   0.0    + 0.0    * 1_i ;
+    std::complex<double> a4= -(abcd.B - abcd.A * 1_i);
+    std::complex<double> d =   abcd.D - abcd.C * 1_i ;
 
     B(0,0) = 0.0; B(0,1) = 1.0; B(0,2) = 0.0; B(0,3) = 0.0;
     B(1,0) = 0.0; B(1,1) = 0.0; B(1,2) = 1.0; B(1,3) = 0.0;
@@ -400,7 +432,7 @@ void UnitaryOptimizer::find_roots_boyd_(const ABCD& abcd)
 
     // Compute all the roots
     eigen.compute(B);
-    Eigen::Vector4cd roots = -1i * eigen.eigenvalues().array().log();
+    Eigen::Vector4cd roots = -1_i * eigen.eigenvalues().array().log();
 
     // Save in work place
     for (int i = 0; i < 4; ++i) {
@@ -409,5 +441,16 @@ void UnitaryOptimizer::find_roots_boyd_(const ABCD& abcd)
          if (r < 0.0) r += 2.0 * M_PI;
          S_[i] = r;
     }
+}
+
+std::shared_ptr<psi::Matrix> UnitaryOptimizer::psi_X_()
+{
+  std::shared_ptr<psi::Matrix> X = std::make_shared<psi::Matrix>("MO-MO Transformation matrix X", n_, n_);
+  for (int i = 0; i < n_; ++i) {
+       for (int j = 0; j < n_; ++j) {
+            X->set(i, j, X_[IDX(i,j,n_)]);
+       }
+  }
+  return X;
 }
 

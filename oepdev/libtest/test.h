@@ -68,6 +68,9 @@ class Test
    /// Test the oepdev::ERI_3_1 class against psi::ERI
    double test_eri_3_1(void);
 
+   /// Test the oepdev::UnitaryOptimizer class
+   double test_unitaryOptimizer(void);
+
 };
 
 /** @}*/

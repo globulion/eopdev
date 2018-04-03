@@ -32,14 +32,34 @@
 # @END LICENSE
 #
 
+# The Project
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
-
 project(oepdev CXX)
-
+set (OEPDEV_VERSION_MAJOR   "1")
+set (OEPDEV_VERSION_MINOR   "0")
+set (OEPDEV_VERSION_PATCH   "0")
+set (OEPDEV_VERSION "${OEPDEV_VERSION_MAJOR}.${BQC_VERSION_MINOR}.${BQC_VERSION_PATCH}")
 find_package(psi4 1.0 REQUIRED)
 
+# External Numerical Library
+set( EIGEN3_INCLUDE_DIR "$ENV{EIGEN3_INCLUDE_DIR}" )
+if( NOT EIGEN3_INCLUDE_DIR ) 
+ message( FATAL_ERROR "
+ OEPDev uses Eigen3 library for some numerical calculations that are not supported by Psi4 internal libraries.
+ Please point the environment variable EIGEN3_INCLUDE_DIR to the include directory of Eigen3 library on your computer.
+ Eigen3 can be downloaded for free from http://eigen.tuxfamily.org/ and does not require installation.
+ Directory pointed by EIGEN3_INCLUDE_DIR should contain the directory called 'Eigen' (which should not be in the path).
+ After settling with Eigen3, type:
+ export EIGEN3_INCLUDE_DIR=<your path to Eigen3> 
+ or add the above line to your .bashrc file and type 'source'.
+")
+endif()
+include_directories ("${EIGEN3_INCLUDE_DIR}")
+
+# Testing
 include (CTest)
 
+# Compile
 add_psi4_plugin(oepdev main.cc 
                        oepdev/libutil/util.cc
                        oepdev/libutil/diis.cc
@@ -49,6 +69,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/space3d.cc
                        oepdev/libutil/esp.cc
                        oepdev/libutil/solver.cc
+                       oepdev/libutil/unitary_optimizer.cc
                        oepdev/libpsi/potential.cc
                        oepdev/libpsi/integral.cc
                        oepdev/liboep/oep.cc   
@@ -58,12 +79,14 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libgefp/gefp.cc
                )
 
+# Configure tests
 add_test (NAME BASIC   COMMAND "psi4" "tests/oepdev/basic.inp"   "tests/oepdev/basic.out"  )
 add_test (NAME CPHF    COMMAND "psi4" "tests/oepdev/cphf.inp"    "tests/oepdev/cphf.out"   )
 add_test (NAME DMATPOL COMMAND "psi4" "tests/oepdev/dmatpol.inp" "tests/oepdev/dmatpol.out")
 add_test (NAME ERI_1_1 COMMAND "psi4" "tests/oepdev/eri_1_1.inp" "tests/oepdev/eri_1_1.out")
 add_test (NAME ERI_2_2 COMMAND "psi4" "tests/oepdev/eri_2_2.inp" "tests/oepdev/eri_2_2.out")
 add_test (NAME ERI_3_1 COMMAND "psi4" "tests/oepdev/eri_3_1.inp" "tests/oepdev/eri_3_1.out")
+add_test (NAME UNITARY_OPTIMIZER COMMAND "psi4" "tests/oepdev/unitaryOptimizer.inp" "tests/oepdev/unitaryOptimizer.out")
 
 set_tests_properties (BASIC   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.0000"    )
 set_tests_properties (CPHF    PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00"      )
@@ -71,3 +94,4 @@ set_tests_properties (DMATPOL PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 
 set_tests_properties (ERI_1_1 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
 set_tests_properties (ERI_2_2 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
 set_tests_properties (ERI_3_1 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
+set_tests_properties (UNITARY_OPTIMIZER PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000")
