@@ -516,6 +516,10 @@ class UnitaryOptimizer_4_2
      const int n4_;
      const int n3_;
      const int n2_;
+     inline double KroneckerDelta_(int i, int j) {if (i==j) {return 1.0;} else {return 0.0;}}
+     double a_(int i, int k, int I, int J) {return (-KroneckerDelta_(I,i)*KroneckerDelta_(J,k)+KroneckerDelta_(I,k)*KroneckerDelta_(J,i))*(1.0-KroneckerDelta_(i,k));}
+     double b_(int i, int k, int I, int J) {return KroneckerDelta_(i,k)*(KroneckerDelta_(I,k)+KroneckerDelta_(J,i));}
+     double c_(int i, int k, int I, int J) {return KroneckerDelta_(i,k)*(1.0-KroneckerDelta_(I,k))*(1.0-KroneckerDelta_(J,i));}
 };
 
 

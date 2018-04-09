@@ -147,7 +147,7 @@ void UnitaryOptimizer::update_conv_()
 }
 void UnitaryOptimizer::update_iter_()
 {
-  for (int i = 0; i < n_; ++i) Xold_[i] = Xnew_[i];
+  for (int i = 0; i < n_*n_; ++i) Xold_[i] = Xnew_[i];
   Zold_ = Znew_;
   niter_ += 1;
 }
@@ -583,7 +583,7 @@ void UnitaryOptimizer_4_2::update_conv_() // same
 }
 void UnitaryOptimizer_4_2::update_iter_() // same
 {
-  for (int i = 0; i < n_; ++i) Xold_[i] = Xnew_[i];
+  for (int i = 0; i < n_*n_; ++i) Xold_[i] = Xnew_[i];
   Zold_ = Znew_;
   niter_ += 1;
 }
@@ -787,9 +787,164 @@ void UnitaryOptimizer_4_2::form_next_X_(const std::string& opt) // override (can
 }
 Fourier9 UnitaryOptimizer_4_2::get_fourier_(int I, int J) // override
 {
+  // Initialize
   double a0 = 0.0, a1 = 0.0, a2 = 0.0, a3 = 0.0, a4 = 0.0,
                    b1 = 0.0, b2 = 0.0, b3 = 0.0, b4 = 0.0;
+  // P-contribution
+  for (int i = 0; i < n_; ++i) {
+       for (int j = 0; j < n_; ++j) {
+            for (int k = 0; k < n_; ++k) {
+                 double p = P_[IDX3(i,j,k)];
+                 double A =   (KroneckerDelta_(I,j)*KroneckerDelta_(J,i) - KroneckerDelta_(I,i)*KroneckerDelta_(J,j)) * (1.0-KroneckerDelta_(i,j));
+                 double B =   -KroneckerDelta_(i,j)*(KroneckerDelta_(I,j)+KroneckerDelta_(J,i));
+                 double C =    KroneckerDelta_(i,k)*(1.0-KroneckerDelta_(I,k))*(1.0-KroneckerDelta_(J,i));
+                 double D =    KroneckerDelta_(i,k)*(KroneckerDelta_(I,k)+KroneckerDelta_(J,i));
+                 double E =   -KroneckerDelta_(I,i)*KroneckerDelta_(J,k)*(1.0-KroneckerDelta_(i,k));
+                 double F =    KroneckerDelta_(I,k)*KroneckerDelta_(J,i)*(1.0-KroneckerDelta_(i,k));
+                 double G =    (1.0-KroneckerDelta_(i,k))*(KroneckerDelta_(I,k)*KroneckerDelta_(J,i) - KroneckerDelta_(I,i)*KroneckerDelta_(J,k));
+                 double H =   -KroneckerDelta_(i,k)*(KroneckerDelta_(I,k)+KroneckerDelta_(J,i));
+                 double II=    KroneckerDelta_(i,j)*(1.0-KroneckerDelta_(I,j))*(1.0-KroneckerDelta_(J,i));
+                 double JJ=    KroneckerDelta_(i,j)*(KroneckerDelta_(I,j)+KroneckerDelta_(J,i));
+                 double K =   -KroneckerDelta_(I,i)*KroneckerDelta_(J,j)*(1.0-KroneckerDelta_(i,j));
+                 double L =    KroneckerDelta_(I,j)*KroneckerDelta_(J,i)*(1.0-KroneckerDelta_(i,j));
+
+                 a0 += p * (A*D+G*JJ+B*(E+F)+H*(K+L)) / 2.0;
+                 a1 += p * (A*C+G*II);
+                 a2 += p * (A*D+G*JJ-B*(E+F)-H*(K+L)) / 2.0;
+                 b1 += p * (B*C+H*II);
+                 b2 += p * (H*JJ+B*D+G*(K+L)+A*(E+F)) / 2.0;
+            }
+       }
+  }
+
+  // R-contribution
+  for (int i = 0; i < n_; ++i) {
+       for (int j = 0; j < n_; ++j) {
+            for (int k = 0; k < n_; ++k) {
+                 for (int l = 0; l < n_; ++l) {
+                      for (int m = 0; m < n_; ++m) {
+                           for (int n = 0; n < n_; ++n) {
+                                double r = R_[IDX6(i,j,k,l,m,n)];
+
+                                // First R batch
+                                double A = this->a_(i,k,I,J);
+                                double B =-this->b_(i,k,I,J);
+                                double C = this->a_(i,m,I,J);
+                                double D = this->c_(i,m,I,J);
+                                double E = this->b_(i,m,I,J);
+                                double F = this->a_(j,l,I,J);
+                                double G = this->c_(j,l,I,J);
+                                double H = this->b_(j,l,I,J);
+                                double II= this->a_(j,n,I,J);
+                                double JJ= this->c_(j,n,I,J);
+                                double K = this->b_(j,n,I,J);
+                                a0 += r * (A*C*F*K+A*C*H*II+4.0*A*D*G*K+4.0*A*D*H*JJ+A*E*F*II+4.0*A*E*G*JJ+3.0*A*E*H*K
+                                          +3.0*B*C*F*II+4.0*B*C*G*JJ+B*C*H*K+4.0*B*D*F*JJ+4.0*B*D*G*II+B*E*F*K+B*E*H*II) / 8.0;
+                                a1 += r * (A*C*F*JJ+A*C*G*II+A*D*F*II+4.0*A*D*G*JJ+3.0*A*D*H*K+3.0*A*E*G*K+3.0*A*E*H*JJ
+                                          +B*C*G*K+B*C*H*JJ+B*D*F*K+B*D*H*II+B*E*F*JJ+B*E*G*II) / 4.0;
+                                a2 += r * (A*D*G*K+A*D*H*JJ+A*E*G*JJ+A*E*H*K-B*C*F*II-B*C*G*JJ-B*D*F*JJ-B*D*G*II) / 2.0;
+                                a3 += r * (-A*C*F*JJ-A*C*G*II-A*D*F*II+A*D*H*K+A*E*G*K+A*E*H*JJ-B*C*G*K-B*C*H*JJ
+                                           -B*D*F*K-B*D*H*II-B*E*F*JJ-B*E*G*II) / 4.0;
+                                a4 += r * (-A*C*F*K-A*C*H*II-A*E*F*II+A*E*H*K+B*C*F*II-B*C*H*K-B*E*F*K-B*E*H*II) / 8.0;
+                                b1 += r * (A*C*G*K+A*C*H*JJ+A*D*F*K+A*D*H*II+A*E*F*JJ+A*E*G*II+3.0*B*C*F*JJ+3.0*B*C*G*II
+                                           +3.0*B*D*F*II+4.0*B*D*G*JJ+B*D*H*K+B*E*G*K+B*E*H*JJ) / 4.0;
+                                b2 += r * (A*C*F*II+2.0*A*C*G*JJ+A*C*H*K+2.0*A*D*F*JJ+2.0*A*D*G*II+A*E*F*K+A*E*H*II+B*C*F*K
+                                          +B*C*H*II+2.0*B*D*G*K+2.0*B*D*H*JJ+B*E*F*II+2.0*B*E*G*JJ+B*E*H*K) / 4.0;
+                                b3 += r * (A*C*G*K+A*C*H*JJ+A*D*F*K+A*D*H*II+A*E*F*JJ+A*E*G*II-B*C*F*JJ-B*C*G*II
+                                          -B*D*F*II+B*D*H*K+B*E*G*K+B*E*H*JJ) / 4.0;
+                                b4 += r * (-A*C*F*II+A*C*H*K+A*E*F*K+A*E*H*II-B*C*F*K-B*C*H*II-B*E*F*II+B*E*H*K) / 8.0;
+                                // Second R batch
+                                A = this->a_(i,m,I,J);
+                                B =-this->b_(i,m,I,J);
+                                C = this->a_(i,k,I,J);
+                                D = this->c_(i,k,I,J);
+                                E = this->b_(i,k,I,J);
+                                F = this->a_(j,l,I,J);
+                                G = this->c_(j,l,I,J);
+                                H = this->b_(j,l,I,J);
+                                II= this->a_(j,n,I,J);
+                                JJ= this->c_(j,n,I,J);
+                                K = this->b_(j,n,I,J);
+                                a0 += r * (A*C*F*K+A*C*H*II+4.0*A*D*G*K+4.0*A*D*H*JJ+A*E*F*II+4.0*A*E*G*JJ+3.0*A*E*H*K
+                                          +3.0*B*C*F*II+4.0*B*C*G*JJ+B*C*H*K+4.0*B*D*F*JJ+4.0*B*D*G*II+B*E*F*K+B*E*H*II) / 8.0;
+                                a1 += r * (A*C*F*JJ+A*C*G*II+A*D*F*II+4.0*A*D*G*JJ+3.0*A*D*H*K+3.0*A*E*G*K+3.0*A*E*H*JJ
+                                          +B*C*G*K+B*C*H*JJ+B*D*F*K+B*D*H*II+B*E*F*JJ+B*E*G*II) / 4.0;
+                                a2 += r * (A*D*G*K+A*D*H*JJ+A*E*G*JJ+A*E*H*K-B*C*F*II-B*C*G*JJ-B*D*F*JJ-B*D*G*II) / 2.0;
+                                a3 += r * (-A*C*F*JJ-A*C*G*II-A*D*F*II+A*D*H*K+A*E*G*K+A*E*H*JJ-B*C*G*K-B*C*H*JJ
+                                           -B*D*F*K-B*D*H*II-B*E*F*JJ-B*E*G*II) / 4.0;
+                                a4 += r * (-A*C*F*K-A*C*H*II-A*E*F*II+A*E*H*K+B*C*F*II-B*C*H*K-B*E*F*K-B*E*H*II) / 8.0;
+                                b1 += r * (A*C*G*K+A*C*H*JJ+A*D*F*K+A*D*H*II+A*E*F*JJ+A*E*G*II+3.0*B*C*F*JJ+3.0*B*C*G*II
+                                           +3.0*B*D*F*II+4.0*B*D*G*JJ+B*D*H*K+B*E*G*K+B*E*H*JJ) / 4.0;
+                                b2 += r * (A*C*F*II+2.0*A*C*G*JJ+A*C*H*K+2.0*A*D*F*JJ+2.0*A*D*G*II+A*E*F*K+A*E*H*II+B*C*F*K
+                                          +B*C*H*II+2.0*B*D*G*K+2.0*B*D*H*JJ+B*E*F*II+2.0*B*E*G*JJ+B*E*H*K) / 4.0;
+                                b3 += r * (A*C*G*K+A*C*H*JJ+A*D*F*K+A*D*H*II+A*E*F*JJ+A*E*G*II-B*C*F*JJ-B*C*G*II
+                                          -B*D*F*II+B*D*H*K+B*E*G*K+B*E*H*JJ) / 4.0;
+                                b4 += r * (-A*C*F*II+A*C*H*K+A*E*F*K+A*E*H*II-B*C*F*K-B*C*H*II-B*E*F*II+B*E*H*K) / 8.0;
+                                // Third R batch
+                                A = this->a_(j,l,I,J);
+                                B =-this->b_(j,l,I,J);
+                                C = this->a_(i,k,I,J);
+                                D = this->c_(i,k,I,J);
+                                E = this->b_(i,k,I,J);
+                                F = this->a_(i,m,I,J);
+                                G = this->c_(i,m,I,J);
+                                H = this->b_(i,m,I,J);
+                                II= this->a_(j,n,I,J);
+                                JJ= this->c_(j,n,I,J);
+                                K = this->b_(j,n,I,J);
+                                a0 += r * (A*C*F*K+A*C*H*II+4.0*A*D*G*K+4.0*A*D*H*JJ+A*E*F*II+4.0*A*E*G*JJ+3.0*A*E*H*K
+                                          +3.0*B*C*F*II+4.0*B*C*G*JJ+B*C*H*K+4.0*B*D*F*JJ+4.0*B*D*G*II+B*E*F*K+B*E*H*II) / 8.0;
+                                a1 += r * (A*C*F*JJ+A*C*G*II+A*D*F*II+4.0*A*D*G*JJ+3.0*A*D*H*K+3.0*A*E*G*K+3.0*A*E*H*JJ
+                                          +B*C*G*K+B*C*H*JJ+B*D*F*K+B*D*H*II+B*E*F*JJ+B*E*G*II) / 4.0;
+                                a2 += r * (A*D*G*K+A*D*H*JJ+A*E*G*JJ+A*E*H*K-B*C*F*II-B*C*G*JJ-B*D*F*JJ-B*D*G*II) / 2.0;
+                                a3 += r * (-A*C*F*JJ-A*C*G*II-A*D*F*II+A*D*H*K+A*E*G*K+A*E*H*JJ-B*C*G*K-B*C*H*JJ
+                                           -B*D*F*K-B*D*H*II-B*E*F*JJ-B*E*G*II) / 4.0;
+                                a4 += r * (-A*C*F*K-A*C*H*II-A*E*F*II+A*E*H*K+B*C*F*II-B*C*H*K-B*E*F*K-B*E*H*II) / 8.0;
+                                b1 += r * (A*C*G*K+A*C*H*JJ+A*D*F*K+A*D*H*II+A*E*F*JJ+A*E*G*II+3.0*B*C*F*JJ+3.0*B*C*G*II
+                                           +3.0*B*D*F*II+4.0*B*D*G*JJ+B*D*H*K+B*E*G*K+B*E*H*JJ) / 4.0;
+                                b2 += r * (A*C*F*II+2.0*A*C*G*JJ+A*C*H*K+2.0*A*D*F*JJ+2.0*A*D*G*II+A*E*F*K+A*E*H*II+B*C*F*K
+                                          +B*C*H*II+2.0*B*D*G*K+2.0*B*D*H*JJ+B*E*F*II+2.0*B*E*G*JJ+B*E*H*K) / 4.0;
+                                b3 += r * (A*C*G*K+A*C*H*JJ+A*D*F*K+A*D*H*II+A*E*F*JJ+A*E*G*II-B*C*F*JJ-B*C*G*II
+                                          -B*D*F*II+B*D*H*K+B*E*G*K+B*E*H*JJ) / 4.0;
+                                b4 += r * (-A*C*F*II+A*C*H*K+A*E*F*K+A*E*H*II-B*C*F*K-B*C*H*II-B*E*F*II+B*E*H*K) / 8.0;
+                                // Fourth R batch
+                                A = this->a_(j,n,I,J);
+                                B =-this->b_(j,n,I,J);
+                                C = this->a_(i,k,I,J);
+                                D = this->c_(i,k,I,J);
+                                E = this->b_(i,k,I,J);
+                                F = this->a_(i,m,I,J);
+                                G = this->c_(i,m,I,J);
+                                H = this->b_(i,m,I,J);
+                                II= this->a_(j,l,I,J);
+                                JJ= this->c_(j,l,I,J);
+                                K = this->b_(j,l,I,J);
+                                a0 += r * (A*C*F*K+A*C*H*II+4.0*A*D*G*K+4.0*A*D*H*JJ+A*E*F*II+4.0*A*E*G*JJ+3.0*A*E*H*K
+                                          +3.0*B*C*F*II+4.0*B*C*G*JJ+B*C*H*K+4.0*B*D*F*JJ+4.0*B*D*G*II+B*E*F*K+B*E*H*II) / 8.0;
+                                a1 += r * (A*C*F*JJ+A*C*G*II+A*D*F*II+4.0*A*D*G*JJ+3.0*A*D*H*K+3.0*A*E*G*K+3.0*A*E*H*JJ
+                                          +B*C*G*K+B*C*H*JJ+B*D*F*K+B*D*H*II+B*E*F*JJ+B*E*G*II) / 4.0;
+                                a2 += r * (A*D*G*K+A*D*H*JJ+A*E*G*JJ+A*E*H*K-B*C*F*II-B*C*G*JJ-B*D*F*JJ-B*D*G*II) / 2.0;
+                                a3 += r * (-A*C*F*JJ-A*C*G*II-A*D*F*II+A*D*H*K+A*E*G*K+A*E*H*JJ-B*C*G*K-B*C*H*JJ
+                                           -B*D*F*K-B*D*H*II-B*E*F*JJ-B*E*G*II) / 4.0;
+                                a4 += r * (-A*C*F*K-A*C*H*II-A*E*F*II+A*E*H*K+B*C*F*II-B*C*H*K-B*E*F*K-B*E*H*II) / 8.0;
+                                b1 += r * (A*C*G*K+A*C*H*JJ+A*D*F*K+A*D*H*II+A*E*F*JJ+A*E*G*II+3.0*B*C*F*JJ+3.0*B*C*G*II
+                                           +3.0*B*D*F*II+4.0*B*D*G*JJ+B*D*H*K+B*E*G*K+B*E*H*JJ) / 4.0;
+                                b2 += r * (A*C*F*II+2.0*A*C*G*JJ+A*C*H*K+2.0*A*D*F*JJ+2.0*A*D*G*II+A*E*F*K+A*E*H*II+B*C*F*K
+                                          +B*C*H*II+2.0*B*D*G*K+2.0*B*D*H*JJ+B*E*F*II+2.0*B*E*G*JJ+B*E*H*K) / 4.0;
+                                b3 += r * (A*C*G*K+A*C*H*JJ+A*D*F*K+A*D*H*II+A*E*F*JJ+A*E*G*II-B*C*F*JJ-B*C*G*II
+                                          -B*D*F*II+B*D*H*K+B*E*G*K+B*E*H*JJ) / 4.0;
+                                b4 += r * (-A*C*F*II+A*C*H*K+A*E*F*K+A*E*H*II-B*C*F*K-B*C*H*II-B*E*F*II+B*E*H*K) / 8.0;
+                           }
+                      }
+                 }
+            }
+       }
+  }
+
+  // Save
   Fourier9 fourier = {a0, a1, a2, a3, a4, b1, b2, b3, b4};
+
+  // Return
   return fourier;
 }
 void UnitaryOptimizer_4_2::find_roots_boyd_(const Fourier9& abcd) // override (can be same if generalized to FourierN)
@@ -832,7 +987,7 @@ void UnitaryOptimizer_4_2::find_roots_boyd_(const Fourier9& abcd) // override (c
     Eigen::Matrix<std::complex<double>,8,1> roots = -1_i * eigen.eigenvalues().array().log();
 
     // Save in work place
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < 8; ++i) {
          //if (std::abs(roots.imag()(i)) > 1.0e-4) std::cout << " Warning! Imaginary root is non-zero = " << roots.imag()(i) << std::endl;
          double r = roots.real()(i);
          if (r < 0.0) r += M_PI;
@@ -844,7 +999,7 @@ double UnitaryOptimizer_4_2::find_gamma_(const Fourier9& abcd, int I, int J, con
    double gamma = 0.0;
    if (opt == "min") {
        double Zold = 1.0e+18;
-       for (int i = 0; i < 4; ++i) {
+       for (int i = 0; i < 8; ++i) {
             //if (this->func_1_(S_[i], abcd) > 0.0) {
                 double Z = this->eval_Z_trial_(I, J, S_[i]);
                 if (Z < Zold) {
@@ -855,7 +1010,7 @@ double UnitaryOptimizer_4_2::find_gamma_(const Fourier9& abcd, int I, int J, con
        }
    } else { 
        double Zold =-1.0e+18;
-       for (int i = 0; i < 4; ++i) {
+       for (int i = 0; i < 8; ++i) {
             //if (this->func_1_(S_[i], abcd) < 0.0) {
                 double Z = this->eval_Z_trial_(I, J, S_[i]);
                 if (Z > Zold) {
