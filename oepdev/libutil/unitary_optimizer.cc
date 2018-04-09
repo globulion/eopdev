@@ -2,10 +2,10 @@
 #include <stdio.h>
 #include <iostream>
 #include <Eigen/Dense>
-#include "unitary_optimizer.h"
 #include "psi4/psi4-dec.h"
+#include "unitary_optimizer.h"
 
-using namespace oepdev;
+namespace oepdev {
 
 UnitaryOptimizer::UnitaryOptimizer(int n, double conv, int maxiter, bool verbose) :
  n_(n),
@@ -452,3 +452,4 @@ std::shared_ptr<psi::Matrix> UnitaryOptimizer::psi_X_()
   }
   return X;
 }
+} // EndNameSpace oepdev

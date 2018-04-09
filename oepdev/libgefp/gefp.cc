@@ -2,6 +2,7 @@
 #include "psi4/libmints/matrix.h"
 #include "gefp.h"
 #include "../libutil/util.h"
+#include "../libutil/unitary_optimizer.h"
 
 using namespace std;
 
@@ -258,7 +259,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   std::shared_ptr<oepdev::PolarGEFactory> factory_0 = shared_from_this();
   std::shared_ptr<oepdev::GenEffPar> par_0 = factory_0->compute();
 
-  // Compute the scales:
+  // Compute the X matrix:
 
   // --> Set up the trial electric fields and compute perturbed density matrices <-- //
   std::vector<std::shared_ptr<psi::Vector>> fields;
@@ -273,16 +274,17 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   }
 
   // --> Allocate data <-- //
-  std::shared_ptr<psi::Matrix> A = std::make_shared<psi::Matrix>("", 3*no, 3*no);
-  std::shared_ptr<psi::Matrix> a = std::make_shared<psi::Matrix>("", 1, 3*no);
+  std::shared_ptr<psi::Matrix> R = std::make_shared<psi::Matrix>("R matrix", no, no);
+  std::shared_ptr<psi::Vector> P = std::make_shared<psi::Vector>("P vector", no);
 
   // --> Compute the least-squares matrices <-- //
   // TODO 
 
-  // --> Perform the fit <-- //
-  A->invert();
-  std::shared_ptr<psi::Matrix> s = psi::Matrix::doublet(a, A, false, false);
-
+  // --> Perform the optimization <-- //
+  oepdev::UnitaryOptimizer optimizer(R, P);
+  optimizer.minimize();
+  std::shared_ptr<psi::Matrix> X = optimizer.X();
+  
   // --> Scale the ab-initio B tensors by scale values
   // TODO 
 
