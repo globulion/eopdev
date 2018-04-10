@@ -11,7 +11,7 @@ namespace oepdev {
 using namespace std;
 
 #define IDX(i,j,n) ((n)*(i)+(j))
-#define IDX3(i,j,k) (n2_*(i)+n_*(k)+(k))
+#define IDX3(i,j,k) (n2_*(i)+n_*(j)+(k))
 #define IDX6(i,j,k,l,m,n) (n5_*(i)+n4_*(j)+n3_*(k)+n2_*(l)+n_*(m)+(n))
 
 constexpr std::complex<double> operator""_i(unsigned long long d)

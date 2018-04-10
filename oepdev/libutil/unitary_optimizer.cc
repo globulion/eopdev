@@ -499,12 +499,17 @@ void UnitaryOptimizer_4_2::common_init_() // override
   size_t n2 = n_*n_;
   size_t n3 = n_*n_*n_;
   size_t n6 = n3*n3;
+  try {
+     R_  = new double[n6];
+     R0_ = new double[n6];
+     W_  = new double[n6];
+  } catch (std::bad_alloc &e) {
+        psi::outfile->Printf("Error allocating 6-rank tensors \n%s\n", e.what());
+        exit(EXIT_FAILURE);
+  }
   P_  = new double[n3];
-  R_  = new double[n6];
   P0_ = new double[n3];
-  R0_ = new double[n6];
   X_  = new double[n2];
-  W_  = new double[n6];
   Xold_ = new double[n2];
   Xnew_ = new double[n2];
 

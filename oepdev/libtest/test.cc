@@ -581,8 +581,8 @@ double oepdev::test::Test::test_unitaryOptimizer()
   const double*  xmax_ref = Xmax_ref;
   for (int i=0; i<5; ++i) {
        for (int j=0; j<5; ++j) {
-            result += sqrt(pow(xmin[i][j] - *xmin_ref, 2.0));
-            result += sqrt(pow(xmax[i][j] - *xmax_ref, 2.0));
+            result += sqrt(pow(std::abs(xmin[i][j]) - std::abs(*xmin_ref), 2.0));
+            result += sqrt(pow(std::abs(xmax[i][j]) - std::abs(*xmax_ref), 2.0));
             xmin_ref++; 
             xmax_ref++;
        }
@@ -738,8 +738,8 @@ double oepdev::test::Test::test_unitaryOptimizer_4_2()
   const double*  xmax_ref = Xmax_ref;
   for (int i=0; i<3; ++i) {
        for (int j=0; j<3; ++j) {
-            result += sqrt(pow(xmin[i][j] - *xmin_ref, 2.0));
-            result += sqrt(pow(xmax[i][j] - *xmax_ref, 2.0));
+            result += sqrt(pow(std::abs(xmin[i][j]) - std::abs(*xmin_ref), 2.0));
+            result += sqrt(pow(std::abs(xmax[i][j]) - std::abs(*xmax_ref), 2.0));
             xmin_ref++; 
             xmax_ref++;
        }

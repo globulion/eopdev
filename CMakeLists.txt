@@ -59,6 +59,9 @@ include_directories ("${EIGEN3_INCLUDE_DIR}")
 # Testing
 include (CTest)
 
+# Configure tests
+include ("cmake/CTestTestfile.cmake.in")
+
 # Compile
 add_psi4_plugin(oepdev main.cc 
                        oepdev/libutil/util.cc
@@ -78,22 +81,3 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libtest/test.cc
                        oepdev/libgefp/gefp.cc
                )
-
-# Configure tests
-add_test (NAME BASIC   COMMAND "psi4" "tests/oepdev/basic.inp"   "tests/oepdev/basic.out"  )
-add_test (NAME CPHF    COMMAND "psi4" "tests/oepdev/cphf.inp"    "tests/oepdev/cphf.out"   )
-add_test (NAME DMATPOL COMMAND "psi4" "tests/oepdev/dmatpol.inp" "tests/oepdev/dmatpol.out")
-add_test (NAME ERI_1_1 COMMAND "psi4" "tests/oepdev/eri_1_1.inp" "tests/oepdev/eri_1_1.out")
-add_test (NAME ERI_2_2 COMMAND "psi4" "tests/oepdev/eri_2_2.inp" "tests/oepdev/eri_2_2.out")
-add_test (NAME ERI_3_1 COMMAND "psi4" "tests/oepdev/eri_3_1.inp" "tests/oepdev/eri_3_1.out")
-add_test (NAME UNITARY_OPTIMIZER COMMAND "psi4" "tests/oepdev/unitaryOptimizer.inp" "tests/oepdev/unitaryOptimizer.out")
-add_test (NAME UNITARY_OPTIMIZER_4_2 COMMAND "psi4" "tests/oepdev/unitaryOptimizer_4_2.inp" "tests/oepdev/unitaryOptimizer_4_2.out")
-
-set_tests_properties (BASIC   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.0000"    )
-set_tests_properties (CPHF    PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00"      )
-set_tests_properties (DMATPOL PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00"      )
-set_tests_properties (ERI_1_1 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
-set_tests_properties (ERI_2_2 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
-set_tests_properties (ERI_3_1 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
-set_tests_properties (UNITARY_OPTIMIZER PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000")
-set_tests_properties (UNITARY_OPTIMIZER_4_2 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000")
