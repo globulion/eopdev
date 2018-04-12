@@ -4,8 +4,11 @@
 
 #include <vector>
 #include <string>
+#include <random>
+#include <cmath>
 #include "psi4/libmints/wavefunction.h"
 #include "psi4/libmints/matrix.h"
+#include "psi4/libmints/vector3.h"
 #include "../liboep/oep.h"
 #include "../libutil/cphf.h"
 
@@ -146,6 +149,20 @@ class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
    /// Psi4 Options
    psi::Options& options_;
 
+   /// Random number generators
+   std::default_random_engine randomNumberGenerator_;
+   std::uniform_real_distribution<double> randomDistribution_;
+
+   /// Draw random number
+   virtual double random_double() {return randomDistribution_(randomNumberGenerator_);};
+   virtual std::shared_ptr<psi::Vector> draw_random_point();
+
+   virtual bool is_in_vdWsphere(double x, double y, double z) const;
+   std::shared_ptr<psi::Matrix> excludeSpheres_;
+   std::map<std::string, double> vdwRadius_;
+   double cx_, cy_, cz_;
+   double radius_;
+
   private:
 };
 
@@ -175,8 +192,12 @@ class PolarGEFactory : public GenEffParFactory, public std::enable_shared_from_t
    /// Randomly draw electric field value
    std::shared_ptr<psi::Vector> draw_field();
 
-   /// Solve SCF equations to find perturbed one-particle density matrix
+   /// Solve SCF equations to find perturbed one-particle density matrix due to uniform electric field
    std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& field);
+
+   /// Solve SCF equations to find perturbed one-particle density matrix due to point charge
+   std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& pos, const double& charge);
+
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Scaling of MO Space.

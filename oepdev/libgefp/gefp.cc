@@ -1,4 +1,5 @@
 #include <iostream>
+#include <random>
 #include "psi4/libmints/matrix.h"
 #include "gefp.h"
 #include "../libutil/util.h"
@@ -37,9 +38,47 @@ void oepdev::GenEffFrag::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std
 //-- GenEffParFactory --////////////////////////////////////////////////////////////////////////////////
 oepdev::GenEffParFactory::GenEffParFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt) :
  wfn_(wfn),
- options_(opt)
+ options_(opt),
+ randomDistribution_(std::uniform_real_distribution<double>(-1.0, 1.0))
 {
+   double pad = 10.0; // Put to options
+   // populate vdwRadius
+   vdwRadius_["C"] = 3.000; // Put to options
+   vdwRadius_["H"] = 1.000;
+   vdwRadius_["N"] = 2.400;
+   vdwRadius_["O"] = 2.600;
+   vdwRadius_["F"] = 2.300;
+   vdwRadius_["Cl"]= 2.900;
 
+   // Set the centre of the sphere
+   psi::Matrix  geom = wfn_->molecule()->geometry();
+   psi::Vector3  com = wfn_->molecule()->center_of_mass();
+   cx_               = com.get(0);
+   cy_               = com.get(1);
+   cz_               = com.get(2);
+  
+   // compute radius (including padding)
+   double maxval = geom.get(0,0) - com.get(0);
+   double minval = geom.get(0,0) - com.get(0);
+   double val, rad;
+   for (int i = 0; i < geom.nrow(); ++i) {
+        for (int j = 0; j < geom.ncol(); ++j) {
+             val = geom.get(i,j) - com.get(j);
+             if (val > maxval) maxval = val;
+             if (val < minval) minval = val;
+        }
+   }
+   rad = std::max(std::abs(maxval), std::abs(minval));
+   radius_ = rad + pad;
+
+   // populate excludeSpheres Matrix
+   excludeSpheres_ = std::make_shared<psi::Matrix>("van der Waals Exclude Spheres", geom.nrow(), 4);
+   for (int i=0; i< geom.nrow(); ++i) {
+        for (int j=0; j< geom.ncol(); ++j) {
+             excludeSpheres_->set(i, j, geom.get(i,j));
+        }
+        excludeSpheres_->set(i, 3, vdwRadius_[wfn_->molecule()->symbol(i)]);
+   }
 }
 oepdev::GenEffParFactory::~GenEffParFactory()
 {
@@ -49,6 +88,48 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::GenEffParFactory::compute()
 {
 
 }
+bool oepdev::GenEffParFactory::is_in_vdWsphere(double x, double y, double z) const
+{
+   bool isInside = false;
+   double rx, ry, rz, r, rw;
+   for (int i=0; i<excludeSpheres_->nrow(); ++i) {
+        rx = excludeSpheres_->get(i, 0);
+        ry = excludeSpheres_->get(i, 1);
+        rz = excludeSpheres_->get(i, 2);
+        rw = excludeSpheres_->get(i, 3);
+        r  = sqrt(std::pow(rx-x, 2.0) + std::pow(ry-y, 2.0) + std::pow(rz-z, 2.0));
+        if (r < rw) {
+            isInside = true;
+            break;
+        }
+   }
+   return isInside;
+}
+
+std::shared_ptr<psi::Vector> oepdev::GenEffParFactory::draw_random_point() 
+{
+  double theta     = acos(random_double());
+  double phi       = 2.0 * M_PI * random_double();
+  double r         = radius_  * cbrt( random_double() );
+  double x         = cx_ + r * sin(theta) * cos(phi);
+  double y         = cy_ + r * sin(theta) * sin(phi);
+  double z         = cz_ + r * cos(theta);
+
+  while (is_in_vdWsphere(x, y, z) == true) {               
+         theta     = acos(random_double());              
+         phi       = 2.0 * M_PI * random_double();
+         r         = radius_  * cbrt( random_double() );
+         x         = cx_ + r * sin(theta) * cos(phi); 
+         y         = cy_ + r * sin(theta) * sin(phi);
+         z         = cz_ + r * cos(theta);
+  }
+  std::shared_ptr<psi::Vector> point = std::make_shared<psi::Vector>("",3);
+  point->set(0, x);
+  point->set(1, y);
+  point->set(2, z);
+  return point;
+}
+
 //-- PolarGEFactory --////////////////////////////////////////////////////////////////////////////////
 oepdev::PolarGEFactory::PolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
  oepdev::GenEffParFactory(cphf->wfn(), opt),
@@ -223,10 +304,22 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::PolarGEFactory::compute()
 std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::draw_field()
 {
   std::shared_ptr<psi::Vector> field = std::make_shared<psi::Vector>("", 3);
-  //TODO Add here random pick up of the field values!
+  const double scale = 0.001; // Put to options
+  double fx = random_double() * scale;
+  double fy = random_double() * scale;
+  double fz = random_double() * scale;
+  field->set(0, fx);
+  field->set(1, fy);
+  field->set(2, fz);
   return field;
 }
 std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& field)
+{
+  std::shared_ptr<psi::Matrix> dmat;
+  // TODO
+  return dmat;
+}
+std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& pos, const double& q)
 {
   std::shared_ptr<psi::Matrix> dmat;
   // TODO
