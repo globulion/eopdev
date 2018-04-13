@@ -155,20 +155,30 @@ class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
 
    /// Draw random number
    virtual double random_double() {return randomDistribution_(randomNumberGenerator_);};
+
+   /// Draw random point in 3D space, excluding the vdW region
    virtual std::shared_ptr<psi::Vector> draw_random_point();
 
+   /// Is the point inside a vdW region?
    virtual bool is_in_vdWsphere(double x, double y, double z) const;
-   std::shared_ptr<psi::Matrix> excludeSpheres_;
-   std::map<std::string, double> vdwRadius_;
-   double cx_, cy_, cz_;
-   double radius_;
 
-  private:
+   /// Matrix with vdW sphere information
+   std::shared_ptr<psi::Matrix> excludeSpheres_;
+
+   /// Map with vdW radii
+   std::map<std::string, double> vdwRadius_;
+
+   /// Centre-of-mass coordinates
+   double cx_, cy_, cz_;
+
+   /// Radius of padding sphere around the molecule
+   double radius_;
 };
 
 /** \brief Polarization GEFP Factory.
  *
- * Implements creation of the density matrix susceptibility tensors.
+ * Implements creation of the density matrix susceptibility tensors for which \f$ {\bf X} = {\bf 1}\f$.
+ * Guarantees the idempotency of the density matrix up to first-order in LCAO-MO variation.
  */
 class PolarGEFactory : public GenEffParFactory, public std::enable_shared_from_this<PolarGEFactory>
 {
@@ -202,6 +212,8 @@ class PolarGEFactory : public GenEffParFactory, public std::enable_shared_from_t
 
 /** \brief Polarization GEFP Factory with Least-Squares Scaling of MO Space.
  *
+ * Implements creation of the density matrix susceptibility tensors for which \f$ {\bf X} \neq {\bf 1}\f$.
+ * Guarantees the idempotency of the density matrix up to first-order in LCAO-MO variation.
  */
 class MOScaledPolarGEFactory : public PolarGEFactory
 {
@@ -222,6 +234,7 @@ class MOScaledPolarGEFactory : public PolarGEFactory
 
 /** \brief Polarization GEFP Factory with Least-Squares Scaling of Cartesian Degrees of freedom.
  *
+ *  The resulting density matrix does not guarantee idempotency.
  */
 class FieldScaledPolarGEFactory : public PolarGEFactory
 {

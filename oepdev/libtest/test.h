@@ -74,6 +74,10 @@ class Test
    /// Test the oepdev::UnitaryOptimizer_4_2 class
    double test_unitaryOptimizer_4_2(void);
 
+   /// Test the oepdev::RHFPerturbed class
+   double test_scf_perturb(void);
+
+
 };
 
 /** @}*/

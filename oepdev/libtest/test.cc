@@ -3,8 +3,10 @@
 #include "psi4/libmints/matrix.h"
 #include "../libutil/cphf.h"
 #include "../libutil/util.h"
-#include "../libgefp/gefp.h"
 #include "../libutil/unitary_optimizer.h"
+#include "../libutil/scf_perturb.h"
+#include "../libgefp/gefp.h"
+
 using namespace std;
 
 oepdev::test::Test::Test(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options) :
@@ -25,6 +27,7 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="ERI_3_1") result = test_eri_3_1();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="UNITARY_OPTIMIZER") result = test_unitaryOptimizer();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="UNITARY_OPTIMIZER_4_2") result = test_unitaryOptimizer_4_2();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="SCF_PERTURB") result = test_scf_perturb();
   else throw psi::PSIEXCEPTION("Incorrect test name specified!");
   return result;
 }
@@ -746,6 +749,41 @@ double oepdev::test::Test::test_unitaryOptimizer_4_2()
   }
   X_min->print();
   X_max->print();
+
+  // Print result
+  std::cout << std::fixed;
+  std::cout.precision(8);
+  std::cout << " Test result= " << result << std::endl;
+
+  return result;
+}
+double oepdev::test::Test::test_scf_perturb()
+{
+  double result = 0.0;
+  const double energy_field_ref = 0.00;
+  const double energy_charge_ref= 0.00;
+  const double Fx = 0.024, Rx = 1.4000;
+  const double Fy =-0.019, Ry = 0.0939;
+  const double Fz = 0.009, Rz = 3.0030;
+  const double q  = 0.001;
+
+  std::shared_ptr<psi::SuperFunctional> func = oepdev::create_superfunctional("HF", options_);
+
+  // Solve SCF in external electric field
+  std::shared_ptr<oepdev::RHFPerturbed> scf_field = std::make_shared<oepdev::RHFPerturbed>(wfn_, func, options_, wfn_->psio());
+  scf_field->set_perturbation(Fx, Fy, Fz);
+  scf_field->compute_energy();
+  const double energy_field = scf_field->reference_energy();
+
+  // Solve SCF in external electric field
+  std::shared_ptr<oepdev::RHFPerturbed> scf_charge = std::make_shared<oepdev::RHFPerturbed>(wfn_, func, options_, wfn_->psio());
+  scf_charge->set_perturbation(Rx, Ry, Rz, q);
+  scf_charge->compute_energy();
+  const double energy_charge = scf_charge->reference_energy();
+
+  // Accumulate errors
+  result += sqrt(pow(energy_field - energy_field_ref , 2.0));
+  result += sqrt(pow(energy_charge- energy_charge_ref, 2.0));
 
   // Print result
   std::cout << std::fixed;
