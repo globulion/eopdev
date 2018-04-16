@@ -30,6 +30,28 @@ struct PerturbCharges
  *  - external uniform electric field
  *  - set of point charges
  * The mixed conditions can also be used.
+ *
+ * ##Theory
+ * 
+ * The electrostatic perturbation is here understood as a distribution of external
+ * (generally non-uniform) electric field. It is assumed that this perturbation 
+ * is one-electron in nature.
+ * Therefore, the one-electron Hamiltonian is changed according to the following
+ * \f[
+ *   {\bf H}^{\rm core} \rightarrow {\bf H}^{\rm core} + \sum_n q_n {\bf V}^{(n)} - \mathbb{M} \cdot {\bf F}
+ * \f]
+ * where \f$ q_n \f$ is the external classical point charge, \f$ {\bf V}^{(n)} \f$ is the associated matrix 
+ * of potential integrals, \f$ \mathbb{M} \f$ is the vector of dipole integrals and \f$ {\bf F} \f$ is
+ * an external uniform electric field.
+ * The total energy is then computed by performing an SCF procedure on the above one-electron Hamiltionian.
+ * The contribution due to nuclei is included, i.e.,
+ * \f[
+ *    E_{\rm Nuc} \rightarrow E_{\rm Nuc-Nuc} + \sum_{In} \frac{q_n Z_I}{r_{In}} - {\bf \mu_{\rm Nuc}} \cdot {\bf F} 
+ * \f]
+ * where \f$ {\bf \mu_{\rm Nuc}} \f$ is the nuclear dipole moment and \f$ Z_I \f$ is the atomic number 
+ * of the \f$ I \f$th nucleus.
+ * It is added in the nuclear repulsion energy \f$ E_{\rm Nuc-Nuc} \f$ (note that the resulting energy can be negative as well
+ * depending on the electric field direction and configuration of point charges.
  */
 class RHFPerturbed : public psi::scf::RHF
 {
@@ -72,7 +94,7 @@ class RHFPerturbed : public psi::scf::RHF
 
 /** \example example_scf_perturb.cc
  * Perturb HF Hamiltonian with external electrostatic potential.
- * This is an example of how to use the oepdev::RHFPerturb class.
+ * This is an example of how to use the oepdev::RHFPerturbed class.
  */
 
 
