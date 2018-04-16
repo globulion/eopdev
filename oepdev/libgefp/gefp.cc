@@ -8,6 +8,9 @@
 
 using namespace std;
 
+#define IDX_3(i,j,k) (n2*(i)+n1*(j)+(k))
+#define IDX_6(i,j,k,l,m,n) (n5*(i)+n4*(j)+n3*(k)+n2*(l)+n1*(m)+(n))
+
 oepdev::GenEffFrag::GenEffFrag(std::string name) : 
   name_(name),
   densityMatrixSusceptibilityGEF_(nullptr),
@@ -354,7 +357,11 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   int npoints = 150;
   int nbf = wfn_->basisset()->nbf();
   int no = cphfSolver_->nocc();
+  size_t n1 = no;
+  size_t n2 = no*no;
   size_t n3 = no*no*no;
+  size_t n4 = n3*no;
+  size_t n5 = n3*n2;
   size_t n6 = n3*n3;
 
   // Compute the ab-initio (unscaled) B tensors
@@ -386,8 +393,76 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
     exit(EXIT_FAILURE);
   }
 
+  // --> Compute the G matrices <-- //
+  // TODO
+
   // --> Compute the least-squares R and P tensors <-- //
-  // TODO 
+  psi::timer_on(" Computation of R tensor");
+  for (int i=0; i<no; ++i) {
+  for (int j=0; j<no; ++j) {
+  for (int k=0; k<no; ++k) {
+  for (int l=0; l<no; ++l) {
+  for (int m=0; m<no; ++m) {
+  for (int n=0; n<no; ++n) {
+       double v = 0.0;
+       for (int N=0; N<npoints; ++N) {
+            for (int ia=0; ia<nbf; ++ia) {
+             for (int ib=0; ib<nbf; ++ib) {
+              double cai = Ca[ia][i];
+              double cbi = Ca[ib][i];
+              double cal = Ca[ia][l];
+              double cbl = Ca[ib][l];
+              double vg1 = 0.0;
+              double vg2 = 0.0;
+              for (int ic=0; ic<nbf; ++ic) {
+                   vg1 += D[ia][ic] * cbi + D[ib][ic] * cai;
+                   vg2 += D[ia][ic] * cbl + D[ib][ic] * cal;
+              }
+              for (int z1=0; z1<3; ++z1) {
+              for (int w1=0; w1<3; ++w1) {
+              for (int z2=0; z2<3; ++z2) {
+              for (int w2=0; w2<3; ++w2) {
+                 v += cphfSolver_->polarizability(j,k)->get(z1,w1) * fields[N]->get(w1) *
+                      cphfSolver_->polarizability(m,n)->get(z2,w2) * fields[N]->get(w2) * 
+                     (cai * gib_z1 + cbi * gia_z1 - vg1 * gic_z1) * 
+                     (cal * glb_z2 + cbl * gla_z2 - vg2 * glc_z2);
+              }}}}
+             }
+            }
+       }
+       v /= 16.0;
+       R[IDX_6(i,j,k,l,m,n)] = v;
+  }}}}}}
+  psi::timer_off(" Computation of R tensor");
+
+  psi::timer_on (" Computation of P tensor");
+  for (int i=0; i<no; ++i) {
+  for (int j=0; j<no; ++j) {
+  for (int k=0; k<no; ++k) {
+       double v = 0.0;
+       for (int N=0; N<npoints; ++N) {
+            for (int ia=0; ia<nbf; ++ia) {
+             for (int ib=0; ib<nbf; ++ib) {
+              double d_ref = dmats[N]->get(ai,bi);
+              double cai = Ca[ia][i];
+              double cbi = Ca[ib][i];
+              double vg = 0.0;
+              for (int ic=0; ic<nbf; ++ic) {
+                   vg += D[ia][ic] * cbi + D[ib][ic] * cai;
+              }
+              for (int z=0; z<3; ++z) {
+              for (int w=0; w<3; ++w) {
+                   v += cphfSolver_->polarizability(j,k)->get(z,w) * fields[N]->get(w) * 
+                      (cai * gib_z + cbi * gia_z - vg * gic_z) * d_ref;
+              }
+              }
+             }
+            }
+       }
+       v /=-2.0;
+       P[IDX_3(i,j,k)] = v;
+  }}}
+  psi::timer_off(" Computation of P tensor");
 
   // --> Perform the optimization <-- //
   oepdev::UnitaryOptimizer_4_2 optimizer(R, P, no);
@@ -418,8 +493,8 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
        }
        B_susc.push_back(Bz);
   }
-  double** Ca = wfn_->Ca_subset("AO","OCC")->pointer();
-  double** Da = wfn_->Da()->pointer();
+  double** Ca = wfn_->Ca_subset("AO","OCC")->pointer(); // remove later (should be in orthogonal basis)
+  double** Da = wfn_->Da()->pointer(); // remove later (should be in orthogonal basis)
   //
   for (int ia=0; ia<nbf; ++ia) {
        for (int ib=0; ib<nbf; ++ib) {
