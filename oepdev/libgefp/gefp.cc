@@ -4,6 +4,7 @@
 #include "gefp.h"
 #include "../libutil/util.h"
 #include "../libutil/unitary_optimizer.h"
+#include "../libutil/scf_perturb.h"
 
 using namespace std;
 
@@ -315,14 +316,20 @@ std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::draw_field()
 }
 std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& field)
 {
-  std::shared_ptr<psi::Matrix> dmat;
-  // TODO
+  std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, 
+                  oepdev::create_superfunctional("HF", options_), options_, wfn_->psio());
+  scf->set_perturbation(field);
+  scf->compute_energy();
+  std::shared_ptr<psi::Matrix> dmat = scf->Da();
   return dmat;
 }
 std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& pos, const double& q)
 {
-  std::shared_ptr<psi::Matrix> dmat;
-  // TODO
+  std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, 
+                  oepdev::create_superfunctional("HF", options_), options_, wfn_->psio());
+  scf->set_perturbation(pos, q);
+  scf->compute_energy();
+  std::shared_ptr<psi::Matrix> dmat = scf->Da();
   return dmat;
 }
 
@@ -347,6 +354,8 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   int npoints = 150;
   int nbf = wfn_->basisset()->nbf();
   int no = cphfSolver_->nocc();
+  size_t n3 = no*no*no;
+  size_t n6 = n3*n3;
 
   // Compute the ab-initio (unscaled) B tensors
   std::shared_ptr<oepdev::PolarGEFactory> factory_0 = shared_from_this();
@@ -367,21 +376,72 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   }
 
   // --> Allocate data <-- //
-  std::shared_ptr<psi::Matrix> R = std::make_shared<psi::Matrix>("R matrix", no, no);
-  std::shared_ptr<psi::Vector> P = std::make_shared<psi::Vector>("P vector", no);
+  double* R = nullptr;
+  double* P = nullptr;
+  try {
+    R  = new double[n6];
+    P  = new double[n3];
+  } catch (std::bad_alloc &e) {
+    psi::outfile->Printf("Error allocating 6-rank and 3-rd rank tensors \n%s\n", e.what());
+    exit(EXIT_FAILURE);
+  }
 
-  // --> Compute the least-squares matrices <-- //
+  // --> Compute the least-squares R and P tensors <-- //
   // TODO 
 
   // --> Perform the optimization <-- //
-  oepdev::UnitaryOptimizer optimizer(R, P);
+  oepdev::UnitaryOptimizer_4_2 optimizer(R, P, no);
   optimizer.minimize();
   std::shared_ptr<psi::Matrix> X = optimizer.X();
-  
-  // --> Scale the ab-initio B tensors by scale values
-  // TODO 
 
-  return par_0;
+  // Clean up
+  delete[] R;
+  delete[] P;
+  
+  // --> Compute the ab-initio b tensors (associated with LCAO-MO coefficients)
+  std::vector<std::vector<std::shared_ptr<psi::Matrix>>> b_susc;
+  for (int i=0; i<no; ++i) {
+       std::vector<std::shared_ptr<psi::Matrix>> bz;
+       for (int z=0; z<3; ++z) {
+            bz.push_back(std::make_shared<psi::Matrix>("LCAO-MO Susceptibility", nbf, 1));
+       }
+       b_susc.push_back(bz);
+  }
+  // TODO
+
+  // --> Compute the ab-initio B tensors (associated with density matrix elements)
+  std::vector<std::vector<std::shared_ptr<psi::Matrix>>> B_susc;
+  for (int i=0; i<no; ++i) {
+       std::vector<std::shared_ptr<psi::Matrix>> Bz;
+       for (int z=0; z<3; ++z) {
+            Bz.push_back(std::make_shared<psi::Matrix>("Density Matrix Susceptibility", nbf, nbf));
+       }
+       B_susc.push_back(Bz);
+  }
+  double** Ca = wfn_->Ca_subset("AO","OCC")->pointer();
+  double** Da = wfn_->Da()->pointer();
+  //
+  for (int ia=0; ia<nbf; ++ia) {
+       for (int ib=0; ib<nbf; ++ib) {
+            for (int i=0; i<no; ++i) {
+                 double cai = Ca[ia][i];
+                 double cbi = Ca[ib][i];
+                 for (int z=0; z<3; ++z) {
+                      double vbz  = cai * b_susc[i][z]->get(ib,0) + cbi * b_susc[i][z]->get(ia,0);
+                      for (int ic=0; ic<nbf; ++ic) {
+                           vbz -=(cbi * Da[ia][ic] + cai * Da[ib][ic]) * b_susc[i][z]->get(ic,0);
+                      }
+                      B_susc[i][z]->set(ia,ib,vbz);
+                 }
+            }
+       }
+  }
+
+  // Construct The Effective Fragment Parameters Object
+  std::shared_ptr<oepdev::GenEffPar> par = std::make_shared<oepdev::GenEffPar>("Polarization");
+  par->set_susceptibility(B_susc);
+
+  return par;
 }
 //-- FieldScaledPolarGEFactory --////////////////////////////////////////////////////////////////////////////////
 oepdev::FieldScaledPolarGEFactory::FieldScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
