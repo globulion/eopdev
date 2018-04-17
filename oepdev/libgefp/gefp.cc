@@ -364,22 +364,121 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   size_t n5 = n3*n2;
   size_t n6 = n3*n3;
 
-  // Compute the ab-initio (unscaled) B tensors
+  // Compute the ab-initio B tensors (X = 1)
   std::shared_ptr<oepdev::PolarGEFactory> factory_0 = shared_from_this();
   std::shared_ptr<oepdev::GenEffPar> par_0 = factory_0->compute();
 
-  // Compute the X matrix:
+  // Allocate
+  std::map<int, char> mm;
+  mm[0] = 'X'; mm[1] = 'Y'; mm[2] = 'Z';
+  std::shared_ptr<MatrixFactory> matrixFactory = std::make_shared<psi::MatrixFactory>();
+  matrixFactory->init_with(1, &nbf, &nbf);
+  psi::IntegralFactory integrals(wfn_->basisset());
+  std::shared_ptr<psi::Matrix> Sao = std::make_shared<psi::Matrix>("Overlap AO Integrals", nbf, nbf);
+  std::shared_ptr<psi::Matrix> X   = std::make_shared<psi::Matrix>("Lowdin Symmetric Orthogonalizer: S^{-1/2}", nbf, nbf);
+  std::shared_ptr<psi::Matrix> Y   = std::make_shared<psi::Matrix>("Lowdin Symmetric Deorthogonalizer: S^{+1/2}", nbf, nbf);
+  std::vector<std::shared_ptr<psi::Matrix>> Mao, Mao_bar, Mmo_ao_bar, L, G;
+  for (int z = 0; z<3; ++z) {
+       Mao.push_back(std::make_shared<psi::Matrix>("Dipole AO Ints", nbf, nbf));
+       G  .push_back(std::make_shared<psi::Matrix>("Left Inverse L Tensor", nocc, nbf));
+  }
+  std::shared_ptr<psi::Matrix> eigvec   = matrixFactory->create_shared_matrix("Eigenvectors of Sao");
+  std::shared_ptr<psi::Matrix> eigval_m = matrixFactory->create_shared_matrix("Eigenvalues of Sao");
+  std::shared_ptr<psi::Matrix> temp     = matrixFactory->create_shared_matrix("Temporary");
+  std::shared_ptr<psi::Matrix> proj     = matrixFactory->create_shared_matrix("Projector in Orthogonal AO Space");
+  std::shared_ptr<psi::Vector> eigval    (matrixFactory->create_vector());
+
+  // Compute Dipole Integrals
+  std::shared_ptr<psi::OneBodyAOInt> dipInt(integrals.ao_dipole());
+  dipInt->compute(Mao);
+
+  // Compute Overlap Integrals
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt(integrals.ao_overlap());
+  ovlInt->compute(Sao);
+
+  // Compute Lowdin Symmetric Orthogonalizer
+  Sao->diagonalize(eigvec, eigval);
+  double min_S = fabs(eigval->get(0,0));
+  for (int i=0; i<nbf; ++i) {
+       if (min_S > eigval->get(0, i)) 
+           min_S = eigval->get(0, i);
+       double v = 1.0 / sqrt(eigval->get(0, i));
+       eigval->set(0, i, v);
+  }
+  outfile->Printf("  Minimum eigenvalue in the overlap matrix is %14.10E.\n", min_S);
+
+  eigval_m->set_diagonal(eigval);
+  temp->gemm(false, true, 1.0, eigval_m, eigvec, 0.0);
+  X->gemm(false, false, 1.0, eigvec, temp, 0.0);
+
+  // Compute Deorthogonalizer
+  Y->copy(X);
+  Y->invert();
+
+  // LCAO-LMO Coefficients in Non-Orthogonal AO Basis
+  std::shared_ptr<psi::Matrix> U = psi::Matrix::doublet(wfn_->Ca_subset("AO","OCC"), cphfSolver_->localizer()->U(), false, false);
+
+  // LCAO-LMO Coefficients in Orthogonal AO Basis
+  std::shared_ptr<psi::Matrix> Ubar = psi::Matrix::doublet(Y, U, false, false);
+  Ubar->set_name("LCAO-LMO Coefficients in Orthogonal AO Basis");
+  double** Ca = Ubar->pointer();
+
+  // One-Particle Density Matrix in Orthogonal AO Basis
+  std::shared_ptr<psi::Matrix> Dbar = psi::Matrix::doublet(Ubar, Ubar, false, true);
+  Dbar->set_name("One-Particle Density Matrix in Orthogonal AO Basis");
+  double** Da = Dbar->pointer();
+
+  // Transform Dipole Integrals to Orthogonal Basis
+  for (int z = 0; z<3; ++z) {
+       Mao[z]->scale(-1.0);
+       Mao_bar.push_back(psi::Matrix::triplet(X, Mao[z], X, true, false, false));
+  }
+
+  // Transform Left Axis of Dipole AO Integrals to LMO Basis
+  for (int z = 0; z<3; ++z) {
+       Mmo_ao_bar.push_back(psi::Matrix::doublet(Ubar, Mao_bar[z], true, false));
+  }
+
+  // Compute L Vector of Matrices
+  proj->identity();
+  proj->subtract(Dbar);
+  for (int z = 0; z<3; ++z) {
+       L.push_back(psi::Matrix::doublet(Mmo_ao_bar[z], proj, false, false));
+  }
+
+  // Compute Collection of Left L Inverse Matrces (G matrices)
+  for (int o = 0; o < nocc; ++o) {
+       std::shared_ptr<psi::Matrix> Li = std::make_shared<psi::Matrix>("", nbf, 3);
+       for (int z = 0; z < 3; ++z) {
+            for (int n = 0; n < nbf; ++n) {
+                 double v = L[z]->get(o, n);
+                 Li->set(n, z, v);
+            }
+       }
+       std::shared_ptr<psi::Matrix> Q  = psi::Matrix::doublet(Li, Li, true, false);
+       Q->invert();
+       std::shared_ptr<psi::Matrix> Li_left = psi::Matrix::doublet(Q, Li, false, true);
+       for (int z = 0; z < 3; ++z) {
+            for (int n = 0; n < nbf; ++n) {
+                 double v = Li_left->get(z, n);
+                 G[z]->set(o, n, v);
+            }
+       }
+  }
+
+  // ===> Compute the X unitary matrix <=== //
 
   // --> Set up the trial electric fields and compute perturbed density matrices <-- //
   std::vector<std::shared_ptr<psi::Vector>> fields;
   std::vector<std::shared_ptr<psi::Matrix>> dmats;
-  for (int i=0; i<npoints; ++i) {
+  for (int N=0; N<npoints; ++N) {
        fields.push_back(draw_field());
 
        std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
-       dmat->copy(perturbed_dmat(fields[i]));
-       dmat->subtract(wfn_->Da());
-       dmats.push_back(dmat);
+       dmat->copy(perturbed_dmat(fields[N]));
+       std::shared_ptr<psi::Matrix> dmat_bar = psi::Matrix::triplet(Y, dmat, Y, false, false, false);
+       dmat_diff->subtract(Dbar);
+       dmats.push_back(dmat_diff);
   }
 
   // --> Allocate data <-- //
@@ -392,9 +491,6 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
     psi::outfile->Printf("Error allocating 6-rank and 3-rd rank tensors \n%s\n", e.what());
     exit(EXIT_FAILURE);
   }
-
-  // --> Compute the G matrices <-- //
-  // TODO
 
   // --> Compute the least-squares R and P tensors <-- //
   psi::timer_on(" Computation of R tensor");
@@ -412,20 +508,32 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
               double cbi = Ca[ib][i];
               double cal = Ca[ia][l];
               double cbl = Ca[ib][l];
-              double vg1 = 0.0;
-              double vg2 = 0.0;
+              std::vector<double> vg1;
+              std::vector<double> vg2;
+              for (int z=0; z<3; ++z) {
+                 vg1.push_back(0.0);
+                 vg2.push_back(0.0);
+              }
               for (int ic=0; ic<nbf; ++ic) {
-                   vg1 += D[ia][ic] * cbi + D[ib][ic] * cai;
-                   vg2 += D[ia][ic] * cbl + D[ib][ic] * cal;
+                 double cd1 = Da[ia][ic] * cbi + Da[ib][ic] * cai;
+                 double cd2 = Da[ia][ic] * cbl + Da[ib][ic] * cal;
+                 for (int z=0; z<3; ++z) {
+                   vg1[z] += cd1 * G[z]->get(i,ic);
+                   vg2[z] += cd2 * G[z]->get(l,ic);
+                 }
               }
               for (int z1=0; z1<3; ++z1) {
+                   double gia_z1 = G[z1]->get(i,ia);
+                   double gib_z1 = G[z1]->get(i,ib);
+              for (int z2=0; z2<3; ++z2) { 
+                   double gla_z2 = G[z2]->get(l,ia);
+                   double glb_z2 = G[z2]->get(l,ib);
               for (int w1=0; w1<3; ++w1) {
-              for (int z2=0; z2<3; ++z2) {
               for (int w2=0; w2<3; ++w2) {
                  v += cphfSolver_->polarizability(j,k)->get(z1,w1) * fields[N]->get(w1) *
                       cphfSolver_->polarizability(m,n)->get(z2,w2) * fields[N]->get(w2) * 
-                     (cai * gib_z1 + cbi * gia_z1 - vg1 * gic_z1) * 
-                     (cal * glb_z2 + cbl * gla_z2 - vg2 * glc_z2);
+                     (cai * gib_z1 + cbi * gia_z1 - vg1[z1]) * 
+                     (cal * glb_z2 + cbl * gla_z2 - vg2[z2]);
               }}}}
              }
             }
@@ -446,14 +554,17 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
               double d_ref = dmats[N]->get(ai,bi);
               double cai = Ca[ia][i];
               double cbi = Ca[ib][i];
-              double vg = 0.0;
+              std::vector<double> vg;
+              for (int z=0; z<3; ++z) vg.push_back(0.0);
               for (int ic=0; ic<nbf; ++ic) {
-                   vg += D[ia][ic] * cbi + D[ib][ic] * cai;
+                   vg[z] += (Da[ia][ic] * cbi + Da[ib][ic] * cai) * G[z]->get(i,ic);
               }
               for (int z=0; z<3; ++z) {
+                   double gia_z = G[z]->get(i,ia);
+                   double gib_z = G[z]->get(i,ib);
+                   double gz    = cai * gib_z + cbi * gia_z - vg[z]
               for (int w=0; w<3; ++w) {
-                   v += cphfSolver_->polarizability(j,k)->get(z,w) * fields[N]->get(w) * 
-                      (cai * gib_z + cbi * gia_z - vg * gic_z) * d_ref;
+                   v += d_ref* cphfSolver_->polarizability(j,k)->get(z,w) * gz * fields[N]->get(w);
               }
               }
              }
@@ -465,9 +576,12 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   psi::timer_off(" Computation of P tensor");
 
   // --> Perform the optimization <-- //
-  oepdev::UnitaryOptimizer_4_2 optimizer(R, P, no);
-  optimizer.minimize();
-  std::shared_ptr<psi::Matrix> X = optimizer.X();
+  std::shared_ptr<psi::Matrix> Xt;
+  {
+     oepdev::UnitaryOptimizer_4_2 optimizer(R, P, no); 
+     optimizer.minimize();
+     Xt = optimizer.X();
+  }
 
   // Clean up
   delete[] R;
@@ -482,7 +596,24 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
        }
        b_susc.push_back(bz);
   }
-  // TODO
+  for (int w=0; w<3; ++w) {
+       for (int i=0; i<no; ++i) {
+            for (int ia=0; ia<nbf; ++ia) {
+                 double v = 0.0;
+                 for (int j=0; j<no; ++j) {
+                      for (int k=0; k<no; ++k) {
+                           double xji = Xt->get(j,i);
+                           double xki = Xt->get(k,i);
+                           for (int z=0; z<3; ++z) {
+                                v += xji * xki * cphfSolver_->polarizability(j,k)->get(u,w) * G[u]->get(i,ia);
+                           }
+                      }
+                 }
+                 v /= 4.0;
+                 b_susc[i][w]->set(ia,0,v);
+            }
+       }
+  }
 
   // --> Compute the ab-initio B tensors (associated with density matrix elements)
   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> B_susc;
@@ -493,8 +624,6 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
        }
        B_susc.push_back(Bz);
   }
-  double** Ca = wfn_->Ca_subset("AO","OCC")->pointer(); // remove later (should be in orthogonal basis)
-  double** Da = wfn_->Da()->pointer(); // remove later (should be in orthogonal basis)
   //
   for (int ia=0; ia<nbf; ++ia) {
        for (int ib=0; ib<nbf; ++ib) {
