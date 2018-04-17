@@ -56,8 +56,11 @@ class Test
    /// Test the CPHF method
    double test_cphf(void);
 
-   /// Test the density matrix susceptibility
+   /// Test the density matrix susceptibility (X = 1)
    double test_dmatPol(void);
+
+   /// Test the density matrix susceptibility (X not 1)
+   double test_dmatPolX(void);
 
    /// Test the oepdev::ERI_1_1 class against psi::ERI
    double test_eri_1_1(void);

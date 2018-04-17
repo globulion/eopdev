@@ -354,7 +354,7 @@ oepdev::MOScaledPolarGEFactory::~MOScaledPolarGEFactory()
 std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
 {
   // Sizing
-  int npoints = 150;
+  int npoints = 1;
   int nbf = wfn_->basisset()->nbf();
   int nocc = cphfSolver_->nocc();
   size_t n1 = nocc;
@@ -405,7 +405,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
        double v = 1.0 / sqrt(eigval->get(0, i));
        eigval->set(0, i, v);
   }
-  outfile->Printf("  Minimum eigenvalue in the overlap matrix is %14.10E.\n", min_S);
+  outfile->Printf("  Info: Minimum eigenvalue in the overlap matrix is %14.10E.\n", min_S);
 
   eigval_m->set_diagonal(eigval);
   temp->gemm(false, true, 1.0, eigval_m, eigvec, 0.0);
@@ -473,6 +473,8 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   std::vector<std::shared_ptr<psi::Matrix>> dmats;
   for (int N=0; N<npoints; ++N) {
        fields.push_back(draw_field());
+       cout << oepdev::string_sprintf(" Computation for N=%2d F=[%14.4f, %14.4f, %14.4f]\n",N+1,
+                                        fields[N]->get(0), fields[N]->get(1), fields[N]->get(2));
 
        std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
        dmat->copy(perturbed_dmat(fields[N]));
@@ -564,7 +566,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
                    double gib_z = G[z]->get(i,ib);
                    double gz    = cai * gib_z + cbi * gia_z - vg[z];
               for (int w=0; w<3; ++w) {
-                   v += d_ref* cphfSolver_->polarizability(j,k)->get(z,w) * gz * fields[N]->get(w);
+                   v += d_ref * cphfSolver_->polarizability(j,k)->get(z,w) * gz * fields[N]->get(w);
               }
               }
              }
@@ -575,13 +577,26 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   }}}
   psi::timer_off(" Computation of P tensor");
 
+  double Z_0 = 0.0;
+  for (int N=0; N<npoints; ++N) {
+      for (int ia=0; ia<nbf; ++ia) {
+       for (int ib=0; ib<nbf; ++ib) {
+            double d_ref = dmats[N]->get(ia,ib);
+            Z_0 += d_ref * d_ref;
+  }}}
+
   // --> Perform the optimization <-- //
   std::shared_ptr<psi::Matrix> Xt;
+  double Z;
   {
      oepdev::UnitaryOptimizer_4_2 optimizer(R, P, nocc); 
      optimizer.minimize();
      Xt = optimizer.X();
+     Z  = optimizer.Z();
   }
+  Z += Z_0;
+  psi::outfile->Printf("\n @Optimizer:             Z_0 = %14.6f\n\n", Z_0);
+  psi::outfile->Printf("\n @Optimizer: Optimal Z + Z_0 = %14.6f\n\n", Z  );
 
   // Clean up
   delete[] R;
