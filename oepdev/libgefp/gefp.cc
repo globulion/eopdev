@@ -363,10 +363,12 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   size_t n4 = n3*nocc;
   size_t n5 = n3*n2;
   size_t n6 = n3*n3;
+  cout << "HERE!\n";
 
   // Compute the ab-initio B tensors (X = 1)
-  std::shared_ptr<oepdev::PolarGEFactory> factory_0 = shared_from_this();
-  std::shared_ptr<oepdev::GenEffPar> par_0 = factory_0->compute();
+  //std::shared_ptr<oepdev::PolarGEFactory> factory_0 = shared_from_this();
+  //std::shared_ptr<oepdev::GenEffPar> par_0 = factory_0->compute();
+  cout << "HERE!\n";
 
   // Allocate
   std::map<int, char> mm;
@@ -465,6 +467,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
             }
        }
   }
+  cout << "HERE!\n";
 
   // ===> Compute the X unitary matrix <=== //
 
@@ -482,6 +485,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
        dmat_diff_bar->subtract(Dbar);
        dmats.push_back(dmat_diff_bar);
   }
+  cout << "HERE!\n";
 
   // --> Allocate data <-- //
   double* R = nullptr;
@@ -542,6 +546,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
        }
        v /= 16.0;
        R[IDX_6(i,j,k,l,m,n)] = v;
+       cout << " R= "<< i << j << k << l << m << n << "   " << v << endl;
   }}}}}}
   psi::timer_off(" Computation of R tensor");
 
@@ -574,6 +579,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
        }
        v /=-2.0;
        P[IDX_3(i,j,k)] = v;
+       cout << " P= "<< i << j << k << "   " << v << endl;
   }}}
   psi::timer_off(" Computation of P tensor");
 
@@ -589,7 +595,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   std::shared_ptr<psi::Matrix> Xt;
   double Z;
   {
-     oepdev::UnitaryOptimizer_4_2 optimizer(R, P, nocc); 
+     oepdev::UnitaryOptimizer_4_2 optimizer(R, P, nocc, 1.0e-6, 10, true); 
      optimizer.minimize();
      Xt = optimizer.X();
      Z  = optimizer.Z();
@@ -597,6 +603,10 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   Z += Z_0;
   psi::outfile->Printf("\n @Optimizer:             Z_0 = %14.6f\n\n", Z_0);
   psi::outfile->Printf("\n @Optimizer: Optimal Z + Z_0 = %14.6f\n\n", Z  );
+
+  Xt->set_name("Unitary Transformation Xt");
+  Xt->print();
+  Xt->identity();
 
   // Clean up
   delete[] R;

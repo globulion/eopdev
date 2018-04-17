@@ -24,6 +24,17 @@ symmetry c1
 noreorient
 nocom
 }
+molecule lih {
+0 1
+Li   0.752785  -0.452035   0.000000
+H   -0.752785  -0.452035   0.000000
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
 molecule menh2 {
 0 1
 N    0.711362   5.135877   0.013084
@@ -54,16 +65,16 @@ set {
     cphf_conver                   1e-8
     cphf_localizer                PIPEK_MEZEY
     # ==> General Psi4 Options <== #
-    basis                         6-31G**
+    basis                         6-31G*
     scf_type                      direct 
     guess                         core
     e_convergence                 1e-8
     d_convergence                 1e-9
     print                         1
     puream                        False
-    save_jk                       True
+    save_jk                       False
 }
 
 
 # run oepdev
-energy('oepdev', molecule=h2o)
+energy('oepdev', molecule=lih)
