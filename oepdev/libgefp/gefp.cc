@@ -363,12 +363,10 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   size_t n4 = n3*nocc;
   size_t n5 = n3*n2;
   size_t n6 = n3*n3;
-  cout << "HERE!\n";
 
   // Compute the ab-initio B tensors (X = 1)
   //std::shared_ptr<oepdev::PolarGEFactory> factory_0 = shared_from_this();
   //std::shared_ptr<oepdev::GenEffPar> par_0 = factory_0->compute();
-  cout << "HERE!\n";
 
   // Allocate
   std::map<int, char> mm;
@@ -467,7 +465,6 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
             }
        }
   }
-  cout << "HERE!\n";
 
   // ===> Compute the X unitary matrix <=== //
 
@@ -485,7 +482,6 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
        dmat_diff_bar->subtract(Dbar);
        dmats.push_back(dmat_diff_bar);
   }
-  cout << "HERE!\n";
 
   // --> Allocate data <-- //
   double* R = nullptr;
@@ -606,7 +602,6 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
 
   Xt->set_name("Unitary Transformation Xt");
   Xt->print();
-  Xt->identity();
 
   // Clean up
   delete[] R;
@@ -665,6 +660,15 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
                       B_susc[i][z]->set(ia,ib,vbz);
                  }
             }
+       }
+  }
+
+  // Transform the susceptibility to non-orthogonal basis
+  for (int i=0; i<nocc; ++i) {
+       for (int z=0; z<3; ++z) {
+            std::shared_ptr<psi::Matrix> Biz_t = psi::Matrix::triplet(X, B_susc[i][z], X, false, false, false);
+            Biz_t->set_name(oepdev::string_sprintf("Density Matrix Susceptibility: B[%c](%d) in Non-Orthogonal AO Basis", mm[z], i+1));
+            B_susc[i][z] = std::make_shared<psi::Matrix>(*Biz_t);
        }
   }
 
