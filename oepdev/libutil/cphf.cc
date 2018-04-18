@@ -187,27 +187,35 @@ void CPHF::compute(void) {
         outfile->Printf("\n CPHF Failed.\n\n");
     }
 
-    // Transform the Xmo and Fmo vectors to a localized MO basis
-    _localizer = Localizer::build(_options.get_str("CPHF_LOCALIZER"), 
-                 _wfn->basisset(), _wfn->Ca_subset("AO", "OCC"), _options);
-    _localizer->localize();
 
-    // Compute LMO centroids
+    // Transform the Xmo and Fmo vectors to a localized MO basis if requested
+    std::shared_ptr<Matrix> T;
+    if (_options.get_bool("CPHF_LOCALIZE") == true) {
+        _localizer = Localizer::build(_options.get_str("CPHF_LOCALIZER"), 
+                     _wfn->basisset(), _wfn->Ca_subset("AO", "OCC"), _options);
+        _localizer->localize();
+        T = _localizer->U();
+    } else {
+        T = std::make_shared<Matrix>("Identity Transformation (no localization of MO's)", _no, _no);
+        T->identity();
+    }
+
+    // Compute (L)MO centroids
     std::vector<std::shared_ptr<Matrix>> Rmo_LMO;
     for (unsigned int z=0; z<3; z++) {
-         Rmo_LMO.push_back(Matrix::triplet(_localizer->U(), Rmo[z], _localizer->U(), true, false, false));
+         Rmo_LMO.push_back(Matrix::triplet(T, Rmo[z], T, true, false, false));
          Rmo_LMO[z]->scale(-1.0);
          Rmo[z].reset();
     }
 
     for (unsigned int z=0; z<3; z++) {
          std::shared_ptr<Matrix> m;
-         m = Matrix::doublet(_localizer->U(), Xmo[z], true, false);
+         m = Matrix::doublet(T, Xmo[z], true, false);
          Xmo[z]->copy(m);
-         m = Matrix::doublet(_localizer->U(), Fmo[z], true, false);
+         m = Matrix::doublet(T, Fmo[z], true, false);
          Fmo[z]->copy(m);
     }
-    _localizer->U()->print();
+    T->print();
 
     // Compute and print the dipole polarizability tensor
 

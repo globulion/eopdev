@@ -52,6 +52,7 @@ set {
     cphf_diis_dim                 8
     cphf_maxiter                  200
     cphf_conver                   1e-8
+    cphf_localize                 True
     cphf_localizer                PIPEK_MEZEY
     # ==> General Psi4 Options <== #
     basis                         6-31G**

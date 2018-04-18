@@ -416,8 +416,12 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   Y->invert();
 
   // LCAO-LMO Coefficients in Non-Orthogonal AO Basis
-  std::shared_ptr<psi::Matrix> U = psi::Matrix::doublet(wfn_->Ca_subset("AO","OCC"), cphfSolver_->localizer()->U(), false, false);
-
+  std::shared_ptr<psi::Matrix> U;
+  if (options_.get_bool("CPHF_LOCALIZE") == true) {
+    U = psi::Matrix::doublet(wfn_->Ca_subset("AO","OCC"), cphfSolver_->localizer()->U(), false, false);
+  } else {
+    U = wfn_->Ca_subset("AO","OCC");
+  }
   // LCAO-LMO Coefficients in Orthogonal AO Basis
   std::shared_ptr<psi::Matrix> Ubar = psi::Matrix::doublet(Y, U, false, false);
   Ubar->set_name("LCAO-LMO Coefficients in Orthogonal AO Basis");
@@ -596,9 +600,9 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
      Xt = optimizer.X();
      Z  = optimizer.Z();
   }
-  Z += Z_0;
-  psi::outfile->Printf("\n @Optimizer:             Z_0 = %14.6E\n\n", Z_0);
-  psi::outfile->Printf("\n @Optimizer: Optimal Z + Z_0 = %14.6E\n\n", Z  );
+  psi::outfile->Printf("\n @Optimizer: Z_0     = %14.6E\n", Z_0);
+  psi::outfile->Printf(  " @Optimizer: Z       = %14.6E\n", Z  );
+  psi::outfile->Printf(  " @Optimizer: Z + Z_0 = %14.6E\n\n", Z+Z_0);
 
   Xt->set_name("Unitary Transformation Xt");
   Xt->print();

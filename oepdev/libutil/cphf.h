@@ -51,8 +51,9 @@ using namespace psi;
  * \note Useful options:
  *       - `CPHF_CONVER`    - convergence of CPHF. Default: `1e-8` (au)
  *       - `CPHF_CONVER`    - maximum numberof iterations. Default: `50`
- *       - `CPHF_DIIS`      - wheather use DIIS or not. Default: `True`
+ *       - `CPHF_DIIS`      - wheather use DIIS or not. Default: `true`
  *       - `CPHF_DIIS_DIM`  - dimension of iterative subspace. Default: `3`
+ *       - `CPHF_LOCALIZE`  - localize the molecular orbitals? Default: `true`
  *       - `CPHF_LOCALIZER` - set orbital localization method. Available: `BOYS` and `PIPEK_MEZEY`. Default: `BOYS`
  */
 class CPHF {

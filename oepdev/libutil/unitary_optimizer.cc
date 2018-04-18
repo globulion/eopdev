@@ -541,7 +541,7 @@ void UnitaryOptimizer_4_2::run_(const std::string& opt) // same
 void UnitaryOptimizer_4_2::optimize_(const std::string& opt) // same
 {
   if (verbose_) 
-     psi::outfile->Printf(" Start  : Z[1] = %15.6f\n", Zold_);
+     psi::outfile->Printf("\n\n Start  : Z[1] = %15.6E\n", Zold_);
   while (conv_current_ > conv_) {
      this->form_next_X_(opt);
      this->update_RP_();
@@ -550,7 +550,7 @@ void UnitaryOptimizer_4_2::optimize_(const std::string& opt) // same
      this->update_conv_();
      this->update_iter_();
      if (verbose_) 
-         psi::outfile->Printf(" Iter %2d: Z[X] = %15.6f  Conv= %15.6f\n", niter_, Znew_, conv_current_);
+         psi::outfile->Printf(" Iter %2d: Z[X] = %15.6E  Conv= %15.6f\n", niter_, Znew_, conv_current_);
      if (niter_ > maxiter_) {
          psi::outfile->Printf(" Optimization unsuccesfull! Maximum iteration number %d exceeded!\n", maxiter_);
          success_ = false;
@@ -560,7 +560,7 @@ void UnitaryOptimizer_4_2::optimize_(const std::string& opt) // same
   success_ = ((niter_ <= maxiter_) ? true : false );
   if (verbose_ && success_) {
       psi::outfile->Printf(" Optimization succesfull!\n");
-      psi::outfile->Printf(" Optimized Z[X] value: %15.6f\n", this->Z());
+      psi::outfile->Printf(" Optimized Z[X] value: %15.6E\n", this->Z());
   }
   
 }
