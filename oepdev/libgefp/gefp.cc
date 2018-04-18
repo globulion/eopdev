@@ -508,8 +508,8 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
              for (int ib=0; ib<nbf; ++ib) {
               double cai = Ca[ia][i];
               double cbi = Ca[ib][i];
-              double cal = Ca[ia][l];
-              double cbl = Ca[ib][l];
+              double caj = Ca[ia][j];
+              double cbj = Ca[ib][j];
               std::vector<double> vg1;
               std::vector<double> vg2;
               for (int z=0; z<3; ++z) {
@@ -518,24 +518,24 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
               }
               for (int ic=0; ic<nbf; ++ic) {
                  double cd1 = Da[ia][ic] * cbi + Da[ib][ic] * cai;
-                 double cd2 = Da[ia][ic] * cbl + Da[ib][ic] * cal;
+                 double cd2 = Da[ia][ic] * cbj + Da[ib][ic] * caj;
                  for (int z=0; z<3; ++z) {
                    vg1[z] += cd1 * G[z]->get(i,ic);
-                   vg2[z] += cd2 * G[z]->get(l,ic);
+                   vg2[z] += cd2 * G[z]->get(j,ic);
                  }
               }
               for (int z1=0; z1<3; ++z1) {
                    double gia_z1 = G[z1]->get(i,ia);
                    double gib_z1 = G[z1]->get(i,ib);
               for (int z2=0; z2<3; ++z2) { 
-                   double gla_z2 = G[z2]->get(l,ia);
-                   double glb_z2 = G[z2]->get(l,ib);
+                   double gja_z2 = G[z2]->get(j,ia);
+                   double gjb_z2 = G[z2]->get(j,ib);
               for (int w1=0; w1<3; ++w1) {
               for (int w2=0; w2<3; ++w2) {
-                 v += cphfSolver_->polarizability(j,k)->get(z1,w1) * fields[N]->get(w1) *
-                      cphfSolver_->polarizability(m,n)->get(z2,w2) * fields[N]->get(w2) * 
+                 v += cphfSolver_->polarizability(k,m)->get(z1,w1) * fields[N]->get(w1) *
+                      cphfSolver_->polarizability(l,n)->get(z2,w2) * fields[N]->get(w2) * 
                      (cai * gib_z1 + cbi * gia_z1 - vg1[z1]) * 
-                     (cal * glb_z2 + cbl * gla_z2 - vg2[z2]);
+                     (caj * gjb_z2 + cbj * gja_z2 - vg2[z2]);
               }}}}
              }
             }
@@ -591,14 +591,14 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::MOScaledPolarGEFactory::compute()
   std::shared_ptr<psi::Matrix> Xt;
   double Z;
   {
-     oepdev::UnitaryOptimizer_4_2 optimizer(R, P, nocc, 1.0e-6, 10, true); 
+     oepdev::UnitaryOptimizer_4_2 optimizer(R, P, nocc, 1.0e-9, 10, true); 
      optimizer.minimize();
      Xt = optimizer.X();
      Z  = optimizer.Z();
   }
   Z += Z_0;
-  psi::outfile->Printf("\n @Optimizer:             Z_0 = %14.6f\n\n", Z_0);
-  psi::outfile->Printf("\n @Optimizer: Optimal Z + Z_0 = %14.6f\n\n", Z  );
+  psi::outfile->Printf("\n @Optimizer:             Z_0 = %14.6E\n\n", Z_0);
+  psi::outfile->Printf("\n @Optimizer: Optimal Z + Z_0 = %14.6E\n\n", Z  );
 
   Xt->set_name("Unitary Transformation Xt");
   Xt->print();
