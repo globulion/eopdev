@@ -65,8 +65,11 @@ set {
     cphf_conver                   1e-8
     cphf_localize                 True
     cphf_localizer                PIPEK_MEZEY
+    # ==> DmatPol <== #
+    dmatpol_nfields               100
+    dmatpol_field_scale           0.05
     # ==> General Psi4 Options <== #
-    basis                         6-31G*
+    basis                         sto-3g
     scf_type                      direct 
     guess                         core
     e_convergence                 1e-8
@@ -78,4 +81,4 @@ set {
 
 
 # run oepdev
-energy('oepdev', molecule=lih)
+energy('oepdev', molecule=menh2)

@@ -139,6 +139,10 @@ int read_options(std::string name, Options& options)
         options.add_str    ("OEPDEV_SOLVER_TYPE"    , "REPULSION_ENERGY"         );
         /*- OEPDev test to perform -*/
         options.add_str    ("OEPDEV_TEST_NAME"      , ""                         );
+        /*- Number of random electric fields in DmatPol models parameterization -*/
+        options.add_int    ("DMATPOL_NFIELDS"       , 30                         );
+        /*- Electric field scale factor in DmatPol models parameterization -*/
+        options.add_double ("DMATPOL_FIELD_SCALE"   , 0.01                       );
      }
 
     return true;

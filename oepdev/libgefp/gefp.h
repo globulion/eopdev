@@ -215,17 +215,17 @@ class PolarGEFactory : public GenEffParFactory, public std::enable_shared_from_t
  * Implements creation of the density matrix susceptibility tensors for which \f$ {\bf X} \neq {\bf 1}\f$.
  * Guarantees the idempotency of the density matrix up to first-order in LCAO-MO variation.
  */
-class MOScaledPolarGEFactory : public PolarGEFactory
+class UnitaryTransformedMOPolarGEFactory : public PolarGEFactory
 {
   public:
    /// Construct from CPHF object and Psi4 options
-   MOScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   UnitaryTransformedMOPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
 
    /// Construct from CPHF object only (options will be read from CPHF object)
-   MOScaledPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   UnitaryTransformedMOPolarGEFactory(std::shared_ptr<CPHF> cphf);
 
    /// Destruct
-   virtual ~MOScaledPolarGEFactory();
+   virtual ~UnitaryTransformedMOPolarGEFactory();
 
    /// Pefrorm Least-Squares Fit
    std::shared_ptr<GenEffPar> compute(void);
@@ -236,22 +236,44 @@ class MOScaledPolarGEFactory : public PolarGEFactory
  *
  *  The resulting density matrix does not guarantee idempotency.
  */
-class FieldScaledPolarGEFactory : public PolarGEFactory
+class ScaledXYZPolarGEFactory : public PolarGEFactory
 {
   public:
    /// Construct from CPHF object and Psi4 options
-   FieldScaledPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   ScaledXYZPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
 
    /// Construct from CPHF object only (options will be read from CPHF object)
-   FieldScaledPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   ScaledXYZPolarGEFactory(std::shared_ptr<CPHF> cphf);
 
    /// Destruct
-   virtual ~FieldScaledPolarGEFactory();
+   virtual ~ScaledXYZPolarGEFactory();
 
    /// Pefrorm Least-Squares Fit
    std::shared_ptr<GenEffPar> compute(void);
 
 };
+
+/** \brief Polarization GEFP Factory with Least-Squares Scaling of AO degrees of freedom.
+ *
+ *  The resulting density matrix does not guarantee idempotency.
+ */
+class ScaledAOPolarGEFactory : public PolarGEFactory
+{
+  public:
+   /// Construct from CPHF object and Psi4 options
+   ScaledAOPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+
+   /// Construct from CPHF object only (options will be read from CPHF object)
+   ScaledAOPolarGEFactory(std::shared_ptr<CPHF> cphf);
+
+   /// Destruct
+   virtual ~ScaledAOPolarGEFactory();
+
+   /// Pefrorm Least-Squares Fit
+   std::shared_ptr<GenEffPar> compute(void);
+
+};
+
 
 
 /** @}*/
