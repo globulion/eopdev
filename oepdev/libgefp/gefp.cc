@@ -48,9 +48,9 @@ oepdev::GenEffParFactory::GenEffParFactory(std::shared_ptr<psi::Wavefunction> wf
    double pad = 10.0; // Put to options
    // populate vdwRadius
    vdwRadius_["C"] = 3.000; // Put to options
-   vdwRadius_["H"] = 1.000;
+   vdwRadius_["H"] = 4.000;
    vdwRadius_["N"] = 2.400;
-   vdwRadius_["O"] = 2.600;
+   vdwRadius_["O"] = 5.600;
    vdwRadius_["F"] = 2.300;
    vdwRadius_["Cl"]= 2.900;
 
@@ -317,6 +317,37 @@ std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::draw_field()
   field->set(2, fz);
   return field;
 }
+std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::field_due_to_charges(const std::shared_ptr<psi::Matrix>& charges,
+                                                                  const double& x, const double& y, const double& z)
+{
+  std::shared_ptr<psi::Vector> field = std::make_shared<psi::Vector>("", 3);
+  double fx = 0.0;
+  double fy = 0.0; 
+  double fz = 0.0;
+  for (int np=0; np<charges->nrow(); ++np) {
+       double rx = charges->get(np, 0);
+       double ry = charges->get(np, 1);
+       double rz = charges->get(np, 2);
+       double q  = charges->get(np, 3);
+       double drx= x - rx;
+       double dry= y - ry;
+       double drz= z - rz;
+       double r = sqrt(drx*drx+dry*dry+drz*drz);
+       double r3 = q/(r*r*r);
+       fx += r3 * drx;
+       fy += r3 * dry;
+       fz += r3 * drz;
+  }
+  field->set(0, fx);
+  field->set(1, fy);
+  field->set(2, fz);
+  return field;
+}
+std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::field_due_to_charges(const std::shared_ptr<psi::Matrix>& charges,
+                                                                          const std::shared_ptr<psi::Vector>& pos)
+{
+  return this->field_due_to_charges(charges, pos->get(0), pos->get(1), pos->get(2));
+}
 std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& field)
 {
   std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, 
@@ -331,6 +362,21 @@ std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::s
   std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, 
                   oepdev::create_superfunctional("HF", options_), options_, wfn_->psio());
   scf->set_perturbation(pos, q);
+  scf->compute_energy();
+  std::shared_ptr<psi::Matrix> dmat = scf->Da();
+  return dmat;
+}
+std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Matrix>& charges)
+{
+  std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_,
+                  oepdev::create_superfunctional("HF", options_), options_, wfn_->psio());
+  for (int i=0; i<charges->nrow(); ++i) {
+       double x = charges->get(i, 0);
+       double y = charges->get(i, 1);
+       double z = charges->get(i, 2);
+       double q = charges->get(i, 3);
+       scf->set_perturbation(x, y, z, q);
+  }
   scf->compute_energy();
   std::shared_ptr<psi::Matrix> dmat = scf->Da();
   return dmat;
@@ -705,7 +751,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::ScaledXYZPolarGEFactory::compute()
   int no = cphfSolver_->nocc();
 
   // Compute the ab-initio (unscaled) B tensors
-  std::shared_ptr<oepdev::PolarGEFactory> factory_0 = shared_from_this();
+  std::shared_ptr<oepdev::PolarGEFactory> factory_0 = std::make_shared<oepdev::PolarGEFactory>(cphfSolver_, options_);
   std::shared_ptr<oepdev::GenEffPar> par_0 = factory_0->compute();
 
   // Compute the scales:
@@ -756,7 +802,7 @@ oepdev::ScaledAOPolarGEFactory::~ScaledAOPolarGEFactory()
 std::shared_ptr<oepdev::GenEffPar> oepdev::ScaledAOPolarGEFactory::compute()
 {
   // Sizing
-  int npoints = options_.get_int("DMATPOL_NFIELDS");
+  int npoints = options_.get_int("DMATPOL_NSAMPLES");
   int nbf = wfn_->basisset()->nbf();
   int nocc = cphfSolver_->nocc();
 
@@ -856,4 +902,242 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::ScaledAOPolarGEFactory::compute()
   par->set_susceptibility(B_scaled);
  
   return par;
+}
+//-- TransformedMOPolarGEFactory --////////////////////////////////////////////////////////////////////////////////
+oepdev::TransformedMOPolarGEFactory::TransformedMOPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
+ oepdev::PolarGEFactory(cphf, opt)
+{
+
+}
+oepdev::TransformedMOPolarGEFactory::TransformedMOPolarGEFactory(std::shared_ptr<CPHF> cphf) :
+ oepdev::PolarGEFactory(cphf)
+{
+
+}
+oepdev::TransformedMOPolarGEFactory::~TransformedMOPolarGEFactory()
+{
+
+}
+std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedMOPolarGEFactory::compute()
+{
+  // Sizing
+  int nsamples = options_.get_int("DMATPOL_NSAMPLES");
+  int nbf = wfn_->basisset()->nbf();
+  int nocc = cphfSolver_->nocc();
+  double q = options_.get_double("DMATPOL_TEST_CHARGE");
+  int nq   = options_.get_double("DMATPOL_NTEST_CHARGE");
+
+  // Compute the ab-initio (unscaled) B tensors
+  std::shared_ptr<oepdev::PolarGEFactory> factory_0 = std::make_shared<oepdev::PolarGEFactory>(cphfSolver_, options_);
+  std::shared_ptr<oepdev::GenEffPar> par_0 = factory_0->compute();
+
+  // Compute the scales:
+
+  // --> Set up the trial electric fields and compute perturbed density matrices <-- //
+  std::vector<std::shared_ptr<psi::Matrix>> pointCharges;
+  std::vector<std::shared_ptr<psi::Matrix>> dmats;
+  for (int N=0; N<nsamples; ++N) {
+       std::shared_ptr<psi::Matrix> charges = std::make_shared<psi::Matrix>("Q", nq, 4);
+       for (int i=0; i<nq; ++i) {
+            std::shared_ptr<psi::Vector> point = draw_random_point();
+            charges->set(i, 0, point->get(0));
+            charges->set(i, 1, point->get(1));
+            charges->set(i, 2, point->get(2));
+            charges->set(i, 3, q);
+       }
+       pointCharges.push_back(charges);
+       for (int i=0; i<nq; ++i) cout << oepdev::string_sprintf(" Computation for N=%2d X=[%14.4f, %14.4f, %14.4f]\n",N+1,
+                                        pointCharges[N]->get(i,0), pointCharges[N]->get(i,1), pointCharges[N]->get(i,2));
+       std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
+       dmat->copy(perturbed_dmat(pointCharges[N]));
+       dmat->subtract(wfn_->Da());
+       dmats.push_back(dmat);
+  }
+
+  // --> Allocate data <-- //
+  std::shared_ptr<psi::Matrix> A = std::make_shared<psi::Matrix>("A Matrix", nocc*nocc, nocc*nocc);
+  std::shared_ptr<psi::Matrix> C = std::make_shared<psi::Matrix>("C Matrix", nocc*nocc, 1);
+  std::shared_ptr<psi::Matrix> g = std::make_shared<psi::Matrix>("Gradient", nocc*nocc, 1);
+  std::shared_ptr<psi::Matrix> H = std::make_shared<psi::Matrix>("Hessian Inverted", nocc*nocc, nocc*nocc);
+  std::shared_ptr<psi::Matrix> x = std::make_shared<psi::Matrix>("MO Transform Vector", nocc*nocc, 1);
+  double** Ap = A->pointer();
+  double** Cp = C->pointer();
+  double** gp = g->pointer();
+  double** Hp = H->pointer();
+  double** xp = x->pointer();
+
+  // --> Compute the least-squares matrices <-- //
+  for (int N=0; N<nsamples; ++N) {
+  for (int a=0; a<nbf; ++a) {
+       for (int b=0; b<nbf; ++b) {
+            double dabN = dmats[N]->get(a,b);
+            for (int i=0; i<nocc; ++i) {
+                 for (int j=0; j<nocc; ++j) {
+                      int ij = nocc*i + j;
+                      for (int z1=0; z1<3; ++z1) {
+                           double bf1 = par_0->susceptibility(i,z1)->get(a,b) *
+                                            field_due_to_charges(pointCharges[N], cphfSolver_->lmo_centroid(j))->get(z1);
+                           Cp[ij][0] += dabN * bf1;
+                           for (int k=0; k<nocc; ++k) {
+                                for (int l=0; l<nocc; ++l) {
+                                     int kl = nocc*k + l;
+                                     for (int z2=0; z2<3; ++z2) {
+                                          Ap[ij][kl] += bf1 *
+                                                        par_0->susceptibility(k,z2)->get(a,b) * 
+                                            field_due_to_charges(pointCharges[N], cphfSolver_->lmo_centroid(l))->get(z2);
+                                     }
+                                }
+                           }
+                      }
+                 }
+            }
+       }
+  }
+  }
+  C->scale(-2.0);
+
+  //for (int i=0; i<nocc; ++i) {
+  //     for (int j=0; j<nocc; ++j) {
+  //          int ij = nocc*i + j;
+  //          double vc = 0.0;
+  //          for (int N=0; N<nsamples; ++N) {
+  //               for (int a=0; a<nbf; ++a) {
+  //                    for (int b=0; b<nbf; ++b) {
+  //                         double dabN = dmats[N]->get(a,b);
+  //                         for (int z1=0; z1<3; ++z1) {
+  //                              vc += dabN * par_0->susceptibility(i,z1)->get(a,b) *  
+  //                                           field_due_to_charges(pointCharges[N], cphfSolver_->lmo_centroid(j))->get(z1);
+  //                         }
+  //                    }
+  //               }
+  //          }
+  //          Cp[ij][0] = vc;
+  //     }
+  //}
+  //C->scale(-2.0);
+
+  //for (int i=0; i<nocc; ++i) {
+  //     for (int j=0; j<nocc; ++j) {
+  //          int ij = nocc*i + j;
+  //          for (int k=0; k<nocc; ++k) {
+  //               for (int l=0; l<nocc; ++l) {
+  //                    int kl = k*nocc + l; 
+  //                    double va = 0.0;
+  //                    for (int N=0; N<nsamples; ++N) {
+  //                    for (int a=0; a<nbf; ++a) { 
+  //                    for (int b=0; b<nbf; ++b) {
+  //                         double dabN = dmats[N]->get(a,b);
+  //                         for (int z1=0; z1<3; ++z1) {
+  //                         for (int z2=0; z2<3; ++z2) {
+  //                              va += par_0->susceptibility(i,z1)->get(a,b) *
+  //                                    par_0->susceptibility(k,z2)->get(a,b) *
+  //                                    field_due_to_charges(pointCharges[N], cphfSolver_->lmo_centroid(j))->get(z1) *
+  //                                    field_due_to_charges(pointCharges[N], cphfSolver_->lmo_centroid(l))->get(z2);
+  //                         }
+  //                         }
+  //                    }
+  //                    }
+  //                    }
+  //                    Ap[ij][kl] = va;
+  //               }
+  //          }
+  //     }
+  //}
+
+  // Compute initial Z
+  double Z_0 = 0.0;
+  for (int N=0; N<nsamples; ++N) {
+  for (int a=0; a<nbf; ++a) { 
+  for (int b=0; b<nbf; ++b) {
+       double dabN = dmats[N]->get(a,b);
+       Z_0 += dabN * dabN;
+  }}}
+
+  double Z_init = Z_0;
+  for (int i=0; i<nocc; ++i) {
+       int ii = nocc*i + i;
+       Z_init += Cp[ii][0];
+       for (int j=0; j<nocc; ++j) {
+            int jj = nocc*j + j;
+            Z_init += Ap[ii][jj];
+       }
+  }
+
+
+
+  //double sc = 1000.0/(A->absmax());
+  //A->scale(sc);
+  std::shared_ptr<psi::Matrix> Ai = std::make_shared<psi::Matrix>(*A);
+  Ai->set_name("INVERSE!!!!!");
+  Ai->invert();
+  A->print();
+  C->print();
+  Ai->print();
+
+  std::shared_ptr<psi::Matrix> S = psi::Matrix::doublet(C, Ai, true, false);
+  S->scale(-0.500);
+  S->set_name("SCALES!!!!!!!!!!!!!!!");
+  S->print();
+
+  // Compute final Z
+  double Z = Z_0 + S->vector_dot(C);
+  std::shared_ptr<psi::Matrix> u = psi::Matrix::triplet(S, A, S, false, false, true);  
+  u->set_name("BUAUAUAUAUAU!!!");
+  u->print();
+  Z += u->get(0,0);
+
+  psi::outfile->Printf("\n\n Z_0    = %15.9f\n", Z_0);
+  psi::outfile->Printf(    " Z_init = %15.9f\n", Z_init);
+  psi::outfile->Printf(    " Z_fin  = %15.9f\n\n\n", Z);
+
+
+
+  // --> Compute Hessian and Invert <-- //
+  //for (int i=0; i<nocc; ++i) {
+  //for (int j=0; j<nocc; ++j) {
+  //     int ij = nocc*i + j;
+  //     for (int k=0; k<nocc; ++k) {
+  //     for (int l=0; l<nocc; ++l) {
+  //         int kl = nocc*k + l;
+  //         Hp[ij][kl] = Ap[ij][kl] + Ap[kl][ij];
+  //     }
+  //     }
+  //}
+  //}
+  ////H->scale(2.0); 
+  //H->invert();
+  //H->print();
+
+
+  // --> Perform the fit <-- //
+  // nothing to do here
+
+  // --> Scale the ab-initio B tensors by scale values
+  std::shared_ptr<oepdev::GenEffPar> par = std::make_shared<oepdev::GenEffPar>("Polarization");
+  std::vector<std::vector<std::shared_ptr<psi::Matrix>>> B_scaled;
+  for (int o=0; o<nocc; ++o) {
+       std::vector<std::shared_ptr<psi::Matrix>> Bo;
+       B_scaled.push_back(Bo);
+       for (int z=0; z<3; ++z) {
+            B_scaled[o].push_back(std::make_shared<psi::Matrix>("",nbf,nbf));
+       }
+  }
+  for (int i=0; i<nbf; ++i) {
+  for (int j=0; j<nbf; ++j) {
+  for (int z=0; z<3; ++z) {
+       for (int o1=0; o1<nocc; ++o1) { 
+            double v = 0.0;
+            for (int o2=0; o2<nocc; ++o2) {
+               v += par_0->susceptibility(o2,z)->get(i,j) * S->get(0, o2*nocc+o1);
+            }
+            B_scaled[o1][z]->set(i,j,v);
+       }
+  }
+  }}
+  par->set_susceptibility(B_scaled);
+ 
+  return par;
+}
+void oepdev::TransformedMOPolarGEFactory::gradient(std::shared_ptr<psi::Matrix> A, std::shared_ptr<psi::Matrix> C, std::shared_ptr<psi::Matrix> S)
+{
 }

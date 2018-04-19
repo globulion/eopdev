@@ -325,7 +325,7 @@ double oepdev::test::Test::test_dmatPolX(void)
   solver->compute();
 
   psi::timer_on (" Test: Computation of Dmat Susc-X");
-  std::shared_ptr<oepdev::GenEffParFactory> factory = std::make_shared<oepdev::ScaledAOPolarGEFactory>(solver, options_);
+  std::shared_ptr<oepdev::GenEffParFactory> factory = std::make_shared<oepdev::TransformedMOPolarGEFactory>(solver, options_);
   std::shared_ptr<oepdev::GenEffPar> par = factory->compute();
   psi::timer_off(" Test: Computation of Dmat Susc-X");
 

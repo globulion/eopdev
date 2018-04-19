@@ -180,7 +180,7 @@ class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
  * Implements creation of the density matrix susceptibility tensors for which \f$ {\bf X} = {\bf 1}\f$.
  * Guarantees the idempotency of the density matrix up to first-order in LCAO-MO variation.
  */
-class PolarGEFactory : public GenEffParFactory, public std::enable_shared_from_this<PolarGEFactory>
+class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_from_this<PolarGEFactory>
 {
   public:
    /// Construct from CPHF object and Psi4 options
@@ -207,6 +207,15 @@ class PolarGEFactory : public GenEffParFactory, public std::enable_shared_from_t
 
    /// Solve SCF equations to find perturbed one-particle density matrix due to point charge
    std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& pos, const double& charge);
+
+   /// Solve SCF equations to find perturbed one-particle density matrix due set of point charges
+   std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Matrix>& charges);
+
+   /// Evaluate electric field at point (x,y,z) due to point charges 
+   std::shared_ptr<psi::Vector> field_due_to_charges(const std::shared_ptr<psi::Matrix>& charges, 
+                                                     const double& x, const double& y, const double& z);
+   std::shared_ptr<psi::Vector> field_due_to_charges(const std::shared_ptr<psi::Matrix>& charges, 
+                                                     const std::shared_ptr<psi::Vector>& pos);
 
 };
 
@@ -271,6 +280,31 @@ class ScaledAOPolarGEFactory : public PolarGEFactory
 
    /// Pefrorm Least-Squares Fit
    std::shared_ptr<GenEffPar> compute(void);
+
+};
+
+/** \brief Polarization GEFP Factory with Least-Squares Transformation of MO degrees of freedom.
+ *
+ *  The resulting density matrix does not guarantee idempotency.
+ */
+class TransformedMOPolarGEFactory : public PolarGEFactory
+{
+  public:
+   /// Construct from CPHF object and Psi4 options
+   TransformedMOPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+
+   /// Construct from CPHF object only (options will be read from CPHF object)
+   TransformedMOPolarGEFactory(std::shared_ptr<CPHF> cphf);
+
+   /// Destruct
+   virtual ~TransformedMOPolarGEFactory();
+
+   /// Pefrorm Least-Squares Fit
+   std::shared_ptr<GenEffPar> compute(void);
+
+  private:
+   /// Gradient for the Newton-Raphson optimization
+   void gradient(std::shared_ptr<psi::Matrix> A, std::shared_ptr<psi::Matrix> C, std::shared_ptr<psi::Matrix> S);
 
 };
 

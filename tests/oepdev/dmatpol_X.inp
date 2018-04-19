@@ -24,6 +24,15 @@ symmetry c1
 noreorient
 nocom
 }
+molecule hcat {
+1 1
+H   0.752785  -0.452035   0.000000
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
 molecule lih {
 0 1
 Li   0.752785  -0.452035   0.000000
@@ -34,7 +43,6 @@ symmetry c1
 noreorient
 nocom
 }
-
 molecule menh2 {
 0 1
 N    0.711362   5.135877   0.013084
@@ -66,8 +74,10 @@ set {
     cphf_localize                 True
     cphf_localizer                PIPEK_MEZEY
     # ==> DmatPol <== #
-    dmatpol_nfields               100
+    dmatpol_nsamples              100
     dmatpol_field_scale           0.05
+    dmatpol_ntest_charge          1
+    dmatpol_test_charge           0.001
     # ==> General Psi4 Options <== #
     basis                         sto-3g
     scf_type                      direct 
@@ -81,4 +91,4 @@ set {
 
 
 # run oepdev
-energy('oepdev', molecule=menh2)
+energy('oepdev', molecule=h2o)
