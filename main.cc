@@ -147,6 +147,8 @@ int read_options(std::string name, Options& options)
         options.add_double ("DMATPOL_TEST_CHARGE"   , 0.001                      );
         /*- Number of test charges per sample in DmatPol models parameterization -*/
         options.add_int    ("DMATPOL_NTEST_CHARGE"   , 1                         );
+        /*- DmatPol training mode -*/
+        options.add_str    ("DMATPOL_TRAINING_MODE"  , "EFIELD"                  );
      }
 
     return true;

@@ -34,6 +34,9 @@ class GenEffPar
    /// Set The Density Matrix Susceptibility Tensors  
    void set_susceptibility(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixSusceptibility_=susc;};
 
+   /// Grab the density matrix susceptibility tensors
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> susceptibility() const {return densityMatrixSusceptibility_;}
+
    /// Grab the density matrix susceptibility tensor for the *i*-th LMO
    std::vector<std::shared_ptr<psi::Matrix>> susceptibility(int i) const {return densityMatrixSusceptibility_[i];}
 
@@ -91,6 +94,10 @@ class GenEffFrag
               densityMatrixSusceptibilityGEF_->set_susceptibility(susc); }
 
    //void set_lmo_centroids();
+
+
+   /// Grab the density matrix susceptibility tensors
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> susceptibility() const {return densityMatrixSusceptibilityGEF_->susceptibility();}
 
    /// Grab the density matrix susceptibility tensor for the *i*-th LMO
    std::vector<std::shared_ptr<psi::Matrix>> susceptibility(int i) const {return densityMatrixSusceptibilityGEF_->susceptibility(i);}
@@ -217,6 +224,15 @@ class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_fro
    std::shared_ptr<psi::Vector> field_due_to_charges(const std::shared_ptr<psi::Matrix>& charges, 
                                                      const std::shared_ptr<psi::Vector>& pos);
 
+   /// Draw samples of density matrices from constant electric fields
+   virtual void draw_samples(std::vector<std::shared_ptr<psi::Matrix>>& electricFieldSet,
+                             std::vector<std::shared_ptr<psi::Matrix>>& densityMatrixSet);
+
+   /// Draw samples of density matrices from sets of point charges
+   virtual void draw_samples(std::vector<std::shared_ptr<psi::Matrix>>& electricFieldSet,
+                             std::vector<std::shared_ptr<psi::Matrix>>& electricFieldGradientSet,
+                             std::vector<std::shared_ptr<psi::Matrix>>& densityMatrixSet);
+
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Scaling of MO Space.
@@ -261,6 +277,28 @@ class ScaledXYZPolarGEFactory : public PolarGEFactory
    std::shared_ptr<GenEffPar> compute(void);
 
 };
+
+/** \brief Polarization GEFP Factory with Least-Squares Transformation of Cartesian Degrees of freedom.
+ *
+ *  The resulting density matrix does not guarantee idempotency.
+ */
+class TransformedXYZPolarGEFactory : public PolarGEFactory
+{
+  public:
+   /// Construct from CPHF object and Psi4 options
+   TransformedXYZPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+
+   /// Construct from CPHF object only (options will be read from CPHF object)
+   TransformedXYZPolarGEFactory(std::shared_ptr<CPHF> cphf);
+
+   /// Destruct
+   virtual ~TransformedXYZPolarGEFactory();
+
+   /// Pefrorm Least-Squares Fit
+   std::shared_ptr<GenEffPar> compute(void);
+
+};
+
 
 /** \brief Polarization GEFP Factory with Least-Squares Scaling of AO degrees of freedom.
  *

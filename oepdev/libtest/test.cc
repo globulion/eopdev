@@ -325,7 +325,7 @@ double oepdev::test::Test::test_dmatPolX(void)
   solver->compute();
 
   psi::timer_on (" Test: Computation of Dmat Susc-X");
-  std::shared_ptr<oepdev::GenEffParFactory> factory = std::make_shared<oepdev::TransformedMOPolarGEFactory>(solver, options_);
+  std::shared_ptr<oepdev::GenEffParFactory> factory = std::make_shared<oepdev::TransformedXYZPolarGEFactory>(solver, options_);
   std::shared_ptr<oepdev::GenEffPar> par = factory->compute();
   psi::timer_off(" Test: Computation of Dmat Susc-X");
 
@@ -334,9 +334,9 @@ double oepdev::test::Test::test_dmatPolX(void)
 
   // Compute SCF in the external field
   double Fx = 0.002;
-  double Fy = 0.04;
-  double Fz =-0.01;
-  Fx = -0.0368,  Fy=      -0.0041,Fz=        -0.0281;
+  double Fy = 0.004;
+  double Fz =-0.001;
+  // Fx = -0.0368,  Fy=      -0.0041,Fz=        -0.0281;
   double F[3] = {Fx, Fy, Fz};
 
   std::shared_ptr<psi::Wavefunction> scf_base = solve_scf(wfn_->molecule(),wfn_->basisset(),

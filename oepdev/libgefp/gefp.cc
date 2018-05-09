@@ -381,6 +381,70 @@ std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::s
   std::shared_ptr<psi::Matrix> dmat = scf->Da();
   return dmat;
 }
+void oepdev::PolarGEFactory::draw_samples(std::vector<std::shared_ptr<psi::Matrix>>& electricFieldSet,
+                                          std::vector<std::shared_ptr<psi::Matrix>>& densityMatrixSet)
+{
+  int nsamples = options_.get_int("DMATPOL_NSAMPLES");
+  int nbf      = wfn_->basisset()->nbf();
+  int nocc     = cphfSolver_->nocc();
+
+  for (int N=0; N<nsamples; ++N) {
+       // Draw uniform electric field
+       std::shared_ptr<psi::Matrix> fields = std::make_shared<psi::Matrix>("", nocc, 3);
+       std::shared_ptr<psi::Vector> field = draw_field();
+       for (int o=0; o<nocc; ++o) {
+            fields->set(o, 0, field->get(0));
+            fields->set(o, 1, field->get(1));
+            fields->set(o, 2, field->get(2));
+       }
+       electricFieldSet.push_back(fields);
+       cout << oepdev::string_sprintf(" Computation for N=%2d F=[%14.4f, %14.4f, %14.4f]\n",N+1,
+                                       field->get(0), field->get(1), field->get(2));
+       // Compute 1-particle density matrix in the presence of uniform electric field
+       std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
+       dmat->copy(perturbed_dmat(field));
+       dmat->subtract(wfn_->Da());
+       densityMatrixSet.push_back(dmat);
+  }
+}
+void oepdev::PolarGEFactory::draw_samples(std::vector<std::shared_ptr<psi::Matrix>>& electricFieldSet,
+                                          std::vector<std::shared_ptr<psi::Matrix>>& electricFieldGradientSet,
+                                          std::vector<std::shared_ptr<psi::Matrix>>& densityMatrixSet)
+{
+  int nsamples = options_.get_int("DMATPOL_NSAMPLES");
+  int nq       = options_.get_double("DMATPOL_NTEST_CHARGE");
+  double q     = options_.get_double("DMATPOL_TEST_CHARGE");
+  int nbf      = wfn_->basisset()->nbf();
+  int nocc     = cphfSolver_->nocc();
+
+  for (int N=0; N<nsamples; ++N) {
+       // Draw the point charge(s)
+       std::shared_ptr<psi::Matrix> charges = std::make_shared<psi::Matrix>("Q", nq, 4);
+       for (int i=0; i<nq; ++i) {
+            std::shared_ptr<psi::Vector> point = draw_random_point();
+            charges->set(i, 0, point->get(0));
+            charges->set(i, 1, point->get(1));
+            charges->set(i, 2, point->get(2));
+            charges->set(i, 3, q);
+       }
+       for (int i=0; i<nq; ++i) cout << oepdev::string_sprintf(" Computation for N=%2d X=[%14.4f, %14.4f, %14.4f]\n",N+1,
+                                        charges->get(i,0), charges->get(i,1), charges->get(i,2));
+       // Compute electric fields due to charge(s)
+       std::shared_ptr<psi::Matrix> fields = std::make_shared<psi::Matrix>("", nocc, 3);
+       for (int o=0; o<nocc; ++o) {
+            std::shared_ptr<psi::Vector> field = this->field_due_to_charges(charges, cphfSolver_->lmo_centroid(o));
+            fields->set(o, 0, field->get(0));
+            fields->set(o, 1, field->get(1));
+            fields->set(o, 2, field->get(2));
+       }
+       electricFieldSet.push_back(fields);
+       // Compute 1-particle density matrix in the presence of point charge(s)
+       std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
+       dmat->copy(perturbed_dmat(charges));
+       dmat->subtract(wfn_->Da());
+       densityMatrixSet.push_back(dmat);
+   }
+}
 
 //-- UnitaryTransformedMOPolarGEFactory --////////////////////////////////////////////////////////////////////////////////
 oepdev::UnitaryTransformedMOPolarGEFactory::UnitaryTransformedMOPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
@@ -784,6 +848,127 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::ScaledXYZPolarGEFactory::compute()
 
   return par_0;
 }
+//-- TransformedXYZPolarGEFactory --////////////////////////////////////////////////////////////////////////////////
+oepdev::TransformedXYZPolarGEFactory::TransformedXYZPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
+ oepdev::PolarGEFactory(cphf, opt)
+{
+
+}
+oepdev::TransformedXYZPolarGEFactory::TransformedXYZPolarGEFactory(std::shared_ptr<CPHF> cphf) :
+ oepdev::PolarGEFactory(cphf)
+{
+
+}
+oepdev::TransformedXYZPolarGEFactory::~TransformedXYZPolarGEFactory()
+{
+
+}
+std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedXYZPolarGEFactory::compute()
+{
+  // Sizing
+  int nsamples = options_.get_int("DMATPOL_NSAMPLES");
+  int nbf = wfn_->basisset()->nbf();
+  int nocc = cphfSolver_->nocc();
+  std::string training_mode = options_.get_str("DMATPOL_TRAINING_MODE");
+
+  // Compute the ab-initio (unscaled) B tensors
+  std::shared_ptr<oepdev::PolarGEFactory> factory_0 = std::make_shared<oepdev::PolarGEFactory>(cphfSolver_, options_);
+  std::shared_ptr<oepdev::GenEffPar> par_0 = factory_0->compute();
+
+  // Compute the scales:
+
+  // --> Set up the trial electric fields and compute perturbed density matrices <-- //
+  std::vector<std::shared_ptr<psi::Matrix>> electricFieldSet;
+  std::vector<std::shared_ptr<psi::Matrix>> electricFieldGradientSet;
+  std::vector<std::shared_ptr<psi::Matrix>> densityMatrixSet;
+
+  if (training_mode == "EFIELD" ) {
+     this->draw_samples(electricFieldSet, densityMatrixSet);
+  } else {
+     this->draw_samples(electricFieldSet, electricFieldGradientSet, densityMatrixSet);
+  }
+
+  // --> Initialize the density matrix susceptibility <-- //
+  std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixSusceptibility = par_0->susceptibility();
+
+  if (training_mode == "EFIELD") {
+
+      // --> Hessian <-- //
+      std::shared_ptr<psi::Matrix> H = std::make_shared<psi::Matrix>("Hessian" , 3, 3);
+      double** Hp = H->pointer();
+      for (int n=0; n<nsamples; ++n) {
+           for (int z1=0; z1<3; ++z1) {
+                double fz1 = electricFieldSet[n]->get(0, z1);
+                for (int z2=0; z2<3; ++z2) {
+                     double fz2 = electricFieldSet[n]->get(0, z2);
+                     Hp[z1][z2] += fz1 * fz2;
+                }
+           }
+      }
+      H->scale(2.0);
+      H->invert();
+
+      // --> Loop over each density matrix element index                                                  
+      for (int i=0; i<nbf; ++i) {
+      for (int j=0; j<nbf; ++j) {
+           
+           // --> Gradient << //
+           std::shared_ptr<psi::Matrix> g = std::make_shared<psi::Matrix>("Gradient", 3, 1);
+           double gx = 0.0; 
+           double gy = 0.0;
+           double gz = 0.0;
+           for (int n=0; n<nsamples; ++n) {
+                double fx = electricFieldSet[n]->get(0,0); // because field is uniform
+                double fy = electricFieldSet[n]->get(0,1); // because field is uniform
+                double fz = electricFieldSet[n]->get(0,2); // because field is uniform
+                double dij_0 = 0.0;
+                double bij_x = 0.0;
+                double bij_y = 0.0; 
+                double bij_z = 0.0;
+                for (int o=0; o<nocc; ++o) {
+                     double bijo_x = par_0->susceptibility(o, 0)->get(i,j);
+                     double bijo_y = par_0->susceptibility(o, 1)->get(i,j);
+                     double bijo_z = par_0->susceptibility(o, 2)->get(i,j);
+                     bij_x += bijo_x;
+                     bij_y += bijo_y;
+                     bij_z += bijo_z;
+                }
+                dij_0 = bij_x * fx + bij_y * fy + bij_z * fz;
+
+                double G = dij_0 - densityMatrixSet[n]->get(i,j);
+                gx += G * fx;
+                gy += G * fy;
+                gz += G * fz;
+           }
+           g->set(0, 0, 2.0 * gx);
+           g->set(1, 0, 2.0 * gy);
+           g->set(2, 0, 2.0 * gz);
+
+           // --> Perform the fit <-- //
+           std::shared_ptr<psi::Matrix> S = psi::Matrix::doublet(H, g, false, false);
+           S->scale(-1.0/((double)nocc));
+           S->set_name(oepdev::string_sprintf("\n Vector S(%d,%d) in Non-Orthogonal AO Basis", i+1,j+1));
+           S->print();
+                                                                                                         
+           // --> Compute the Susceptibility <-- //
+           for (int o=0; o<nocc; ++o) {
+                double** box = densityMatrixSusceptibility[o][0]->pointer(); 
+                double** boy = densityMatrixSusceptibility[o][1]->pointer();
+                double** boz = densityMatrixSusceptibility[o][2]->pointer();
+                box[i][j] += S->get(0, 0);
+                boy[i][j] += S->get(1, 0);
+                boz[i][j] += S->get(2, 0);
+           }
+      }}
+  } // else
+
+  // --> Save and Return <-- //
+  std::shared_ptr<oepdev::GenEffPar> par = std::make_shared<oepdev::GenEffPar>("Polarization");
+  par->set_susceptibility(densityMatrixSusceptibility);
+
+  return par;
+}
+
 //-- ScaledAOPolarGEFactory --////////////////////////////////////////////////////////////////////////////////
 oepdev::ScaledAOPolarGEFactory::ScaledAOPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
  oepdev::PolarGEFactory(cphf, opt)
