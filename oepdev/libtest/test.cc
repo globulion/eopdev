@@ -333,8 +333,8 @@ double oepdev::test::Test::test_dmatPolX(void)
   double r_sum = 0.0;
 
   // Compute SCF in the external field
-  double Fx = 0.002;
-  double Fy = 0.004;
+  double Fx =-0.003;
+  double Fy = 0.002;
   double Fz =-0.001;
   // Fx = -0.0368,  Fy=      -0.0041,Fz=        -0.0281;
   double F[3] = {Fx, Fy, Fz};

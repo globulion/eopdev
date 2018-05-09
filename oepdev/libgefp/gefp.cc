@@ -936,6 +936,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedXYZPolarGEFactory::compute
                 dij_0 = bij_x * fx + bij_y * fy + bij_z * fz;
 
                 double G = dij_0 - densityMatrixSet[n]->get(i,j);
+                //double G = 0.0 - densityMatrixSet[n]->get(i,j);
                 gx += G * fx;
                 gy += G * fy;
                 gz += G * fz;
@@ -958,9 +959,138 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedXYZPolarGEFactory::compute
                 box[i][j] += S->get(0, 0);
                 boy[i][j] += S->get(1, 0);
                 boz[i][j] += S->get(2, 0);
+                //box[i][j] = S->get(0, 0);
+                //boy[i][j] = S->get(1, 0);
+                //boz[i][j] = S->get(2, 0);
            }
       }}
-  } // else
+  } else if (training_mode == "CHARGES") {
+
+      // --> Sizing <-- //
+      const int DIM_A = nocc * 3;
+      const int DIM_B = nocc * 9;
+      const int DIM   = DIM_A + DIM_B;
+
+      // --> Hessian <-- //
+      std::shared_ptr<psi::Matrix> H = std::make_shared<psi::Matrix>("Hessian" , DIM, DIM);
+      double** Hp = H->pointer();
+      for (int o1=0; o1<nocc; ++o1) {
+           for (int z1=0; z1<3; ++z1) {
+                int o1z1 = o1*3 + z1;
+                for (int o2=0; o2<nocc; ++o2) {
+                     for (int z2=0; z2<3; ++z2) {
+                          int o2z2 = o2*3 + z2;
+                          double v_AA = 0.0;
+                          for (int n=0; n<nsamples; ++n) {
+                               v_AA += electricFieldSet[n]->get(o1, z1) * electricFieldSet[n]->get(o2, z2);
+                          }
+                          Hp[o1z1][o2z2] = v_AA;
+                          for (int z3=0; z3<3; ++z3) {
+                               int o2z2z3 = DIM_A + o2*9 + z2*3 + z3;
+                               int z2z3   = z2*3 + z3;
+                               double v_AB = 0.0;
+                               for (int n=0; n<nsamples; ++n) {
+                                    v_AB += electricFieldSet[n]->get(o1, z1) * electricFieldGradientSet[n]->get(o2, z2z3);
+                               }
+                               Hp[o1z1][o2z2z3] = v_AB;
+                               Hp[o2z2z3][o1z1] = v_AB;
+                          }
+                     }
+                }
+                for (int z2=0; z2<3; ++z2) {
+                     int o1z1z2 = DIM_A + o1*9 + z1*3 + z2;
+                     int z1z2   = z1*3 + z2;
+                     for (int o2=0; o2<nocc; ++o2) {
+                          for (int z3=0; z3<3; ++z3) {
+                               for (int z4=0; z4<3; ++z4) {
+                                    int o2z3z4 = DIM_A + o2*9 + z3*3 + z4;
+                                    int z3z4   = z3*3 + z4;
+                                    double v_BB = 0.0;
+                                    for (int n=0; n<nsamples; ++n) {
+                                         v_BB += electricFieldGradientSet[n]->get(o1, z1z2) * electricFieldGradientSet[n]->get(o2, z3z4);
+                                    }
+                                    Hp[o1z1z2][o2z3z4] = v_BB;
+                               }
+                          }
+                     }
+                }
+           }
+      }
+      H->scale(2.0);
+      H->invert();
+
+      // --> Loop over each density matrix element index                                                  
+      for (int i=0; i<nbf; ++i) {
+      for (int j=0; j<nbf; ++j) {
+
+           // --> Errors of the zeroth-order solution <-- //
+           std::shared_ptr<psi::Vector> G = std::make_shared<psi::Vector>("", nsamples);
+           for (int n=0; n<nsamples; ++n) {
+                double v = 0.0;
+                for (int o=0; o<nocc; ++o) {
+                     double bijo_x = par_0->susceptibility(o, 0)->get(i,j);
+                     double bijo_y = par_0->susceptibility(o, 1)->get(i,j);
+                     double bijo_z = par_0->susceptibility(o, 2)->get(i,j);
+                     double fox = electricFieldSet[n]->get(o, 0);
+                     double foy = electricFieldSet[n]->get(o, 1);
+                     double foz = electricFieldSet[n]->get(o, 2);
+                     v += bijo_x * fox + bijo_y * foy + bijo_z * foz;
+                }
+                G->set(n, v - densityMatrixSet[n]->get(i,j));
+           }
+          
+           // --> Gradient <-- //
+           std::shared_ptr<psi::Matrix> g = std::make_shared<psi::Matrix>("Gradient", DIM, 1);
+           double** gp = g->pointer();
+
+           for (int o=0; o<nocc; ++o) {
+                for (int z1=0; z1<3; ++z1) {
+                     int oz1 = 3*o + z1;
+                     double v_A = 0.0;
+                     for (int n=0; n<nsamples; ++n) {
+                          v_A += G->get(n) * electricFieldSet[n]->get(o, z1);
+                     }
+                     gp[oz1][0] = v_A;
+                     for (int z2=0; z2<3; ++z2) {
+                          int oz1z2 = DIM_A + 9*o + 3*z1 + z2;
+                          int z1z2  = 3*z1 + z2;
+                          double v_B = 0.0;
+                          for (int n=0; n<nsamples; ++n) {
+                               v_B += G->get(n) * electricFieldGradientSet[n]->get(o, z1z2);
+                          }
+                          gp[oz1z2][0] = v_B;
+                     }
+                }
+           }
+           g->scale(2.0);
+
+           // --> Perform the fit <-- //
+           std::shared_ptr<psi::Matrix> S = psi::Matrix::doublet(H, g, false, false);
+           S->scale(-1.0/((double)nocc));
+           S->set_name(oepdev::string_sprintf("\n Vector S(%d,%d) in Non-Orthogonal AO Basis", i+1,j+1));
+           S->print();
+                                                                                                         
+           // --> Compute the Susceptibility <-- //
+           // TODO
+           //for (int o=0; o<nocc; ++o) {
+           //     double** box = densityMatrixSusceptibility[o][0]->pointer(); 
+           //     double** boy = densityMatrixSusceptibility[o][1]->pointer();
+           //     double** boz = densityMatrixSusceptibility[o][2]->pointer();
+           //     box[i][j] += S->get(0, 0);
+           //     boy[i][j] += S->get(1, 0);
+           //     boz[i][j] += S->get(2, 0);
+           //     //box[i][j] = S->get(0, 0);
+           //     //boy[i][j] = S->get(1, 0);
+           //     //boz[i][j] = S->get(2, 0);
+           //}
+
+           // --> Field-gradient susceptibility <-- //
+           // TODO
+      }}
+     
+  } else {
+     throw psi::PSIEXCEPTION(" Incorrect training mode for DmatPol model specified!");
+  }
 
   // --> Save and Return <-- //
   std::shared_ptr<oepdev::GenEffPar> par = std::make_shared<oepdev::GenEffPar>("Polarization");
