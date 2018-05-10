@@ -16,6 +16,6 @@ oepdev::LinearGradientNonUniformEFieldPolarGEFactory::LinearGradientNonUniformEF
 oepdev::LinearGradientNonUniformEFieldPolarGEFactory::~LinearGradientNonUniformEFieldPolarGEFactory()
 {
 }
-std::shared_ptr<oepdev::GenEffPar> oepdev::LinearGradientNonUniformEFieldPolarGEFactory::compute(void)
-{
-}
+//std::shared_ptr<oepdev::GenEffPar> oepdev::LinearGradientNonUniformEFieldPolarGEFactory::compute(void)
+//{
+//}

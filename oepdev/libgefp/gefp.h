@@ -274,6 +274,7 @@ class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_fro
 class GeneralizedPolarGEFactory : public PolarGEFactory
 {
   public:
+
    /// Construct from CPHF object and Psi4 options
    GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    /// Construct from CPHF object only (options will be read from CPHF object)
@@ -281,7 +282,42 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    /// Destruct
    virtual ~GeneralizedPolarGEFactory();
    /// Pefrorm Least-Squares Fit
-   virtual std::shared_ptr<GenEffPar> compute(void) = 0;
+   virtual std::shared_ptr<GenEffPar> compute(void);
+
+  protected:
+
+   /// Number of parameter blocks
+   int nBlocks_;
+   /// Number of distributed sites
+   int nSites_;
+   /// Dimensionality of entire parameter space
+   int nParameters_;
+   /// Dimensionality of parameter space per block
+   std::vector<int> nParametersBlock_;
+
+   /// Gradient
+   std::shared_ptr<psi::Matrix> Gradient_;
+   /// Hessian
+   std::shared_ptr<psi::Matrix> Hessian_;
+   /// Parameters
+   std::shared_ptr<psi::Matrix> Parameters_;
+   /// Density Matrix Susceptibility Tensors Object
+   std::shared_ptr<oepdev::GenEffPar> PolarizationSusceptibilities_;
+
+   /// Compute the parameters
+   void compute_parameters(void);
+
+   /// Perform least-squares fit
+   void fit(void);
+
+   /// Save susceptibility tensors associated with the *i*-th and *j*-th basis set function
+   void save(int i, int j);
+
+   /// Compute Gradient vector associated with the *i*-th and *j*-th basis set function
+   virtual void compute_gradient(int i, int j) = 0;
+
+   /// Compute Hessian matrix (independent on the parameters)
+   virtual void compute_hessian(void) = 0;
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -295,7 +331,7 @@ class UniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
    UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~UniformEFieldPolarGEFactory();
-   virtual std::shared_ptr<GenEffPar> compute(void) = 0;
+   //virtual std::shared_ptr<GenEffPar> compute(void) = 0;
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -309,7 +345,7 @@ class NonUniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
    NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~NonUniformEFieldPolarGEFactory();
-   virtual std::shared_ptr<GenEffPar> compute(void) = 0;
+   //virtual std::shared_ptr<GenEffPar> compute(void) = 0;
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -328,7 +364,7 @@ class LinearUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
    LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~LinearUniformEFieldPolarGEFactory();
-   std::shared_ptr<GenEffPar> compute(void);
+   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -349,7 +385,7 @@ class QuadraticUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
    QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~QuadraticUniformEFieldPolarGEFactory();
-   std::shared_ptr<GenEffPar> compute(void);
+   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -369,7 +405,7 @@ class LinearNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFacto
    LinearNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    LinearNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~LinearNonUniformEFieldPolarGEFactory();
-   std::shared_ptr<GenEffPar> compute(void);
+   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -393,7 +429,7 @@ class QuadraticNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFa
    QuadraticNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    QuadraticNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~QuadraticNonUniformEFieldPolarGEFactory();
-   std::shared_ptr<GenEffPar> compute(void);
+   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -417,7 +453,7 @@ class LinearGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPola
    LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~LinearGradientNonUniformEFieldPolarGEFactory();
-   std::shared_ptr<GenEffPar> compute(void);
+   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -443,7 +479,7 @@ class QuadraticGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldP
    QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~QuadraticGradientNonUniformEFieldPolarGEFactory();
-   std::shared_ptr<GenEffPar> compute(void);
+   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Scaling of MO Space.

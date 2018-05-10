@@ -16,6 +16,6 @@ oepdev::UniformEFieldPolarGEFactory::UniformEFieldPolarGEFactory(std::shared_ptr
 oepdev::UniformEFieldPolarGEFactory::~UniformEFieldPolarGEFactory()
 {
 }
-std::shared_ptr<oepdev::GenEffPar> oepdev::UniformEFieldPolarGEFactory::compute(void)
-{
-}
+//std::shared_ptr<oepdev::GenEffPar> oepdev::UniformEFieldPolarGEFactory::compute(void)
+//{
+//}

@@ -16,6 +16,6 @@ oepdev::QuadraticNonUniformEFieldPolarGEFactory::QuadraticNonUniformEFieldPolarG
 oepdev::QuadraticNonUniformEFieldPolarGEFactory::~QuadraticNonUniformEFieldPolarGEFactory()
 {
 }
-std::shared_ptr<oepdev::GenEffPar> oepdev::QuadraticNonUniformEFieldPolarGEFactory::compute(void)
-{
-}
+//std::shared_ptr<oepdev::GenEffPar> oepdev::QuadraticNonUniformEFieldPolarGEFactory::compute(void)
+//{
+//}

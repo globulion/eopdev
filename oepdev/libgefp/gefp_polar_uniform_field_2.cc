@@ -16,6 +16,6 @@ oepdev::QuadraticUniformEFieldPolarGEFactory::QuadraticUniformEFieldPolarGEFacto
 oepdev::QuadraticUniformEFieldPolarGEFactory::~QuadraticUniformEFieldPolarGEFactory()
 {
 }
-std::shared_ptr<oepdev::GenEffPar> oepdev::QuadraticUniformEFieldPolarGEFactory::compute(void)
-{
-}
+//std::shared_ptr<oepdev::GenEffPar> oepdev::QuadraticUniformEFieldPolarGEFactory::compute(void)
+//{
+//}

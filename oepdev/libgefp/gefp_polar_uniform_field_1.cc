@@ -16,6 +16,6 @@ oepdev::LinearUniformEFieldPolarGEFactory::LinearUniformEFieldPolarGEFactory(std
 oepdev::LinearUniformEFieldPolarGEFactory::~LinearUniformEFieldPolarGEFactory()
 {
 }
-std::shared_ptr<oepdev::GenEffPar> oepdev::LinearUniformEFieldPolarGEFactory::compute(void)
-{
-}
+//std::shared_ptr<oepdev::GenEffPar> oepdev::LinearUniformEFieldPolarGEFactory::compute(void)
+//{
+//}

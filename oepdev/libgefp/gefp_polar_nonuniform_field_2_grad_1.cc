@@ -16,6 +16,6 @@ oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::QuadraticGradientNonUni
 oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::~QuadraticGradientNonUniformEFieldPolarGEFactory()
 {
 }
-std::shared_ptr<oepdev::GenEffPar> oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::compute(void)
-{
-}
+//std::shared_ptr<oepdev::GenEffPar> oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::compute(void)
+//{
+//}
