@@ -81,4 +81,13 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libints/eri.cc
                        oepdev/libtest/test.cc
                        oepdev/libgefp/gefp.cc
+                       oepdev/libgefp/gefp_polar_base.cc
+                       oepdev/libgefp/gefp_polar_uniform_base.cc
+                       oepdev/libgefp/gefp_polar_uniform_field_1.cc
+                       oepdev/libgefp/gefp_polar_uniform_field_2.cc
+                       oepdev/libgefp/gefp_polar_nonuniform_base.cc
+                       oepdev/libgefp/gefp_polar_nonuniform_field_1.cc
+                       oepdev/libgefp/gefp_polar_nonuniform_field_2.cc
+                       oepdev/libgefp/gefp_polar_nonuniform_field_1_grad_1.cc
+                       oepdev/libgefp/gefp_polar_nonuniform_field_2_grad_1.cc
                )

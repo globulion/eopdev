@@ -235,6 +235,217 @@ class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_fro
 
 };
 
+/** \brief Polarization GEFP Factory with Least-Squares Parameterization.
+ *
+ * Implements a general class of methods for the density matrix susceptibility tensors represented by:
+ * \f[
+ *   \delta D_{\alpha\beta} = \sum_i 
+ *              \left\{ 
+ *           {\bf B}_{i;\alpha\beta}^{(00)} \cdot {\bf F}
+ *        +  {\bf B}_{i;\alpha\beta}^{(10)} : {\bf F} \otimes {\bf F} 
+ *        +  {\bf B}_{i;\alpha\beta}^{(01)} : \nabla \otimes {\bf F} 
+ *        +  \ldots
+ *           \right\}                
+ * \f]
+ * where:
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole-dipole hyperpolarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(01)} \f$ is the density matrix quadrupole polarizability
+ *
+ * all defined for the generalized distributed site at \f$ {\bf r}_i \f$.
+ * 
+ * Available models:
+ *
+ *  1. Training against uniform electric fields
+ *      - oepdev::LinearUniformEFieldPolarGEFactory - linear with respect to electric field
+ *      - oepdev::QuadraticUniformEFieldPolarGEFactory - quadratic with respect to electric field
+ *
+ *  2. Training against non-uniform electric fields
+ *      - oepdev::LinearNonUniformEFieldPolarGEFactory - linear with respect to electric field, distributed site model
+ *      - oepdev::QuadraticNonUniformEFieldPolarGEFactory - quadratic with respect to electric field, distributed site model
+ *      - oepdev::LinearGradientNonUniformEFieldPolarGEFactory - linear with respect to electric field 
+ *        and linear with respect to electric field gradient, distributed site model
+ *      - oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory - linear with respect to electric field 
+ *        and linear with respect to electric field gradient, distributed site model
+ *
+ * For the non-linear field training, a set of point charges in each training sample is assumed.
+ * Distributed models use atomic centers as expansion points.
+ */
+class GeneralizedPolarGEFactory : public PolarGEFactory
+{
+  public:
+   /// Construct from CPHF object and Psi4 options
+   GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   /// Construct from CPHF object only (options will be read from CPHF object)
+   GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   /// Destruct
+   virtual ~GeneralizedPolarGEFactory();
+   /// Pefrorm Least-Squares Fit
+   virtual std::shared_ptr<GenEffPar> compute(void) = 0;
+};
+
+/** \brief Polarization GEFP Factory with Least-Squares Parameterization.
+ *
+ * Implements a class of density matrix susceptibility models for parameterization
+ * in uniform electric fields.
+ */
+class UniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
+{
+  public:
+   UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   virtual ~UniformEFieldPolarGEFactory();
+   virtual std::shared_ptr<GenEffPar> compute(void) = 0;
+};
+
+/** \brief Polarization GEFP Factory with Least-Squares Parameterization.
+ *
+ * Implements a class of density matrix susceptibility models for parameterization
+ * in non-uniform electric fields.
+ */
+class NonUniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
+{
+  public:
+   NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   virtual ~NonUniformEFieldPolarGEFactory();
+   virtual std::shared_ptr<GenEffPar> compute(void) = 0;
+};
+
+/** \brief Polarization GEFP Factory with Least-Squares Parameterization.
+ *
+ * Implements the density matrix susceptibility model of the form
+ * \f[
+ *   \delta D_{\alpha\beta} \approx
+ *           {\bf B}_{\alpha\beta}^{(00)} \cdot {\bf F}
+ * \f]
+ * where:
+ *  - \f$ {\bf B}_{\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
+ */
+class LinearUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
+{
+  public:
+   LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   virtual ~LinearUniformEFieldPolarGEFactory();
+   std::shared_ptr<GenEffPar> compute(void);
+};
+
+/** \brief Polarization GEFP Factory with Least-Squares Parameterization.
+ *
+ * Implements the density matrix susceptibility model of the form
+ * \f[
+ *   \delta D_{\alpha\beta} \approx 
+ *           {\bf B}_{\alpha\beta}^{(00)} \cdot {\bf F}
+ *        +  {\bf B}_{\alpha\beta}^{(10)} : {\bf F} \otimes {\bf F} 
+ * \f]
+ * where:
+ *  - \f$ {\bf B}_{\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{\alpha\beta}^{(10)} \f$ is the density matrix dipole-dipole hyperpolarizability
+ */
+class QuadraticUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
+{
+  public:
+   QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   virtual ~QuadraticUniformEFieldPolarGEFactory();
+   std::shared_ptr<GenEffPar> compute(void);
+};
+
+/** \brief Polarization GEFP Factory with Least-Squares Parameterization.
+ *
+ * Implements the density matrix susceptibility model of the form
+ * \f[
+ *   \delta D_{\alpha\beta} \approx \sum_i
+ *           {\bf B}_{i;\alpha\beta}^{(00)} \cdot {\bf F}
+ * \f]
+ * where:
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
+ *    defined for the distributed site at \f$ {\bf r}_i \f$.
+ */
+class LinearNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
+{
+  public:
+   LinearNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   LinearNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   virtual ~LinearNonUniformEFieldPolarGEFactory();
+   std::shared_ptr<GenEffPar> compute(void);
+};
+
+/** \brief Polarization GEFP Factory with Least-Squares Parameterization.
+ *
+ * Implements the density matrix susceptibility model of the form
+ * \f[
+ *   \delta D_{\alpha\beta} \approx \sum_i
+ *              \left\{ 
+ *           {\bf B}_{i;\alpha\beta}^{(00)} \cdot {\bf F}
+ *        +  {\bf B}_{i;\alpha\beta}^{(10)} : {\bf F} \otimes {\bf F} 
+ *           \right\}                
+ * \f]
+ * where:
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole-dipole hyperpolarizability
+ * all defined for the distributed site at \f$ {\bf r}_i \f$.
+ */
+class QuadraticNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
+{
+  public:
+   QuadraticNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   QuadraticNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   virtual ~QuadraticNonUniformEFieldPolarGEFactory();
+   std::shared_ptr<GenEffPar> compute(void);
+};
+
+/** \brief Polarization GEFP Factory with Least-Squares Parameterization.
+ *
+ * Implements the density matrix susceptibility model of the form
+ * \f[
+ *   \delta D_{\alpha\beta} \approx \sum_i
+ *              \left\{ 
+ *           {\bf B}_{i;\alpha\beta}^{(00)} \cdot {\bf F}
+ *        +  {\bf B}_{i;\alpha\beta}^{(01)} : \nabla \otimes {\bf F} 
+ *           \right\}                
+ * \f]
+ * where:
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(01)} \f$ is the density matrix quadrupole polarizability
+ * all defined for the distributed site at \f$ {\bf r}_i \f$.
+ */
+class LinearGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
+{
+  public:
+   LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   virtual ~LinearGradientNonUniformEFieldPolarGEFactory();
+   std::shared_ptr<GenEffPar> compute(void);
+};
+
+/** \brief Polarization GEFP Factory with Least-Squares Parameterization.
+ *
+ * Implements the density matrix susceptibility model of the form
+ * \f[
+ *   \delta D_{\alpha\beta} \approx \sum_i
+ *              \left\{ 
+ *           {\bf B}_{i;\alpha\beta}^{(00)} \cdot {\bf F}
+ *        +  {\bf B}_{i;\alpha\beta}^{(10)} : {\bf F} \otimes {\bf F} 
+ *        +  {\bf B}_{i;\alpha\beta}^{(01)} : \nabla \otimes {\bf F} 
+ *           \right\}                
+ * \f]
+ * where:
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole-dipole hyperpolarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(01)} \f$ is the density matrix quadrupole polarizability
+ * all defined for the distributed site at \f$ {\bf r}_i \f$.
+ */
+class QuadraticGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
+{
+  public:
+   QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
+   QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   virtual ~QuadraticGradientNonUniformEFieldPolarGEFactory();
+   std::shared_ptr<GenEffPar> compute(void);
+};
+
 /** \brief Polarization GEFP Factory with Least-Squares Scaling of MO Space.
  *
  * Implements creation of the density matrix susceptibility tensors for which \f$ {\bf X} \neq {\bf 1}\f$.
