@@ -300,7 +300,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::PolarGEFactory::compute()
 
   // Construct The Effective Fragment Parameters Object
   std::shared_ptr<oepdev::GenEffPar> par = std::make_shared<oepdev::GenEffPar>("Polarization");
-  par->set_susceptibility(densityMatrixSusceptibility);
+  par->set_dipole_polarizability(densityMatrixSusceptibility);
 
   // Return
   return par;
@@ -788,7 +788,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::UnitaryTransformedMOPolarGEFactory::c
 
   // Construct The Effective Fragment Parameters Object
   std::shared_ptr<oepdev::GenEffPar> par = std::make_shared<oepdev::GenEffPar>("Polarization");
-  par->set_susceptibility(B_susc);
+  par->set_dipole_polarizability(B_susc);
 
   return par;
 }
@@ -889,7 +889,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedXYZPolarGEFactory::compute
   }
 
   // --> Initialize the density matrix susceptibility <-- //
-  std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixSusceptibility = par_0->susceptibility();
+  std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixSusceptibility = par_0->dipole_polarizability();
 
   if (training_mode == "EFIELD") {
 
@@ -926,9 +926,9 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedXYZPolarGEFactory::compute
                 double bij_y = 0.0; 
                 double bij_z = 0.0;
                 for (int o=0; o<nocc; ++o) {
-                     double bijo_x = par_0->susceptibility(o, 0)->get(i,j);
-                     double bijo_y = par_0->susceptibility(o, 1)->get(i,j);
-                     double bijo_z = par_0->susceptibility(o, 2)->get(i,j);
+                     double bijo_x = par_0->dipole_polarizability(o, 0)->get(i,j);
+                     double bijo_y = par_0->dipole_polarizability(o, 1)->get(i,j);
+                     double bijo_z = par_0->dipole_polarizability(o, 2)->get(i,j);
                      bij_x += bijo_x;
                      bij_y += bijo_y;
                      bij_z += bijo_z;
@@ -1028,9 +1028,9 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedXYZPolarGEFactory::compute
            for (int n=0; n<nsamples; ++n) {
                 double v = 0.0;
                 for (int o=0; o<nocc; ++o) {
-                     double bijo_x = par_0->susceptibility(o, 0)->get(i,j);
-                     double bijo_y = par_0->susceptibility(o, 1)->get(i,j);
-                     double bijo_z = par_0->susceptibility(o, 2)->get(i,j);
+                     double bijo_x = par_0->dipole_polarizability(o, 0)->get(i,j);
+                     double bijo_y = par_0->dipole_polarizability(o, 1)->get(i,j);
+                     double bijo_z = par_0->dipole_polarizability(o, 2)->get(i,j);
                      double fox = electricFieldSet[n]->get(o, 0);
                      double foy = electricFieldSet[n]->get(o, 1);
                      double foz = electricFieldSet[n]->get(o, 2);
@@ -1094,7 +1094,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedXYZPolarGEFactory::compute
 
   // --> Save and Return <-- //
   std::shared_ptr<oepdev::GenEffPar> par = std::make_shared<oepdev::GenEffPar>("Polarization");
-  par->set_susceptibility(densityMatrixSusceptibility);
+  par->set_dipole_polarizability(densityMatrixSusceptibility);
 
   return par;
 }
@@ -1161,11 +1161,11 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::ScaledAOPolarGEFactory::compute()
             for (int N=0; N<npoints; ++N) {
                  for (int o1=0; o1<nocc; ++o1) {
                       for (int z1=0; z1<3; ++z1) {
-                           vc += dmats[N]->get(i,j) * par_0->susceptibility(o1, z1)->get(i,j) * fields[N]->get(z1);
+                           vc += dmats[N]->get(i,j) * par_0->dipole_polarizability(o1, z1)->get(i,j) * fields[N]->get(z1);
                            for (int o2=0; o2<nocc; ++o2) {
                                 for (int z2=0; z2<3; ++z2) {
-                                     va += par_0->susceptibility(o1, z1)->get(i,j) * fields[N]->get(z1) *
-                                           par_0->susceptibility(o2, z2)->get(i,j) * fields[N]->get(z2);
+                                     va += par_0->dipole_polarizability(o1, z1)->get(i,j) * fields[N]->get(z1) *
+                                           par_0->dipole_polarizability(o2, z2)->get(i,j) * fields[N]->get(z2);
                                 }
                            }
                       }
@@ -1205,7 +1205,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::ScaledAOPolarGEFactory::compute()
        std::vector<std::shared_ptr<psi::Matrix>> Bo;
        B_scaled.push_back(Bo);
        for (int z=0; z<3; ++z) {
-            B_scaled[o].push_back(par_0->susceptibility(o,z));
+            B_scaled[o].push_back(par_0->dipole_polarizability(o,z));
             for (int i=0; i<nbf; ++i) { 
             for (int j=0; j<nbf; ++j) {
                  double v = B_scaled[o][z]->get(i,j) * X->get(i,j);
@@ -1214,7 +1214,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::ScaledAOPolarGEFactory::compute()
             }
        }
   }
-  par->set_susceptibility(B_scaled);
+  par->set_dipole_polarizability(B_scaled);
  
   return par;
 }
@@ -1290,7 +1290,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedMOPolarGEFactory::compute(
                  for (int j=0; j<nocc; ++j) {
                       int ij = nocc*i + j;
                       for (int z1=0; z1<3; ++z1) {
-                           double bf1 = par_0->susceptibility(i,z1)->get(a,b) *
+                           double bf1 = par_0->dipole_polarizability(i,z1)->get(a,b) *
                                             field_due_to_charges(pointCharges[N], cphfSolver_->lmo_centroid(j))->get(z1);
                            Cp[ij][0] += dabN * bf1;
                            for (int k=0; k<nocc; ++k) {
@@ -1298,7 +1298,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedMOPolarGEFactory::compute(
                                      int kl = nocc*k + l;
                                      for (int z2=0; z2<3; ++z2) {
                                           Ap[ij][kl] += bf1 *
-                                                        par_0->susceptibility(k,z2)->get(a,b) * 
+                                                        par_0->dipole_polarizability(k,z2)->get(a,b) * 
                                             field_due_to_charges(pointCharges[N], cphfSolver_->lmo_centroid(l))->get(z2);
                                      }
                                 }
@@ -1443,13 +1443,13 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedMOPolarGEFactory::compute(
        for (int o1=0; o1<nocc; ++o1) { 
             double v = 0.0;
             for (int o2=0; o2<nocc; ++o2) {
-               v += par_0->susceptibility(o2,z)->get(i,j) * S->get(0, o2*nocc+o1);
+               v += par_0->dipole_polarizability(o2,z)->get(i,j) * S->get(0, o2*nocc+o1);
             }
             B_scaled[o1][z]->set(i,j,v);
        }
   }
   }}
-  par->set_susceptibility(B_scaled);
+  par->set_dipole_polarizability(B_scaled);
  
   return par;
 }

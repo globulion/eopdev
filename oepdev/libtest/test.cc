@@ -192,7 +192,7 @@ double oepdev::test::Test::test_dmatPol(void)
   std::shared_ptr<oepdev::GenEffPar> par = factory->compute();
   psi::timer_off(" Test: Computation of Dmat Susc");
 
-  par->susceptibility(0,0)->print();
+  par->dipole_polarizability(0,0)->print();
 
   // Accumulate errors
   double r_sum = 0.0;
@@ -265,17 +265,17 @@ double oepdev::test::Test::test_dmatPol(void)
        ind_dipoles[o]->print();
 
        std::shared_ptr<psi::Matrix> temp = std::make_shared<psi::Matrix>("",nbf,nbf);
-       temp->copy(par->susceptibility(o, 0)); 
+       temp->copy(par->dipole_polarizability(o, 0)); 
        temp->scale(Fx);
        dD_m->add(temp);
        temp->zero();
 
-       temp->copy(par->susceptibility(o, 1)); 
+       temp->copy(par->dipole_polarizability(o, 1)); 
        temp->scale(Fy);
        dD_m->add(temp);
        temp->zero();
 
-       temp->copy(par->susceptibility(o, 2)); 
+       temp->copy(par->dipole_polarizability(o, 2)); 
        temp->scale(Fz);
        dD_m->add(temp);
        temp->zero();
@@ -401,17 +401,17 @@ double oepdev::test::Test::test_dmatPolX(void)
        ind_dipoles[o]->print();
 
        std::shared_ptr<psi::Matrix> temp = std::make_shared<psi::Matrix>("",nbf,nbf);
-       temp->copy(par->susceptibility(o, 0)); 
+       temp->copy(par->dipole_polarizability(o, 0)); 
        temp->scale(Fx);
        dD_m->add(temp);
        temp->zero();
 
-       temp->copy(par->susceptibility(o, 1)); 
+       temp->copy(par->dipole_polarizability(o, 1)); 
        temp->scale(Fy);
        dD_m->add(temp);
        temp->zero();
 
-       temp->copy(par->susceptibility(o, 2)); 
+       temp->copy(par->dipole_polarizability(o, 2)); 
        temp->scale(Fz);
        dD_m->add(temp);
        temp->zero();

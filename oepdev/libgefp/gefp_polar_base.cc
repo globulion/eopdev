@@ -12,7 +12,10 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPH
    Gradient_(std::make_shared<psi::Matrix>()),
    Hessian_(std::make_shared<psi::Matrix>()),
    Parameters_(std::make_shared<psi::Matrix>()),
-   PolarizationSusceptibilities_(std::make_shared<oepdev::GenEffPar>("Polarization"))
+   PolarizationSusceptibilities_(std::make_shared<oepdev::GenEffPar>("Polarization")),
+   hasDipolePolarizability_(false),
+   hasDipoleDipoleHyperpolarizability_(false),
+   hasQuadrupolePolarizability_(false)
 {
 }
 oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf)

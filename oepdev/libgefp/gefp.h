@@ -31,25 +31,184 @@ class GenEffPar
    /// Destruct
   ~GenEffPar() {};
 
-   /// Set The Density Matrix Susceptibility Tensors  
-   void set_susceptibility(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixSusceptibility_=susc;};
 
-   /// Grab the density matrix susceptibility tensors
-   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> susceptibility() const {return densityMatrixSusceptibility_;}
+   // ---> Mutators <--- //
 
-   /// Grab the density matrix susceptibility tensor for the *i*-th LMO
-   std::vector<std::shared_ptr<psi::Matrix>> susceptibility(int i) const {return densityMatrixSusceptibility_[i];}
 
-   /// Grab the density matrix susceptibility tensor *x*-th component for the *i*-th LMO
-   std::shared_ptr<psi::Matrix> susceptibility(int i, int x) const {return densityMatrixSusceptibility_[i][x];}
+   /** \brief Set the Density Matrix Susceptibility
+    *
+    *  @param fieldRank         - power dependency with respect to the electric field \f$ {\bf F} \f$
+    *  @param fieldGradientRank - power dependency with respect to the electric field gradient \f$ \nabla \otimes {\bf F} \f$
+    *  @param susc              - the susceptibility tensor
+    *
+    *  The following susceptibilities are supported (fieldRank, fieldGradientRank):
+    *   - (1, 0) - dipole polarizability, interacts with \f$ {\bf F} \f$
+    *   - (2, 0) - dipole-dipole hyperpolarizability, interacts with \f$ {\bf F} \otimes {\bf F} \f$
+    *   - (0, 1) - quadrupole polarizability, interacts with \f$ \nabla \otimes {\bf F} \f$
+    */
+   void set_susceptibility(int fieldRank, int fieldGradientRank, const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc)
+   {
+      std::string notsupported = "Susceptibilities for this rank are not supported yet.";
+      if        (fieldRank == 0) { // Not dependent on electric field
+           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Unphysical susceptibility!");}
+           else if (fieldGradientRank == 1){set_quadrupole_polarizability(susc);}
+      } else if (fieldRank == 1) { // Linear wrt electric field
+           if (fieldGradientRank == 0)     {set_dipole_polarizability(susc);} 
+           else                            {throw psi::PSIEXCEPTION(notsupported);}
+      } else if (fieldRank == 2) {  // Quadratic wrt electric field
+           if (fieldGradientRank == 0)     {set_dipole_dipole_hyperpolarizability(susc);}
+           else                            {throw psi::PSIEXCEPTION(notsupported);}
+      } else {
+           throw psi::PSIEXCEPTION(notsupported);
+      }
+   }
+
+   /// Set The Density Matrix Dipole Polarizability
+   void set_dipole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixDipolePolarizability_=susc;}
+
+   /// Set The Density Matrix Dipole-Dipole Hyperpolarizability
+   void set_dipole_dipole_hyperpolarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixDipoleDipoleHyperpolarizability_=susc;}
+
+   /// Set The Density Matrix Quadrupole Polarizability
+   void set_quadrupole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixQuadrupolePolarizability_=susc;}
+
+
+   // ---> Accessors <--- //
+
+
+   /** \brief Grab the Density Matrix Susceptibility
+    *
+    *  @param fieldRank         - power dependency with respect to the electric field
+    *  @param fieldGradientRank - power dependency with respect to the electric field gradient
+    *  @param i                 - id of the distributed site
+    *  @param x                 - id of the composite Cartesian component
+    *
+    *  The following susceptibilities are supported (fieldRank, fieldGradientRank):
+    *   - (1, 0) - dipole polarizability, interacts with \f$ {\bf F} \f$
+    *   - (2, 0) - dipole-dipole hyperpolarizability, interacts with \f$ {\bf F} \otimes {\bf F} \f$
+    *   - (0, 1) - quadrupole polarizability, interacts with \f$ \nabla \otimes {\bf F} \f$
+    *   
+    *  The distributed sites are assumed to be atomic sites or molecular orbital centroids (depending on the polarization
+    *  factory used).
+    *  For the electric field, the composite Cartesian index is just an ordinary Cartesian index.
+    *  For the electric field gradient and electric field squared, the composite Cartesian index is
+    *  given as
+    *  \f[
+    *    I(x, y) = 3x + y
+    *  \f]
+    *  where the values of 0, 1 and 2 correspond to *x*, *y* and *z* Cartesian components, respectively.
+    *  Therefore, in the latter case, there is 9 distinct composite Cartesian components.
+    */
+   std::shared_ptr<psi::Matrix> susceptibility(int fieldRank, int fieldGradientRank, int i, int x) const
+   {
+      std::string notsupported = "Susceptibilities for this rank are not supported yet.";
+      if        (fieldRank == 0) { // Not dependent on electric field
+           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Unphysical susceptibility!");}
+           else if (fieldGradientRank == 1){return quadrupole_polarizability(i, x);}
+      } else if (fieldRank == 1) { // Linear wrt electric field
+           if (fieldGradientRank == 0)     {return dipole_polarizability(i, x);}
+           else                            {throw psi::PSIEXCEPTION(notsupported);}
+      } else if (fieldRank == 2) {  // Quadratic wrt electric field
+           if (fieldGradientRank == 0)     {return dipole_dipole_hyperpolarizability(i, x);}
+           else                            {throw psi::PSIEXCEPTION(notsupported);}
+      } else {
+           throw psi::PSIEXCEPTION(notsupported);
+      }
+   }
+
+   /** \brief Grab the Density Matrix Susceptibility
+    *
+    *  @param fieldRank         - power dependency with respect to the electric field
+    *  @param fieldGradientRank - power dependency with respect to the electric field gradient
+    *  @param i                 - id of the distributed site
+    *
+    *  The following susceptibilities are supported (fieldRank, fieldGradientRank):
+    *   - (1, 0) - dipole polarizability, interacts with \f$ {\bf F} \f$
+    *   - (2, 0) - dipole-dipole hyperpolarizability, interacts with \f$ {\bf F} \otimes {\bf F} \f$
+    *   - (0, 1) - quadrupole polarizability, interacts with \f$ \nabla \otimes {\bf F} \f$
+    *   
+    *  The distributed sites are assumed to be atomic sites or molecular orbital centroids (depending on the polarization
+    *  factory used).
+    */
+   std::vector<std::shared_ptr<psi::Matrix>> susceptibility(int fieldRank, int fieldGradientRank, int i) const
+   {
+      std::string notsupported = "Susceptibilities for this rank are not supported yet.";
+      if        (fieldRank == 0) { // Not dependent on electric field
+           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Unphysical susceptibility!");}
+           else if (fieldGradientRank == 1){return quadrupole_polarizability(i);}
+      } else if (fieldRank == 1) { // Linear wrt electric field
+           if (fieldGradientRank == 0)     {return dipole_polarizability(i);}
+           else                            {throw psi::PSIEXCEPTION(notsupported);}
+      } else if (fieldRank == 2) {  // Quadratic wrt electric field
+           if (fieldGradientRank == 0)     {return dipole_dipole_hyperpolarizability(i);} 
+           else                            {throw psi::PSIEXCEPTION(notsupported);}
+      } else {
+           throw psi::PSIEXCEPTION(notsupported);
+      }
+   }
+
+   /** \brief Grab the Density Matrix Susceptibility
+    *
+    *  @param fieldRank         - power dependency with respect to the electric field
+    *  @param fieldGradientRank - power dependency with respect to the electric field gradient
+    *
+    *  The following susceptibilities are supported (fieldRank, fieldGradientRank):
+    *   - (1, 0) - dipole polarizability, interacts with \f$ {\bf F} \f$
+    *   - (2, 0) - dipole-dipole hyperpolarizability, interacts with \f$ {\bf F} \otimes {\bf F} \f$
+    *   - (0, 1) - quadrupole polarizability, interacts with \f$ \nabla \otimes {\bf F} \f$
+    */
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> susceptibility(int fieldRank, int fieldGradientRank) const
+   {
+      std::string notsupported = "Susceptibilities for this rank are not supported yet.";
+      if        (fieldRank == 0) { // Not dependent on electric field
+           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Unphysical susceptibility!");}
+           else if (fieldGradientRank == 1){return quadrupole_polarizability();}
+      } else if (fieldRank == 1) { // Linear wrt electric field
+           if (fieldGradientRank == 0)     {return dipole_polarizability();}
+           else                            {throw psi::PSIEXCEPTION(notsupported);}
+      } else if (fieldRank == 2) {  // Quadratic wrt electric field
+           if (fieldGradientRank == 0)     {return dipole_dipole_hyperpolarizability();}
+           else                            {throw psi::PSIEXCEPTION(notsupported);}
+      } else {
+           throw psi::PSIEXCEPTION(notsupported);
+      }
+   }
+
+   /// Grab the density matrix dipole polarizability tensor
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> dipole_polarizability() const {return densityMatrixDipolePolarizability_;}
+   /// Grab the density matrix dipole polarizability tensor's *x*-th component
+   std::vector<std::shared_ptr<psi::Matrix>> dipole_polarizability(int i) const {return densityMatrixDipolePolarizability_[i];}
+   /// Grab the density matrix dipole polarizability tensor's *x*-th component of the *i*-th distributed site
+   std::shared_ptr<psi::Matrix> dipole_polarizability(int i, int x) const {return densityMatrixDipolePolarizability_[i][x];}
+
+   /// Grab the density matrix dipole-dipole hyperpolarizability tensor
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> dipole_dipole_hyperpolarizability() const {return densityMatrixDipoleDipoleHyperpolarizability_;}
+   /// Grab the density matrix dipole-dipole hyperpolarizability tensor's *x*-th component
+   std::vector<std::shared_ptr<psi::Matrix>> dipole_dipole_hyperpolarizability(int i) const {return densityMatrixDipoleDipoleHyperpolarizability_[i];}
+   /// Grab the density matrix dipole-dipole hyperpolarizability tensor's *x*-th component of the *i*-th distributed site
+   std::shared_ptr<psi::Matrix> dipole_dipole_hyperpolarizability(int i, int x) const {return densityMatrixDipoleDipoleHyperpolarizability_[i][x];}
+
+   /// Grab the density matrix quadrupole polarizability tensor
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> quadrupole_polarizability() const {return densityMatrixQuadrupolePolarizability_;}
+   /// Grab the density matrix quadrupole polarizability tensor's *x*-th component
+   std::vector<std::shared_ptr<psi::Matrix>> quadrupole_polarizability(int i) const {return densityMatrixQuadrupolePolarizability_[i];}
+   /// Grab the density matrix quadrupole polarizability tensor's *x*-th component of the *i*-th distributed site
+   std::shared_ptr<psi::Matrix> quadrupole_polarizability(int i, int x) const {return densityMatrixQuadrupolePolarizability_[i][x];}
+
 
 
   protected:
    /// The Name of Parameter Type
    std::string name_;
 
-   /// The Density Matrix Susceptibility Tensors
-   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixSusceptibility_;
+   /// The Density Matrix Dipole Polarizability
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixDipolePolarizability_;
+
+   /// The Density Matrix Dipole-Dipole Hyperpolarizability
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixDipoleDipoleHyperpolarizability_;
+
+   /// The Density Matrix Quadrupole Polarizability
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixQuadrupolePolarizability_;
 };
 
 /** \brief Generalized Effective Fragment. Container Class.
@@ -86,24 +245,64 @@ class GenEffFrag
    /// Superimpose
    void superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList);
 
-   /// Set the Density Matrix Susceptibility Tensors
+   /// Set the Density Matrix Susceptibility Tensor Object
    void set_gefp_polarization(const std::shared_ptr<GenEffPar>& par) {densityMatrixSusceptibilityGEF_=par;}
 
-   void set_dmat_susceptibility(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) 
+   /// Set the Density Matrix Dipole Polarizability
+   void set_dmat_dipole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc)
         { if (densityMatrixSusceptibilityGEF_) 
-              densityMatrixSusceptibilityGEF_->set_susceptibility(susc); }
+              densityMatrixSusceptibilityGEF_->set_dipole_polarizability(susc); }
+
+   /// Set the Density Matrix Dipole-Dipole Hyperpolarizability
+   void set_dmat_dipole_dipole_hyperpolarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc)
+        { if (densityMatrixSusceptibilityGEF_)
+              densityMatrixSusceptibilityGEF_->set_dipole_dipole_hyperpolarizability(susc); }
+
+   /// Set the Density Matrix Quadrupole Polarizability
+   void set_dmat_quadrupole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc)
+        { if (densityMatrixSusceptibilityGEF_)
+              densityMatrixSusceptibilityGEF_->set_quadrupole_polarizability(susc); }
+
 
    //void set_lmo_centroids();
 
 
-   /// Grab the density matrix susceptibility tensors
-   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> susceptibility() const {return densityMatrixSusceptibilityGEF_->susceptibility();}
+   // --> Accessors <-- //
 
-   /// Grab the density matrix susceptibility tensor for the *i*-th LMO
-   std::vector<std::shared_ptr<psi::Matrix>> susceptibility(int i) const {return densityMatrixSusceptibilityGEF_->susceptibility(i);}
 
-   /// Grab the density matrix susceptibility tensor *x*-th component for the *i*-th LMO
-   std::shared_ptr<psi::Matrix> susceptibility(int i, int x) const {return densityMatrixSusceptibilityGEF_->susceptibility(i,x);}
+   /** \brief Grab the Density Matrix Susceptibility
+    *
+    *  @param fieldRank         - power dependency with respect to the electric field
+    *  @param fieldGradientRank - power dependency with respect to the electric field gradient
+    *  @param i                 - id of the distributed site
+    *  @param x                 - id of the composite Cartesian component
+    */
+   std::shared_ptr<psi::Matrix> susceptibility(int fieldRank, int fieldGradientRank, int i, int x) const
+   {
+       return densityMatrixSusceptibilityGEF_->susceptibility(fieldRank, fieldGradientRank, i, x);
+   }
+
+   /** \brief Grab the Density Matrix Susceptibility
+    *
+    *  @param fieldRank         - power dependency with respect to the electric field
+    *  @param fieldGradientRank - power dependency with respect to the electric field gradient
+    *  @param i                 - id of the distributed site
+    */
+   std::vector<std::shared_ptr<psi::Matrix>> susceptibility(int fieldRank, int fieldGradientRank, int i) const
+   {
+       return densityMatrixSusceptibilityGEF_->susceptibility(fieldRank, fieldGradientRank, i);
+   }
+
+   /** \brief Grab the Density Matrix Susceptibility
+    *
+    *  @param fieldRank         - power dependency with respect to the electric field
+    *  @param fieldGradientRank - power dependency with respect to the electric field gradient
+    */
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> susceptibility(int fieldRank, int fieldGradientRank) const
+   {
+       return densityMatrixSusceptibilityGEF_->susceptibility(fieldRank, fieldGradientRank);
+   }
+
 
 
   protected:
@@ -284,6 +483,13 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    /// Pefrorm Least-Squares Fit
    virtual std::shared_ptr<GenEffPar> compute(void);
 
+   /// Dipole Polarizability (interacting with \f$ {\bf F} \f$)
+   bool has_dipole_polarizability            () const {return hasDipolePolarizability_           ;}
+   /// Dipole-Dipole Hyperpolarizability (interacting with \f$ {\bf F}^2 \f$)
+   bool has_dipole_dipole_hyperpolarizability() const {return hasDipoleDipoleHyperpolarizability_;}
+   /// Quadrupole Polarizability (interacting with \f$ \nabla \otimes {\bf F} \f$)
+   bool has_quadrupole_polarizability        () const {return hasQuadrupolePolarizability_       ;}
+
   protected:
 
    /// Number of parameter blocks
@@ -303,6 +509,14 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    std::shared_ptr<psi::Matrix> Parameters_;
    /// Density Matrix Susceptibility Tensors Object
    std::shared_ptr<oepdev::GenEffPar> PolarizationSusceptibilities_;
+
+   /// Dipole Polarizability
+   bool hasDipolePolarizability_;
+   /// Dipole-Dipole Hyperpolarizability 
+   bool hasDipoleDipoleHyperpolarizability_;
+   /// Quadrupole Polarizability
+   bool hasQuadrupolePolarizability_;
+   
 
    /// Compute the parameters
    void compute_parameters(void);
