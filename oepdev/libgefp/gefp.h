@@ -490,7 +490,15 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    /// Quadrupole Polarizability (interacting with \f$ \nabla \otimes {\bf F} \f$)
    bool has_quadrupole_polarizability        () const {return hasQuadrupolePolarizability_       ;}
 
+   /// Grab initial summaric Z value
+   double Zinit() const {return Zinit_;}
+   /// Grab final summaric Z value
+   double Z() const {return Z_;}
+
+
   protected:
+
+   // --> Dimensions <-- //
 
    /// Number of parameter blocks
    int nBlocks_;
@@ -500,6 +508,11 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    int nParameters_;
    /// Dimensionality of parameter space per block
    std::vector<int> nParametersBlock_;
+   /// Number of statistical samples
+   const int nSamples_;
+
+
+   // --> Parameters <-- //
 
    /// Gradient
    std::shared_ptr<psi::Matrix> Gradient_;
@@ -510,13 +523,37 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    /// Density Matrix Susceptibility Tensors Object
    std::shared_ptr<oepdev::GenEffPar> PolarizationSusceptibilities_;
 
-   /// Dipole Polarizability
+
+   // --> Qualifiers <-- //
+
+   /// Has Dipole Polarizability?
    bool hasDipolePolarizability_;
-   /// Dipole-Dipole Hyperpolarizability 
+   /// Has Dipole-Dipole Hyperpolarizability?
    bool hasDipoleDipoleHyperpolarizability_;
-   /// Quadrupole Polarizability
+   /// Has Quadrupole Polarizability?
    bool hasQuadrupolePolarizability_;
-   
+
+
+   // --> Statistical descriptors <-- //
+
+   /// Initial summaric Z value
+   double Zinit_;
+   /// Final summaric Z value
+   double Z_;
+
+   // --> Sets of statistical data <-- //
+
+   /// Reference density matrix set
+   std::vector<std::shared_ptr<psi::Matrix>> referenceDensityMatrixSet_;
+   /// Guess density matrix set
+   std::vector<std::shared_ptr<psi::Matrix>> guessDensityMatrixSet_;
+   /// Electric field set
+   std::vector<std::vector<std::shared_ptr<Matrix>>> electricFieldSet_;
+   /// Electric field gradient set
+   std::vector<std::vector<std::shared_ptr<Matrix>>> electricFieldGradientSet_;
+
+
+   // --> Computers <-- //
 
    /// Compute the parameters
    void compute_parameters(void);
