@@ -92,4 +92,4 @@ set {
 
 
 # run oepdev
-energy('oepdev', molecule=menh2)
+energy('oepdev', molecule=h2o)

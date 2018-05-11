@@ -8,6 +8,7 @@
 #include <cmath>
 #include "psi4/libmints/wavefunction.h"
 #include "psi4/libmints/matrix.h"
+#include "psi4/libmints/vector.h"
 #include "psi4/libmints/vector3.h"
 #include "../liboep/oep.h"
 #include "../libutil/cphf.h"
@@ -474,6 +475,16 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
 {
   public:
 
+   /** \brief Build Density Matrix Susceptibility Generalized Factory.
+    *
+    * @param cphf          - CPHF solver
+    * @param opt           - Psi4 options
+    * @param rank_field    - rank of the electric field model
+    * @param rank_gradient - rank of the electric field gradient model
+    */
+   static std::shared_ptr<GeneralizedPolarGEFactory> build(std::shared_ptr<CPHF> cphf, psi::Options& opt, 
+                                                           int rank_field = 1, int rank_gradient = 0);
+
    /// Construct from CPHF object and Psi4 options
    GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    /// Construct from CPHF object only (options will be read from CPHF object)
@@ -522,6 +533,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    std::shared_ptr<psi::Matrix> Parameters_;
    /// Density Matrix Susceptibility Tensors Object
    std::shared_ptr<oepdev::GenEffPar> PolarizationSusceptibilities_;
+   /// Allocate memory
+   void allocate(void);
 
 
    // --> Qualifiers <-- //
@@ -548,7 +561,7 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    /// Guess density matrix set
    std::vector<std::shared_ptr<psi::Matrix>> guessDensityMatrixSet_;
    /// Electric field set
-   std::vector<std::vector<std::shared_ptr<Matrix>>> electricFieldSet_;
+   std::vector<std::vector<std::shared_ptr<Vector>>> electricFieldSet_;
    /// Electric field gradient set
    std::vector<std::vector<std::shared_ptr<Matrix>>> electricFieldGradientSet_;
 
@@ -564,11 +577,15 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    /// Save susceptibility tensors associated with the *i*-th and *j*-th basis set function
    void save(int i, int j);
 
+   /// Compute samples of density matrices and select electric field distributions
+   virtual void compute_samples(void) = 0;
+
    /// Compute Gradient vector associated with the *i*-th and *j*-th basis set function
    virtual void compute_gradient(int i, int j) = 0;
 
    /// Compute Hessian matrix (independent on the parameters)
    virtual void compute_hessian(void) = 0;
+
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -582,6 +599,9 @@ class UniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
    UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~UniformEFieldPolarGEFactory();
+   void compute_samples(void);
+   virtual void compute_gradient(int i, int j) = 0;
+   virtual void compute_hessian(void) = 0;
    //virtual std::shared_ptr<GenEffPar> compute(void) = 0;
 };
 
@@ -596,6 +616,9 @@ class NonUniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
    NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~NonUniformEFieldPolarGEFactory();
+   void compute_samples(void);
+   virtual void compute_gradient(int i, int j) = 0;
+   virtual void compute_hessian(void) = 0;
    //virtual std::shared_ptr<GenEffPar> compute(void) = 0;
 };
 
@@ -615,6 +638,8 @@ class LinearUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
    LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~LinearUniformEFieldPolarGEFactory();
+   void compute_gradient(int i, int j);
+   void compute_hessian(void);
    //std::shared_ptr<GenEffPar> compute(void);
 };
 
@@ -636,6 +661,8 @@ class QuadraticUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
    QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~QuadraticUniformEFieldPolarGEFactory();
+   void compute_gradient(int i, int j);
+   void compute_hessian(void);
    //std::shared_ptr<GenEffPar> compute(void);
 };
 
@@ -656,6 +683,8 @@ class LinearNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFacto
    LinearNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    LinearNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~LinearNonUniformEFieldPolarGEFactory();
+   void compute_gradient(int i, int j);
+   void compute_hessian(void);
    //std::shared_ptr<GenEffPar> compute(void);
 };
 
@@ -680,6 +709,8 @@ class QuadraticNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFa
    QuadraticNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    QuadraticNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~QuadraticNonUniformEFieldPolarGEFactory();
+   void compute_gradient(int i, int j);
+   void compute_hessian(void);
    //std::shared_ptr<GenEffPar> compute(void);
 };
 
@@ -704,6 +735,8 @@ class LinearGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPola
    LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~LinearGradientNonUniformEFieldPolarGEFactory();
+   void compute_gradient(int i, int j);
+   void compute_hessian(void);
    //std::shared_ptr<GenEffPar> compute(void);
 };
 
@@ -730,6 +763,8 @@ class QuadraticGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldP
    QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
    virtual ~QuadraticGradientNonUniformEFieldPolarGEFactory();
+   void compute_gradient(int i, int j);
+   void compute_hessian(void);
    //std::shared_ptr<GenEffPar> compute(void);
 };
 

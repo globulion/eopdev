@@ -40,7 +40,9 @@ oepdev::GeneralizedPolarGEFactory::~GeneralizedPolarGEFactory()
 }
 std::shared_ptr<oepdev::GenEffPar> oepdev::GeneralizedPolarGEFactory::compute(void)
 {
+   compute_samples();
    compute_parameters();
+   return PolarizationSusceptibilities_; 
 }
 // protected methods
 void oepdev::GeneralizedPolarGEFactory::compute_parameters(void)
@@ -127,10 +129,40 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
   }
   
 }
+void oepdev::GeneralizedPolarGEFactory::allocate(void)
+{
+  Gradient_   = std::make_shared<psi::Matrix>("Gradient"  , nParameters_, 1);
+  Hessian_    = std::make_shared<psi::Matrix>("Hessian"   , nParameters_, nParameters_);
+  Parameters_ = std::make_shared<psi::Matrix>("Parameters", nParameters_, 1);
+}
 // abstract methods
+void oepdev::GeneralizedPolarGEFactory::compute_samples(void)
+{
+}
 void oepdev::GeneralizedPolarGEFactory::compute_gradient(int i, int j)
 {
 }
 void oepdev::GeneralizedPolarGEFactory::compute_hessian(void)
 {
+}
+// Static factory method
+std::shared_ptr<oepdev::GeneralizedPolarGEFactory> oepdev::GeneralizedPolarGEFactory::build(
+                                                         std::shared_ptr<oepdev::CPHF> cphf, psi::Options& opt,
+                                                         int rank_field, int rank_gradient)
+{
+   // TODO: Add two more options (add mode of "EFIELD" or "CHARGES" training option)
+   std::string notsupported = "Susceptibilities for this rank are not supported yet.";
+   if        (rank_field == 0) { 
+     throw psi::PSIEXCEPTION("Unphysical susceptibility!");
+   } else if (rank_field == 1) { // Linear wrt electric field
+     if      (rank_gradient == 0) {return std::make_shared<oepdev::LinearUniformEFieldPolarGEFactory>(cphf, opt);}
+     else if (rank_gradient == 1) {return std::make_shared<oepdev::LinearGradientNonUniformEFieldPolarGEFactory>(cphf, opt);}
+     else                         {throw psi::PSIEXCEPTION(notsupported);}
+   } else if (rank_field == 2) {  // Quadratic wrt electric field
+     if      (rank_gradient == 0) {return std::make_shared<oepdev::QuadraticUniformEFieldPolarGEFactory>(cphf, opt);}
+     else if (rank_gradient == 1) {return std::make_shared<oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory>(cphf, opt);}
+     else                         {throw psi::PSIEXCEPTION(notsupported);}
+   } else {
+        throw psi::PSIEXCEPTION(notsupported);
+   }
 }
