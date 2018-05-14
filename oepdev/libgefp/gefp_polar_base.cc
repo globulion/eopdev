@@ -25,10 +25,9 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPH
    electricFieldGradientSet_({})
 {
    // Allocate memory for density matrix sets
-   int nbf = wfn_->basisset()->nbf();
    for (int n=0; n<nSamples_; ++n) {
-        referenceDensityMatrixSet_.push_back(std::make_shared<psi::Matrix>("", nbf, nbf));
-        guessDensityMatrixSet_    .push_back(std::make_shared<psi::Matrix>("", nbf, nbf));
+        referenceDensityMatrixSet_.push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
+        guessDensityMatrixSet_    .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
    }
 }
 oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf)
@@ -50,8 +49,8 @@ void oepdev::GeneralizedPolarGEFactory::compute_parameters(void)
    compute_hessian();
    Hessian_->invert();
    Hessian_->set_name("\nInverse Hessian");
-   for (int i=0; i<wfn_->basisset()->nbf(); ++i) {
-        for (int j=0; j<wfn_->basisset()->nbf(); ++j) {
+   for (int i=0; i<nbf_; ++i) {
+        for (int j=0; j<nbf_; ++j) {
              compute_gradient(i, j);
              fit();
              save(i, j);
@@ -131,9 +130,14 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
 }
 void oepdev::GeneralizedPolarGEFactory::allocate(void)
 {
+  // Parameter spaces
   Gradient_   = std::make_shared<psi::Matrix>("Gradient"  , nParameters_, 1);
   Hessian_    = std::make_shared<psi::Matrix>("Hessian"   , nParameters_, nParameters_);
   Parameters_ = std::make_shared<psi::Matrix>("Parameters", nParameters_, 1);
+  // Susceptibilities
+  if (hasDipolePolarizability_           ) PolarizationSusceptibilities_->allocate(1, 0, nSites_, nbf_);
+  if (hasDipoleDipoleHyperpolarizability_) PolarizationSusceptibilities_->allocate(2, 0, nSites_, nbf_);
+  if (hasQuadrupolePolarizability_       ) PolarizationSusceptibilities_->allocate(0, 1, nSites_, nbf_);
 }
 // abstract methods
 void oepdev::GeneralizedPolarGEFactory::compute_samples(void)
@@ -151,6 +155,7 @@ std::shared_ptr<oepdev::GeneralizedPolarGEFactory> oepdev::GeneralizedPolarGEFac
                                                          int rank_field, int rank_gradient)
 {
    // TODO: Add two more options (add mode of "EFIELD" or "CHARGES" training option)
+   // TODO: Move this factory method to the uppest base class (general factory for all interactions)
    std::string notsupported = "Susceptibilities for this rank are not supported yet.";
    if        (rank_field == 0) { 
      throw psi::PSIEXCEPTION("Unphysical susceptibility!");

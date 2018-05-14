@@ -51,7 +51,7 @@ class GenEffPar
    {
       std::string notsupported = "Susceptibilities for this rank are not supported yet.";
       if        (fieldRank == 0) { // Not dependent on electric field
-           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Unphysical susceptibility!");}
+           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Trivially vanishing susceptibility!");}
            else if (fieldGradientRank == 1){set_quadrupole_polarizability(susc);}
       } else if (fieldRank == 1) { // Linear wrt electric field
            if (fieldGradientRank == 0)     {set_dipole_polarizability(susc);} 
@@ -72,6 +72,47 @@ class GenEffPar
 
    /// Set The Density Matrix Quadrupole Polarizability
    void set_quadrupole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixQuadrupolePolarizability_=susc;}
+
+   // ---> Allocators <--- //
+
+
+   /** \brief Allocate the Density Matrix Susceptibility
+    *
+    *  @param fieldRank         - power dependency with respect to the electric field \f$ {\bf F} \f$
+    *  @param fieldGradientRank - power dependency with respect to the electric field gradient \f$ \nabla \otimes {\bf F} \f$
+    *  @param nsites            - number of distributed sites
+    *  @param nbf               - number of basis functions in the basis set
+    *
+    *  The following susceptibilities are supported (fieldRank, fieldGradientRank):
+    *   - (1, 0) - dipole polarizability, interacts with \f$ {\bf F} \f$
+    *   - (2, 0) - dipole-dipole hyperpolarizability, interacts with \f$ {\bf F} \otimes {\bf F} \f$
+    *   - (0, 1) - quadrupole polarizability, interacts with \f$ \nabla \otimes {\bf F} \f$
+    */
+   void allocate(int fieldRank, int fieldGradientRank, int nsites, int nbf)
+   {
+      std::string notsupported = "Susceptibilities for this rank are not supported yet.";
+      if        (fieldRank == 0) { // Not dependent on electric field
+           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Trivially vanishing susceptibility!");}
+           else if (fieldGradientRank == 1){allocate_quadrupole_polarizability(nsites, nbf);}
+      } else if (fieldRank == 1) { // Linear wrt electric field
+           if (fieldGradientRank == 0)     {allocate_dipole_polarizability(nsites, nbf);} 
+           else                            {throw psi::PSIEXCEPTION(notsupported);}
+      } else if (fieldRank == 2) {  // Quadratic wrt electric field
+           if (fieldGradientRank == 0)     {allocate_dipole_dipole_hyperpolarizability(nsites, nbf);}
+           else                            {throw psi::PSIEXCEPTION(notsupported);}
+      } else {
+           throw psi::PSIEXCEPTION(notsupported);
+      }
+   }
+
+   /// Allocate The Density Matrix Dipole Polarizability
+   void allocate_dipole_polarizability(int nsites, int nbf);
+
+   /// Allocate The Density Matrix Dipole-Dipole Hyperpolarizability
+   void allocate_dipole_dipole_hyperpolarizability(int nsites, int nbf);
+
+   /// Allocate The Density Matrix Quadrupole Polarizability
+   void allocate_quadrupole_polarizability(int nsites, int nbf);
 
 
    // ---> Accessors <--- //
@@ -104,7 +145,7 @@ class GenEffPar
    {
       std::string notsupported = "Susceptibilities for this rank are not supported yet.";
       if        (fieldRank == 0) { // Not dependent on electric field
-           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Unphysical susceptibility!");}
+           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Trivially vanishing susceptibility!");}
            else if (fieldGradientRank == 1){return quadrupole_polarizability(i, x);}
       } else if (fieldRank == 1) { // Linear wrt electric field
            if (fieldGradientRank == 0)     {return dipole_polarizability(i, x);}
@@ -135,7 +176,7 @@ class GenEffPar
    {
       std::string notsupported = "Susceptibilities for this rank are not supported yet.";
       if        (fieldRank == 0) { // Not dependent on electric field
-           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Unphysical susceptibility!");}
+           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Trivially vanishing susceptibility!");}
            else if (fieldGradientRank == 1){return quadrupole_polarizability(i);}
       } else if (fieldRank == 1) { // Linear wrt electric field
            if (fieldGradientRank == 0)     {return dipole_polarizability(i);}
@@ -162,7 +203,7 @@ class GenEffPar
    {
       std::string notsupported = "Susceptibilities for this rank are not supported yet.";
       if        (fieldRank == 0) { // Not dependent on electric field
-           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Unphysical susceptibility!");}
+           if      (fieldGradientRank == 0){throw psi::PSIEXCEPTION("Trivially vanishing susceptibility!");}
            else if (fieldGradientRank == 1){return quadrupole_polarizability();}
       } else if (fieldRank == 1) { // Linear wrt electric field
            if (fieldGradientRank == 0)     {return dipole_polarizability();}
@@ -380,6 +421,9 @@ class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
 
    /// Radius of padding sphere around the molecule
    double radius_;
+
+   /// Number of basis functions
+   const int nbf_;
 };
 
 /** \brief Polarization GEFP Factory.

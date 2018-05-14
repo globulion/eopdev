@@ -12,6 +12,8 @@ oepdev::QuadraticNonUniformEFieldPolarGEFactory::QuadraticNonUniformEFieldPolarG
   nBlocks_ = 3;
   nParameters_ = 3*(nSites_ * 3);
   for (int z=0; z<nBlocks_; ++z) nParametersBlock_.push_back(nSites_ * 3);
+  // Allocate memory
+  allocate();
 }
 oepdev::QuadraticNonUniformEFieldPolarGEFactory::QuadraticNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
  : oepdev::QuadraticNonUniformEFieldPolarGEFactory(cphf, cphf->options())
@@ -23,10 +25,9 @@ oepdev::QuadraticNonUniformEFieldPolarGEFactory::~QuadraticNonUniformEFieldPolar
 // Implementations of abstract methods from base class
 void oepdev::QuadraticNonUniformEFieldPolarGEFactory::compute_gradient(int i, int j)
 {
+  // TODO
 }
 void oepdev::QuadraticNonUniformEFieldPolarGEFactory::compute_hessian(void)
 {
+  // TODO
 }
-//std::shared_ptr<oepdev::GenEffPar> oepdev::QuadraticNonUniformEFieldPolarGEFactory::compute(void)
-//{
-//}

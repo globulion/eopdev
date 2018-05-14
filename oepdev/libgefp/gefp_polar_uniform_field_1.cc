@@ -14,10 +14,7 @@ oepdev::LinearUniformEFieldPolarGEFactory::LinearUniformEFieldPolarGEFactory(std
   nParameters_ = 3;
   nParametersBlock_.push_back(3);
   // Allocate memory
-  allocate();//-> add later
-  //Gradient_   = std::make_shared<psi::Matrix>("Gradient"  , 3, 1);
-  //Hessian_    = std::make_shared<psi::Matrix>("Hessian"   , 3, 3);
-  //Parameters_ = std::make_shared<psi::Matrix>("Parameters", 3, 1);
+  allocate();
 }
 oepdev::LinearUniformEFieldPolarGEFactory::LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
  : oepdev::LinearUniformEFieldPolarGEFactory(cphf, cphf->options())
@@ -57,6 +54,3 @@ void oepdev::LinearUniformEFieldPolarGEFactory::compute_hessian(void)
    }
    Hessian_->scale(2.0);
 }
-//std::shared_ptr<oepdev::GenEffPar> oepdev::LinearUniformEFieldPolarGEFactory::compute(void)
-//{
-//}

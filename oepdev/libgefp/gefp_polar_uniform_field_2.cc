@@ -12,6 +12,8 @@ oepdev::QuadraticUniformEFieldPolarGEFactory::QuadraticUniformEFieldPolarGEFacto
   nBlocks_ = 3;
   nParameters_ = 9;
   for (int z=0; z<nBlocks_; ++z) nParametersBlock_.push_back(3);
+  // Allocate memory
+  allocate();
 }
 oepdev::QuadraticUniformEFieldPolarGEFactory::QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
  : oepdev::QuadraticUniformEFieldPolarGEFactory(cphf, cphf->options())
@@ -23,10 +25,9 @@ oepdev::QuadraticUniformEFieldPolarGEFactory::~QuadraticUniformEFieldPolarGEFact
 // Implementations of abstract methods from base class
 void oepdev::QuadraticUniformEFieldPolarGEFactory::compute_gradient(int i, int j)
 {
+  // TODO
 }
 void oepdev::QuadraticUniformEFieldPolarGEFactory::compute_hessian(void)
 {
+  // TODO
 }
-//std::shared_ptr<oepdev::GenEffPar> oepdev::QuadraticUniformEFieldPolarGEFactory::compute(void)
-//{
-//}

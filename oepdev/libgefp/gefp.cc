@@ -11,6 +11,64 @@ using namespace std;
 #define IDX_3(i,j,k) (n2*(i)+n1*(j)+(k))
 #define IDX_6(i,j,k,l,m,n) (n5*(i)+n4*(j)+n3*(k)+n2*(l)+n1*(m)+(n))
 
+void oepdev::GenEffPar::allocate_dipole_polarizability(int nsites, int nbf)
+{
+   std::map<int, char> m;
+   m[0] = 'X'; m[1] = 'Y'; m[2] = 'Z';
+
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> susc;
+   for (int n=0; n<nsites; ++n) {
+        std::vector<std::shared_ptr<psi::Matrix>> susc_n;
+        for (int z=0; z<3; ++z) {
+             std::string name = oepdev::string_sprintf("Density Matrix Dipole Polarizability B[%c](%d)", m[z], n+1);
+             std::shared_ptr<psi::Matrix> susc_nz = std::make_shared<psi::Matrix>(name, nbf, nbf);
+             susc_n.push_back(susc_nz);
+        }
+        susc.push_back(susc_n);
+   }
+   set_dipole_polarizability(susc);
+}
+void oepdev::GenEffPar::allocate_dipole_dipole_hyperpolarizability(int nsites, int nbf)
+{
+   std::map<int, char> m;
+   m[0] = 'X'; m[1] = 'Y'; m[2] = 'Z';
+
+   //mm[0] = "XX"; mm[1] = "XY"; mm[2] = "XZ";
+   //mm[3] = "YX"; mm[4] = "YY"; mm[5] = "YZ";
+   //mm[6] = "ZX"; mm[7] = "ZY"; mm[8] = "ZZ";
+
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> susc;
+   for (int n=0; n<nsites; ++n) {
+        std::vector<std::shared_ptr<psi::Matrix>> susc_n;
+        for (int z1=0; z1<3; ++z1) {
+        for (int z2=0; z2<3; ++z2) {
+             std::string name = oepdev::string_sprintf("Density Matrix Dipole-Dipole Hyperpolarizability B[%c%c](%d)", m[z1], m[z2], n+1);
+             std::shared_ptr<psi::Matrix> susc_nz = std::make_shared<psi::Matrix>(name, nbf, nbf);
+             susc_n.push_back(susc_nz);
+        }}
+        susc.push_back(susc_n);
+   }
+   set_dipole_dipole_hyperpolarizability(susc);
+}
+void oepdev::GenEffPar::allocate_quadrupole_polarizability(int nsites, int nbf)
+{
+   std::map<int, char> m;
+   m[0] = 'X'; m[1] = 'Y'; m[2] = 'Z';
+
+   std::vector<std::vector<std::shared_ptr<psi::Matrix>>> susc;
+   for (int n=0; n<nsites; ++n) {
+        std::vector<std::shared_ptr<psi::Matrix>> susc_n;
+        for (int z1=0; z1<3; ++z1) {
+        for (int z2=0; z2<3; ++z2) {
+             std::string name = oepdev::string_sprintf("Density Matrix Quadrupole Polarizability B[%c%c](%d)", m[z1], m[z2], n+1);
+             std::shared_ptr<psi::Matrix> susc_nz = std::make_shared<psi::Matrix>(name, nbf, nbf);
+             susc_n.push_back(susc_nz);
+        }}
+        susc.push_back(susc_n);
+   }
+   set_quadrupole_polarizability(susc);
+}
+//-- GenEffPar --///////////////////////////////////////////////////////////////////////////////////////
 oepdev::GenEffFrag::GenEffFrag(std::string name) : 
   name_(name),
   densityMatrixSusceptibilityGEF_(nullptr),
@@ -43,6 +101,7 @@ void oepdev::GenEffFrag::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std
 oepdev::GenEffParFactory::GenEffParFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt) :
  wfn_(wfn),
  options_(opt),
+ nbf_(wfn->basisset()->nbf()),
  randomDistribution_(std::uniform_real_distribution<double>(-1.0, 1.0))
 {
    double pad = 10.0; // Put to options

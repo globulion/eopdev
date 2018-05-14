@@ -21,6 +21,7 @@ oepdev::NonUniformEFieldPolarGEFactory::~NonUniformEFieldPolarGEFactory()
 // implementations of abstract methods from base
 void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
 {
+  // TODO
 }
 // abstract methods
 void oepdev::NonUniformEFieldPolarGEFactory::compute_gradient(int i, int j)
@@ -29,6 +30,3 @@ void oepdev::NonUniformEFieldPolarGEFactory::compute_gradient(int i, int j)
 void oepdev::NonUniformEFieldPolarGEFactory::compute_hessian(void)
 {
 }
-//std::shared_ptr<oepdev::GenEffPar> oepdev::NonUniformEFieldPolarGEFactory::compute(void)
-//{
-//}

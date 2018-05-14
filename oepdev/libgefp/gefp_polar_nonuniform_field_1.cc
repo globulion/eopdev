@@ -12,6 +12,8 @@ oepdev::LinearNonUniformEFieldPolarGEFactory::LinearNonUniformEFieldPolarGEFacto
   nBlocks_ = 1;
   nParameters_ = nSites_ * 3;
   nParametersBlock_.push_back(nSites_ * 3);
+  // Allocate memory
+  allocate();
 }
 oepdev::LinearNonUniformEFieldPolarGEFactory::LinearNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
  : oepdev::LinearNonUniformEFieldPolarGEFactory(cphf, cphf->options())
@@ -23,10 +25,9 @@ oepdev::LinearNonUniformEFieldPolarGEFactory::~LinearNonUniformEFieldPolarGEFact
 // Implementations of abstract methods from base class
 void oepdev::LinearNonUniformEFieldPolarGEFactory::compute_gradient(int i, int j)
 {
+  // TODO
 }
 void oepdev::LinearNonUniformEFieldPolarGEFactory::compute_hessian(void)
 {
+  // TODO
 }
-//std::shared_ptr<oepdev::GenEffPar> oepdev::LinearNonUniformEFieldPolarGEFactory::compute(void)
-//{
-//}

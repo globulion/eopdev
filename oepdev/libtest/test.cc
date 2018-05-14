@@ -385,7 +385,10 @@ double oepdev::test::Test::test_dmatPolX(void)
   std::vector<std::shared_ptr<psi::Vector>> ind_dipoles;
   std::shared_ptr<psi::Vector> ind_dipole = std::make_shared<psi::Vector>("INDUCED DIPOLE REFERENCE",3);
 
-  for (int o=0; o<solver->nocc(); ++o) {
+  //int nsites = solver->nocc();
+  //int nsites = wfn_->molecule()->natom();
+  int nsites = 1;
+  for (int o=0; o<nsites; ++o) {
        ind_dipoles.push_back(std::make_shared<psi::Vector>(oepdev::string_sprintf("IndDip -%d-", o+1),3));
        ind_dipoles[o]->set(0, solver->polarizability(o)->get(0,0) * Fx
                              +solver->polarizability(o)->get(0,1) * Fy
