@@ -233,7 +233,48 @@ std::shared_ptr<psi::Vector> oepdev::GenEffParFactory::draw_random_point()
   point->set(2, z);
   return point;
 }
+// Static factory method
+std::shared_ptr<oepdev::GenEffParFactory> oepdev::GenEffParFactory::build(const std::string& type,
+                                                         std::shared_ptr<oepdev::CPHF> cphf, psi::Options& opt)
+{
+   if (type == "POLARIZATION") {
+       const int rank_field    = opt.get_int("DMATPOL_FIELD_RANK");
+       const int rank_gradient = opt.get_int("DMATPOL_GRADIENT_RANK");
+       const std::string mode  = opt.get_str("DMATPOL_TRAINING_MODE");
 
+       std::string notsupported = "Susceptibilities for this rank are not supported yet.";
+       if        (rank_field == 0) { 
+         throw psi::PSIEXCEPTION("Trivially vanishing susceptibility!");
+       } else if (rank_field == 1) { // Linear wrt electric field
+         if      (rank_gradient == 0) {
+           if      (mode == "EFIELD")  {return std::make_shared<oepdev::LinearUniformEFieldPolarGEFactory>(cphf, opt);}
+           else if (mode == "CHARGES") {return std::make_shared<oepdev::LinearNonUniformEFieldPolarGEFactory>(cphf, opt);}
+           else {throw psi::PSIEXCEPTION(notsupported);}
+         }
+         else if (rank_gradient == 1) {
+           if (mode == "EFIELD") throw psi::PSIEXCEPTION("Options: Gradient rank 1 and uniform EFIELD exclude each other.");
+           else if (mode == "CHARGES") return std::make_shared<oepdev::LinearGradientNonUniformEFieldPolarGEFactory>(cphf, opt);
+           else {throw psi::PSIEXCEPTION(notsupported);}
+         }
+         else {throw psi::PSIEXCEPTION(notsupported);}
+       } else if (rank_field == 2) {  // Quadratic wrt electric field
+         if      (rank_gradient == 0) {
+           if      (mode == "EFIELD")  {return std::make_shared<oepdev::QuadraticUniformEFieldPolarGEFactory>(cphf, opt);}
+           else if (mode == "CHARGES") {return std::make_shared<oepdev::QuadraticNonUniformEFieldPolarGEFactory>(cphf, opt);}
+         }
+         else if (rank_gradient == 1) {
+           if (mode == "EFIELD") throw psi::PSIEXCEPTION("Options: Gradient rank 1 and uniform EFIELD exclude each other.");
+           else if (mode == "CHARGES") return std::make_shared<oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory>(cphf, opt);
+           else {throw psi::PSIEXCEPTION(notsupported);} 
+         }
+         else {throw psi::PSIEXCEPTION(notsupported);}
+       } else {
+            throw psi::PSIEXCEPTION(notsupported);
+       }
+   } else {
+     throw psi::PSIEXCEPTION("Invalid factory type chosen!");
+   }
+}
 //-- PolarGEFactory --////////////////////////////////////////////////////////////////////////////////
 oepdev::PolarGEFactory::PolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt) :
  oepdev::GenEffParFactory(cphf->wfn(), opt),

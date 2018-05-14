@@ -325,8 +325,7 @@ double oepdev::test::Test::test_dmatPolX(void)
   solver->compute();
 
   psi::timer_on (" Test: Computation of Dmat Susc-X");
-  std::shared_ptr<oepdev::GeneralizedPolarGEFactory> factory = oepdev::GeneralizedPolarGEFactory::build(solver, options_, 
-                  options_.get_int("DMATPOL_FIELD_RANK"), options_.get_int("DMATPOL_GRADIENT_RANK"));
+  std::shared_ptr<oepdev::GenEffParFactory> factory = oepdev::GenEffParFactory::build("POLARIZATION", solver, options_);
   std::shared_ptr<oepdev::GenEffPar> par = factory->compute();
   psi::timer_off(" Test: Computation of Dmat Susc-X");
 

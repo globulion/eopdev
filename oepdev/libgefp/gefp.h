@@ -404,6 +404,29 @@ class GenEffFrag
 class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
 {
   public: 
+   /** \brief Build Density Matrix Susceptibility Generalized Factory.
+    *
+    * @param type          - type of factory
+    * @param cphf          - CPHF solver (to be moved to separate class branch)
+    * @param opt           - Psi4 options
+    *
+    * Available factory types:
+    *  - `POLARIZATION` - creates the polarization generalized effective fragment parameters' factory
+    * Factory subtype is specified in Psi4 options (input file).
+    *
+    * \note Useful options:
+    *  - `POLARIZATION` factory type:
+    *   - `DMATPOL_TRAINING_MODE` - training mode. Default: `EFIELD`
+    *   - `DMATPOL_FIELD_RANK`    - electric field rank. Default: `1`
+    *   - `DMATPOL_GRADIENT_RANK` - electric field gradient rank. Default: `0`
+    *   - `DMATPOL_NSAMPLES`      - number of random samples (field or test charges sets). Default: `30`
+    *   - `DMATPOL_FIELD_SCALE`   - electric field scale factor (relevant if training mode is `EFIELD`). Default: `0.01` [au]
+    *   - `DMATPOL_NTEST_CHARGE`  - number of test charges per sample (relevant if training mode is `CHARGES`). Default: `1`
+    *   - `DMATPOL_TEST_CHARGE`   - test charge value (relevant if training mode is `CHARGES`). Default: `0.001` [au]
+    */
+   static std::shared_ptr<GenEffParFactory> build(const std::string& type, 
+                                                  std::shared_ptr<CPHF> cphf, psi::Options& opt);
+
    /// Construct from wavefunction and Psi4 options
    GenEffParFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
 
@@ -547,17 +570,6 @@ class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_fro
 class GeneralizedPolarGEFactory : public PolarGEFactory
 {
   public:
-
-   /** \brief Build Density Matrix Susceptibility Generalized Factory.
-    *
-    * @param cphf          - CPHF solver
-    * @param opt           - Psi4 options
-    * @param rank_field    - rank of the electric field model
-    * @param rank_gradient - rank of the electric field gradient model
-    */
-   static std::shared_ptr<GeneralizedPolarGEFactory> build(std::shared_ptr<CPHF> cphf, psi::Options& opt, 
-                                                           int rank_field = 1, int rank_gradient = 0);
-
    /// Construct from CPHF object and Psi4 options
    GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
    /// Construct from CPHF object only (options will be read from CPHF object)

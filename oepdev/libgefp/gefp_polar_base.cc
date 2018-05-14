@@ -170,25 +170,3 @@ void oepdev::GeneralizedPolarGEFactory::compute_gradient(int i, int j)
 void oepdev::GeneralizedPolarGEFactory::compute_hessian(void)
 {
 }
-// Static factory method
-std::shared_ptr<oepdev::GeneralizedPolarGEFactory> oepdev::GeneralizedPolarGEFactory::build(
-                                                         std::shared_ptr<oepdev::CPHF> cphf, psi::Options& opt,
-                                                         int rank_field, int rank_gradient)
-{
-   // TODO: Add two more options (add mode of "EFIELD" or "CHARGES" training option)
-   // TODO: Move this factory method to the uppest base class (general factory for all interactions)
-   std::string notsupported = "Susceptibilities for this rank are not supported yet.";
-   if        (rank_field == 0) { 
-     throw psi::PSIEXCEPTION("Unphysical susceptibility!");
-   } else if (rank_field == 1) { // Linear wrt electric field
-     if      (rank_gradient == 0) {return std::make_shared<oepdev::LinearUniformEFieldPolarGEFactory>(cphf, opt);}
-     else if (rank_gradient == 1) {return std::make_shared<oepdev::LinearGradientNonUniformEFieldPolarGEFactory>(cphf, opt);}
-     else                         {throw psi::PSIEXCEPTION(notsupported);}
-   } else if (rank_field == 2) {  // Quadratic wrt electric field
-     if      (rank_gradient == 0) {return std::make_shared<oepdev::QuadraticUniformEFieldPolarGEFactory>(cphf, opt);}
-     else if (rank_gradient == 1) {return std::make_shared<oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory>(cphf, opt);}
-     else                         {throw psi::PSIEXCEPTION(notsupported);}
-   } else {
-        throw psi::PSIEXCEPTION(notsupported);
-   }
-}

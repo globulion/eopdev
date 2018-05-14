@@ -107,52 +107,89 @@ extern "C"
 int read_options(std::string name, Options& options)
 {
     if (name == "OEPDEV" || options.read_globals()) {
+
+        // ---> Psi4: General Options  <--- //
+
         /*- The amount of information printed to the output file -*/
         options.add_int    ("PRINT"                 , 1                          );
+
         /*- Basis set for OEP density fitting -*/                                   
         options.add_str    ("DF_BASIS_OEP"          , "sto-3g"                   );
-        /*- CPHF maximum iterations -*/                                             
-        options.add_int    ("CPHF_MAXITER"          , 50                         );
-        /*- CPHF convergence -*/                                                    
-        options.add_double ("CPHF_CONVER"           , 1.0E-8                     );
-        /*- Whether use DIIS for CPHF -*/                                           
-        options.add_bool   ("CPHF_DIIS"             , true                       );
-        /*- Size of DIIS subspace for CPHF -*/                                      
-        options.add_int    ("CPHF_DIIS_DIM"         , 3                          );
-        /*- Localizer for CPHF routine -*/                                          
-        options.add_bool   ("CPHF_LOCALIZE"         , true                       );
-        /*- Localizer for CPHF routine -*/                                          
-        options.add_str    ("CPHF_LOCALIZER"        , "BOYS"                     );
-        /*- ESP: number of points per atom -*/                                      
-        options.add_int    ("ESP_NPOINTS_PER_ATOM"  , 1500                       );
-        /*- ESP: padding of a sphere enclosing the molecule -*/                     
-        options.add_double ("ESP_PAD_SPHERE"        , 10.0                       );
+
+
+        // ---> OEPDEV: Main Routine  <--- //
+
         /*- Target: What to do? -*/
         options.add_str    ("OEPDEV_TARGET"         , "SOLVER"                   );
+
         /*- Whether localize MO's or not -*/
         options.add_bool   ("OEPDEV_LOCALIZE"       , false                      );
+
         /*- Whether enable trial tests in main.cc or not -*/
         options.add_bool   ("OEPDEV_ENABLE_TRIAL"   , false                      );
+
         /*- Which OEP to build? -*/
         options.add_str    ("OEPDEV_OEP_BUILD_TYPE" , "ELECTROSTATIC_ENERGY"     );
+
         /*- Which Solver to use? -*/
         options.add_str    ("OEPDEV_SOLVER_TYPE"    , "REPULSION_ENERGY"         );
+
         /*- OEPDev test to perform -*/
         options.add_str    ("OEPDEV_TEST_NAME"      , ""                         );
-        /*- Number of random samples (fields or sets of test charges) in DmatPol models parameterization -*/
-        options.add_int    ("DMATPOL_NSAMPLES"      , 30                         );
-        /*- Electric field scale factor in DmatPol models parameterization -*/
-        options.add_double ("DMATPOL_FIELD_SCALE"   , 0.01                       );
-        /*- Test Charge value in DmatPol models parameterization -*/
-        options.add_double ("DMATPOL_TEST_CHARGE"   , 0.001                      );
-        /*- Number of test charges per sample in DmatPol models parameterization -*/
-        options.add_int    ("DMATPOL_NTEST_CHARGE"   , 1                         );
+
+
+        // ---> CPHF Global Options  <--- //
+
+        /*- CPHF maximum iterations -*/                                             
+        options.add_int    ("CPHF_MAXITER"          , 50                         );
+
+        /*- CPHF convergence -*/                                                    
+        options.add_double ("CPHF_CONVER"           , 1.0E-8                     );
+
+        /*- Whether use DIIS for CPHF -*/                                           
+        options.add_bool   ("CPHF_DIIS"             , true                       );
+
+        /*- Size of DIIS subspace for CPHF -*/                                      
+        options.add_int    ("CPHF_DIIS_DIM"         , 3                          );
+
+        /*- Localizer for CPHF routine -*/                                          
+        options.add_bool   ("CPHF_LOCALIZE"         , true                       );
+
+        /*- Localizer for CPHF routine -*/                                          
+        options.add_str    ("CPHF_LOCALIZER"        , "BOYS"                     );
+
+
+        // ---> ESP Global Options  <--- //
+
+        /*- ESP: number of points per atom -*/                                      
+        options.add_int    ("ESP_NPOINTS_PER_ATOM"  , 1500                       );
+
+        /*- ESP: padding of a sphere enclosing the molecule -*/                     
+        options.add_double ("ESP_PAD_SPHERE"        , 10.0                       );
+
+
+        // ---> DmatPol Global Options  <--- //
+
         /*- DmatPol training mode -*/
         options.add_str    ("DMATPOL_TRAINING_MODE"  , "EFIELD"                  );
+
         /*- DmatPol field rank -*/
         options.add_int    ("DMATPOL_FIELD_RANK"     , 1                         );
+
         /*- DmatPol field gradient rank -*/
         options.add_int    ("DMATPOL_GRADIENT_RANK"  , 0                         );
+
+        /*- Number of random samples (fields or sets of test charges) in DmatPol models parameterization -*/
+        options.add_int    ("DMATPOL_NSAMPLES"      , 30                         );
+
+        /*- Electric field scale factor in DmatPol models parameterization -*/
+        options.add_double ("DMATPOL_FIELD_SCALE"   , 0.01                       );
+
+        /*- Number of test charges per sample in DmatPol models parameterization -*/
+        options.add_int    ("DMATPOL_NTEST_CHARGE"   , 1                         );
+
+        /*- Test Charge value in DmatPol models parameterization -*/
+        options.add_double ("DMATPOL_TEST_CHARGE"   , 0.001                      );
      }
 
     return true;
