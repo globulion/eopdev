@@ -76,10 +76,10 @@ set {
     # ==> DmatPol <== #
     dmatpol_nsamples              40
     dmatpol_field_scale           0.02
-    dmatpol_ntest_charge          1
-    dmatpol_test_charge           0.001
-    dmatpol_training_mode         EFIELD
-    dmatpol_field_rank            2
+    dmatpol_ntest_charge          10
+    dmatpol_test_charge           0.005
+    dmatpol_training_mode         CHARGES
+    dmatpol_field_rank            1
     dmatpol_gradient_rank         0
     # ==> General Psi4 Options <== #
     basis                         6-31G
