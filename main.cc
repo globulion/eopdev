@@ -149,6 +149,10 @@ int read_options(std::string name, Options& options)
         options.add_int    ("DMATPOL_NTEST_CHARGE"   , 1                         );
         /*- DmatPol training mode -*/
         options.add_str    ("DMATPOL_TRAINING_MODE"  , "EFIELD"                  );
+        /*- DmatPol field rank -*/
+        options.add_int    ("DMATPOL_FIELD_RANK"     , 1                         );
+        /*- DmatPol field gradient rank -*/
+        options.add_int    ("DMATPOL_GRADIENT_RANK"  , 0                         );
      }
 
     return true;

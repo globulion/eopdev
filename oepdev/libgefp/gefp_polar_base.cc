@@ -22,7 +22,9 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPH
    referenceDensityMatrixSet_({}),
    guessDensityMatrixSet_({}),
    electricFieldSet_({}),
-   electricFieldGradientSet_({})
+   electricFieldGradientSet_({}),
+   electricFieldSumSet_({}),
+   electricFieldGradientSumSet_({})
 {
    // Allocate memory for density matrix sets
    for (int n=0; n<nSamples_; ++n) {
@@ -46,9 +48,11 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::GeneralizedPolarGEFactory::compute(vo
 // protected methods
 void oepdev::GeneralizedPolarGEFactory::compute_parameters(void)
 {
-   compute_hessian();
+   if (hasDipoleDipoleHyperpolarizability_) compute_electric_field_sums();
+   if (hasQuadrupolePolarizability_)        compute_electric_field_gradient_sums();
+   compute_hessian(); Hessian_->print();
    Hessian_->invert();
-   Hessian_->set_name("\nInverse Hessian");
+   Hessian_->set_name("\nInverse Hessian"); Hessian_->print();
    for (int i=0; i<nbf_; ++i) {
         for (int j=0; j<nbf_; ++j) {
              compute_gradient(i, j);
@@ -80,9 +84,9 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
                 double val = Parameters_->get(3*n + z1, 0);
                 PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
 
-                int iz1 = nSites_ * 3 + 3 * n * z1; // Second block
+                int iz1 = nSites_ * 3 + 3 * n + z1; // Second block
                 for (int z2 = 0; z2<3; ++z2) {
-                     int iz2 = nSites_ * 3 + 3 * n * z2; // Second block
+                     int iz2 = nSites_ * 3 + 3 * n + z2; // Second block
 
                      val = Parameters_->get(iz1, 0) + Parameters_->get(iz2, 0);
                      PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val);
@@ -95,9 +99,9 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
                 double val = Parameters_->get(3*n + z1, 0);
                 PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
 
-                int iz1 = nSites_ * 3 + 3 * n * z1; // Second block
+                int iz1 = nSites_ * 3 + 3 * n + z1; // Second block
                 for (int z2 = 0; z2<3; ++z2) {
-                     int iz2 = nSites_ * 3 + 3 * n * z2; // Second block
+                     int iz2 = nSites_ * 3 + 3 * n + z2; // Second block
 
                      val = Parameters_->get(iz1, 0) + Parameters_->get(iz2, 0);
                      PolarizationSusceptibilities_->quadrupole_polarizability(n, z1*3+z2)->set(i, j, val);
@@ -110,11 +114,11 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
                 double val = Parameters_->get(3*n + z1, 0);
                 PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
 
-                int i1z1 = nSites_ * 3 + 3 * n * z1; // Second block
-                int i2z1 = nSites_ * 6 + 3 * n * z1; // Third block
+                int i1z1 = nSites_ * 3 + 3 * n + z1; // Second block
+                int i2z1 = nSites_ * 6 + 3 * n + z1; // Third block
                 for (int z2 = 0; z2<3; ++z2) {
-                     int i1z2 = nSites_ * 3 + 3 * n * z2; // Second block
-                     int i2z2 = nSites_ * 6 + 3 * n * z2; // Third block
+                     int i1z2 = nSites_ * 3 + 3 * n + z2; // Second block
+                     int i2z2 = nSites_ * 6 + 3 * n + z2; // Third block
 
                      val = Parameters_->get(i1z1, 0) + Parameters_->get(i1z2, 0);
                      PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val);
@@ -142,6 +146,19 @@ void oepdev::GeneralizedPolarGEFactory::allocate(void)
   if (hasDipolePolarizability_           ) PolarizationSusceptibilities_->allocate(1, 0, nSites_, nbf_);
   if (hasDipoleDipoleHyperpolarizability_) PolarizationSusceptibilities_->allocate(2, 0, nSites_, nbf_);
   if (hasQuadrupolePolarizability_       ) PolarizationSusceptibilities_->allocate(0, 1, nSites_, nbf_);
+}
+void oepdev::GeneralizedPolarGEFactory::compute_electric_field_sums(void) {
+  for (int n=0; n<nSamples_; ++n) {
+     double sum = 0.0;
+     for (int i=0; i<nSites_; ++i) {
+          std::shared_ptr<psi::Vector> field = electricFieldSet_[n][i];
+          sum += field->get(0) + field->get(1) + field->get(2);
+     }
+     electricFieldSumSet_.push_back(sum);
+  }
+}
+void oepdev::GeneralizedPolarGEFactory::compute_electric_field_gradient_sums(void) {
+  // TODO
 }
 // abstract methods
 void oepdev::GeneralizedPolarGEFactory::compute_samples(void)

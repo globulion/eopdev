@@ -28,7 +28,9 @@ class GenEffPar
 {
   public:
    /// Create with name of this parameter type
-   GenEffPar(std::string name) : name_(name) {};
+   GenEffPar(std::string name) : name_(name), hasDensityMatrixDipolePolarizability_(false), 
+                                              hasDensityMatrixDipoleDipoleHyperpolarizability_(false),
+                                              hasDensityMatrixQuadrupolePolarizability_(false) {};
    /// Destruct
   ~GenEffPar() {};
 
@@ -65,13 +67,13 @@ class GenEffPar
    }
 
    /// Set The Density Matrix Dipole Polarizability
-   void set_dipole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixDipolePolarizability_=susc;}
+   void set_dipole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixDipolePolarizability_=susc;hasDensityMatrixDipolePolarizability_=true;}
 
    /// Set The Density Matrix Dipole-Dipole Hyperpolarizability
-   void set_dipole_dipole_hyperpolarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixDipoleDipoleHyperpolarizability_=susc;}
+   void set_dipole_dipole_hyperpolarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixDipoleDipoleHyperpolarizability_=susc;hasDensityMatrixDipoleDipoleHyperpolarizability_=true;}
 
    /// Set The Density Matrix Quadrupole Polarizability
-   void set_quadrupole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixQuadrupolePolarizability_=susc;}
+   void set_quadrupole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixQuadrupolePolarizability_=susc;hasDensityMatrixQuadrupolePolarizability_=true;}
 
    // ---> Allocators <--- //
 
@@ -114,6 +116,11 @@ class GenEffPar
    /// Allocate The Density Matrix Quadrupole Polarizability
    void allocate_quadrupole_polarizability(int nsites, int nbf);
 
+
+   // ---> Descriptors <--- //
+   bool hasDensityMatrixDipolePolarizability() const {return hasDensityMatrixDipolePolarizability_;}
+   bool hasDensityMatrixDipoleDipoleHyperpolarizability () const {return hasDensityMatrixDipoleDipoleHyperpolarizability_;}
+   bool hasDensityMatrixQuadrupolePolarizability() const {return hasDensityMatrixQuadrupolePolarizability_;}
 
    // ---> Accessors <--- //
 
@@ -237,6 +244,23 @@ class GenEffPar
    /// Grab the density matrix quadrupole polarizability tensor's *x*-th component of the *i*-th distributed site
    std::shared_ptr<psi::Matrix> quadrupole_polarizability(int i, int x) const {return densityMatrixQuadrupolePolarizability_[i][x];}
 
+   // ---> Computers <--- //
+
+
+   /** \brief Compute the density matrix due to the uniform electric field perturbation.
+   *
+   *  @param field - the uniform electric field vector (A.U.)
+   */
+   std::shared_ptr<psi::Matrix> compute_density_matrix(std::shared_ptr<psi::Vector> field);
+   /** \brief Compute the density matrix due to the uniform electric field perturbation.
+   *
+   *  @param fx - *x*-th Cartesian component of the uniform electric field vector (A.U.)
+   *  @param fy - *y*-th Cartesian component of the uniform electric field vector (A.U.)
+   *  @param fz - *z*-th Cartesian component of the uniform electric field vector (A.U.)
+   */
+   std::shared_ptr<psi::Matrix> compute_density_matrix(double fx, double fy, double fz);
+
+
 
 
   protected:
@@ -251,6 +275,11 @@ class GenEffPar
 
    /// The Density Matrix Quadrupole Polarizability
    std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixQuadrupolePolarizability_;
+
+   /// 
+   bool hasDensityMatrixDipolePolarizability_;
+   bool hasDensityMatrixDipoleDipoleHyperpolarizability_;
+   bool hasDensityMatrixQuadrupolePolarizability_;
 };
 
 /** \brief Generalized Effective Fragment. Container Class.
@@ -591,13 +620,6 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    bool hasQuadrupolePolarizability_;
 
 
-   // --> Statistical descriptors <-- //
-
-   /// Initial summaric Z value
-   double Zinit_;
-   /// Final summaric Z value
-   double Z_;
-
    // --> Sets of statistical data <-- //
 
    /// Reference density matrix set
@@ -608,6 +630,23 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    std::vector<std::vector<std::shared_ptr<Vector>>> electricFieldSet_;
    /// Electric field gradient set
    std::vector<std::vector<std::shared_ptr<Matrix>>> electricFieldGradientSet_;
+   /// Electric field sum set
+   std::vector<double> electricFieldSumSet_;
+   /// Electric field gradient sum set
+   std::vector<std::shared_ptr<Vector>> electricFieldGradientSumSet_;
+
+   /// Compute electric field sum set
+   void compute_electric_field_sums(void);
+   /// Compute electric field gradient sum set
+   void compute_electric_field_gradient_sums(void);
+
+
+   // --> Statistical descriptors <-- //
+
+   /// Initial summaric Z value
+   double Zinit_;
+   /// Final summaric Z value
+   double Z_;
 
 
    // --> Computers <-- //

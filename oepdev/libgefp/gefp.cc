@@ -68,6 +68,47 @@ void oepdev::GenEffPar::allocate_quadrupole_polarizability(int nsites, int nbf)
    }
    set_quadrupole_polarizability(susc);
 }
+std::shared_ptr<psi::Matrix> oepdev::GenEffPar::compute_density_matrix(std::shared_ptr<psi::Vector> field)
+{
+   return oepdev::GenEffPar::compute_density_matrix(field->get(0), field->get(1), field->get(2));
+}
+std::shared_ptr<psi::Matrix> oepdev::GenEffPar::compute_density_matrix(double fx, double fy, double fz)
+{
+   if (!hasDensityMatrixDipolePolarizability_) throw psi::PSIEXCEPTION("Density Matrix Dipole Polarizability is not set!");
+   int nbf = densityMatrixDipolePolarizability_[0][0]->nrow();
+   int nsites = densityMatrixDipolePolarizability_.size();
+
+   std::shared_ptr<psi::Matrix> D = std::make_shared<psi::Matrix>("Density Matrix Change", nbf, nbf);
+   for (int n=0; n<nsites; ++n) {
+        D->axpy(fx, densityMatrixDipolePolarizability_[n][0]);
+        D->axpy(fy, densityMatrixDipolePolarizability_[n][1]);
+        D->axpy(fz, densityMatrixDipolePolarizability_[n][2]);
+        //cout << densityMatrixDipolePolarizability_[n][0]->get(0,0) << endl;
+        //cout << densityMatrixDipolePolarizability_[n][1]->get(0,0) << endl;
+        //cout << densityMatrixDipolePolarizability_[n][2]->get(0,0) << endl;
+        if (hasDensityMatrixDipoleDipoleHyperpolarizability_) {
+            //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][0]->get(0,0) << endl;
+            //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][4]->get(0,0) << endl;
+            //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][8]->get(0,0) << endl;
+            //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][1]->get(0,0) << endl;
+            //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][3]->get(0,0) << endl;
+            //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][2]->get(0,0) << endl;
+            //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][6]->get(0,0) << endl;
+            //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][5]->get(0,0) << endl;
+            //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][7]->get(0,0) << endl;
+            D->axpy(fx*fx, densityMatrixDipoleDipoleHyperpolarizability_[n][0]);
+            D->axpy(fx*fy, densityMatrixDipoleDipoleHyperpolarizability_[n][1]);
+            D->axpy(fx*fz, densityMatrixDipoleDipoleHyperpolarizability_[n][2]);
+            D->axpy(fy*fx, densityMatrixDipoleDipoleHyperpolarizability_[n][3]);
+            D->axpy(fy*fy, densityMatrixDipoleDipoleHyperpolarizability_[n][4]);
+            D->axpy(fy*fz, densityMatrixDipoleDipoleHyperpolarizability_[n][5]);
+            D->axpy(fz*fx, densityMatrixDipoleDipoleHyperpolarizability_[n][6]);
+            D->axpy(fz*fy, densityMatrixDipoleDipoleHyperpolarizability_[n][7]);
+            D->axpy(fz*fz, densityMatrixDipoleDipoleHyperpolarizability_[n][8]);
+        }
+   }
+   return D;
+}
 //-- GenEffPar --///////////////////////////////////////////////////////////////////////////////////////
 oepdev::GenEffFrag::GenEffFrag(std::string name) : 
   name_(name),
