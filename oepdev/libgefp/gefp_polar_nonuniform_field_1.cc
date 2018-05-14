@@ -9,9 +9,7 @@ oepdev::LinearNonUniformEFieldPolarGEFactory::LinearNonUniformEFieldPolarGEFacto
  : oepdev::NonUniformEFieldPolarGEFactory(cphf, opt)
 {
   // One block: Electric field parameters
-  nBlocks_ = 1;
-  nParameters_ = nSites_ * 3;
-  nParametersBlock_.push_back(nSites_ * 3);
+  hasDipolePolarizability_ = true;
   // Allocate memory
   allocate();
 }

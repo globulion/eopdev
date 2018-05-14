@@ -8,11 +8,8 @@ using namespace std;
 oepdev::LinearUniformEFieldPolarGEFactory::LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt)
  : oepdev::UniformEFieldPolarGEFactory(cphf, opt)
 {
-  hasDipolePolarizability_ = true;
   // One block: Electric field parameters
-  nBlocks_ = 1;
-  nParameters_ = 3;
-  nParametersBlock_.push_back(3);
+  hasDipolePolarizability_ = true;
   // Allocate memory
   allocate();
 }

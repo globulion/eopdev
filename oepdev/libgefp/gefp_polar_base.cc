@@ -82,7 +82,7 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
 
                 int iz1 = nSites_ * 3 + 3 * n * z1; // Second block
                 for (int z2 = 0; z2<3; ++z2) {
-                     int iz2 = nSites_ * 6 + 3 * n * z2; // Third block
+                     int iz2 = nSites_ * 3 + 3 * n * z2; // Second block
 
                      val = Parameters_->get(iz1, 0) + Parameters_->get(iz2, 0);
                      PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val);
@@ -97,7 +97,7 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
 
                 int iz1 = nSites_ * 3 + 3 * n * z1; // Second block
                 for (int z2 = 0; z2<3; ++z2) {
-                     int iz2 = nSites_ * 6 + 3 * n * z2; // Third block
+                     int iz2 = nSites_ * 3 + 3 * n * z2; // Second block
 
                      val = Parameters_->get(iz1, 0) + Parameters_->get(iz2, 0);
                      PolarizationSusceptibilities_->quadrupole_polarizability(n, z1*3+z2)->set(i, j, val);
@@ -111,10 +111,10 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
                 PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
 
                 int i1z1 = nSites_ * 3 + 3 * n * z1; // Second block
-                int i2z1 = nSites_ * 9 + 3 * n * z1; // Fourth block
+                int i2z1 = nSites_ * 6 + 3 * n * z1; // Third block
                 for (int z2 = 0; z2<3; ++z2) {
-                     int i1z2 = nSites_ * 6 + 3 * n * z2; // Third block
-                     int i2z2 = nSites_ *12 + 3 * n * z2; // Fifth block
+                     int i1z2 = nSites_ * 3 + 3 * n * z2; // Second block
+                     int i2z2 = nSites_ * 6 + 3 * n * z2; // Third block
 
                      val = Parameters_->get(i1z1, 0) + Parameters_->get(i1z2, 0);
                      PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val);
@@ -130,6 +130,10 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
 }
 void oepdev::GeneralizedPolarGEFactory::allocate(void)
 {
+  // Blocks
+  nBlocks_  = (int)hasDipolePolarizability_ + (int)hasDipoleDipoleHyperpolarizability_ + (int)hasQuadrupolePolarizability_;
+  nParameters_ = nBlocks_*(nSites_ * 3);
+  for (int z=0; z<nBlocks_; ++z) nParametersBlock_.push_back(nSites_ * 3);
   // Parameter spaces
   Gradient_   = std::make_shared<psi::Matrix>("Gradient"  , nParameters_, 1);
   Hessian_    = std::make_shared<psi::Matrix>("Hessian"   , nParameters_, nParameters_);

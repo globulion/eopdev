@@ -8,10 +8,9 @@ using namespace std;
 oepdev::QuadraticUniformEFieldPolarGEFactory::QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt)
  : oepdev::UniformEFieldPolarGEFactory(cphf, opt)
 {
-  // Three blocks: Electric field parameters (1 block), Squared electric field parameters (2 blocks)
-  nBlocks_ = 3;
-  nParameters_ = 9;
-  for (int z=0; z<nBlocks_; ++z) nParametersBlock_.push_back(3);
+  // Two blocks: Electric field parameters (1 block), Squared electric field parameters (1 block)
+  hasDipolePolarizability_ = true;
+  hasDipoleDipoleHyperpolarizability_ = true;
   // Allocate memory
   allocate();
 }

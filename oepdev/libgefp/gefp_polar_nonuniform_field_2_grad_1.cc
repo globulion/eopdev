@@ -9,9 +9,9 @@ oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::QuadraticGradientNonUni
  : oepdev::NonUniformEFieldPolarGEFactory(cphf, opt)
 {
   // Five blocks: Electric field parameters (1 block), Squared electric field parameters (2 blocks), Electric field gradient parameters (2 blocks)
-  nBlocks_ = 5;
-  nParameters_ = 5*(nSites_ * 3);
-  for (int z=0; z<nBlocks_; ++z) nParametersBlock_.push_back(nSites_ * 3);
+  hasDipolePolarizability_ = true;
+  hasDipoleDipoleHyperpolarizability_ = true;
+  hasQuadrupolePolarizability_ = true;
   // Allocate memory
   allocate();
 }
