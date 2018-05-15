@@ -75,18 +75,18 @@ set {
     cphf_localizer                PIPEK_MEZEY
     # ==> DmatPol <== #
     dmatpol_nsamples              40
-    dmatpol_field_scale           0.02
-    dmatpol_ntest_charge          10
-    dmatpol_test_charge           0.005
+    dmatpol_field_scale           0.0005
+    dmatpol_ntest_charge          1
+    dmatpol_test_charge           0.5
     dmatpol_training_mode         CHARGES
-    dmatpol_field_rank            1
+    dmatpol_field_rank            2
     dmatpol_gradient_rank         0
     # ==> General Psi4 Options <== #
     basis                         6-31G
     scf_type                      direct 
     guess                         core
-    e_convergence                 1e-8
-    d_convergence                 1e-9
+    e_convergence                 1e-10
+    d_convergence                 1e-11
     print                         1
     puream                        False
     save_jk                       False
@@ -94,4 +94,4 @@ set {
 
 
 # run oepdev
-energy('oepdev', molecule=h2o)
+energy('oepdev', molecule=h2)

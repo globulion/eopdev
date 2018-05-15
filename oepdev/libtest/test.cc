@@ -336,7 +336,7 @@ double oepdev::test::Test::test_dmatPolX(void)
   double Fx =-0.003;
   double Fy = 0.002;
   double Fz =-0.001;
-  Fx = -0.008,  Fy=       0.007,Fz=        -0.009;
+  Fx = -0.0050,  Fy=       0.000,Fz=        -0.000;
 
   std::shared_ptr<psi::SuperFunctional> func = oepdev::create_superfunctional("HF", options_);
   std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, func, options_, wfn_->psio());
