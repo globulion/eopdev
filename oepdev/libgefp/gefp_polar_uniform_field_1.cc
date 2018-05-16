@@ -27,7 +27,7 @@ void oepdev::LinearUniformEFieldPolarGEFactory::compute_gradient(int i, int j)
    double g_y = 0.0;
    double g_z = 0.0;
    for (int n=0; n<nSamples_; ++n) {
-        double dij = guessDensityMatrixSet_[n]->get(i, j) - referenceDensityMatrixSet_[n]->get(i, j);
+        double dij = -referenceDensityMatrixSet_[n]->get(i, j);
         g_x += dij * electricFieldSet_[n][0]->get(0);
         g_y += dij * electricFieldSet_[n][0]->get(1);
         g_z += dij * electricFieldSet_[n][0]->get(2);

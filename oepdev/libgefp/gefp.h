@@ -644,8 +644,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
 
    /// Reference density matrix set
    std::vector<std::shared_ptr<psi::Matrix>> referenceDensityMatrixSet_;
-   /// Guess density matrix set
-   std::vector<std::shared_ptr<psi::Matrix>> guessDensityMatrixSet_;
+   /// Model density matrix set
+   std::vector<std::shared_ptr<psi::Matrix>> modelDensityMatrixSet_;
    /// Electric field set
    std::vector<std::vector<std::shared_ptr<Vector>>> electricFieldSet_;
    /// Electric field gradient set
@@ -661,6 +661,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    void compute_electric_field_gradient_sums(void);
    /// Level shifters for Hessian blocks
    const double mField_;
+   /// Run the statistical evaluation of results
+   void compute_statistics(void);
 
 
    // --> Statistical descriptors <-- //

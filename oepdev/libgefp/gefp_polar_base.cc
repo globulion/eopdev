@@ -21,7 +21,7 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPH
    Zinit_(-1.0),
    Z_(-1.0),
    referenceDensityMatrixSet_({}),
-   guessDensityMatrixSet_({}),
+   modelDensityMatrixSet_({}),
    electricFieldSet_({}),
    electricFieldGradientSet_({}),
    electricFieldSumSet_({}),
@@ -30,7 +30,7 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPH
    // Allocate memory for density matrix sets
    for (int n=0; n<nSamples_; ++n) {
         referenceDensityMatrixSet_.push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
-        guessDensityMatrixSet_    .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
+        modelDensityMatrixSet_    .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
    }
 }
 oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf)
@@ -44,6 +44,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::GeneralizedPolarGEFactory::compute(vo
 {
    compute_samples();
    compute_parameters();
+   compute_statistics();
    return PolarizationSusceptibilities_; 
 }
 // protected methods
@@ -176,6 +177,13 @@ void oepdev::GeneralizedPolarGEFactory::compute_electric_field_sums(void) {
      }
      electricFieldSumSet_.push_back(sum);
   }
+}
+void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
+   // TODO
+   cout << " Statistical evaluation ...\n";
+   for (int n=0; n<nSamples_; ++n) {
+        referenceDensityMatrixSet_[n]->partial_cholesky_factorize();
+   }
 }
 void oepdev::GeneralizedPolarGEFactory::compute_electric_field_gradient_sums(void) {
   // TODO
