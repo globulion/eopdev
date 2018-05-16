@@ -76,13 +76,17 @@ set {
     # ==> DmatPol <== #
     dmatpol_nsamples              40
     dmatpol_field_scale           0.0005
-    dmatpol_ntest_charge          1
-    dmatpol_test_charge           0.5
+    dmatpol_ntest_charge          10
+    dmatpol_test_charge           1.0
     dmatpol_training_mode         CHARGES
-    dmatpol_field_rank            2
+    dmatpol_field_rank            1
     dmatpol_gradient_rank         0
+    dmatpol_scale_1               2.0
+    dmatpol_test_field_x          0.002
+    dmatpol_test_field_y          0.010
+    dmatpol_test_field_z          0.010
     # ==> General Psi4 Options <== #
-    basis                         6-31G
+    basis                         sto-3g
     scf_type                      direct 
     guess                         core
     e_convergence                 1e-10
@@ -94,4 +98,4 @@ set {
 
 
 # run oepdev
-energy('oepdev', molecule=h2)
+energy('oepdev', molecule=h2o)

@@ -190,6 +190,15 @@ int read_options(std::string name, Options& options)
 
         /*- Test Charge value in DmatPol models parameterization -*/
         options.add_double ("DMATPOL_TEST_CHARGE"   , 0.001                      );
+
+        /*- Level shifter for DMATPOL -*/
+        options.add_double ("DMATPOL_SCALE_1"       , 1.0                        );
+
+        /*- Test electric field for DMATPOL -*/
+        options.add_double ("DMATPOL_TEST_FIELD_X"  , 0.000                      );
+        options.add_double ("DMATPOL_TEST_FIELD_Y"  , 0.000                      );
+        options.add_double ("DMATPOL_TEST_FIELD_Z"  , 0.008                      );
+
      }
 
     return true;

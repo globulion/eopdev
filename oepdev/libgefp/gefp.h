@@ -423,6 +423,9 @@ class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
     *   - `DMATPOL_FIELD_SCALE`   - electric field scale factor (relevant if training mode is `EFIELD`). Default: `0.01` [au]
     *   - `DMATPOL_NTEST_CHARGE`  - number of test charges per sample (relevant if training mode is `CHARGES`). Default: `1`
     *   - `DMATPOL_TEST_CHARGE`   - test charge value (relevant if training mode is `CHARGES`). Default: `0.001` [au]
+    *   - `DMATPOL_TEST_FIELD_X`  - test electric field in X direction. Default: `0.000` [au]
+    *   - `DMATPOL_TEST_FIELD_Y`  - test electric field in Y direction. Default: `0.000` [au]
+    *   - `DMATPOL_TEST_FIELD_Z`  - test electric field in Z direction. Default: `0.008` [au]
     */
    static std::shared_ptr<GenEffParFactory> build(const std::string& type, 
                                                   std::shared_ptr<CPHF> cphf, psi::Options& opt);
@@ -504,6 +507,9 @@ class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_fro
 
    /// Randomly draw electric field value
    std::shared_ptr<psi::Vector> draw_field();
+
+   /// Randomly draw charge value
+   double draw_charge();
 
    /// Solve SCF equations to find perturbed one-particle density matrix due to uniform electric field
    std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& field);
@@ -620,6 +626,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    std::shared_ptr<oepdev::GenEffPar> PolarizationSusceptibilities_;
    /// Allocate memory
    void allocate(void);
+   /// Invert Hessian (do also the identity test)
+   void invert_hessian(void);
 
 
    // --> Qualifiers <-- //
@@ -643,7 +651,7 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    /// Electric field gradient set
    std::vector<std::vector<std::shared_ptr<Matrix>>> electricFieldGradientSet_;
    /// Electric field sum set
-   std::vector<double> electricFieldSumSet_;
+   std::vector<std::vector<double>> electricFieldSumSet_;
    /// Electric field gradient sum set
    std::vector<std::shared_ptr<Vector>> electricFieldGradientSumSet_;
 
@@ -651,6 +659,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    void compute_electric_field_sums(void);
    /// Compute electric field gradient sum set
    void compute_electric_field_gradient_sums(void);
+   /// Level shifters for Hessian blocks
+   const double mField_;
 
 
    // --> Statistical descriptors <-- //

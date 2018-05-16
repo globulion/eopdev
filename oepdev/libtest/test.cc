@@ -333,10 +333,9 @@ double oepdev::test::Test::test_dmatPolX(void)
   double r_sum = 0.0;
 
   // Compute SCF in the external field
-  double Fx =-0.003;
-  double Fy = 0.002;
-  double Fz =-0.001;
-  Fx = -0.0050,  Fy=       0.000,Fz=        -0.000;
+  double Fx = options_.get_double("DMATPOL_TEST_FIELD_X");
+  double Fy = options_.get_double("DMATPOL_TEST_FIELD_Y");
+  double Fz = options_.get_double("DMATPOL_TEST_FIELD_Z");
 
   std::shared_ptr<psi::SuperFunctional> func = oepdev::create_superfunctional("HF", options_);
   std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, func, options_, wfn_->psio());

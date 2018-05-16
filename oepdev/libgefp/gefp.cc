@@ -446,6 +446,12 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::PolarGEFactory::compute()
   // Return
   return par;
 }
+double oepdev::PolarGEFactory::draw_charge()
+{
+  const double scale = options_.get_double("DMATPOL_TEST_CHARGE");
+  double q = random_double() * scale;
+  return q;
+}
 std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::draw_field()
 {
   std::shared_ptr<psi::Vector> field = std::make_shared<psi::Vector>("", 3);

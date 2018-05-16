@@ -17,6 +17,7 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPH
    hasDipoleDipoleHyperpolarizability_(false),
    hasQuadrupolePolarizability_(false),
    nSamples_(options_.get_int("DMATPOL_NSAMPLES")),
+   mField_(options_.get_double("DMATPOL_SCALE_1")),
    Zinit_(-1.0),
    Z_(-1.0),
    referenceDensityMatrixSet_({}),
@@ -46,13 +47,32 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::GeneralizedPolarGEFactory::compute(vo
    return PolarizationSusceptibilities_; 
 }
 // protected methods
+void oepdev::GeneralizedPolarGEFactory::invert_hessian(void)
+{
+   std::shared_ptr<psi::Matrix> Htemp= std::make_shared<psi::Matrix>(Hessian_);
+   Hessian_->invert();
+   Hessian_->set_name("\nInverse Hessian");
+   Hessian_->print();
+   // Perform the identity test
+   std::shared_ptr<psi::Matrix> I = psi::Matrix::doublet(Hessian_, Htemp, false, false);
+   double s = 0.0;
+   for (int a=0; a<nParameters_; ++a) {
+        for (int b=0; b<nParameters_; ++b) {
+             s += sqrt( I->get(a,b) * I->get(a,b) );
+        }
+   }
+   s /= (double)(nParameters_);
+   cout << " Hessian Matrix Identity Test = " << s << endl;
+   if (std::abs(s-1.0)>0.000001) cout << " ----> Warning!! Hessian inverse has numerical error! <----\n";
+   else {cout << " Hessian Matrix Identity Test: Passed (threshold: 0.000001) ! :)\n";}
+}
 void oepdev::GeneralizedPolarGEFactory::compute_parameters(void)
 {
    if (hasDipoleDipoleHyperpolarizability_) compute_electric_field_sums();
    if (hasQuadrupolePolarizability_)        compute_electric_field_gradient_sums();
-   compute_hessian(); Hessian_->print();
-   Hessian_->invert();
-   Hessian_->set_name("\nInverse Hessian"); Hessian_->print();
+   compute_hessian(); 
+   Hessian_->print();
+   invert_hessian();
    for (int i=0; i<nbf_; ++i) {
         for (int j=0; j<nbf_; ++j) {
              compute_gradient(i, j);
@@ -89,7 +109,7 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
                      int iz2 = nSites_ * 3 + 3 * n + z2; // Second block
 
                      val = Parameters_->get(iz1, 0) + Parameters_->get(iz2, 0);
-                     PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val);
+                     PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val*mField_);
                 }
            }
       }
@@ -121,7 +141,7 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
                      int i2z2 = nSites_ * 6 + 3 * n + z2; // Third block
 
                      val = Parameters_->get(i1z1, 0) + Parameters_->get(i1z2, 0);
-                     PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val);
+                     PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val*mField_);
                      val = Parameters_->get(i2z1, 0) + Parameters_->get(i2z2, 0);
                      PolarizationSusceptibilities_->quadrupole_polarizability(n, z1*3+z2)->set(i, j, val);
                 }
@@ -149,10 +169,10 @@ void oepdev::GeneralizedPolarGEFactory::allocate(void)
 }
 void oepdev::GeneralizedPolarGEFactory::compute_electric_field_sums(void) {
   for (int n=0; n<nSamples_; ++n) {
-     double sum = 0.0;
+     std::vector<double> sum;
      for (int i=0; i<nSites_; ++i) {
           std::shared_ptr<psi::Vector> field = electricFieldSet_[n][i];
-          sum += field->get(0) + field->get(1) + field->get(2);
+          sum.push_back(field->get(0) + field->get(1) + field->get(2));
      }
      electricFieldSumSet_.push_back(sum);
   }

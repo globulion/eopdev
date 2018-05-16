@@ -34,7 +34,7 @@ void oepdev::QuadraticNonUniformEFieldPolarGEFactory::compute_gradient(int i, in
         for (int n=0; n<nSamples_; ++n) {                                                                  
              double dij = -referenceDensityMatrixSet_[n]->get(i, j);
              double fz = electricFieldSet_[n][s]->get(z);
-             double fs = electricFieldSumSet_[n] * 2.0;
+             double fs = electricFieldSumSet_[n][s] * 2.0 * mField_;
              g1 += dij * fz;
              g2 += dij * fz * fs;
         }
@@ -60,10 +60,12 @@ void oepdev::QuadraticNonUniformEFieldPolarGEFactory::compute_hessian(void)
              for (int n=0; n<nSamples_; ++n) {
                   double fz1 = electricFieldSet_[n][s1]->get(z1);
                   double fz2 = electricFieldSet_[n][s2]->get(z2);
-                  double fs  = electricFieldSumSet_[n] * 2.0;
+                  double fs1 = electricFieldSumSet_[n][s1] * 2.0 * mField_;
+                  double fs2 = electricFieldSumSet_[n][s2] * 2.0 * mField_;
                   v_AA += fz1 * fz2;
-                  v_AB += fz1 * fz2 * fs;
-                  v_BB += fz1 * fz2 * fs * fs;
+                  v_AB += fz1 * fz2 * fs2;
+                  //v_BA += fz1 * fz2 * fs1 
+                  v_BB += fz1 * fz2 * fs1 * fs2;
              }
              H[s1z1  ][s2z2  ] = v_AA;
              H[s1z1+d][s2z2+d] = v_BB;

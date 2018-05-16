@@ -34,8 +34,8 @@ void oepdev::QuadraticUniformEFieldPolarGEFactory::compute_gradient(int i, int j
         double fx = electricFieldSet_[n][0]->get(0);
         double fy = electricFieldSet_[n][0]->get(1);
         double fz = electricFieldSet_[n][0]->get(2);
-        double fs = electricFieldSumSet_[n] * 2.0;
-        double dij = guessDensityMatrixSet_[n]->get(i, j) - referenceDensityMatrixSet_[n]->get(i, j);
+        double fs = electricFieldSumSet_[n][0] * 2.0 * mField_;
+        double dij=-referenceDensityMatrixSet_[n]->get(i, j);
         g1_x += dij * fx;
         g1_y += dij * fy;
         g1_z += dij * fz;
@@ -62,7 +62,7 @@ void oepdev::QuadraticUniformEFieldPolarGEFactory::compute_hessian(void)
              for (int n=0; n<nSamples_; ++n) {
                   double fz1 = electricFieldSet_[n][0]->get(z1);
                   double fz2 = electricFieldSet_[n][0]->get(z2);
-                  double fs  = electricFieldSumSet_[n] * 2.0;
+                  double fs  = electricFieldSumSet_[n][0] * 2.0 * mField_;
                   v_AA += fz1 * fz2;
                   v_AB += fz1 * fz2 * fs;
                   v_BB += fz1 * fz2 * fs * fs;

@@ -22,7 +22,6 @@ oepdev::NonUniformEFieldPolarGEFactory::~NonUniformEFieldPolarGEFactory()
 void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
 {
    int nq   = options_.get_double("DMATPOL_NTEST_CHARGE");
-   double q = options_.get_double("DMATPOL_TEST_CHARGE");
 
    for (int n=0; n<nSamples_; ++n) {
         std::shared_ptr<psi::Matrix> charges = std::make_shared<psi::Matrix>("Q", nq, 4);
@@ -31,7 +30,7 @@ void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
              charges->set(i, 0, point->get(0));
              charges->set(i, 1, point->get(1));
              charges->set(i, 2, point->get(2));
-             charges->set(i, 3, q);
+             charges->set(i, 3, draw_charge());
         }
         std::vector<std::shared_ptr<psi::Vector>> fields_n;
         for (int o=0; o<nSites_; ++o) {
