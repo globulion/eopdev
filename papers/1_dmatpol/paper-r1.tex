@@ -1,0 +1,873 @@
+%% ****** Start of file aiptemplate.tex ****** %
+%%
+%%   This file is part of the files in the distribution of AIP substyles for REVTeX4.
+%%   Version 4.1 of 9 October 2009.
+%%
+%
+% This is a template for producing documents for use with 
+% the REVTEX 4.1 document class and the AIP substyles.
+% 
+% Copy this file to another name and then work on that file.
+% That way, you always have this original template file to use.
+
+\documentclass[aip,graphicx]{revtex4-1}
+%\documentclass[aip,reprint]{revtex4-1}
+
+% hyphenation
+\usepackage{hyphenat}
+%\usepackage{lipsum}
+
+% tables
+%\usepackage{dcolumn}
+%\usepackage{multirow}
+%\usepackage{hhline}
+%\usepackage{booktabs}
+%\usepackage{longtable}
+
+% mathematics
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsbsy}
+\usepackage{bm}
+\usepackage{mathrsfs}
+\usepackage{upgreek}
+%\allowdisplaybreaks
+
+% symbols
+%\usepackage{gensymb}
+%\usepackage{textcomp}
+
+%---------------------------------------------------
+% happy integral
+\newcommand{\rint}[1]{\mbox{\Large $ \int\limits_{\mbox{\tiny  $#1$}}$}}
+% SHORTCUTS
+%\newcolumntype{,}{D{.}{,}{2}}
+\newcommand{\citee}[1]{\ensuremath{\scriptsize^{\citenum{#1}}}}
+\newcommand{\HRule}{\rule{\linewidth}{0.2mm}}
+% Quantum notation
+\newcommand{\bra}[1]{\ensuremath{\bigl\langle {#1} \bigl\lvert}}
+\newcommand{\ket}[1]{\ensuremath{\bigr\rvert {#1} \bigr\rangle}}
+\newcommand{\braket}[2]{\ensuremath{\bigl\langle {#1} \bigl\lvert {#2} \bigr\rangle}}
+\newcommand{\tbraket}[3]{\ensuremath{\bigl\langle {#1} \bigl\lvert {#2} \bigl\lvert {#3} \bigr\rangle}}
+% Math
+\newcommand{\pd}{\ensuremath{\partial}}
+\newcommand{\DR}{\ensuremath{{\rm d} {\bf r}}}
+%\newcommand{\BM}[1]{\ensuremath{\mbox{\boldmath${#1}$}}}
+\newcommand{\BM}[1]{\bm{#1}}
+% Chemistry (formulas)
+\newcommand{\ch}[2]{\ensuremath{\mathrm{#1}_{#2}}}
+% Math 
+\newcommand{\VEC}[1]{\ensuremath{\mathrm{\mathbf{#1}}}}
+% vector nabla
+\newcommand{\Nabla}{\ensuremath{ \BM{\nabla}}}
+% derivative
+\newcommand{\FDer}[3]{\ensuremath{
+\bigg(
+\frac{\partial #1}{\partial #2}
+\bigg)_{#3}}}
+% diagonal second derivative
+\newcommand{\SDer}[3]{\ensuremath{
+\biggl(
+\frac{\partial^2 #1}{\partial #2^2}
+\biggr)_{#3}}}
+% off-diagonal second derivative
+\newcommand{\SSDer}[4]{\ensuremath{
+\biggl(
+\frac{\partial^2 #1}{\partial #2 \partial #3}
+\biggr)_{#4}}}
+% derivatives without bound
+% derivative
+\newcommand{\fderiv}[2]{\ensuremath{
+\frac{\partial #1}{\partial #2}}}
+% diagonal second derivative
+\newcommand{\sderiv}[2]{\ensuremath{
+\frac{\partial^2 #1}{\partial #2^2}
+}}
+% off-diagonal second derivative
+\newcommand{\sderivd}[3]{\ensuremath{
+\frac{\partial^2 #1}{\partial #2 \partial #3}
+}}
+% derivatives for tables
+\newcommand{\fderivm}[2]{\ensuremath{
+{\partial #1}/{\partial #2}}}
+% diagonal second derivative
+\newcommand{\sderivm}[2]{\ensuremath{
+{\partial^2 #1}/{\partial #2^2}
+}}
+% off-diagonal second derivative
+\newcommand{\sderivdm}[3]{\ensuremath{
+{\partial^2 #1}/{\partial #2 \partial #3}
+}}
+% ERIs and OEIs
+\newcommand{\OEIc}[3]{\ensuremath{\left(#1 \lvert #2 \rvert #3 \right)}}
+\newcommand{\ERIc}[4]{\ensuremath{\left(#1 #2 \vert #3 #4 \right)}}
+
+% Partial density and potential
+\newcommand{\PartPot}[4]{\ensuremath{\frac{#1 #2}{\lvert #3-#4 \rvert }}}
+
+% trace operator
+\DeclareMathOperator{\Tr}{Tr}
+
+\draft % marks overfull lines with a black rule on the right
+
+\begin{document}
+
+\title{Density Matrix Susceptibility} %Title of paper
+
+\author{Bartosz B{\l}asiak}
+\email[]{blasiak.bartosz@gmail.com}
+\homepage[]{https://www.polonez.pwr.edu.pl}
+\thanks{Bulak}
+\affiliation{Department of Physical and Quantum Chemistry, Faculty of Chemistry, Wroc{\l}aw University of Technology, Wybrze{\.z}e Wyspia{\'n}kiego 27, Wroc{\l}aw 50-370, Poland}
+
+\date{\today}
+
+\begin{abstract}
+To be filled ...
+\end{abstract}
+
+\pacs{}% insert suggested PACS numbers in braces on next line
+
+\maketitle %\maketitle must follow title, authors, abstract and \pacs
+
+\section{\label{s:1}Introduction}
+
+\section{\label{s:2}Theory}
+
+The electronic energy of a closed\hyp{}shell molecule $A$ is given by the time\hyp{}independent Schr{\"o}dinger equation,
+%
+\begin{equation}
+ E^{(0)} = \tbraket{\Psi^{(0)}}{\mathscr{H}^{(0)}}{\Psi^{(0)}} \;,
+\end{equation}
+%
+where $E$ stands for the total electronic energy, $\Psi$ the electronic wavefunction and $\mathscr{H}$
+the Hamiltonian operator. In the above, the superscript $(0)$
+denotes the reference, or unperturbed, state that is assumed to be known.
+
+Under the influence of an external electrostatic perturbation, the total electronic energy
+becomes
+%
+\begin{equation}
+ E[{\bf F}({\bf r})] = \tbraket{\Psi}{\mathscr{H}^{(0)} + \mathscr{V}({\bf F}({\bf r}))}{\Psi}
+\end{equation}
+%
+in which ${\bf F}({\bf r})$ is a non\hyp{}uniform electric field distribution.
+The electric field\hyp{}induced energy change is an unknown functional 
+of the associated change in the one\hyp{}electron density,
+%
+\begin{equation}\label{e:rho}
+ \rho({\bf r}) = 2\sum_{\alpha\beta} D_{\alpha\beta} \phi_\alpha({\bf r}) \phi^*_\beta({\bf r}) \;.
+\end{equation}
+%
+In Eq.~\eqref{e:rho} $\phi_\alpha({\bf r})$ is a basis funtion, which can be for instance 
+an atomic orbital (AO) or a molecular orbital (MO), and $D_{\alpha\beta}$ is the corresponding
+one\hyp{}particle density matrix.
+If perturbation\hyp{}independent basis is chosen, the electric field\hyp{}induced change in the one\hyp{}particle density
+is given by
+%
+\begin{equation}\label{e:rho}
+ \delta \rho({\bf r}) = 2\sum_{\alpha\beta} \delta D_{\alpha\beta} \phi_\alpha({\bf r}) \phi^*_\beta({\bf r}) \;.
+\end{equation}
+%
+Ideally, the electric field\hyp{}induced change in the ground state's one\hyp{}particle density 
+follows its energy minimum of the perturbed state. In addition, all the perturbed 
+excited state one\hyp{}electron densities must be excited state solutions of the Schr{\"o}dinger equation
+with the exact energy\hyp{}minimized ground state. 
+
+Development of a first\hyp{}principles theory
+that is capable of accurately capturing the electric field\hyp{}dependence of the one\hyp{}particle density
+is extremely difficult. This is not only because of the very complicated (and generally unknown) solution
+to the electronic correlation problem, but also due to the dimensionality of the problem: the quantitative
+model has to accurately predict all the $n^2$ elements of the density matrix. Even relatively small errors
+in a particular matrix element could accumulate tremendously when computing traces with other matrices,
+and in turn, obstruct the evaluated properties with non\hyp{}negligible errors.
+Therefore, in this Work we adopt the simplistic approach: we first develop a qualitative first\hyp{}principles model 
+at the Hartree\hyp{}Fock (HF)
+level of theory, and then generalize it to the arbitrary level using the functional form that was found 
+by considering HF level,
+but treating the model as a set of adjustable parameters further on.
+
+\subsection{Ab Initio Density Matrix Susceptibilities: Hartree-Fock Level}
+
+\subsubsection{Induced Dipole Moment}
+
+It seems intuitive that $\delta {\bf D}$ should 
+be directly related to the
+polarization\hyp{}induced multipole moments because they are
+a measure of the distortion of the electron density distribution due to the external electric
+field. 
+%Unfortunately, such a mathematical problem is very complicated due to its high\hyp{}order tensor nature
+%with respect to the unknown $\delta {\bf D}$ and no approximate analytical solutions have been proposed
+%up to date. Therefore, in this paper we adopt a somewhat different
+%approach that will require \emph{a priori} knowledge from training set of known cases.
+Therefore, 
+we start our analysis by considering the induced electronic dipole moment 
+of a closed-shell molecule, %which is the first non\hyp{}vanishing moment,
+%
+\begin{equation} \label{e:dmu-exact}
+ \delta {\BM{\upmu}}({\bf r}_Q) = 
+     2 \Tr{ 
+         \left[ 
+              \delta {\bf D} {\mathbb{M}({\bf r}_Q)}
+         \right] } \;.
+\end{equation}
+%
+where ${\mathbb{M}({\bf r}_Q)}$ is AO\hyp{}representation
+of the dipole moment operator defined with respect to origin at ${\bf r}_Q$,
+%
+\begin{equation}\label{e:m}
+ \left[ {\mathbb{M}({\bf r}_Q)} \right]_{\alpha\beta} = \tbraket{\alpha}{{\bf r} - {\bf r}_Q}{\beta} \;.
+\end{equation}
+%
+Note that if the total charge is conserved, the induced moments are independent on the origin.
+
+In the Hartree\hyp{}Fock theory, ${\bf D}$ is approximated as
+%
+\begin{equation}
+ {\bf D} = {\bf C}{\bf C}^\dagger \;,
+\end{equation}
+%
+where ${\bf C}$ describes the occupied molecular orbitals as linear combinations
+of atomic orbitals (AO's), referred here to as the LCAO-MO matrix.
+When ${\bf D}$ is expressed in orthogonal basis, the density matrix is idempotent, i.e.,
+%
+\begin{equation}
+ {\bf D}^2 = {\bf D} \;.
+\end{equation}
+%
+The change in the molecular orbitals can be parameterized as suggested by McWeeny\cite{McWeeny.RevModPhys.1960}
+by defining the idempotency\hyp{}preserving variation
+%
+\begin{equation}
+ \delta {\bf C} = {\BM\Delta} \cdot {\bf C}^{(0)} \;,
+\end{equation}
+%
+where $\BM\Delta$ is a square non\hyp{}singular and non\hyp{}symmetric matrix.
+McWeeny has shown that
+%
+\begin{equation} \label{e:dmat-change.exact}
+ \delta {\bf D} = -{\bf D}^{(0)} + \left[ {\bf D}^{(0)} + {\bf v} \right]
+                                   \left[ {\bf 1} + {\bf v}^\dagger{\bf v} \right]^{-1}
+                                   \left[ {\bf D}^{(0)} + {\bf v}^\dagger \right] \;,
+\end{equation}
+%
+where the auxiliary vector ${\bf v}$ is defined as
+%
+\begin{equation}
+ {\bf v} \equiv \left[ {\bf 1} - {\bf D}^{(0)} \right] {\BM\Delta} {\bf D}^{(0)}  \;.
+\end{equation}
+%
+Expanding Eq.~\eqref{e:dmat-change.exact} in a Taylor series around ${\bf v}={\bf 0}$ and
+truncating it at linear terms with respect to ${\BM\Delta}$ gives
+%
+\begin{subequations} 
+ \begin{align}
+ \delta {\bf D} &\cong \left[ {\bf 1} - {\bf D}^{(0)} \right] {\BM\Delta} {\bf D}^{(0)} + 
+                        {\bf D}^{(0)} {\BM\Delta}^\dagger \left[ {\bf 1} - {\bf D}^{(0)} \right]  
+ \label{e:dD-1} \\  &= 
+  \delta {\bf C}  {\bf C}^{(0)\dagger} + {\bf C}^{(0)}\delta {\bf C}^\dagger
+           - {\bf D}^{(0)} \delta {\bf C}  {\bf C}^{{(0)}\dagger} - {\bf C}^{(0)}\delta {\bf C}^\dagger {\bf D}^{(0)} 
+ \label{e:dD-2}
+ \end{align}
+\end{subequations}
+%
+The latter equality is true only if the basis set functions are orthogonal, i.e., 
+${\bf C}^{(0)\dagger}{\bf C}^{(0)}={\bf 1}$,
+which will be the case throughout the entire work, unless stated differently.
+Substituting the result from Eq.~\eqref{e:dD-1}
+into Eq.~\eqref{e:dmu-exact} leads to
+%%
+%\begin{equation} \label{e:delta-Taylor}
+% \delta {\bf D} = \left[ {\bf v} + {\bf v}^\dagger \right]
+%                + \left[ {\bf v}{\bf v}^\dagger - {\bf v}^\dagger{\bf v}\right] + \ldots 
+%\end{equation}
+%
+\begin{equation} \label{e:dmu-4-exact.linear-approximation}
+ \frac{1}{2} 
+ \delta {\BM{\upmu}}
+  \cong
+   \Tr{ 
+    \left[ 
+         {\mathbb{M}} {\BM\Delta} {\bf D}^{(0)}  
+    \right] }
+%
+  +\Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger}
+    \right] }
+%
+  -\Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta} {\bf D}^{(0)}
+    \right] }
+%
+  -\Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger} {\bf D}^{(0)}
+    \right] } \;,
+\end{equation}
+%
+It can be proven (see Appendix~\ref{a:orig-dep}) that such obtained
+induced dipole moment is independent on the origin. Therefore,
+in the above result and also in later course of the Paper the dipole origin has been omitted. 
+%where the dipole origin was omitted for notational clarity.
+If the AO basis is orthogonal, Eq.~\eqref{e:dmu-4-exact.linear-approximation} can be simplified by realising that
+%
+\begin{subequations}
+ \begin{align}
+  \Tr{ 
+    \left[ 
+         {\mathbb{M}} {\BM\Delta} {\bf D}^{(0)}  
+    \right] }
+%
+  +\Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger}
+    \right] }
+  &=
+2 \Tr{ 
+    \left[ 
+         \widetilde{\mathbb{M}} \cdot \delta {\bf C}
+   \right] }  \;,
+%
+\\
+%
+  \Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta} {\bf D}^{(0)}
+    \right] }
+%
+ +\Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger} {\bf D}^{(0)}
+    \right] }
+  &=
+2 \Tr{ 
+    \left[ 
+         \widetilde{\mathbb{K}} \cdot \delta {\bf C}
+   \right] } \;.
+%
+ \end{align}
+\end{subequations}
+%
+Here we introduced the auxiliary tensors
+%
+\begin{subequations}
+ \begin{align}
+   \widetilde{\mathbb{M}}  &\equiv {\bf C}^\dagger {\mathbb{M}}     \;,           \\
+   \widetilde{\mathbb{K}}  &\equiv {\bf C}^\dagger {\mathbb{M}} {\bf D}^{(0)} \;, \\
+   \widetilde{\mathbb{L}}  &\equiv \widetilde{\mathbb{M}} - \widetilde{\mathbb{K}} \;.
+ \end{align}
+\end{subequations}
+%
+to simplify the notation. Hence, we have
+%
+\begin{equation} \label{e:dmu-l-vector}
+  \frac{1}{4} 
+ \delta {\BM{\upmu}} %({\bf r}_0) 
+   =
+   \Tr{ 
+    \left[ 
+         \widetilde{\mathbb{L}} \cdot \delta {\bf C}
+    \right] }
+   %
+   \equiv \sum_{i}^{\rm occ} \sum_\alpha {\bf l}_{i\alpha} \delta C_{\alpha i} \;,
+\end{equation}
+%
+where the Cartesian vector
+%
+\begin{equation}\label{e:l-vector}
+ {\bf l}_{i\alpha} \equiv \left[ \widetilde{\mathbb{M}} - \widetilde{\mathbb{K}} \right]_{i\alpha} 
+      = \left[  {\bf C}^\dagger \mathbb{M} \left[ \bf{1} - \bf{D}^{(0)} \right] \right]_{i\alpha}
+\end{equation}
+%
+and $i$ runs over occupied unperturbed MO's.
+Note that the intermediate quantity $\widetilde{\mathbb{L}}$ contains the projector onto
+the unoccupied MO space at the absence of the external electric field. It means that the
+perturbed solution is constructed from the unperturbed virtual orbitals as well.
+Although Eq.~\eqref{e:dmu-l-vector}
+is exact up to first order in ${\BM\Delta}$, it cannot be inverted at this moment to obtain $\delta {\bf C}$
+due to the presence of trace operation, unless the electric field is uniform.
+%in which ${\bf D}^{(0)}$ is the unperturbed density matrix of the system whereas
+%$\delta {\bf D}$ is the associated change due to the external electric field distribution. 
+%In fact, $\delta {\bf D}$ is a complicated
+%but unknown function of ${\bf F}({\bf r})$ and basis set. 
+%Moreover, it certainly depends on the choice of
+%molecular orbitals because the unitary transformation . 
+Let us partition the induced dipole moment into separate contributions
+from the occupied MO's, i.e.,
+%
+\begin{equation} \label{e:dmu-part}
+ \delta {\BM{\upmu}} = \sum_i^{\rm occ} \delta {\BM{\upmu}}_i
+\end{equation}
+%
+where
+%
+\begin{equation} \label{e:dmu-dpol}
+ \delta {\BM{\upmu}}_i = {\BM{\alpha}}_i \cdot {\bf F}({\bf r}_i) \;.
+\end{equation}
+%
+In Eq.~\eqref{e:dmu-dpol}, ${\BM{\alpha}}_i$ is the distributed polarizability tensor
+associated with the $i$th MO whereas ${\bf F}({\bf r}_i)$ is the electric field evaluated at the $i$th MO centroid of charge
+${\bf r}_i = \tbraket{i}{\hat{\bf r}}{i}$.
+We can now insert the above result into Eq.~\eqref{e:dmu-l-vector} 
+and after recasting the right hand side in a matrix form
+we get
+%
+\begin{equation} \label{e:dmu-l-vector-mo-transform-X}
+ \frac{1}{4} {\BM{\alpha}}_i \cdot {\bf F}({\bf r}_i) 
+   =
+   \delta {\bf c}_i^T \cdot {\bf L}_i \;.
+\end{equation}
+%
+Note that now ${\bf L}_i$ is a matrix of size $(n \times 3)$ and $\delta{\bf c}_i$ is just the $i$th column of the
+change in the LCAO-MO matrix due to the polarization process.
+%
+%The above equation can be re-written in a matrix form as
+%
+%\begin{equation} 
+% \left[ {\mathbb L} \right]_{\alpha \zeta \beta} = L_{\beta\alpha}^{(\zeta)}
+%\end{equation}
+%%
+%of size $m \times 3 \times m$.
+%Note that, in this notation, ${\BM{\upmu}}_i^T$ and $\overline{\BM\Delta}_i^T$ are row vectors
+%whereas $\overline{\BM\Delta}_i^p$ is a column vector. 
+The solution for $\delta {\bf C}$ is
+%
+\begin{equation} \label{e:mu-ind.matrix.linear.solution}
+  \delta {\bf c}_i^T = \frac{1}{4}
+            {\bf F}({\bf r}_i)  \cdot {\BM{\alpha}}_i \cdot 
+                    \left[ {\bf L}_i  \right]^{-1}_{\rm Left} \;,
+\end{equation}
+%
+where $\left[ {\bf L}_i  \right]^{-1}_{\rm Left}$ is a left inverse
+of ${\bf L}_i$ matrix 
+%
+\begin{equation} 
+      \left[ {\bf L}_i  \right]^{-1}_{\rm Left}   \equiv
+       \left[ {\bf L}_i^T {\bf L}_i \right]^{-1} {\bf L}_i^T 
+\end{equation}
+%
+and has size $(3\times n)$. Note that the \emph{right inverse} of ${\bf L}_i$
+does not exist because ${\bf L}_i {\bf L}_i^T$ is singular.
+%Clearly, in the above approximation, ${\bf X}$ depends on the choice
+%of unperturbed orbitals.
+
+\subsubsection{Density Matrix Change}
+
+Now we can obtain the final expression for the density matrix change 
+due to external electric field that reproduces the 
+induced dipole moment of the molecule.
+The change in the LCAO\hyp{}MO coefficient is parametereized as
+%
+\begin{equation} \label{e:dC-dmatpol}
+ \delta C_{\alpha i} = {\bf b}_{\alpha i} \cdot {\bf F}({\bf r}_i)  \;,
+\end{equation}
+%
+where the susceptibility tensor is defined as
+%
+\begin{equation} \label{e:susceptibility-b}
+  b_{\alpha i;w} = \frac{1}{4} \sum_u^{x, y, z} \left[ {\BM{\alpha}}_i \right]_{uw}
+   \left[ \left[ {\bf L}_i  \right]^{-1}_{\rm Left} \right]_{u;\alpha}  
+\end{equation}
+%
+for $w=x,y,z$. The result from Eq.~\eqref{e:dC-dmatpol} can be now inserted into 
+the expression for $\delta {\bf D}$ from Eq.~\eqref{e:dD-2} to finally give
+%
+\begin{equation}\label{e:final-model.HF}
+ \delta D_{\alpha\beta} \approx \sum_i^{\rm occ} {\bf B}^{(i)}_{\alpha\beta} \cdot {\bf F}({\bf r}_i)  \;,
+\end{equation}
+%
+where the \emph{density matrix polarization susceptibility tensor} is
+%
+\begin{equation}  \label{e:susceptibility-B}
+ {\bf B}^{(i)}_{\alpha\beta} = \left\{
+%
+                               C_{\alpha i} {\bf b}_{\beta i} + C_{\beta i} {\bf b}_{\alpha i}
+                               - \sum_\gamma 
+                                 \left( 
+               D_{\alpha\gamma} C_{\beta i} + D_{\beta\gamma} C_{\alpha i}
+                                 \right)
+                                           {\bf b}_{\gamma i}
+%
+\right\}  \;.
+\end{equation}
+%
+Hence, the 3D vector ${\bf B}^{(i)}_{\alpha\beta}$ describes the polarization affinity
+of the density matrix element associated with $\alpha$th and $\beta$th orthogonal AO's.
+Transforming these vectors to a non\hyp{}orthogonal AO basis is straightforward.
+It is emphasized here that all elements of ${\bf B}_{\alpha\beta}^{(i)}$
+are unique properties of electronically unperturbed molecule. 
+
+One very important feature of the susceptibility from Eq.~\eqref{e:final-model.HF} is that
+the density matrix increment dependent {\emph only} by susceptibility element associated with the same
+pair of AO's. Therefore, there is no mixing in the AO's, rather the increment is proportional to the 
+vector susceptibility, different for each density matrix element.
+
+\subsection{Generalized Density Matrix Susceptibility Model}
+
+\subsubsection{Functional form of the model}
+
+Eq.~\eqref{e:final-model.HF}, which is the final result of the previous section, 
+can be used as a guideline to construct a general model of density matrix polarization.
+Quadratic terms with respect to the electric field as well as linear terms with respect to
+electric field gradient can be added to the formulation, which leads to
+%
+\begin{equation}\label{e:final-model.General}
+ \delta D_{\alpha\beta} = \sum_{i }^M \left\{
+                                      {\bf B}^{(i ; 10)}_{\alpha\beta} \cdot {\bf F}({\bf r}_i)  
+%                       + \sum_{ij}^M {\bf B}^{(ij; 20)}_{\alpha\beta} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_j)
+                        +             {\bf B}^{(i ; 20)}_{\alpha\beta} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_i)
+                        +             {\bf B}^{(i ; 01)}_{\alpha\beta} : {\BM\nabla} \otimes {\bf F}({\bf r}_i) 
+                        + \ldots \right\}
+\end{equation}
+%
+%However, Eq.~\eqref{e:final-model} is an approximation because (i) it is based on the approximate
+%relation in Eq.~\eqref{e:dmu-l-vector-mo-transform} and (ii) only total dipole moment (but not quadrupole
+%and higher moments) is exactly
+%reproduced by the current model. Due to the above reasons, the existence of ${\bf X}$ that
+%reproduces the exact perturbed density matrix with vanishing error is not guaranteed. 
+%Moreover, as it was pointed out before, ${\bf X}$ almost certainly depends on the external electric field. 
+%Next section adresses the problem of finding the optimal ${\bf X}$ that is treated as an adjustable
+%matrix.
+In the above equation, the density matrix susceptibilities
+${\bf B}^{(i; RP)}_{\alpha\beta}$, distributed over $M$ sites,
+denote the $R$-th order response with respect to the electric field
+and $P$-th order response with respect to the electric field gradient. Note that
+${\bf B}^{(i; 10)}_{\alpha\beta}$ is a vector of length $3$ whereas ${\bf B}^{(i; 20)}_{\alpha\beta}$
+and ${\bf B}^{(i; 01)}_{\alpha\beta}$ are $(3\times 3)$ matrices. Also, the distributed expansion centres
+(labeled as $i$) are generalized to any point in the molecule.
+
+\subsubsection{Determining the generalized susceptibility tensors}
+
+The exact mathematical form of the generalized density matrix susceptibilities is unknown. 
+The first suscebility from Eq.~\eqref{e:final-model.HF} is valid only under the Hartree\hyp{}Fock
+approximation, with a guarantee that only the overall charge and the dipole moment, 
+but not higher multipole moments, are correctly described.
+Our strategy is to treat the susceptibilities from Eq.~\eqref{e:final-model.General}
+as adjustable parameters, rather than try to derive them from first principles theory.
+
+Let  
+$\left\{ {\bf F}^{(1)}({\bf r}), {\bf F}^{(2)}({\bf r}), \ldots, {\bf F}^{(N)}({\bf r}), \ldots \right\}$ 
+be a set of $N_{\rm max}$ distinct and randomly sampled 
+spatially non\hyp{}uniform distributions of the electric field. It is assumed that
+the exact difference one\hyp{}particle density matrices (with respect to the unperturbed state)
+defined as
+%
+\begin{equation}
+ \delta \overline{\bf D}^{(N)} \equiv \overline{\bf D}^{(N)} - \overline{\bf D}^{(0)}
+\end{equation}
+%
+are known for each sample (overline symbolizes the exact estimate).
+%Let us assume that we a $\delta \overline{\bf D}^{(N)}$ 
+%is the $N$th known (exact) difference one\hyp{}particle density matrix
+%that was computed for the electric field distribution ${\bf F}^{(N)}({\bf r})$ chosen randomly.
+Now, for each pair of the AO indices we construct the following 
+parameterization of Eq.~\eqref{e:final-model.General}:
+%
+\begin{equation}\label{e:final-model.General.Parameters}
+ \delta D^{(N)} = \sum_{i }^M \left\{ 
+                              \sum_u^{x,y,z} S^{[1]}_{iu} F_{iu}^{(N)} 
+%               + \sum_{ij}^M \sum_{uw}^{x,y,z} \left( S^{[2]}_{iu} + S^{[2]}_{jw} \right) F_{iu}^{(N)} F_{ju}^{(N)}
+                +             \sum_{uw}^{x,y,z} \left( S^{[2]}_{iu} + S^{[2]}_{iw} \right) F_{iu}^{(N)} F_{iu}^{(N)}
+                +             \sum_{uw}^{x,y,z} \left( S^{[3]}_{iu} + S^{[3]}_{iw}\right) F_{iu,iw}^{(N)}
+                        + \ldots \right\}
+\end{equation}
+%
+(the Greek subscripts were omitted here for notational simplicity).
+The multiple parameter blocks 
+$S^{[1]}$, $S^{[2]}$ and $S^{[3]}$ that are associated with electric field and its gradients
+appear in the first power, allowing for linear least\hyp{}squares regression.
+Note that $B_u^{(i,(10))} = S^{[1]}_{iu}$, $B_{uw}^{(i,(20))} = S^{[2]}_{iu} + S^{[2]}_{iw}$
+and $B_{uw}^{(i,(01))} = S^{[3]}_{iu} + S^{[3]}_{iw}$. The square bracket superscripts 
+denote the block of the parameter space. We chose symmetric forms of ${\bf B}^{(i;20)}$
+and ${\bf B}^{(i;01)}$ (antisymmetric form could be constructed as well by taking the difference
+of the parameters from block 2 and 3, respectively). $F_{iu}^{(N)}$ and $F_{iu,iw}^{(N)}$ 
+stand for the electric field $\left[ {\bf F}({\bf r}_i)\right]_u$ and the electric field
+gradient $\left[ {\BM \nabla} \otimes {\bf F}({\bf r}_i) \right]_{uw}$, respectively.
+
+To determine the optimim set 
+$
+ {\bf S} = 
+\begin{pmatrix}
+{\bf S}^{[1]} &
+{\bf S}^{[2]} &
+{\bf S}^{[3]}
+\end{pmatrix}^T
+$, we define the loss function $Z$ 
+of the three blocks of adjustable parameters
+that is subject to the least\hyp{}squares minimization:
+%
+\begin{equation}\label{e:Z}
+ Z[{\bf S}] = \sum_N^{N_{\rm max}} \left( \delta D^{(N)} - \delta \overline{D}^{(N)} \right)^2 \;.
+\end{equation}
+%
+%where $N_{\rm max}$ is the total number of samples. 
+%The linear form of Eq.~\eqref{e:final-model.General.Parameters} ensures that the Hessian 
+%of $Z$
+%is non\hyp{}singular and independent on the parameters. 
+The Hessian of $Z$ computed with respect to the parameters is non\hyp{}singular 
+and constant.
+Therefore, the exact solution for the optimal parameters is given by a Newton equation
+%
+\begin{equation}\label{e:Newton}
+ {\bf S} = -{\bf H}^{-1} \cdot {\bf g} \;,
+\end{equation}
+%
+where ${\bf g}$ and ${\bf H}$ are the gradient vector and Hessian matrix, respectively.
+%
+%\begin{equation}\label{e:Newton.S}
+% {\bf S} = 
+%\begin{pmatrix}
+%{\bf S}^{[1]} &
+%{\bf S}^{[2]} &
+%{\bf S}^{[3]}
+%\end{pmatrix}^T
+%\end{equation}
+%
+The explicit forms of the gradient and Hessian are given in the Appendix~\ref{a:blocks}.
+Note that the dimensions of parameter space for the block 1, 2 and 3 are all
+equal to $3M$.
+%unperturbed molecule. This makes them perfect candidates for general effective fragment parameters.
+
+\section{\label{s:3}Calculation Details}
+
+The theory that is necessary to validate the density matrix susceptibility model from Section~\ref{s:2}
+was implemented in our in\hyp{}house plugin to Psi4 quantum chemistry program.
+A few simple molecules were selected as test systems, that were subject to 
+perturbations due to uniform electric fields as well as collections of point charges
+generating non\hyp{}uniform electric fields. 
+%For finding a general unitary transformations,
+%100 random point charge distributions were selected for which an exact density matrices
+%were calculated.
+
+In order to validate all the models discussed in this Contribution,
+the electric field\hyp{}induced interaction energy, 
+the dipole moment and the quadrupole moment were analysed in detail.
+The electric field\hyp{}induced interaction energy at the HF level, $\delta E$,
+was computed from the following exact formula:
+%
+\begin{multline}\label{e:dE}
+ \delta E[{\bf F}] = 2\Tr{\left\{ {\bf D}^{(0)} \cdot {\bf V}[{\bf F}] \right\}}
+                   + \Tr{\left\{ \left( {\bf D}^{(0)} + \delta {\bf D} \right) \cdot
+                                \left( \delta {\bf J} + \delta {\bf K}\right) \right\}} \\
+                   + \Tr{\left\{ \delta {\bf D} \cdot
+                                \left( {\bf H}^{(0)} + 2 {\bf V}[{\bf F}] + {\bf f}^{(0)} \right) \right\}}
+                   + E_{\rm nuc}({\bf F}) \;.
+\end{multline}
+%
+In Eq.~\eqref{e:dE}, ${\bf f}^{(0)}$ and ${\bf H}^{(0)}$ are the Fock matrix and 
+the one\hyp{}electron Hamiltonian matrix of an unperturbed HF ground state,
+${\bf V}[{\bf F}]$ is the one\hyp{}electron external electrostatic potential matrix whereas $\delta {\bf J}$
+and $\delta {\bf K}$ are electric field\hyp{}induced changes in the Coulomb and the exchange HF matrices due to 
+the polarization of the electron density distribution, respectively. $E_{\rm nuc}({\bf F})$ denotes the interaction energy
+due to the nuclei.
+The electric field\hyp{}induced dipole and quadrupole moments were evaluated from the following expressions:
+%
+\begin{subequations}\label{e:dmult}
+  \begin{align}
+   \delta \upmu_{u}   &= 2\sum_{\alpha\beta} \delta D_{\alpha\beta} \tbraket{\alpha}{u}{\beta}  \;,\\
+   \delta \Theta_{uw} &= 2\sum_{\alpha\beta} \delta D_{\alpha\beta} \tbraket{\alpha}{uw}{\beta} \;. 
+  \end{align}
+\end{subequations}
+%
+To compute the interaction energy and the induced multipole moments, either exact or approximated forms
+of the difference density matrix from Eq.~\eqref{e:final-model.General}
+were used for a particular electric field distribution. The statistical evaluation of
+errors with respect to the benchmark (full HF calculations) were based on 
+the following statistical quality descriptors:
+%
+\begin{enumerate}
+ \item Root Mean Square Energy Error (RMSE)
+   \begin{equation}
+     {\rm RMSE} = \sum_N \sqrt{ \left( \delta E^{(N)} - \overline{\delta E^{(N)}}\right)^2 }
+   \end{equation}
+ \item Root Mean Square Dipole Error (RMSD)
+   \begin{equation}
+     {\rm RMSD} = \sum_N \sqrt{ \lvert \delta {\BM\upmu}^{(N)} - \overline{\delta {\BM\upmu}^{(N)}}\rvert^2 }
+   \end{equation}
+ \item Root Mean Square Quadrupole Error (RMSQ)
+   \begin{equation}
+     {\rm RMSQ} = \sum_N \sqrt{ \lvert \delta {\BM\Theta}^{(N)} - \overline{\delta {\BM\Theta}^{(N)}}\rvert^2 }
+   \end{equation}
+\end{enumerate}
+%
+The first describes the ability of the model to reproduce the exact energetics of the system, 
+wherease the latter two contain crucial information on how well the deformation of the one\hyp{}electron
+density is described.
+
+Throughout the Work, the Hartree\hyp{}Fock level was assumed and the aug-cc-pVTZ basis set
+was used. For all the calculations of the density matrix polarization susceptibility tensors
+from Eqs.~\eqref{e:final-model.HF} and \eqref{e:susceptibility-B}, 
+atomic basis was orthogonalized by using the L{\"o}wdin symmetric orthogonalization scheme.
+
+
+\section{\label{s:4}Results and Discussion}
+
+\subsection{Ab Initio Model of Densty Matrix Polarization}
+
+We first test the accuracy of the density matrix susceptibility tensors that were derived
+in Eq.~\eqref{e:susceptibility-B} from first principles. 
+For this purpose we have considered a water molecule 
+under weak uniform electric fields (Figure~XXX). 
+3D difference one\hyp{}electron density isosurface plots for sample electric fields
+with respect to the unperturbed density (${\bf F} = {\bf 0}$)
+are shown in Figure~XXX. The statistical evaluation of errors for a set of
+100 random electric fields is shown in Figure~XXX. The shape of the basins 
+of decreased/increased density are comparable with the exact result
+obtained from HF/6-311++G** calculations. 
+%It can be seen that the theory
+%describes the polarization of the electron density distribution qualitatively well:
+However, the accuracy in the density matrix elements is on overall very low which 
+manifests with drammatic errors in the electronic total energy of the system.
+It is due to the approximations used to derive Eq.~\eqref{e:susceptibility-B},
+which neglects quadrupole and higher\hyp{}order induced multipole moments.
+
+\subsection{General Model of Densty Matrix Polarization}
+
+%However, Eq.~\eqref{e:final-model} is an approximation because (i) it is based on the approximate
+%relation in Eq.~\eqref{e:dmu-l-vector-mo-transform} and (ii) only total dipole moment (but not quadrupole
+%and higher moments) is exactly
+%reproduced by the current model. Due to the above reasons, the existence of ${\bf X}$ that
+
+
+
+
+%The critical assessment of the proposed model is discussed in two stages: (i) first
+%the capability of the model in capturing the polarization 
+%It is instructive to analyze first the capability of the model in capturing the polarization
+%process by studying the 3D electronic density distortions due to the electric field perturbation.
+%For this purpose we consider a , i.e., without
+%optimization of the particular density matrix elements with respect to benchmark. 
+
+%For this purpose we studied few molecules
+%in a uniform external electric field. Although the density matrix elements in a chosen AO basis
+%can be inconsistent with other quantities (such as Fock matrix and so on) the polarization 
+
+
+\section{\label{s:5}Summary and a few concluding remarks}
+Test summary bla bla blaaaaa dfn fdj gf ads;jha g;ja gf; p.
+
+\begin{acknowledgments}
+This project is carried out under POLONEZ programme which has received funding from the European Union's
+Horizon~2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement 
+No.~665778. This project is funded by National Science Centre, Poland 
+(grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+\end{acknowledgments}
+
+%
+\appendix
+
+\section{\label{a:orig-dep} Origin-Dependence of Induced Dipole Moment}
+
+We need to be aware that multipole integrals depend on the origin with respect to which they are evaluated.
+However, the induced dipole moments defined in Eq.~\eqref{e:mu-ind-distributed-general} 
+have to be origin independent. 
+%Let us check if this is the case.
+
+Let us start with noticing that
+%
+\begin{equation}
+ \left[ {\bf M} \right]_{i\alpha} ({\bf r}_0) 
+ = \left[ {\bf M} \right]_{i\alpha} ({\bf 0}) - {\bf r}_0 \left[ {\bf C}^\dagger \right]_{i\alpha}  \;.
+\end{equation}
+%
+Further we have
+%
+\begin{equation}
+ \left[ {\bf K} \right]_{i\alpha} ({\bf r}_0) 
+ = \left[ {\bf K} \right]_{i\alpha} ({\bf 0}) - {\bf r}_0 \left[ {\bf C}^\dagger {\bf D} \right]_{i\alpha} \;.
+\end{equation}
+%
+But ${\bf C}^\dagger {\bf D}={\bf C}^\dagger {\bf C} {\bf C}^\dagger={\bf C}^\dagger$ in orthogonal
+AO basis. This implies that
+%
+\begin{equation}
+   \left[ {\bf L} \right]_{i\alpha} ({\bf r}_0) 
+ = \left[ {\bf M} \right]_{i\alpha} ({\bf r}_0) - \left[ {\bf K} \right]_{i\alpha} ({\bf r}_0)
+ = \left[ {\bf M} \right]_{i\alpha} ({\bf 0})   - \left[ {\bf K} \right]_{i\alpha} ({\bf 0})
+ = \left[ {\bf L} \right]_{i\alpha} ({\bf 0}) \;.
+\end{equation}
+%
+Therefore, it is proved that the polarization\hyp{}induced distributed dipole moments 
+defined in Eq.~\eqref{e:mu-ind-distributed-general} 
+are origin independent.
+Thus, one can compute dipole integrals with respect to any origin and resulting
+susceptibilities ${\bf B}_{\alpha\beta}^{(i)}$ from Eq.~\eqref{e:susceptibility-B} will be uniquely defined.
+
+\section{\label{a:blocks} Explicit Formulae for Gradient and Hessian Blocks}
+
+The gradient vector ${\bf g}$ and Hessian matrix ${\bf H}$ 
+are build from blocks associated with the type of parameters, i.e.,
+%
+\begin{equation}\label{e:Newton.gH}
+ {\bf g} = 
+\begin{pmatrix}
+{\bf g}^{[1]} \\ 
+{\bf g}^{[2]} \\ 
+{\bf g}^{[3]}
+\end{pmatrix} ,\quad
+ {\bf H} = 
+\begin{pmatrix}
+{\bf H}^{[11]} & {\bf H}^{[12]} & {\bf H}^{[13]} \\ 
+{\bf H}^{[21]} & {\bf H}^{[22]} & {\bf H}^{[23]} \\ 
+{\bf H}^{[31]} & {\bf H}^{[32]} & {\bf H}^{[33]} 
+\end{pmatrix} \;.
+\end{equation}
+%
+The gradient element of the $r$th block and Hessian element of the $rs$th block read
+%
+\begin{subequations}
+ \begin{align}
+  g^{[r ]}_{kv}    &\equiv \frac{\partial   Z}{\partial S_{kv}^{[r]}} 
+     =-2\sum_N \overline{\delta D}^{(N)}
+               \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S_{kv}^{[r]}} \;,\\
+  H^{[rs]}_{kv,lw} &\equiv \frac{\partial^2 Z}{\partial S_{kv}^{[r]} \partial S_{lw}^{[s]}}  
+     = 2\sum_N 
+        \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S_{kv}^{[r]}}
+        \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S_{lw}^{[s]}} \;.
+ \end{align}
+\end{subequations}
+%
+Note that the second derivatives of $\delta D^{(N)}$ vanish
+due to the linearity with respect to the adjustable parameters.
+Thus, the explicit formulae for the gradient are
+%
+\begin{subequations}
+ \begin{align}
+  g^{[1]}_{kv} &=-2\sum_N \overline{\delta D}^{(N)} F^{(N)}_{kv} \;,\\
+  g^{[2]}_{kv} &=-4\sum_N \overline{\delta D}^{(N)} F^{(N)}_{kv} \widetilde{F}^{(N)}_k \;,\\
+  g^{[3]}_{kv} &=-4\sum_N \overline{\delta D}^{(N)} \widetilde{F}^{(N)}_{kv} \;.
+ \end{align}
+\end{subequations}
+%
+The Hessian subsequently follows to be
+%
+\begin{subequations}
+ \begin{align}
+  H^{[11]}_{kv,lw} &= 2\sum_N F^{(N)}_{kv} F^{(N)}_{lw} \;,\\
+  H^{[22]}_{kv,lw} &= 8\sum_N F^{(N)}_{kv} F^{(N)}_{lw} \widetilde{F}^{(N)}_k \widetilde{F}^{(N)}_l \;,\\
+  H^{[33]}_{kv,lw} &= 8\sum_N \widetilde{F}^{(N)}_{kv} \widetilde{F}^{(N)}_{lw} \;,\\
+  H^{[12]}_{kv,lw} &= 4\sum_N F^{(N)}_{kv} F^{(N)}_{lw} \widetilde{F}^{(N)}_l \;,\\
+  H^{[13]}_{kv,lw} &= 4\sum_N F^{(N)}_{kv} \widetilde{F}^{(N)}_{lw} \;,\\
+  H^{[23]}_{kv,lw} &= 8\sum_N F^{(N)}_{kv} \widetilde{F}^{(N)}_k \widetilde{F}^{(N)}_{lw} \;.
+ \end{align}
+\end{subequations}
+%
+In the above equations, the auxiliary quantities $\widetilde{F}^{(N)}_k$ 
+and $\widetilde{F}^{(N)}_{kv}$ are defined as
+%
+\begin{subequations}
+ \begin{align}
+  \widetilde{F}^{(N)}_k    &\equiv \sum_w F^{(N)}_{kw} \;,\\
+  \widetilde{F}^{(N)}_{kv} &\equiv \sum_w F^{(N)}_{kw,kv} \;.
+ \end{align}
+\end{subequations}
+%
+Note that due to the symmetry of the Hessian matrix, the blocks $21$, $31$ and $32$
+are transposes of the blocks $12$, $13$ and $23$, respectively. The composite index
+can be defined as $kv \equiv 3k+v$, for example.
+\bibliography{references}
+
+\end{document}

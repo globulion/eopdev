@@ -1,0 +1,827 @@
+%% ****** Start of file aiptemplate.tex ****** %
+%%
+%%   This file is part of the files in the distribution of AIP substyles for REVTeX4.
+%%   Version 4.1 of 9 October 2009.
+%%
+%
+% This is a template for producing documents for use with 
+% the REVTEX 4.1 document class and the AIP substyles.
+% 
+% Copy this file to another name and then work on that file.
+% That way, you always have this original template file to use.
+
+\documentclass[aip,graphicx]{revtex4-1}
+%\documentclass[aip,reprint]{revtex4-1}
+
+% hyphenation
+\usepackage{hyphenat}
+%\usepackage{lipsum}
+
+% tables
+%\usepackage{dcolumn}
+%\usepackage{multirow}
+%\usepackage{hhline}
+%\usepackage{booktabs}
+%\usepackage{longtable}
+
+% mathematics
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsbsy}
+\usepackage{bm}
+\usepackage{mathrsfs}
+\usepackage{upgreek}
+%\allowdisplaybreaks
+
+% symbols
+%\usepackage{gensymb}
+%\usepackage{textcomp}
+
+%---------------------------------------------------
+% happy integral
+\newcommand{\rint}[1]{\mbox{\Large $ \int\limits_{\mbox{\tiny  $#1$}}$}}
+% SHORTCUTS
+%\newcolumntype{,}{D{.}{,}{2}}
+\newcommand{\citee}[1]{\ensuremath{\scriptsize^{\citenum{#1}}}}
+\newcommand{\HRule}{\rule{\linewidth}{0.2mm}}
+% Quantum notation
+\newcommand{\bra}[1]{\ensuremath{\bigl\langle {#1} \bigl\lvert}}
+\newcommand{\ket}[1]{\ensuremath{\bigr\rvert {#1} \bigr\rangle}}
+\newcommand{\braket}[2]{\ensuremath{\bigl\langle {#1} \bigl\lvert {#2} \bigr\rangle}}
+\newcommand{\tbraket}[3]{\ensuremath{\bigl\langle {#1} \bigl\lvert {#2} \bigl\lvert {#3} \bigr\rangle}}
+% Math
+\newcommand{\pd}{\ensuremath{\partial}}
+\newcommand{\DR}{\ensuremath{{\rm d} {\bf r}}}
+%\newcommand{\BM}[1]{\ensuremath{\mbox{\boldmath${#1}$}}}
+\newcommand{\BM}[1]{\bm{#1}}
+% Chemistry (formulas)
+\newcommand{\ch}[2]{\ensuremath{\mathrm{#1}_{#2}}}
+% Math 
+\newcommand{\VEC}[1]{\ensuremath{\mathrm{\mathbf{#1}}}}
+% vector nabla
+\newcommand{\Nabla}{\ensuremath{ \BM{\nabla}}}
+% derivative
+\newcommand{\FDer}[3]{\ensuremath{
+\bigg(
+\frac{\partial #1}{\partial #2}
+\bigg)_{#3}}}
+% diagonal second derivative
+\newcommand{\SDer}[3]{\ensuremath{
+\biggl(
+\frac{\partial^2 #1}{\partial #2^2}
+\biggr)_{#3}}}
+% off-diagonal second derivative
+\newcommand{\SSDer}[4]{\ensuremath{
+\biggl(
+\frac{\partial^2 #1}{\partial #2 \partial #3}
+\biggr)_{#4}}}
+% derivatives without bound
+% derivative
+\newcommand{\fderiv}[2]{\ensuremath{
+\frac{\partial #1}{\partial #2}}}
+% diagonal second derivative
+\newcommand{\sderiv}[2]{\ensuremath{
+\frac{\partial^2 #1}{\partial #2^2}
+}}
+% off-diagonal second derivative
+\newcommand{\sderivd}[3]{\ensuremath{
+\frac{\partial^2 #1}{\partial #2 \partial #3}
+}}
+% derivatives for tables
+\newcommand{\fderivm}[2]{\ensuremath{
+{\partial #1}/{\partial #2}}}
+% diagonal second derivative
+\newcommand{\sderivm}[2]{\ensuremath{
+{\partial^2 #1}/{\partial #2^2}
+}}
+% off-diagonal second derivative
+\newcommand{\sderivdm}[3]{\ensuremath{
+{\partial^2 #1}/{\partial #2 \partial #3}
+}}
+% ERIs and OEIs
+\newcommand{\OEIc}[3]{\ensuremath{\left(#1 \lvert #2 \rvert #3 \right)}}
+\newcommand{\ERIc}[4]{\ensuremath{\left(#1 #2 \vert #3 #4 \right)}}
+
+% Partial density and potential
+\newcommand{\PartPot}[4]{\ensuremath{\frac{#1 #2}{\lvert #3-#4 \rvert }}}
+
+% trace operator
+\DeclareMathOperator{\Tr}{Tr}
+
+\draft % marks overfull lines with a black rule on the right
+
+\begin{document}
+
+\title{Density Matrix Susceptibility} %Title of paper
+
+\author{Bartosz B{\l}asiak}
+\email[]{blasiak.bartosz@gmail.com}
+\homepage[]{https://www.polonez.pwr.edu.pl}
+\thanks{Bulak}
+\affiliation{Department of Physical and Quantum Chemistry, Faculty of Chemistry, Wroc{\l}aw University of Technology, Wybrze{\.z}e Wyspia{\'n}kiego 27, Wroc{\l}aw 50-370, Poland}
+
+\date{\today}
+
+\begin{abstract}
+To be filled ...
+\end{abstract}
+
+\pacs{}% insert suggested PACS numbers in braces on next line
+
+\maketitle %\maketitle must follow title, authors, abstract and \pacs
+
+\section{\label{s:1}Introduction}
+
+\section{\label{s:2}Theory}
+
+The total electronic dipole moment of a closed-shell molecule can be expressed as
+%
+\begin{equation}\label{e:mu-total}
+ {\BM{\upmu}}({\bf r}_0) = 
+    2 \Tr{
+        \left[
+             {\bf D} {\mathbb{M}({\bf r}_0)}
+        \right]} \;,
+\end{equation}
+%
+where ${\bf D}$ is a one-particle density matrix and ${\mathbb{M}({\bf r}_0)}$ is certain representation
+of the dipole moment operator defined with respect to origin at ${\bf r}_0$,
+%
+\begin{equation}\label{e:m}
+ \left[ {\mathbb{M}({\bf r}_0)} \right]_{\alpha\beta} = \tbraket{\alpha}{{\bf r} - {\bf r}_0}{\beta} \;.
+\end{equation}
+%
+In the above equations and throughout this Work, the basis set functions are labeled with Greek symbols.
+%Note that ${\mathbb{M}}$ can be considered as a vector of $n\times n$ matrices with $n$ denoting the
+%number of basis set functions.
+
+In the Hartree\hyp{}Fock theory, ${\bf D}$ is approximated as
+%
+\begin{equation}
+ {\bf D} = {\bf C}{\bf C}^\dagger \;,
+\end{equation}
+%
+where ${\bf C}$ describes the occupied molecular orbitals as linear combinations
+of atomic orbitals (AO's), referred here to as the LCAO-MO matrix.
+When ${\bf D}$ is expressed in orthogonal basis, the density matrix is idempotent, i.e.,
+%
+\begin{equation}
+ {\bf D}^2 = {\bf D} \;.
+\end{equation}
+%
+
+%
+\subsection{Molecule in External Electric Field}
+
+Let us consider a case in which a molecule experiences external and generally non\hyp{}uniform electric field,
+${\bf F}({\bf r})$. 
+Then, if unchanging basis such as AO's is used, Eq.~\eqref{e:mu-total} can be recast as
+%
+\begin{equation}
+ {\BM{\upmu}}({\bf r}_0) = 
+     2 \Tr{ 
+         \left[ 
+              \left\{ {\bf D}^{(0)} + \delta {\bf D}[{\bf F}({\bf r})] \right\}  {\mathbb{M}({\bf r}_0)}
+         \right] } \;,
+\end{equation}
+%
+in which ${\bf D}^{(0)}$ is the unperturbed density matrix of the system whereas
+$\delta {\bf D}$ is the associated change due to the external electric field distribution. 
+In fact, $\delta {\bf D}$ is a complicated
+but unknown function of ${\bf F}({\bf r})$ and basis set. 
+%Moreover, it certainly depends on the choice of
+%molecular orbitals because the unitary transformation . 
+On the other hand it seems intuitive that $\delta {\bf D}$ should 
+be directly related to the distortion of the electron density distribution, which is also described
+by the polarization\hyp{}induced multipole moments. Then, the optimal $\delta {\bf D}$ minimizes
+the total energy of the molecule under a constraint of reproducing the polarization\hyp{}induced 
+distortion of the electron density distribution (or equivalently, all the multipole moments). 
+Unfortunately, such a mathematical problem is very complicated due to its high\hyp{}order tensor nature
+with respect to the unknown $\delta {\bf D}$ and no approximate analytical solutions have been proposed
+up to date. Therefore, in this paper we adopt a somewhat different
+approach that will require \emph{a priori} knowledge from training set of known cases.
+
+\subsection{Polarization\hyp{}Induced Dipole Moment}
+
+The first non\hyp{}vanishing induced moment is given by
+%
+\begin{equation} \label{e:dmu-exact}
+ \delta {\BM{\upmu}}({\bf r}_0) = 
+     2 \Tr{ 
+         \left[ 
+              \delta {\bf D} {\mathbb{M}({\bf r}_0)}
+         \right] } \;.
+\end{equation}
+%
+The change in the molecular orbitals can be parameterized as suggested by McWeeny\cite{McWeeny.RevModPhys.1960}
+by defining the idempotency\hyp{}preserving variation
+%
+\begin{equation}
+ \delta {\bf C} = {\BM\Delta} {\bf C} \;,
+\end{equation}
+%
+where $\BM\Delta$ is a square non\hyp{}singular and non\hyp{}symmetric matrix.
+McWeeny has shown that
+%
+\begin{equation} \label{e:dmat-change.exact}
+ \delta {\bf D} = -{\bf D}^{(0)} + \left[ {\bf D}^{(0)} + {\bf v} \right]
+                                   \left[ {\bf 1} + {\bf v}^\dagger{\bf v} \right]^{-1}
+                                   \left[ {\bf D}^{(0)} + {\bf v}^\dagger \right] \;,
+\end{equation}
+%
+where the auxiliary vector ${\bf v}$ is defined as
+%
+\begin{equation}
+ {\bf v} \equiv \left[ {\bf 1} - {\bf D}^{(0)} \right] {\BM\Delta} {\bf D}^{(0)}  \;.
+\end{equation}
+%
+Expanding Eq.~\eqref{e:dmat-change.exact} in a Taylor series around ${\bf v}={\bf 0}$ and
+truncating it at linear terms with respect to ${\BM\Delta}$ gives
+%
+\begin{subequations} 
+ \begin{align}
+ \delta {\bf D} &\cong \left[ \bf{1} - {\bf D}^{(0)} \right] {\BM\Delta} {\bf D}^{(0)} + 
+                        {\bf D}^{(0)} {\BM\Delta}^\dagger \left[ \bf{1} - {\bf D}^{(0)} \right]  
+ \label{e:dD-1} \\  &= 
+  \delta {\bf C}  {\bf C}^\dagger + {\bf C}\delta {\bf C}^\dagger
+           - {\bf D}^{(0)} \delta {\bf C}  {\bf C}^\dagger - {\bf C}\delta {\bf C}^\dagger {\bf D}^{(0)} 
+ \label{e:dD-2}
+ \end{align}
+\end{subequations}
+%
+The latter equality is true only if the basis set functions are orthogonal, i.e., ${{\bf C}^\dagger}{\bf C}={\bf 1}$,
+which will be the case throughout the entire work, unless stated differently.
+Substituting the result from Eq.~\eqref{e:dD-1}
+into Eq.~\eqref{e:dmu-exact} leads to
+%%
+%\begin{equation} \label{e:delta-Taylor}
+% \delta {\bf D} = \left[ {\bf v} + {\bf v}^\dagger \right]
+%                + \left[ {\bf v}{\bf v}^\dagger - {\bf v}^\dagger{\bf v}\right] + \ldots 
+%\end{equation}
+%
+\begin{equation} \label{e:dmu-4-exact.linear-approximation}
+ \frac{1}{2} 
+ \delta {\BM{\upmu}}
+  \cong
+   \Tr{ 
+    \left[ 
+         {\mathbb{M}} {\BM\Delta} {\bf D}^{(0)}  
+    \right] }
+%
+  +\Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger}
+    \right] }
+%
+  -\Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta} {\bf D}^{(0)}
+    \right] }
+%
+  -\Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger} {\bf D}^{(0)}
+    \right] } \;,
+\end{equation}
+%
+It can be proven (see Appendix~\ref{a:orig-dep}) that such obtained
+induced dipole moment is independent on the origin. Therefore,
+in the above result and also in later course of the Paper the dipole origin has been omitted. 
+%where the dipole origin was omitted for notational clarity.
+If the AO basis is orthogonal, Eq.~\eqref{e:dmu-4-exact.linear-approximation} can be simplified by realising that
+%
+\begin{subequations}
+ \begin{align}
+  \Tr{ 
+    \left[ 
+         {\mathbb{M}} {\BM\Delta} {\bf D}^{(0)}  
+    \right] }
+%
+  +\Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger}
+    \right] }
+  &=
+2 \Tr{ 
+    \left[ 
+         \widetilde{\mathbb{M}} \cdot \delta {\bf C}
+   \right] }  \;,
+%
+\\
+%
+  \Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta} {\bf D}^{(0)}
+    \right] }
+%
+ +\Tr{ 
+    \left[ 
+         {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger} {\bf D}^{(0)}
+    \right] }
+  &=
+2 \Tr{ 
+    \left[ 
+         \widetilde{\mathbb{K}} \cdot \delta {\bf C}
+   \right] } \;.
+%
+ \end{align}
+\end{subequations}
+%
+Here we introduced the auxiliary tensors
+%
+\begin{subequations}
+ \begin{align}
+   \widetilde{\mathbb{M}}  &\equiv {\bf C}^\dagger {\mathbb{M}}     \;,           \\
+   \widetilde{\mathbb{K}}  &\equiv {\bf C}^\dagger {\mathbb{M}} {\bf D}^{(0)} \;, \\
+   \widetilde{\mathbb{L}}  &\equiv \widetilde{\mathbb{M}} - \widetilde{\mathbb{K}} \;.
+ \end{align}
+\end{subequations}
+%
+to simplify the notation. Hence, we have
+%
+\begin{equation} \label{e:dmu-l-vector}
+  \frac{1}{4} 
+ \delta {\BM{\upmu}} %({\bf r}_0) 
+   =
+   \Tr{ 
+    \left[ 
+         \widetilde{\mathbb{L}} \cdot \delta {\bf C}
+    \right] }
+   %
+   \equiv \sum_{i}^{\rm occ} \sum_\alpha {\bf l}_{i\alpha} \delta C_{\alpha i} \;,
+\end{equation}
+%
+where the Cartesian vector
+%
+\begin{equation}\label{e:l-vector}
+ {\bf l}_{i\alpha} \equiv \left[ \widetilde{\mathbb{M}} - \widetilde{\mathbb{K}} \right]_{i\alpha} 
+      = \left[  {\bf C}^\dagger \mathbb{M} \left[ \bf{1} - \bf{D}^{(0)} \right] \right]_{i\alpha}
+\end{equation}
+%
+and $i$ runs over occupied unperturbed MO's.
+Note that the intermediate quantity $\widetilde{\mathbb{L}}$ contains the projector onto
+the unoccupied MO space at the absence of the external electric field. It means that the
+perturbed solution is constructed from the unperturbed virtual orbitals as well.
+Although Eq.~\eqref{e:dmu-l-vector}
+is exact up to first order in ${\BM\Delta}$, it cannot be inverted at this moment to obtain $\delta {\bf C}$
+due to the presence of trace operation. 
+
+\subsection{Distributed Multipole Approach}
+
+The above problem can be simplified if the trace operation in Eq.~\eqref{e:dmu-l-vector} is broken down into
+two separate summations and then compared with the MO\hyp{}distributed partitioning 
+of the polarization\hyp{}induced dipole moment. Formally,
+%
+\begin{equation} \label{e:mu-ind-distributed-general}
+ \delta {\BM{\upmu}} = \sum_{i'}^{\rm occ} \delta {\BM{\upmu}}_{i'}  \;.
+\end{equation}
+%
+The molecular orbitals in Eq.~\eqref{e:mu-ind-distributed-general}
+are generally different from molecular orbitals in Eq.~\eqref{e:dmu-l-vector} because
+any unitary transformation of MO's preserves the total dipole moment of the system. In other words,
+Eq.~\eqref{e:dmu-l-vector} requires the following generalization
+%
+\begin{equation} \label{e:dmu-l-vector-X}
+  \frac{1}{4} 
+ \delta {\BM{\upmu}} %({\bf r}_0) 
+   =
+   \Tr{ 
+    \left[ {\bf X}^\dagger
+         \widetilde{\mathbb{L}}  \delta {\bf C}
+          {\bf X}
+    \right] } \;,
+\end{equation}
+%
+in which ${\bf X}$ is, until now, an arbitrary unitary transformation of unperturbed molecular orbitals
+%
+\begin{equation}
+ C_{\alpha i'} = \sum_i  C_{\alpha i} X_{ii'} \;,
+\end{equation}
+%
+and is, in general, dependent on the external electric field.
+Unfortunately, such an approach is greatly limited because now the target quantity $\delta {\bf C}$
+is involved in summations that are second order in ${\bf X}$. However,
+one can consider an opposite but much simpler problem when we look for such unitary transformation
+that will result in the MO\hyp{}distributed dipole moments equivalent to 
+$\sum_\alpha {\bf l}_{i\alpha} \delta C_{\alpha i}$ for $i$ running over \emph{known} set of unperturbed orbitals.
+It means that we require that
+%
+\begin{equation} \label{e:dmu-l-vector-mo-transform}
+ \frac{1}{4} \delta {\BM{\upmu}}_{i'}
+   \cong
+   \sum_\alpha {\bf l}_{i\alpha} \delta C_{\alpha i} \;.
+\end{equation}
+%
+%which is to be understood that ${\BM{\upmu}}^{(i)}$ refers to the part of the total induced dipole moment
+%that is compatible with the contribution to $\delta {\bf C}$ constructed from the known set of MO's.
+%(which is different from ${\BM{\upmu}}_i$ which 
+$\delta {\BM{\upmu}}_{i'}$ can be found from the coupled\hyp{}perturbed Hartree\hyp{}Fock theory,
+according to which the molecular polarizability is given as 
+%
+\begin{equation} \label{e:pol-cphf}
+ {\BM{\alpha}} = \Tr{{\mathbb{A}}} = \sum_i^{\rm occ} {\BM{\alpha}}_i  \;,
+\end{equation}
+%
+where
+%
+\begin{equation} \label{e:pol-cphf-A}
+ \left[{\mathbb{A}}\right]_{ij} = 2 \sum_r^{\rm vir} {\mathbb X}_{ir} \otimes {\mathbb{M}}_{rj}
+\end{equation}
+%
+and ${\BM{\alpha}}_i$ is the distributed polarizability associated with the $i$th occupied MO.
+In Eq.~\eqref{e:pol-cphf} the trace is performed along the occupied MO axes of ${\mathbb{A}}$
+whereas the tensor outer product ($\otimes$) in Eq.~\eqref{e:pol-cphf-A} refers to the Cartesian components of
+the perturbation operator $\hat{x}$ and dipole moment operator, projected onto the 
+occupied and virtual MO subspaces. Note also, that ${\mathbb{A}}$ is a square matrix with
+dimension $(N_{\rm occ} \times N_{\rm occ})$ of $(3 \times 3)$ matrices.
+
+Now, the induced dipole moment associated with the $i$th occupied
+MO is given by
+%
+\begin{equation} \label{e:dmu-dpol}
+ \delta {\BM{\upmu}}_i = {\BM{\alpha}}_i \cdot {\bf F}({\bf r}_i) \;.
+\end{equation}
+%
+In Eq.~\eqref{e:dmu-dpol}, ${\bf F}({\bf r}_i)$ is the electric field evaluated at the $i$th MO centroid of charge
+${\bf r}_i = \tbraket{i}{\hat{\bf r}}{i}$.
+It becomes apparent that
+%
+\begin{equation} \label{e:dmu-dpol-expl}
+ \delta {\BM{\upmu}}_{i'} = \left[ {\bf X}^\dagger {\mathbb A} {\bf X} \right]_{i'i'} \cdot {\bf F}({\bf r}_{i'}) \;.
+\end{equation}
+%
+We can now insert the above result into Eq.~\eqref{e:dmu-l-vector-mo-transform} and, after dropping off the primed indices
+and recasting the right hand side in a matrix form,
+we get
+%
+\begin{equation} \label{e:dmu-l-vector-mo-transform-X}
+ \frac{1}{4} \sum_{jk}^{\rm occ} X_{ji} \left[ {\bf A}_{jk} \cdot {\bf F}({\bf r}_i) \right] X_{ki}
+   =
+   \delta {\bf c}_i^T \cdot {\bf L}_i \;.
+\end{equation}
+%
+Note that now ${\bf L}_i$ is a matrix of size $(n \times 3)$ and $\delta{\bf c}_i$ is just the $i$th column of the
+change in the LCAO-MO matrix due to the polarization process.
+%
+%The above equation can be re-written in a matrix form as
+%
+%\begin{equation} 
+% \left[ {\mathbb L} \right]_{\alpha \zeta \beta} = L_{\beta\alpha}^{(\zeta)}
+%\end{equation}
+%%
+%of size $m \times 3 \times m$.
+%Note that, in this notation, ${\BM{\upmu}}_i^T$ and $\overline{\BM\Delta}_i^T$ are row vectors
+%whereas $\overline{\BM\Delta}_i^p$ is a column vector. 
+The solution for $\delta {\bf C}$, given that ${\bf X}$ is known, is
+%
+\begin{equation} \label{e:mu-ind.matrix.linear.solution}
+  \delta {\bf c}_i^T = \frac{1}{4}
+                    \sum_{jk}^{\rm occ} X_{ji} X_{ki}
+                    \left[ {\bf A}_{jk} \cdot {\bf F}({\bf r}_i) \right] \cdot
+                    \left[ {\bf L}_i  \right]^{-1}_{\rm Left} \;,
+\end{equation}
+%
+where $\left[ {\bf L}_i  \right]^{-1}_{\rm Left}$ is a left inverse
+of ${\bf L}_i$ matrix 
+%
+\begin{equation} 
+      \left[ {\bf L}_i  \right]^{-1}_{\rm Left}   \equiv
+       \left[ {\bf L}_i^T {\bf L}_i \right]^{-1} {\bf L}_i^T 
+\end{equation}
+%
+and has size $(3\times n)$. Note that the \emph{right inverse} of ${\bf L}_i$
+does not exist because ${\bf L}_i {\bf L}_i^T$ is singular.
+%Clearly, in the above approximation, ${\bf X}$ depends on the choice
+%of unperturbed orbitals.
+
+
+\subsection{Density Matrix Change}
+
+Now we can obtain the final expression for the density matrix change 
+due to external electric field that reproduces the 
+induced dipole moment of the molecule, provided ${\bf X}$ is known. 
+The change in the LCAO\hyp{}MO coefficient is parametereized as
+%
+\begin{equation} \label{e:dC-dmatpol}
+ \delta C_{\alpha i} = {\bf b}_{\alpha i}[{\bf X}] \cdot {\bf F}({\bf r}_i)  \;,
+\end{equation}
+%
+where the susceptibility tensor is defined as
+%
+\begin{equation} \label{e:susceptibility-b}
+  b_{\alpha i;w}[{\bf X}] = \frac{1}{4} \sum_{jk}^{\rm occ} \sum_u^{x,y,z} X_{ji} X_{ki} A_{jk;uw} 
+   \left[ \left[ {\bf L}_i  \right]^{-1}_{\rm Left} \right]_{u;\alpha}  
+\end{equation}
+%
+for $w=x,y,z$. The result from Eq.~\eqref{e:dC-dmatpol} can be now inserted into 
+the expression for $\delta {\bf D}$ from Eq.~\eqref{e:dD-2} to finally give
+%
+\begin{equation}\label{e:final-model}
+ \delta D_{\alpha\beta} \approx \sum_i^{\rm occ} {\bf B}^{(i)}_{\alpha\beta} \cdot {\bf F}({\bf r}_i)  \;,
+\end{equation}
+%
+where the \emph{density matrix polarization susceptibility tensor} is
+%
+\begin{equation}  \label{e:susceptibility-B}
+ {\bf B}^{(i)}_{\alpha\beta} = \left\{
+%
+                               C_{\alpha i} {\bf b}_{\beta i} + C_{\beta i} {\bf b}_{\alpha i}
+                               - \sum_\gamma 
+                                 \left( 
+               D_{\alpha\gamma} C_{\beta i} + D_{\beta\gamma} C_{\alpha i}
+                                 \right)
+                                           {\bf b}_{\gamma i}
+%
+\right\}  \;.
+\end{equation}
+%
+Hence, the 3D vector ${\bf B}^{(i)}_{\alpha\beta}$ describes the polarization affinity
+of the density matrix element associated with $\alpha$th and $\beta$th orthogonal AO's.
+Transforming these vectors to a non\hyp{}orthogonal AO basis is straightforward.
+
+It is emphasized here that all elements of ${\bf B}_{\alpha\beta}^{(i)}$ except of ${\bf X}$
+are unique properties of electronically unperturbed molecule. 
+However, Eq.~\eqref{e:final-model} is an approximation because (i) it is based on the approximate
+relation in Eq.~\eqref{e:dmu-l-vector-mo-transform} and (ii) only total dipole moment (but not quadrupole
+and higher moments) is exactly
+reproduced by the current model. Due to the above reasons, the existence of ${\bf X}$ that
+reproduces the exact perturbed density matrix with vanishing error is not guaranteed. 
+Moreover, as it was pointed out before, ${\bf X}$ almost certainly depends on the external electric field. 
+Next section adresses the problem of finding the optimal ${\bf X}$ that is treated as an adjustable
+matrix.
+
+%unperturbed molecule. This makes them perfect candidates for general effective fragment parameters.
+
+\subsection{Determination of Optimal Unitary Transformation}
+
+In this Work the major task is then brought to examining if it is possible to find such ${\bf X}$ that optimizes
+the perturbed density matrix with the minimal error. If it would be the case, the next important question
+would be how much the effective unitary transformation depends on the external electric field.
+
+We start with recasting Eq.~\eqref{e:final-model} in a form that is simpler for further analysis, mainly
+%
+\begin{equation}
+ \delta D_{\alpha\beta}^{(N)} \approx
+  \sum_{ijk}^{\rm occ} X_{ji} X_{ki} S_{ijk}^{\alpha\beta(N)}  \;,
+\end{equation}
+%
+where 
+%
+\begin{equation}
+  S_{ijk}^{\alpha\beta(N)} \equiv 
+   \frac{1}{4} \sum_{uw}^{x,y,z} A_{jk;uw} 
+   \left\{
+     C_{\alpha i} G_{i\beta ;u} + C_{\beta i} G_{i\alpha ;u} 
+   - \sum_\gamma \left(
+        D_{\alpha\gamma} C_{\beta i} + D_{\beta\gamma} C_{\alpha i} 
+    \right) G_{i\gamma ;u}
+   \right\}
+   F_w^{(N)}({\bf r}_i)  \;,
+\end{equation}
+%
+$N$ denotes the sample taken for analysis and
+%
+\begin{equation}
+ G_{i\alpha ;u} \equiv  \left[ \left[ {\bf L}_i  \right]^{-1}_{\rm Left} \right]_{u;\alpha}  \;.
+\end{equation}
+%
+%for notational clarity. 
+Now, let us assume that we have gathered $N$ samples with $N$ known exact estimates
+of density matrix (each for different distribution of electric field) denoted as $\delta D_{\alpha\beta}^{(N),{\rm ref}}$. 
+We define the objective, positive definite
+error function
+%
+\begin{equation} \label{e:Z-func}
+ Z[{\bf X}] = \sum_N \sum_{\alpha\beta} 
+    \left( 
+      \delta D_{\alpha\beta}^{(N)} - \delta D_{\alpha\beta}^{(N),{\rm ref}}
+    \right)^2
+\end{equation}
+%
+that is subject to minimization under unitary constraints for $\bf X$.
+Writing $Z$ function explicitly we can see that it is fourth\hyp{}order with respect to
+the unitary transformation
+%
+\begin{equation} \label{e:Z-func-explicit}
+ Z[{\bf X}] = \sum_{ijklmn} X_{ji} X_{ki} X_{ml} X_{nl} R_{ijklmn}
+    + \sum_{ijk} X_{ji} X_{ki} P_{ijk} 
+    + Z_0
+\end{equation}
+%
+where 
+%
+\begin{subequations}
+ \begin{align}
+  R_{ijklmn} &=  \sum_N \sum_{\alpha\beta} S_{ijk}^{\alpha\beta(N)} S_{lmn}^{\alpha\beta(N)} \\
+  P_{ijk}    &=-2\sum_N \sum_{\alpha\beta} \delta D_{\alpha\beta}^{(N),{\rm ref}} S_{ijk}^{\alpha\beta(N)} \\
+  Z_0        &=  \sum_N \sum_{\alpha\beta} \left[ \delta D_{\alpha\beta}^{(N),{\rm ref}} \right]^2
+ \end{align}
+\end{subequations}
+%
+We developed the iterative algorithm to find the global optimum of $Z$ and the Reader 
+is referred to the Appendix~\ref{a:X-mat} for more details. 
+
+\section{\label{s:3}Calculation Details}
+
+The theory that is necessary to validate the density matrix susceptibility model from Section~\ref{s:2}
+was implemented in our in\hyp{}house plugin to Psi4 quantum chemistry program.
+A few simple molecules were selected as test systems, that were subject to 
+perturbations due to uniform electric fields as well as a collection of point charges
+generating a non\hyp{}uniform electric fields. For finding a general unitary transformations,
+100 random point charge distributions were selected for which an exact density matrices
+were calculated.
+
+Throughout the Work, the Hartree\hyp{}Fock level was assumed and the aug-cc-pVTZ basis set
+was used. For all the calculations of the density matrix polarization susceptibility tensors, 
+atomic basis was orthogonalized by using the L{\"o}wdin symmetric orthogonalization scheme.
+
+
+\section{\label{s:4}Results and Discussion}
+
+
+%The critical assessment of the proposed model is discussed in two stages: (i) first
+%the capability of the model in capturing the polarization 
+It is instructive to analyze first the capability of the model in capturing the polarization
+process by studying the 3D electronic density distortions due to the electric field perturbation.
+For this purpose we consider a special case of the model in which ${\bf X}={\bf 1}$, i.e., without
+optimization of the particular density matrix elements with respect to benchmark. In such a case,
+density matrix polarization susceptibility tensors are implicitly independent on the electric field
+distribution and can be computed for an isolated molecule.
+
+For this purpose we studied few molecules
+in a uniform external electric field. Although the density matrix elements in a chosen AO basis
+can be inconsistent with other quantities (such as Fock matrix and so on) the polarization 
+
+
+\section{\label{s:5}Summary and a few concluding remarks}
+Test summary bla bla blaaaaa dfn fdj gf ads;jha g;ja gf; p.
+
+\begin{acknowledgments}
+This project is carried out under POLONEZ programme which has received funding from the European Union's
+Horizon~2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement 
+No.~665778. This project is funded by National Science Centre, Poland 
+(grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+\end{acknowledgments}
+
+%
+\appendix
+
+\section{\label{a:orig-dep} Origin-Dependence of Induced Dipole Moment}
+
+We need to be aware that multipole integrals depend on the origin with respect to which they are evaluated.
+However, the induced dipole moments defined in Eq.~\eqref{e:mu-ind-distributed-general} 
+have to be origin independent. 
+%Let us check if this is the case.
+
+Let us start with noticing that
+%
+\begin{equation}
+ \left[ {\bf M} \right]_{i\alpha} ({\bf r}_0) 
+ = \left[ {\bf M} \right]_{i\alpha} ({\bf 0}) - {\bf r}_0 \left[ {\bf C}^\dagger \right]_{i\alpha}  \;.
+\end{equation}
+%
+Further we have
+%
+\begin{equation}
+ \left[ {\bf K} \right]_{i\alpha} ({\bf r}_0) 
+ = \left[ {\bf K} \right]_{i\alpha} ({\bf 0}) - {\bf r}_0 \left[ {\bf C}^\dagger {\bf D} \right]_{i\alpha} \;.
+\end{equation}
+%
+But ${\bf C}^\dagger {\bf D}={\bf C}^\dagger {\bf C} {\bf C}^\dagger={\bf C}^\dagger$ in orthogonal
+AO basis. This implies that
+%
+\begin{equation}
+   \left[ {\bf L} \right]_{i\alpha} ({\bf r}_0) 
+ = \left[ {\bf M} \right]_{i\alpha} ({\bf r}_0) - \left[ {\bf K} \right]_{i\alpha} ({\bf r}_0)
+ = \left[ {\bf M} \right]_{i\alpha} ({\bf 0})   - \left[ {\bf K} \right]_{i\alpha} ({\bf 0})
+ = \left[ {\bf L} \right]_{i\alpha} ({\bf 0}) \;.
+\end{equation}
+%
+Therefore, it is proved that the polarization\hyp{}induced distributed dipole moments 
+defined in Eq.~\eqref{e:mu-ind-distributed-general} 
+are origin independent.
+Thus, one can compute dipole integrals with respect to any origin and resulting
+susceptibilities ${\bf B}_{\alpha\beta}^{(i)}$ from Eq.~\eqref{e:susceptibility-B} will be uniquely defined.
+
+\section{\label{a:X-mat}Algorithm for Optimal Unitary Transformation}
+
+The error function from Eq.~\eqref{e:Z-func-explicit} is optimized by using the generalized Jacobi iteration algorithm
+which is an extension of the Edmiston\hyp{}Reudenberg optimization scheme to tackle high\hyp{}order
+complicated tensor equations. 
+
+Here we discuss a general algorithm that minimizes or maximizes the following function
+%
+\begin{equation} \label{e:a.Z}
+ Z[{\bf X}] = \sum_{ijklmn} X_{ki} X_{lj} X_{mi} X_{nj} R_{ijklmn}
+             +\sum_{ijk}    X_{ji} X_{ki} P_{ijk}
+\end{equation}
+%
+under unitary constraint for ${\bf X}$. ${\bf P}^{(3)}$ and ${\bf R}^{(6)}$ are the real, arbitrary three\hyp{} and
+six\hyp{}rank tensors of size $N^3$ and $N^6$, respectively. Note that $Z_0$ term 
+in Eq.~\eqref{e:Z-func-explicit} is constant
+and therefore we omit this term in the present section.
+
+Optimization of $ {\bf X} $ is factorized into a sequence of 2-dimensional Jacobi rotations with one real parameter
+%
+\begin{equation}
+ {\bf X}^{\rm New} = {\bf X}^{\rm Old} \cdot {\bf U}^{IJ}(\gamma)
+\end{equation}
+%
+where 
+%
+\begin{equation} \label{e:a.U}
+ U_{ij}^{IJ}(\gamma) = \delta_{ij}
+                       \left( 1-\delta_{iI} \right)
+                       \left( 1-\delta_{jJ} \right) 
+                       +
+                       \cos(\gamma) \delta_{ij} \left( \delta_{iI} + \delta_{jJ} \right)
+                       + 
+                       \sin(\gamma) \left( 1-\delta_{ij} \right) 
+                       \left( \delta_{iI} \delta_{jJ} - \delta_{iJ} \delta_{jI}\right)
+\end{equation}
+%
+is the Jacobi transformation matrix constructed for the appropriately chosen $ I$th and $ J$th element ($I\neq J$)
+from the entire $ N$-dimensional set. Each step is performed by finding the optimal pair
+$(I,J)$ (out of all $N(N-1)/2$ pairs) for which optimal $\gamma*$ gives the largest decrease (increase) of $Z$ 
+in the case of minimization (maximization). 
+For the sake of algirithmic simplicity, 
+every iteration after $ {\bf U}^{IJ}(\gamma) $ has been formed, $ {\bf X}^{\rm Old} $ 
+is for a while assumed to be an identity matrix and the $ {\bf R} $ as well as $ {\bf P} $ tensors 
+are transformed according to the following formulae
+%
+\begin{subequations}\label{e:a.rp-transformations}
+ \begin{align}
+ R_{ijklmn} &\rightarrow \sum_{k'l'm'n'} R_{ijk'l'm'n'} X_{k'k} X_{l'l} X_{m'm} X_{n'n} \;, \\
+ P_{ijk}    &\rightarrow \sum_{j'k'}     P_{ijk} X_{j'j} X_{k'k}  \;.
+ \end{align}
+\end{subequations}
+%
+The full transformation matrix is accumulated in the memory buffer until convergence.
+
+To find the optimal $\gamma^*$ for a chosen $(I,J)$ pair
+all the roots of the first derivative of $Z$ with respect to $\gamma$
+need to be found first, i.e.,
+%
+\begin{equation} \label{e:a.Z-grad}
+ \frac{\partial Z[{\bf U}^{IJ}(\gamma)]}{\partial \gamma} = 0 \;.
+\end{equation}
+%
+From expression for ${\bf U}^{IJ}$ in Eq.~\eqref{e:a.U} it is clear that Eq.~\eqref{e:a.Z-grad}
+adopts the truncated Fourier series
+%
+\begin{equation} \label{e:a.Z-grad-Fourier}
+ \frac{\partial Z[{\bf U}^{IJ}(\gamma)]}{\partial \gamma} = 
+  a_0 + \sum_{q=1}^4 \left\{ a_q\cos(q\gamma) + b_q\sin(q\gamma) \right\} = 0\;.
+\end{equation}
+%
+In general, if $Z$ function subject to optimize contains $Y$ as maximal power of ${\bf X}$
+then the Fourier series will have $2Y+1$ coefficients and maximally $2Y$ roots. Therefore,
+in the case of $Z$ in Eq.~\eqref{e:a.Z} there will be eight roots, from which only one
+is to be chosen.
+
+Finding all the Fourier coefficients is straightforward though tedious if attempted analytically. 
+In the Supporting Information the analytical formulae for the Fourier coefficients are given. 
+Once all the Fourier coefficients are found, Eq.~\eqref{e:a.Z-grad-Fourier} can be solved
+by utilizing the Boyd's method.\cite{Boyd.JEngMath.2006} 
+In our case, the roots are given by
+%
+\begin{equation}
+ \gamma_n = \Re\left[-i\ln{\varepsilon_n}\right] \;,
+\end{equation}
+%
+where $\varepsilon_n$ are the complex eigenvalues of the Frobenius\hyp{}Jacobi matrix
+%
+\begin{equation}
+\begin{pmatrix}
+0 & 1 & 0 & 0 & 0 & 0 & 0 & 0\\
+0 & 0 & 1 & 0 & 0 & 0 & 0 & 0\\
+0 & 0 & 0 & 1 & 0 & 0 & 0 & 0\\
+0 & 0 & 0 & 0 & 1 & 0 & 0 & 0\\
+0 & 0 & 0 & 0 & 0 & 1 & 0 & 0\\
+0 & 0 & 0 & 0 & 0 & 0 & 1 & 0\\
+-\frac{a_4+ib_4}{a_4-ib_4} &
+-\frac{a_3+ib_3}{a_4-ib_4} &
+-\frac{a_2+ib_2}{a_4-ib_4} &
+-\frac{a_1+ib_1}{a_4-ib_4} & 
+-\frac{2a_0}{a_4-ib_4} &
+-\frac{a_1-ib_1}{a_4-ib_4} &
+-\frac{a_2-ib_2}{a_4-ib_4} &
+-\frac{a_3-ib_3}{a_4-ib_4} &
+\end{pmatrix}  \;.
+\end{equation}
+%
+The roots can also be determined numerically. 
+It is anticipated here that the above described method is not limited to Eq.~\eqref{e:a.Z} but can be directly applied 
+to design unitary optimizations for more complicated tensor equations. In fact, the whole problem
+reduces to finding the roots of the Fourier series.
+It is also worth mentioning that the orbital localization method of Edmiston and Reudenberg
+is the special case of the above algorighm. In their case the most of the Fourier coefficients
+vanish leaving only those for $\cos(4\gamma)$. The according $Z$ function reaches 
+the same maxima (minima) for angles that are constant through the iterative process,
+in contrast to the general case when they need to be updated every iteration,
+after the transformations similar to those in Eqs.~\eqref{e:a.rp-transformations}.
+
+\bibliography{references}
+
+\end{document}
