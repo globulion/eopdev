@@ -30,10 +30,12 @@ void oepdev::UniformEFieldPolarGEFactory::compute_samples(void)
         cout << oepdev::string_sprintf(" Computation for N=%2d F=[%14.4f, %14.4f, %14.4f]\n",n+1, 
                                          field->get(0), field->get(1), field->get(2));
 
-        referenceDensityMatrixSet_[n]->copy(perturbed_dmat(field));
-        referenceDensityMatrixSet_[n]->subtract(wfn_->Da());
+        std::shared_ptr<oepdev::RHFPerturbed> pert = perturbed_state(field);
+        referenceStatisticalSet_.DensityMatrixSet[n]->copy(pert->Da());
+        referenceStatisticalSet_.DensityMatrixSet[n]->subtract(wfn_->Da());
+        VMatrixSet_[n]->copy(pert->Vpert());
 
-        electricFieldSet_         .push_back(fields);
+        electricFieldSet_.push_back(fields);
    }
 }
 // abstract methods

@@ -12,6 +12,7 @@
 #include "psi4/libmints/vector3.h"
 #include "../liboep/oep.h"
 #include "../libutil/cphf.h"
+#include "../libutil/scf_perturb.h"
 
 namespace oepdev{
 
@@ -511,14 +512,14 @@ class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_fro
    /// Randomly draw charge value
    double draw_charge();
 
-   /// Solve SCF equations to find perturbed one-particle density matrix due to uniform electric field
-   std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& field);
+   /// Solve SCF equations to find perturbed state due to uniform electric field
+   std::shared_ptr<oepdev::RHFPerturbed> perturbed_state(const std::shared_ptr<psi::Vector>& field);
 
-   /// Solve SCF equations to find perturbed one-particle density matrix due to point charge
-   std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Vector>& pos, const double& charge);
+   /// Solve SCF equations to find perturbed state due to point charge
+   std::shared_ptr<oepdev::RHFPerturbed> perturbed_state(const std::shared_ptr<psi::Vector>& pos, const double& charge);
 
-   /// Solve SCF equations to find perturbed one-particle density matrix due set of point charges
-   std::shared_ptr<psi::Matrix> perturbed_dmat(const std::shared_ptr<psi::Matrix>& charges);
+   /// Solve SCF equations to find perturbed state due set of point charges
+   std::shared_ptr<oepdev::RHFPerturbed> perturbed_state(const std::shared_ptr<psi::Matrix>& charges);
 
    /// Evaluate electric field at point (x,y,z) due to point charges 
    std::shared_ptr<psi::Vector> field_due_to_charges(const std::shared_ptr<psi::Matrix>& charges, 
@@ -640,12 +641,27 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    bool hasQuadrupolePolarizability_;
 
 
-   // --> Sets of statistical data <-- //
+   // --> Sets of statistical data <-- //  ----> TODO: Group them into objects (structures)
 
-   /// Reference density matrix set
-   std::vector<std::shared_ptr<psi::Matrix>> referenceDensityMatrixSet_;
-   /// Model density matrix set
-   std::vector<std::shared_ptr<psi::Matrix>> modelDensityMatrixSet_;
+   /// A structure to handle statistical data
+   struct StatisticalSet {
+      /// Interaction energy set
+      std::vector<double> InducedInteractionEnergySet;
+      /// Density matrix set
+      std::vector<std::shared_ptr<psi::Matrix>> DensityMatrixSet;
+      /// Induced dipole moment set
+      std::vector<std::shared_ptr<psi::Vector>> InducedDipoleSet;
+      /// Induced quadrupole moment set
+      std::vector<std::shared_ptr<psi::Matrix>> InducedQuadrupoleSet;
+   };
+
+   /// Reference statistical data
+   StatisticalSet referenceStatisticalSet_;
+   /// Model statistical data
+   StatisticalSet modelStatisticalSet_;
+   
+   /// Potential matrix set
+   std::vector<std::shared_ptr<psi::Matrix>> VMatrixSet_;
    /// Electric field set
    std::vector<std::vector<std::shared_ptr<Vector>>> electricFieldSet_;
    /// Electric field gradient set
@@ -653,7 +669,7 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    /// Electric field sum set
    std::vector<std::vector<double>> electricFieldSumSet_;
    /// Electric field gradient sum set
-   std::vector<std::shared_ptr<Vector>> electricFieldGradientSumSet_;
+   std::vector<std::shared_ptr<psi::Vector>> electricFieldGradientSumSet_;
 
    /// Compute electric field sum set
    void compute_electric_field_sums(void);

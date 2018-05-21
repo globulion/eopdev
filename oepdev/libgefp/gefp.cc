@@ -4,7 +4,6 @@
 #include "gefp.h"
 #include "../libutil/util.h"
 #include "../libutil/unitary_optimizer.h"
-#include "../libutil/scf_perturb.h"
 
 using namespace std;
 
@@ -495,25 +494,23 @@ std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::field_due_to_charges(const 
 {
   return this->field_due_to_charges(charges, pos->get(0), pos->get(1), pos->get(2));
 }
-std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& field)
+std::shared_ptr<oepdev::RHFPerturbed> oepdev::PolarGEFactory::perturbed_state(const std::shared_ptr<psi::Vector>& field)
 {
   std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, 
                   oepdev::create_superfunctional("HF", options_), options_, wfn_->psio());
   scf->set_perturbation(field);
   scf->compute_energy();
-  std::shared_ptr<psi::Matrix> dmat = scf->Da();
-  return dmat;
+  return scf;
 }
-std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Vector>& pos, const double& q)
+std::shared_ptr<oepdev::RHFPerturbed> oepdev::PolarGEFactory::perturbed_state(const std::shared_ptr<psi::Vector>& pos, const double& q)
 {
   std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, 
                   oepdev::create_superfunctional("HF", options_), options_, wfn_->psio());
   scf->set_perturbation(pos, q);
   scf->compute_energy();
-  std::shared_ptr<psi::Matrix> dmat = scf->Da();
-  return dmat;
+  return scf;
 }
-std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::shared_ptr<psi::Matrix>& charges)
+std::shared_ptr<oepdev::RHFPerturbed> oepdev::PolarGEFactory::perturbed_state(const std::shared_ptr<psi::Matrix>& charges)
 {
   std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_,
                   oepdev::create_superfunctional("HF", options_), options_, wfn_->psio());
@@ -525,8 +522,7 @@ std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::perturbed_dmat(const std::s
        scf->set_perturbation(x, y, z, q);
   }
   scf->compute_energy();
-  std::shared_ptr<psi::Matrix> dmat = scf->Da();
-  return dmat;
+  return scf;
 }
 void oepdev::PolarGEFactory::draw_samples(std::vector<std::shared_ptr<psi::Matrix>>& electricFieldSet,
                                           std::vector<std::shared_ptr<psi::Matrix>>& densityMatrixSet)
@@ -549,7 +545,7 @@ void oepdev::PolarGEFactory::draw_samples(std::vector<std::shared_ptr<psi::Matri
                                        field->get(0), field->get(1), field->get(2));
        // Compute 1-particle density matrix in the presence of uniform electric field
        std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
-       dmat->copy(perturbed_dmat(field));
+       dmat->copy(perturbed_state(field)->Da());
        dmat->subtract(wfn_->Da());
        densityMatrixSet.push_back(dmat);
   }
@@ -587,7 +583,7 @@ void oepdev::PolarGEFactory::draw_samples(std::vector<std::shared_ptr<psi::Matri
        electricFieldSet.push_back(fields);
        // Compute 1-particle density matrix in the presence of point charge(s)
        std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
-       dmat->copy(perturbed_dmat(charges));
+       dmat->copy(perturbed_state(charges)->Da());
        dmat->subtract(wfn_->Da());
        densityMatrixSet.push_back(dmat);
    }
@@ -738,7 +734,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::UnitaryTransformedMOPolarGEFactory::c
                                         fields[N]->get(0), fields[N]->get(1), fields[N]->get(2));
 
        std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
-       dmat->copy(perturbed_dmat(fields[N]));
+       dmat->copy(perturbed_state(fields[N])->Da());
        std::shared_ptr<psi::Matrix> dmat_diff_bar = psi::Matrix::triplet(Y, dmat, Y, false, false, false);
        dmat_diff_bar->subtract(Dbar);
        dmats.push_back(dmat_diff_bar);
@@ -974,7 +970,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::ScaledXYZPolarGEFactory::compute()
        fields.push_back(draw_field());
 
        std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
-       dmat->copy(perturbed_dmat(fields[i]));
+       dmat->copy(perturbed_state(fields[i])->Da());
        dmat->subtract(wfn_->Da());
        dmats.push_back(dmat);
   }
@@ -1283,7 +1279,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::ScaledAOPolarGEFactory::compute()
                                         fields[N]->get(0), fields[N]->get(1), fields[N]->get(2));
 
        std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
-       dmat->copy(perturbed_dmat(fields[N]));
+       dmat->copy(perturbed_state(fields[N])->Da());
        dmat->subtract(wfn_->Da());
        dmats.push_back(dmat);
   }
@@ -1411,7 +1407,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::TransformedMOPolarGEFactory::compute(
        for (int i=0; i<nq; ++i) cout << oepdev::string_sprintf(" Computation for N=%2d X=[%14.4f, %14.4f, %14.4f]\n",N+1,
                                         pointCharges[N]->get(i,0), pointCharges[N]->get(i,1), pointCharges[N]->get(i,2));
        std::shared_ptr<psi::Matrix> dmat = std::make_shared<psi::Matrix>("",nbf,nbf);
-       dmat->copy(perturbed_dmat(pointCharges[N]));
+       dmat->copy(perturbed_state(pointCharges[N])->Da());
        dmat->subtract(wfn_->Da());
        dmats.push_back(dmat);
   }

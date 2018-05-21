@@ -35,7 +35,7 @@ void oepdev::QuadraticUniformEFieldPolarGEFactory::compute_gradient(int i, int j
         double fy = electricFieldSet_[n][0]->get(1);
         double fz = electricFieldSet_[n][0]->get(2);
         double fs = electricFieldSumSet_[n][0] * 2.0 * mField_;
-        double dij=-referenceDensityMatrixSet_[n]->get(i, j);
+        double dij=-referenceStatisticalSet_.DensityMatrixSet[n]->get(i, j);
         g1_x += dij * fx;
         g1_y += dij * fy;
         g1_z += dij * fz;

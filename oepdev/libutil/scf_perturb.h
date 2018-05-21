@@ -1,6 +1,7 @@
 #ifndef _oepdev_libutil_scf_perturb_h
 #define _oepdev_libutil_scp_perturb_h
 /** @file scf_perturb.h */
+
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/matrix.h"
 #include "psi4/libscf_solver/rhf.h"
@@ -81,15 +82,26 @@ class RHFPerturbed : public psi::scf::RHF
      */
     virtual void set_perturbation(const double& rx, const double& ry, const double& rz, const double& charge);
 
+    /// Get a copy of the perturbation potential one-electron matrix
+    std::shared_ptr<psi::Matrix> Vpert() const {return std::make_shared<psi::Matrix>(Vpert_);}
+
   protected:
 
     /// Perturbing electric field
     std::shared_ptr<psi::Vector> perturbField_;
     /// Perturbing charges
     std::shared_ptr<PerturbCharges> perturbCharges_;
+
+    /// Perturbation potential one-electron matrix
+    std::shared_ptr<psi::Matrix> Vpert_;
     
     /// Add the electrostatic perturbation to the Hcore matrix
     virtual void perturb_Hcore();
+
+  private:
+
+    /// Initialize the Vpert_ as zero matrix
+    void common_init();
 };
 
 /** \example example_scf_perturb.cc

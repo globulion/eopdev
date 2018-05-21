@@ -20,17 +20,25 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPH
    mField_(options_.get_double("DMATPOL_SCALE_1")),
    Zinit_(-1.0),
    Z_(-1.0),
-   referenceDensityMatrixSet_({}),
-   modelDensityMatrixSet_({}),
+   referenceStatisticalSet_({{},{},{},{}}),
+   modelStatisticalSet_({{},{},{},{}}),
+   VMatrixSet_({}),
    electricFieldSet_({}),
    electricFieldGradientSet_({}),
    electricFieldSumSet_({}),
    electricFieldGradientSumSet_({})
 {
-   // Allocate memory for density matrix sets
+   // Allocate memory for matrix sets
    for (int n=0; n<nSamples_; ++n) {
-        referenceDensityMatrixSet_.push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
-        modelDensityMatrixSet_    .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
+        VMatrixSet_                                         .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
+        referenceStatisticalSet_.DensityMatrixSet           .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
+        referenceStatisticalSet_.InducedDipoleSet           .push_back(std::make_shared<psi::Vector>("", 3));
+        referenceStatisticalSet_.InducedQuadrupoleSet       .push_back(std::make_shared<psi::Matrix>("", 3, 3));
+        referenceStatisticalSet_.InducedInteractionEnergySet.push_back(0.0);
+        modelStatisticalSet_.DensityMatrixSet               .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
+        modelStatisticalSet_.InducedDipoleSet               .push_back(std::make_shared<psi::Vector>("", 3));
+        modelStatisticalSet_.InducedQuadrupoleSet           .push_back(std::make_shared<psi::Matrix>("", 3, 3));
+        modelStatisticalSet_.InducedInteractionEnergySet    .push_back(0.0);
    }
 }
 oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf)
@@ -182,7 +190,7 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    // TODO
    cout << " Statistical evaluation ...\n";
    for (int n=0; n<nSamples_; ++n) {
-        referenceDensityMatrixSet_[n]->partial_cholesky_factorize();
+        referenceStatisticalSet_.DensityMatrixSet[n]->partial_cholesky_factorize();
    }
 }
 void oepdev::GeneralizedPolarGEFactory::compute_electric_field_gradient_sums(void) {

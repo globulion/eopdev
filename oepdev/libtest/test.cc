@@ -4,7 +4,6 @@
 #include "../libutil/cphf.h"
 #include "../libutil/util.h"
 #include "../libutil/unitary_optimizer.h"
-#include "../libutil/scf_perturb.h"
 #include "../libgefp/gefp.h"
 
 using namespace std;

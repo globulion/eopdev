@@ -43,10 +43,12 @@ void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
                                               field->get(0), field->get(1), field->get(2));
         }
 
-        referenceDensityMatrixSet_[n]->copy(perturbed_dmat(charges));
-        referenceDensityMatrixSet_[n]->subtract(wfn_->Da());
+        std::shared_ptr<oepdev::RHFPerturbed> pert = perturbed_state(charges);
+        referenceStatisticalSet_.DensityMatrixSet[n]->copy(pert->Da());
+        referenceStatisticalSet_.DensityMatrixSet[n]->subtract(wfn_->Da());
+        VMatrixSet_[n]->copy(pert->Vpert());
 
-        electricFieldSet_         .push_back(fields_n);
+        electricFieldSet_.push_back(fields_n);
    }
  
 }

@@ -7,15 +7,23 @@ namespace oepdev {
 RHFPerturbed::RHFPerturbed(std::shared_ptr<psi::Wavefunction> ref_wfn, std::shared_ptr<psi::SuperFunctional> functional)
  : psi::scf::RHF(ref_wfn, functional), 
    perturbField_(std::make_shared<psi::Vector>("Perturbing Electric Field",3)),
-   perturbCharges_(std::make_shared<PerturbCharges>())
+   perturbCharges_(std::make_shared<PerturbCharges>()),
+   Vpert_(nullptr)
 {
+   common_init();
 }
 RHFPerturbed::RHFPerturbed(std::shared_ptr<psi::Wavefunction> ref_wfn, std::shared_ptr<psi::SuperFunctional> functional,
     psi::Options& options, std::shared_ptr<psi::PSIO> psio) 
  : psi::scf::RHF(ref_wfn, functional, options, psio),
    perturbField_(std::make_shared<psi::Vector>("Perturbing Electric Field",3)),
-   perturbCharges_(std::make_shared<PerturbCharges>())
+   perturbCharges_(std::make_shared<PerturbCharges>()),
+   Vpert_(nullptr)
 {
+   common_init();
+}
+void RHFPerturbed::common_init()
+{
+   Vpert_ = std::make_shared<psi::Matrix>("External Potential Matrix", basisset_->nbf(), basisset_->nbf());
 }
 RHFPerturbed::~RHFPerturbed()
 {
@@ -78,6 +86,9 @@ void RHFPerturbed::perturb_Hcore()
        Hadd->axpy(perturbCharges_->charges[n], V);
        V->zero();
   }
+
+  // Save the perturbation potential one-electron matrix
+  V_->copy(Hadd);
 
   // Add perturbation to Hcore matrix
   H_->add(Hadd);

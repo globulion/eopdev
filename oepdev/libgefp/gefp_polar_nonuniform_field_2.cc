@@ -32,7 +32,7 @@ void oepdev::QuadraticNonUniformEFieldPolarGEFactory::compute_gradient(int i, in
         double g1 = 0.0;
         double g2 = 0.0;
         for (int n=0; n<nSamples_; ++n) {                                                                  
-             double dij = -referenceDensityMatrixSet_[n]->get(i, j);
+             double dij = -referenceStatisticalSet_.DensityMatrixSet[n]->get(i, j);
              double fz = electricFieldSet_[n][s]->get(z);
              double fs = electricFieldSumSet_[n][s] * 2.0 * mField_;
              g1 += dij * fz;

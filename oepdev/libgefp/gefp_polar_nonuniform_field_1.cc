@@ -28,7 +28,7 @@ void oepdev::LinearNonUniformEFieldPolarGEFactory::compute_gradient(int i, int j
         int sz = 3*s + z;
         double g = 0.0;
         for (int n=0; n<nSamples_; ++n) {                            
-             double dij = -referenceDensityMatrixSet_[n]->get(i, j);
+             double dij = -referenceStatisticalSet_.DensityMatrixSet[n]->get(i, j);
              g += dij * electricFieldSet_[n][s]->get(z);
         }
         Gradient_->set(sz, 0, g);
