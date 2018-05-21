@@ -260,7 +260,18 @@ class GenEffPar
    *  @param fz - *z*-th Cartesian component of the uniform electric field vector (A.U.)
    */
    std::shared_ptr<psi::Matrix> compute_density_matrix(double fx, double fy, double fz);
-
+   /** \brief Compute the density matrix due to the non-uniform electric field perturbation.
+   *
+   *  @param fields - the list of non-uniform electric field vector (A.U.) evaluated at the distributed DMatPol sites
+   */
+   std::shared_ptr<psi::Matrix> compute_density_matrix(std::vector<std::shared_ptr<psi::Vector>> fields);
+   /** \brief Compute the density matrix due to the non-uniform electric field perturbation.
+   *
+   *  @param fields - the list of electric field vectors (A.U.) evaluated at the distributed DMatPol sites
+   *  @param grads  - the list of electric field gradient matrices (A.U.) evaluated at the distributed DMatPol sites
+   */
+   std::shared_ptr<psi::Matrix> compute_density_matrix(std::vector<std::shared_ptr<psi::Vector>> fields,
+                                                       std::vector<std::shared_ptr<psi::Matrix>> grads);
 
 
 
@@ -653,6 +664,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
       std::vector<std::shared_ptr<psi::Vector>> InducedDipoleSet;
       /// Induced quadrupole moment set
       std::vector<std::shared_ptr<psi::Matrix>> InducedQuadrupoleSet;
+      /// Sum of J and K matrix set
+      std::vector<std::shared_ptr<psi::Matrix>> JKMatrixSet;
    };
 
    /// Reference statistical data
@@ -691,6 +704,9 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
 
    // --> Computers <-- //
 
+   /// Computer of generalized JK objects
+   std::shared_ptr<psi::JK> jk_;
+   
    /// Compute the parameters
    void compute_parameters(void);
 

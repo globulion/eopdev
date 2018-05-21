@@ -20,26 +20,34 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPH
    mField_(options_.get_double("DMATPOL_SCALE_1")),
    Zinit_(-1.0),
    Z_(-1.0),
-   referenceStatisticalSet_({{},{},{},{}}),
+   referenceStatisticalSet_({{},{},{},{},{}}),
    modelStatisticalSet_({{},{},{},{}}),
    VMatrixSet_({}),
    electricFieldSet_({}),
    electricFieldGradientSet_({}),
    electricFieldSumSet_({}),
-   electricFieldGradientSumSet_({})
+   electricFieldGradientSumSet_({}),
+   jk_(nullptr)
 {
    // Allocate memory for matrix sets
    for (int n=0; n<nSamples_; ++n) {
         VMatrixSet_                                         .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
         referenceStatisticalSet_.DensityMatrixSet           .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
+        referenceStatisticalSet_.JKMatrixSet                .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
         referenceStatisticalSet_.InducedDipoleSet           .push_back(std::make_shared<psi::Vector>("", 3));
         referenceStatisticalSet_.InducedQuadrupoleSet       .push_back(std::make_shared<psi::Matrix>("", 3, 3));
         referenceStatisticalSet_.InducedInteractionEnergySet.push_back(0.0);
         modelStatisticalSet_.DensityMatrixSet               .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
+        modelStatisticalSet_.JKMatrixSet                    .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
         modelStatisticalSet_.InducedDipoleSet               .push_back(std::make_shared<psi::Vector>("", 3));
         modelStatisticalSet_.InducedQuadrupoleSet           .push_back(std::make_shared<psi::Matrix>("", 3, 3));
         modelStatisticalSet_.InducedInteractionEnergySet    .push_back(0.0);
    }
+   // Construct the JK object
+   jk_ = psi::JK::build_JK(wfn_->basisset(), psi::BasisSet::zero_ao_basis_set(), options_);
+   jk_->set_memory((options_.get_double("SCF_MEM_SAFETY_FACTOR")*(psi::Process::environment.get_memory() / 8L)));
+   jk_->initialize();
+   jk_->print_header();
 }
 oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf)
  : oepdev::GeneralizedPolarGEFactory(cphf, cphf->options())
@@ -47,6 +55,9 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPH
 }
 oepdev::GeneralizedPolarGEFactory::~GeneralizedPolarGEFactory()
 {
+   //if (!options_.get_bool("SAVE_JK")) {
+   //    jk_.reset();
+   //}
 }
 std::shared_ptr<oepdev::GenEffPar> oepdev::GeneralizedPolarGEFactory::compute(void)
 {
@@ -187,11 +198,84 @@ void oepdev::GeneralizedPolarGEFactory::compute_electric_field_sums(void) {
   }
 }
 void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
-   // TODO
    cout << " Statistical evaluation ...\n";
-   for (int n=0; n<nSamples_; ++n) {
-        referenceStatisticalSet_.DensityMatrixSet[n]->partial_cholesky_factorize();
+
+   // Grab some unperturbed quantities
+   std::shared_ptr<psi::Matrix> Hcore  = wfn_->H();
+   std::shared_ptr<psi::Matrix> Fock   = wfn_->Fa();
+   std::shared_ptr<psi::Matrix> D      = wfn_->Da();
+
+   // Compute model difference density matrices
+   if (hasQuadrupolePolarizability_) {
+      for (int n=0; n<nSamples_; ++n) {                                                                          
+           modelStatisticalSet_.DensityMatrixSet[n]->copy(PolarizationSusceptibilities_->compute_density_matrix(
+                     electricFieldSet_[n], electricFieldGradientSet_[n]));
+      }
+   } else {
+      for (int n=0; n<nSamples_; ++n) {                                                                          
+           modelStatisticalSet_.DensityMatrixSet[n]->copy(PolarizationSusceptibilities_->compute_density_matrix(
+                     electricFieldSet_[n]));
+      }
    }
+
+   // Compute changes in the Coulomb and exchange HF matrices
+   std::vector<psi::SharedMatrix>& C_left = jk_->C_left();
+   const std::vector<std::shared_ptr<psi::Matrix>>& J = jk_->J();
+   const std::vector<std::shared_ptr<psi::Matrix>>& K = jk_->K();
+
+   C_left.clear();
+   for (int n=0; n<nSamples_; ++n) {
+        std::shared_ptr<psi::Matrix> C = referenceStatisticalSet_.DensityMatrixSet[n]->partial_cholesky_factorize();
+        C_left.push_back(C);
+   }
+   jk_->compute();
+   for (int n=0; n<nSamples_; ++n) {
+        referenceStatisticalSet_.JKMatrixSet[n]->add(J[n]);
+        referenceStatisticalSet_.JKMatrixSet[n]->add(K[n]);
+   }
+   C_left.clear();
+   for (int n=0; n<nSamples_; ++n) {
+       std::shared_ptr<psi::Matrix> C = modelStatisticalSet_.DensityMatrixSet[n]->partial_cholesky_factorize();
+       C_left.push_back(C);
+   }
+   jk_->compute();
+   for (int n=0; n<nSamples_; ++n) {
+        modelStatisticalSet_.JKMatrixSet[n]->add(J[n]);
+        modelStatisticalSet_.JKMatrixSet[n]->add(K[n]);
+   }
+
+   for (int n=0; n<nSamples_; ++n) {
+
+        // ---> Compute interaction energy <--- //
+
+        double e_nuc = 0.0; // TODO: compute this 
+        double eint_refer = 2.0 * D->vector_dot(VMatrixSet_[n]) + e_nuc;
+        double eint_model = eint_refer;
+
+        std::shared_ptr<psi::Matrix> A = Hcore->clone(); 
+        A->add(VMatrixSet_[n]);
+        A->add(VMatrixSet_[n]);
+        A->add(Fock);
+        eint_refer += referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(A);
+        eint_model +=     modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(A);
+ 
+        std::shared_ptr<psi::Matrix> Dr = D->clone(); Dr->add(referenceStatisticalSet_.DensityMatrixSet[n]);
+        std::shared_ptr<psi::Matrix> Dm = D->clone(); Dm->add(    modelStatisticalSet_.DensityMatrixSet[n]);
+        eint_refer += Dr->vector_dot(referenceStatisticalSet_.JKMatrixSet[n]);
+        eint_model += Dm->vector_dot(    modelStatisticalSet_.JKMatrixSet[n]);
+        //std::shared_ptr<psi::Matrix> Cr = referenceStatisticalSet_.DensityMatrixSet[n]->partial_cholesky_factorize();
+        //std::shared_ptr<psi::Matrix> Cm =     modelStatisticalSet_.DensityMatrixSet[n]->partial_cholesky_factorize();
+ 
+        referenceStatisticalSet_.InducedInteractionEnergySet[n] = eint_refer;
+            modelStatisticalSet_.InducedInteractionEnergySet[n] = eint_model;
+        cout << eint_refer << " " << eint_model << endl;
+
+        // ---> Compute induced dipole moments <--- //
+        // TODO
+
+   }
+   // Finish with JK object
+   //jk_->finalize();
 }
 void oepdev::GeneralizedPolarGEFactory::compute_electric_field_gradient_sums(void) {
   // TODO

@@ -73,12 +73,28 @@ std::shared_ptr<psi::Matrix> oepdev::GenEffPar::compute_density_matrix(std::shar
 }
 std::shared_ptr<psi::Matrix> oepdev::GenEffPar::compute_density_matrix(double fx, double fy, double fz)
 {
+   int nsites = densityMatrixDipolePolarizability_.size();
+   std::vector<std::shared_ptr<psi::Vector>> fields;
+   for (int n=0; n<nsites; ++n) {
+        std::shared_ptr<psi::Vector> field = std::make_shared<psi::Vector>("", 3); 
+        field->set(0, fx);
+        field->set(1, fy);
+        field->set(2, fz);
+        fields.push_back(field);
+   }
+   return oepdev::GenEffPar::compute_density_matrix(fields);
+}
+std::shared_ptr<psi::Matrix> oepdev::GenEffPar::compute_density_matrix(std::vector<std::shared_ptr<psi::Vector>> fields) 
+{
    if (!hasDensityMatrixDipolePolarizability_) throw psi::PSIEXCEPTION("Density Matrix Dipole Polarizability is not set!");
    int nbf = densityMatrixDipolePolarizability_[0][0]->nrow();
    int nsites = densityMatrixDipolePolarizability_.size();
 
    std::shared_ptr<psi::Matrix> D = std::make_shared<psi::Matrix>("Density Matrix Change", nbf, nbf);
    for (int n=0; n<nsites; ++n) {
+        double fx = fields[n]->get(0);
+        double fy = fields[n]->get(1);
+        double fz = fields[n]->get(2);
         D->axpy(fx, densityMatrixDipolePolarizability_[n][0]);
         D->axpy(fy, densityMatrixDipolePolarizability_[n][1]);
         D->axpy(fz, densityMatrixDipolePolarizability_[n][2]);
@@ -105,6 +121,35 @@ std::shared_ptr<psi::Matrix> oepdev::GenEffPar::compute_density_matrix(double fx
             D->axpy(fz*fy, densityMatrixDipoleDipoleHyperpolarizability_[n][7]);
             D->axpy(fz*fz, densityMatrixDipoleDipoleHyperpolarizability_[n][8]);
         }
+   }
+   return D;
+}
+std::shared_ptr<psi::Matrix> oepdev::GenEffPar::compute_density_matrix(std::vector<std::shared_ptr<psi::Vector>> fields,
+                                                                       std::vector<std::shared_ptr<psi::Matrix>> grads) 
+{
+   std::shared_ptr<psi::Matrix> D = oepdev::GenEffPar::compute_density_matrix(fields);
+   if (hasDensityMatrixQuadrupolePolarizability_) {
+       int nsites = densityMatrixDipolePolarizability_.size();
+       for (int n=0; n<nsites; ++n) {                                   
+            double fxx = grads[n]->get(0, 0);
+            double fxy = grads[n]->get(0, 1);
+            double fxz = grads[n]->get(0, 2);
+            double fyx = grads[n]->get(1, 0);
+            double fyy = grads[n]->get(1, 1);
+            double fyz = grads[n]->get(1, 2);
+            double fzx = grads[n]->get(2, 0);
+            double fzy = grads[n]->get(2, 1);
+            double fzz = grads[n]->get(2, 2);
+            D->axpy(fxx, densityMatrixQuadrupolePolarizability_[n][0]);
+            D->axpy(fxy, densityMatrixQuadrupolePolarizability_[n][1]);
+            D->axpy(fxz, densityMatrixQuadrupolePolarizability_[n][2]);
+            D->axpy(fyx, densityMatrixQuadrupolePolarizability_[n][3]);
+            D->axpy(fyy, densityMatrixQuadrupolePolarizability_[n][4]);
+            D->axpy(fyz, densityMatrixQuadrupolePolarizability_[n][5]);
+            D->axpy(fzx, densityMatrixQuadrupolePolarizability_[n][6]);
+            D->axpy(fzy, densityMatrixQuadrupolePolarizability_[n][7]);
+            D->axpy(fzz, densityMatrixQuadrupolePolarizability_[n][8]);
+       }
    }
    return D;
 }
