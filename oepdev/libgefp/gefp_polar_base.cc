@@ -304,9 +304,14 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    jk_->finalize();
 
    // ---> Compute RMS indicators <--- //
-   double rmse = 0.0;
-   double rmsd = 0.0;
-   double rmsq = 0.0;
+   double rmse = 0.0; double r2e = 1.0; double sre = 0.0; double ste = 0.0;
+   double rmsd = 0.0; double r2d = 1.0;
+   double rmsq = 0.0; double r2q = 1.0;
+   double ave = 0.0;
+   for (int n=0; n<nSamples_; ++n) {
+        ave += referenceStatisticalSet_.InducedInteractionEnergySet[n];
+   }
+   ave /= (double)nSamples_;
    for (int n=0; n<nSamples_; ++n) {
         double er = referenceStatisticalSet_.InducedInteractionEnergySet[n];
         double em =     modelStatisticalSet_.InducedInteractionEnergySet[n];
@@ -314,21 +319,21 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         double dm = 0.0; // TODO
         double qr = 0.0; // TODO
         double qm = 0.0; // TODO
-        rmse += pow(er-em,2.0);
+        rmse += pow(er-em,2.0); sre += pow(er-em,2.0); ste += pow(er - ave,2.0);
         rmsd += pow(dr-dm,2.0);
         rmsq += pow(qr-qm,2.0);
    }
-   rmse /= (double)nSamples_; rmse = sqrt(rmse);
-   rmsd /= (double)nSamples_; rmsd = sqrt(rmsd);
+   rmse /= (double)nSamples_; rmse = sqrt(rmse); r2e -= sre/ste;
+   rmsd /= (double)nSamples_; rmsd = sqrt(rmsd); 
    rmsq /= (double)nSamples_; rmsq = sqrt(rmsq);
 
    // ---> Print to output file <--- //
    const double c1 = 627.509;
    const double c2 = 1.0;
    const double c3 = 1.0;
-   psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]\n", rmse, rmse*c1);
-   psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [kcal/mol]\n", rmsd, rmsd*c2);
-   psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]\n", rmsq, rmsq*c3);
+   psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmse, rmse*c1, r2e);
+   psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsd, rmsd*c2, r2d);
+   psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsq, rmsq*c3, r2q);
 }
 // abstract methods
 void oepdev::GeneralizedPolarGEFactory::compute_samples(void)
