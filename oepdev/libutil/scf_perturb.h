@@ -85,6 +85,9 @@ class RHFPerturbed : public psi::scf::RHF
     /// Get a copy of the perturbation potential one-electron matrix
     std::shared_ptr<psi::Matrix> Vpert() const {return std::make_shared<psi::Matrix>(Vpert_);}
 
+    /// Get the interaction energy of the nuclei with the perturbing potential
+    double nuclear_interaction_energy() const {return nuclearInteractionEnergy_;}
+
   protected:
 
     /// Perturbing electric field
@@ -94,6 +97,9 @@ class RHFPerturbed : public psi::scf::RHF
 
     /// Perturbation potential one-electron matrix
     std::shared_ptr<psi::Matrix> Vpert_;
+
+    /// Electrostatic interaction energy due to nuclei
+    double nuclearInteractionEnergy_;
     
     /// Add the electrostatic perturbation to the Hcore matrix
     virtual void perturb_Hcore();

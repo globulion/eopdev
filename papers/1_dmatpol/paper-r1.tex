@@ -649,17 +649,17 @@ The electric field\hyp{}induced interaction energy at the HF level, $\delta E$,
 was computed from the following exact formula:
 %
 \begin{multline}\label{e:dE}
- \delta E[{\bf F}] = 2\Tr{\left\{ {\bf D}^{(0)} \cdot {\bf V}[{\bf F}] \right\}}
+ \delta E[{\bf F}] = 
+                     \Tr{\left\{ \delta {\bf D} \cdot
+                                \left( {\bf H}^{(0)} + {\bf f}^{(0)} \right) \right\}}
                    + \Tr{\left\{ \left( {\bf D}^{(0)} + \delta {\bf D} \right) \cdot
-                                \left( \delta {\bf J} + \delta {\bf K}\right) \right\}} \\
-                   + \Tr{\left\{ \delta {\bf D} \cdot
-                                \left( {\bf H}^{(0)} + 2 {\bf V}[{\bf F}] + {\bf f}^{(0)} \right) \right\}}
+                                \left( 2{\bf V} + 2\delta {\bf J} - \delta {\bf K}\right) \right\}} 
                    + E_{\rm nuc}({\bf F}) \;.
 \end{multline}
 %
 In Eq.~\eqref{e:dE}, ${\bf f}^{(0)}$ and ${\bf H}^{(0)}$ are the Fock matrix and 
 the one\hyp{}electron Hamiltonian matrix of an unperturbed HF ground state,
-${\bf V}[{\bf F}]$ is the one\hyp{}electron external electrostatic potential matrix whereas $\delta {\bf J}$
+${\bf V}$ is the one\hyp{}electron external electrostatic potential matrix whereas $\delta {\bf J}$
 and $\delta {\bf K}$ are electric field\hyp{}induced changes in the Coulomb and the exchange HF matrices due to 
 the polarization of the electron density distribution, respectively. $E_{\rm nuc}({\bf F})$ denotes the interaction energy
 due to the nuclei.
@@ -681,15 +681,15 @@ the following statistical quality descriptors:
 \begin{enumerate}
  \item Root Mean Square Energy Error (RMSE)
    \begin{equation}
-     {\rm RMSE} = \sum_N \sqrt{ \left( \delta E^{(N)} - \overline{\delta E^{(N)}}\right)^2 }
+     {\rm RMSE} = \sqrt{ \frac{1}{N_{\rm max}} \sum_N \left( \delta E^{(N)} - \overline{\delta E^{(N)}}\right)^2 }
    \end{equation}
  \item Root Mean Square Dipole Error (RMSD)
    \begin{equation}
-     {\rm RMSD} = \sum_N \sqrt{ \lvert \delta {\BM\upmu}^{(N)} - \overline{\delta {\BM\upmu}^{(N)}}\rvert^2 }
+     {\rm RMSD} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N \lvert \delta {\BM\upmu}^{(N)} - \overline{\delta {\BM\upmu}^{(N)}}\rvert^2 }
    \end{equation}
  \item Root Mean Square Quadrupole Error (RMSQ)
    \begin{equation}
-     {\rm RMSQ} = \sum_N \sqrt{ \lvert \delta {\BM\Theta}^{(N)} - \overline{\delta {\BM\Theta}^{(N)}}\rvert^2 }
+     {\rm RMSQ} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N \lvert \delta {\BM\Theta}^{(N)} - \overline{\delta {\BM\Theta}^{(N)}}\rvert^2 }
    \end{equation}
 \end{enumerate}
 %

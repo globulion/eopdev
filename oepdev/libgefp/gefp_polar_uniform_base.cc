@@ -36,6 +36,11 @@ void oepdev::UniformEFieldPolarGEFactory::compute_samples(void)
         VMatrixSet_[n]->copy(pert->Vpert());
 
         electricFieldSet_.push_back(fields);
+
+        referenceStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
+            modelStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
+
+        cout << oepdev::string_sprintf(" Interaction Energy = %15.6f\n", pert->reference_energy() - wfn_->reference_energy());
    }
 }
 // abstract methods

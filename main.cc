@@ -199,6 +199,9 @@ int read_options(std::string name, Options& options)
         options.add_double ("DMATPOL_TEST_FIELD_Y"  , 0.000                      );
         options.add_double ("DMATPOL_TEST_FIELD_Z"  , 0.008                      );
 
+        /*- Output file name for statistical evaluation for DMATPOL -*/
+        options.add_str    ("DMATPOL_OUT_STATS"     , "dmatpol.stats.dat"        );
+
      }
 
     return true;

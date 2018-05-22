@@ -24,6 +24,7 @@ RHFPerturbed::RHFPerturbed(std::shared_ptr<psi::Wavefunction> ref_wfn, std::shar
 void RHFPerturbed::common_init()
 {
    Vpert_ = std::make_shared<psi::Matrix>("External Potential Matrix", basisset_->nbf(), basisset_->nbf());
+   nuclearInteractionEnergy_ = 0.0;
 }
 RHFPerturbed::~RHFPerturbed()
 {
@@ -88,7 +89,7 @@ void RHFPerturbed::perturb_Hcore()
   }
 
   // Save the perturbation potential one-electron matrix
-  V_->copy(Hadd);
+  Vpert_->copy(Hadd);
 
   // Add perturbation to Hcore matrix
   H_->add(Hadd);
@@ -99,16 +100,17 @@ void RHFPerturbed::perturb_Hcore()
   psi::timer_off("HF: Guess-Perturbed");
 
   // Add the contribution from nuclei
-  for (int z=0; z<3; ++z) nuclearrep_ -= perturbField_->get(z) * molecule_->nuclear_dipole().get(z);
+  for (int z=0; z<3; ++z) nuclearInteractionEnergy_ -= perturbField_->get(z) * molecule_->nuclear_dipole().get(z);
   for (int I=0; I<molecule_->natom(); ++I) {
        for (int n=0; n<perturbCharges_->charges.size(); ++n){
             double x = molecule_->x(I) - perturbCharges_->positions[n]->get(0);
             double y = molecule_->y(I) - perturbCharges_->positions[n]->get(1);
             double z = molecule_->z(I) - perturbCharges_->positions[n]->get(2);
             double r_In = sqrt(x*x + y*y + z*z);
-            nuclearrep_ += perturbCharges_->charges[n] * (double)(molecule_->Z(I)) / r_In;
+            nuclearInteractionEnergy_ += perturbCharges_->charges[n] * (double)(molecule_->Z(I)) / r_In;
        }
   }
+  nuclearrep_ += nuclearInteractionEnergy_;
 }
 
 } // EndNameSpace oepdev

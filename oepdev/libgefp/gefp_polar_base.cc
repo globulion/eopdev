@@ -201,9 +201,8 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    cout << " Statistical evaluation ...\n";
 
    // Grab some unperturbed quantities
-   std::shared_ptr<psi::Matrix> Hcore  = wfn_->H();
-   std::shared_ptr<psi::Matrix> Fock   = wfn_->Fa();
-   std::shared_ptr<psi::Matrix> D      = wfn_->Da();
+   std::shared_ptr<psi::Matrix> H = wfn_->Fa(); H->add(wfn_->H());
+   std::shared_ptr<psi::Matrix> D = wfn_->Da();
 
    // Compute model difference density matrices
    if (hasQuadrupolePolarizability_) {
@@ -220,62 +219,99 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
 
    // Compute changes in the Coulomb and exchange HF matrices
    std::vector<psi::SharedMatrix>& C_left = jk_->C_left();
+   std::vector<psi::SharedMatrix>& C_right= jk_->C_right();
    const std::vector<std::shared_ptr<psi::Matrix>>& J = jk_->J();
    const std::vector<std::shared_ptr<psi::Matrix>>& K = jk_->K();
 
-   C_left.clear();
+   C_left.clear(); C_right.clear();
    for (int n=0; n<nSamples_; ++n) {
-        std::shared_ptr<psi::Matrix> C = referenceStatisticalSet_.DensityMatrixSet[n]->partial_cholesky_factorize();
-        C_left.push_back(C);
+        std::shared_ptr<psi::Matrix> Cl = referenceStatisticalSet_.DensityMatrixSet[n]->clone();
+        std::shared_ptr<psi::Matrix> Cr= Cl->clone(); Cr->identity();
+        C_left.push_back(Cl);
+        C_right.push_back(Cr);
    }
    jk_->compute();
    for (int n=0; n<nSamples_; ++n) {
-        referenceStatisticalSet_.JKMatrixSet[n]->add(J[n]);
-        referenceStatisticalSet_.JKMatrixSet[n]->add(K[n]);
+        referenceStatisticalSet_.JKMatrixSet[n]->axpy(2.0,J[n]);
+        referenceStatisticalSet_.JKMatrixSet[n]->subtract(K[n]);
    }
-   C_left.clear();
+   C_left.clear(); C_right.clear();
    for (int n=0; n<nSamples_; ++n) {
-       std::shared_ptr<psi::Matrix> C = modelStatisticalSet_.DensityMatrixSet[n]->partial_cholesky_factorize();
-       C_left.push_back(C);
+        std::shared_ptr<psi::Matrix> Cl = modelStatisticalSet_.DensityMatrixSet[n]->clone();
+        std::shared_ptr<psi::Matrix> Cr= Cl->clone(); Cr->identity();
+        C_left.push_back(Cl);
+        C_right.push_back(Cr);
    }
    jk_->compute();
    for (int n=0; n<nSamples_; ++n) {
-        modelStatisticalSet_.JKMatrixSet[n]->add(J[n]);
-        modelStatisticalSet_.JKMatrixSet[n]->add(K[n]);
+        modelStatisticalSet_.JKMatrixSet[n]->axpy(2.0,J[n]);
+        modelStatisticalSet_.JKMatrixSet[n]->subtract(K[n]);
    }
+
+   // ---> Printer <--- //
+   std::filebuf fb;
+   fb.open(options_.get_str("DMATPOL_OUT_STATS"), std::ios::out);
+   std::shared_ptr<std::ostream> os = std::make_shared<std::ostream>(&fb);
+   std::shared_ptr<psi::PsiOutStream> printer = std::make_shared<psi::PsiOutStream>(os);
+   printer->Printf("# Eint(Ref)    Eint(Model)\n");
 
    for (int n=0; n<nSamples_; ++n) {
 
-        // ---> Compute interaction energy <--- //
+        // ---> Compute interaction energy <--- // nuclear part is already computed in void compute_samples(void)
 
-        double e_nuc = 0.0; // TODO: compute this 
-        double eint_refer = 2.0 * D->vector_dot(VMatrixSet_[n]) + e_nuc;
-        double eint_model = eint_refer;
+        double eint_refer = H->vector_dot(referenceStatisticalSet_.DensityMatrixSet[n]);
+        double eint_model = H->vector_dot(    modelStatisticalSet_.DensityMatrixSet[n]);
 
-        std::shared_ptr<psi::Matrix> A = Hcore->clone(); 
-        A->add(VMatrixSet_[n]);
-        A->add(VMatrixSet_[n]);
-        A->add(Fock);
-        eint_refer += referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(A);
-        eint_model +=     modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(A);
- 
-        std::shared_ptr<psi::Matrix> Dr = D->clone(); Dr->add(referenceStatisticalSet_.DensityMatrixSet[n]);
-        std::shared_ptr<psi::Matrix> Dm = D->clone(); Dm->add(    modelStatisticalSet_.DensityMatrixSet[n]);
-        eint_refer += Dr->vector_dot(referenceStatisticalSet_.JKMatrixSet[n]);
-        eint_model += Dm->vector_dot(    modelStatisticalSet_.JKMatrixSet[n]);
-        //std::shared_ptr<psi::Matrix> Cr = referenceStatisticalSet_.DensityMatrixSet[n]->partial_cholesky_factorize();
-        //std::shared_ptr<psi::Matrix> Cm =     modelStatisticalSet_.DensityMatrixSet[n]->partial_cholesky_factorize();
- 
-        referenceStatisticalSet_.InducedInteractionEnergySet[n] = eint_refer;
-            modelStatisticalSet_.InducedInteractionEnergySet[n] = eint_model;
-        cout << eint_refer << " " << eint_model << endl;
+        std::shared_ptr<psi::Matrix> Dn1= D->clone(); Dn1->add(referenceStatisticalSet_.DensityMatrixSet[n]);
+        std::shared_ptr<psi::Matrix> Dn2= D->clone(); Dn2->add(    modelStatisticalSet_.DensityMatrixSet[n]);
+        std::shared_ptr<psi::Matrix> G = D->clone(); G->zero();
+        G->add(VMatrixSet_[n]); G->scale(2.0);
+        std::shared_ptr<psi::Matrix> G1 = G->clone(); G1->add(referenceStatisticalSet_.JKMatrixSet[n]);
+        std::shared_ptr<psi::Matrix> G2 = G->clone(); G2->add(    modelStatisticalSet_.JKMatrixSet[n]);
+        eint_refer+= G1->vector_dot(Dn1);
+        eint_model+= G2->vector_dot(Dn2);
+
+        referenceStatisticalSet_.InducedInteractionEnergySet[n] += eint_refer;
+            modelStatisticalSet_.InducedInteractionEnergySet[n] += eint_model;
+
 
         // ---> Compute induced dipole moments <--- //
         // TODO
 
+        // ---> Print all to the output file <--- //
+        printer->Printf("%20.8E %20.8E\n", referenceStatisticalSet_.InducedInteractionEnergySet[n],
+                                               modelStatisticalSet_.InducedInteractionEnergySet[n]);
+
    }
-   // Finish with JK object
-   //jk_->finalize();
+   // Finish with the JK object (clear but not destroy it)
+   jk_->finalize();
+
+   // ---> Compute RMS indicators <--- //
+   double rmse = 0.0;
+   double rmsd = 0.0;
+   double rmsq = 0.0;
+   for (int n=0; n<nSamples_; ++n) {
+        double er = referenceStatisticalSet_.InducedInteractionEnergySet[n];
+        double em =     modelStatisticalSet_.InducedInteractionEnergySet[n];
+        double dr = 0.0; // TODO
+        double dm = 0.0; // TODO
+        double qr = 0.0; // TODO
+        double qm = 0.0; // TODO
+        rmse += pow(er-em,2.0);
+        rmsd += pow(dr-dm,2.0);
+        rmsq += pow(qr-qm,2.0);
+   }
+   rmse /= (double)nSamples_; rmse = sqrt(rmse);
+   rmsd /= (double)nSamples_; rmsd = sqrt(rmsd);
+   rmsq /= (double)nSamples_; rmsq = sqrt(rmsq);
+
+   // ---> Print to output file <--- //
+   const double c1 = 627.509;
+   const double c2 = 1.0;
+   const double c3 = 1.0;
+   psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]\n", rmse, rmse*c1);
+   psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [kcal/mol]\n", rmsd, rmsd*c2);
+   psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]\n", rmsq, rmsq*c3);
 }
 void oepdev::GeneralizedPolarGEFactory::compute_electric_field_gradient_sums(void) {
   // TODO

@@ -438,6 +438,7 @@ class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
     *   - `DMATPOL_TEST_FIELD_X`  - test electric field in X direction. Default: `0.000` [au]
     *   - `DMATPOL_TEST_FIELD_Y`  - test electric field in Y direction. Default: `0.000` [au]
     *   - `DMATPOL_TEST_FIELD_Z`  - test electric field in Z direction. Default: `0.008` [au]
+    *   - `DMATPOL_OUT_STATS`     - output file name for statistical evaluation results. Default: `dmatpol.stats.dat`
     */
    static std::shared_ptr<GenEffParFactory> build(const std::string& type, 
                                                   std::shared_ptr<CPHF> cphf, psi::Options& opt);
