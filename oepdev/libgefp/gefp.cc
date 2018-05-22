@@ -534,10 +534,56 @@ std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::field_due_to_charges(const 
   field->set(2, fz);
   return field;
 }
+std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::field_gradient_due_to_charges(
+                                                                  const std::shared_ptr<psi::Matrix>& charges,
+                                                                  const double& x, const double& y, const double& z)
+{
+  std::shared_ptr<psi::Matrix> gradient = std::make_shared<psi::Matrix>("", 3, 3);
+  double gxx = 0.0; double gyx = 0.0; double gzx = 0.0;
+  double gxy = 0.0; double gyy = 0.0; double gzy = 0.0;
+  double gxz = 0.0; double gyz = 0.0; double gzz = 0.0;
+  for (int np=0; np<charges->nrow(); ++np) {
+       double rx = charges->get(np, 0);
+       double ry = charges->get(np, 1);
+       double rz = charges->get(np, 2);
+       double q  = charges->get(np, 3);
+       double drx= x - rx;
+       double dry= y - ry;
+       double drz= z - rz;
+       double r = sqrt(drx*drx+dry*dry+drz*drz);
+       double r3 = q/(r*r*r);
+       double r5 = 3.0*r3/(r*r);
+       gxx += r3 - r5 * drx * drx;
+       gxy -=      r5 * drx * dry;
+       gxz -=      r5 * drx * drz;
+       gyx -=      r5 * dry * drx;
+       gyy += r3 - r5 * dry * dry;
+       gyz -=      r5 * dry * drz;
+       gzx -=      r5 * drz * drx;
+       gzy -=      r5 * drz * dry;
+       gzz += r3 - r5 * drz * drz;
+  }
+  gradient->set(0, 0, gxx);
+  gradient->set(0, 1, gxy);
+  gradient->set(0, 2, gxz);
+  gradient->set(1, 0, gyx);
+  gradient->set(1, 1, gyy);
+  gradient->set(1, 2, gyz);
+  gradient->set(2, 0, gzx);
+  gradient->set(2, 1, gzy);
+  gradient->set(2, 2, gzz);
+  return gradient;
+}
 std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::field_due_to_charges(const std::shared_ptr<psi::Matrix>& charges,
                                                                           const std::shared_ptr<psi::Vector>& pos)
 {
   return this->field_due_to_charges(charges, pos->get(0), pos->get(1), pos->get(2));
+}
+std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::field_gradient_due_to_charges(
+                                                                          const std::shared_ptr<psi::Matrix>& charges,
+                                                                          const std::shared_ptr<psi::Vector>& pos)
+{
+  return this->field_gradient_due_to_charges(charges, pos->get(0), pos->get(1), pos->get(2));
 }
 std::shared_ptr<oepdev::RHFPerturbed> oepdev::PolarGEFactory::perturbed_state(const std::shared_ptr<psi::Vector>& field)
 {

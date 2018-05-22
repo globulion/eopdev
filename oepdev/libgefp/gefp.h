@@ -539,6 +539,12 @@ class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_fro
    std::shared_ptr<psi::Vector> field_due_to_charges(const std::shared_ptr<psi::Matrix>& charges, 
                                                      const std::shared_ptr<psi::Vector>& pos);
 
+   /// Evaluate electric field gradient at point (x,y,z) due to point charges 
+   std::shared_ptr<psi::Matrix> field_gradient_due_to_charges(const std::shared_ptr<psi::Matrix>& charges, 
+                                                              const double& x, const double& y, const double& z);
+   std::shared_ptr<psi::Matrix> field_gradient_due_to_charges(const std::shared_ptr<psi::Matrix>& charges, 
+                                                              const std::shared_ptr<psi::Vector>& pos);
+
    /// Draw samples of density matrices from constant electric fields
    virtual void draw_samples(std::vector<std::shared_ptr<psi::Matrix>>& electricFieldSet,
                              std::vector<std::shared_ptr<psi::Matrix>>& densityMatrixSet);
@@ -683,7 +689,7 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    /// Electric field sum set
    std::vector<std::vector<double>> electricFieldSumSet_;
    /// Electric field gradient sum set
-   std::vector<std::shared_ptr<psi::Vector>> electricFieldGradientSumSet_;
+   std::vector<std::vector<std::shared_ptr<psi::Vector>>> electricFieldGradientSumSet_;
 
    /// Compute electric field sum set
    void compute_electric_field_sums(void);

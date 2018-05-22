@@ -57,6 +57,7 @@ void oepdev::QuadraticNonUniformEFieldPolarGEFactory::compute_hessian(void)
              double v_AA = 0.0;
              double v_BB = 0.0;
              double v_AB = 0.0;
+             double v_BA = 0.0;
              for (int n=0; n<nSamples_; ++n) {
                   double fz1 = electricFieldSet_[n][s1]->get(z1);
                   double fz2 = electricFieldSet_[n][s2]->get(z2);
@@ -64,13 +65,13 @@ void oepdev::QuadraticNonUniformEFieldPolarGEFactory::compute_hessian(void)
                   double fs2 = electricFieldSumSet_[n][s2] * 2.0 * mField_;
                   v_AA += fz1 * fz2;
                   v_AB += fz1 * fz2 * fs2;
-                  //v_BA += fz1 * fz2 * fs1 
+                  v_BA += fz1 * fz2 * fs1;
                   v_BB += fz1 * fz2 * fs1 * fs2;
              }
              H[s1z1  ][s2z2  ] = v_AA;
              H[s1z1+d][s2z2+d] = v_BB;
              H[s1z1  ][s2z2+d] = v_AB;
-             H[s1z1+d][s2z2  ] = v_AB;
+             H[s1z1+d][s2z2  ] = v_BA;
         }}
    }}
    Hessian_->scale(2.0);

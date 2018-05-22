@@ -89,7 +89,7 @@ void oepdev::GeneralizedPolarGEFactory::invert_hessian(void)
 void oepdev::GeneralizedPolarGEFactory::compute_parameters(void)
 {
    if (hasDipoleDipoleHyperpolarizability_) compute_electric_field_sums();
-   if (hasQuadrupolePolarizability_)        compute_electric_field_gradient_sums();
+   if (hasQuadrupolePolarizability_       ) compute_electric_field_gradient_sums();
    compute_hessian(); 
    Hessian_->print();
    invert_hessian();
@@ -111,14 +111,14 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
   if (!hasDipolePolarizability_) throw psi::PSIEXCEPTION("Dipole polarizability must be set!");
 
   // Un-Pack the parameters from Parameters_ vector into dipole and quadrupole (hyper)polarizabilities
-  if (hasDipolePolarizability_ and !hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
+  if (!hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
       for (int n=0; n<nSites_; ++n) {
            for (int z=0; z<3; ++z) {
                 double val = Parameters_->get(3*n + z, 0);
                 PolarizationSusceptibilities_->dipole_polarizability(n, z)->set(i, j, val);
            }
       }
-  } else if (hasDipolePolarizability_ and hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
+  } else if (hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
       for (int n=0; n<nSites_; ++n) { 
            for (int z1=0; z1<3; ++z1) {
                 double val = Parameters_->get(3*n + z1, 0);
@@ -133,7 +133,7 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
                 }
            }
       }
-  } else if (hasDipolePolarizability_ and !hasDipoleDipoleHyperpolarizability_ and hasQuadrupolePolarizability_) {
+  } else if (!hasDipoleDipoleHyperpolarizability_ and hasQuadrupolePolarizability_) {
       for (int n=0; n<nSites_; ++n) { 
            for (int z1=0; z1<3; ++z1) {
                 double val = Parameters_->get(3*n + z1, 0);
@@ -148,7 +148,7 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
                 }
            }
       }
-  } else if (hasDipolePolarizability_ and hasDipoleDipoleHyperpolarizability_ and hasQuadrupolePolarizability_) {
+  } else if (hasDipoleDipoleHyperpolarizability_ and hasQuadrupolePolarizability_) {
       for (int n=0; n<nSites_; ++n) { 
            for (int z1=0; z1<3; ++z1) {
                 double val = Parameters_->get(3*n + z1, 0);
@@ -195,6 +195,23 @@ void oepdev::GeneralizedPolarGEFactory::compute_electric_field_sums(void) {
           sum.push_back(field->get(0) + field->get(1) + field->get(2));
      }
      electricFieldSumSet_.push_back(sum);
+  }
+}
+void oepdev::GeneralizedPolarGEFactory::compute_electric_field_gradient_sums(void) {
+  for (int n=0; n<nSamples_; ++n) {
+     std::vector<std::shared_ptr<psi::Vector>> sum;
+     for (int i=0; i<nSites_; ++i) {
+          std::shared_ptr<psi::Matrix> gradient = electricFieldGradientSet_[n][i];
+          std::shared_ptr<psi::Vector> sum_i = std::make_shared<psi::Vector>("", 3);
+          double sx = gradient->get(0, 0) + gradient->get(1, 0) + gradient->get(2, 0);
+          double sy = gradient->get(0, 1) + gradient->get(1, 1) + gradient->get(2, 1);
+          double sz = gradient->get(0, 2) + gradient->get(1, 2) + gradient->get(2, 2);
+          sum_i->set(0, sx);
+          sum_i->set(1, sy);
+          sum_i->set(2, sz);
+          sum.push_back(sum_i);
+     }
+     electricFieldGradientSumSet_.push_back(sum);
   }
 }
 void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
@@ -312,9 +329,6 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]\n", rmse, rmse*c1);
    psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [kcal/mol]\n", rmsd, rmsd*c2);
    psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]\n", rmsq, rmsq*c3);
-}
-void oepdev::GeneralizedPolarGEFactory::compute_electric_field_gradient_sums(void) {
-  // TODO
 }
 // abstract methods
 void oepdev::GeneralizedPolarGEFactory::compute_samples(void)

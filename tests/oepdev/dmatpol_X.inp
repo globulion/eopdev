@@ -80,12 +80,12 @@ set {
     dmatpol_test_charge           0.3
     dmatpol_training_mode         CHARGES
     dmatpol_field_rank            1
-    dmatpol_gradient_rank         0
+    dmatpol_gradient_rank         1
     dmatpol_scale_1               2.0
     dmatpol_test_field_x          0.002
     dmatpol_test_field_y          0.010
     dmatpol_test_field_z          0.010
-    dmatpol_out_stats             energy.dat
+    dmatpol_out_stats             energy.10.dat
     # ==> General Psi4 Options <== #
     basis                         sto-3g
     scf_type                      direct 

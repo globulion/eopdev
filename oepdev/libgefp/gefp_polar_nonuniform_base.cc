@@ -33,12 +33,15 @@ void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
              charges->set(i, 3, draw_charge());
         }
         std::vector<std::shared_ptr<psi::Vector>> fields_n;
+        std::vector<std::shared_ptr<psi::Matrix>> grads_n;
         for (int o=0; o<nSites_; ++o) {
              double x = wfn_->molecule()->x(o);
              double y = wfn_->molecule()->y(o);
              double z = wfn_->molecule()->z(o);
              std::shared_ptr<psi::Vector> field = field_due_to_charges(charges, x, y, z);
+             std::shared_ptr<psi::Matrix> grad  = field_gradient_due_to_charges(charges, x, y, z);
              fields_n.push_back(field);
+             grads_n .push_back(grad);
              cout << oepdev::string_sprintf(" Computation for N=%2d S=%2d F=[%14.4f, %14.4f, %14.4f]\n",n+1, o+1,
                                               field->get(0), field->get(1), field->get(2));
         }
@@ -49,7 +52,8 @@ void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
         VMatrixSet_[n]->copy(pert->Vpert());
 
 
-        electricFieldSet_.push_back(fields_n);
+        electricFieldSet_        .push_back(fields_n);
+        electricFieldGradientSet_.push_back(grads_n);
 
         referenceStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
             modelStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
