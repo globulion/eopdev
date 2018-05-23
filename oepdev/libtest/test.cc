@@ -183,15 +183,16 @@ double oepdev::test::Test::test_cphf(void)
 double oepdev::test::Test::test_dmatPol(void)
 {
   /* In field perturbation nuclear dipole - field interaction was not added to the total energy */
-  std::shared_ptr<oepdev::CPHF> solver = std::make_shared<oepdev::CPHF>(wfn_, options_);
-  solver->compute();
+  //std::shared_ptr<oepdev::CPHF> solver = std::make_shared<oepdev::CPHF>(wfn_, options_);
+  //solver->compute();
 
   psi::timer_on (" Test: Computation of Dmat Susc");
-  std::shared_ptr<oepdev::GenEffParFactory> factory = std::make_shared<oepdev::PolarGEFactory>(solver, options_);
+  std::shared_ptr<oepdev::GenEffParFactory> factory = std::make_shared<oepdev::AbInitioPolarGEFactory>(wfn_, options_);
   std::shared_ptr<oepdev::GenEffPar> par = factory->compute();
   psi::timer_off(" Test: Computation of Dmat Susc");
 
   par->dipole_polarizability(0,0)->print();
+  std::shared_ptr<oepdev::CPHF> solver = factory->cphf_solver();
 
   // Accumulate errors
   double r_sum = 0.0;
@@ -320,11 +321,11 @@ double oepdev::test::Test::test_dmatPol(void)
 double oepdev::test::Test::test_dmatPolX(void)
 {
   /* In field perturbation nuclear dipole - field interaction was not added to the total energy */
-  std::shared_ptr<oepdev::CPHF> solver = std::make_shared<oepdev::CPHF>(wfn_, options_);
-  solver->compute();
+  //std::shared_ptr<oepdev::CPHF> solver = std::make_shared<oepdev::CPHF>(wfn_, options_);
+  //solver->compute();
 
   psi::timer_on (" Test: Computation of Dmat Susc-X");
-  std::shared_ptr<oepdev::GenEffParFactory> factory = oepdev::GenEffParFactory::build("POLARIZATION", solver, options_);
+  std::shared_ptr<oepdev::GenEffParFactory> factory = oepdev::GenEffParFactory::build("POLARIZATION", wfn_, options_);
   std::shared_ptr<oepdev::GenEffPar> par = factory->compute();
   psi::timer_off(" Test: Computation of Dmat Susc-X");
 

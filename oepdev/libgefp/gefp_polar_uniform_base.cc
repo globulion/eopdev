@@ -5,18 +5,19 @@
 
 using namespace std;
 
-oepdev::UniformEFieldPolarGEFactory::UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt)
- : oepdev::GeneralizedPolarGEFactory(cphf, opt)
+oepdev::UniformEFieldPolarGEFactory::UniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt)
+ : oepdev::GeneralizedPolarGEFactory(wfn, opt)
 {
    // Set the number of sites to one since the electric field is uniform in space
    nSites_ = 1;
 }
-oepdev::UniformEFieldPolarGEFactory::UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
- : oepdev::UniformEFieldPolarGEFactory(cphf, cphf->options())
-{
-}
+//oepdev::UniformEFieldPolarGEFactory::UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
+// : oepdev::UniformEFieldPolarGEFactory(cphf, cphf->options())
+//{
+//}
 oepdev::UniformEFieldPolarGEFactory::~UniformEFieldPolarGEFactory()
 {
+
 }
 // implementations of abstract methods from base
 void oepdev::UniformEFieldPolarGEFactory::compute_samples(void)

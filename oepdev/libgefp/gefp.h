@@ -11,6 +11,7 @@
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/vector3.h"
 #include "../liboep/oep.h"
+#include "../libutil/util.h"
 #include "../libutil/cphf.h"
 #include "../libutil/scf_perturb.h"
 
@@ -413,13 +414,13 @@ class GenEffFrag
  * Describes the GEFP fragment that is in principle designed to work
  * at correlated levels of theory.
  */
-class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
+class GenEffParFactory
 {
   public: 
    /** \brief Build Density Matrix Susceptibility Generalized Factory.
     *
-    * @param type          - type of factory
-    * @param cphf          - CPHF solver (to be moved to separate class branch)
+    * @param type          - Type of factory
+    * @param wfn           - Psi4 wavefunction
     * @param opt           - Psi4 options
     *
     * Available factory types:
@@ -429,19 +430,19 @@ class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
     * \note Useful options:
     *  - `POLARIZATION` factory type:
     *   - `DMATPOL_TRAINING_MODE` - training mode. Default: `EFIELD`
-    *   - `DMATPOL_FIELD_RANK`    - electric field rank. Default: `1`
-    *   - `DMATPOL_GRADIENT_RANK` - electric field gradient rank. Default: `0`
     *   - `DMATPOL_NSAMPLES`      - number of random samples (field or test charges sets). Default: `30`
     *   - `DMATPOL_FIELD_SCALE`   - electric field scale factor (relevant if training mode is `EFIELD`). Default: `0.01` [au]
     *   - `DMATPOL_NTEST_CHARGE`  - number of test charges per sample (relevant if training mode is `CHARGES`). Default: `1`
     *   - `DMATPOL_TEST_CHARGE`   - test charge value (relevant if training mode is `CHARGES`). Default: `0.001` [au]
+    *   - `DMATPOL_FIELD_RANK`    - electric field rank. Default: `1`
+    *   - `DMATPOL_GRADIENT_RANK` - electric field gradient rank. Default: `0`
     *   - `DMATPOL_TEST_FIELD_X`  - test electric field in X direction. Default: `0.000` [au]
     *   - `DMATPOL_TEST_FIELD_Y`  - test electric field in Y direction. Default: `0.000` [au]
     *   - `DMATPOL_TEST_FIELD_Z`  - test electric field in Z direction. Default: `0.008` [au]
     *   - `DMATPOL_OUT_STATS`     - output file name for statistical evaluation results. Default: `dmatpol.stats.dat`
     */
    static std::shared_ptr<GenEffParFactory> build(const std::string& type, 
-                                                  std::shared_ptr<CPHF> cphf, psi::Options& opt);
+                                                  std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
 
    /// Construct from wavefunction and Psi4 options
    GenEffParFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
@@ -457,6 +458,9 @@ class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
 
    /// Grab options
    virtual psi::Options& options(void) const {return options_;}
+
+   /// Grab the CPHF object
+   std::shared_ptr<CPHF> cphf_solver() const {return cphfSolver_;}
 
   protected:
    /// Wavefunction
@@ -492,31 +496,30 @@ class GenEffParFactory //: public std::enable_shared_from_this<GenEffParFactory>
 
    /// Number of basis functions
    const int nbf_;
+
+   /// The CPHF object
+   std::shared_ptr<CPHF> cphfSolver_;
 };
 
-/** \brief Polarization GEFP Factory.
- *
- * Implements creation of the density matrix susceptibility tensors for which \f$ {\bf X} = {\bf 1}\f$.
- * Guarantees the idempotency of the density matrix up to first-order in LCAO-MO variation.
+/** \brief Polarization GEFP Factory. Abstract Base.
+ * 
+ *  Basic interface for the polarization density matrix susceptibility parameters.
  */
-class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_from_this<PolarGEFactory>
+class PolarGEFactory : public GenEffParFactory
 {
   public:
-   /// Construct from CPHF object and Psi4 options
-   PolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-
-   /// Construct from CPHF object only (options will be read from CPHF object)
-   PolarGEFactory(std::shared_ptr<CPHF> cphf); 
+   /// Construct from Psi4 options
+   PolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
 
    /// Destruct
    virtual ~PolarGEFactory();
 
    /// Compute the density matrix susceptibility tensors
-   virtual std::shared_ptr<GenEffPar> compute(void);
+   virtual std::shared_ptr<GenEffPar> compute(void) = 0;
 
   protected:
    /// The CPHF object
-   std::shared_ptr<CPHF> cphfSolver_;
+   ///std::shared_ptr<CPHF> cphfSolver_;
 
    /// Randomly draw electric field value
    std::shared_ptr<psi::Vector> draw_field();
@@ -530,7 +533,7 @@ class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_fro
    /// Solve SCF equations to find perturbed state due to point charge
    std::shared_ptr<oepdev::RHFPerturbed> perturbed_state(const std::shared_ptr<psi::Vector>& pos, const double& charge);
 
-   /// Solve SCF equations to find perturbed state due set of point charges
+   /// Solve SCF equations to find perturbed state due to set of point charges
    std::shared_ptr<oepdev::RHFPerturbed> perturbed_state(const std::shared_ptr<psi::Matrix>& charges);
 
    /// Evaluate electric field at point (x,y,z) due to point charges 
@@ -544,16 +547,26 @@ class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_fro
                                                               const double& x, const double& y, const double& z);
    std::shared_ptr<psi::Matrix> field_gradient_due_to_charges(const std::shared_ptr<psi::Matrix>& charges, 
                                                               const std::shared_ptr<psi::Vector>& pos);
+};
 
-   /// Draw samples of density matrices from constant electric fields
-   virtual void draw_samples(std::vector<std::shared_ptr<psi::Matrix>>& electricFieldSet,
-                             std::vector<std::shared_ptr<psi::Matrix>>& densityMatrixSet);
-
-   /// Draw samples of density matrices from sets of point charges
-   virtual void draw_samples(std::vector<std::shared_ptr<psi::Matrix>>& electricFieldSet,
-                             std::vector<std::shared_ptr<psi::Matrix>>& electricFieldGradientSet,
-                             std::vector<std::shared_ptr<psi::Matrix>>& densityMatrixSet);
-
+/** \brief Polarization GEFP Factory from First Principles. Hartree-Fock Approximation.
+ *
+ * Implements creation of the density matrix susceptibility tensors for which \f$ {\bf X} = {\bf 1}\f$.
+ * Guarantees the idempotency of the density matrix up to first-order in LCAO-MO variation.
+ * The density matrix susceptibility tensor is represented by:
+ * \f[
+ *   \delta D_{\alpha\beta} = \sum_i 
+ *           {\bf B}_{i;\alpha\beta}^{(10)} \cdot {\bf F}({\bf r}_i)
+ * \f]
+ * where \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
+ * defined for the distributed LMO site at \f$ {\bf r}_i \f$.
+ */
+class AbInitioPolarGEFactory : public PolarGEFactory
+{
+  public:
+   AbInitioPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~AbInitioPolarGEFactory();
+   virtual std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -562,15 +575,15 @@ class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_fro
  * \f[
  *   \delta D_{\alpha\beta} = \sum_i 
  *              \left\{ 
- *           {\bf B}_{i;\alpha\beta}^{(00)} \cdot {\bf F}
- *        +  {\bf B}_{i;\alpha\beta}^{(10)} : {\bf F} \otimes {\bf F} 
- *        +  {\bf B}_{i;\alpha\beta}^{(01)} : \nabla \otimes {\bf F} 
+ *           {\bf B}_{i;\alpha\beta}^{(10)} \cdot {\bf F}({\bf r}_i)
+ *        +  {\bf B}_{i;\alpha\beta}^{(20)} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_i) 
+ *        +  {\bf B}_{i;\alpha\beta}^{(01)} : \nabla_i \otimes {\bf F}({\bf r}_i) 
  *        +  \ldots
  *           \right\}                
  * \f]
  * where:
- *  - \f$ {\bf B}_{i;\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
- *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole-dipole hyperpolarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(20)} \f$ is the density matrix dipole-dipole hyperpolarizability
  *  - \f$ {\bf B}_{i;\alpha\beta}^{(01)} \f$ is the density matrix quadrupole polarizability
  *
  * all defined for the generalized distributed site at \f$ {\bf r}_i \f$.
@@ -595,10 +608,8 @@ class PolarGEFactory : public GenEffParFactory //, public std::enable_shared_fro
 class GeneralizedPolarGEFactory : public PolarGEFactory
 {
   public:
-   /// Construct from CPHF object and Psi4 options
-   GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-   /// Construct from CPHF object only (options will be read from CPHF object)
-   GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   /// Construct from Psi4 wavefunction and options
+   GeneralizedPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    /// Destruct
    virtual ~GeneralizedPolarGEFactory();
    /// Pefrorm Least-Squares Fit
@@ -659,7 +670,7 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    bool hasQuadrupolePolarizability_;
 
 
-   // --> Sets of statistical data <-- //  ----> TODO: Group them into objects (structures)
+   // --> Sets of statistical data <-- //
 
    /// A structure to handle statistical data
    struct StatisticalSet {
@@ -742,13 +753,11 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
 class UniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
 {
   public:
-   UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-   UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   UniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~UniformEFieldPolarGEFactory();
    void compute_samples(void);
    virtual void compute_gradient(int i, int j) = 0;
    virtual void compute_hessian(void) = 0;
-   //virtual std::shared_ptr<GenEffPar> compute(void) = 0;
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -759,13 +768,11 @@ class UniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
 class NonUniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
 {
   public:
-   NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-   NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   NonUniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~NonUniformEFieldPolarGEFactory();
    void compute_samples(void);
    virtual void compute_gradient(int i, int j) = 0;
    virtual void compute_hessian(void) = 0;
-   //virtual std::shared_ptr<GenEffPar> compute(void) = 0;
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -773,20 +780,18 @@ class NonUniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
  * Implements the density matrix susceptibility model of the form
  * \f[
  *   \delta D_{\alpha\beta} \approx
- *           {\bf B}_{\alpha\beta}^{(00)} \cdot {\bf F}
+ *           {\bf B}_{\alpha\beta}^{(10)} \cdot {\bf F}
  * \f]
  * where:
- *  - \f$ {\bf B}_{\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
  */
 class LinearUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
 {
   public:
-   LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-   LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   LinearUniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~LinearUniformEFieldPolarGEFactory();
    void compute_gradient(int i, int j);
    void compute_hessian(void);
-   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -794,22 +799,20 @@ class LinearUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
  * Implements the density matrix susceptibility model of the form
  * \f[
  *   \delta D_{\alpha\beta} \approx 
- *           {\bf B}_{\alpha\beta}^{(00)} \cdot {\bf F}
- *        +  {\bf B}_{\alpha\beta}^{(10)} : {\bf F} \otimes {\bf F} 
+ *           {\bf B}_{\alpha\beta}^{(10)} \cdot {\bf F}
+ *        +  {\bf B}_{\alpha\beta}^{(20)} : {\bf F} \otimes {\bf F}
  * \f]
  * where:
- *  - \f$ {\bf B}_{\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
- *  - \f$ {\bf B}_{\alpha\beta}^{(10)} \f$ is the density matrix dipole-dipole hyperpolarizability
+ *  - \f$ {\bf B}_{\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{\alpha\beta}^{(20)} \f$ is the density matrix dipole-dipole hyperpolarizability
  */
 class QuadraticUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
 {
   public:
-   QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-   QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~QuadraticUniformEFieldPolarGEFactory();
    void compute_gradient(int i, int j);
    void compute_hessian(void);
-   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -817,21 +820,19 @@ class QuadraticUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
  * Implements the density matrix susceptibility model of the form
  * \f[
  *   \delta D_{\alpha\beta} \approx \sum_i
- *           {\bf B}_{i;\alpha\beta}^{(00)} \cdot {\bf F}
+ *           {\bf B}_{i;\alpha\beta}^{(10)} \cdot {\bf F}({\bf r}_i)
  * \f]
  * where:
- *  - \f$ {\bf B}_{i;\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
  *    defined for the distributed site at \f$ {\bf r}_i \f$.
  */
 class LinearNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
 {
   public:
-   LinearNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-   LinearNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   LinearNonUniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~LinearNonUniformEFieldPolarGEFactory();
    void compute_gradient(int i, int j);
    void compute_hessian(void);
-   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -840,24 +841,22 @@ class LinearNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFacto
  * \f[
  *   \delta D_{\alpha\beta} \approx \sum_i
  *              \left\{ 
- *           {\bf B}_{i;\alpha\beta}^{(00)} \cdot {\bf F}
- *        +  {\bf B}_{i;\alpha\beta}^{(10)} : {\bf F} \otimes {\bf F} 
+ *           {\bf B}_{i;\alpha\beta}^{(10)} \cdot {\bf F}({\bf r}_i)
+ *        +  {\bf B}_{i;\alpha\beta}^{(20)} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_i) 
  *           \right\}                
  * \f]
  * where:
- *  - \f$ {\bf B}_{i;\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
- *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole-dipole hyperpolarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(20)} \f$ is the density matrix dipole-dipole hyperpolarizability
  * all defined for the distributed site at \f$ {\bf r}_i \f$.
  */
 class QuadraticNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
 {
   public:
-   QuadraticNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-   QuadraticNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   QuadraticNonUniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~QuadraticNonUniformEFieldPolarGEFactory();
    void compute_gradient(int i, int j);
    void compute_hessian(void);
-   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -866,24 +865,22 @@ class QuadraticNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFa
  * \f[
  *   \delta D_{\alpha\beta} \approx \sum_i
  *              \left\{ 
- *           {\bf B}_{i;\alpha\beta}^{(00)} \cdot {\bf F}
- *        +  {\bf B}_{i;\alpha\beta}^{(01)} : \nabla \otimes {\bf F} 
+ *           {\bf B}_{i;\alpha\beta}^{(10)} \cdot {\bf F}({\bf r}_i)
+ *        +  {\bf B}_{i;\alpha\beta}^{(01)} : \nabla_i \otimes {\bf F}({\bf r}_i) 
  *           \right\}                
  * \f]
  * where:
- *  - \f$ {\bf B}_{i;\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
  *  - \f$ {\bf B}_{i;\alpha\beta}^{(01)} \f$ is the density matrix quadrupole polarizability
  * all defined for the distributed site at \f$ {\bf r}_i \f$.
  */
 class LinearGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
 {
   public:
-   LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-   LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~LinearGradientNonUniformEFieldPolarGEFactory();
    void compute_gradient(int i, int j);
    void compute_hessian(void);
-   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
@@ -892,41 +889,41 @@ class LinearGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPola
  * \f[
  *   \delta D_{\alpha\beta} \approx \sum_i
  *              \left\{ 
- *           {\bf B}_{i;\alpha\beta}^{(00)} \cdot {\bf F}
- *        +  {\bf B}_{i;\alpha\beta}^{(10)} : {\bf F} \otimes {\bf F} 
- *        +  {\bf B}_{i;\alpha\beta}^{(01)} : \nabla \otimes {\bf F} 
+ *           {\bf B}_{i;\alpha\beta}^{(10)} \cdot {\bf F}({\bf r}_i)
+ *        +  {\bf B}_{i;\alpha\beta}^{(20)} : {\bf F} \otimes {\bf F}({\bf r}_i) 
+ *        +  {\bf B}_{i;\alpha\beta}^{(01)} : \nabla_i \otimes {\bf F}({\bf r}_i) 
  *           \right\}                
  * \f]
  * where:
- *  - \f$ {\bf B}_{i;\alpha\beta}^{(00)} \f$ is the density matrix dipole polarizability
- *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole-dipole hyperpolarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
+ *  - \f$ {\bf B}_{i;\alpha\beta}^{(20)} \f$ is the density matrix dipole-dipole hyperpolarizability
  *  - \f$ {\bf B}_{i;\alpha\beta}^{(01)} \f$ is the density matrix quadrupole polarizability
  * all defined for the distributed site at \f$ {\bf r}_i \f$.
  */
 class QuadraticGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
 {
   public:
-   QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-   QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~QuadraticGradientNonUniformEFieldPolarGEFactory();
    void compute_gradient(int i, int j);
    void compute_hessian(void);
-   //std::shared_ptr<GenEffPar> compute(void);
 };
 
 /** \brief Polarization GEFP Factory with Least-Squares Scaling of MO Space.
  *
  * Implements creation of the density matrix susceptibility tensors for which \f$ {\bf X} \neq {\bf 1}\f$.
  * Guarantees the idempotency of the density matrix up to first-order in LCAO-MO variation.
+ *
+ * \note
+ * This method does not give better results than the X=1 method and is extremely time and memory consuming.
+ * Therefore, it is placed here only for future reference about solving unitary optimization problem in case
+ * it occurs.
  */
-class UnitaryTransformedMOPolarGEFactory : public PolarGEFactory
+class UnitaryTransformedMOPolarGEFactory : public AbInitioPolarGEFactory
 {
   public:
    /// Construct from CPHF object and Psi4 options
-   UnitaryTransformedMOPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-
-   /// Construct from CPHF object only (options will be read from CPHF object)
-   UnitaryTransformedMOPolarGEFactory(std::shared_ptr<CPHF> cphf);
+   UnitaryTransformedMOPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
 
    /// Destruct
    virtual ~UnitaryTransformedMOPolarGEFactory();
@@ -935,96 +932,6 @@ class UnitaryTransformedMOPolarGEFactory : public PolarGEFactory
    std::shared_ptr<GenEffPar> compute(void);
 
 };
-
-/** \brief Polarization GEFP Factory with Least-Squares Scaling of Cartesian Degrees of freedom.
- *
- *  The resulting density matrix does not guarantee idempotency.
- */
-class ScaledXYZPolarGEFactory : public PolarGEFactory
-{
-  public:
-   /// Construct from CPHF object and Psi4 options
-   ScaledXYZPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-
-   /// Construct from CPHF object only (options will be read from CPHF object)
-   ScaledXYZPolarGEFactory(std::shared_ptr<CPHF> cphf);
-
-   /// Destruct
-   virtual ~ScaledXYZPolarGEFactory();
-
-   /// Pefrorm Least-Squares Fit
-   std::shared_ptr<GenEffPar> compute(void);
-
-};
-
-/** \brief Polarization GEFP Factory with Least-Squares Transformation of Cartesian Degrees of freedom.
- *
- *  The resulting density matrix does not guarantee idempotency.
- */
-class TransformedXYZPolarGEFactory : public PolarGEFactory
-{
-  public:
-   /// Construct from CPHF object and Psi4 options
-   TransformedXYZPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-
-   /// Construct from CPHF object only (options will be read from CPHF object)
-   TransformedXYZPolarGEFactory(std::shared_ptr<CPHF> cphf);
-
-   /// Destruct
-   virtual ~TransformedXYZPolarGEFactory();
-
-   /// Pefrorm Least-Squares Fit
-   std::shared_ptr<GenEffPar> compute(void);
-
-};
-
-
-/** \brief Polarization GEFP Factory with Least-Squares Scaling of AO degrees of freedom.
- *
- *  The resulting density matrix does not guarantee idempotency.
- */
-class ScaledAOPolarGEFactory : public PolarGEFactory
-{
-  public:
-   /// Construct from CPHF object and Psi4 options
-   ScaledAOPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-
-   /// Construct from CPHF object only (options will be read from CPHF object)
-   ScaledAOPolarGEFactory(std::shared_ptr<CPHF> cphf);
-
-   /// Destruct
-   virtual ~ScaledAOPolarGEFactory();
-
-   /// Pefrorm Least-Squares Fit
-   std::shared_ptr<GenEffPar> compute(void);
-
-};
-
-/** \brief Polarization GEFP Factory with Least-Squares Transformation of MO degrees of freedom.
- *
- *  The resulting density matrix does not guarantee idempotency.
- */
-class TransformedMOPolarGEFactory : public PolarGEFactory
-{
-  public:
-   /// Construct from CPHF object and Psi4 options
-   TransformedMOPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt);
-
-   /// Construct from CPHF object only (options will be read from CPHF object)
-   TransformedMOPolarGEFactory(std::shared_ptr<CPHF> cphf);
-
-   /// Destruct
-   virtual ~TransformedMOPolarGEFactory();
-
-   /// Pefrorm Least-Squares Fit
-   std::shared_ptr<GenEffPar> compute(void);
-
-  private:
-   /// Gradient for the Newton-Raphson optimization
-   void gradient(std::shared_ptr<psi::Matrix> A, std::shared_ptr<psi::Matrix> C, std::shared_ptr<psi::Matrix> S);
-
-};
-
 
 
 /** @}*/

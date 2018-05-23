@@ -5,22 +5,27 @@
 
 using namespace std;
 
-oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt)
- : oepdev::NonUniformEFieldPolarGEFactory(cphf, opt)
+oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt)
+ : oepdev::NonUniformEFieldPolarGEFactory(wfn, opt)
 {
-  // Five blocks: Electric field parameters (1 block), Squared electric field parameters (2 blocks), Electric field gradient parameters (2 blocks)
+  // Three blocks: 
+  //  - Electric field parameters
+  //  - Squared electric field parameters
+  //  - Electric field gradient parameters
   hasDipolePolarizability_ = true;
   hasDipoleDipoleHyperpolarizability_ = true;
   hasQuadrupolePolarizability_ = true;
+
   // Allocate memory
   allocate();
 }
-oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
- : oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory(cphf, cphf->options())
-{
-}
+//oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
+// : oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory(cphf, cphf->options())
+//{
+//}
 oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::~QuadraticGradientNonUniformEFieldPolarGEFactory()
 {
+
 }
 // Implementations of abstract methods from base class
 void oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::compute_gradient(int i, int j)

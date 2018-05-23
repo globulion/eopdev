@@ -167,6 +167,14 @@ int read_options(std::string name, Options& options)
         /*- ESP: padding of a sphere enclosing the molecule -*/                     
         options.add_double ("ESP_PAD_SPHERE"        , 10.0                       );
 
+        /*- ESP: vdW radii of atoms used for random point selections [A.U.] -*/            
+        options.add_double ("ESP_VDW_RADIUS_C"      ,  3.0                       );
+        options.add_double ("ESP_VDW_RADIUS_H"      ,  4.0                       );
+        options.add_double ("ESP_VDW_RADIUS_N"      ,  2.4                       );
+        options.add_double ("ESP_VDW_RADIUS_O"      ,  5.6                       );
+        options.add_double ("ESP_VDW_RADIUS_F"      ,  2.3                       );
+        options.add_double ("ESP_VDW_RADIUS_CL"     ,  2.9                       );
+
 
         // ---> DmatPol Global Options  <--- //
 

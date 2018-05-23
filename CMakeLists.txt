@@ -90,4 +90,5 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libgefp/gefp_polar_nonuniform_field_2.cc
                        oepdev/libgefp/gefp_polar_nonuniform_field_1_grad_1.cc
                        oepdev/libgefp/gefp_polar_nonuniform_field_2_grad_1.cc
+                       oepdev/libgefp/gefp_polar_abinitio.cc
                )

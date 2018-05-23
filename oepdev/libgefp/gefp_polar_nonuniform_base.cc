@@ -5,18 +5,19 @@
 
 using namespace std;
 
-oepdev::NonUniformEFieldPolarGEFactory::NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt)
- : oepdev::GeneralizedPolarGEFactory(cphf, opt)
+oepdev::NonUniformEFieldPolarGEFactory::NonUniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt)
+ : oepdev::GeneralizedPolarGEFactory(wfn, opt)
 {
    // Atoms are assumed to be distributed centres
    nSites_ = wfn_->molecule()->natom();
 }
-oepdev::NonUniformEFieldPolarGEFactory::NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
- : oepdev::NonUniformEFieldPolarGEFactory(cphf, cphf->options())
-{
-}
+//oepdev::NonUniformEFieldPolarGEFactory::NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
+// : oepdev::NonUniformEFieldPolarGEFactory(cphf, cphf->options())
+//{
+//}
 oepdev::NonUniformEFieldPolarGEFactory::~NonUniformEFieldPolarGEFactory()
 {
+
 }
 // implementations of abstract methods from base
 void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)

@@ -1,10 +1,150 @@
 #include "gefp.h"
-#include "psi4/libmints/matrix.h"
+
 
 using namespace std;
 
-oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt)
- : oepdev::PolarGEFactory(cphf, opt),
+//-- PolarGEFactory --////////////////////////////////////////////////////////////////////////////////
+oepdev::PolarGEFactory::PolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt) :
+ oepdev::GenEffParFactory(wfn, opt)
+{
+
+}
+oepdev::PolarGEFactory::~PolarGEFactory()
+{
+
+}
+std::shared_ptr<oepdev::GenEffPar> oepdev::PolarGEFactory::compute()
+{
+
+}
+double oepdev::PolarGEFactory::draw_charge()
+{
+  const double scale = options_.get_double("DMATPOL_TEST_CHARGE");
+  double q = random_double() * scale;
+  return q;
+}
+std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::draw_field()
+{
+  std::shared_ptr<psi::Vector> field = std::make_shared<psi::Vector>("", 3);
+  const double scale = options_.get_double("DMATPOL_FIELD_SCALE");
+  double fx = random_double() * scale;
+  double fy = random_double() * scale;
+  double fz = random_double() * scale;
+  field->set(0, fx);
+  field->set(1, fy);
+  field->set(2, fz);
+  return field;
+}
+std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::field_due_to_charges(const std::shared_ptr<psi::Matrix>& charges,
+                                                                  const double& x, const double& y, const double& z)
+{
+  std::shared_ptr<psi::Vector> field = std::make_shared<psi::Vector>("", 3);
+  double fx = 0.0;
+  double fy = 0.0; 
+  double fz = 0.0;
+  for (int np=0; np<charges->nrow(); ++np) {
+       double rx = charges->get(np, 0);
+       double ry = charges->get(np, 1);
+       double rz = charges->get(np, 2);
+       double q  = charges->get(np, 3);
+       double drx= x - rx;
+       double dry= y - ry;
+       double drz= z - rz;
+       double r = sqrt(drx*drx+dry*dry+drz*drz);
+       double r3 = q/(r*r*r);
+       fx += r3 * drx;
+       fy += r3 * dry;
+       fz += r3 * drz;
+  }
+  field->set(0, fx);
+  field->set(1, fy);
+  field->set(2, fz);
+  return field;
+}
+std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::field_gradient_due_to_charges(
+                                                                  const std::shared_ptr<psi::Matrix>& charges,
+                                                                  const double& x, const double& y, const double& z)
+{
+  std::shared_ptr<psi::Matrix> gradient = std::make_shared<psi::Matrix>("", 3, 3);
+  double gxx = 0.0; double gyx = 0.0; double gzx = 0.0;
+  double gxy = 0.0; double gyy = 0.0; double gzy = 0.0;
+  double gxz = 0.0; double gyz = 0.0; double gzz = 0.0;
+  for (int np=0; np<charges->nrow(); ++np) {
+       double rx = charges->get(np, 0);
+       double ry = charges->get(np, 1);
+       double rz = charges->get(np, 2);
+       double q  = charges->get(np, 3);
+       double drx= x - rx;
+       double dry= y - ry;
+       double drz= z - rz;
+       double r = sqrt(drx*drx+dry*dry+drz*drz);
+       double r3 = q/(r*r*r);
+       double r5 = 3.0*r3/(r*r);
+       gxx += r3 - r5 * drx * drx;
+       gxy -=      r5 * drx * dry;
+       gxz -=      r5 * drx * drz;
+       gyx -=      r5 * dry * drx;
+       gyy += r3 - r5 * dry * dry;
+       gyz -=      r5 * dry * drz;
+       gzx -=      r5 * drz * drx;
+       gzy -=      r5 * drz * dry;
+       gzz += r3 - r5 * drz * drz;
+  }
+  gradient->set(0, 0, gxx);
+  gradient->set(0, 1, gxy);
+  gradient->set(0, 2, gxz);
+  gradient->set(1, 0, gyx);
+  gradient->set(1, 1, gyy);
+  gradient->set(1, 2, gyz);
+  gradient->set(2, 0, gzx);
+  gradient->set(2, 1, gzy);
+  gradient->set(2, 2, gzz);
+  return gradient;
+}
+std::shared_ptr<psi::Vector> oepdev::PolarGEFactory::field_due_to_charges(const std::shared_ptr<psi::Matrix>& charges,
+                                                                          const std::shared_ptr<psi::Vector>& pos)
+{
+  return this->field_due_to_charges(charges, pos->get(0), pos->get(1), pos->get(2));
+}
+std::shared_ptr<psi::Matrix> oepdev::PolarGEFactory::field_gradient_due_to_charges(
+                                                                          const std::shared_ptr<psi::Matrix>& charges,
+                                                                          const std::shared_ptr<psi::Vector>& pos)
+{
+  return this->field_gradient_due_to_charges(charges, pos->get(0), pos->get(1), pos->get(2));
+}
+std::shared_ptr<oepdev::RHFPerturbed> oepdev::PolarGEFactory::perturbed_state(const std::shared_ptr<psi::Vector>& field)
+{
+  std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, 
+                  oepdev::create_superfunctional("HF", options_), options_, wfn_->psio());
+  scf->set_perturbation(field);
+  scf->compute_energy();
+  return scf;
+}
+std::shared_ptr<oepdev::RHFPerturbed> oepdev::PolarGEFactory::perturbed_state(const std::shared_ptr<psi::Vector>& pos, const double& q)
+{
+  std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, 
+                  oepdev::create_superfunctional("HF", options_), options_, wfn_->psio());
+  scf->set_perturbation(pos, q);
+  scf->compute_energy();
+  return scf;
+}
+std::shared_ptr<oepdev::RHFPerturbed> oepdev::PolarGEFactory::perturbed_state(const std::shared_ptr<psi::Matrix>& charges)
+{
+  std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_,
+                  oepdev::create_superfunctional("HF", options_), options_, wfn_->psio());
+  for (int i=0; i<charges->nrow(); ++i) {
+       double x = charges->get(i, 0);
+       double y = charges->get(i, 1);
+       double z = charges->get(i, 2);
+       double q = charges->get(i, 3);
+       scf->set_perturbation(x, y, z, q);
+  }
+  scf->compute_energy();
+  return scf;
+}
+// -- GeneralizedPolarGEFactory ---------------------------------------------------------------------------------------
+oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt)
+ : oepdev::PolarGEFactory(wfn, opt),
    nBlocks_(0),
    nSites_(0),
    nParameters_(0),
@@ -49,10 +189,6 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPH
    jk_->initialize();
    jk_->print_header();
 }
-oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<CPHF> cphf)
- : oepdev::GeneralizedPolarGEFactory(cphf, cphf->options())
-{
-}
 oepdev::GeneralizedPolarGEFactory::~GeneralizedPolarGEFactory()
 {
    //if (!options_.get_bool("SAVE_JK")) {
@@ -73,6 +209,7 @@ void oepdev::GeneralizedPolarGEFactory::invert_hessian(void)
    Hessian_->invert();
    Hessian_->set_name("\nInverse Hessian");
    Hessian_->print();
+
    // Perform the identity test
    std::shared_ptr<psi::Matrix> I = psi::Matrix::doublet(Hessian_, Htemp, false, false);
    double s = 0.0;
@@ -178,10 +315,12 @@ void oepdev::GeneralizedPolarGEFactory::allocate(void)
   nBlocks_  = (int)hasDipolePolarizability_ + (int)hasDipoleDipoleHyperpolarizability_ + (int)hasQuadrupolePolarizability_;
   nParameters_ = nBlocks_*(nSites_ * 3);
   for (int z=0; z<nBlocks_; ++z) nParametersBlock_.push_back(nSites_ * 3);
+
   // Parameter spaces
   Gradient_   = std::make_shared<psi::Matrix>("Gradient"  , nParameters_, 1);
   Hessian_    = std::make_shared<psi::Matrix>("Hessian"   , nParameters_, nParameters_);
   Parameters_ = std::make_shared<psi::Matrix>("Parameters", nParameters_, 1);
+
   // Susceptibilities
   if (hasDipolePolarizability_           ) PolarizationSusceptibilities_->allocate(1, 0, nSites_, nbf_);
   if (hasDipoleDipoleHyperpolarizability_) PolarizationSusceptibilities_->allocate(2, 0, nSites_, nbf_);

@@ -56,6 +56,16 @@ using SharedScalarField3D = std::shared_ptr<ScalarField3D>;
  *  \f}
  *  In the above equation, summations run over all sample points, at which reference potential
  *  is known.
+ * 
+ * \note Useful options:
+ *  - `ESP_PAD_SPHERE`        - Padding spherical radius for random points selection. Default: `10.0` [A.U.]
+ *  - `ESP_NPOINTS_PER_ATOM`  - Number of random points per atom in a molecule. Detault: `1500`
+ *  - `ESP_VDW_RADIUS_C`      - The vdW radius for carbon atom. Default: `3.0` [A.U.]
+ *  - `ESP_VDW_RADIUS_H`      - The vdW radius for hydrogen atom. Default: `4.0` [A.U.]
+ *  - `ESP_VDW_RADIUS_N`      - The vdW radius for nitrogen atom. Default: `2.4` [A.U.]
+ *  - `ESP_VDW_RADIUS_O`      - The vdW radius for oxygen atom. Default: `5.6` [A.U.]
+ *  - `ESP_VDW_RADIUS_F`      - The vdW radius for fluorium atom. Default: `2.3` [A.U.]
+ *  - `ESP_VDW_RADIUS_CL`     - The vdW radius for chlorium atom. Default: `2.9` [A.U.]
  */
 class ESPSolver
 {

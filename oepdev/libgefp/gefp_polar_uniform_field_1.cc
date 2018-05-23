@@ -5,20 +5,22 @@
 
 using namespace std;
 
-oepdev::LinearUniformEFieldPolarGEFactory::LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt)
- : oepdev::UniformEFieldPolarGEFactory(cphf, opt)
+oepdev::LinearUniformEFieldPolarGEFactory::LinearUniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt)
+ : oepdev::UniformEFieldPolarGEFactory(wfn, opt)
 {
   // One block: Electric field parameters
   hasDipolePolarizability_ = true;
+
   // Allocate memory
   allocate();
 }
-oepdev::LinearUniformEFieldPolarGEFactory::LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
- : oepdev::LinearUniformEFieldPolarGEFactory(cphf, cphf->options())
-{
-}
+//oepdev::LinearUniformEFieldPolarGEFactory::LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
+// : oepdev::LinearUniformEFieldPolarGEFactory(cphf, cphf->options())
+//{
+//}
 oepdev::LinearUniformEFieldPolarGEFactory::~LinearUniformEFieldPolarGEFactory()
 {
+
 }
 // implementations of abstract methods from base
 void oepdev::LinearUniformEFieldPolarGEFactory::compute_gradient(int i, int j)

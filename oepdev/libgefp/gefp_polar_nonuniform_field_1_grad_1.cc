@@ -5,21 +5,25 @@
 
 using namespace std;
 
-oepdev::LinearGradientNonUniformEFieldPolarGEFactory::LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf, psi::Options& opt)
- : oepdev::NonUniformEFieldPolarGEFactory(cphf, opt)
+oepdev::LinearGradientNonUniformEFieldPolarGEFactory::LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt)
+ : oepdev::NonUniformEFieldPolarGEFactory(wfn, opt)
 {
-  // Three blocks: Electric field parameters (1 block), Electric field gradient parameters (2 blocks)
+  // Two blocks: 
+  //  - Electric field parameters
+  //  - Electric field gradient parameters
   hasDipolePolarizability_ = true;
   hasQuadrupolePolarizability_ = true;
+
   // Allocate memory
   allocate();
 }
-oepdev::LinearGradientNonUniformEFieldPolarGEFactory::LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
- : oepdev::LinearGradientNonUniformEFieldPolarGEFactory(cphf, cphf->options())
-{
-}
+//oepdev::LinearGradientNonUniformEFieldPolarGEFactory::LinearGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
+// : oepdev::LinearGradientNonUniformEFieldPolarGEFactory(cphf, cphf->options())
+//{
+//}
 oepdev::LinearGradientNonUniformEFieldPolarGEFactory::~LinearGradientNonUniformEFieldPolarGEFactory()
 {
+
 }
 // Implementations of abstract methods from base class
 void oepdev::LinearGradientNonUniformEFieldPolarGEFactory::compute_gradient(int i, int j)
@@ -34,7 +38,6 @@ void oepdev::LinearGradientNonUniformEFieldPolarGEFactory::compute_gradient(int 
         for (int n=0; n<nSamples_; ++n) {                                                                  
              double dij = -referenceStatisticalSet_.DensityMatrixSet[n]->get(i, j);
              double fz = electricFieldSet_[n][s]->get(z);
-             //double fs = electricFieldSumSet_[n][s] * 2.0 * mField_;
              double gs = electricFieldGradientSumSet_[n][s]->get(z) * 2.0;
              g1 += dij * fz;
              g2 += dij * gs;
@@ -62,8 +65,6 @@ void oepdev::LinearGradientNonUniformEFieldPolarGEFactory::compute_hessian(void)
              for (int n=0; n<nSamples_; ++n) {
                   double fz1 = electricFieldSet_[n][s1]->get(z1);
                   double fz2 = electricFieldSet_[n][s2]->get(z2);
-                  //double fs1 = electricFieldSumSet_[n][s1] * 2.0 * mField_;
-                  //double fs2 = electricFieldSumSet_[n][s2] * 2.0 * mField_;
                   double gs1 = electricFieldGradientSumSet_[n][s1]->get(z1) * 2.0;
                   double gs2 = electricFieldGradientSumSet_[n][s2]->get(z2) * 2.0;
 
