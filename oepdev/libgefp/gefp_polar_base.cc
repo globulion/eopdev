@@ -153,20 +153,24 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<psi
    Hessian_(std::make_shared<psi::Matrix>()),
    Parameters_(std::make_shared<psi::Matrix>()),
    PolarizationSusceptibilities_(std::make_shared<oepdev::GenEffPar>("Polarization")),
+   abInitioPolarizationSusceptibilities_(std::make_shared<oepdev::GenEffPar>("Polarization")),
    hasDipolePolarizability_(false),
    hasDipoleDipoleHyperpolarizability_(false),
    hasQuadrupolePolarizability_(false),
+   hasAbInitioDipolePolarizability_(false),
    nSamples_(options_.get_int("DMATPOL_NSAMPLES")),
    mField_(options_.get_double("DMATPOL_SCALE_1")),
    Zinit_(-1.0),
    Z_(-1.0),
    referenceStatisticalSet_({{},{},{},{},{}}),
-   modelStatisticalSet_({{},{},{},{}}),
+   modelStatisticalSet_({{},{},{},{},{}}),
+   abInitioModelStatisticalSet_({{},{},{},{},{}}),
    VMatrixSet_({}),
    electricFieldSet_({}),
    electricFieldGradientSet_({}),
    electricFieldSumSet_({}),
    electricFieldGradientSumSet_({}),
+   abInitioModelElectricFieldSet_({}),
    jk_(nullptr)
 {
    // Allocate memory for matrix sets
@@ -182,6 +186,13 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<psi
         modelStatisticalSet_.InducedDipoleSet               .push_back(std::make_shared<psi::Vector>("", 3));
         modelStatisticalSet_.InducedQuadrupoleSet           .push_back(std::make_shared<psi::Matrix>("", 3, 3));
         modelStatisticalSet_.InducedInteractionEnergySet    .push_back(0.0);
+        if (hasAbInitioDipolePolarizability_) {
+           abInitioModelStatisticalSet_.DensityMatrixSet           .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_)); 
+           abInitioModelStatisticalSet_.JKMatrixSet                .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
+           abInitioModelStatisticalSet_.InducedDipoleSet           .push_back(std::make_shared<psi::Vector>("", 3));
+           abInitioModelStatisticalSet_.InducedQuadrupoleSet       .push_back(std::make_shared<psi::Matrix>("", 3, 3));
+           abInitioModelStatisticalSet_.InducedInteractionEnergySet.push_back(0.0);
+        }
    }
    // Construct the JK object
    jk_ = psi::JK::build_JK(wfn_->basisset(), psi::BasisSet::zero_ao_basis_set(), options_);
@@ -231,12 +242,25 @@ void oepdev::GeneralizedPolarGEFactory::compute_parameters(void)
    Hessian_->print();
    invert_hessian();
    for (int i=0; i<nbf_; ++i) {
-        for (int j=0; j<nbf_; ++j) {
-             compute_gradient(i, j);
-             fit();
-             save(i, j);
-        }
+   for (int j=0; j<nbf_; ++j) {
+        compute_gradient(i, j);
+        fit();
+        save(i, j);
    }
+   }
+   set_distributed_centres();
+}
+void oepdev::GeneralizedPolarGEFactory::set_distributed_centres(void)
+{
+   // Centres are assumed to be atoms
+   std::vector<std::shared_ptr<psi::Vector>> centres;
+   for (int s=0; s<nSites_; ++s) {
+        centres.push_back(std::make_shared<psi::Vector>(oepdev::string_sprintf("Atomic centre (%d)", s+1), 3));
+        centres[s]->set(0, wfn_->molecule()->x(s));
+        centres[s]->set(1, wfn_->molecule()->y(s));
+        centres[s]->set(2, wfn_->molecule()->z(s));
+   }
+   PolarizationSusceptibilities_->set_centres(centres);
 }
 void oepdev::GeneralizedPolarGEFactory::fit(void)
 {
@@ -247,7 +271,8 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
 {
   if (!hasDipolePolarizability_) throw psi::PSIEXCEPTION("Dipole polarizability must be set!");
 
-  // Un-Pack the parameters from Parameters_ vector into dipole and quadrupole (hyper)polarizabilities
+  // --> Un-Pack the parameters from Parameters_ vector into dipole and quadrupole (hyper)polarizabilities <-- //
+
   if (!hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
       for (int n=0; n<nSites_; ++n) {
            for (int z=0; z<3; ++z) {
@@ -307,7 +332,6 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
   } else {
     throw psi::PSIEXCEPTION("The model you refer to is not implemented.");
   }
-  
 }
 void oepdev::GeneralizedPolarGEFactory::allocate(void)
 {
@@ -321,10 +345,17 @@ void oepdev::GeneralizedPolarGEFactory::allocate(void)
   Hessian_    = std::make_shared<psi::Matrix>("Hessian"   , nParameters_, nParameters_);
   Parameters_ = std::make_shared<psi::Matrix>("Parameters", nParameters_, 1);
 
+  // Ab initio model
+  hasAbInitioDipolePolarizability_ = options_.get_bool("DMATPOL_DO_AB_INITIO");
+
   // Susceptibilities
   if (hasDipolePolarizability_           ) PolarizationSusceptibilities_->allocate(1, 0, nSites_, nbf_);
   if (hasDipoleDipoleHyperpolarizability_) PolarizationSusceptibilities_->allocate(2, 0, nSites_, nbf_);
   if (hasQuadrupolePolarizability_       ) PolarizationSusceptibilities_->allocate(0, 1, nSites_, nbf_);
+  if (hasAbInitioDipolePolarizability_   ) abInitioPolarizationSusceptibilities_->allocate(1, 0, wfn_->doccpi()[0], nbf_);
+
+  // Ab Initio Model
+  if (hasAbInitioDipolePolarizability_   ) compute_ab_initio();
 }
 void oepdev::GeneralizedPolarGEFactory::compute_electric_field_sums(void) {
   for (int n=0; n<nSamples_; ++n) {
@@ -353,6 +384,12 @@ void oepdev::GeneralizedPolarGEFactory::compute_electric_field_gradient_sums(voi
      electricFieldGradientSumSet_.push_back(sum);
   }
 }
+void oepdev::GeneralizedPolarGEFactory::compute_ab_initio(void) {
+  std::shared_ptr<oepdev::GenEffParFactory> factory = std::make_shared<oepdev::AbInitioPolarGEFactory>(wfn_, options_);
+  std::shared_ptr<oepdev::GenEffPar> parameters = factory->compute();
+  abInitioPolarizationSusceptibilities_->set_dipole_polarizability(parameters->dipole_polarizability());
+  abInitioPolarizationSusceptibilities_->set_centres(parameters->centres());
+}
 void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    cout << " Statistical evaluation ...\n";
 
@@ -370,6 +407,11 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
       for (int n=0; n<nSamples_; ++n) {                                                                          
            modelStatisticalSet_.DensityMatrixSet[n]->copy(PolarizationSusceptibilities_->compute_density_matrix(
                      electricFieldSet_[n]));
+      }
+   }
+   if (hasAbInitioDipolePolarizability_) {
+      for (int n=0; n<nSamples_; ++n) {                                                                          
+           abInitioModelStatisticalSet_.DensityMatrixSet[n]->copy(abInitioPolarizationSusceptibilities_->compute_density_matrix(abInitioModelElectricFieldSet_[n]));
       }
    }
 
@@ -403,13 +445,34 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         modelStatisticalSet_.JKMatrixSet[n]->axpy(2.0,J[n]);
         modelStatisticalSet_.JKMatrixSet[n]->subtract(K[n]);
    }
+   if (hasAbInitioDipolePolarizability_) {
+       C_left.clear(); C_right.clear();                                                          
+       for (int n=0; n<nSamples_; ++n) {
+            std::shared_ptr<psi::Matrix> Cl = abInitioModelStatisticalSet_.DensityMatrixSet[n]->clone();
+            std::shared_ptr<psi::Matrix> Cr= Cl->clone(); Cr->identity();
+            C_left.push_back(Cl);
+            C_right.push_back(Cr);
+       }
+       jk_->compute();
+       for (int n=0; n<nSamples_; ++n) {
+            abInitioModelStatisticalSet_.JKMatrixSet[n]->axpy(2.0,J[n]);
+            abInitioModelStatisticalSet_.JKMatrixSet[n]->subtract(K[n]);
+       }
+   }
 
-   // ---> Printer <--- //
-   std::filebuf fb;
+
+   // ---> Printer(s) <--- //
+   std::filebuf fb, fb2;
    fb.open(options_.get_str("DMATPOL_OUT_STATS"), std::ios::out);
    std::shared_ptr<std::ostream> os = std::make_shared<std::ostream>(&fb);
-   std::shared_ptr<psi::PsiOutStream> printer = std::make_shared<psi::PsiOutStream>(os);
+   std::shared_ptr<psi::PsiOutStream> printer = std::make_shared<psi::PsiOutStream>(os), printer_abini;
    printer->Printf("# Eint(Ref)    Eint(Model)\n");
+   if (hasAbInitioDipolePolarizability_) {
+       fb2.open(options_.get_str("DMATPOL_OUT_STATS_AB_INITIO"), std::ios::out);
+       std::shared_ptr<std::ostream> os2 = std::make_shared<std::ostream>(&fb2);               
+       printer_abini = std::make_shared<psi::PsiOutStream>(os2);
+       printer_abini->Printf("# Eint(Ref)    Eint(Model)\n");
+   }
 
    for (int n=0; n<nSamples_; ++n) {
 
@@ -435,12 +498,30 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         // TODO
 
         // ---> Print all to the output file <--- //
-        printer->Printf("%20.8E %20.8E\n", referenceStatisticalSet_.InducedInteractionEnergySet[n],
+        printer->Printf("%20.8E %20.8E\n", 
+                                           referenceStatisticalSet_.InducedInteractionEnergySet[n],
                                                modelStatisticalSet_.InducedInteractionEnergySet[n]);
 
+        // ---> Optional calculations for the Ab Initio Model <--- //
+        if (hasAbInitioDipolePolarizability_) {
+            double eint_abini = H->vector_dot(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
+            std::shared_ptr<psi::Matrix> Dn3= D->clone(); Dn3->add(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
+            std::shared_ptr<psi::Matrix> G3 = G->clone();  G3->add(abInitioModelStatisticalSet_.JKMatrixSet[n]);
+            eint_abini+= G3->vector_dot(Dn3);
+                                                                                                                  
+            abInitioModelStatisticalSet_.InducedInteractionEnergySet[n] += eint_abini;
+
+            printer_abini->Printf("%20.8E %20.8E\n", 
+                                                     referenceStatisticalSet_.InducedInteractionEnergySet[n],
+                                                 abInitioModelStatisticalSet_.InducedInteractionEnergySet[n]);
+        }
    }
    // Finish with the JK object (clear but not destroy it)
    jk_->finalize();
+
+   // Close the statistical output files
+   fb.close();
+   if (hasAbInitioDipolePolarizability_) fb2.close();
 
    // ---> Compute RMS indicators <--- //
    double rmse = 0.0; double r2e = 1.0; double sre = 0.0; double ste = 0.0;
@@ -473,6 +554,9 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmse, rmse*c1, r2e);
    psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsd, rmsd*c2, r2d);
    psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsq, rmsq*c3, r2q);
+
+   if (hasAbInitioDipolePolarizability_) {
+   }
 }
 // abstract methods
 void oepdev::GeneralizedPolarGEFactory::compute_samples(void)

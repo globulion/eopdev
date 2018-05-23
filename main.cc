@@ -210,6 +210,10 @@ int read_options(std::string name, Options& options)
         /*- Output file name for statistical evaluation for DMATPOL -*/
         options.add_str    ("DMATPOL_OUT_STATS"     , "dmatpol.stats.dat"        );
 
+        /*- Do the Ab Initio model calculations or not -*/
+        options.add_bool   ("DMATPOL_DO_AB_INITIO"  , false                      );
+        options.add_str    ("DMATPOL_OUT_STATS_AB_INITIO" , "dmatpol.stats.abinitio.dat"        );
+
      }
 
     return true;

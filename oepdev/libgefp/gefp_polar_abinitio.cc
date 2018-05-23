@@ -171,6 +171,11 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::AbInitioPolarGEFactory::compute()
   // Construct The Effective Fragment Parameters Object
   std::shared_ptr<oepdev::GenEffPar> par = std::make_shared<oepdev::GenEffPar>("Polarization");
   par->set_dipole_polarizability(densityMatrixSusceptibility);
+  std::vector<std::shared_ptr<psi::Vector>> centres;
+  for (int o=0; o<cphfSolver_->nocc(); ++o) {
+       centres.push_back(std::make_shared<psi::Vector>(*(cphfSolver_->lmo_centroid(o))));
+  }
+  par->set_centres(centres);
 
   // Return
   return par;

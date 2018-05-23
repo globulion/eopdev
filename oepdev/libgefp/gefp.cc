@@ -7,12 +7,15 @@ using namespace std;
 
 void oepdev::GenEffPar::allocate_dipole_polarizability(int nsites, int nbf)
 {
+   // Here also the distributed centres are allocated.
    std::map<int, char> m;
    m[0] = 'X'; m[1] = 'Y'; m[2] = 'Z';
 
    std::vector<std::vector<std::shared_ptr<psi::Matrix>>> susc;
+   std::vector<std::shared_ptr<psi::Vector>> centres;
    for (int n=0; n<nsites; ++n) {
         std::vector<std::shared_ptr<psi::Matrix>> susc_n;
+        centres.push_back(std::make_shared<psi::Vector>(oepdev::string_sprintf("Centre (%d)", n+1), 3));
         for (int z=0; z<3; ++z) {
              std::string name = oepdev::string_sprintf("Density Matrix Dipole Polarizability B[%c](%d)", m[z], n+1);
              std::shared_ptr<psi::Matrix> susc_nz = std::make_shared<psi::Matrix>(name, nbf, nbf);
@@ -21,6 +24,7 @@ void oepdev::GenEffPar::allocate_dipole_polarizability(int nsites, int nbf)
         susc.push_back(susc_n);
    }
    set_dipole_polarizability(susc);
+   set_centres(centres);
 }
 void oepdev::GenEffPar::allocate_dipole_dipole_hyperpolarizability(int nsites, int nbf)
 {

@@ -60,6 +60,17 @@ void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
             modelStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
 
         cout << oepdev::string_sprintf(" Interaction Energy = %15.6f\n", pert->reference_energy() - wfn_->reference_energy());
+
+        if (hasAbInitioDipolePolarizability_) {
+            std::vector<std::shared_ptr<psi::Vector>> fields_abini_n;
+            for (int o=0; o<wfn_->doccpi()[0]; ++o) {
+                 std::shared_ptr<psi::Vector> field = field_due_to_charges(charges, abInitioPolarizationSusceptibilities_->centre(o));
+                 fields_abini_n.push_back(field);
+            }
+            abInitioModelElectricFieldSet_.push_back(fields_abini_n);
+            abInitioModelStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
+        }
+
    }
  
 }

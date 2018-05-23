@@ -91,7 +91,9 @@ set {
     dmatpol_test_field_x          0.002
     dmatpol_test_field_y          0.010
     dmatpol_test_field_z          0.010
-    dmatpol_out_stats             energy.4.dat
+    dmatpol_do_ab_initio          False
+    dmatpol_out_stats             energy.X.dat
+    dmatpol_out_stats_ab_initio   energy.Y.dat
     # ==> General Psi4 Options <== #
     basis                         sto-3g
     scf_type                      direct 

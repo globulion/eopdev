@@ -77,6 +77,9 @@ class GenEffPar
    /// Set The Density Matrix Quadrupole Polarizability
    void set_quadrupole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc) {densityMatrixQuadrupolePolarizability_=susc;hasDensityMatrixQuadrupolePolarizability_=true;}
 
+   /// Set the distributed centres' positions
+   void set_centres(const std::vector<std::shared_ptr<psi::Vector>>& centres) {distributedCentres_=centres;}
+
    // ---> Allocators <--- //
 
 
@@ -246,6 +249,11 @@ class GenEffPar
    /// Grab the density matrix quadrupole polarizability tensor's *x*-th component of the *i*-th distributed site
    std::shared_ptr<psi::Matrix> quadrupole_polarizability(int i, int x) const {return densityMatrixQuadrupolePolarizability_[i][x];}
 
+   /// Grab the centres' positions
+   std::vector<std::shared_ptr<psi::Vector>> centres() const {return distributedCentres_;}
+   /// Grab the position of the *i*-th distributed site
+   std::shared_ptr<psi::Vector> centre(int i) const {return distributedCentres_[i];}
+
    // ---> Computers <--- //
 
 
@@ -288,6 +296,9 @@ class GenEffPar
 
    /// The Density Matrix Quadrupole Polarizability
    std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixQuadrupolePolarizability_;
+
+   /// The Positions of the Distributed Centres
+   std::vector<std::shared_ptr<psi::Vector>> distributedCentres_;
 
    /// 
    bool hasDensityMatrixDipolePolarizability_;
@@ -621,11 +632,13 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    bool has_dipole_dipole_hyperpolarizability() const {return hasDipoleDipoleHyperpolarizability_;}
    /// Quadrupole Polarizability (interacting with \f$ \nabla \otimes {\bf F} \f$)
    bool has_quadrupole_polarizability        () const {return hasQuadrupolePolarizability_       ;}
+   /// Ab Initio Dipole Polarizability (interacting with \f$ {\bf F} \f$)
+   bool has_ab_initio_dipole_polarizability  () const {return hasAbInitioDipolePolarizability_   ;}
 
    /// Grab initial summaric Z value
-   double Zinit() const {return Zinit_;}
+   double Zinit() const {return Zinit_;}  // Not implemented
    /// Grab final summaric Z value
-   double Z() const {return Z_;}
+   double Z() const {return Z_;}          // Not implemented
 
 
   protected:
@@ -654,6 +667,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    std::shared_ptr<psi::Matrix> Parameters_;
    /// Density Matrix Susceptibility Tensors Object
    std::shared_ptr<oepdev::GenEffPar> PolarizationSusceptibilities_;
+   /// Density Matrix Susceptibility Tensors Object for Ab Initio Model
+   std::shared_ptr<oepdev::GenEffPar> abInitioPolarizationSusceptibilities_;
    /// Allocate memory
    void allocate(void);
    /// Invert Hessian (do also the identity test)
@@ -668,6 +683,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    bool hasDipoleDipoleHyperpolarizability_;
    /// Has Quadrupole Polarizability?
    bool hasQuadrupolePolarizability_;
+   /// Has Ab Initio Dipole Polarizability?
+   bool hasAbInitioDipolePolarizability_;
 
 
    // --> Sets of statistical data <-- //
@@ -690,6 +707,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    StatisticalSet referenceStatisticalSet_;
    /// Model statistical data
    StatisticalSet modelStatisticalSet_;
+   /// Ab Initio Model statistical data
+   StatisticalSet abInitioModelStatisticalSet_;
    
    /// Potential matrix set
    std::vector<std::shared_ptr<psi::Matrix>> VMatrixSet_;
@@ -701,6 +720,9 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    std::vector<std::vector<double>> electricFieldSumSet_;
    /// Electric field gradient sum set
    std::vector<std::vector<std::shared_ptr<psi::Vector>>> electricFieldGradientSumSet_;
+   /// Electric field set for Ab Initio Model (LMO-distributed)
+   std::vector<std::vector<std::shared_ptr<Vector>>> abInitioModelElectricFieldSet_;
+
 
    /// Compute electric field sum set
    void compute_electric_field_sums(void);
@@ -724,12 +746,18 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
 
    /// Computer of generalized JK objects
    std::shared_ptr<psi::JK> jk_;
+
+   /// Set the distributed centres
+   void set_distributed_centres(void);
    
    /// Compute the parameters
    void compute_parameters(void);
 
    /// Perform least-squares fit
    void fit(void);
+
+   /// Compute ab initio parameters
+   void compute_ab_initio(void);
 
    /// Save susceptibility tensors associated with the *i*-th and *j*-th basis set function
    void save(int i, int j);
