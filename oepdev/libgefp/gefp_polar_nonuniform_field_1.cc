@@ -14,10 +14,6 @@ oepdev::LinearNonUniformEFieldPolarGEFactory::LinearNonUniformEFieldPolarGEFacto
   // Allocate memory
   allocate();
 }
-//oepdev::LinearNonUniformEFieldPolarGEFactory::LinearNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
-// : oepdev::LinearNonUniformEFieldPolarGEFactory(cphf, cphf->options())
-//{
-//}
 oepdev::LinearNonUniformEFieldPolarGEFactory::~LinearNonUniformEFieldPolarGEFactory()
 {
 

@@ -14,10 +14,6 @@ oepdev::LinearUniformEFieldPolarGEFactory::LinearUniformEFieldPolarGEFactory(std
   // Allocate memory
   allocate();
 }
-//oepdev::LinearUniformEFieldPolarGEFactory::LinearUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
-// : oepdev::LinearUniformEFieldPolarGEFactory(cphf, cphf->options())
-//{
-//}
 oepdev::LinearUniformEFieldPolarGEFactory::~LinearUniformEFieldPolarGEFactory()
 {
 

@@ -186,13 +186,13 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<psi
         modelStatisticalSet_.InducedDipoleSet               .push_back(std::make_shared<psi::Vector>("", 3));
         modelStatisticalSet_.InducedQuadrupoleSet           .push_back(std::make_shared<psi::Matrix>("", 3, 3));
         modelStatisticalSet_.InducedInteractionEnergySet    .push_back(0.0);
-        if (hasAbInitioDipolePolarizability_) {
+        //if (hasAbInitioDipolePolarizability_) {
            abInitioModelStatisticalSet_.DensityMatrixSet           .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_)); 
            abInitioModelStatisticalSet_.JKMatrixSet                .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
            abInitioModelStatisticalSet_.InducedDipoleSet           .push_back(std::make_shared<psi::Vector>("", 3));
            abInitioModelStatisticalSet_.InducedQuadrupoleSet       .push_back(std::make_shared<psi::Matrix>("", 3, 3));
            abInitioModelStatisticalSet_.InducedInteractionEnergySet.push_back(0.0);
-        }
+        //}
    }
    // Construct the JK object
    jk_ = psi::JK::build_JK(wfn_->basisset(), psi::BasisSet::zero_ao_basis_set(), options_);
@@ -410,7 +410,7 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
       }
    }
    if (hasAbInitioDipolePolarizability_) {
-      for (int n=0; n<nSamples_; ++n) {                                                                          
+      for (int n=0; n<nSamples_; ++n) {
            abInitioModelStatisticalSet_.DensityMatrixSet[n]->copy(abInitioPolarizationSusceptibilities_->compute_density_matrix(abInitioModelElectricFieldSet_[n]));
       }
    }
@@ -527,6 +527,10 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    double rmse = 0.0; double r2e = 1.0; double sre = 0.0; double ste = 0.0;
    double rmsd = 0.0; double r2d = 1.0;
    double rmsq = 0.0; double r2q = 1.0;
+   double rmse1= 0.0; double r2e1= 1.0; double sre1= 0.0;
+   double rmsd1= 0.0; double r2d1= 1.0;
+   double rmsq1= 0.0; double r2q1= 1.0;
+
    double ave = 0.0;
    for (int n=0; n<nSamples_; ++n) {
         ave += referenceStatisticalSet_.InducedInteractionEnergySet[n];
@@ -542,18 +546,38 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         rmse += pow(er-em,2.0); sre += pow(er-em,2.0); ste += pow(er - ave,2.0);
         rmsd += pow(dr-dm,2.0);
         rmsq += pow(qr-qm,2.0);
+        if (hasAbInitioDipolePolarizability_) {
+        double em1= abInitioModelStatisticalSet_.InducedInteractionEnergySet[n];
+        double dm1= 0.0; // TODO
+        double qm1= 0.0; // TODO
+        rmse1+= pow(er-em1,2.0); sre1+= pow(er-em1,2.0);
+        rmsd1+= pow(dr-dm1,2.0);
+        rmsq1+= pow(qr-qm1,2.0);
+        }
    }
    rmse /= (double)nSamples_; rmse = sqrt(rmse); r2e -= sre/ste;
    rmsd /= (double)nSamples_; rmsd = sqrt(rmsd); 
    rmsq /= (double)nSamples_; rmsq = sqrt(rmsq);
+   if (hasAbInitioDipolePolarizability_) {
+   rmse1/= (double)nSamples_; rmse1= sqrt(rmse1); r2e1-= sre1/ste;
+   rmsd1/= (double)nSamples_; rmsd1= sqrt(rmsd1); 
+   rmsq1/= (double)nSamples_; rmsq1= sqrt(rmsq1);
+   }
 
    // ---> Print to output file <--- //
    const double c1 = 627.509;
    const double c2 = 1.0;
    const double c3 = 1.0;
+   psi::outfile->Printf(" \n===> Statistical Results: Generalized Susceptibility <===\n\n");
    psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmse, rmse*c1, r2e);
    psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsd, rmsd*c2, r2d);
    psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsq, rmsq*c3, r2q);
+   if (hasAbInitioDipolePolarizability_) {
+   psi::outfile->Printf(" \n===> Statistical Results: Ab Initio Susceptibility <===\n\n");
+   psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmse1, rmse1*c1, r2e1);
+   psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsd1, rmsd1*c2, r2d1);
+   psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsq1, rmsq1*c3, r2q1);
+   }
 
    if (hasAbInitioDipolePolarizability_) {
    }

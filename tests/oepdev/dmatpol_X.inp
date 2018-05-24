@@ -74,28 +74,28 @@ set {
     cphf_localize                 True
     cphf_localizer                PIPEK_MEZEY
     # ==> ESP <== #
-    esp_pad_sphere                10.0
+    esp_pad_sphere                8.0
     esp_vdw_radius_c              3.0
     esp_vdw_radius_h              4.0
     esp_vdw_radius_o              5.6
-    esp_vdw_radius_n              2.4
+    esp_vdw_radius_n              4.4
     # ==> DmatPol <== #
     dmatpol_nsamples              40
     dmatpol_field_scale           0.005
-    dmatpol_ntest_charge          10
-    dmatpol_test_charge           0.3
+    dmatpol_ntest_charge          3
+    dmatpol_test_charge           1.0
     dmatpol_training_mode         CHARGES
-    dmatpol_field_rank            1
-    dmatpol_gradient_rank         0
-    dmatpol_scale_1               2.0
+    dmatpol_field_rank            2
+    dmatpol_gradient_rank         1
+    dmatpol_scale_1               1.0
     dmatpol_test_field_x          0.002
     dmatpol_test_field_y          0.010
     dmatpol_test_field_z          0.010
-    dmatpol_do_ab_initio          False
+    dmatpol_do_ab_initio          True
     dmatpol_out_stats             energy.X.dat
     dmatpol_out_stats_ab_initio   energy.Y.dat
     # ==> General Psi4 Options <== #
-    basis                         sto-3g
+    basis                         6-31G
     scf_type                      direct 
     guess                         core
     e_convergence                 1e-10

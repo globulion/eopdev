@@ -15,10 +15,6 @@ oepdev::QuadraticUniformEFieldPolarGEFactory::QuadraticUniformEFieldPolarGEFacto
   // Allocate memory
   allocate();
 }
-//oepdev::QuadraticUniformEFieldPolarGEFactory::QuadraticUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
-// : oepdev::QuadraticUniformEFieldPolarGEFactory(cphf, cphf->options())
-//{
-//}
 oepdev::QuadraticUniformEFieldPolarGEFactory::~QuadraticUniformEFieldPolarGEFactory()
 {
 

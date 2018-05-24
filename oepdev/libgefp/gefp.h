@@ -451,6 +451,8 @@ class GenEffParFactory
     *   - `DMATPOL_TEST_FIELD_Y`  - test electric field in Y direction. Default: `0.000` [au]
     *   - `DMATPOL_TEST_FIELD_Z`  - test electric field in Z direction. Default: `0.008` [au]
     *   - `DMATPOL_OUT_STATS`     - output file name for statistical evaluation results. Default: `dmatpol.stats.dat`
+    *   - `DMATPOL_DO_AB_INITIO`  - compute ab initio susceptibilities and evaluate statistics for it. Default: `false`
+    *   - `DMATPOL_OUT_STATS_AB_INITIO` - output file name for statistical evaluation results of ab initio model. Default: `dmatpol.stats.abinitio.dat`
     */
    static std::shared_ptr<GenEffParFactory> build(const std::string& type, 
                                                   std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
@@ -529,8 +531,6 @@ class PolarGEFactory : public GenEffParFactory
    virtual std::shared_ptr<GenEffPar> compute(void) = 0;
 
   protected:
-   /// The CPHF object
-   ///std::shared_ptr<CPHF> cphfSolver_;
 
    /// Randomly draw electric field value
    std::shared_ptr<psi::Vector> draw_field();

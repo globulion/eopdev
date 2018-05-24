@@ -19,10 +19,6 @@ oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::QuadraticGradientNonUni
   // Allocate memory
   allocate();
 }
-//oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::QuadraticGradientNonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
-// : oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory(cphf, cphf->options())
-//{
-//}
 oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory::~QuadraticGradientNonUniformEFieldPolarGEFactory()
 {
 
