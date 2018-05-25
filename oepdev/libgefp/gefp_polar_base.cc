@@ -163,6 +163,7 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<psi
    Zinit_(-1.0),
    Z_(-1.0),
    referenceStatisticalSet_({{},{},{},{},{}}),
+   referenceDpolStatisticalSet_({{},{},{},{},{}}),
    modelStatisticalSet_({{},{},{},{},{}}),
    abInitioModelStatisticalSet_({{},{},{},{},{}}),
    VMatrixSet_({}),
@@ -181,12 +182,19 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<psi
         referenceStatisticalSet_.InducedDipoleSet           .push_back(std::make_shared<psi::Vector>("", 3));
         referenceStatisticalSet_.InducedQuadrupoleSet       .push_back(std::make_shared<psi::Vector>("", 6));
         referenceStatisticalSet_.InducedInteractionEnergySet.push_back(0.0);
+
         modelStatisticalSet_.DensityMatrixSet               .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
         modelStatisticalSet_.JKMatrixSet                    .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
         modelStatisticalSet_.InducedDipoleSet               .push_back(std::make_shared<psi::Vector>("", 3));
         modelStatisticalSet_.InducedQuadrupoleSet           .push_back(std::make_shared<psi::Vector>("", 6));
         modelStatisticalSet_.InducedInteractionEnergySet    .push_back(0.0);
+
         //if (hasAbInitioDipolePolarizability_) {
+
+           referenceDpolStatisticalSet_.InducedDipoleSet           .push_back(std::make_shared<psi::Vector>("", 3)); 
+           referenceDpolStatisticalSet_.InducedQuadrupoleSet       .push_back(std::make_shared<psi::Vector>("", 6));
+           referenceDpolStatisticalSet_.InducedInteractionEnergySet.push_back(0.0);
+
            abInitioModelStatisticalSet_.DensityMatrixSet           .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_)); 
            abInitioModelStatisticalSet_.JKMatrixSet                .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
            abInitioModelStatisticalSet_.InducedDipoleSet           .push_back(std::make_shared<psi::Vector>("", 3));
@@ -389,6 +397,7 @@ void oepdev::GeneralizedPolarGEFactory::compute_ab_initio(void) {
   std::shared_ptr<oepdev::GenEffPar> parameters = factory->compute();
   abInitioPolarizationSusceptibilities_->set_dipole_polarizability(parameters->dipole_polarizability());
   abInitioPolarizationSusceptibilities_->set_centres(parameters->centres());
+  abInitioPolarizationSusceptibilitiesFactory_ = factory;
 }
 void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    cout << " Statistical evaluation ...\n";
@@ -499,8 +508,8 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         eint_refer+= G1->vector_dot(Dn1);
         eint_model+= G2->vector_dot(Dn2);
 
-        referenceStatisticalSet_.InducedInteractionEnergySet[n] += eint_refer;
-            modelStatisticalSet_.InducedInteractionEnergySet[n] += eint_model;
+            referenceStatisticalSet_.InducedInteractionEnergySet[n] += eint_refer;
+                modelStatisticalSet_.InducedInteractionEnergySet[n] += eint_model;
 
 
         // ---> Compute induced dipole and quadrupole moments <--- //
@@ -596,10 +605,61 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
                                                                                                               
         abInitioModelStatisticalSet_.InducedInteractionEnergySet[n] += eint_abini;
 
-        printer_abini->Printf("%20.8E %20.8E %20.8E %20.8E %20.8E %20.8E\n", 
+        std::shared_ptr<psi::Vector> inddip = std::make_shared<psi::Vector>("Induced Dipole (DPOL)", 3);
+        std::shared_ptr<psi::Vector> indqad = std::make_shared<psi::Vector>("Induced Quadrupole (DPOL)", 6);
+        double mmx = 0.0; double qqxx = 0.0; double qqyz = 0.0;
+        double mmy = 0.0; double qqxy = 0.0; double qqyy = 0.0;
+        double mmz = 0.0; double qqxz = 0.0; double qqzz = 0.0;
+        double edipind = 0.0;
+
+        for (int o=0; o<wfn_->doccpi()[0]; ++o) { 
+             std::shared_ptr<psi::Matrix> pol = abInitioPolarizationSusceptibilitiesFactory_->cphf_solver()->polarizability(o);
+             std::shared_ptr<psi::Vector> lmoc= abInitioPolarizationSusceptibilitiesFactory_->cphf_solver()->lmo_centroid(o);
+
+             double r0x= wfn_->molecule()->center_of_mass().get(0);
+             double r0y= wfn_->molecule()->center_of_mass().get(1);
+             double r0z= wfn_->molecule()->center_of_mass().get(2);
+             double rox= lmoc->get(0);
+             double roy= lmoc->get(1);
+             double roz= lmoc->get(2);
+
+             double fx = abInitioModelElectricFieldSet_[n][o]->get(0);
+             double fy = abInitioModelElectricFieldSet_[n][o]->get(1);
+             double fz = abInitioModelElectricFieldSet_[n][o]->get(2);
+
+             double dmmx = pol->get(0,0)*fx + pol->get(0,1)*fy + pol->get(0,2)*fz;
+             double dmmy = pol->get(1,0)*fx + pol->get(1,1)*fy + pol->get(1,2)*fz;
+             double dmmz = pol->get(2,0)*fx + pol->get(2,1)*fy + pol->get(2,2)*fz;
+      
+             mmx += dmmx;
+             mmy += dmmy;
+             mmz += dmmz;
+
+             qqxx-= 2.0 * dmmx * (r0x - rox);
+             qqyy-= 2.0 * dmmy * (r0y - roy);
+             qqzz-= 2.0 * dmmz * (r0z - roz);
+             qqxy-= dmmx * (r0y - roy) + dmmy * (r0x - rox);
+             qqxz-= dmmx * (r0z - roz) + dmmz * (r0x - rox);
+             qqyz-= dmmy * (r0z - roz) + dmmz * (r0y - roy);
+
+             edipind -= dmmx * fx + dmmy * fy + dmmz * fz;
+        }
+        inddip->set(0, mmx); indqad->set(0, qqxx); indqad->set(3, qqyy);  
+        inddip->set(1, mmy); indqad->set(1, qqxy); indqad->set(4, qqyz);
+        inddip->set(2, mmz); indqad->set(2, qqxz); indqad->set(5, qqzz);
+
+        referenceDpolStatisticalSet_.InducedDipoleSet[n]->copy(*inddip);
+        referenceDpolStatisticalSet_.InducedQuadrupoleSet[n]->copy(*indqad);
+        referenceDpolStatisticalSet_.InducedInteractionEnergySet[n] += (1.0/2.0) * edipind;
+
+        double drd_av = oepdev::average_moment(inddip);
+        double qrd_av = oepdev::average_moment(indqad);
+
+        printer_abini->Printf("%20.8E %20.8E %20.8E %20.8E %20.8E %20.8E %20.8E %20.8E %20.8E\n", 
                                                  referenceStatisticalSet_.InducedInteractionEnergySet[n],
                                              abInitioModelStatisticalSet_.InducedInteractionEnergySet[n],
-                                                     dr_av, da_av, qr_av, qa_av);
+                                             referenceDpolStatisticalSet_.InducedInteractionEnergySet[n],
+                                                     dr_av, da_av, drd_av, qr_av, qa_av, qrd_av);
         }
    }
    // ---> Finish with the JK object (clear but not destroy it) <--- //
@@ -616,6 +676,11 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    double rmse1= 0.0; double r2e1= 1.0; double sre1= 0.0;
    double rmsd1= 0.0; double r2d1= 1.0; double srd1= 0.0;
    double rmsq1= 0.0; double r2q1= 1.0; double srq1= 0.0;
+
+   double rmse2= 0.0; double r2e2= 1.0; double sre2= 0.0; 
+   double rmsd2= 0.0; double r2d2= 1.0; double srd2= 0.0; 
+   double rmsq2= 0.0; double r2q2= 1.0; double srq2= 0.0; 
+  
 
    double ave = 0.0, avd = 0.0, avq = 0.0;
    for (int n=0; n<nSamples_; ++n) {
@@ -640,9 +705,15 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         double em1= abInitioModelStatisticalSet_.InducedInteractionEnergySet[n];
         double dm1= oepdev::average_moment(abInitioModelStatisticalSet_.InducedDipoleSet[n]);
         double qm1= oepdev::average_moment(abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]);
+        double em2= referenceDpolStatisticalSet_.InducedInteractionEnergySet[n];
+        double dm2= oepdev::average_moment(referenceDpolStatisticalSet_.InducedDipoleSet[n]);
+        double qm2= oepdev::average_moment(referenceDpolStatisticalSet_.InducedQuadrupoleSet[n]);
         rmse1+= pow(er-em1,2.0); sre1+= pow(er-em1,2.0);
         rmsd1+= pow(dr-dm1,2.0); srd1+= pow(dr-dm1,2.0);
         rmsq1+= pow(qr-qm1,2.0); srq1+= pow(qr-qm1,2.0);
+        rmse2+= pow(er-em2,2.0); sre2+= pow(er-em2,2.0);
+        rmsd2+= pow(dr-dm2,2.0); srd2+= pow(dr-dm2,2.0);
+        rmsq2+= pow(qr-qm2,2.0); srq2+= pow(qr-qm2,2.0);
         }
    }
    rmse /= (double)nSamples_; rmse = sqrt(rmse); r2e -= sre/ste;
@@ -652,7 +723,36 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    rmse1/= (double)nSamples_; rmse1= sqrt(rmse1); r2e1-= sre1/ste;
    rmsd1/= (double)nSamples_; rmsd1= sqrt(rmsd1); r2d1-= srd1/std;
    rmsq1/= (double)nSamples_; rmsq1= sqrt(rmsq1); r2q1-= srq1/stq;
+   rmse2/= (double)nSamples_; rmse2= sqrt(rmse2); r2e2-= sre2/ste;
+   rmsd2/= (double)nSamples_; rmsd2= sqrt(rmsd2); r2d2-= srd2/std;
+   rmsq2/= (double)nSamples_; rmsq2= sqrt(rmsq2); r2q2-= srq2/stq;
    }
+
+   // ---> Compute average electric fields as well as interaction energies <--- //
+   double fx_av = 0.0;
+   double fy_av = 0.0;
+   double fz_av = 0.0;
+   double eint_av = 0.0;
+   for (int n=0; n<nSamples_; ++n) {
+        double fx_av_n = 0.0; 
+        double fy_av_n = 0.0;
+        double fz_av_n = 0.0;
+        for (int s=0; s<nSites_; ++s) {
+             fx_av_n += std::abs(electricFieldSet_[n][s]->get(0));
+             fy_av_n += std::abs(electricFieldSet_[n][s]->get(1));
+             fz_av_n += std::abs(electricFieldSet_[n][s]->get(2));
+        }
+        fx_av += fx_av_n / (double)nSites_;
+        fy_av += fy_av_n / (double)nSites_;
+        fz_av += fz_av_n / (double)nSites_;
+        //
+        eint_av += std::abs(referenceStatisticalSet_.InducedInteractionEnergySet[n]);
+   }
+   fx_av   /= (double)nSamples_;
+   fy_av   /= (double)nSamples_;
+   fz_av   /= (double)nSamples_;
+   eint_av /= (double)nSamples_;
+
 
    // ---> Print to output file <--- //
    const double c1 = 627.509;
@@ -660,14 +760,23 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    const double c3 = 1.0;
    psi::outfile->Printf(" \n ===> Statistical Results: Generalized Susceptibility <===\n\n");
    psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmse, rmse*c1, r2e);
-   psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsd, rmsd*c2, r2d);
-   psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsq, rmsq*c3, r2q);
+   psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [--------]  R^2=%8.6f\n", rmsd, rmsd*c2, r2d);
+   psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [--------]  R^2=%8.6f\n", rmsq, rmsq*c3, r2q);
    if (hasAbInitioDipolePolarizability_) {
    psi::outfile->Printf(" \n ===> Statistical Results: Ab Initio Susceptibility <===\n\n");
    psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmse1, rmse1*c1, r2e1);
-   psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsd1, rmsd1*c2, r2d1);
-   psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsq1, rmsq1*c3, r2q1);
+   psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [--------]  R^2=%8.6f\n", rmsd1, rmsd1*c2, r2d1);
+   psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [--------]  R^2=%8.6f\n", rmsq1, rmsq1*c3, r2q1);
+   psi::outfile->Printf(" \n ===> Statistical Results: Reference Distributed Polarizability Model <===\n\n");
+   psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmse2, rmse2*c1, r2e2);
+   psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [--------]  R^2=%8.6f\n", rmsd2, rmsd2*c2, r2d2);
+   psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [--------]  R^2=%8.6f\n", rmsq2, rmsq2*c3, r2q2);
    }
+   psi::outfile->Printf(" \n\n ===> Average Fields and Interaction Energies <===\n\n");
+   psi::outfile->Printf(" <|FX|> = %13.4f\n", fx_av);
+   psi::outfile->Printf(" <|FY|> = %13.4f\n", fy_av);
+   psi::outfile->Printf(" <|FZ|> = %13.4f\n", fz_av);
+   psi::outfile->Printf(" <|dE|> = %13.4f [A.U.]  %13.4f [kcal/mole]\n", eint_av, eint_av*c1);
 
 }
 // abstract methods

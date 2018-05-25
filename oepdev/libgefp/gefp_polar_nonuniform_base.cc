@@ -11,10 +11,6 @@ oepdev::NonUniformEFieldPolarGEFactory::NonUniformEFieldPolarGEFactory(std::shar
    // Atoms are assumed to be distributed centres
    nSites_ = wfn_->molecule()->natom();
 }
-//oepdev::NonUniformEFieldPolarGEFactory::NonUniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
-// : oepdev::NonUniformEFieldPolarGEFactory(cphf, cphf->options())
-//{
-//}
 oepdev::NonUniformEFieldPolarGEFactory::~NonUniformEFieldPolarGEFactory()
 {
 
@@ -23,6 +19,8 @@ oepdev::NonUniformEFieldPolarGEFactory::~NonUniformEFieldPolarGEFactory()
 void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
 {
    int nq   = options_.get_double("DMATPOL_NTEST_CHARGE");
+
+   std::shared_ptr<psi::Matrix> D = wfn_->Da();
 
    for (int n=0; n<nSamples_; ++n) {
         std::shared_ptr<psi::Matrix> charges = std::make_shared<psi::Matrix>("Q", nq, 4);
@@ -69,6 +67,8 @@ void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
             }
             abInitioModelElectricFieldSet_.push_back(fields_abini_n);
             abInitioModelStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
+            referenceDpolStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy() 
+                         + 2.0*D->vector_dot(VMatrixSet_[n]);
         }
 
    }

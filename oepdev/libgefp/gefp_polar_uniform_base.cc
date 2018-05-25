@@ -11,10 +11,6 @@ oepdev::UniformEFieldPolarGEFactory::UniformEFieldPolarGEFactory(std::shared_ptr
    // Set the number of sites to one since the electric field is uniform in space
    nSites_ = 1;
 }
-//oepdev::UniformEFieldPolarGEFactory::UniformEFieldPolarGEFactory(std::shared_ptr<CPHF> cphf)
-// : oepdev::UniformEFieldPolarGEFactory(cphf, cphf->options())
-//{
-//}
 oepdev::UniformEFieldPolarGEFactory::~UniformEFieldPolarGEFactory()
 {
 
@@ -22,6 +18,8 @@ oepdev::UniformEFieldPolarGEFactory::~UniformEFieldPolarGEFactory()
 // implementations of abstract methods from base
 void oepdev::UniformEFieldPolarGEFactory::compute_samples(void)
 {
+   std::shared_ptr<psi::Matrix> D = wfn_->Da();
+
    for (int n=0; n<nSamples_; ++n) {
         std::vector<std::shared_ptr<psi::Vector>> fields;
         std::shared_ptr<psi::Vector> field = draw_field();
@@ -38,8 +36,9 @@ void oepdev::UniformEFieldPolarGEFactory::compute_samples(void)
 
         electricFieldSet_.push_back(fields);
 
-        referenceStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
-            modelStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
+            referenceStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
+                modelStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
+
 
         cout << oepdev::string_sprintf(" Interaction Energy = %15.6f\n", pert->reference_energy() - wfn_->reference_energy());
 
@@ -47,6 +46,8 @@ void oepdev::UniformEFieldPolarGEFactory::compute_samples(void)
             for (int o=1; o<wfn_->doccpi()[0]; ++o) fields.push_back(field);
             abInitioModelElectricFieldSet_.push_back(fields);
             abInitioModelStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
+            referenceDpolStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy() 
+                         + 2.0*D->vector_dot(VMatrixSet_[n]);
         }
    }
 }

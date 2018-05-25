@@ -512,6 +512,9 @@ class GenEffParFactory
 
    /// The CPHF object
    std::shared_ptr<CPHF> cphfSolver_;
+
+   /// Ab initio polarization susceptibility factory
+   std::shared_ptr<oepdev::GenEffParFactory> abInitioPolarizationSusceptibilitiesFactory_;
 };
 
 /** \brief Polarization GEFP Factory. Abstract Base.
@@ -705,6 +708,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
 
    /// Reference statistical data
    StatisticalSet referenceStatisticalSet_;
+   /// Multipole reference statistical data
+   StatisticalSet referenceDpolStatisticalSet_;
    /// Model statistical data
    StatisticalSet modelStatisticalSet_;
    /// Ab Initio Model statistical data

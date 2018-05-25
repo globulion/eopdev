@@ -186,7 +186,8 @@ oepdev::GenEffParFactory::GenEffParFactory(std::shared_ptr<psi::Wavefunction> wf
  options_(opt),
  nbf_(wfn->basisset()->nbf()),
  randomDistribution_(std::uniform_real_distribution<double>(-1.0, 1.0)),
- cphfSolver_(nullptr)
+ cphfSolver_(nullptr),
+ abInitioPolarizationSusceptibilitiesFactory_(nullptr)
 {
    // --> Future: encapsulate the ESP point space with vdW excluded spheres into an object and put to 3D points library <-- //
 
