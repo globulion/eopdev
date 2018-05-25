@@ -179,18 +179,18 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<psi
         referenceStatisticalSet_.DensityMatrixSet           .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
         referenceStatisticalSet_.JKMatrixSet                .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
         referenceStatisticalSet_.InducedDipoleSet           .push_back(std::make_shared<psi::Vector>("", 3));
-        referenceStatisticalSet_.InducedQuadrupoleSet       .push_back(std::make_shared<psi::Matrix>("", 3, 3));
+        referenceStatisticalSet_.InducedQuadrupoleSet       .push_back(std::make_shared<psi::Vector>("", 6));
         referenceStatisticalSet_.InducedInteractionEnergySet.push_back(0.0);
         modelStatisticalSet_.DensityMatrixSet               .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
         modelStatisticalSet_.JKMatrixSet                    .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
         modelStatisticalSet_.InducedDipoleSet               .push_back(std::make_shared<psi::Vector>("", 3));
-        modelStatisticalSet_.InducedQuadrupoleSet           .push_back(std::make_shared<psi::Matrix>("", 3, 3));
+        modelStatisticalSet_.InducedQuadrupoleSet           .push_back(std::make_shared<psi::Vector>("", 6));
         modelStatisticalSet_.InducedInteractionEnergySet    .push_back(0.0);
         //if (hasAbInitioDipolePolarizability_) {
            abInitioModelStatisticalSet_.DensityMatrixSet           .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_)); 
            abInitioModelStatisticalSet_.JKMatrixSet                .push_back(std::make_shared<psi::Matrix>("", nbf_, nbf_));
            abInitioModelStatisticalSet_.InducedDipoleSet           .push_back(std::make_shared<psi::Vector>("", 3));
-           abInitioModelStatisticalSet_.InducedQuadrupoleSet       .push_back(std::make_shared<psi::Matrix>("", 3, 3));
+           abInitioModelStatisticalSet_.InducedQuadrupoleSet       .push_back(std::make_shared<psi::Vector>("", 6));
            abInitioModelStatisticalSet_.InducedInteractionEnergySet.push_back(0.0);
         //}
    }
@@ -460,6 +460,15 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
        }
    }
 
+   // ---> Compute the dipole and the quadrupole integrals <--- //
+   std::vector<std::shared_ptr<psi::Matrix>> dipInts, qadInts;
+   for (int z=0; z<3; ++z) dipInts.push_back(std::make_shared<psi::Matrix>("",wfn_->basisset()->nbf(), wfn_->basisset()->nbf()));
+   for (int z=0; z<6; ++z) qadInts.push_back(std::make_shared<psi::Matrix>("",wfn_->basisset()->nbf(), wfn_->basisset()->nbf()));
+   std::shared_ptr<psi::OneBodyAOInt> dipInt(wfn_->integral()->ao_dipole());
+   std::shared_ptr<psi::OneBodyAOInt> qadInt(wfn_->integral()->ao_quadrupole());
+   dipInt->set_origin(wfn_->molecule()->center_of_mass()); dipInt->compute(dipInts);
+   qadInt->set_origin(wfn_->molecule()->center_of_mass()); qadInt->compute(qadInts);
+
 
    // ---> Printer(s) <--- //
    std::filebuf fb, fb2;
@@ -494,26 +503,108 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
             modelStatisticalSet_.InducedInteractionEnergySet[n] += eint_model;
 
 
-        // ---> Compute induced dipole moments <--- //
-        // TODO
+        // ---> Compute induced dipole and quadrupole moments <--- //
+        double dr_av, dm_av, da_av;
+        double qr_av, qm_av, qa_av;
+
+        double dr_x = 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[0]);
+        double dr_y = 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[1]);
+        double dr_z = 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[2]);
+        double qr_xx= 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[0]);
+        double qr_xy= 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[1]);
+        double qr_xz= 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[2]);
+        double qr_yy= 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[3]);
+        double qr_yz= 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[4]);
+        double qr_zz= 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[5]);
+               dr_av = sqrt(dr_x*dr_x + dr_y*dr_y + dr_z*dr_z);
+        double tr = (1.0 / 3.0) * (qr_xx + qr_yy + qr_zz);
+               qr_av = sqrt((qr_zz-tr)*(qr_zz-tr) + (4.0/3.0)*(qr_xy*qr_xy+qr_xz*qr_xz+qr_yz*qr_yz) 
+                                                  + (1.0/3.0)*((qr_xx-tr)*(qr_xx-tr) - (qr_yy-tr)*(qr_yy-tr)));
+
+        double dm_x = 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[0]);
+        double dm_y = 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[1]);
+        double dm_z = 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[2]);
+        double qm_xx= 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[0]);
+        double qm_xy= 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[1]);
+        double qm_xz= 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[2]);
+        double qm_yy= 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[3]);
+        double qm_yz= 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[4]);
+        double qm_zz= 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[5]);
+               dm_av = sqrt(dm_x*dm_x + dm_y*dm_y + dm_z*dm_z);
+        double tm = (1.0 / 3.0) * (qm_xx + qm_yy + qm_zz);
+               qm_av = sqrt((qm_zz-tm)*(qm_zz-tm) + (4.0/3.0)*(qm_xy*qm_xy+qm_xz*qm_xz+qm_yz*qm_yz) 
+                                                  + (1.0/3.0)*((qm_xx-tm)*(qm_xx-tm) - (qm_yy-tm)*(qm_yy-tm)));
+
+        referenceStatisticalSet_.InducedDipoleSet    [n]->set(0, dr_x);
+        referenceStatisticalSet_.InducedDipoleSet    [n]->set(1, dr_y);
+        referenceStatisticalSet_.InducedDipoleSet    [n]->set(2, dr_z);
+        modelStatisticalSet_.InducedDipoleSet    [n]->set(0, dm_x);
+        modelStatisticalSet_.InducedDipoleSet    [n]->set(1, dm_y);
+        modelStatisticalSet_.InducedDipoleSet    [n]->set(2, dm_z);
+
+
+        referenceStatisticalSet_.InducedQuadrupoleSet[n]->set(0, qr_xx);
+        referenceStatisticalSet_.InducedQuadrupoleSet[n]->set(1, qr_xy);
+        referenceStatisticalSet_.InducedQuadrupoleSet[n]->set(2, qr_xz);
+        referenceStatisticalSet_.InducedQuadrupoleSet[n]->set(3, qr_yy);
+        referenceStatisticalSet_.InducedQuadrupoleSet[n]->set(4, qr_yz);
+        referenceStatisticalSet_.InducedQuadrupoleSet[n]->set(5, qr_zz);
+        modelStatisticalSet_.InducedQuadrupoleSet[n]->set(0, qm_xx);
+        modelStatisticalSet_.InducedQuadrupoleSet[n]->set(1, qm_xy);
+        modelStatisticalSet_.InducedQuadrupoleSet[n]->set(2, qm_xz);
+        modelStatisticalSet_.InducedQuadrupoleSet[n]->set(3, qm_yy);
+        modelStatisticalSet_.InducedQuadrupoleSet[n]->set(4, qm_yz);
+        modelStatisticalSet_.InducedQuadrupoleSet[n]->set(5, qm_zz);
+
+
+        if (hasAbInitioDipolePolarizability_) {
+        double da_x = 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[0]);
+        double da_y = 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[1]);
+        double da_z = 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[2]);
+        double qa_xx= 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[0]);
+        double qa_xy= 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[1]);
+        double qa_xz= 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[2]);
+        double qa_yy= 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[3]);
+        double qa_yz= 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[4]);
+        double qa_zz= 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[5]);
+               da_av = sqrt(da_x*da_x + da_y*da_y + da_z*da_z);
+        double ta = (1.0 / 3.0) * (qa_xx + qa_yy + qa_zz);
+               qa_av = sqrt((qa_zz-ta)*(qa_zz-ta) + (4.0/3.0)*(qa_xy*qa_xy+qa_xz*qa_xz+qa_yz*qa_yz) 
+                                                  + (1.0/3.0)*((qa_xx-ta)*(qa_xx-ta) - (qa_yy-ta)*(qa_yy-ta)));
+
+        abInitioModelStatisticalSet_.InducedDipoleSet    [n]->set(0, da_x);
+        abInitioModelStatisticalSet_.InducedDipoleSet    [n]->set(1, da_y);
+        abInitioModelStatisticalSet_.InducedDipoleSet    [n]->set(2, da_z);
+
+        abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]->set(0, qa_xx);
+        abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]->set(1, qa_xy);
+        abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]->set(2, qa_xz);
+        abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]->set(3, qa_yy);
+        abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]->set(4, qa_yz);
+        abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]->set(5, qa_zz);
+        }
+
 
         // ---> Print all to the output file <--- //
-        printer->Printf("%20.8E %20.8E\n", 
+        printer->Printf("%20.8E %20.8E %20.8E %20.8E %20.8E %20.8E\n", 
                                            referenceStatisticalSet_.InducedInteractionEnergySet[n],
-                                               modelStatisticalSet_.InducedInteractionEnergySet[n]);
+                                               modelStatisticalSet_.InducedInteractionEnergySet[n],
+                                                      dr_av, dm_av, qr_av, qm_av);
+
 
         // ---> Optional calculations for the Ab Initio Model <--- //
         if (hasAbInitioDipolePolarizability_) {
-            double eint_abini = H->vector_dot(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
-            std::shared_ptr<psi::Matrix> Dn3= D->clone(); Dn3->add(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
-            std::shared_ptr<psi::Matrix> G3 = G->clone();  G3->add(abInitioModelStatisticalSet_.JKMatrixSet[n]);
-            eint_abini+= G3->vector_dot(Dn3);
-                                                                                                                  
-            abInitioModelStatisticalSet_.InducedInteractionEnergySet[n] += eint_abini;
+        double eint_abini = H->vector_dot(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
+        std::shared_ptr<psi::Matrix> Dn3= D->clone(); Dn3->add(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
+        std::shared_ptr<psi::Matrix> G3 = G->clone();  G3->add(abInitioModelStatisticalSet_.JKMatrixSet[n]);
+        eint_abini+= G3->vector_dot(Dn3);
+                                                                                                              
+        abInitioModelStatisticalSet_.InducedInteractionEnergySet[n] += eint_abini;
 
-            printer_abini->Printf("%20.8E %20.8E\n", 
-                                                     referenceStatisticalSet_.InducedInteractionEnergySet[n],
-                                                 abInitioModelStatisticalSet_.InducedInteractionEnergySet[n]);
+        printer_abini->Printf("%20.8E %20.8E %20.8E %20.8E %20.8E %20.8E\n", 
+                                                 referenceStatisticalSet_.InducedInteractionEnergySet[n],
+                                             abInitioModelStatisticalSet_.InducedInteractionEnergySet[n],
+                                                     dr_av, da_av, qr_av, qa_av);
         }
    }
    // Finish with the JK object (clear but not destroy it)
@@ -525,43 +616,47 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
 
    // ---> Compute RMS indicators <--- //
    double rmse = 0.0; double r2e = 1.0; double sre = 0.0; double ste = 0.0;
-   double rmsd = 0.0; double r2d = 1.0;
-   double rmsq = 0.0; double r2q = 1.0;
+   double rmsd = 0.0; double r2d = 1.0; double srd = 0.0; double std = 0.0;
+   double rmsq = 0.0; double r2q = 1.0; double srq = 0.0; double stq = 0.0;
    double rmse1= 0.0; double r2e1= 1.0; double sre1= 0.0;
-   double rmsd1= 0.0; double r2d1= 1.0;
-   double rmsq1= 0.0; double r2q1= 1.0;
+   double rmsd1= 0.0; double r2d1= 1.0; double srd1= 0.0;
+   double rmsq1= 0.0; double r2q1= 1.0; double srq1= 0.0;
 
-   double ave = 0.0;
+   double ave = 0.0, avd = 0.0, avq = 0.0;
    for (int n=0; n<nSamples_; ++n) {
         ave += referenceStatisticalSet_.InducedInteractionEnergySet[n];
+        avd += oepdev::average_moment(referenceStatisticalSet_.InducedDipoleSet[n]);
+        avq += oepdev::average_moment(referenceStatisticalSet_.InducedQuadrupoleSet[n]);
    }
    ave /= (double)nSamples_;
+   avd /= (double)nSamples_;
+   avq /= (double)nSamples_;
    for (int n=0; n<nSamples_; ++n) {
         double er = referenceStatisticalSet_.InducedInteractionEnergySet[n];
         double em =     modelStatisticalSet_.InducedInteractionEnergySet[n];
-        double dr = 0.0; // TODO
-        double dm = 0.0; // TODO
-        double qr = 0.0; // TODO
-        double qm = 0.0; // TODO
+        double dr = oepdev::average_moment(referenceStatisticalSet_.InducedDipoleSet[n]);
+        double dm = oepdev::average_moment(    modelStatisticalSet_.InducedDipoleSet[n]);
+        double qr = oepdev::average_moment(referenceStatisticalSet_.InducedQuadrupoleSet[n]);
+        double qm = oepdev::average_moment(    modelStatisticalSet_.InducedQuadrupoleSet[n]);
         rmse += pow(er-em,2.0); sre += pow(er-em,2.0); ste += pow(er - ave,2.0);
-        rmsd += pow(dr-dm,2.0);
-        rmsq += pow(qr-qm,2.0);
+        rmsd += pow(dr-dm,2.0); srd += pow(dr-dm,2.0); std += pow(dr - avd,2.0);
+        rmsq += pow(qr-qm,2.0); srq += pow(qr-qm,2.0); stq += pow(qr - avq,2.0);
         if (hasAbInitioDipolePolarizability_) {
         double em1= abInitioModelStatisticalSet_.InducedInteractionEnergySet[n];
-        double dm1= 0.0; // TODO
-        double qm1= 0.0; // TODO
+        double dm1= oepdev::average_moment(abInitioModelStatisticalSet_.InducedDipoleSet[n]);
+        double qm1= oepdev::average_moment(abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]);
         rmse1+= pow(er-em1,2.0); sre1+= pow(er-em1,2.0);
-        rmsd1+= pow(dr-dm1,2.0);
-        rmsq1+= pow(qr-qm1,2.0);
+        rmsd1+= pow(dr-dm1,2.0); srd1+= pow(dr-dm1,2.0);
+        rmsq1+= pow(qr-qm1,2.0); srq1+= pow(qr-qm1,2.0);
         }
    }
    rmse /= (double)nSamples_; rmse = sqrt(rmse); r2e -= sre/ste;
-   rmsd /= (double)nSamples_; rmsd = sqrt(rmsd); 
-   rmsq /= (double)nSamples_; rmsq = sqrt(rmsq);
+   rmsd /= (double)nSamples_; rmsd = sqrt(rmsd); r2d -= srd/std;
+   rmsq /= (double)nSamples_; rmsq = sqrt(rmsq); r2q -= srq/stq;
    if (hasAbInitioDipolePolarizability_) {
    rmse1/= (double)nSamples_; rmse1= sqrt(rmse1); r2e1-= sre1/ste;
-   rmsd1/= (double)nSamples_; rmsd1= sqrt(rmsd1); 
-   rmsq1/= (double)nSamples_; rmsq1= sqrt(rmsq1);
+   rmsd1/= (double)nSamples_; rmsd1= sqrt(rmsd1); r2d1-= srd1/std;
+   rmsq1/= (double)nSamples_; rmsq1= sqrt(rmsq1); r2q1-= srq1/stq;
    }
 
    // ---> Print to output file <--- //
@@ -579,8 +674,6 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsq1, rmsq1*c3, r2q1);
    }
 
-   if (hasAbInitioDipolePolarizability_) {
-   }
 }
 // abstract methods
 void oepdev::GeneralizedPolarGEFactory::compute_samples(void)

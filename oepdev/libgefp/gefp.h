@@ -698,7 +698,7 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
       /// Induced dipole moment set
       std::vector<std::shared_ptr<psi::Vector>> InducedDipoleSet;
       /// Induced quadrupole moment set
-      std::vector<std::shared_ptr<psi::Matrix>> InducedQuadrupoleSet;
+      std::vector<std::shared_ptr<psi::Vector>> InducedQuadrupoleSet;
       /// Sum of J and K matrix set
       std::vector<std::shared_ptr<psi::Matrix>> JKMatrixSet;
    };

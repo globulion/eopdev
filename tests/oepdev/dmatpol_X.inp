@@ -80,7 +80,7 @@ set {
     esp_vdw_radius_o              5.6
     esp_vdw_radius_n              4.4
     # ==> DmatPol <== #
-    dmatpol_nsamples              40
+    dmatpol_nsamples              100
     dmatpol_field_scale           0.005
     dmatpol_ntest_charge          3
     dmatpol_test_charge           1.0
@@ -95,7 +95,7 @@ set {
     dmatpol_out_stats             energy.X.dat
     dmatpol_out_stats_ab_initio   energy.Y.dat
     # ==> General Psi4 Options <== #
-    basis                         6-31G
+    basis                         6-31G**
     scf_type                      direct 
     guess                         core
     e_convergence                 1e-10

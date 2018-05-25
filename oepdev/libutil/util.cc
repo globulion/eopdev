@@ -60,4 +60,26 @@ solve_scf(std::shared_ptr<Molecule> molecule,
     return scf;
 }
 
+extern "C" double average_moment(std::shared_ptr<psi::Vector> moment)
+{
+  const int l = moment->dim();
+  // Dipole
+  if (l == 3) {
+     double da_x = moment->get(0);
+     double da_y = moment->get(1);
+     double da_z = moment->get(2);
+     return sqrt(da_x*da_x + da_y*da_y + da_z*da_z);
+  } else if (l == 6) {
+     double qa_xx= moment->get(0);
+     double qa_xy= moment->get(1);
+     double qa_xz= moment->get(2);
+     double qa_yy= moment->get(3);
+     double qa_yz= moment->get(4);
+     double qa_zz= moment->get(5);
+     double ta = (1.0 / 3.0) * (qa_xx + qa_yy + qa_zz);
+     return sqrt((qa_zz-ta)*(qa_zz-ta) + (4.0/3.0)*(qa_xy*qa_xy+qa_xz*qa_xz+qa_yz*qa_yz) 
+                                                  + (1.0/3.0)*((qa_xx-ta)*(qa_xx-ta) - (qa_yy-ta)*(qa_yy-ta)));
+  } else {throw PSIEXCEPTION("Wrong size of multipole moment vector!");}
+}
+
 } // EndNameSpace oepdev

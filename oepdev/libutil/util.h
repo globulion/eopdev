@@ -4,6 +4,7 @@
 
 #include<cstdio>
 #include<string>
+#include<cmath>
 #include<map>
 
 #include "psi4/psi4-dec.h"
@@ -107,6 +108,25 @@ solve_scf(std::shared_ptr<Molecule> molecule,
           std::shared_ptr<SuperFunctional> functional,
           Options& options,
           std::shared_ptr<PSIO> psio);
+
+/** \brief Compute the scalar magnitude of multipole moment.
+ *
+ *  @param moment - multipole moment vector with unique matrix elements. Now supported only for dipole and quadrupole.
+ *  @return       - the average multipole moment value.
+ *
+ *  The magnitudes of multipole moments are defined here as follows:
+ *   - The dipole moment magnitude is just a norm
+ *  \f[
+ *    \lvert \mu \rvert \equiv \sqrt{\mu_x^2 + \mu_y^2 + \mu_z^2}
+ *  \f]
+ *   - The quadrupole moment magnitude refers to the traceless moment in Buckingham convention
+ *  \f[
+ *    \lvert \Theta \rvert \equiv \sqrt{\Theta_{zz}^2 + \frac{1}{3}\left(\Theta_{xx} - \Theta_{yy}\right)^2
+ *              + \frac{4}{3} \left( \Theta_{xy}^2 + \Theta_{xz}^2 + \Theta_{yz}^2 \right)}
+ *  \f]
+ *     In the above equation, the quadrupole moment elements refer to its traceless form.
+ */
+extern "C" double average_moment(std::shared_ptr<psi::Vector> moment);
 
 /** @}*/
 
