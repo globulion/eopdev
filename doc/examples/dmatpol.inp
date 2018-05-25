@@ -1,0 +1,64 @@
+#!/usr/bin/python
+sys.path.insert(0, './..')
+import oepdev
+
+# test molecule
+molecule h2o {
+0 1
+O   0.000000   0.113009   0.000000
+H   0.752785  -0.452035   0.000000
+H  -0.752785  -0.452035   0.000000
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+set {
+    # ==> OEPDEV Routine Specification <== #
+    oepdev_target                 DMATPOL
+    oepdev_localize               False
+    oepdev_enable_trial           False
+    # ==> CPHF <== #
+    cphf_diis                     True
+    cphf_diis_dim                 8
+    cphf_maxiter                  200
+    cphf_conver                   1e-8
+    cphf_localize                 True
+    cphf_localizer                PIPEK_MEZEY
+    # ==> ESP <== #
+    esp_pad_sphere                8.0
+    esp_vdw_radius_c              3.0
+    esp_vdw_radius_h              4.0
+    esp_vdw_radius_o              5.6
+    esp_vdw_radius_n              4.4
+    # ==> DmatPol <== #
+    dmatpol_nsamples              40
+    dmatpol_field_scale           0.005
+    dmatpol_ntest_charge          1
+    dmatpol_test_charge           1.0
+    dmatpol_training_mode         CHARGES
+    dmatpol_field_rank            2
+    dmatpol_gradient_rank         1
+    dmatpol_scale_1               1.0
+    dmatpol_test_field_x          0.002
+    dmatpol_test_field_y          0.010
+    dmatpol_test_field_z          0.010
+    dmatpol_do_ab_initio          True
+    dmatpol_out_stats             energy.X.dat
+    dmatpol_out_stats_ab_initio   energy.Y.dat
+    # ==> General Psi4 Options <== #
+    basis                         6-311++G**
+    scf_type                      direct 
+    guess                         core
+    e_convergence                 1e-10
+    d_convergence                 1e-11
+    print                         1
+    puream                        False
+    save_jk                       False
+}
+
+
+# run oepdev
+energy('oepdev', molecule=h2o)

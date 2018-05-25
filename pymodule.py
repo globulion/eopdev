@@ -72,6 +72,7 @@ def run_oepdev(name, **kwargs):
 
     # case when OEP build is requested
     if psi4.core.get_global_option("OEPDEV_TARGET").startswith("OEP") \
+    or psi4.core.get_global_option("OEPDEV_TARGET").startswith("DMAT") \
     or psi4.core.get_global_option("OEPDEV_TARGET") == "TEST":
            
        basis_df_oep = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),

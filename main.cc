@@ -64,6 +64,7 @@
 #include "oepdev/libutil/solver.h"
 #include "oepdev/liboep/oep.h"
 #include "oepdev/libpsi/potential.h"
+#include "oepdev/libgefp/gefp.h"
 
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libtrans/integraltransform.h"
@@ -275,6 +276,12 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         oep->compute();
 
     }
+    // ===> Density Matrix Susceptibility Tensor Model <=== //
+    else if (o_task == "DMATPOL") 
+    {
+        std::shared_ptr<oepdev::GenEffParFactory> factory = oepdev::GenEffParFactory::build("POLARIZATION", ref_wfn, options);
+        std::shared_ptr<oepdev::GenEffPar> parameters = factory->compute();
+    } 
     // ==> Create Wavefunction Union of two monomers <==
     else if (o_task == "SOLVER")
     {
