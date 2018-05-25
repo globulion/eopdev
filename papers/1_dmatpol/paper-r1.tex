@@ -663,6 +663,22 @@ ${\bf V}$ is the one\hyp{}electron external electrostatic potential matrix where
 and $\delta {\bf K}$ are electric field\hyp{}induced changes in the Coulomb and the exchange HF matrices due to 
 the polarization of the electron density distribution, respectively. $E_{\rm nuc}({\bf F})$ denotes the interaction energy
 due to the nuclei.
+In order to compare the performance of the distributed polarizability approach,
+the approximate interaction energy was also evaluated by using the expression:
+%
+\begin{equation}\label{e:dE-dpol}
+ \delta E[{\bf F}] \approx 2 \Tr{\left\{ {\bf D}^{(0)} {\bf V}\right\} } 
+                   + \frac{1}{2} \sum_i^{\rm occ} {\BM \alpha}_i : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_i)
+                   + E_{\rm nuc}({\bf F}) \;,
+\end{equation}
+%
+in which ${\BM \alpha}_i$ is the distributed anisotropic polarizability tensor associated with the
+$i$th localized molecular orbital (LMO) centroid, ${\bf r}_i = \tbraket{\phi_i}{\bf r}{\phi_i}$.
+The distributed polarizabilities were computed by utilizing the coupled\hyp{}perturbed Hartree\hyp{}Fock
+method. Orbital localization was performed by using the Boys method. Note that in Eq.~\eqref{e:dE-dpol}, 
+multipole approximation is introduced only for the part associated with the electric field\hyp{}induced
+change in the one\hyp{}particle density matrix, i.e., the polarization of the electron density distribution.
+
 The electric field\hyp{}induced dipole and quadrupole moments were evaluated from the following expressions:
 %
 \begin{subequations}\label{e:dmult}
@@ -672,6 +688,12 @@ The electric field\hyp{}induced dipole and quadrupole moments were evaluated fro
   \end{align}
 \end{subequations}
 %
+Quadrupole moments were subsequently transformed to the their traceless forms by
+%
+\begin{equation}
+  \delta \widetilde{\Theta}_{uw} = \delta \Theta_{uw} - \frac{1}{3} \delta_{uw} \Tr{\BM\Theta} \;.
+\end{equation}
+%
 To compute the interaction energy and the induced multipole moments, either exact or approximated forms
 of the difference density matrix from Eq.~\eqref{e:final-model.General}
 were used for a particular electric field distribution. The statistical evaluation of
@@ -680,24 +702,34 @@ the following statistical quality descriptors:
 %
 \begin{enumerate}
  \item Root Mean Square Energy Error (RMSE)
-   \begin{equation}
+   \begin{equation}\label{e:rmse}
      {\rm RMSE} = \sqrt{ \frac{1}{N_{\rm max}} \sum_N \left( \delta E^{(N)} - \overline{\delta E^{(N)}}\right)^2 }
    \end{equation}
  \item Root Mean Square Dipole Error (RMSD)
-   \begin{equation}
+   \begin{equation}\label{e:rmsd}
      {\rm RMSD} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N \lvert \delta {\BM\upmu}^{(N)} - \overline{\delta {\BM\upmu}^{(N)}}\rvert^2 }
    \end{equation}
  \item Root Mean Square Quadrupole Error (RMSQ)
-   \begin{equation}
-     {\rm RMSQ} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N \lvert \delta {\BM\Theta}^{(N)} - \overline{\delta {\BM\Theta}^{(N)}}\rvert^2 }
+   \begin{equation}\label{e:rmsq}
+     {\rm RMSQ} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N \lvert \delta \widetilde{\BM\Theta}^{(N)} - \overline{\delta \widetilde{\BM\Theta}^{(N)}}\rvert^2 }
    \end{equation}
 \end{enumerate}
 %
 The first describes the ability of the model to reproduce the exact energetics of the system, 
 wherease the latter two contain crucial information on how well the deformation of the one\hyp{}electron
-density is described.
-
-Throughout the Work, the Hartree\hyp{}Fock level was assumed and the aug-cc-pVTZ basis set
+density is described. For Eqs.~\eqref{e:rmsd} and \eqref{e:rmsq} the absolute magnitudes
+are defined as
+%
+\begin{subequations}\label{e:absmagn}
+  \begin{align}
+   \lvert {\BM\upmu} \rvert &= \sqrt{\mu_x^2+\mu_y^2+\mu_z^2} \;,\\
+   \lvert {\widetilde{\BM\Theta}}\rvert &= 
+          \sqrt{\widetilde{\Theta}_{zz}^2 + \frac{1}{3}\left(\widetilde{\Theta}_{xx}-\widetilde{\Theta}_{yy}\right)^2 
+          + \frac{4}{3}\left( \widetilde{\Theta}_{xy}^2 + \widetilde{\Theta}_{xz}^2 + \widetilde{\Theta}_{yz}^2 \right)} \;. 
+  \end{align}
+\end{subequations}
+%
+Throughout the Work, the Hartree\hyp{}Fock level was assumed and the 6-311++G** basis set
 was used. For all the calculations of the density matrix polarization susceptibility tensors
 from Eqs.~\eqref{e:final-model.HF} and \eqref{e:susceptibility-B}, 
 atomic basis was orthogonalized by using the L{\"o}wdin symmetric orthogonalization scheme.

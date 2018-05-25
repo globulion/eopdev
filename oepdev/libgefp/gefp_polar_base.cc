@@ -393,11 +393,11 @@ void oepdev::GeneralizedPolarGEFactory::compute_ab_initio(void) {
 void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    cout << " Statistical evaluation ...\n";
 
-   // Grab some unperturbed quantities
+   // ---> Grab some unperturbed quantities <--- //
    std::shared_ptr<psi::Matrix> H = wfn_->Fa(); H->add(wfn_->H());
    std::shared_ptr<psi::Matrix> D = wfn_->Da();
 
-   // Compute model difference density matrices
+   // ---> Compute model difference density matrices <--- //
    if (hasQuadrupolePolarizability_) {
       for (int n=0; n<nSamples_; ++n) {                                                                          
            modelStatisticalSet_.DensityMatrixSet[n]->copy(PolarizationSusceptibilities_->compute_density_matrix(
@@ -415,7 +415,7 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
       }
    }
 
-   // Compute changes in the Coulomb and exchange HF matrices
+   // ---> Compute changes in the Coulomb and exchange HF matrices <--- //
    std::vector<psi::SharedMatrix>& C_left = jk_->C_left();
    std::vector<psi::SharedMatrix>& C_right= jk_->C_right();
    const std::vector<std::shared_ptr<psi::Matrix>>& J = jk_->J();
@@ -516,10 +516,6 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         double qr_yy= 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[3]);
         double qr_yz= 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[4]);
         double qr_zz= 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[5]);
-               dr_av = sqrt(dr_x*dr_x + dr_y*dr_y + dr_z*dr_z);
-        double tr = (1.0 / 3.0) * (qr_xx + qr_yy + qr_zz);
-               qr_av = sqrt((qr_zz-tr)*(qr_zz-tr) + (4.0/3.0)*(qr_xy*qr_xy+qr_xz*qr_xz+qr_yz*qr_yz) 
-                                                  + (1.0/3.0)*((qr_xx-tr)*(qr_xx-tr) - (qr_yy-tr)*(qr_yy-tr)));
 
         double dm_x = 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[0]);
         double dm_y = 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[1]);
@@ -530,10 +526,6 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         double qm_yy= 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[3]);
         double qm_yz= 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[4]);
         double qm_zz= 2.0 * modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[5]);
-               dm_av = sqrt(dm_x*dm_x + dm_y*dm_y + dm_z*dm_z);
-        double tm = (1.0 / 3.0) * (qm_xx + qm_yy + qm_zz);
-               qm_av = sqrt((qm_zz-tm)*(qm_zz-tm) + (4.0/3.0)*(qm_xy*qm_xy+qm_xz*qm_xz+qm_yz*qm_yz) 
-                                                  + (1.0/3.0)*((qm_xx-tm)*(qm_xx-tm) - (qm_yy-tm)*(qm_yy-tm)));
 
         referenceStatisticalSet_.InducedDipoleSet    [n]->set(0, dr_x);
         referenceStatisticalSet_.InducedDipoleSet    [n]->set(1, dr_y);
@@ -541,7 +533,6 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         modelStatisticalSet_.InducedDipoleSet    [n]->set(0, dm_x);
         modelStatisticalSet_.InducedDipoleSet    [n]->set(1, dm_y);
         modelStatisticalSet_.InducedDipoleSet    [n]->set(2, dm_z);
-
 
         referenceStatisticalSet_.InducedQuadrupoleSet[n]->set(0, qr_xx);
         referenceStatisticalSet_.InducedQuadrupoleSet[n]->set(1, qr_xy);
@@ -556,6 +547,11 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         modelStatisticalSet_.InducedQuadrupoleSet[n]->set(4, qm_yz);
         modelStatisticalSet_.InducedQuadrupoleSet[n]->set(5, qm_zz);
 
+        dr_av = oepdev::average_moment(referenceStatisticalSet_.InducedDipoleSet[n]);
+        qr_av = oepdev::average_moment(referenceStatisticalSet_.InducedQuadrupoleSet[n]);
+        dm_av = oepdev::average_moment(modelStatisticalSet_.InducedDipoleSet[n]);
+        qm_av = oepdev::average_moment(modelStatisticalSet_.InducedQuadrupoleSet[n]);
+
 
         if (hasAbInitioDipolePolarizability_) {
         double da_x = 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(dipInts[0]);
@@ -567,10 +563,6 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         double qa_yy= 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[3]);
         double qa_yz= 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[4]);
         double qa_zz= 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(qadInts[5]);
-               da_av = sqrt(da_x*da_x + da_y*da_y + da_z*da_z);
-        double ta = (1.0 / 3.0) * (qa_xx + qa_yy + qa_zz);
-               qa_av = sqrt((qa_zz-ta)*(qa_zz-ta) + (4.0/3.0)*(qa_xy*qa_xy+qa_xz*qa_xz+qa_yz*qa_yz) 
-                                                  + (1.0/3.0)*((qa_xx-ta)*(qa_xx-ta) - (qa_yy-ta)*(qa_yy-ta)));
 
         abInitioModelStatisticalSet_.InducedDipoleSet    [n]->set(0, da_x);
         abInitioModelStatisticalSet_.InducedDipoleSet    [n]->set(1, da_y);
@@ -582,6 +574,9 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]->set(3, qa_yy);
         abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]->set(4, qa_yz);
         abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]->set(5, qa_zz);
+
+        da_av = oepdev::average_moment(abInitioModelStatisticalSet_.InducedDipoleSet[n]);
+        qa_av = oepdev::average_moment(abInitioModelStatisticalSet_.InducedQuadrupoleSet[n]);
         }
 
 
@@ -607,10 +602,10 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
                                                      dr_av, da_av, qr_av, qa_av);
         }
    }
-   // Finish with the JK object (clear but not destroy it)
+   // ---> Finish with the JK object (clear but not destroy it) <--- //
    jk_->finalize();
 
-   // Close the statistical output files
+   // ---> Close the statistical output files <--- //
    fb.close();
    if (hasAbInitioDipolePolarizability_) fb2.close();
 
@@ -663,12 +658,12 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    const double c1 = 627.509;
    const double c2 = 1.0;
    const double c3 = 1.0;
-   psi::outfile->Printf(" \n===> Statistical Results: Generalized Susceptibility <===\n\n");
+   psi::outfile->Printf(" \n ===> Statistical Results: Generalized Susceptibility <===\n\n");
    psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmse, rmse*c1, r2e);
    psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsd, rmsd*c2, r2d);
    psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsq, rmsq*c3, r2q);
    if (hasAbInitioDipolePolarizability_) {
-   psi::outfile->Printf(" \n===> Statistical Results: Ab Initio Susceptibility <===\n\n");
+   psi::outfile->Printf(" \n ===> Statistical Results: Ab Initio Susceptibility <===\n\n");
    psi::outfile->Printf(" RMSE = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmse1, rmse1*c1, r2e1);
    psi::outfile->Printf(" RMSD = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsd1, rmsd1*c2, r2d1);
    psi::outfile->Printf(" RMSQ = %14.8f [A.U.]  %14.8f [kcal/mol]  R^2=%8.6f\n", rmsq1, rmsq1*c3, r2q1);
