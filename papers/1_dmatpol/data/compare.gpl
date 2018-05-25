@@ -1,0 +1,59 @@
+#!/usr/bin/gnuplot
+set term pngcairo dashed size 1024,728 font "Helvetica, 19"
+set border lw 4 lc rgbcolor "#808080"
+
+set key outside right top vertical Right noreverse noenhanced autotitle nobox spacing 1.0
+
+
+# define colours
+c_L23C = "#25D412"
+c_V57C = "#59D497"
+c_A30C = "#994C00"
+c_A44C = "#00149A"
+c_D48C = "#25CFD5"
+c_M100C= "#FF8000"
+c_V122C= "#FFE600"
+
+set grid x y
+
+set size ratio -1
+c1 = 627.509
+c2 = 1.0
+c3 = 1.0
+
+set xlabel "Interaction Energy (Full HF) [kcal/mole]"
+set ylabel "Interaction Energy (Theory) [kcal/mole]"
+
+set output 'plot.energy.general.png'
+plot "ENERGY.X.DAT" u (c1*($1)):(c1*($2)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set output 'plot.energy.abinitio.png'
+plot "ENERGY.Y.DAT" u (c1*($1)):(c1*($2)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set output 'plot.energy.dpol.png'
+plot "ENERGY.Y.DAT" u (c1*($1)):(c1*($3)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set xlabel "Induced Dipole (Full HF) [A.U.]"
+set ylabel "Induced Dipole (Theory) [A.U.]"
+
+set output 'plot.dipole.general.png'
+plot "ENERGY.X.DAT" u (c2*($3)):(c2*($4)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set output 'plot.dipole.abinitio.png'
+plot "ENERGY.Y.DAT" u (c2*($4)):(c2*($5)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set output 'plot.dipole.dpol.png'
+plot "ENERGY.Y.DAT" u (c2*($4)):(c2*($6)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set xlabel "Induced Quadrupole (Full HF) [A.U.]"
+set ylabel "Induced Quadrupole (Theory) [A.U.]"
+
+set output 'plot.quadrupole.general.png'
+plot "ENERGY.X.DAT" u (c3*($5)):(c3*($6)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set output 'plot.quadrupole.abinitio.png'
+plot "ENERGY.Y.DAT" u (c3*($7)):(c3*($8)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set output 'plot.quadrupole.dpol.png'
+plot "ENERGY.Y.DAT" u (c3*($7)):(c3*($9)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
