@@ -94,6 +94,8 @@ using intVector                = std::vector<int>;
 using SharedLocalizer          = std::shared_ptr<Localizer>;
 using SharedOEPotential        = std::shared_ptr<oepdev::OEPotential>;
 using SharedField3D            = std::shared_ptr<oepdev::ScalarField3D>;
+using SharedGEFPFactory        = std::shared_ptr<oepdev::GenEffParFactory>;
+using SharedGEFPParameters     = std::shared_ptr<oepdev::GenEffPar>;
 
 namespace psi{ 
 
@@ -247,18 +249,15 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
 
     // ==> Determine what to do <== //
     std::string o_task          = options.get_str  ("OEPDEV_TARGET"        );
-    std::string o_oep_build_type= options.get_str  ("OEPDEV_OEP_BUILD_TYPE");
-    std::string o_solver_type   = options.get_str  ("OEPDEV_SOLVER_TYPE"   );
     bool        o_local         = options.get_bool ("OEPDEV_LOCALIZE"      );
     bool        o_enable_trial  = options.get_bool ("OEPDEV_ENABLE_TRIAL"  );
     int         o_print         = options.get_int  ("PRINT"                );
 
-    // ==> Psi4 Input/Output Stream <== //
-    SharedPSIO psio = PSIO::shared_object();
-
     // ==> Create OEP's <==
     if (o_task == "OEP_BUILD" || o_task == "OEP") 
     {
+
+        std::string o_oep_build_type= options.get_str  ("OEPDEV_OEP_BUILD_TYPE");
 
         SharedOEPotential oep;
 
@@ -279,12 +278,16 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     // ===> Density Matrix Susceptibility Tensor Model <=== //
     else if (o_task == "DMATPOL") 
     {
-        std::shared_ptr<oepdev::GenEffParFactory> factory = oepdev::GenEffParFactory::build("POLARIZATION", ref_wfn, options);
-        std::shared_ptr<oepdev::GenEffPar> parameters = factory->compute();
+
+        SharedGEFPFactory factory = oepdev::GenEffParFactory::build("POLARIZATION", ref_wfn, options);
+        SharedGEFPParameters parameters = factory->compute();
+
     } 
     // ==> Create Wavefunction Union of two monomers <==
     else if (o_task == "SOLVER")
     {
+
+        std::string o_solver_type   = options.get_str  ("OEPDEV_SOLVER_TYPE");
 
         SharedUnion wfn_union = std::make_shared<oepdev::WavefunctionUnion>(ref_wfn, options); 
         wfn_union->print_header();
@@ -320,8 +323,10 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
            throw PSIEXCEPTION("Incorrect solver type chosen!\n");
 
     } else if (o_task == "TEST") {
+
             oepdev::test::Test test(ref_wfn, options);
             double result = test.run();
+
     } else 
            throw PSIEXCEPTION("Incorrect target for oepdev program!\n");
 
@@ -337,35 +342,6 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
          */
         if (o_enable_trial) {
 
-
-        //SharedWavefunction      wfn_union_base = wfn_union;
-        //SharedIntegralTransform transform      = wfn_union->integrals();
-        //                                                                                                                                     
-        //// Parse molecules, fragments, basis sets and other primary informations
-        //SharedBasisSet          primary_1      = wfn_union->l_primary(0);    
-        //SharedBasisSet          primary_2      = wfn_union->l_primary(1);
-        //SharedMolecule          molecule_1     = wfn_union->l_molecule(0);
-        //SharedMolecule          molecule_2     = wfn_union->l_molecule(1);
-        //SharedMolecule          molecule       = wfn_union->molecule();
-        //SharedBasisSet          primary        = wfn_union->basisset();
-        //SharedBasisSet          auxiliary_1    = wfn_union->l_auxiliary(0);
-        //SharedBasisSet          auxiliary_2    = wfn_union->l_auxiliary(1);
-        //SharedWavefunction      scf_1          = wfn_union->l_wfn(0); 
-        //SharedWavefunction      scf_2          = wfn_union->l_wfn(1);
-        //
-        //// Solve CPHF equations for each monomer
-        //SharedCPHF cphf_1(new oepdev::CPHF(scf_1, options));
-        //SharedCPHF cphf_2(new oepdev::CPHF(scf_2, options));
-        //cphf_1->compute();
-        //cphf_2->compute();
-        //SharedMatrix pol_1 = cphf_1->get_molecular_polarizability();
-        //SharedMatrix pol_2 = cphf_2->get_molecular_polarizability();
-        //pol_1->print(); pol_2->print();
-        //                                                                                                                                     
-        //// Wavefunction coefficients for isolated monomers
-        //SharedMatrix c_1 = scf_1->Ca_subset("AO","ALL");
-        //SharedMatrix c_2 = scf_2->Ca_subset("AO","ALL");
-        //                                                                                                                                     
         //// Create some OEP's
         //SharedOEPotential oep_cou = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", scf_1, options);
         //SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, primary_1, options);

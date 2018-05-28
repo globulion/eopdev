@@ -7,7 +7,7 @@
  */
 
 /**
- *  @defgroup OEPDEV_SOLVERS The OEPDev solver Library
+ *  @defgroup OEPDEV_SOLVERS The OEPDev Solver Library
  *  @brief 
  *  Implementations of various solvers for molecular properties
  *  as a functions of unperturbed monomeric wavefunctions.
@@ -99,9 +99,9 @@
  *  respectively.
  *  The first elements are given by
  *  \f{align*}{
-     d_0^{0}   &= 1\\
-     d_0^{00}  &= 1\\
-     d_0^{000} &= 1
+ *   d_0^{0}   &= 1\\
+ *   d_0^{00}  &= 1\\
+ *   d_0^{000} &= 1
  *  \f}
  *  By using the above formalisms, it is strightforward to express the doublet of primitive GTO's
  *  as 
@@ -142,18 +142,18 @@
  *  \f{align*}{
  *    \left[ NLM \vert 1 \right]   &= \delta_{N0}\delta_{L0}\delta_{M0} \left( \frac{\pi}{\alpha_P} \right)^{3/2} \\
  *    \left[ NLM \vert x_C \right] &= \left[ \delta_{N1} + \vert {\bf PC}\vert_x\delta_{N0} \right]\delta_{L0}\delta_{M0}
-                                      \left( \frac{\pi}{\alpha_P} \right)^{3/2} \\
+ *                                    \left( \frac{\pi}{\alpha_P} \right)^{3/2} \\
  *    \left[ NLM \vert x_C^2 \right] &= \left[ 
  *                                       2\delta_{N2} + 2\vert {\bf PC}\vert_x\delta_{N1} + 
-                                             \left(
-                                                 \vert {\bf PC}\vert_x^2 + \frac{1}{2\alpha_P}
-                                             \right) \delta_{N0} 
+ *                                           \left(
+ *                                               \vert {\bf PC}\vert_x^2 + \frac{1}{2\alpha_P}
+ *                                           \right) \delta_{N0} 
  *                                      \right] \delta_{L0}\delta_{M0} \left( \frac{\pi}{\alpha_P} \right)^{3/2} \\
  *    \left[ NLM \vert x_Cy_C \right] &= \left( 
-                                           \delta_{N1} + \vert {\bf PC}\vert_x\delta_{N0}
-                                          \right) \left(
-                                           \delta_{L1} + \vert {\bf PC}\vert_y\delta_{L0}
-                                          \right) \delta_{M0} \left( \frac{\pi}{\alpha_P} \right)^{3/2} \\
+ *                                         \delta_{N1} + \vert {\bf PC}\vert_x\delta_{N0}
+ *                                        \right) \left(
+ *                                         \delta_{L1} + \vert {\bf PC}\vert_y\delta_{L0}
+ *                                        \right) \delta_{M0} \left( \frac{\pi}{\alpha_P} \right)^{3/2} \\
  *   \left[ NLM \vert r^{-1}_C \right] &= \frac{2\pi}{\alpha_P} R_{NLM}
  *  \f}
  *  The coefficients \f$ R_{NLM} \f$ are discussed in separate section below.
