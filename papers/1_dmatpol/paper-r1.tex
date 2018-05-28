@@ -133,6 +133,72 @@ To be filled ...
 
 \section{\label{s:1}Introduction}
 
+Molecular\hyp{}level exploration of condensed phase phenomena becomes increasingly unavoidable
+as technology and medicine continue to develop. Unfortunately, the computational cost of accurate
+electronic structure calculations grows extremely fast with the number of particles, greatly limiting
+the use of the state\hyp{}of\hyp{}the\hyp{}art first\hyp{}principles theories 
+when large and complex chemical systems such as
+solutions and biomolecules come into play. Although the advent in the computer technology 
+brought some hopes, it is still insufficient to follow up the expensive needs.
+Due to this reason, it has been of particular importance nowadays to develop bridging theoretical techniques that link
+extremely accurate but localized pieces of information with the heuristic knowledge of an atomistic organisation 
+on a relatively large spatial scales, typically ranging beyond few nanometers. 
+
+A class of molecular dynamics simulation techniques was developed over the years. That was possible
+due to the fruitful incorporation of accurate \emph{ab initio} methods and a 
+semi\hyp{}classical notion of molecular motion combined with extensive experimental and semi\hyp{}empirical
+refinings. The advent of hybrid methods such as quantum mechanical\hyp{}molecular mechanical (QM/MM)
+technique was a revolution in computational chemistry and allowed insightful theoretical studies
+of quantum mechanical effects in biological systems because the high\hyp{}level 
+and costly quantum mechanical calculations
+could be combined with low\hyp{}level and cheap classical dynamics. 
+The size of quantum level can be extended without compromising accuracy and maintaining good performance
+by using vast family of fragmentation methods, such as effective fragment potentials (EFP).
+The most difficult to tackle part of Hamiltonian can also be embedded within a widely understood effective environment
+leading to various embedding methodologies, realising similar goals.
+
+However, even with the modern advances in computational chemistry, 
+%accurate description of environmental effects
+accurate description of phenomena due to complex heterogeneous molecular environments 
+remains a challenge in the following areas: (i) describing the electronically excited states 
+(electronic solvatochromism), (ii) understanding
+the vibrational properties of molecules in ground and electronically excited states
+(vibrational or vibronic solvatochromisms). EFP methods are limited to the ground\hyp{}state
+chemistry at the Hartree\hyp{}Fock (HF) or density functional theory (DFT) levels.
+It is also quite difficult to generalize the embedding potential operator
+because of complicated nature of intermolecular interactions, that theoretically
+cannot be solely envisioned as a sum of electrostatic, dispersion and Pauli effects.
+Therefore, Hamiltonian embedding is often realised by Coulombic embedding with polarization
+of QM level, and only rarely the Pauli exclusion principle is taken into account. Although
+such approach is very accurate in certain cases, it is not guaranteed that it is sufficient
+for all cases.
+
+In this Work, we explore the susceptibility of the molecule's electronic density distribution
+to polarize due to external electrostatic perturbation from first principles. 
+The deformation density is expressed in terms
+of the density matrix susceptibility (DMS) tensors that are properties of isolated molecules and can be
+extracted from quantum chemistry calculations. The focus on the density (matrix) instead of the energy
+(scalar) is beneficial since it provides the directional tensor description
+of the polarization that could be combined with other effects such as Pauli repulsion or dispersion,
+in contrast to the standard interaction energy approaches. We show that accurate polarization 
+of the one\hyp{}particle density
+matrix is achievable and can be realized as long as the one\hyp{}particle density matrices
+are available. It is believed that the proposed method
+could be a basis for a construction of an 
+alternative approach in fragment\hyp{}based
+modelling of extended molecular aggregates that is not limitted to the ground state chemistry.
+We introduce the necessary theory and derive the \emph{ab initio} density matrix susceptibility model
+at the HF approximation in Section II. This model serves as a basis for generalization to the 
+arbitrary one\hyp{}electron density with electronic correlation which is derived in Section II. 
+The implementation details in a computer code as well as the validation procedures are detailed
+in Section III. We then discuss the performance of the models in Section IV based on a few small molecules
+in constant and varying electric field distributions. Finally, we conclude the presentation wit a few 
+remarks for a future development in Section V.
+
+%
+%Understanding intricate mechanisms that govern
+%the biomachinery of life requires thorough 
+
 \section{\label{s:2}Theory}
 
 The electronic energy of a closed\hyp{}shell molecule $A$ is given by the time\hyp{}independent Schr{\"o}dinger equation,
@@ -143,8 +209,7 @@ The electronic energy of a closed\hyp{}shell molecule $A$ is given by the time\h
 %
 where $E$ stands for the total electronic energy, $\Psi$ the electronic wavefunction and $\mathscr{H}$
 the Hamiltonian operator. In the above, the superscript $(0)$
-denotes the reference, or unperturbed, state that is assumed to be known.
-
+denotes the reference or unperturbed state that is assumed to be known.
 Under the influence of an external electrostatic perturbation, the total electronic energy
 becomes
 %
@@ -178,15 +243,16 @@ with the exact energy\hyp{}minimized ground state.
 Development of a first\hyp{}principles theory
 that is capable of accurately capturing the electric field\hyp{}dependence of the one\hyp{}particle density
 is extremely difficult. This is not only because of the very complicated (and generally unknown) solution
-to the electronic correlation problem, but also due to the dimensionality of the problem: the quantitative
-model has to accurately predict all the $n^2$ elements of the density matrix. Even relatively small errors
+to the electronic correlation problem, but also because
+a working model has to accurately predict all the $n^2$ elements of the density matrix
+where $n$ is the size of basis set. Even relatively small errors
 in a particular matrix element could accumulate tremendously when computing traces with other matrices,
 and in turn, obstruct the evaluated properties with non\hyp{}negligible errors.
-Therefore, in this Work we adopt the simplistic approach: we first develop a qualitative first\hyp{}principles model 
+Therefore, we adopt the following approach: we first develop a qualitative first\hyp{}principles model 
 at the Hartree\hyp{}Fock (HF)
 level of theory, and then generalize it to the arbitrary level using the functional form that was found 
 by considering HF level,
-but treating the model as a set of adjustable parameters further on.
+but treating the density matrix susceptibility tensors as cetrain functions of adjustable parameters further on.
 
 \subsection{Ab Initio Density Matrix Susceptibilities: Hartree-Fock Level}
 
@@ -220,6 +286,8 @@ of the dipole moment operator defined with respect to origin at ${\bf r}_Q$,
  \left[ {\mathbb{M}({\bf r}_Q)} \right]_{\alpha\beta} = \tbraket{\alpha}{{\bf r} - {\bf r}_Q}{\beta} \;.
 \end{equation}
 %
+(In this work we shall use the special open bold font for matrices of vectors, so that
+in this case ${\mathbb{M}}$ can be considered as a $n \times n$ matrix of vectors of length 3).
 Note that if the total charge is conserved, the induced moments are independent on the origin.
 
 In the Hartree\hyp{}Fock theory, ${\bf D}$ is approximated as
@@ -230,7 +298,7 @@ In the Hartree\hyp{}Fock theory, ${\bf D}$ is approximated as
 %
 where ${\bf C}$ describes the occupied molecular orbitals as linear combinations
 of atomic orbitals (AO's), referred here to as the LCAO-MO matrix.
-When ${\bf D}$ is expressed in orthogonal basis, the density matrix is idempotent, i.e.,
+${\bf D}$ is an idempotent matrix and if expressed in orthogonal basis the following holds
 %
 \begin{equation}
  {\bf D}^2 = {\bf D} \;.
@@ -309,10 +377,13 @@ into Eq.~\eqref{e:dmu-exact} leads to
 \end{equation}
 %
 It can be proven (see Appendix~\ref{a:orig-dep}) that such obtained
-induced dipole moment is independent on the origin. Therefore,
-in the above result and also in later course of the Paper the dipole origin has been omitted. 
+induced dipole moment is independent on the origin. 
+This quarantees that the theory fulfills the total charge conservation requirement.
+Therefore,
+in the above result and also in later course of the Paper the dipole origin will be omitted. 
 %where the dipole origin was omitted for notational clarity.
-If the AO basis is orthogonal, Eq.~\eqref{e:dmu-4-exact.linear-approximation} can be simplified by realising that
+
+Now, if the AO basis is orthogonal, Eq.~\eqref{e:dmu-4-exact.linear-approximation} can be simplified by realising that
 %
 \begin{subequations}
  \begin{align}
@@ -450,7 +521,8 @@ of ${\bf L}_i$ matrix
 \end{equation}
 %
 and has size $(3\times n)$. Note that the \emph{right inverse} of ${\bf L}_i$
-does not exist because ${\bf L}_i {\bf L}_i^T$ is singular.
+does not exist because ${\bf L}_i {\bf L}_i^T$ is singular due to the fact that usually
+$n > 3$.
 %Clearly, in the above approximation, ${\bf X}$ depends on the choice
 %of unperturbed orbitals.
 
@@ -541,9 +613,11 @@ and ${\bf B}^{(i; 01)}_{\alpha\beta}$ are $(3\times 3)$ matrices. Also, the dist
 
 \subsubsection{Determining the generalized susceptibility tensors}
 
-The exact mathematical form of the generalized density matrix susceptibilities is unknown. 
-The first suscebility from Eq.~\eqref{e:final-model.HF} is valid only under the Hartree\hyp{}Fock
-approximation, with a guarantee that only the overall charge and the dipole moment, 
+The exact mathematical form of the generalized density matrix susceptibilities 
+from Eq.~\eqref{e:final-model.General} is unknown. 
+The susceptibility from Eq.~\eqref{e:final-model.HF} is valid only under the Hartree\hyp{}Fock
+approximation, with a guarantee that only the overall charge (exactly) and the dipole moment (approximately,
+limited by the flavour of the distributed polarizability approximation), 
 but not higher multipole moments, are correctly described.
 Our strategy is to treat the susceptibilities from Eq.~\eqref{e:final-model.General}
 as adjustable parameters, rather than try to derive them from first principles theory.
@@ -597,7 +671,7 @@ $
 \end{pmatrix}^T
 $, we define the loss function $Z$ 
 of the three blocks of adjustable parameters
-that is subject to the least\hyp{}squares minimization:
+that is subject to the least\hyp{}squares minimization,
 %
 \begin{equation}\label{e:Z}
  Z[{\bf S}] = \sum_N^{N_{\rm max}} \left( \delta D^{(N)} - \delta \overline{D}^{(N)} \right)^2 \;.
@@ -688,7 +762,7 @@ The electric field\hyp{}induced dipole and quadrupole moments were evaluated fro
   \end{align}
 \end{subequations}
 %
-Quadrupole moments were subsequently transformed to the their traceless forms by
+Quadrupole moments were subsequently transformed to their traceless forms by
 %
 \begin{equation}
   \delta \widetilde{\Theta}_{uw} = \delta \Theta_{uw} - \frac{1}{3} \delta_{uw} \Tr{\BM\Theta} \;.
