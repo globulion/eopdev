@@ -10,8 +10,14 @@
 % Copy this file to another name and then work on that file.
 % That way, you always have this original template file to use.
 
-\documentclass[aip,graphicx]{revtex4-1}
+\documentclass[aip,amsmath,amssymb,reprint]{revtex4-1}
 %\documentclass[aip,reprint]{revtex4-1}
+
+\usepackage{graphicx}% Include figure files
+\usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+%\usepackage[mathlines]{lineno}% Enable numbering of text and display math
+%\linenumbers\relax % Commence numbering lines
 
 % hyphenation
 \usepackage{hyphenat}
@@ -29,7 +35,7 @@
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{amsbsy}
-\usepackage{bm}
+%\usepackage{bm}
 \usepackage{mathrsfs}
 \usepackage{upgreek}
 %\allowdisplaybreaks
@@ -109,22 +115,39 @@
 % trace operator
 \DeclareMathOperator{\Tr}{Tr}
 
-\draft % marks overfull lines with a black rule on the right
+%\draft % marks overfull lines with a black rule on the right
 
 \begin{document}
 
-\title{Density Matrix Susceptibility} %Title of paper
+\preprint{AIP/123-DMS}
+
+\title{Density Matrix Susceptibility Tensors} %Title of paper
 
 \author{Bartosz B{\l}asiak}
 \email[]{blasiak.bartosz@gmail.com}
 \homepage[]{https://www.polonez.pwr.edu.pl}
-\thanks{Bulak}
+%\thanks{Bulak}
 \affiliation{Department of Physical and Quantum Chemistry, Faculty of Chemistry, Wroc{\l}aw University of Technology, Wybrze{\.z}e Wyspia{\'n}kiego 27, Wroc{\l}aw 50-370, Poland}
 
 \date{\today}
 
 \begin{abstract}
-To be filled ...
+
+%Considering the solvent effect on the correlated electronic wavefunctions, especially
+%those that describe the electronically excited state, is a great challenge of Quantum Chemistry. 
+
+In this work, the electric field\hyp{}induced change in the one\hyp{}electron density
+has been expressed as a series of the one\hyp{}particle density matrix susceptibility tensors
+interacting with electric fields. The analytical approximate expressions were derived
+at the Hartree\hyp{}Fock theory, which served as a basis for construction of generalized
+model that can be used for an arbitrary form of wavefunction as long as the one\hyp{}particle
+density matrices are available. It is shown that it is possible to accurately predict the changes
+in the one\hyp{}electron density of water molecule in spatially non\hyp{}uniform electric field distribution
+generetated by point charges. The interaction\hyp{}induced energies
+dipole moments and quadrupole moments
+are quantitatively described by the present theory in weak and moderate electric fields.
+The possibility of extension of the proposed model with high\hyp{}order susceptibilities
+opens new routes in quantum chemistry of fast and efficient calculations of strongly perturbed systems.
 \end{abstract}
 
 \pacs{}% insert suggested PACS numbers in braces on next line
@@ -231,7 +254,7 @@ one\hyp{}particle density matrix.
 If perturbation\hyp{}independent basis is chosen, the electric field\hyp{}induced change in the one\hyp{}particle density
 is given by
 %
-\begin{equation}\label{e:rho}
+\begin{equation}\label{e:rho-1}
  \delta \rho({\bf r}) = 2\sum_{\alpha\beta} \delta D_{\alpha\beta} \phi_\alpha({\bf r}) \phi^*_\beta({\bf r}) \;.
 \end{equation}
 %
@@ -351,7 +374,7 @@ into Eq.~\eqref{e:dmu-exact} leads to
 %                + \left[ {\bf v}{\bf v}^\dagger - {\bf v}^\dagger{\bf v}\right] + \ldots 
 %\end{equation}
 %
-\begin{equation} \label{e:dmu-4-exact.linear-approximation}
+\begin{multline} \label{e:dmu-4-exact.linear-approximation}
  \frac{1}{2} 
  \delta {\BM{\upmu}}
   \cong
@@ -363,7 +386,7 @@ into Eq.~\eqref{e:dmu-exact} leads to
   +\Tr{ 
     \left[ 
          {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger}
-    \right] }
+    \right] } \\
 %
   -\Tr{ 
     \left[ 
@@ -374,7 +397,7 @@ into Eq.~\eqref{e:dmu-exact} leads to
     \left[ 
          {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger} {\bf D}^{(0)}
     \right] } \;,
-\end{equation}
+\end{multline}
 %
 It can be proven (see Appendix~\ref{a:orig-dep}) that such obtained
 induced dipole moment is independent on the origin. 
@@ -396,7 +419,7 @@ Now, if the AO basis is orthogonal, Eq.~\eqref{e:dmu-4-exact.linear-approximatio
     \left[ 
          {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger}
     \right] }
-  &=
+  & \\ \nonumber =
 2 \Tr{ 
     \left[ 
          \widetilde{\mathbb{M}} \cdot \delta {\bf C}
@@ -413,7 +436,7 @@ Now, if the AO basis is orthogonal, Eq.~\eqref{e:dmu-4-exact.linear-approximatio
     \left[ 
          {\mathbb{M}} {\bf D}^{(0)} {\BM\Delta}^{\dagger} {\bf D}^{(0)}
     \right] }
-  &=
+  & \\ \nonumber =
 2 \Tr{ 
     \left[ 
          \widetilde{\mathbb{K}} \cdot \delta {\bf C}
@@ -553,18 +576,17 @@ the expression for $\delta {\bf D}$ from Eq.~\eqref{e:dD-2} to finally give
 %
 where the \emph{density matrix polarization susceptibility tensor} is
 %
-\begin{equation}  \label{e:susceptibility-B}
- {\bf B}^{(i)}_{\alpha\beta} = \left\{
-%
-                               C_{\alpha i} {\bf b}_{\beta i} + C_{\beta i} {\bf b}_{\alpha i}
-                               - \sum_\gamma 
+\begin{multline}  \label{e:susceptibility-B}
+ {\bf B}^{(i)}_{\alpha\beta} = \Big\{
+                               C_{\alpha i} {\bf b}_{\beta i} + C_{\beta i} {\bf b}_{\alpha i} \\
+                                - \sum_\gamma 
                                  \left( 
                D_{\alpha\gamma} C_{\beta i} + D_{\beta\gamma} C_{\alpha i}
                                  \right)
                                            {\bf b}_{\gamma i}
 %
-\right\}  \;.
-\end{equation}
+\Big\}  \;.
+\end{multline}
 %
 Hence, the 3D vector ${\bf B}^{(i)}_{\alpha\beta}$ describes the polarization affinity
 of the density matrix element associated with $\alpha$th and $\beta$th orthogonal AO's.
@@ -586,14 +608,14 @@ can be used as a guideline to construct a general model of density matrix polari
 Quadratic terms with respect to the electric field as well as linear terms with respect to
 electric field gradient can be added to the formulation, which leads to
 %
-\begin{equation}\label{e:final-model.General}
- \delta D_{\alpha\beta} = \sum_{i }^M \left\{
+\begin{multline}\label{e:final-model.General}
+ \delta D_{\alpha\beta} = \sum_{i }^M \Big\{
                                       {\bf B}^{(i ; 10)}_{\alpha\beta} \cdot {\bf F}({\bf r}_i)  
 %                       + \sum_{ij}^M {\bf B}^{(ij; 20)}_{\alpha\beta} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_j)
-                        +             {\bf B}^{(i ; 20)}_{\alpha\beta} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_i)
+                        +             {\bf B}^{(i ; 20)}_{\alpha\beta} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_i) \\
                         +             {\bf B}^{(i ; 01)}_{\alpha\beta} : {\BM\nabla} \otimes {\bf F}({\bf r}_i) 
-                        + \ldots \right\}
-\end{equation}
+                        + \ldots \Big\}
+\end{multline}
 %
 %However, Eq.~\eqref{e:final-model} is an approximation because (i) it is based on the approximate
 %relation in Eq.~\eqref{e:dmu-l-vector-mo-transform} and (ii) only total dipole moment (but not quadrupole
@@ -640,14 +662,14 @@ are known for each sample (overline symbolizes the exact estimate).
 Now, for each pair of the AO indices we construct the following 
 parameterization of Eq.~\eqref{e:final-model.General}:
 %
-\begin{equation}\label{e:final-model.General.Parameters}
- \delta D^{(N)} = \sum_{i }^M \left\{ 
-                              \sum_u^{x,y,z} S^{[1]}_{iu} F_{iu}^{(N)} 
-%               + \sum_{ij}^M \sum_{uw}^{x,y,z} \left( S^{[2]}_{iu} + S^{[2]}_{jw} \right) F_{iu}^{(N)} F_{ju}^{(N)}
-                +             \sum_{uw}^{x,y,z} \left( S^{[2]}_{iu} + S^{[2]}_{iw} \right) F_{iu}^{(N)} F_{iu}^{(N)}
+\begin{multline}\label{e:final-model.General.Parameters}
+ \delta D^{(N)} = \sum_{i }^M \Big\{ 
+                              \sum_u^{x,y,z} S^{[1]}_{iu} F_{iu}^{(N)} \\
+%               + \sum_{ij}^M \sum_{uw}^{x,y,z} \left( S^{[2]}_{iu} + S^{[2]}_{jw} \right) F_{iu}^{(N)} F_{jw}^{(N)}
+                +             \sum_{uw}^{x,y,z} \left( S^{[2]}_{iu} + S^{[2]}_{iw} \right) F_{iu}^{(N)} F_{iw}^{(N)} \\
                 +             \sum_{uw}^{x,y,z} \left( S^{[3]}_{iu} + S^{[3]}_{iw}\right) F_{iu,iw}^{(N)}
-                        + \ldots \right\}
-\end{equation}
+                        + \ldots \Big\}
+\end{multline}
 %
 (the Greek subscripts were omitted here for notational simplicity).
 The multiple parameter blocks 
@@ -723,12 +745,11 @@ The electric field\hyp{}induced interaction energy at the HF level, $\delta E$,
 was computed from the following exact formula:
 %
 \begin{multline}\label{e:dE}
- \delta E[{\bf F}] = 
+ \delta E[{\bf F}] = E_{\rm nuc}({\bf F}) +
                      \Tr{\left\{ \delta {\bf D} \cdot
-                                \left( {\bf H}^{(0)} + {\bf f}^{(0)} \right) \right\}}
+                                \left( {\bf H}^{(0)} + {\bf f}^{(0)} \right) \right\}} \\
                    + \Tr{\left\{ \left( {\bf D}^{(0)} + \delta {\bf D} \right) \cdot
-                                \left( 2{\bf V} + 2\delta {\bf J} - \delta {\bf K}\right) \right\}} 
-                   + E_{\rm nuc}({\bf F}) \;.
+                                \left( 2{\bf V} + 2\delta {\bf J} - \delta {\bf K}\right) \right\}} \;.
 \end{multline}
 %
 In Eq.~\eqref{e:dE}, ${\bf f}^{(0)}$ and ${\bf H}^{(0)}$ are the Fock matrix and 
@@ -740,11 +761,11 @@ due to the nuclei.
 In order to compare the performance of the distributed polarizability approach,
 the approximate interaction energy was also evaluated by using the expression:
 %
-\begin{equation}\label{e:dE-dpol}
- \delta E[{\bf F}] \approx 2 \Tr{\left\{ {\bf D}^{(0)} {\bf V}\right\} } 
-                   - \frac{1}{2} \sum_i^{\rm occ} {\BM \alpha}_i : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_i)
-                   + E_{\rm nuc}({\bf F}) \;,
-\end{equation}
+\begin{multline}\label{e:dE-dpol}
+ \delta E[{\bf F}] \approx E_{\rm nuc}({\bf F}) + 
+                     2 \Tr{\left\{ {\bf D}^{(0)} {\bf V}\right\} }  \\
+                   - \frac{1}{2} \sum_i^{\rm occ} {\BM \alpha}_i : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_i) \;,
+\end{multline}
 %
 in which ${\BM \alpha}_i$ is the distributed anisotropic polarizability tensor associated with the
 $i$th localized molecular orbital (LMO) centroid, ${\bf r}_i = \tbraket{\phi_i}{\bf r}{\phi_i}$.
@@ -811,26 +832,42 @@ atomic basis was orthogonalized by using the L{\"o}wdin symmetric orthogonalizat
 
 \section{\label{s:4}Results and Discussion}
 
-\subsection{Ab Initio Model of Densty Matrix Polarization}
+Performance descriptors of the \emph{ab initio} and generalized 
+models of the density matrix susceptibility are shown in Table~XXX. 
+We considered three different types of point charge environment that generate
+weak (0.001 -- 0.005 a.u.), 
+moderate (0.001 -- 0.002 a.u.) and strong (0.002 -- 0.004 a.u.) 
+electric fields (on average) around the water molecule.
+%
+%for a set of varying point charge environments
+%with weak, moderate and strong electric fields are shown in Table~XXX.
 
-We first test the accuracy of the density matrix susceptibility tensors that were derived
-in Eq.~\eqref{e:susceptibility-B} from first principles. 
-For this purpose we have considered a water molecule 
-under weak uniform electric fields (Figure~XXX). 
-3D difference one\hyp{}electron density isosurface plots for sample electric fields
-with respect to the unperturbed density (${\bf F} = {\bf 0}$)
-are shown in Figure~XXX. The statistical evaluation of errors for a set of
-100 random electric fields is shown in Figure~XXX. The shape of the basins 
-of decreased/increased density are comparable with the exact result
-obtained from HF/6-311++G** calculations. 
+\begin{figure*}
+\includegraphics[width=\textwidth]{data/dmatpol/water/figure1/fig-1.eps}
+\caption{\label{f:results} {\bf Performance of the distributed density matrix susceptibility tensors in moderate
+electric fields.}
+Calculations of the electric field\hyp{}induced interaction energies (A-C), dipole moments (D-F) and
+quadrupole moments (G-I).}
+\end{figure*}
+
+%We first test the accuracy of the density matrix susceptibility tensors that were derived
+%in Eq.~\eqref{e:susceptibility-B} from first principles. 
+%For this purpose we have considered a water molecule 
+%under weak uniform electric fields (Figure~XXX). 
+%3D difference one\hyp{}electron density isosurface plots for sample electric fields
+%with respect to the unperturbed density (${\bf F} = {\bf 0}$)
+%are shown in Figure~XXX. The statistical evaluation of errors for a set of
+%100 random electric fields is shown in Figure~XXX. The shape of the basins 
+%of decreased/increased density are comparable with the exact result
+%obtained from HF/6-311++G** calculations. 
 %It can be seen that the theory
 %describes the polarization of the electron density distribution qualitatively well:
-However, the accuracy in the density matrix elements is on overall very low which 
-manifests with drammatic errors in the electronic total energy of the system.
-It is due to the approximations used to derive Eq.~\eqref{e:susceptibility-B},
-which neglects quadrupole and higher\hyp{}order induced multipole moments.
+%However, the accuracy in the density matrix elements is on overall very low which 
+%manifests with drammatic errors in the electronic total energy of the system.
+%It is due to the approximations used to derive Eq.~\eqref{e:susceptibility-B},
+%which neglects quadrupole and higher\hyp{}order induced multipole moments.
 
-\subsection{General Model of Densty Matrix Polarization}
+%\subsection{General Model of Densty Matrix Polarization}
 
 %However, Eq.~\eqref{e:final-model} is an approximation because (i) it is based on the approximate
 %relation in Eq.~\eqref{e:dmu-l-vector-mo-transform} and (ii) only total dipole moment (but not quadrupole
@@ -853,7 +890,40 @@ which neglects quadrupole and higher\hyp{}order induced multipole moments.
 
 
 \section{\label{s:5}Summary and a few concluding remarks}
-Test summary bla bla blaaaaa dfn fdj gf ads;jha g;ja gf; p.
+
+In this Work, the \emph{ab initio} model of the one\hyp{}particle density matrix susceptibility tensors
+at the HF level was derived for a closed shell molecule in a spatially non\hyp{}uniform
+electric field distribution. It was found that the change in the density matrix element
+is approximately proportional to the electric field evaluated at the distributed site associated with the 
+center of charge of the 
+localized molecular orbital. Subsequently, the \emph{ab initio} model served as a basis
+for the formulation of the generalized model that is, in principle, not limited to the HF theory,
+and takes into account higher\hyp{}order curvatures of the electric field distribution as well.
+The generalized model consisted of a set of adjustable parameters defining the density matrix susceptibility tensors
+that are able to interact with the electric field, square of electric field and electric field gradients.
+The particular density matrix susceptibilities are determined through the least\hyp{}squares 
+linear regression with respect to the enseble of electrostatically petrurbed known density matrices.
+
+The above theoretically developed models were then used to calculate the electric field\hyp{}induced
+interaction energies, dipole moments and quadrupole moments of water molecule that
+interacts with various point charge environments generating electric fields of weak, moderate
+and strong magnitudes. It was found that, while the \emph{ab initio} model yelds qualitatively correct
+interaction energies and dipole moments, the generalized model can reach quantitative level of accuracy
+for prediction of interaction energies, dipole moments and even quadrupole moments. Although 
+errors in interaction energies produced by using the generalized model 
+was still at best one order of magnitude larger than the errors produced by using the
+usual approach based on the distributed polarizabilities, this work demonstrated that it is possible to
+accurately predict the change in the density matrix of electronic system, and the accuracy of the model
+can be improved by extending the parameter space of the susceptibility tensors. 
+
+It is anticipated here that the above generalized models from Eq.~\eqref{e:final-model.General}
+should be studied in the future with an emphasis 
+on their further optimization, especially to reach RMSE below 1 kcal/mole
+in strong and very strong electric fields. Owing the capability of the proposed approach to correctly capture the 
+environment\hyp{}induced changes in the one\hyp{}particle density matrix, 
+the generalized density matrix susceptibility tensors 
+could be used in accurate fragment\hyp{}based calculations of extended molecular aggregates
+described at correlated levels of theory, particularly including the excited state chemistry.
 
 \begin{acknowledgments}
 This project is carried out under POLONEZ programme which has received funding from the European Union's
@@ -865,10 +935,10 @@ No.~665778. This project is funded by National Science Centre, Poland
 %
 \appendix
 
-\section{\label{a:orig-dep} Origin-Dependence of Induced Dipole Moment}
+\section{\label{a:orig-dep} Origin-Independence of the Induced Dipole Moment}
 
 We need to be aware that multipole integrals depend on the origin with respect to which they are evaluated.
-However, the induced dipole moments defined in Eq.~\eqref{e:mu-ind-distributed-general} 
+However, the induced dipole moments defined in Eq.~\eqref{e:dmu-exact} 
 have to be origin independent. 
 %Let us check if this is the case.
 
@@ -897,7 +967,7 @@ AO basis. This implies that
 \end{equation}
 %
 Therefore, it is proved that the polarization\hyp{}induced distributed dipole moments 
-defined in Eq.~\eqref{e:mu-ind-distributed-general} 
+defined in Eq.~\eqref{e:dmu-4-exact.linear-approximation} 
 are origin independent.
 Thus, one can compute dipole integrals with respect to any origin and resulting
 susceptibilities ${\bf B}_{\alpha\beta}^{(i)}$ from Eq.~\eqref{e:susceptibility-B} will be uniquely defined.
