@@ -839,22 +839,71 @@ models of the density matrix susceptibility are shown in Table~\ref{t:results}.
 \centering
 \caption{My caption}
 \label{t:results}
-\begin{tabular}{|l|c|c|c|c|c|c|c|}
-\hline
-\textbf{}                                                                           & \multicolumn{1}{l|}{} & \textbf{An Initio DMS} & \multicolumn{4}{c|}{\textbf{Generalized DMS}}                 & \textbf{Multipole} \\ \hline
-\textbf{}                                                                           & \textbf{Set}          & \textbf{1, 0}          & \textbf{1, 0} & \textbf{2, 0} & \textbf{1, 1} & \textbf{2, 1} & \textbf{-}         \\ \hline
-\multirow{3}{*}{\textbf{\begin{tabular}[c]{@{}l@{}}RMSE\\ (kcal/mol)\end{tabular}}} & W                     & 0.067 (99.80)          & 0.076 (99.74) & 0.053 (99.88) & 0.074 (99.76) & 0.050 (99.89) & 0.004 (100.00)     \\ \cline{2-8} 
-                                                                                    & M                     & 1.07 (96.96)           & 1.24 (95.96)  & 0.86 (98.06)  & 1.20 (96.17)  & 0.81 (98.27)  & 0.07 (99.99)       \\ \cline{2-8} 
-                                                                                    & S                     & 4.22 (88.87)           & 5.15 (83.44)  & 3.60 (91.92)  & 5.02 (84.25)  & 3.41 (92.73)  & 0.33 (99.93)       \\ \hline
-\multirow{3}{*}{\textbf{\begin{tabular}[c]{@{}l@{}}RMSD\\ (mD)\end{tabular}}}       & W                     & 3.36 (98.70)           & 1.03 (99.88)  & 0.98 (99.89)  & 0.52 (99.97)  & 0.47 (99.98)  & 3.36 (98.70)       \\ \cline{2-8} 
-                                                                                    & M                     & 14.72 (98.50)          & 7.72 (99.59)  & 6.86 (99.67)  & 6.15 (99.74)  & 5.38 (99.80)  & 14.72 (98.50)      \\ \cline{2-8} 
-                                                                                    & S                     & 44.80 (96.92)          & 33.06 (98.32) & 29.49 (98.67) & 28.74 (98.73) & 26.25 (98.94) & 44.80 (96.92)      \\ \hline
-\multirow{3}{*}{\textbf{\begin{tabular}[c]{@{}l@{}}RMSQ\\ (DA10-3)\end{tabular}}}   & W                     & 6.22 (58.72)           & 1.59 (97.32)  & 1.49 (97.62)  & 0.58 (99.64)  & 0.48 (99.75)  & 5.45 (68.30)       \\ \cline{2-8} 
-                                                                                    & M                     & 28.22 (53.90)          & 10.45 (93.68) & 8.83 (95.49)  & 8.25 (96.06)  & 6.57 (97.50)  & 23.94 (66.83)      \\ \cline{2-8} 
-                                                                                    & S                     & 78.07 (40.53)          & 43.33 (81.68) & 35.73 (87.55) & 38.80 (85.31) & 31.59 (90.26) & 64.33 (59.62)      \\ \hline
-\end{tabular}
+\begin{ruledtabular}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{cddcddddddddcdd}
+%\hline\hline
+\toprule
+\multicolumn{1}{l}{} & \multicolumn{2}{c}{\textbf{An Initio DMS}} &  & \multicolumn{8}{c}{\textbf{Generalized DMS}}                                                                                                  &  & \multicolumn{2}{c}{\textbf{Distributed}} \\
+\cline{2-3}
+\cline{5-12}
+%\cline{14-15}
+\textbf{Set}         & \multicolumn{2}{c}{\textbf{1, 0}}          &  & \multicolumn{2}{c}{\textbf{1, 0}} & \multicolumn{2}{c}{\textbf{2, 0}} & \multicolumn{2}{c}{\textbf{1, 1}} & \multicolumn{2}{c}{\textbf{2, 1}} &  & \multicolumn{2}{c}{\textbf{Polarizability}}         \\ \hline
+\multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSE (kcal/mol)}}                                                                                                                                                                                             \\ \hline
+W                    & 0.067               & (99.80)              &  & 0.076          & (99.74)          & 0.053          & (99.88)          & 0.074          & (99.76)          & 0.050          & (99.89)          &  & 0.004            & (100.00)            \\
+M                    & 1.07                & (96.96)              &  & 1.24           & (95.96)          & 0.86           & (98.06)          & 1.20           & (96.17)          & 0.81           & (98.27)          &  & 0.07             & (99.99)             \\
+S                    & 4.22                & (88.87)              &  & 5.15           & (83.44)          & 3.60           & (91.92)          & 5.02           & (84.25)          & 3.41           & (92.73)          &  & 0.33             & (99.93)             \\ \hline
+\multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSD (mD)}}                                                                                                                                                                                                   \\ \hline
+W                    & 3.36                & (98.70)              &  & 1.03           & (99.88)          & 0.98           & (99.89)          & 0.52           & (99.97)          & 0.47           & (99.98)          &  & 3.36             & (98.70)             \\
+M                    & 14.72               & (98.50)              &  & 7.72           & (99.59)          & 6.86           & (99.67)          & 6.15           & (99.74)          & 5.38           & (99.80)          &  & 14.72            & (98.50)             \\
+S                    & 44.80               & (96.92)              &  & 33.06          & (98.32)          & 29.49          & (98.67)          & 28.74          & (98.73)          & 26.25          & (98.94)          &  & 44.80            & (96.92)             \\ \hline
+\multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSQ (D\AA $\times 10^{-3}$)}}                                                                                                                                                                                               \\ \hline
+W                    & 6.22                & (58.72)              &  & 1.59           & (97.32)          & 1.49           & (97.62)          & 0.58           & (99.64)          & 0.48           & (99.75)          &  & 5.45             & (68.30)             \\
+M                    & 28.22               & (53.90)              &  & 10.45          & (93.68)          & 8.83           & (95.49)          & 8.25           & (96.06)          & 6.57           & (97.50)          &  & 23.94            & (66.83)             \\
+S                    & 78.07               & (40.53)              &  & 43.33          & (81.68)          & 35.73          & (87.55)          & 38.80          & (85.31)          & 31.59          & (90.26)          &  & 64.33            & (59.62) \\
+\bottomrule
+\end{tabular}%
+}
+\end{ruledtabular}
 \end{table*}
-
+%
+We considered three different types of point charge environment that generate
+weak (0.001 -- 0.005 a.u.), 
+moderate (0.001 -- 0.002 a.u.) and strong (0.002 -- 0.004 a.u.) 
+electric fields around the water molecule (see the histograms of the electric field distribution
+per atomic centre in Figure~XXX).
+-%
+-%for a set of varying point charge environments
+-%with weak, moderate and strong electric fields are shown in Table~XXX.
+\begin{figure*}
+\includegraphics[width=\textwidth]{data/dmatpol/water/figure1/fig-1.eps}
+\caption{\label{f:results} {\bf Performance of the distributed density matrix susceptibility tensors in moderate
+electric fields.}
+Calculations of the electric field\hyp{}induced interaction energies (A-C), dipole moments (D-F) and
+quadrupole moments (G-I).}
+\end{figure*}
+%
+%\begin{table*}[]
+%\centering
+%\caption{My caption}
+%\label{t:results}
+%\resizebox{\textwidth}{!}{%
+%\begin{tabular}{|l|c|c|c|c|c|c|c|}
+%\hline
+%\textbf{}                                                                           & \multicolumn{1}{l|}{} & \textbf{An Initio DMS} & \multicolumn{4}{c|}{\textbf{Generalized DMS}}                 & \textbf{Multipole} \\ \hline
+%\textbf{}                                                                           & \textbf{Set}          & \textbf{1, 0}          & \textbf{1, 0} & \textbf{2, 0} & \textbf{1, 1} & \textbf{2, 1} & \textbf{-}         \\ \hline
+%\multirow{3}{*}{\textbf{\begin{tabular}[c]{@{}l@{}}RMSE\\ (kcal/mol)\end{tabular}}} & W                     & 0.067 (99.80)          & 0.076 (99.74) & 0.053 (99.88) & 0.074 (99.76) & 0.050 (99.89) & 0.004 (100.00)     \\ \cline{2-8} 
+%                                                                                    & M                     & 1.07 (96.96)           & 1.24 (95.96)  & 0.86 (98.06)  & 1.20 (96.17)  & 0.81 (98.27)  & 0.07 (99.99)       \\ \cline{2-8} 
+%                                                                                    & S                     & 4.22 (88.87)           & 5.15 (83.44)  & 3.60 (91.92)  & 5.02 (84.25)  & 3.41 (92.73)  & 0.33 (99.93)       \\ \hline
+%\multirow{3}{*}{\textbf{\begin{tabular}[c]{@{}l@{}}RMSD\\ (mD)\end{tabular}}}       & W                     & 3.36 (98.70)           & 1.03 (99.88)  & 0.98 (99.89)  & 0.52 (99.97)  & 0.47 (99.98)  & 3.36 (98.70)       \\ \cline{2-8} 
+%                                                                                    & M                     & 14.72 (98.50)          & 7.72 (99.59)  & 6.86 (99.67)  & 6.15 (99.74)  & 5.38 (99.80)  & 14.72 (98.50)      \\ \cline{2-8} 
+%                                                                                    & S                     & 44.80 (96.92)          & 33.06 (98.32) & 29.49 (98.67) & 28.74 (98.73) & 26.25 (98.94) & 44.80 (96.92)      \\ \hline
+%\multirow{3}{*}{\textbf{\begin{tabular}[c]{@{}l@{}}RMSQ\\ (DA10-3)\end{tabular}}}   & W                     & 6.22 (58.72)           & 1.59 (97.32)  & 1.49 (97.62)  & 0.58 (99.64)  & 0.48 (99.75)  & 5.45 (68.30)       \\ \cline{2-8} 
+%                                                                                    & M                     & 28.22 (53.90)          & 10.45 (93.68) & 8.83 (95.49)  & 8.25 (96.06)  & 6.57 (97.50)  & 23.94 (66.83)      \\ \cline{2-8} 
+%                                                                                    & S                     & 78.07 (40.53)          & 43.33 (81.68) & 35.73 (87.55) & 38.80 (85.31) & 31.59 (90.26) & 64.33 (59.62)      \\ \hline
+%\end{tabular}%
+%}
+%\end{table*}
 %We first test the accuracy of the density matrix susceptibility tensors that were derived
 %in Eq.~\eqref{e:susceptibility-B} from first principles. 
 %For this purpose we have considered a water molecule 
@@ -951,26 +1000,26 @@ have to be origin independent.
 Let us start with noticing that
 %
 \begin{equation}
- \left[ {\bf M} \right]_{i\alpha} ({\bf r}_0) 
- = \left[ {\bf M} \right]_{i\alpha} ({\bf 0}) - {\bf r}_0 \left[ {\bf C}^\dagger \right]_{i\alpha}  \;.
+ \left[ {\bf M} \right]_{i\alpha} ({\bf r}_Q) 
+ = \left[ {\bf M} \right]_{i\alpha} ({\bf 0}) - {\bf r}_Q \left[ {\bf C}^\dagger \right]_{i\alpha}  \;.
 \end{equation}
 %
 Further we have
 %
 \begin{equation}
- \left[ {\bf K} \right]_{i\alpha} ({\bf r}_0) 
- = \left[ {\bf K} \right]_{i\alpha} ({\bf 0}) - {\bf r}_0 \left[ {\bf C}^\dagger {\bf D} \right]_{i\alpha} \;.
+ \left[ {\bf K} \right]_{i\alpha} ({\bf r}_Q) 
+ = \left[ {\bf K} \right]_{i\alpha} ({\bf 0}) - {\bf r}_Q \left[ {\bf C}^\dagger {\bf D} \right]_{i\alpha} \;.
 \end{equation}
 %
 But ${\bf C}^\dagger {\bf D}={\bf C}^\dagger {\bf C} {\bf C}^\dagger={\bf C}^\dagger$ in orthogonal
 AO basis. This implies that
 %
-\begin{equation}
-   \left[ {\bf L} \right]_{i\alpha} ({\bf r}_0) 
- = \left[ {\bf M} \right]_{i\alpha} ({\bf r}_0) - \left[ {\bf K} \right]_{i\alpha} ({\bf r}_0)
+\begin{multline}
+   \left[ {\bf L} \right]_{i\alpha} ({\bf r}_Q) 
+ = \left[ {\bf M} \right]_{i\alpha} ({\bf r}_Q) - \left[ {\bf K} \right]_{i\alpha} ({\bf r}_Q) \\
  = \left[ {\bf M} \right]_{i\alpha} ({\bf 0})   - \left[ {\bf K} \right]_{i\alpha} ({\bf 0})
  = \left[ {\bf L} \right]_{i\alpha} ({\bf 0}) \;.
-\end{equation}
+\end{multline}
 %
 Therefore, it is proved that the polarization\hyp{}induced distributed dipole moments 
 defined in Eq.~\eqref{e:dmu-4-exact.linear-approximation} 
