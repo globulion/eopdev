@@ -25,7 +25,7 @@
 
 % tables
 %\usepackage{dcolumn}
-%\usepackage{multirow}
+\usepackage{multirow}
 %\usepackage{hhline}
 %\usepackage{booktabs}
 %\usepackage{longtable}
@@ -833,11 +833,33 @@ atomic basis was orthogonalized by using the L{\"o}wdin symmetric orthogonalizat
 \section{\label{s:4}Results and Discussion}
 
 Performance descriptors of the \emph{ab initio} and generalized 
-models of the density matrix susceptibility are shown in Table~XXX. 
+models of the density matrix susceptibility are shown in Table~\ref{t:results}. 
+%
+% Please add the following required packages to your document preamble:
+\begin{table*}[]
+\centering
+\caption{My caption}
+\label{my-label}
+\begin{tabular}{|l|c|c|c|c|c|c|c|}
+\hline
+\textbf{}                                                                           &              & \textbf{An Initio} & \multicolumn{4}{c|}{\textbf{Generalized}}                     & \textbf{Multipole} \\ \hline
+\textbf{Rank of DMS}                                                                & \textbf{Set} & \textbf{1, 0}      & \textbf{1, 0} & \textbf{2, 0} & \textbf{1, 1} & \textbf{2, 1} & \textbf{-}         \\ \hline
+\multirow{3}{*}{\textbf{\begin{tabular}[c]{@{}l@{}}RMSE\\ (kcal/mol)\end{tabular}}} & W            & 0.067 (99.80)      & 0.076 (99.74) & 0.053 (99.88) & 0.074 (99.76) & 0.050 (99.89) & 0.004 (100.00)     \\ \cline{2-8} 
+                                                                                    & M            &                    &               &               &               &               &                    \\ \cline{2-8} 
+                                                                                    & S            &                    &               &               &               &               &                    \\ \hline
+\multirow{3}{*}{\textbf{\begin{tabular}[c]{@{}l@{}}RMSD\\ (mD)\end{tabular}}}       & W            & 3.36 (98.70)       & 1.03 (99.88)  & 0.98 (99.89)  & 0.52 (99.97)  & 0.47 (99.98)  & 3.36 (98.70)       \\ \cline{2-8} 
+                                                                                    & M            &                    &               &               &               &               &                    \\ \cline{2-8} 
+                                                                                    & S            &                    &               &               &               &               &                    \\ \hline
+\multirow{3}{*}{\textbf{\begin{tabular}[c]{@{}l@{}}RMSQ\\ (DA10-3)\end{tabular}}}   & W            & 6.22 (58.72)       & 1.59 (97.32)  & 1.49 (97.62)  & 0.58 (99.64)  & 0.48 (99.75)  & 5.45 (68.30)       \\ \cline{2-8} 
+                                                                                    & M            &                    &               &               &               &               &                    \\ \cline{2-8} 
+                                                                                    & S            &                    &               &               &               &               &                    \\ \hline
+\end{tabular}
+\end{table*}
 We considered three different types of point charge environment that generate
 weak (0.001 -- 0.005 a.u.), 
 moderate (0.001 -- 0.002 a.u.) and strong (0.002 -- 0.004 a.u.) 
-electric fields (on average) around the water molecule.
+electric fields around the water molecule (see the histograms of the electric field distribution
+per atomic centre in Figure~XXX).
 %
 %for a set of varying point charge environments
 %with weak, moderate and strong electric fields are shown in Table~XXX.
@@ -901,8 +923,8 @@ for the formulation of the generalized model that is, in principle, not limited 
 and takes into account higher\hyp{}order curvatures of the electric field distribution as well.
 The generalized model consisted of a set of adjustable parameters defining the density matrix susceptibility tensors
 that are able to interact with the electric field, square of electric field and electric field gradients.
-The particular density matrix susceptibilities are determined through the least\hyp{}squares 
-linear regression with respect to the enseble of electrostatically petrurbed known density matrices.
+The particular density matrix susceptibilities were determined through the least\hyp{}squares 
+linear regression with respect to the training enseble of electrostatically petrurbed states.
 
 The above theoretically developed models were then used to calculate the electric field\hyp{}induced
 interaction energies, dipole moments and quadrupole moments of water molecule that
@@ -911,15 +933,16 @@ and strong magnitudes. It was found that, while the \emph{ab initio} model yelds
 interaction energies and dipole moments, the generalized model can reach quantitative level of accuracy
 for prediction of interaction energies, dipole moments and even quadrupole moments. Although 
 errors in interaction energies produced by using the generalized model 
-was still at best one order of magnitude larger than the errors produced by using the
+were still at best one order of magnitude larger than the errors produced by using the
 usual approach based on the distributed polarizabilities, this work demonstrated that it is possible to
 accurately predict the change in the density matrix of electronic system, and the accuracy of the model
 can be improved by extending the parameter space of the susceptibility tensors. 
 
-It is anticipated here that the above generalized models from Eq.~\eqref{e:final-model.General}
+It is anticipated here that the generalized models from Eq.~\eqref{e:final-model.General}
 should be studied in the future with an emphasis 
 on their further optimization, especially to reach RMSE below 1 kcal/mole
-in strong and very strong electric fields. Owing the capability of the proposed approach to correctly capture the 
+in strong and very strong electric fields (0.05-0.07 a.u.). 
+Owing the capability of the proposed approach to correctly capture the 
 environment\hyp{}induced changes in the one\hyp{}particle density matrix, 
 the generalized density matrix susceptibility tensors 
 could be used in accurate fragment\hyp{}based calculations of extended molecular aggregates
