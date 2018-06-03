@@ -10,7 +10,7 @@
 % Copy this file to another name and then work on that file.
 % That way, you always have this original template file to use.
 
-\documentclass[aip,amsmath,amssymb,reprint]{revtex4-1}
+\documentclass[aip,amsmath,amssymb,reprint,floatfix]{revtex4-1}
 %\documentclass[aip,reprint]{revtex4-1}
 
 \usepackage{graphicx}% Include figure files
@@ -162,23 +162,29 @@ electronic structure calculations grows extremely fast with the number of partic
 the use of the state\hyp{}of\hyp{}the\hyp{}art first\hyp{}principles theories 
 when large and complex chemical systems such as
 solutions and biomolecules come into play. Although the advent in the computer technology 
-brought some hopes, it is still insufficient to follow up the expensive needs.
-Due to this reason, it has been of particular importance nowadays to develop bridging theoretical techniques that link
-extremely accurate but localized pieces of information with the heuristic knowledge of an atomistic organisation 
+brought some hopes, it is still insufficient to follow up the expensive needs
+of computational chemistry.
+Due to this reason, it has been of particular importance nowadays 
+to develop bridging theoretical techniques that link
+extremely accurate but localized pieces of information 
+with the heuristic knowledge of an atomistic organisation and intermolecular interaction
 on a relatively large spatial scales, typically ranging beyond few nanometers. 
 
-A class of molecular dynamics simulation techniques was developed over the years. That was possible
-due to the fruitful incorporation of accurate \emph{ab initio} methods and a 
-semi\hyp{}classical notion of molecular motion combined with extensive experimental and semi\hyp{}empirical
-refinings. The advent of hybrid methods such as quantum mechanical\hyp{}molecular mechanical (QM/MM)
+The advent of hybrid methods such as quantum mechanical\hyp{}molecular mechanical (QM/MM)
 technique was a revolution in computational chemistry and allowed insightful theoretical studies
-of quantum mechanical effects in biological systems because the high\hyp{}level 
+of quantum mechanical effects in biological systems because the high\hyp{}level
 and costly quantum mechanical calculations
-could be combined with low\hyp{}level and cheap classical dynamics. 
-The size of quantum level can be extended without compromising accuracy and maintaining good performance
-by using vast family of fragmentation methods, such as effective fragment potentials (EFP).
-The most difficult to tackle part of Hamiltonian can also be embedded within a widely understood effective environment
-leading to various embedding methodologies, realising similar goals.
+could be combined with low\hyp{}level and cheap classical dynamics.
+That was possible due to the fruitful incorporation of accurate \emph{ab initio} methods and a 
+semi\hyp{}classical notion of molecular motion combined with extensive experimental and semi\hyp{}empirical
+refinings.
+Understanding physics that rules intermolecular interactions helped to develop
+a wide family of force fields, and served a basis for embedding Hamiltonian
+within an effective environment. 
+%The size of quantum level can be extended without compromising accuracy and maintaining good performance
+%by using vast family of fragmentation methods, such as effective fragment potentials (EFP).
+%The most difficult to tackle part of Hamiltonian can also be embedded within a widely understood effective environment
+%leading to various embedding methodologies, realising similar goals.
 
 However, even with the modern advances in computational chemistry, 
 %accurate description of environmental effects
@@ -186,20 +192,67 @@ accurate description of phenomena due to complex heterogeneous molecular environ
 remains a challenge in the following areas: (i) describing the electronically excited states 
 (electronic solvatochromism), (ii) understanding
 the vibrational properties of molecules in ground and electronically excited states
-(vibrational or vibronic solvatochromisms). EFP methods are limited to the ground\hyp{}state
-chemistry at the Hartree\hyp{}Fock (HF) or density functional theory (DFT) levels.
-It is also quite difficult to generalize the embedding potential operator
+(vibrational or vibronic solvatochromisms). 
+Interface between QM and MM levels is usually realized by electrostatic embedding
+and only rarely includes the Pauli exclusion principle and dispersion. 
+Unfortunately, it is quite difficult to generalize the embedding potential operator
 because of complicated nature of intermolecular interactions, that theoretically
 cannot be solely envisioned as a sum of electrostatic, dispersion and Pauli effects.
-Therefore, Hamiltonian embedding is often realised by Coulombic embedding with polarization
-of QM level, and only rarely the Pauli exclusion principle is taken into account. Although
-such approach is very accurate in certain cases, it is not guaranteed that it is sufficient
-for all cases.
+Perhaps the most frequently used efficient and accurate \emph{ab initio} fragmentation methods,
+the effective fragment potential (EFP) methods, are limited to the ground\hyp{}state
+chemistry at the Hartree\hyp{}Fock (HF) or density functional theory (DFT) levels,
+and, while they can approximately describe the environment composed of molecules in their ground states,
+they cannot be used for highly correlated wavefunctions such as electronically excited states.
+%Therefore, Hamiltonian embedding is often realised by Coulombic embedding with polarization
+%of QM level, and only rarely the Pauli exclusion principle is taken into account. Although
+%such approach is very accurate in certain cases, it is not guaranteed that it is sufficient
+%for all cases.
 
+Most of efforts to theoretically treat extended molecular aggregates are rooted in 
+energy\hyp{}based philosophy. However,
+in the past decade there has been considerable interest in density\hyp{}based approaches
+of a wide scope. In particular, the importance of
+one\hyp{}electron densities in chemistry is well known and acknowledged in the community,
+though still not solved exactly.\cite{Holas.March.PhysRevA.1991}
+%that seem to have an important advantage over the standard energetic approach.
+This Work challenges in establishing a connection bewteen the one\hyp{}particle
+density and the perturbation in the environment through introducing the
+density matrix susceptibility (DMS) tensors.
+The associated change in the one\hyp{}particle density matrix, $\delta {\bf D}$, is postulated to be
+deconvoluted into a product form of the perturbation susceptibility ${\bf B}_i$
+and the environment\hyp{}induced perturbation on a molecule, $\delta {\bf P}_i$.
+%and induced dipole moments $\delta {\BM\upmu}_i$ due to electric fields ${\bf E}_i$ 
+%at the centroids of the occupied molecular orbitals,
+%
+\begin{equation*} \label{e:initial-model}
+ \delta {\bf D} \approx \sum_i^{\text{Sites}} \text{[DMS of the $i$th site]} 
+  \cdot  \delta {\bf P}_i
+  %\rightarrow \sum_i^{\rm occ} {\bf B}^{(i)}_{\mu\nu} \cdot {\bf E}_i \;.
+\end{equation*}
+%
+While $\delta {\bf P}_i$ contain critical information 
+about the actual distortion of the electronic cloud,
+perturbation susceptibility is assumed to be a property of unperturbed 
+molecule and could be precomputed only once. 
+This could be adapted into an efficient effective 
+one\hyp{}electron fragment potential, in principle applicable to an arbitrary
+level of theory, as long as the one\hyp{}particle densities are available.
+%
+%a simple first\hyp{}principles model for prediction 
+%of the perturbation\hyp{}induced one\hyp{}electron density
+%change of structurally unrelaxed molecule is proposed here. 
+
+The simplest, yet perhaps the most relevant for chemistry, type of perturbation 
+is electrostatic perturbation.
+It is worth 
+mentioning that, at that moment, there is no simple \emph{ab initio}
+method of computation of electron deformation densities without considering the entire molecular 
+aggregate.\cite{Horn.Yuezhi.Head-Gordon.JCP.2016,Horn.Head-Gordon.JCP.2015}
 In this Work, we explore the susceptibility of the molecule's electronic density distribution
 to polarize due to external electrostatic perturbation from first principles. 
 The deformation density is expressed in terms
-of the density matrix susceptibility (DMS) tensors that are properties of isolated molecules and can be
+of the one\hyp{}particle density matrix polarization susceptibility tensors 
+that are properties of isolated molecules and can be
 extracted from quantum chemistry calculations. The focus on the density (matrix) instead of the energy
 (scalar) is beneficial since it provides the directional tensor description
 of the polarization that could be combined with other effects such as Pauli repulsion or dispersion,
@@ -215,8 +268,8 @@ at the HF approximation in Section II. This model serves as a basis for generali
 arbitrary one\hyp{}electron density with electronic correlation which is derived in Section II. 
 The implementation details in a computer code as well as the validation procedures are detailed
 in Section III. We then discuss the performance of the models in Section IV based on a few small molecules
-in constant and varying electric field distributions. Finally, we conclude the presentation wit a few 
-remarks for a future development in Section V.
+in varying electric field distributions. Finally, in Section V we conclude the presentation with a few 
+remarks for future development.
 
 %
 %Understanding intricate mechanisms that govern
@@ -335,7 +388,7 @@ by defining the idempotency\hyp{}preserving variation
 \end{equation}
 %
 where $\BM\Delta$ is a square non\hyp{}singular and non\hyp{}symmetric matrix.
-McWeeny has shown that
+McWeeny showed that
 %
 \begin{equation} \label{e:dmat-change.exact}
  \delta {\bf D} = -{\bf D}^{(0)} + \left[ {\bf D}^{(0)} + {\bf v} \right]
@@ -473,7 +526,7 @@ where the Cartesian vector
 %
 \begin{equation}\label{e:l-vector}
  {\bf l}_{i\alpha} \equiv \left[ \widetilde{\mathbb{M}} - \widetilde{\mathbb{K}} \right]_{i\alpha} 
-      = \left[  {\bf C}^\dagger \mathbb{M} \left[ \bf{1} - \bf{D}^{(0)} \right] \right]_{i\alpha}
+      = \left[  {\bf C}^\dagger \mathbb{M} \left( \bf{1} - \bf{D}^{(0)} \right) \right]_{i\alpha}
 \end{equation}
 %
 and $i$ runs over occupied unperturbed MO's.
@@ -730,8 +783,9 @@ equal to $3M$.
 \section{\label{s:3}Calculation Details}
 
 The theory that is necessary to validate the density matrix susceptibility models from Section~\ref{s:2}
-was implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry program.
-Water molecule, energy\hyp{}optimized by using the HF/6-311++G** method, 
+was implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry program.\cite{Psi4.JCTC.2017}
+Water molecule, energy\hyp{}optimized by using the HF/6-311++G** 
+method\cite{Roothaan.RevModPhys.1951,Krishnan.Binkley.Seeger.Pople.JCP.1980}, 
 was selected as a test system which was subject to 
 electrostatic perturbations due to random collections of point charges
 generating non\hyp{}uniform electric fields. 
@@ -783,7 +837,9 @@ in which ${\BM \alpha}_i$ is the distributed anisotropic polarizability tensor a
 $i$th localized molecular orbital (LMO) centroid (see Eq.~\eqref{e:dmu-dpol}). 
 %, ${\bf r}_i = \tbraket{\phi_i}{\bf r}{\phi_i}$.
 The distributed polarizabilities were computed by utilizing the coupled\hyp{}perturbed Hartree\hyp{}Fock
-method. Orbital localization was performed by using the Boys method. Note that in Eq.~\eqref{e:dE-dpol}, 
+method.\cite{McWeeny.RevModPhys.1960,Dodds.McWeeney.Sadlej.MolPhys.1977} 
+Orbital localization was performed by using the Boys method.\cite{Boys.RevModPhys.1960} 
+Note that in Eq.~\eqref{e:dE-dpol}, 
 multipole approximation is introduced only for the part associated with the electric field\hyp{}induced
 change in the one\hyp{}particle density matrix, i.e., the polarization of the electron density distribution.
 %This is because we focus in this Work on the pure polarization process. Therefore, comparison between
@@ -812,13 +868,15 @@ the induced dipole moments according to
 \end{equation}
 %
 %where ${\bf r}_{\rm CM}$ is the center of mass of water molecule.
-
 Primitive quadrupole moments were subsequently transformed to their traceless forms by
 %
 \begin{equation}
   \delta \widetilde{\Theta}_{uw} = \delta \Theta_{uw} - \frac{1}{3} \delta_{uw} \Tr{\BM\Theta} \;.
 \end{equation}
 %
+Methodology for the calculation of the electric field and electric field gradient due to point charges
+can be found elsewhere.\cite{Blasiak.Cho.JCP.2014}
+
 To compute the interaction energy and the induced multipole moments, either exact or approximated forms
 of the difference density matrix from Eq.~\eqref{e:final-model.General}
 were used for a particular electric field distribution. The statistical evaluation of
@@ -854,10 +912,11 @@ are defined as
   \end{align}
 \end{subequations}
 %
-Throughout the Work, the Hartree\hyp{}Fock level was assumed and the 6-311++G** basis set
+Throughout the Work, the Hartree\hyp{}Fock level\cite{Roothaan.RevModPhys.1951} was assumed 
+and the 6-311++G** basis set\cite{Krishnan.Binkley.Seeger.Pople.JCP.1980}
 was used. For all the calculations of the density matrix polarization susceptibility tensors
 from Eqs.~\eqref{e:final-model.HF} and \eqref{e:susceptibility-B}, 
-atomic basis was orthogonalized by using the L{\"o}wdin symmetric orthogonalization scheme.
+atomic basis was orthogonalized by using the L{\"o}wdin symmetric orthogonalization scheme.\cite{Mayer.IJQC.2002}
 
 
 \section{\label{s:4}Results and Discussion}
@@ -986,7 +1045,8 @@ moments even in weak fields. Certainly, taking into account the distributed quad
 would greatly reduce errors of the standard multipole approach. However, it is believed that
 the DMS approach, although less (but still sufficiently) accurate in terms of interaction energy, 
 has an important advantage over the multipole\hyp{}based approach, i.e., it provides detailed
-tensor description of the spatial polarization of the electron density distribution.
+tensor description of the spatial polarization of the electron density distribution, that could be
+combined with density\hyp{}based methods of interaction energy calculations.\cite{Mandado.Hermida-Ramon.JCTC.2011}
 
 
 
