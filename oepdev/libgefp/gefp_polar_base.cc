@@ -147,6 +147,7 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<psi
  : oepdev::PolarGEFactory(wfn, opt),
    nBlocks_(0),
    nSites_(0),
+   nSitesAbInitio_(0),
    nParameters_(0),
    nParametersBlock_({}),
    Gradient_(std::make_shared<psi::Matrix>()),
@@ -360,7 +361,7 @@ void oepdev::GeneralizedPolarGEFactory::allocate(void)
   if (hasDipolePolarizability_           ) PolarizationSusceptibilities_->allocate(1, 0, nSites_, nbf_);
   if (hasDipoleDipoleHyperpolarizability_) PolarizationSusceptibilities_->allocate(2, 0, nSites_, nbf_);
   if (hasQuadrupolePolarizability_       ) PolarizationSusceptibilities_->allocate(0, 1, nSites_, nbf_);
-  if (hasAbInitioDipolePolarizability_   ) abInitioPolarizationSusceptibilities_->allocate(1, 0, wfn_->doccpi()[0], nbf_);
+  if (hasAbInitioDipolePolarizability_   ) abInitioPolarizationSusceptibilities_->allocate(1, 0, nSitesAbInitio_, nbf_);
 
   // Ab Initio Model
   if (hasAbInitioDipolePolarizability_   ) compute_ab_initio();
@@ -393,7 +394,12 @@ void oepdev::GeneralizedPolarGEFactory::compute_electric_field_gradient_sums(voi
   }
 }
 void oepdev::GeneralizedPolarGEFactory::compute_ab_initio(void) {
-  std::shared_ptr<oepdev::GenEffParFactory> factory = std::make_shared<oepdev::AbInitioPolarGEFactory>(wfn_, options_);
+  std::shared_ptr<oepdev::GenEffParFactory> factory;
+  if (options_.get_bool("DMATPOL_FF_AB_INITIO") == true) {
+      factory = std::make_shared<oepdev::FFAbInitioPolarGEFactory>(wfn_, options_);
+  } else {
+      factory = std::make_shared<oepdev::AbInitioPolarGEFactory>(wfn_, options_);
+  }
   std::shared_ptr<oepdev::GenEffPar> parameters = factory->compute();
   abInitioPolarizationSusceptibilities_->set_dipole_polarizability(parameters->dipole_polarizability());
   abInitioPolarizationSusceptibilities_->set_centres(parameters->centres());
@@ -634,37 +640,41 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
         double mmz = 0.0; double qqxz = 0.0; double qqzz = 0.0;
         double edipind = 0.0;
 
-        for (int o=0; o<wfn_->doccpi()[0]; ++o) { 
-             std::shared_ptr<psi::Matrix> pol = abInitioPolarizationSusceptibilitiesFactory_->cphf_solver()->polarizability(o);
-             std::shared_ptr<psi::Vector> lmoc= abInitioPolarizationSusceptibilitiesFactory_->cphf_solver()->lmo_centroid(o);
+        if (options_.get_bool("DMATPOL_FF_AB_INITIO") == false) {
+           for (int o=0; o<nSitesAbInitio_; ++o) {                                                                               
+                std::shared_ptr<psi::Matrix> pol = abInitioPolarizationSusceptibilitiesFactory_->cphf_solver()->polarizability(o);
+                std::shared_ptr<psi::Vector> lmoc= abInitioPolarizationSusceptibilitiesFactory_->cphf_solver()->lmo_centroid(o);
 
-             double r0x= wfn_->molecule()->center_of_mass().get(0);
-             double r0y= wfn_->molecule()->center_of_mass().get(1);
-             double r0z= wfn_->molecule()->center_of_mass().get(2);
-             double rox= lmoc->get(0);
-             double roy= lmoc->get(1);
-             double roz= lmoc->get(2);
+                double r0x= wfn_->molecule()->center_of_mass().get(0);
+                double r0y= wfn_->molecule()->center_of_mass().get(1);
+                double r0z= wfn_->molecule()->center_of_mass().get(2);
+                double rox= lmoc->get(0);
+                double roy= lmoc->get(1);
+                double roz= lmoc->get(2);
 
-             double fx = abInitioModelElectricFieldSet_[n][o]->get(0);
-             double fy = abInitioModelElectricFieldSet_[n][o]->get(1);
-             double fz = abInitioModelElectricFieldSet_[n][o]->get(2);
+                double fx = abInitioModelElectricFieldSet_[n][o]->get(0);
+                double fy = abInitioModelElectricFieldSet_[n][o]->get(1);
+                double fz = abInitioModelElectricFieldSet_[n][o]->get(2);
 
-             double dmmx = pol->get(0,0)*fx + pol->get(0,1)*fy + pol->get(0,2)*fz;
-             double dmmy = pol->get(1,0)*fx + pol->get(1,1)*fy + pol->get(1,2)*fz;
-             double dmmz = pol->get(2,0)*fx + pol->get(2,1)*fy + pol->get(2,2)*fz;
-      
-             mmx += dmmx;
-             mmy += dmmy;
-             mmz += dmmz;
+                double dmmx = pol->get(0,0)*fx + pol->get(0,1)*fy + pol->get(0,2)*fz;
+                double dmmy = pol->get(1,0)*fx + pol->get(1,1)*fy + pol->get(1,2)*fz;
+                double dmmz = pol->get(2,0)*fx + pol->get(2,1)*fy + pol->get(2,2)*fz;
 
-             qqxx-= 2.0 * dmmx * (r0x - rox);
-             qqyy-= 2.0 * dmmy * (r0y - roy);
-             qqzz-= 2.0 * dmmz * (r0z - roz);
-             qqxy-= dmmx * (r0y - roy) + dmmy * (r0x - rox);
-             qqxz-= dmmx * (r0z - roz) + dmmz * (r0x - rox);
-             qqyz-= dmmy * (r0z - roz) + dmmz * (r0y - roy);
+                mmx += dmmx;
+                mmy += dmmy;
+                mmz += dmmz;
 
-             edipind -= dmmx * fx + dmmy * fy + dmmz * fz;
+                qqxx-= 2.0 * dmmx * (r0x - rox);
+                qqyy-= 2.0 * dmmy * (r0y - roy);
+                qqzz-= 2.0 * dmmz * (r0z - roz);
+                qqxy-= dmmx * (r0y - roy) + dmmy * (r0x - rox);
+                qqxz-= dmmx * (r0z - roz) + dmmz * (r0x - rox);
+                qqyz-= dmmy * (r0z - roz) + dmmz * (r0y - roy);
+
+                edipind -= dmmx * fx + dmmy * fy + dmmz * fz;
+           }
+        } else {
+          // nothing to do
         }
         inddip->set(0, mmx); indqad->set(0, qqxx); indqad->set(3, qqyy);  
         inddip->set(1, mmy); indqad->set(1, qqxy); indqad->set(4, qqyz);

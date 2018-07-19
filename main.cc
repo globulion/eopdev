@@ -216,8 +216,10 @@ int read_options(std::string name, Options& options)
         /*- Do the Ab Initio model calculations or not -*/
         options.add_bool   ("DMATPOL_DO_AB_INITIO"  , false                      );
         options.add_str    ("DMATPOL_OUT_STATS_AB_INITIO" , "dmatpol.stats.abinitio.dat"        );
+        options.add_bool   ("DMATPOL_FF_AB_INITIO"  , false                      );
+        options.add_double ("DMATPOL_EFIELD_FF_STEP", 0.0005                     );
 
-     }
+    }
 
     return true;
 }

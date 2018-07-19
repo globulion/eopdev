@@ -10,6 +10,13 @@ oepdev::UniformEFieldPolarGEFactory::UniformEFieldPolarGEFactory(std::shared_ptr
 {
    // Set the number of sites to one since the electric field is uniform in space
    nSites_ = 1;
+
+   // Set the number of sites for Ab Initio model
+   if (options_.get_bool("DMATPOL_FF_AB_INITIO")) {
+     nSitesAbInitio_ = 1;
+   } else { 
+     nSitesAbInitio_= wfn_->doccpi()[0];
+   }
 }
 oepdev::UniformEFieldPolarGEFactory::~UniformEFieldPolarGEFactory()
 {
@@ -43,7 +50,7 @@ void oepdev::UniformEFieldPolarGEFactory::compute_samples(void)
         cout << oepdev::string_sprintf(" Interaction Energy = %15.6f\n", pert->reference_energy() - wfn_->reference_energy());
 
         if (hasAbInitioDipolePolarizability_) {
-            for (int o=1; o<wfn_->doccpi()[0]; ++o) fields.push_back(field);
+            for (int o=1; o<nSitesAbInitio_; ++o) fields.push_back(field);
             abInitioModelElectricFieldSet_.push_back(fields);
             abInitioModelStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy();
             referenceDpolStatisticalSet_.InducedInteractionEnergySet[n] = pert->nuclear_interaction_energy() 

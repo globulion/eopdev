@@ -10,6 +10,9 @@ oepdev::NonUniformEFieldPolarGEFactory::NonUniformEFieldPolarGEFactory(std::shar
 {
    // Atoms are assumed to be distributed centres
    nSites_ = wfn_->molecule()->natom();
+
+   // Set the number of sites for Ab Initio model
+   nSitesAbInitio_= wfn_->doccpi()[0];
 }
 oepdev::NonUniformEFieldPolarGEFactory::~NonUniformEFieldPolarGEFactory()
 {
@@ -61,7 +64,7 @@ void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
 
         if (hasAbInitioDipolePolarizability_) {
             std::vector<std::shared_ptr<psi::Vector>> fields_abini_n;
-            for (int o=0; o<wfn_->doccpi()[0]; ++o) {
+            for (int o=0; o<nSitesAbInitio_; ++o) {
                  std::shared_ptr<psi::Vector> field = field_due_to_charges(charges, abInitioPolarizationSusceptibilities_->centre(o));
                  fields_abini_n.push_back(field);
             }

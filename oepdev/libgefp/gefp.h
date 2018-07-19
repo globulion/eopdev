@@ -583,6 +583,36 @@ class AbInitioPolarGEFactory : public PolarGEFactory
    virtual std::shared_ptr<GenEffPar> compute(void);
 };
 
+/** \brief Polarization GEFP Factory from First Principles: Finite-Difference Model. Arbitrary level of theory.
+ *
+ * Implements creation of the density matrix susceptibility tensors.
+ * Does not guarantee the idempotency of the density matrix in LCAO-MO variation, but for weak electric fields
+ * the idempotency is to be expected up to first order.
+ * The density matrix susceptibility tensor is represented by:
+ * \f[
+ *   \delta D_{\alpha\beta} =  
+ *           {\bf B}_{\alpha\beta}^{(10)} \cdot {\bf F}
+ * \f]
+ * where \f$ {\bf B}_{\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
+ * defined as
+ * \f[
+ *   {\bf B}_{\alpha\beta}^{(10)} = \frac{\partial D_{\alpha\beta}}{\partial {\bf F}} \Big|_{{\bf F}={\bf 0}} 
+ * \f]
+ * This derivative is evaluated numerically from central finite-field 3-point formula,
+ * \f[
+ *  f' = \frac{f(h) - f(-h)}{2h} + \mathfrak{O}(3)
+ * \f]
+ * where \f$ h \f$ is the differentiation step.
+ * This susceptibility works for uniform weak and moderate electric fields.
+ */
+class FFAbInitioPolarGEFactory : public PolarGEFactory
+{
+  public:
+   FFAbInitioPolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~FFAbInitioPolarGEFactory();
+   virtual std::shared_ptr<GenEffPar> compute(void);
+};
+
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
  *
  * Implements a general class of methods for the density matrix susceptibility tensors represented by:
@@ -652,6 +682,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    int nBlocks_;
    /// Number of distributed sites
    int nSites_;
+   /// Number of distributed sites of Ab Initio model (FF - single site (com); distributed: LMO sites)
+   int nSitesAbInitio_;
    /// Dimensionality of entire parameter space
    int nParameters_;
    /// Dimensionality of parameter space per block
