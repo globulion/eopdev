@@ -143,11 +143,13 @@ at the Hartree\hyp{}Fock theory, which served as a basis for construction of gen
 model that can be used for an arbitrary form of wavefunction as long as the one\hyp{}particle
 density matrices are available. It is shown that it is possible to accurately predict the changes
 in the one\hyp{}electron density of water molecule in spatially non\hyp{}uniform electric field distribution
-generetated by point charges. The interaction\hyp{}induced energies
+generetated by point charges. The electric field\hyp{}induced interaction energies,
 dipole moments and quadrupole moments
-are quantitatively described by the present theory in weak and moderate electric fields.
-The possibility of extension of the proposed model with high\hyp{}order susceptibilities
-opens new routes in quantum chemistry of fast and efficient calculations of strongly perturbed systems.
+are quantitatively described by the present theory in weak and moderate electric fields (0.003 -- 0.02 a.u.).
+%It is believed that the possibility of extension of the proposed model with high\hyp{}order susceptibilities
+%opens new routes in quantum chemistry of fast and efficient calculations of strongly perturbed systems.
+It is believed that the proposed model, after extensive development on its optimization, could open
+new routes in quantum chemistry of fast and efficient calculations of strongly perturbed systems.
 \end{abstract}
 
 \pacs{}% insert suggested PACS numbers in braces on next line
@@ -161,26 +163,28 @@ as technology and medicine continue to develop. Unfortunately, the computational
 electronic structure calculations grows extremely fast with the number of particles, greatly limiting
 the use of the state\hyp{}of\hyp{}the\hyp{}art first\hyp{}principles theories 
 when large and complex chemical systems such as
-solutions and biomolecules come into play. Although the advent in the computer technology 
-brought some hopes, it is still insufficient to follow up the expensive needs
-of computational chemistry.
+solutions and biomolecules come into play.\cite{Tomasi.Mennucci.Cammi.ChemRev.2005}
+%Although the advent in the computer technology 
+%brought some hopes, it is still insufficient to follow up the expensive needs
+%of computational chemistry.
 Due to this reason, it has been of particular importance nowadays 
 to develop bridging theoretical techniques that link
 extremely accurate but localized pieces of information 
-with the heuristic knowledge of an atomistic organisation and intermolecular interaction
+with certain knowledge of an atomistic organisation and intermolecular interaction
 on a relatively large spatial scales, typically ranging beyond few nanometers. 
 
-The advent of hybrid methods such as quantum mechanical\hyp{}molecular mechanical (QM/MM)
+The discovery of hybrid methods such as quantum mechanical\hyp{}molecular mechanical (QM/MM)
 technique was a revolution in computational chemistry and allowed insightful theoretical studies
 of quantum mechanical effects in biological systems because the high\hyp{}level
 and costly quantum mechanical calculations
-could be combined with low\hyp{}level and cheap classical dynamics.
-That was possible due to the fruitful incorporation of accurate \emph{ab initio} methods and a 
-semi\hyp{}classical notion of molecular motion combined with extensive experimental and semi\hyp{}empirical
-refinings.
-Understanding physics that rules intermolecular interactions helped to develop
+could be combined with low\hyp{}level and cheap classical dynamics.\cite{Warshel.Levitt.JMolBiol.1976,Senn.Thiel.Angew.2009}
+%That was possible due to the fruitful incorporation of accurate \emph{ab initio} methods and a 
+%semi\hyp{}classical notion of molecular motion combined with extensive experimental and semi\hyp{}empirical
+%refinings.
+Understanding physics that rules intermolecular interactions\cite{Jeziorski.Moszynski.Szalewicz.ChemRev.1994} 
+helped to develop
 a wide family of force fields, and served a basis for embedding Hamiltonian
-within an effective environment. 
+within an effective environment and fragmentation methods.\cite{Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012}
 %The size of quantum level can be extended without compromising accuracy and maintaining good performance
 %by using vast family of fragmentation methods, such as effective fragment potentials (EFP).
 %The most difficult to tackle part of Hamiltonian can also be embedded within a widely understood effective environment
@@ -190,17 +194,21 @@ However, even with the modern advances in computational chemistry,
 %accurate description of environmental effects
 accurate description of phenomena due to complex heterogeneous molecular environments 
 remains a challenge in the following areas: (i) describing the electronically excited states 
-(electronic solvatochromism), (ii) understanding
-the vibrational properties of molecules in ground and electronically excited states
-(vibrational or vibronic solvatochromisms). 
+(electronic solvatochromism),\cite{Barbati.JACS.2014,
+Szabla.Sponer.Jiri.Gora.JPCL.2015,
+Bednarska.Zalesny.Tian.Murugan.Agren.Bartkowiak.Molecules.2017,
+Jedrzejewska.Grabarz.Bartkowiak.Osmialowski.SpectChimActA.2018} 
+(ii) understanding the vibrational properties of molecules in ground and electronically excited states
+(vibrational or vibronic solvatochromisms).\cite{Blasiak.Londergan.Webb.Cho.ACR.2017} 
 Interface between QM and MM levels is usually realized by electrostatic embedding
-and only rarely includes the Pauli exclusion principle and dispersion. 
-Unfortunately, it is quite difficult to generalize the embedding potential operator
+and only rarely includes the Pauli exclusion principle and dispersion.\cite{List.Olsen.Kongsted.PCCP.2016}
+Unfortunately, it is quite difficult to efficiently treat the environment\hyp{}induced potential operator
 because of complicated nature of intermolecular interactions, that theoretically
 cannot be solely envisioned as a sum of electrostatic, dispersion and Pauli effects.
 Perhaps the most frequently used efficient and accurate \emph{ab initio} fragmentation methods,
 the effective fragment potential (EFP) methods, are limited to the ground\hyp{}state
-chemistry at the Hartree\hyp{}Fock (HF) or density functional theory (DFT) levels,
+chemistry at the Hartree\hyp{}Fock (HF)\cite{Gordon.Smith.Xu.Slipchenko.AnnuRevPhysChem.2013} 
+or density functional theory (DFT) levels\cite{Nguyen.Pachter.Day.JCP.2014},
 and, while they can approximately describe the environment composed of molecules in their ground states,
 they cannot be used for highly correlated wavefunctions such as electronically excited states.
 %Therefore, Hamiltonian embedding is often realised by Coulombic embedding with polarization
@@ -209,18 +217,26 @@ they cannot be used for highly correlated wavefunctions such as electronically e
 %for all cases.
 
 Most of efforts to theoretically treat extended molecular aggregates are rooted in 
-energy\hyp{}based philosophy. However,
+energy\hyp{} (or force field\hyp{})based philosophy. However,
 in the past decade there has been considerable interest in density\hyp{}based approaches
-of a wide scope. In particular, the importance of
+of a wide scope and aims.\cite{Piquemal.Cisneros.Reinhardt.Gresh.Darden.JCP.2006,
+Mandado.Hermida-Ramon.JCTC.2011,
+Sun.Chan.ACR.2016,
+Hedegard.Reiher.JCTC.2016} 
+In particular, the importance of
 one\hyp{}electron densities in chemistry is well known and acknowledged in the community,
 though still not solved exactly.\cite{Holas.March.PhysRevA.1991}
 %that seem to have an important advantage over the standard energetic approach.
-This Work challenges in establishing a connection bewteen the one\hyp{}particle
+With connection to the above, it would be incredibly insightful 
+to establish a first\hyp{}principles connection bewteen the one\hyp{}particle
 density and the perturbation in the environment through introducing the
-density matrix susceptibility (DMS) tensors.
-The associated change in the one\hyp{}particle density matrix, $\delta {\bf D}$, is postulated to be
-deconvoluted into a product form of the perturbation susceptibility ${\bf B}_i$
-and the environment\hyp{}induced perturbation on a molecule, $\delta {\bf P}_i$.
+\emph{density matrix susceptibility} (DMS) tensors. % because knowing the density distribution
+%is equivalent to knowing the state of the molecule.
+The main postulate of the present Work is that the associated change 
+in the one\hyp{}particle density matrix, $\delta {\bf D}$, can be
+deconvoluted into a product form of the generalized perturbation susceptibility ${\bf B}_i$
+and the environment\hyp{}induced perturbation on a molecule, $\delta {\bf P}_i$,
+evaluated at certain site $i$.
 %and induced dipole moments $\delta {\BM\upmu}_i$ due to electric fields ${\bf E}_i$ 
 %at the centroids of the occupied molecular orbitals,
 %
@@ -233,21 +249,23 @@ and the environment\hyp{}induced perturbation on a molecule, $\delta {\bf P}_i$.
 While $\delta {\bf P}_i$ contain critical information 
 about the actual distortion of the electronic cloud,
 perturbation susceptibility is assumed to be a property of unperturbed 
-molecule and could be precomputed only once. 
-This could be adapted into an efficient effective 
+molecule and is to be precomputed only once. 
+Thus, such DMS could be adapted into an efficient effective 
 one\hyp{}electron fragment potential, in principle applicable to an arbitrary
 level of theory, as long as the one\hyp{}particle densities are available.
+It also means that such a technique would dramatically reduce costs of quantum chemistry calculations
+becuase the task of performing full computation on a molecular aggregate
+would reduce to much simpler matrix operations.
 %
 %a simple first\hyp{}principles model for prediction 
 %of the perturbation\hyp{}induced one\hyp{}electron density
 %change of structurally unrelaxed molecule is proposed here. 
 
 The simplest, yet perhaps the most relevant for chemistry, type of perturbation 
-is electrostatic perturbation.
-It is worth 
-mentioning that, at that moment, there is no simple \emph{ab initio}
+is the electrostatic perturbation.
+It is worth mentioning that, at that moment, there is no simple \emph{ab initio}
 method of computation of electron deformation densities without considering the entire molecular 
-aggregate.\cite{Horn.Yuezhi.Head-Gordon.JCP.2016,Horn.Head-Gordon.JCP.2015}
+aggregate by using full quantum chemistry calculations.\cite{Horn.Yuezhi.Head-Gordon.JCP.2016,Horn.Head-Gordon.JCP.2015}
 In this Work, we explore the susceptibility of the molecule's electronic density distribution
 to polarize due to external electrostatic perturbation from first principles. 
 The deformation density is expressed in terms
@@ -255,7 +273,8 @@ of the one\hyp{}particle density matrix polarization susceptibility tensors
 that are properties of isolated molecules and can be
 extracted from quantum chemistry calculations. The focus on the density (matrix) instead of the energy
 (scalar) is beneficial since it provides the directional tensor description
-of the polarization that could be combined with other effects such as Pauli repulsion or dispersion,
+of the polarization that could be combined with other effects such as Pauli repulsion 
+or dispersion,\cite{Mandado.Hermida-Ramon.JCTC.2011}
 in contrast to the standard interaction energy approaches. We show that accurate polarization 
 of the one\hyp{}particle density
 matrix is achievable and can be realized as long as the one\hyp{}particle density matrices
@@ -263,12 +282,16 @@ are available. It is believed that the proposed method
 could be a basis for a construction of an 
 alternative approach in fragment\hyp{}based
 modelling of extended molecular aggregates that is not limitted to the ground state chemistry.
+
 We introduce the necessary theory and derive the \emph{ab initio} density matrix susceptibility model
-at the HF approximation in Section II. This model serves as a basis for generalization to the 
-arbitrary one\hyp{}electron density with electronic correlation which is derived in Section II. 
+at the HF approximation\cite{Roothaan.RevModPhys.1951} 
+in Section~\ref{s:2}. Subsequently, this model serves as a basis for generalization to the 
+arbitrary one\hyp{}electron density with electronic correlation which is derived in Section~\ref{s:2}. 
 The implementation details in a computer code as well as the validation procedures are detailed
-in Section III. We then discuss the performance of the models in Section IV based on a few small molecules
-in varying electric field distributions. Finally, in Section V we conclude the presentation with a few 
+in Section~\ref{s:3}. We then discuss the performance of the models in Section~\ref{s:4} 
+%based on a few small molecules
+%in varying electric field distributions. 
+Finally, in Section~\ref{s:5} we conclude the presentation with a few 
 remarks for future development.
 
 %
@@ -277,7 +300,7 @@ remarks for future development.
 
 \section{\label{s:2}Theory}
 
-The electronic energy of a closed\hyp{}shell molecule $A$ is given by the time\hyp{}independent Schr{\"o}dinger equation,
+The electronic energy of a closed\hyp{}shell molecule is given by the time\hyp{}independent Schr{\"o}dinger equation,
 %
 \begin{equation}
  E^{(0)} = \tbraket{\Psi^{(0)}}{\mathscr{H}^{(0)}}{\Psi^{(0)}} \;,
@@ -359,14 +382,14 @@ where ${\mathbb{M}({\bf r}_Q)}$ is AO\hyp{}representation
 of the dipole moment operator defined with respect to origin at ${\bf r}_Q$,
 %
 \begin{equation}\label{e:m}
- \left[ {\mathbb{M}({\bf r}_Q)} \right]_{\alpha\beta} = \tbraket{\alpha}{{\bf r} - {\bf r}_Q}{\beta} \;.
+ \left[ {\mathbb{M}({\bf r}_Q)} \right]_{\alpha\beta} = -e\tbraket{\alpha}{{\bf r} - {\bf r}_Q}{\beta} \;.
 \end{equation}
 %
-(In this work we shall use the special open bold font for matrices of vectors, so that
+(In this Work we shall use the special open bold font for matrices of vectors, so that
 in this case ${\mathbb{M}}$ can be considered as a $n \times n$ matrix of vectors of length 3).
 Note that if the total charge is conserved, the induced moments are independent on the origin.
 
-In the Hartree\hyp{}Fock theory, ${\bf D}$ is approximated as
+In the Hartree\hyp{}Fock theory,\cite{Roothaan.RevModPhys.1951} ${\bf D}$ is approximated as
 %
 \begin{equation}
  {\bf D} = {\bf C}{\bf C}^\dagger \;,
@@ -454,7 +477,7 @@ into Eq.~\eqref{e:dmu-exact} leads to
 %
 It can be proven (see Appendix~\ref{a:orig-dep}) that such obtained
 induced dipole moment is independent on the origin. 
-This quarantees that the theory fulfills the total charge conservation requirement.
+This guarantees that the theory fulfills the total charge conservation requirement.
 Therefore,
 in the above result and also in later course of the Paper the dipole origin will be omitted. 
 %where the dipole origin was omitted for notational clarity.
@@ -684,7 +707,10 @@ denote the $R$-th order response with respect to the electric field
 and $P$-th order response with respect to the electric field gradient. Note that
 ${\bf B}^{(i; 10)}_{\alpha\beta}$ is a vector of length $3$ whereas ${\bf B}^{(i; 20)}_{\alpha\beta}$
 and ${\bf B}^{(i; 01)}_{\alpha\beta}$ are $(3\times 3)$ matrices. Also, the distributed expansion centres
-(labeled as $i$) are generalized to any point in the molecule.
+(labeled as $i$) are generalized to any point in the molecule.\footnote{More general
+contribution due to square of electric field could be $\sum_{ij}^M {\bf B}^{(ij; 20)}_{\alpha\beta} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_j)$. However, for simplicity we neglect the contributions from different sites $i$ and $j$
+in the present discussion and leave it for future development.
+}
 
 \subsubsection{Determining the generalized susceptibility tensors}
 
@@ -800,6 +826,8 @@ Charge values were selected from the one\hyp{}dimensional uniform distribution
 of double precision numbers in the interval of $\vert q_{\rm max} \vert$, where $q_{\rm max}$
 was tuned to obtain a desired ensemble of weak, moderate and strong electric field magnitudes
 (with $q_{\rm max}=0.05$, $0.2$ and $0.4$ a.u., accordingly; cf. Table~\ref{t:fields}).
+In this way, 100 random samples of 40 point charges were selected and exact solutions of HF\hyp{}SCF equations were 
+performed for each validation procedure.
 
 %For finding a general unitary transformations,
 %100 random point charge distributions were selected for which an exact density matrices
@@ -1131,7 +1159,7 @@ and takes into account higher\hyp{}order curvatures of the electric field distri
 The generalized model consisted of a set of adjustable parameters defining the density matrix susceptibility tensors
 that are able to interact with the electric field, square of electric field and electric field gradients.
 The particular density matrix susceptibilities were determined through the least\hyp{}squares 
-linear regression with respect to the training enseble of electrostatically petrurbed states.
+linear regression with respect to the training enseble of electrostatically perturbed states.
 
 The above theoretically developed models were then used to calculate the electric field\hyp{}induced
 interaction energies, dipole moments and quadrupole moments of water molecule that
@@ -1149,7 +1177,9 @@ It is anticipated here that the generalized models from Eq.~\eqref{e:final-model
 should be studied in the future with an emphasis 
 on their further optimization, especially to reach RMSE below 1 kcal/mole
 in strong and very strong electric fields (0.05-0.07 a.u.). 
-Owing the capability of the proposed approach to correctly capture the 
+For this purpose, more general forms of Eq.~\eqref{e:final-model.General}, as well as the choice of distributed
+sites should be further investigated, preferably with post\hyp{}Hartree\hyp{}Fock methods.
+Nevertheless, owing the capability of the proposed approach to correctly capture the 
 environment\hyp{}induced changes in the one\hyp{}particle density matrix, 
 the generalized density matrix susceptibility tensors 
 could be used in accurate fragment\hyp{}based calculations of extended molecular aggregates

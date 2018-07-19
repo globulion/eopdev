@@ -496,20 +496,36 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
 
         // ---> Compute interaction energy <--- // nuclear part is already computed in void compute_samples(void)
 
-        double eint_refer = H->vector_dot(referenceStatisticalSet_.DensityMatrixSet[n]);
-        double eint_model = H->vector_dot(    modelStatisticalSet_.DensityMatrixSet[n]);
+        //double eint_refer = H->vector_dot(referenceStatisticalSet_.DensityMatrixSet[n]);
+        //double eint_model = H->vector_dot(    modelStatisticalSet_.DensityMatrixSet[n]);
 
-        std::shared_ptr<psi::Matrix> Dn1= D->clone(); Dn1->add(referenceStatisticalSet_.DensityMatrixSet[n]);
-        std::shared_ptr<psi::Matrix> Dn2= D->clone(); Dn2->add(    modelStatisticalSet_.DensityMatrixSet[n]);
-        std::shared_ptr<psi::Matrix> G = D->clone(); G->zero();
-        G->add(VMatrixSet_[n]); G->scale(2.0);
-        std::shared_ptr<psi::Matrix> G1 = G->clone(); G1->add(referenceStatisticalSet_.JKMatrixSet[n]);
-        std::shared_ptr<psi::Matrix> G2 = G->clone(); G2->add(    modelStatisticalSet_.JKMatrixSet[n]);
-        eint_refer+= G1->vector_dot(Dn1);
-        eint_model+= G2->vector_dot(Dn2);
+        //std::shared_ptr<psi::Matrix> Dn1= D->clone(); Dn1->add(referenceStatisticalSet_.DensityMatrixSet[n]);
+        //std::shared_ptr<psi::Matrix> Dn2= D->clone(); Dn2->add(    modelStatisticalSet_.DensityMatrixSet[n]);
+        //std::shared_ptr<psi::Matrix> G = D->clone(); G->zero();
+        //G->add(VMatrixSet_[n]); G->scale(2.0);
+        //double eint_coul = G->vector_dot(D);
+        //std::shared_ptr<psi::Matrix> G1 = G->clone(); G1->add(referenceStatisticalSet_.JKMatrixSet[n]);
+        //std::shared_ptr<psi::Matrix> G2 = G->clone(); G2->add(    modelStatisticalSet_.JKMatrixSet[n]);
+        //eint_refer+= G1->vector_dot(Dn1);
+        //eint_model+= G2->vector_dot(Dn2);
 
-            referenceStatisticalSet_.InducedInteractionEnergySet[n] += eint_refer;
-                modelStatisticalSet_.InducedInteractionEnergySet[n] += eint_model;
+        //double eint_quad = referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(referenceStatisticalSet_.JKMatrixSet[n]);
+        //double tr_d_f = referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(wfn_->Fa());
+        //double tr_d_v = referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(VMatrixSet_[n]);
+        double tr_rest_r = referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(H) + 
+                           referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(referenceStatisticalSet_.JKMatrixSet[n]) +
+                           referenceStatisticalSet_.JKMatrixSet[n]->vector_dot(D);
+        double tr_rest_m = modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(H) + 
+                           modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(modelStatisticalSet_.JKMatrixSet[n]) +
+                           modelStatisticalSet_.JKMatrixSet[n]->vector_dot(D);
+        double tr_2v_r = 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(VMatrixSet_[n]);
+        double tr_2v_m = 2.0 *     modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(VMatrixSet_[n]);
+        //cout << tr_rest_r << "                   " << tr_rest_m << endl;
+
+        //    referenceStatisticalSet_.InducedInteractionEnergySet[n] = -eint_coul;
+        //        modelStatisticalSet_.InducedInteractionEnergySet[n] = -eint_coul;
+            referenceStatisticalSet_.InducedInteractionEnergySet[n] = tr_2v_r + tr_rest_r;
+                modelStatisticalSet_.InducedInteractionEnergySet[n] = tr_2v_m + tr_rest_m;
 
 
         // ---> Compute induced dipole and quadrupole moments <--- //
@@ -598,12 +614,18 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
 
         // ---> Optional calculations for the Ab Initio Model <--- //
         if (hasAbInitioDipolePolarizability_) {
-        double eint_abini = H->vector_dot(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
-        std::shared_ptr<psi::Matrix> Dn3= D->clone(); Dn3->add(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
-        std::shared_ptr<psi::Matrix> G3 = G->clone();  G3->add(abInitioModelStatisticalSet_.JKMatrixSet[n]);
-        eint_abini+= G3->vector_dot(Dn3);
+        //double eint_abini = H->vector_dot(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
+        //std::shared_ptr<psi::Matrix> Dn3= D->clone(); Dn3->add(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
+        //std::shared_ptr<psi::Matrix> G3 = G->clone();  G3->add(abInitioModelStatisticalSet_.JKMatrixSet[n]);
+        //eint_abini+= G3->vector_dot(Dn3);
                                                                                                               
-        abInitioModelStatisticalSet_.InducedInteractionEnergySet[n] += eint_abini;
+        //abInitioModelStatisticalSet_.InducedInteractionEnergySet[n] = -eint_coul;
+        double tr_rest_a = abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(H) + 
+                           abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(abInitioModelStatisticalSet_.JKMatrixSet[n]) +
+                           abInitioModelStatisticalSet_.JKMatrixSet[n]->vector_dot(D);
+        double tr_2v_a = 2.0 * abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(VMatrixSet_[n]);
+
+        abInitioModelStatisticalSet_.InducedInteractionEnergySet[n]  = tr_2v_a + tr_rest_a;
 
         std::shared_ptr<psi::Vector> inddip = std::make_shared<psi::Vector>("Induced Dipole (DPOL)", 3);
         std::shared_ptr<psi::Vector> indqad = std::make_shared<psi::Vector>("Induced Quadrupole (DPOL)", 6);
@@ -650,6 +672,7 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
 
         referenceDpolStatisticalSet_.InducedDipoleSet[n]->copy(*inddip);
         referenceDpolStatisticalSet_.InducedQuadrupoleSet[n]->copy(*indqad);
+        referenceDpolStatisticalSet_.InducedInteractionEnergySet[n] = 0.0;
         referenceDpolStatisticalSet_.InducedInteractionEnergySet[n] += (1.0/2.0) * edipind;
 
         double drd_av = oepdev::average_moment(inddip);
