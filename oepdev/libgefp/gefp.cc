@@ -100,6 +100,9 @@ std::shared_ptr<psi::Matrix> oepdev::GenEffPar::compute_density_matrix(std::vect
         //cout << densityMatrixDipolePolarizability_[n][0]->get(0,0) << endl;
         //cout << densityMatrixDipolePolarizability_[n][1]->get(0,0) << endl;
         //cout << densityMatrixDipolePolarizability_[n][2]->get(0,0) << endl;
+        //densityMatrixDipolePolarizability_[n][0]->print();
+        //densityMatrixDipolePolarizability_[n][1]->print();
+        //densityMatrixDipolePolarizability_[n][2]->print();
         if (hasDensityMatrixDipoleDipoleHyperpolarizability_) {
             //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][0]->get(0,0) << endl;
             //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][4]->get(0,0) << endl;
@@ -110,6 +113,15 @@ std::shared_ptr<psi::Matrix> oepdev::GenEffPar::compute_density_matrix(std::vect
             //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][6]->get(0,0) << endl;
             //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][5]->get(0,0) << endl;
             //cout << densityMatrixDipoleDipoleHyperpolarizability_[n][7]->get(0,0) << endl;
+            //densityMatrixDipoleDipoleHyperpolarizability_[n][0]->print();
+            //densityMatrixDipoleDipoleHyperpolarizability_[n][1]->print();
+            //densityMatrixDipoleDipoleHyperpolarizability_[n][2]->print();
+            //densityMatrixDipoleDipoleHyperpolarizability_[n][3]->print();
+            //densityMatrixDipoleDipoleHyperpolarizability_[n][4]->print();
+            //densityMatrixDipoleDipoleHyperpolarizability_[n][5]->print();
+            //densityMatrixDipoleDipoleHyperpolarizability_[n][6]->print();
+            //densityMatrixDipoleDipoleHyperpolarizability_[n][7]->print();
+            //densityMatrixDipoleDipoleHyperpolarizability_[n][8]->print();
             D->axpy(fx*fx, densityMatrixDipoleDipoleHyperpolarizability_[n][0]);
             D->axpy(fx*fy, densityMatrixDipoleDipoleHyperpolarizability_[n][1]);
             D->axpy(fx*fz, densityMatrixDipoleDipoleHyperpolarizability_[n][2]);

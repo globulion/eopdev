@@ -361,7 +361,11 @@ void oepdev::GeneralizedPolarGEFactory::allocate(void)
   if (hasDipolePolarizability_           ) PolarizationSusceptibilities_->allocate(1, 0, nSites_, nbf_);
   if (hasDipoleDipoleHyperpolarizability_) PolarizationSusceptibilities_->allocate(2, 0, nSites_, nbf_);
   if (hasQuadrupolePolarizability_       ) PolarizationSusceptibilities_->allocate(0, 1, nSites_, nbf_);
-  if (hasAbInitioDipolePolarizability_   ) abInitioPolarizationSusceptibilities_->allocate(1, 0, nSitesAbInitio_, nbf_);
+  if (hasAbInitioDipolePolarizability_   ) {
+     abInitioPolarizationSusceptibilities_->allocate(1, 0, nSitesAbInitio_, nbf_);
+     if ((options_.get_int("DMATPOL_FIELD_RANK")==2) && (options_.get_bool("DMATPOL_FF_AB_INITIO")))
+     abInitioPolarizationSusceptibilities_->allocate(2, 0, nSitesAbInitio_, nbf_);
+  }
 
   // Ab Initio Model
   if (hasAbInitioDipolePolarizability_   ) compute_ab_initio();
@@ -402,6 +406,8 @@ void oepdev::GeneralizedPolarGEFactory::compute_ab_initio(void) {
   }
   std::shared_ptr<oepdev::GenEffPar> parameters = factory->compute();
   abInitioPolarizationSusceptibilities_->set_dipole_polarizability(parameters->dipole_polarizability());
+  if ((options_.get_int("DMATPOL_FIELD_RANK")==2) && options_.get_bool("DMATPOL_FF_AB_INITIO"))
+  abInitioPolarizationSusceptibilities_->set_dipole_dipole_hyperpolarizability(parameters->dipole_dipole_hyperpolarizability());
   abInitioPolarizationSusceptibilities_->set_centres(parameters->centres());
   abInitioPolarizationSusceptibilitiesFactory_ = factory;
 }
