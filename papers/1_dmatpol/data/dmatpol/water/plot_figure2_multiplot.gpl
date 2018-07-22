@@ -1,7 +1,7 @@
 #!/usr/bin/gnuplot
 #
 # ------------------------------------------------
-# Figure 1. Density Matrix Susceptibility Paper.
+# Figure 2. Density Matrix Susceptibility Paper.
 # Bartosz Błasiak, Wrocław 20 July 2018
 # ------------------------------------------------
 #
@@ -16,7 +16,7 @@ unset key
 set grid x y
 
 # output file
-set output 'multi.tex'
+set output 'fig-2.tex'
 set multiplot
 
 # physical scaling factors

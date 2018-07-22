@@ -137,7 +137,7 @@
 %those that describe the electronically excited state, is a great challenge of Quantum Chemistry. 
 
 In this work, the electric field\hyp{}induced change in the one\hyp{}electron density
-has been expressed as a series of the one\hyp{}particle density matrix susceptibility tensors
+has been expressed as a series of the one\hyp{}particle density matrix susceptibilities
 interacting with electric fields. The analytical approximate expressions were derived
 at the Hartree\hyp{}Fock theory, which served as a basis for construction of generalized
 model that can be used for an arbitrary form of wavefunction as long as the one\hyp{}particle
@@ -173,7 +173,7 @@ extremely accurate but localized pieces of information
 with certain knowledge of an atomistic organisation and intermolecular interaction
 on a relatively large spatial scales, typically ranging beyond few nanometers. 
 
-The discovery of hybrid methods such as quantum mechanical\hyp{}molecular mechanical (QM/MM)
+The development of hybrid methods such as quantum mechanical\hyp{}molecular mechanical (QM/MM)
 technique was a revolution in computational chemistry and allowed insightful theoretical studies
 of quantum mechanical effects in biological systems because the high\hyp{}level
 and costly quantum mechanical calculations
@@ -183,7 +183,7 @@ could be combined with low\hyp{}level and cheap classical dynamics.\cite{Warshel
 %refinings.
 Understanding physics that rules intermolecular interactions\cite{Jeziorski.Moszynski.Szalewicz.ChemRev.1994} 
 helped to develop
-a wide family of force fields, and served a basis for embedding Hamiltonian
+a wide family of force fields, and served as a basis for embedding Hamiltonian
 within an effective environment and fragmentation methods.\cite{Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012}
 %The size of quantum level can be extended without compromising accuracy and maintaining good performance
 %by using vast family of fragmentation methods, such as effective fragment potentials (EFP).
@@ -205,11 +205,11 @@ and only rarely includes the Pauli exclusion principle and dispersion.\cite{List
 Unfortunately, it is quite difficult to efficiently treat the environment\hyp{}induced potential operator
 because of complicated nature of intermolecular interactions, that theoretically
 cannot be solely envisioned as a sum of electrostatic, dispersion and Pauli effects.
-Perhaps the most frequently used efficient and accurate \emph{ab initio} fragmentation methods,
+Perhaps the most frequently used efficient and reasonably accurate \emph{ab initio} fragmentation methods,
 the effective fragment potential (EFP) methods, are limited to the ground\hyp{}state
 chemistry at the Hartree\hyp{}Fock (HF)\cite{Gordon.Smith.Xu.Slipchenko.AnnuRevPhysChem.2013} 
-or density functional theory (DFT) levels\cite{Nguyen.Pachter.Day.JCP.2014},
-and, while they can approximately describe the environment composed of molecules in their ground states,
+or density functional theory (DFT) levels\cite{Nguyen.Pachter.Day.JCP.2014}.
+Unfortunately, while they can approximately describe the environment composed of molecules in their ground states,
 they cannot be used for highly correlated wavefunctions such as electronically excited states.
 %Therefore, Hamiltonian embedding is often realised by Coulombic embedding with polarization
 %of QM level, and only rarely the Pauli exclusion principle is taken into account. Although
@@ -232,9 +232,9 @@ to establish a first\hyp{}principles connection bewteen the one\hyp{}particle
 density and the perturbation in the environment through introducing the
 \emph{density matrix susceptibility} (DMS) tensors. % because knowing the density distribution
 %is equivalent to knowing the state of the molecule.
-The main postulate of the present Work is that the associated change 
+The main postulate of the present work is that the associated change 
 in the one\hyp{}particle density matrix, $\delta {\bf D}$, can be
-deconvoluted into a product form of the generalized perturbation susceptibility ${\bf B}_i$
+represented in a product form of the generalized perturbation susceptibility ${\bf B}_i$
 and the environment\hyp{}induced perturbation on a molecule, $\delta {\bf P}_i$,
 evaluated at certain site $i$.
 %and induced dipole moments $\delta {\BM\upmu}_i$ due to electric fields ${\bf E}_i$ 
@@ -246,7 +246,7 @@ evaluated at certain site $i$.
   %\rightarrow \sum_i^{\rm occ} {\bf B}^{(i)}_{\mu\nu} \cdot {\bf E}_i \;.
 \end{equation*}
 %
-While $\delta {\bf P}_i$ contain critical information 
+While $\delta {\bf P}_i$ contains critical information 
 about the actual distortion of the electronic cloud,
 perturbation susceptibility is assumed to be a property of unperturbed 
 molecule and is to be precomputed only once. 
@@ -266,7 +266,7 @@ is the electrostatic perturbation.
 It is worth mentioning that, at that moment, there is no simple \emph{ab initio}
 method of computation of electron deformation densities without considering the entire molecular 
 aggregate by using full quantum chemistry calculations.\cite{Horn.Yuezhi.Head-Gordon.JCP.2016,Horn.Head-Gordon.JCP.2015}
-In this Work, we explore the susceptibility of the molecule's electronic density distribution
+In this work, we explore the susceptibility of the molecule's electronic density distribution
 to polarize due to external electrostatic perturbation from first principles. 
 The deformation density is expressed in terms
 of the one\hyp{}particle density matrix polarization susceptibility tensors 
@@ -334,21 +334,38 @@ is given by
  \delta \rho({\bf r}) = 2\sum_{\alpha\beta} \delta D_{\alpha\beta} \phi_\alpha({\bf r}) \phi^*_\beta({\bf r}) \;.
 \end{equation}
 %
-Ideally, the electric field\hyp{}induced change in the ground state's one\hyp{}particle density 
+The electric field\hyp{}induced change in the ground state's one\hyp{}particle density 
 follows its energy minimum of the perturbed state. In addition, all the perturbed 
 excited state one\hyp{}electron densities must be excited state solutions of the Schr{\"o}dinger equation
 with the exact energy\hyp{}minimized ground state. 
+In the limit of a weak and spatially uniform electric field,
+the polarization\hyp{}induced density matrix change is given by the follwoing Taylor expansion
+%
+\begin{equation}\label{e:dD-Taylor}
+ \delta D_{\alpha\beta} = \frac{\partial D_{\alpha\beta}}{\partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}}  \cdot {\bf F} 
+   + \frac{1}{2} 
+     \frac{\partial^2 D_{\alpha\beta}}{\partial {\bf F} \otimes \partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} : {\bf F} \otimes {\bf F}
+   + \ldots 
+\end{equation}
+%
+In the above expression, the density matrix susceptibilities are simply equal to the derivatives of the density matrix
+with respect to electric field (up to a multiplicative constant).
 
-Development of a first\hyp{}principles theory
+In a general case, i.e., when electric field is non\hyp{}uniform, the development of a first\hyp{}principles theory
 that is capable of accurately capturing the electric field\hyp{}dependence of the one\hyp{}particle density
-is extremely difficult. This is not only because of the very complicated (and generally unknown) solution
+becomes extremely difficult. This is not only because of the very complicated (and generally unknown) solution
 to the electronic correlation problem, but also because
 a working model has to accurately predict all the $n^2$ elements of the density matrix
 where $n$ is the size of basis set. Even relatively small errors
-in a particular matrix element could accumulate tremendously when computing traces with other matrices,
+in a particular matrix element could accumulate tremendously when performing two\hyp{}
+and four\hyp{}index contractions,
 and in turn, obstruct the evaluated properties with non\hyp{}negligible errors.
-Therefore, we adopt the following approach: we first develop a qualitative first\hyp{}principles model 
-at the Hartree\hyp{}Fock (HF)
+Single\hyp{}centered expansions, like the one from Eq.~\eqref{e:dD-Taylor}, although valid for 
+an arbitrary level of theory,
+are probably not sufficient enough to accurately describe the local polarization
+of electron density distribution when the electric fields are highly non\hyp{}uniform in space.
+Due to all of these reasons, we adopt the following approach: 
+we first develop a qualitative first\hyp{}principles distributed site model at the Hartree\hyp{}Fock (HF)
 level of theory, and then generalize it to the arbitrary level using the functional form that was found 
 by considering HF level,
 but treating the density matrix susceptibility tensors as cetrain functions of adjustable parameters further on.
@@ -441,7 +458,7 @@ truncating it at linear terms with respect to ${\BM\Delta}$ gives
 %
 The latter equality is true only if the basis set functions are orthogonal, i.e., 
 ${\bf C}^{(0)\dagger}{\bf C}^{(0)}={\bf 1}$,
-which will be the case throughout the entire work, unless stated differently.
+which will be the case throughout the entire work, unless stated otherwise.
 Substituting the result from Eq.~\eqref{e:dD-1}
 into Eq.~\eqref{e:dmu-exact} leads to
 %%
@@ -479,7 +496,7 @@ It can be proven (see Appendix~\ref{a:orig-dep}) that such obtained
 induced dipole moment is independent on the origin. 
 This guarantees that the theory fulfills the total charge conservation requirement.
 Therefore,
-in the above result and also in later course of the Paper the dipole origin will be omitted. 
+in the above result and also in later course of the paper the dipole origin will be omitted. 
 %where the dipole origin was omitted for notational clarity.
 
 Now, if the AO basis is orthogonal, Eq.~\eqref{e:dmu-4-exact.linear-approximation} can be simplified by realising that
@@ -813,65 +830,64 @@ was implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry prog
 Water molecule, energy\hyp{}optimized by using the HF/6-311++G** 
 method\cite{Roothaan.RevModPhys.1951,Krishnan.Binkley.Seeger.Pople.JCP.1980}, 
 was selected as a test system which was subject to 
-electrostatic perturbations due to random collections of point charges
+electrostatic perturbations due to randomly selected uniform electric fields and random collections of point charges
 generating non\hyp{}uniform electric fields. 
-Cartesian coordinates of perturbing charges were drawn from uniform distribution of a set of fourty
+Components of spatially uniform electric fields were determined 
+from the uniform distribution in the interval of $\vert 0.02 \vert$ a.u.
+generating average field of 0.035 a.u. in an ensemble of 100 samples.
+Cartesian coordinates of perturbing charges were drawn from the uniform distribution of a set of fourty
 three\hyp{}dimensional Euclidean points within a sphere of radius 6.0 Bohrs
 and origin in the center of mass of water molecule.
 In selection of random points, space inside the union of spheres surrounding
 oxygen and hydrogen atoms with radii of 4.5 and 4.0 Bohrs, respectively, was
 kept free from any point charges due to potential problems with the convergence of the 
 self\hyp{}consistent field (SCF) calculations.
-Charge values were selected from the one\hyp{}dimensional uniform distribution
+Electric charge values were selected from the one\hyp{}dimensional uniform distribution
 of double precision numbers in the interval of $\vert q_{\rm max} \vert$, where $q_{\rm max}$
 was tuned to obtain a desired ensemble of weak, moderate and strong electric field magnitudes
 (with $q_{\rm max}=0.05$, $0.2$ and $0.4$ a.u., accordingly; cf. Table~\ref{t:fields}).
-In this way, 100 random samples of 40 point charges were selected and exact solutions of HF\hyp{}SCF equations were 
+In this way, independent sets of 100 random samples of uniform electric fields as well as 
+40 point charges were selected and exact solutions of HF\hyp{}SCF equations were 
 performed for each validation procedure.
 
 %For finding a general unitary transformations,
 %100 random point charge distributions were selected for which an exact density matrices
 %were calculated.
-In order to validate all the models discussed in this Contribution,
-the electric field\hyp{}induced interaction energy, 
+In order to validate all the models discussed in this contribution,
+the electric field\hyp{}induced polarization energy, 
 the dipole moment and the quadrupole moment were analysed in detail.
 The electric field\hyp{}induced interaction energy at the HF level, $\delta E$,
 was computed from the following exact formula:
 %
 \begin{multline}\label{e:dE}
- \delta E[{\bf F}] = E_{\rm nuc}({\bf F}) +
-                     \Tr{\left\{ \delta {\bf D} \cdot
-                                \left( {\bf H}^{(0)} + {\bf f}^{(0)} \right) \right\}} \\
-                   + \Tr{\left\{ \left( {\bf D}^{(0)} + \delta {\bf D} \right) \cdot
-                                \left( 2{\bf V} + 2\delta {\bf J} - \delta {\bf K}\right) \right\}} \;.
+ \delta E^{\rm Pol}[{\bf F}] = 
+                     \Tr{\left\{ {\bf D}^{(0)} \cdot
+                                \left( 2\delta {\bf J} - \delta {\bf K}  \right) \right\}} \\
+                   + \Tr{\left\{ \delta {\bf D} \cdot
+                                \left( {\bf H}^{(0)} + {\bf f}^{(0)} + 2{\bf V} + 2\delta {\bf J} - \delta {\bf K}\right) \right\}} \;.
 \end{multline}
 %
 In Eq.~\eqref{e:dE}, ${\bf f}^{(0)}$ and ${\bf H}^{(0)}$ are the Fock matrix and 
 the one\hyp{}electron Hamiltonian matrix of an unperturbed HF ground state,
 ${\bf V}$ is the one\hyp{}electron external electrostatic potential matrix whereas $\delta {\bf J}$
 and $\delta {\bf K}$ are electric field\hyp{}induced changes in the Coulomb and the exchange HF matrices due to 
-the polarization of the electron density distribution, respectively. $E_{\rm nuc}({\bf F})$ denotes the interaction energy
-due to the nuclei.
+the polarization of the electron density distribution, respectively. 
+%$E_{\rm nuc}({\bf F})$ denotes the interaction energy due to the nuclei.
 In order to compare the performance of the distributed polarizability approach,
 the approximate interaction energy was also evaluated by using the expression:
 %
-\begin{multline}\label{e:dE-dpol}
- \delta E[{\bf F}] \approx E_{\rm nuc}({\bf F}) + 
-                     2 \Tr{\left\{ {\bf D}^{(0)} {\bf V}\right\} }  \\
+\begin{equation}\label{e:dE-dpol}
+ \delta E^{\rm Pol}[{\bf F}] \approx %E_{\rm nuc}({\bf F}) + 
+                     %2 \Tr{\left\{ {\bf D}^{(0)} {\bf V}\right\} }  \\
                    - \frac{1}{2} \sum_i^{\rm occ} {\BM \alpha}_i : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_i) \;,
-\end{multline}
+\end{equation}
 %
 in which ${\BM \alpha}_i$ is the distributed anisotropic polarizability tensor associated with the
-$i$th localized molecular orbital (LMO) centroid (see Eq.~\eqref{e:dmu-dpol}). 
+$i$th localized molecular orbital (LMO) centroid (see Eq.~\eqref{e:dmu-dpol}).
 %, ${\bf r}_i = \tbraket{\phi_i}{\bf r}{\phi_i}$.
 The distributed polarizabilities were computed by utilizing the coupled\hyp{}perturbed Hartree\hyp{}Fock
 method.\cite{McWeeny.RevModPhys.1960,Dodds.McWeeney.Sadlej.MolPhys.1977} 
 Orbital localization was performed by using the Boys method.\cite{Boys.RevModPhys.1960} 
-Note that in Eq.~\eqref{e:dE-dpol}, 
-multipole approximation is introduced only for the part associated with the electric field\hyp{}induced
-change in the one\hyp{}particle density matrix, i.e., the polarization of the electron density distribution.
-%This is because we focus in this Work on the pure polarization process. Therefore, comparison between
-%the results obtained by using Eq.~\eqref{e:dE-dpol} and Eq.~\eqref{e:dE} will reveal
 
 The electric field\hyp{}induced dipole and primitive quadrupole moments were evaluated from the following expressions:
 %
@@ -882,7 +898,7 @@ The electric field\hyp{}induced dipole and primitive quadrupole moments were eva
   \end{align}
 \end{subequations}
 %
-where the subscript CM denotes the center of mass of water molecule.
+where the subscript `CM' denotes the center of mass of water molecule.
 When the distributed polarizabilities were used instead of the polarization\hyp{}induced 
 difference density matrices, primitive induced quadrupole moments were computed from
 the induced dipole moments according to
@@ -949,6 +965,30 @@ atomic basis was orthogonalized by using the L{\"o}wdin symmetric orthogonalizat
 
 \section{\label{s:4}Results and Discussion}
 
+\subsection{\label{ss:41}Water molecule in spatially uniform electric field}
+
+It is instructive to start first from the discussion of the polarization under the uniform electric field
+condition because, in this case, it is possible to compute the exact DMS according to Eq.~\eqref{e:dD-Taylor} 
+directly by numerical differentiation. Here we consider DMS up to second order, i.e.,
+%
+\begin{subequations}\label{e:exact-DMS}
+ \begin{align}
+  {\bf B}^{(10)}_{\alpha\beta} &= \frac{\partial D_{\alpha\beta}}{\partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}}   \\
+  {\bf B}^{(20)}_{\alpha\beta} &= \frac{1}{2} 
+     \frac{\partial^2 D_{\alpha\beta}}{\partial {\bf F} \otimes \partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} 
+ \end{align}
+\end{subequations}
+%
+and the associated error analysis is shown in Figure~\ref{f:fig-1}.
+\begin{figure}[h]
+\includegraphics[width=0.5\textwidth]{data/dmatpol/water/figure1/fig-1.eps}
+\caption{\label{f:fig-1} A figure caption. The figure captions are
+automatically numbered.}
+\end{figure}
+
+
+\subsection{\label{ss:42}Water molecule in spatially non\hyp{}uniform electric field}
+
 Three different types of point charge environment that generate
 weak (0.003 -- 0.007 a.u.), 
 moderate (0.01 -- 0.02 a.u.) and strong (0.02 -- 0.05 a.u.) 
@@ -959,7 +999,7 @@ in liquid phase.\cite{Reischl.Kofinger.Dellago.MolPhys.2009,Fried.Wang.Boxer.Ren
 \begin{table}%[]
 %\centering
 \caption{{\bf Average electric fields in statistical sets of electrostatically perturbed states
-of water molecule.} Each set was composed of 100 samples differing in the configuration
+of water molecule surrounded by point charges.} Each set was composed of 100 samples differing in the configuration
 of 40 charges generated from a uniform distribution.
 In this Table, `W', `M' and `S' denote `weak', `moderate' and `strong' electric fields,
 respectively.}
@@ -1038,7 +1078,7 @@ Induced quadrupole moment is described by the \emph{ab initio} DMS qualitatively
 60\%. Generalized DMS model of the same rank ($R_{\rm max}$=1, $P_{\rm max}$=0) performs slightly worse
 for interaction energies but better for induced multipole moments, particularly decreasing the errors of induced quadrupole
 calculations almost by a factor of two in strong electric fields, and by a factor of three in weaker fields.
-Extending the parameter space improves the accuracy of the generalized DMS model, on overall. 
+By and large, extending the parameter space improves the accuracy of the generalized DMS model. 
 Including DMS of type ${\bf B}^{(20)}$, i.e., that interact with the square of electric field,
 leads to improvement in prediction of all quantities evaluated in all electric field strengths considered in this Work. 
 Interestingly, interaction energies are somewhat insensitive to addition of the quadrupolar DMS 
@@ -1051,7 +1091,7 @@ However, the errors in the interaction energy
 in strong fields are 3.4~kcal/mol, which is quite high as compared to the usually acceptable accuracy 
 of 1~kcal/mol in routine quantum chemistry calculations. 
 Recently, it was found by Fried et~al. by performing molecular dynamics simulations with a classical 
-polarizable forcefield, that the average electric field experienced by water molecule in liquid phase
+polarizable force field, that the average electric field experienced by water molecule in liquid phase
 in room temperature is around 0.014 a.u. ($\sim$70 MV/cm).\cite{Fried.Wang.Boxer.Ren.Pande.JPCB.2013}
 This value corresponds to our moderate electric field set of samples (denoted as `M' in Tables~\ref{t:fields}
 and \ref{t:results}) for which the
@@ -1066,7 +1106,7 @@ the present state of generalized DMS's must be further optimized in order to rea
 
 It is also instructive to compare the DMS models with the conventional approach based on the distributed
 dipole\hyp{}dipole
-polarizabilities. In terms of accuracy in interaction energy prediction, DMS models are on average one order 
+polarizabilities. In terms of accuracy in interaction energy prediction, DMS models are, on average, one order 
 of magnitude less accurate than the distributed polarizability approach, which provides errors of 0.3~kcal/mol
 or less in all cases. On the other hand, DMS models better predict the induced dipole and quadrupole 
 moments even in weak fields. Certainly, taking into account the distributed quadrupole polarizabilities
@@ -1079,7 +1119,7 @@ combined with density\hyp{}based methods of interaction energy calculations.\cit
 
 
 \begin{figure*}[h]
-\includegraphics[width=\textwidth]{data/dmatpol/water/figure1/fig-1.eps}
+\includegraphics[width=\textwidth]{data/dmatpol/water/figure1/fig-2.eps}
 \caption{\label{f:results} {\bf Performance of the distributed density matrix susceptibility tensors in moderate
 non\hyp{}uniform electric fields.}
 Calculations of the electric field\hyp{}induced interaction energies (A-C), dipole moments (D-F) and
