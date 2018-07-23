@@ -241,8 +241,9 @@ evaluated at certain site $i$.
 %at the centroids of the occupied molecular orbitals,
 %
 \begin{equation*} \label{e:initial-model}
- \delta {\bf D} \approx \sum_i^{\text{Sites}} \text{[DMS of the $i$th site]} 
-  \cdot  \delta {\bf P}_i
+% \delta {\bf D} \approx \sum_i^{\text{Sites}} \text{[DMS of the $i$th site]} 
+  \delta {\bf D} \approx \sum_i^{\text{Sites}} {\bf B}_i
+  \cdot  \delta {\bf P}_i \;.
   %\rightarrow \sum_i^{\rm occ} {\bf B}^{(i)}_{\mu\nu} \cdot {\bf E}_i \;.
 \end{equation*}
 %
@@ -396,7 +397,7 @@ of the dipole moment operator defined with respect to origin at ${\bf r}_Q$,
  \left[ {\mathbb{M}({\bf r}_Q)} \right]_{\alpha\beta} = -e\tbraket{\alpha}{{\bf r} - {\bf r}_Q}{\beta} \;.
 \end{equation}
 %
-(In this Work we shall use the special open bold font for matrices of vectors, so that
+(In this work we shall use the special open bold font for matrices of vectors, so that
 in this case ${\mathbb{M}}$ can be considered as a $n \times n$ matrix of vectors of length 3).
 Note that if the total charge is conserved, the induced moments are independent on the origin.
 
@@ -674,7 +675,7 @@ where the susceptibility tensor is defined as
 \end{equation}
 %
 for $w=x,y,z$. 
-The superscript `$(10)$' denotes the fact that the susceptibility introduced here
+The superscript `$(10)$' underlines the fact that the susceptibility introduced here
 is first\hyp{}order with respect to the electric field and zeroth\hyp{}order with respect to
 the electric field gradient.
 The result from Eq.~\eqref{e:dC-dmatpol} can be now inserted into 
@@ -818,8 +819,8 @@ that is subject to the least\hyp{}squares minimization,
 %The linear form of Eq.~\eqref{e:final-model.General.Parameters} ensures that the Hessian 
 %of $Z$
 %is non\hyp{}singular and independent on the parameters. 
-The Hessian of $Z$ computed with respect to the parameters is non\hyp{}singular 
-and constant.
+The Hessian of $Z$ computed with respect to the parameters is non\hyp{}singular
+and parameter\hyp{}independent (constant).
 Therefore, the exact solution for the optimal parameters is given by the Newton equation
 %
 \begin{equation}\label{e:Newton}
@@ -1012,31 +1013,54 @@ directly by numerical differentiation. Here we consider DMS up to second order, 
  \begin{align}
   {\bf B}^{(10)}_{\alpha\beta} &= \frac{\partial D_{\alpha\beta}}{\partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} \;, \label{e:B10} \\
   {\bf B}^{(20)}_{\alpha\beta} &= \frac{1}{2} 
-     \frac{\partial^2 D_{\alpha\beta}}{\partial {\bf F} \otimes \partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} \;, \label{e:B20}
+     \frac{\partial^2 D_{\alpha\beta}}{\partial {\bf F} \otimes \partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} \;. \label{e:B20}
  \end{align}
 \end{subequations}
 %
-and the associated error analysis is shown in Figure~\ref{f:fig-1}.
+The associated error distributions in prediction of polarization energies 
+are shown in scatter plot in Figure~\ref{f:fig-1}, whereas
+statistical performance descriptors of polarization energies and induced multipole moments
+are gathered in Table~XXX.
 \begin{figure}[h]
 \includegraphics[width=0.5\textwidth]{data/dmatpol/water/figure1/fig-1.eps}
 \caption{\label{f:fig-1} {\bf Performance of the density matrix polarization susceptibility tensors of water molecule
 in moderate uniform electric field.} The notation $(R_{\max}0)$ denotes the maximum rank of the electric field
 and zero rank of electric field gradient in the expansion from Eq.~\eqref{e:final-model.General}.
-Electric field magnitudes in a range from 0 to 0.035 a.u. were tested in 100 random samples with random direction of electric field.
+Electric field magnitudes in a range from 0 to 0.035 a.u. were tested in 100 samples with randomly selected 
+directions of electric field.
 } 
 \end{figure}
 %
-All the models that are linear with respect to the electric field incorrectly predict the polarization energy.
+All the tested models that are linear with respect to the electric field 
+incorrectly reproduce the polarization energy.
 Interestingly, the predicted values are in perfect correlation with the exact estimates with a slope of $\sim$2.
+%especially the \emph{ab initio} models from Eq.~\eqref{e:final-model.HF} and Eq.~\eqref{e:dD-Taylor}
 Incorporation of the second\hyp{}order term from Eq.~\eqref{e:B20} 
 obtained by numerical differentiation dramatically reduces the errors
 leading to quantitative accuracy (with RMSE of 0.029 kcal/mol and $R^2=99.58\%$;
-see also red filled dots in Figure~\ref{f:fig-1}).
-What is particularly 
+see also red filled circles in Figure~\ref{f:fig-1}). On the other hand,
+induced dipole and quadrupole moments are reproduced quantitatively well already by
+using first\hyp{}order DMS, ${\bf B}^{(10)}$, with $R^2$ coefficients being systematically
+greater than 95\%. This observation can be understood by the fact that the induced dipole
+and quadrupole moment is approximately proportional to the external electric field, whereas the polarization
+energy exhibits quadratic dependence (c.f. Eq.~\eqref{e:dE-dpol}), hence the need of including at least
+quadratic terms in the expansion from Eq.~\eqref{e:dD-Taylor}.
 
+Performance of the generalized DMS models based on the linear regression 
+is inferior with respect to the \emph{ab initio} approach in terms of calculations of polarization energy.
+Although the linear model (blue open circles in Figure~\ref{f:fig-1})
+still predicts the correct slope of $\sim$2 at this level of approximation with RMSE of 1.19 kcal/mol,
+yet the quadratic model (red open circles)
+improves the performance only slightly, yelding RMSE as high as 0.89 kcal/mol
+and produces significant spread of points around the correlation line. This striking difference
+between the second\hyp{}order \emph{ab initio} and generalized models originates from the limitations
+in the current fitting procedure, that is used to approximate non\hyp{}linear susceptibilities (see further discussion).
 
 \subsection{\label{ss:42}Water molecule in spatially non\hyp{}uniform electric field}
 
+To study the capability of the presented distributed models to capture 
+density matrix polarization in inhomogeneous electric fields, we analyse water molecule
+surrounded by point charges.
 Three different types of point charge environment that generate
 weak (0.003 -- 0.007 a.u.), 
 moderate (0.01 -- 0.02 a.u.) and strong (0.02 -- 0.05 a.u.) 
@@ -1128,7 +1152,7 @@ for interaction energies but better for induced multipole moments, particularly 
 calculations almost by a factor of two in strong electric fields, and by a factor of three in weaker fields.
 By and large, extending the parameter space improves the accuracy of the generalized DMS model. 
 Including DMS of type ${\bf B}^{(20)}$, i.e., that interact with the square of electric field,
-leads to improvement in prediction of all quantities evaluated in all electric field strengths considered in this Work. 
+leads to improvement in prediction of all quantities evaluated in all electric field strengths considered in this work. 
 Interestingly, interaction energies are somewhat insensitive to addition of the quadrupolar DMS 
 (${\bf B}^{(01)}$, interacting with the electric field gradient), in contrast to induced multipole moments
 which exhibit noticeable improvement of accuracy. The most accurate generalized DMS model presented here 
@@ -1260,16 +1284,17 @@ Note however, that not all symmetric matrices
 can be factored out in a way shown above which puts significant limits to a linear regression method
 currently used.
 It is also natural to expect that $B_{uw}^{(20)}$ does not need to be symmetric if it refers to the distributed site(s).
-Although such linear parameterization leads to very simple, one\hyp{}step optimization problem 
-from Eq.~\eqref{e:Newton} (Hessian is parameter\hyp{}independent), it
-is unfortunately insufficient for an accurate description of two\hyp{}electron effects.
+Although such linear parameterization enables a relatively simple, one\hyp{}step optimization
+from Eq.~\eqref{e:Newton}, 
+it is unfortunately insufficient for an accurate description of two\hyp{}electron effects which manifest
+here in energy by the Fermi electron correlation at the HF level.
 On the other hand, constructing more sophisticated models of $B_{uw}^{(20)}$ and $B_{uw}^{(01)}$ 
 requires introducing non\hyp{}linearity to the model, which is out of scope of the present contribution.
 This shall be studied in detail elsewhere.
 
 \section{\label{s:5}Summary and a few concluding remarks}
 
-In this Work, the \emph{ab initio} model of the one\hyp{}particle density matrix susceptibility tensors
+In this work, the \emph{ab initio} model of the one\hyp{}particle density matrix susceptibility tensors
 at the HF level was derived for a closed shell molecule in a spatially non\hyp{}uniform
 electric field distribution. It was found that the change in the density matrix element
 is approximately proportional to the electric field evaluated at the distributed site associated with the 
