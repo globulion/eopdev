@@ -687,7 +687,7 @@ the expression for $\delta {\bf D}$ from Eq.~\eqref{e:dD-2} to finally give
 where the \emph{density matrix polarization susceptibility tensor} is
 %
 \begin{multline}  \label{e:susceptibility-B}
- {\bf B}^{(i;10)}_{\alpha\beta} = \Big\{
+ {\bf B}^{(i;10)}_{\alpha\beta} = %\Big\{
                                C_{\alpha i} {\bf b}_{\beta i}^{(10)} + C_{\beta i} {\bf b}_{\alpha i}^{(10)} \\
                                 - \sum_\gamma 
                                  \left( 
@@ -695,11 +695,12 @@ where the \emph{density matrix polarization susceptibility tensor} is
                                  \right)
                                            {\bf b}_{\gamma i}^{(10)}
 %
-\Big\}  \;.
+%\Big\} 
+ \;.
 \end{multline}
 %
 Hence, the three dimensional vector ${\bf B}^{(i;10)}_{\alpha\beta}$ describes the polarization affinity
-of the density matrix element associated with $\alpha$th and $\beta$th orthogonal AO's.
+of the density matrix element associated with the $\alpha$th and $\beta$th orthogonal AO's.
 Transforming these vectors to a non\hyp{}orthogonal AO basis is straightforward.
 It is emphasized here that all elements of ${\bf B}_{\alpha\beta}^{(i;10)}$
 are unique properties of electronically unperturbed molecule. 
@@ -1003,15 +1004,15 @@ assumed to be 0.0005~a.u.
 
 \subsection{\label{ss:41}Water molecule in spatially uniform electric field}
 
-It is instructive to start first from the discussion of the polarization under the uniform electric field
+It is instructive to start first from the discussion of polarization under the uniform electric field
 condition because, in this case, it is possible to compute the exact DMS according to Eq.~\eqref{e:dD-Taylor} 
 directly by numerical differentiation. Here we consider DMS up to second order, i.e.,
 %
 \begin{subequations}\label{e:exact-DMS}
  \begin{align}
-  {\bf B}^{(10)}_{\alpha\beta} &= \frac{\partial D_{\alpha\beta}}{\partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} \;, \\
+  {\bf B}^{(10)}_{\alpha\beta} &= \frac{\partial D_{\alpha\beta}}{\partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} \;, \label{e:B10} \\
   {\bf B}^{(20)}_{\alpha\beta} &= \frac{1}{2} 
-     \frac{\partial^2 D_{\alpha\beta}}{\partial {\bf F} \otimes \partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} \;,
+     \frac{\partial^2 D_{\alpha\beta}}{\partial {\bf F} \otimes \partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} \;, \label{e:B20}
  \end{align}
 \end{subequations}
 %
@@ -1024,6 +1025,14 @@ and zero rank of electric field gradient in the expansion from Eq.~\eqref{e:fina
 Electric field magnitudes in a range from 0 to 0.035 a.u. were tested in 100 random samples with random direction of electric field.
 } 
 \end{figure}
+%
+All the models that are linear with respect to the electric field incorrectly predict the polarization energy.
+Interestingly, the predicted values are in perfect correlation with the exact estimates with a slope of $\sim$2.
+Incorporation of the second\hyp{}order term from Eq.~\eqref{e:B20} 
+obtained by numerical differentiation dramatically reduces the errors
+leading to quantitative accuracy (with RMSE of 0.029 kcal/mol and $R^2=99.58\%$;
+see also red filled dots in Figure~\ref{f:fig-1}).
+What is particularly 
 
 
 \subsection{\label{ss:42}Water molecule in spatially non\hyp{}uniform electric field}
