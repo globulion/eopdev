@@ -163,6 +163,7 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<psi
    mField_(options_.get_double("DMATPOL_SCALE_1")),
    Zinit_(-1.0),
    Z_(-1.0),
+   symmetryNumber_{1.0, 2.0, 2.0, 1.0, 2.0, 1.0}, /* XX, XY, XZ, YY, YZ, ZZ */
    referenceStatisticalSet_({{},{},{},{},{}}),
    referenceDpolStatisticalSet_({{},{},{},{},{}}),
    modelStatisticalSet_({{},{},{},{},{}}),
@@ -245,8 +246,8 @@ void oepdev::GeneralizedPolarGEFactory::invert_hessian(void)
 }
 void oepdev::GeneralizedPolarGEFactory::compute_parameters(void)
 {
-   if (hasDipoleDipoleHyperpolarizability_) compute_electric_field_sums();
-   if (hasQuadrupolePolarizability_       ) compute_electric_field_gradient_sums();
+   //if (hasDipoleDipoleHyperpolarizability_) compute_electric_field_sums();
+   //if (hasQuadrupolePolarizability_       ) compute_electric_field_gradient_sums();
    compute_hessian(); 
    Hessian_->print();
    invert_hessian();
@@ -282,72 +283,159 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
 
   // --> Un-Pack the parameters from Parameters_ vector into dipole and quadrupole (hyper)polarizabilities <-- //
 
-  if (!hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
-      for (int n=0; n<nSites_; ++n) {
-           for (int z=0; z<3; ++z) {
-                double val = Parameters_->get(3*n + z, 0);
-                PolarizationSusceptibilities_->dipole_polarizability(n, z)->set(i, j, val);
-           }
-      }
-  } else if (hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
+  // Dipole Polarizability (always)
+  for (int n=0; n<nSites_; ++n) {
+       for (int z=0; z<3; ++z) {
+            double val = Parameters_->get(3*n + z, 0);
+            PolarizationSusceptibilities_->dipole_polarizability(n, z)->set(i, j, val);
+       }
+  }
+  // Only Dipole-Dipole Hyperpolarizability
+  if (hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
       for (int n=0; n<nSites_; ++n) { 
-           for (int z1=0; z1<3; ++z1) {
-                double val = Parameters_->get(3*n + z1, 0);
-                PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
-
-                int iz1 = nSites_ * 3 + 3 * n + z1; // Second block
-                for (int z2 = 0; z2<3; ++z2) {
-                     int iz2 = nSites_ * 3 + 3 * n + z2; // Second block
-
-                     val = Parameters_->get(iz1, 0) + Parameters_->get(iz2, 0);
-                     PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val*mField_);
-                }
-           }
+           double val_xx = Parameters_->get(nSites_*3 + 6*n + 0, 0);
+           double val_xy = Parameters_->get(nSites_*3 + 6*n + 1, 0);
+           double val_xz = Parameters_->get(nSites_*3 + 6*n + 2, 0);
+           double val_yy = Parameters_->get(nSites_*3 + 6*n + 3, 0);
+           double val_yz = Parameters_->get(nSites_*3 + 6*n + 4, 0);
+           double val_zz = Parameters_->get(nSites_*3 + 6*n + 5, 0);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 0)->set(i, j, val_xx);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 1)->set(i, j, val_xy);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 2)->set(i, j, val_xz);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 3)->set(i, j, val_xy);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 4)->set(i, j, val_yy);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 5)->set(i, j, val_yz);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 6)->set(i, j, val_xz);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 7)->set(i, j, val_yz);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 8)->set(i, j, val_zz);
       }
+  // Only Quadrupole Polarizability
   } else if (!hasDipoleDipoleHyperpolarizability_ and hasQuadrupolePolarizability_) {
       for (int n=0; n<nSites_; ++n) { 
-           for (int z1=0; z1<3; ++z1) {
-                double val = Parameters_->get(3*n + z1, 0);
-                PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
-
-                int iz1 = nSites_ * 3 + 3 * n + z1; // Second block
-                for (int z2 = 0; z2<3; ++z2) {
-                     int iz2 = nSites_ * 3 + 3 * n + z2; // Second block
-
-                     val = Parameters_->get(iz1, 0) + Parameters_->get(iz2, 0);
-                     PolarizationSusceptibilities_->quadrupole_polarizability(n, z1*3+z2)->set(i, j, val);
-                }
-           }
-      }
+           double val_xx = Parameters_->get(nSites_*3 + 6*n + 0, 0);
+           double val_xy = Parameters_->get(nSites_*3 + 6*n + 1, 0);
+           double val_xz = Parameters_->get(nSites_*3 + 6*n + 2, 0);
+           double val_yy = Parameters_->get(nSites_*3 + 6*n + 3, 0);
+           double val_yz = Parameters_->get(nSites_*3 + 6*n + 4, 0);
+           double val_zz = Parameters_->get(nSites_*3 + 6*n + 5, 0);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 0)->set(i, j, val_xx);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 1)->set(i, j, val_xy);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 2)->set(i, j, val_xz);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 3)->set(i, j, val_xy);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 4)->set(i, j, val_yy);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 5)->set(i, j, val_yz);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 6)->set(i, j, val_xz);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 7)->set(i, j, val_yz);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 8)->set(i, j, val_zz);
+     }
+  // Both Dipole-Dipole Hyperpolarizability and Quadrupole Polarizability
   } else if (hasDipoleDipoleHyperpolarizability_ and hasQuadrupolePolarizability_) {
       for (int n=0; n<nSites_; ++n) { 
-           for (int z1=0; z1<3; ++z1) {
-                double val = Parameters_->get(3*n + z1, 0);
-                PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
-
-                int i1z1 = nSites_ * 3 + 3 * n + z1; // Second block
-                int i2z1 = nSites_ * 6 + 3 * n + z1; // Third block
-                for (int z2 = 0; z2<3; ++z2) {
-                     int i1z2 = nSites_ * 3 + 3 * n + z2; // Second block
-                     int i2z2 = nSites_ * 6 + 3 * n + z2; // Third block
-
-                     val = Parameters_->get(i1z1, 0) + Parameters_->get(i1z2, 0);
-                     PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val*mField_);
-                     val = Parameters_->get(i2z1, 0) + Parameters_->get(i2z2, 0);
-                     PolarizationSusceptibilities_->quadrupole_polarizability(n, z1*3+z2)->set(i, j, val);
-                }
-           }
+           double val_xx = Parameters_->get(nSites_*3 + 6*n + 0, 0);
+           double val_xy = Parameters_->get(nSites_*3 + 6*n + 1, 0);
+           double val_xz = Parameters_->get(nSites_*3 + 6*n + 2, 0);
+           double val_yy = Parameters_->get(nSites_*3 + 6*n + 3, 0);
+           double val_yz = Parameters_->get(nSites_*3 + 6*n + 4, 0);
+           double val_zz = Parameters_->get(nSites_*3 + 6*n + 5, 0);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 0)->set(i, j, val_xx);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 1)->set(i, j, val_xy);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 2)->set(i, j, val_xz);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 3)->set(i, j, val_xy);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 4)->set(i, j, val_yy);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 5)->set(i, j, val_yz);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 6)->set(i, j, val_xz);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 7)->set(i, j, val_yz);
+           PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, 8)->set(i, j, val_zz);
+           val_xx = Parameters_->get(nSites_*9 + 6*n + 0, 0);
+           val_xy = Parameters_->get(nSites_*9 + 6*n + 1, 0);
+           val_xz = Parameters_->get(nSites_*9 + 6*n + 2, 0);
+           val_yy = Parameters_->get(nSites_*9 + 6*n + 3, 0);
+           val_yz = Parameters_->get(nSites_*9 + 6*n + 4, 0);
+           val_zz = Parameters_->get(nSites_*9 + 6*n + 5, 0);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 0)->set(i, j, val_xx);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 1)->set(i, j, val_xy);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 2)->set(i, j, val_xz);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 3)->set(i, j, val_xy);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 4)->set(i, j, val_yy);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 5)->set(i, j, val_yz);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 6)->set(i, j, val_xz);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 7)->set(i, j, val_yz);
+           PolarizationSusceptibilities_->quadrupole_polarizability(n, 8)->set(i, j, val_zz);
       }
   } else {
     throw psi::PSIEXCEPTION("The model you refer to is not implemented.");
   }
+
+  //if (!hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
+  //    for (int n=0; n<nSites_; ++n) {
+  //         for (int z=0; z<3; ++z) {
+  //              double val = Parameters_->get(3*n + z, 0);
+  //              PolarizationSusceptibilities_->dipole_polarizability(n, z)->set(i, j, val);
+  //         }
+  //    }
+  //} else if (hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
+  //    for (int n=0; n<nSites_; ++n) { 
+  //         for (int z1=0; z1<3; ++z1) {
+  //              double val = Parameters_->get(3*n + z1, 0);
+  //              PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
+
+  //              int iz1 = nSites_ * 3 + 3 * n + z1; // Second block
+  //              for (int z2 = 0; z2<3; ++z2) {
+  //                   int iz2 = nSites_ * 3 + 3 * n + z2; // Second block
+
+  //                   val = Parameters_->get(iz1, 0) + Parameters_->get(iz2, 0);
+  //                   PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val*mField_);
+  //              }
+  //         }
+  //    }
+  //} else if (!hasDipoleDipoleHyperpolarizability_ and hasQuadrupolePolarizability_) {
+  //    for (int n=0; n<nSites_; ++n) { 
+  //         for (int z1=0; z1<3; ++z1) {
+  //              double val = Parameters_->get(3*n + z1, 0);
+  //              PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
+
+  //              int iz1 = nSites_ * 3 + 3 * n + z1; // Second block
+  //              for (int z2 = 0; z2<3; ++z2) {
+  //                   int iz2 = nSites_ * 3 + 3 * n + z2; // Second block
+
+  //                   val = Parameters_->get(iz1, 0) + Parameters_->get(iz2, 0);
+  //                   PolarizationSusceptibilities_->quadrupole_polarizability(n, z1*3+z2)->set(i, j, val);
+  //              }
+  //         }
+  //    }
+  //} else if (hasDipoleDipoleHyperpolarizability_ and hasQuadrupolePolarizability_) {
+  //    for (int n=0; n<nSites_; ++n) { 
+  //         for (int z1=0; z1<3; ++z1) {
+  //              double val = Parameters_->get(3*n + z1, 0);
+  //              PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
+
+  //              int i1z1 = nSites_ * 3 + 3 * n + z1; // Second block
+  //              int i2z1 = nSites_ * 6 + 3 * n + z1; // Third block
+  //              for (int z2 = 0; z2<3; ++z2) {
+  //                   int i1z2 = nSites_ * 3 + 3 * n + z2; // Second block
+  //                   int i2z2 = nSites_ * 6 + 3 * n + z2; // Third block
+
+  //                   val = Parameters_->get(i1z1, 0) + Parameters_->get(i1z2, 0);
+  //                   PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val*mField_);
+  //                   val = Parameters_->get(i2z1, 0) + Parameters_->get(i2z2, 0);
+  //                   PolarizationSusceptibilities_->quadrupole_polarizability(n, z1*3+z2)->set(i, j, val);
+  //              }
+  //         }
+  //    }
+  //} else {
+  //  throw psi::PSIEXCEPTION("The model you refer to is not implemented.");
+  //}
 }
 void oepdev::GeneralizedPolarGEFactory::allocate(void)
 {
   // Blocks
   nBlocks_  = (int)hasDipolePolarizability_ + (int)hasDipoleDipoleHyperpolarizability_ + (int)hasQuadrupolePolarizability_;
-  nParameters_ = nBlocks_*(nSites_ * 3);
-  for (int z=0; z<nBlocks_; ++z) nParametersBlock_.push_back(nSites_ * 3);
+  nParametersBlock_.push_back(nSites_ * 3);
+  if (hasDipoleDipoleHyperpolarizability_) nParametersBlock_.push_back(nSites_ * 6);
+  if (hasQuadrupolePolarizability_) nParametersBlock_.push_back(nSites_ * 6);
+  for (int b=0; b<nParametersBlock_.size(); ++b) nParameters_ += nParametersBlock_[b];
+  //nParameters_ = nBlocks_*(nSites_ * 3);
+  //for (int z=0; z<nBlocks_; ++z) nParametersBlock_.push_back(nSites_ * 3);
 
   // Parameter spaces
   Gradient_   = std::make_shared<psi::Matrix>("Gradient"  , nParameters_, 1);

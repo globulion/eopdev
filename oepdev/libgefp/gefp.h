@@ -690,6 +690,8 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
    std::vector<int> nParametersBlock_;
    /// Number of statistical samples
    const int nSamples_;
+   /// Symmetry number for matrix susceptibilities
+   const double symmetryNumber_[6];
 
 
    // --> Parameters <-- //
