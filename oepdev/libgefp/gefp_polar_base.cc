@@ -362,9 +362,9 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
            PolarizationSusceptibilities_->quadrupole_polarizability(n, 7)->set(i, j, val_yz);
            PolarizationSusceptibilities_->quadrupole_polarizability(n, 8)->set(i, j, val_zz);
       }
-  } else {
-    throw psi::PSIEXCEPTION("The model you refer to is not implemented.");
-  }
+  } //else {
+  //  throw psi::PSIEXCEPTION("The model you refer to is not implemented.");
+  //}
 
   //if (!hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
   //    for (int n=0; n<nSites_; ++n) {
