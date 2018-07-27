@@ -1173,7 +1173,7 @@ susceptibilities ${\bf B}_{\alpha\beta}^{(i)}$ from Eq.~\eqref{e:susceptibility-
 \section{\label{a:blocks} Explicit Formulae for Gradient and Hessian Blocks in Linear Regression DMS Model}
 
 The gradient vector ${\bf g}$ and Hessian matrix ${\bf H}$ 
-are build from blocks associated with the type of parameters, i.e.,
+are build from blocks associated with a particular type of parameters, i.e.,
 %
 \begin{equation}\label{e:Newton.gH}
  {\bf g} = 
@@ -1188,29 +1188,30 @@ are build from blocks associated with the type of parameters, i.e.,
 \end{pmatrix} \;.
 \end{equation}
 %
-The gradient element of the $r$th block and Hessian element of the $(rs)$th block read
+where the block indices 1 and 2 correspond to the first\hyp{} and second\hyp{}order susceptibilities, respectively.
+Note that the second derivatives of $\delta D^{(N)}$ 
+with respect to the adjustable parameters vanish
+due to the linear functional form of Eq.~\eqref{e:final-model.General.Parameters}.
+Thus, the gradient element of the $r$th block and Hessian element of the $(rs)$th block read
 %
 \begin{subequations}
  \begin{align}
-  g^{[r ]}_{kv}    &\equiv \frac{\partial   Z}{\partial S_{kv}^{[r]}} 
+  g^{[r ]}    &\equiv \frac{\partial   Z}{\partial S^{[r]}} 
      =-2\sum_N \overline{\delta D}^{(N)}
-               \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S_{kv}^{[r]}} \;,\\
-  H^{[rs]}_{kv,lw} &\equiv \frac{\partial^2 Z}{\partial S_{kv}^{[r]} \partial S_{lw}^{[s]}}  
+               \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S^{[r]}} \;,\\
+  H^{[rs]} &\equiv \frac{\partial^2 Z}{\partial S^{[r]} \partial S^{[s]}}  
      = 2\sum_N 
-        \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S_{kv}^{[r]}}
-        \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S_{lw}^{[s]}} \;.
+        \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S^{[r]}}
+        \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S^{[s]}} \;.
  \end{align}
 \end{subequations}
 %
-Note that the second derivatives of $\delta D^{(N)}$ vanish
-due to the linearity with respect to the adjustable parameters.
-Thus, the explicit formulae for the gradient are
+The explicit formulae for the gradient are
 %
 \begin{subequations}
  \begin{align}
   g^{[1]}_{kv} &=-2\sum_N \overline{\delta D}^{(N)} F^{(N)}_{kv} \;,\\
-  g^{[2]}_{kv} &=-4\sum_N \overline{\delta D}^{(N)} F^{(N)}_{kv} \widetilde{F}^{(N)}_k \;,\\
-  g^{[3]}_{kv} &=-4\sum_N \overline{\delta D}^{(N)} \widetilde{F}^{(N)}_{kv} \;.
+  g^{[2]}_{kvw} &=-2r_{vw} \sum_N \overline{\delta D}^{(N)} F^{(N)}_{kv} F^{(N)}_{kw} \;.
  \end{align}
 \end{subequations}
 %
@@ -1219,27 +1220,17 @@ The Hessian subsequently follows to be
 \begin{subequations}
  \begin{align}
   H^{[11]}_{kv,lw} &= 2\sum_N F^{(N)}_{kv} F^{(N)}_{lw} \;,\\
-  H^{[22]}_{kv,lw} &= 8\sum_N F^{(N)}_{kv} F^{(N)}_{lw} \widetilde{F}^{(N)}_k \widetilde{F}^{(N)}_l \;,\\
-  H^{[33]}_{kv,lw} &= 8\sum_N \widetilde{F}^{(N)}_{kv} \widetilde{F}^{(N)}_{lw} \;,\\
-  H^{[12]}_{kv,lw} &= 4\sum_N F^{(N)}_{kv} F^{(N)}_{lw} \widetilde{F}^{(N)}_l \;,\\
-  H^{[13]}_{kv,lw} &= 4\sum_N F^{(N)}_{kv} \widetilde{F}^{(N)}_{lw} \;,\\
-  H^{[23]}_{kv,lw} &= 8\sum_N F^{(N)}_{kv} \widetilde{F}^{(N)}_k \widetilde{F}^{(N)}_{lw} \;.
+  H^{[12]}_{kv,lv'w'} &= 2r_{v'w'} \sum_N F^{(N)}_{kv} F^{(N)}_{lv'} F^{(N)}_{lw'}  \;,\\
+  H^{[22]}_{kvw,lv'w'} &= 2r_{vw} r_{v'w'} \sum_N F^{(N)}_{kv} F^{(N)}_{kw} F^{(N)}_{lv'} F^{(N)}_{lw'} \;.
  \end{align}
 \end{subequations}
 %
-In the above equations, the auxiliary quantities $\widetilde{F}^{(N)}_k$ 
-and $\widetilde{F}^{(N)}_{kv}$ are defined as
-%
-\begin{subequations}
- \begin{align}
-  \widetilde{F}^{(N)}_k    &\equiv \sum_w F^{(N)}_{kw} \;,\\
-  \widetilde{F}^{(N)}_{kv} &\equiv \sum_w F^{(N)}_{kw,kv} \;.
- \end{align}
-\end{subequations}
-%
-Note that due to the symmetry of the Hessian matrix, the blocks $21$, $31$ and $32$
-are transposes of the blocks $12$, $13$ and $23$, respectively. The composite index
-can be defined as $kv \equiv 3k+v$, for example.
+Note that due to the symmetry of the Hessian matrix, the block $21$
+is a transpose of the block $12$. 
+The composite indices $kv$ and $kvw$ are constructed from the distributed site index $k$
+and the appropriate symmetry\hyp{}corrected Cartesian component 
+of a particular DMS tensor ($v$ for first\hyp{}order,
+and $vw$, $w<v$ for second\hyp{}order susceptibility tensor, respectively).
 \bibliography{references}
 
 \end{document}
