@@ -136,20 +136,20 @@
 %Considering the solvent effect on the correlated electronic wavefunctions, especially
 %those that describe the electronically excited state, is a great challenge of Quantum Chemistry. 
 
-In this work, the electric field\hyp{}induced change in the one\hyp{}electron density
-has been expressed as a series of the one\hyp{}particle density matrix susceptibilities
-interacting with electric fields. The analytical approximate expressions were derived
+The electric field\hyp{}induced change in the one\hyp{}electron density
+has been expressed as a series of the one\hyp{}particle density matrix susceptibilities.
+The analytical approximate expressions were derived
 at the Hartree\hyp{}Fock theory, which served as a basis for construction of generalized
 model that can be used for an arbitrary form of wavefunction as long as the one\hyp{}particle
 density matrices are available. It is shown that it is possible to accurately predict the changes
-in the one\hyp{}electron density of water molecule in spatially non\hyp{}uniform electric field distribution
-generetated by point charges. The electric field\hyp{}induced interaction energies,
-dipole moments and quadrupole moments
-are quantitatively described by the present theory in weak, moderate and even very strong electric fields (0.003 -- 0.07 a.u.).
+in the one\hyp{}electron density of water molecule in spatially uniform electric field, as well as
+in spatially non\hyp{}uniform electric field distribution
+generetated by point charges. The electric field\hyp{}induced polarization energies,
+dipole moments and quadrupole moments are quantitatively described by the present theory 
+in weak, moderate and even very strong electric fields (0.003 -- 0.07 a.u.)
+when quadratic terms with respect to the electric field are accounted for.
 It is believed that the proposed model could open
-new routes in quantum chemistry of fast and efficient calculations of strongly perturbed systems
-at arbitrary level of theory.
-%at post\hyp{}Hartree\hyp{}Fock levels of theory.
+new routes in quantum chemistry of fast and efficient calculations of strongly perturbed systems.
 \end{abstract}
 
 \pacs{}% insert suggested PACS numbers in braces on next line
@@ -881,20 +881,15 @@ directly by numerical differentiation. Here we consider DMS up to second order, 
  \end{align}
 \end{subequations}
 %
-and consider electric field magnitudes in a range from very weak (~0.003 a.u.) to strong (0.07 a.u.).
+and consider electric field magnitudes in a range from very weak (~0.003 a.u.) to very strong (0.07 a.u.).
 The associated error distributions in prediction of polarization energies 
 are shown in scatter plot in Figure~\ref{f:fig-1}, whereas the
 statistical performance descriptors of polarization energies and induced multipole moments
 are gathered in Table~\ref{t:results}.
 %
 \begin{table*}%[]
-\caption{{\bf Performance of the density matrix susceptibility tensors of water molecule 
-in weak, moderate and strong electric fields.}
-In this Table, `W', `M' and `S' denote `weak', `moderate' and `strong' electric fields,
-respectively. $R$-squared coefficients are shown in parentheses.
-Ranks of the density matrix susceptibility models are denoted as $R_{\rm max}$
-where $R_{\rm max}$ is the maximum power in the expansion
-from Eq.~\eqref{e:final-model.General}.
+\caption{{\bf Performance of the density matrix susceptibility tensors of water molecule
+in uniform and non\hyp{}uniform electric fields.$^{a,b}$}
 }
 \label{t:results}
 \begin{ruledtabular}
@@ -925,7 +920,7 @@ from Eq.~\eqref{e:final-model.General}.
 \multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSQ (D\AA $\times 10^{-3}$)}} \\ %\hline
    & 47.89 & (69.17) & 39.24 & (79.30) &  8.56 & (99.02) && 37.63 & (80.96) & 3.94 & (99.79) && 50.66 & (65.49) \\ \hline
 \multicolumn{15}{c}{} \\ 
-\multicolumn{15}{c}{\textbf{Non-Uniform Electric Field}} \\ 
+\multicolumn{15}{c}{\textbf{Non-Uniform Electric Field}$^{c}$} \\ 
 \multicolumn{15}{c}{} \\ \hline
 \multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSE (kcal/mol)}}   \\ 
 W & 0.067 & (-)     & - & (-) & - & (-) && 0.076 & (-)     & 0.003 & (99.45) && 0.004 & (98.64)\\ 
@@ -938,11 +933,19 @@ S & 44.80 & (96.92) & - & (-) & -  & (-) && 33.06 & (98.33) & 15.96 & (99.61) &&
 \multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSQ (D\AA $\times 10^{-3}$)}} \\ 
 W &  6.22 & (58.72) & - & (-) & - & (-) &&  1.59 & (97.32) &  1.42 & (97.86) &&  5.45 & (68.29) \\ 
 M & 28.22 & (53.90) & - & (-) & - & (-) && 10.45 & (93.68) &  5.68 & (98.13) && 23.94 & (66.83) \\ 
-S & 78.07 & (40.53) & - & (-) & - & (-) && 43.33 & (81.68) & 14.40 & (97.98) && 64.33 & (59.62) \\ \hline
+S & 78.07 & (40.53) & - & (-) & - & (-) && 43.33 & (81.68) & 14.40 & (97.98) && 64.33 & (59.62) \\ 
 \bottomrule
 \end{tabular}%
 }
 \end{ruledtabular}
+%
+\footnotesize{\flushleft{
+$^a$ $R$-squared coefficients are shown in parentheses. `n.d.' stands for `not determined'. \\
+$^b$ Ranks of the density matrix susceptibility models are denoted as $R_{\rm max}$ where $R_{\rm max}$ is the maximum power in the expansion from Eq.~\eqref{e:final-model.General}.\\
+$^c$ `W', `M' and `S' denote `weak', `moderate' and `strong' electric fields 
+that are generated by sets of point charges, respectively (c.f. Table~\ref{t:fields}).\\
+}}
+
 \end{table*}
 %
 \begin{figure}[h]
@@ -1052,9 +1055,9 @@ energy, and even higher $R^2$ for induced multipole moments.
 Recently, it was found by Fried et~al. by performing molecular dynamics simulations with a classical 
 polarizable force field, that the average electric field experienced by water molecule in liquid phase
 in room temperature is around 0.014 a.u. ($\sim$70 MV/cm).\cite{Fried.Wang.Boxer.Ren.Pande.JPCB.2013}
-This value corresponds to our moderate electric field set of samples (denoted as `M' in Tables~\ref{t:fields}
-and \ref{t:results}) for which the
-accuracy of the generalized quadratic DMS model is excellent
+This value corresponds to our moderate electric field set of samples (denoted as `M' in Tables~\ref{t:results}
+and \ref{t:fields}) for which the
+accuracy of the generalized quadratic DMS model is excellent.
 Water molecules can experience
 stronger electric fields in certain geometries of hydrogen bonded clusters, 
 even up to 0.055 a.u. according to study by Reischl et~al.\cite{Reischl.Kofinger.Dellago.MolPhys.2009} 
