@@ -11,7 +11,7 @@ set terminal epslatex size 14cm,17cm color colortext standalone \
    "\\newcommand{\\ft}[0]{\\footnotesize}\\usepackage{amsmath}\\usepackage{amssymb}\\usepackage{upgreek}"
 
 # global settings for each subplot
-set border lw 3 lc rgbcolor "#808080"
+set border lw 3 lc rgbcolor "#515151"
 unset key
 set grid x y
 
@@ -73,7 +73,7 @@ set ylabel "$\\delta E_{\\text{Theory}}^{\\text{Pol}}$ (kcal/mol)"
 set size ratio -1 s,s
 set origin o11x, o11y
 #set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
-#set label 11 "$R^2=0.9826$" front at graph 0.1,0.9 tc rgbcolor "#808080"
+#set label 11 "$R^2=0.9826$" front at graph 0.1,0.9 tc rgbcolor "#515151"
 set label 22 "\\Huge \\textbf{A}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 plot "reports/REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c1*($1)):(c1*($2)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
 
@@ -84,7 +84,7 @@ unset ylabel
 set size ratio -1 s, s
 set origin o12x, o12y
 set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
-set label 11 "$R^2=0.9725$" front at graph 0.1,0.9 tc rgbcolor "#808080"
+set label 11 "$R^2=0.9725$" front at graph 0.1,0.9 tc rgbcolor "#515151"
 set label 22 "\\Huge \\textbf{B}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 plot "reports/REPORT.POLAR.G.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c1*($1)):(c1*($2)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
 
@@ -95,7 +95,7 @@ unset ylabel
 set size ratio -1 s, s
 set origin o13x, o13y
 set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
-set label 11 "$R^2=0.9813$" front at graph 0.1,0.9 tc rgbcolor "#808080"
+set label 11 "$R^2=0.9813$" front at graph 0.1,0.9 tc rgbcolor "#515151"
 set label 22 "\\Huge \\textbf{C}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 plot "reports/REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c1*($1)):(c1*($3)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
 
@@ -113,7 +113,7 @@ set ylabel "$\\vert\\delta{\\upmu}\\vert_{\\text{Theory}}$ (D)"
 set size ratio -1 s, s
 set origin o21x, o21y
 set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
-set label 11 "$R^2=0.9692$" front at graph 0.1,0.9 tc rgbcolor "#808080"
+set label 11 "$R^2=0.9692$" front at graph 0.1,0.9 tc rgbcolor "#515151"
 set label 22 "\\Huge \\textbf{D}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 plot "reports/REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c2*($4)):(c2*($5)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
 
@@ -124,7 +124,7 @@ unset ylabel
 set size ratio -1 s, s
 set origin o22x, o22y
 set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
-set label 11 "$R^2=0.9961$" front at graph 0.1,0.9 tc rgbcolor "#808080"
+set label 11 "$R^2=0.9961$" front at graph 0.1,0.9 tc rgbcolor "#515151"
 set label 22 "\\Huge \\textbf{E}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 plot "reports/REPORT.POLAR.G.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c2*($3)):(c2*($4)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
 
@@ -135,7 +135,7 @@ unset ylabel
 set size ratio -1 s, s
 set origin o23x, o23y
 set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
-set label 11 "$R^2=0.9692$" front at graph 0.1,0.9 tc rgbcolor "#808080"
+set label 11 "$R^2=0.9692$" front at graph 0.1,0.9 tc rgbcolor "#515151"
 set label 22 "\\Huge \\textbf{F}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 plot "reports/REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c2*($4)):(c2*($6)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
 
@@ -153,7 +153,7 @@ set ylabel "$\\vert\\delta{\\widetilde{\\Theta}}\\vert_{\\text{Theory}}$ (D\\AA)
 set size ratio -1 s, s
 set origin o31x, o31y
 set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
-set label 11 "$R^2=0.4053$" front at graph 0.1,0.9 tc rgbcolor "#808080"
+set label 11 "$R^2=0.4053$" front at graph 0.1,0.9 tc rgbcolor "#515151"
 set label 22 "\\Huge \\textbf{G}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 plot "reports/REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c3*($7)):(c3*($8)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
 
@@ -164,7 +164,7 @@ unset ylabel
 set size ratio -1 s, s
 set origin o32x, o32y
 set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
-set label 11 "$R^2=0.9798$" front at graph 0.1,0.9 tc rgbcolor "#808080"
+set label 11 "$R^2=0.9798$" front at graph 0.1,0.9 tc rgbcolor "#515151"
 set label 22 "\\Huge \\textbf{H}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 plot "reports/REPORT.POLAR.G.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c3*($5)):(c3*($6)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
 
@@ -175,7 +175,7 @@ unset ylabel
 set size ratio -1 s, s
 set origin o33x, o33y
 set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
-set label 11 "$R^2=0.5962$" front at graph 0.1,0.9 tc rgbcolor "#808080"
+set label 11 "$R^2=0.5962$" front at graph 0.1,0.9 tc rgbcolor "#515151"
 set label 22 "\\Huge \\textbf{I}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 plot "reports/REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c3*($7)):(c3*($9)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
 

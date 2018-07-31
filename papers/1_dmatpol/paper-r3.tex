@@ -137,7 +137,8 @@
 %those that describe the electronically excited state, is a great challenge of Quantum Chemistry. 
 
 The electric field\hyp{}induced change in the one\hyp{}electron density
-has been expressed as a series of the one\hyp{}particle density matrix susceptibilities.
+has been expressed as a series of the one\hyp{}particle density matrix susceptibilities (DMS)
+interacting with electric field.
 The analytical approximate expressions were derived
 at the Hartree\hyp{}Fock theory, which served as a basis for construction of generalized
 model that can be used for an arbitrary form of wavefunction as long as the one\hyp{}particle
@@ -149,7 +150,7 @@ dipole moments and quadrupole moments are quantitatively described by the presen
 in weak, moderate and even very strong electric fields (0.003 -- 0.07 a.u.)
 when quadratic terms with respect to the electric field are accounted for.
 It is believed that the proposed model could open
-new routes in quantum chemistry of fast and efficient calculations of strongly perturbed systems.
+new routes in Quantum Chemistry of fast and efficient calculations of strongly perturbed systems.
 \end{abstract}
 
 \pacs{}% insert suggested PACS numbers in braces on next line
@@ -192,11 +193,11 @@ Jedrzejewska.Grabarz.Bartkowiak.Osmialowski.SpectChimActA.2018}
 Interface between QM and MM levels is usually realized by electrostatic embedding
 and only rarely includes the Pauli exclusion principle and dispersion.\cite{List.Olsen.Kongsted.PCCP.2016}
 Unfortunately, it is quite difficult to efficiently treat the environment\hyp{}induced potential operator
-because of complicated nature of intermolecular interactions, that theoretically
+because of complicated nature of intermolecular interactions that theoretically
 cannot be solely envisioned as a sum of electrostatic, dispersion and Pauli effects.
-Perhaps the most frequently used efficient and reasonably accurate \emph{ab initio} fragmentation methods,
+Perhaps one of the most frequently used, efficient and reasonably accurate \emph{ab initio} fragmentation methods,
 the effective fragment potential (EFP) methods, are limited to the ground\hyp{}state
-chemistry at the Hartree\hyp{}Fock (HF)\cite{Gordon.Smith.Xu.Slipchenko.AnnuRevPhysChem.2013} 
+chemistry at the Hartree\hyp{}Fock (HF)\cite{Roothaan.RevModPhys.1951,Gordon.Smith.Xu.Slipchenko.AnnuRevPhysChem.2013} 
 or density functional theory (DFT) levels\cite{Nguyen.Pachter.Day.JCP.2014}.
 Unfortunately, while they can approximately describe the environment composed of molecules in their ground states,
 they cannot be used for highly correlated wavefunctions such as electronically excited states.
@@ -335,7 +336,7 @@ an arbitrary level of theory,
 are probably not sufficient enough to accurately describe the local polarization
 of electron density distribution when electric fields are highly non\hyp{}uniform in space.
 Due to all of these reasons, we adopt the following approach: 
-we first develop a qualitative first\hyp{}principles distributed\hyp{}site model at the Hartree\hyp{}Fock (HF)
+we first develop a qualitative first\hyp{}principles distributed\hyp{}site model at the Hartree\hyp{}Fock
 level of theory, and then generalize it to the arbitrary level using the functional form that was found 
 by considering HF level,
 but treating the density matrix susceptibility tensors as cetrain functions of adjustable parameters further on.
@@ -361,7 +362,7 @@ of a closed-shell molecule,
          \right] } \;.
 \end{equation}
 %
-where ${\mathbb{M}({\bf r}_Q)}$ is AO\hyp{}representation
+where ${\mathbb{M}({\bf r}_Q)}$ is atomic orbital (AO)\hyp{}representation
 of the dipole moment operator defined with respect to origin at ${\bf r}_Q$,
 %
 \begin{equation}\label{e:m}
@@ -378,8 +379,8 @@ In the Hartree\hyp{}Fock theory,\cite{Roothaan.RevModPhys.1951} ${\bf D}$ is app
  {\bf D} = {\bf C} \cdot {\bf C}^\dagger \;,
 \end{equation}
 %
-where ${\bf C}$ describes the occupied molecular orbitals as linear combinations
-of atomic orbitals (AO's), referred here to as the LCAO-MO matrix.
+where ${\bf C}$ describes the occupied molecular orbitals (MO's) as linear combinations
+of AO's, referred here to as the LCAO-MO matrix.
 ${\bf D}$ is an idempotent matrix and if expressed in orthogonal basis the following holds
 %
 \begin{equation}
@@ -529,11 +530,12 @@ where
  \delta {\BM{\upmu}}_i = {\BM{\alpha}}_i \cdot {\bf F}({\bf r}_i) \;.
 \end{equation}
 %
-In Eq.~\eqref{e:dmu-dpol}, ${\BM{\alpha}}_i$ is the distributed polarizability tensor
-associated with the $i$th MO whereas ${\bf F}({\bf r}_i)$ is the electric field evaluated at the $i$th MO centroid of charge
+In Eq.~\eqref{e:dmu-dpol}, ${\BM{\alpha}}_i$ is the distributed dipole\hyp{}dipole polarizability tensor
+associated with the $i$th MO whereas ${\bf F}({\bf r}_i)$ is the electric field evaluated at the $i$th MO centroid of charge,
 ${\bf r}_i = \tbraket{\phi_i}{\hat{\bf r}}{\phi_i}$.
 We can now insert the above result into Eq.~\eqref{e:dmu-l-vector} 
 and after recasting the right hand side in a matrix form
+and assuming real quantities
 we get
 %
 \begin{equation} \label{e:dmu-l-vector-mo-transform-X}
@@ -553,11 +555,11 @@ The solution for $\delta {\bf C}$ is
 \end{equation}
 %
 where $\left[ {\bf L}_i  \right]^{-1}_{\rm Left}$ is a left inverse
-of ${\bf L}_i$ matrix 
+of ${\bf L}_i$ matrix,
 %
 \begin{equation} 
       \left[ {\bf L}_i  \right]^{-1}_{\rm Left}   \equiv
-       \left[ {\bf L}_i^T \cdot {\bf L}_i \right]^{-1} \cdot {\bf L}_i^T 
+       \left[ {\bf L}_i^T \cdot {\bf L}_i \right]^{-1} \cdot {\bf L}_i^T   \;,
 \end{equation}
 %
 and has size $(3\times n)$. Note that the \emph{right inverse} of ${\bf L}_i$
@@ -623,8 +625,8 @@ generalize the model to an arbitrary level of theory and electric field curvatur
 
 Eq.~\eqref{e:final-model.HF}, which is the final result of the previous section, 
 can be used as a guideline to construct a general model of density matrix polarization.
-Quadratic terms with respect to the electric field as well as linear terms with respect to
-electric field gradient can be added to the formulation, which leads to
+Quadratic (and higher\hyp{}order) terms with respect to the electric field
+can be added to the formulation, which leads to
 %
 \begin{multline}\label{e:final-model.General}
  \delta D_{\alpha\beta} = \sum_{i }^M \Big\{
@@ -639,9 +641,11 @@ ${\bf B}^{(i; R)}_{\alpha\beta}$, distributed over $M$ sites,
 denote the $R$-th order response with respect to the electric field.
 Note that
 ${\bf B}^{(i; 1)}_{\alpha\beta}$ is a vector of length $3$ whereas ${\bf B}^{(i; 2)}_{\alpha\beta}$
-is $(3\times 3)$ matrix. Also, the distributed expansion centres
+is a $(3\times 3)$ matrix. Also, the distributed expansion centres
 (labeled as $i$) are generalized to any point in the molecule.\footnote{More general
-contribution due to square of electric field could be $\sum_{ij}^M {\bf B}^{(ij; 2)}_{\alpha\beta} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_j)$. However, for simplicity we neglect the contributions from different sites $i$ and $j$
+contribution due to square of electric field could 
+be $\sum_{ij}^M {\bf B}^{(ij; 2)}_{\alpha\beta} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_j)$. 
+However, for simplicity, we neglect the contributions from different sites $i$ and $j$
 in the present discussion and leave it for future development.
 }
 
@@ -659,7 +663,7 @@ as adjustable parameters, rather than try to derive them from first principles t
 Let  
 $\left\{ {\bf F}^{(1)}({\bf r}), {\bf F}^{(2)}({\bf r}), \ldots, {\bf F}^{(N)}({\bf r}), \ldots \right\}$ 
 be a set of $N_{\rm max}$ distinct and randomly sampled 
-spatially non\hyp{}uniform distributions of the electric field. It is assumed that
+spatial distributions of electric field. It is assumed that
 the exact difference one\hyp{}particle density matrices (with respect to the unperturbed state)
 defined as
 %
@@ -695,7 +699,7 @@ $
 {\bf S}^{[1]} &
 {\bf S}^{[2]} 
 \end{pmatrix}^T
-$, we define the loss function $Z$ 
+$, we define a loss function $Z$ 
 of the three blocks of adjustable parameters
 that is subject to the least\hyp{}squares minimization,
 %
@@ -725,10 +729,10 @@ was selected as a test system which was subject to
 electrostatic perturbations due to random uniform electric fields and random collections of point charges
 generating non\hyp{}uniform electric fields. 
 Components of spatially uniform electric fields were determined 
-from the uniform distribution in the interval of $\vert 0.02 \vert$ a.u.
+from the uniform distribution in the interval of $\vert 0.0404 \vert$ a.u.
 generating average field of 0.035 a.u. in an ensemble of 100 samples.
-Cartesian coordinates of perturbing charges were drawn from the uniform distribution of a set of fourty
-three\hyp{}dimensional Euclidean points within a sphere of radius 6.0 Bohrs
+Cartesian coordinates of perturbing charges were drawn from the uniform distribution 
+of a set of fourty three\hyp{}dimensional Euclidean points within a sphere of radius 6.0 Bohrs
 and origin in the center of mass of water molecule.
 In selection of random points, space inside the union of spheres surrounding
 oxygen and hydrogen atoms with radii of 4.5 and 4.0 Bohrs, respectively, was
@@ -737,14 +741,14 @@ self\hyp{}consistent field (SCF) calculations.
 Electric charge values were selected from the one\hyp{}dimensional uniform distribution
 of double precision numbers in the interval of $\vert q_{\rm max} \vert$, where $q_{\rm max}$
 was tuned to obtain a desired ensemble of weak, moderate and strong electric field magnitudes
-(with $q_{\rm max}=0.05$, $0.2$ and $0.4$ a.u., accordingly; cf. Table~\ref{t:fields}).
+(with $q_{\rm max}=0.05$, $0.2$ and $0.4$ a.u., accordingly).
 In this way, independent sets of 100 random samples of uniform electric fields as well as 
 40 point charges were selected and exact solutions of HF\hyp{}SCF equations were 
 performed for each validation procedure.
 
 In order to validate all the models discussed in this contribution,
 the electric field\hyp{}induced polarization energy, 
-the dipole moment and the quadrupole moment were analysed in detail.
+dipole moment and quadrupole moment were analysed in detail.
 The electric field\hyp{}induced polarization energy at the HF level, $\delta E^{\rm Pol}$,
 was computed from the following exact formula:
 %
@@ -761,7 +765,8 @@ the one\hyp{}electron Hamiltonian matrix of an unperturbed HF ground state,
 ${\bf V}$ is the one\hyp{}electron external electrostatic potential matrix whereas $\delta {\bf J}$
 and $\delta {\bf K}$ are electric field\hyp{}induced changes in the Coulomb and the exchange HF matrices due to 
 the polarization of the electron density distribution, respectively. 
-In order to compare the performance of the distributed polarizability approach,
+In order to compare the performance of the usual 
+distributed dipole\hyp{}dipole polarizability approach,
 the approximate interaction energy was also evaluated by using the expression:
 %
 \begin{equation}\label{e:dE-dpol}
@@ -769,7 +774,7 @@ the approximate interaction energy was also evaluated by using the expression:
                    - \frac{1}{2} \sum_i^{\rm occ} {\BM \alpha}_i : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_i) \;,
 \end{equation}
 %
-in which ${\BM \alpha}_i$ is the distributed anisotropic polarizability tensor associated with the
+in which ${\BM \alpha}_i$ is the distributed anisotropic dipole\hyp{}dipole polarizability tensor associated with the
 $i$th localized molecular orbital (LMO) centroid (see Eq.~\eqref{e:dmu-dpol}).
 The distributed polarizabilities were computed by utilizing the coupled\hyp{}perturbed Hartree\hyp{}Fock
 method.\cite{McWeeny.RevModPhys.1960,Dodds.McWeeney.Sadlej.MolPhys.1977} 
@@ -819,11 +824,13 @@ the following statistical quality descriptors:
    \end{equation}
  \item Root Mean Square Dipole Error (RMSD)
    \begin{equation}\label{e:rmsd}
-     {\rm RMSD} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N \lvert \delta {\BM\upmu}^{(N)} - \overline{\delta {\BM\upmu}^{(N)}}\rvert^2 } \;;
+     {\rm RMSD} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N \left( \lvert \delta {\BM\upmu}^{(N)} \rvert 
+                                             - \lvert \overline{\delta {\BM\upmu}^{(N)} \rvert }\right)^2 } \;;
    \end{equation}
  \item Root Mean Square Quadrupole Error (RMSQ)
    \begin{equation}\label{e:rmsq}
-     {\rm RMSQ} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N \lvert \delta \widetilde{\BM\Theta}^{(N)} - \overline{\delta \widetilde{\BM\Theta}^{(N)}}\rvert^2 } \;.
+     {\rm RMSQ} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N \left( \lvert \delta \widetilde{\BM\Theta}^{(N)} \rvert 
+                                             - \lvert \overline{\delta \widetilde{\BM\Theta}^{(N)} \rvert }\right)^2 } \;.
    \end{equation}
 \end{enumerate}
 %
@@ -854,16 +861,17 @@ the following finite\hyp{}difference formulae were utilized:
 %
 \begin{subequations}\label{e:ff}
   \begin{align}
-    f_u    &= \frac{f(h_u) - f(-h_u)}{2h_u} \;,\\
-    f_{uu} &= \frac{f(h_u) + f(-h_u) - 2f(0)}{h_u^2} \;,\\
-    f_{uw} &= \frac{f(h_u,h_w) + f(-h_u,-h_w) + 2f(0)}{2h_uh_w} \nonumber \\ 
-           & \; -\frac{f(h_u,0) - f(-h_u,0) - f(0,h_w) - f(0,-h_w)}{2h_uh_w} \;,
+    D_u    &= \frac{D(F_u) - D(-F_u)}{2F_u} \;,\\
+    D_{uu} &= \frac{D(F_u) + D(-F_u) - 2D^{(0)}+}{F_u^2} \;,\\
+    D_{uw} &= \frac{D(F_u,F_w) + D(-F_u,-F_w) + 2D^{(0)}}{2F_uF_w} \nonumber \\ 
+           & \; -\frac{D(F_u) + D(-F_u) + D(F_w) + D(-F_w)}{2F_uF_w} \;,
   \end{align}
 \end{subequations}
 %
 where 
-the subscripts denote the Cartesian component of the electric field and $h$ is the differentiation step
-assumed to be 0.0005~a.u. 
+the subscripts $u,w=x,y,z$ denote the derivatives with respect 
+to the Cartesian component of the electric field, and the finite difference
+steps $F_{u(w)}$ were assumed to be 0.0005~a.u for all components. 
 
 \section{\label{s:4}Results and Discussion}
 
@@ -887,8 +895,58 @@ are shown in scatter plot in Figure~\ref{f:fig-1}, whereas the
 statistical performance descriptors of polarization energies and induced multipole moments
 are gathered in Table~\ref{t:results}.
 %
+\begin{figure}[h]
+\includegraphics[width=0.5\textwidth]{data/dmatpol/water/figure1/fig-1.eps}
+\caption{\label{f:fig-1} {\bf Performance of the DMS tensors of water molecule
+in uniform electric field.} 
+$R_{\rm max}$ denotes the maximum rank of the electric field
+in the expansion from Eq.~\eqref{e:final-model.General}.
+Electric field magnitudes in a range from 0.0 to 0.07 a.u. were tested in 100 samples with randomly selected 
+directions of electric field.
+} 
+\end{figure}
+%
+
+All the tested models that are linear with respect to the electric field,
+i.e., from Eq.~\eqref{e:final-model.HF} (black solid squares in Figure~\ref{f:fig-1}) 
+as well as truncated at linear susceptibilities ${\bf B}^{(1)}$ 
+from Eqs.~\eqref{e:dD-Taylor} (blue solid circles) and \eqref{e:final-model.General} (blue open circles),
+incorrectly reproduce the polarization energy.
+Interestingly, the predicted values are in noticeable 
+and same correlation with the exact estimates with a slope of $\sim$2.
+Incorporation of the second\hyp{}order term
+obtained either by numerical differentiation from Eq.~\eqref{e:B20} (red filled circles) 
+or by using the generalized DMS model (red open circles)
+dramatically reduces the errors
+leading to quantitative accuracy in all tested field magnitudes 
+with the best RMSE of 0.173 kcal/mol ($R^2=99.1\%$) for the generalized DMS model.
+On the other hand, the
+induced dipole and quadrupole moments are reproduced reasonably well already by
+using the first\hyp{}order DMS with $R^2$ coefficients being 
+greater than 97\% in case of dipole moments and from 69\% up to 81\% in case of quadrupole moments.
+This observation can be understood by the fact that the induced dipole
+and quadrupole moment is approximately proportional to the external electric field, whereas the polarization
+energy exhibits quadratic dependence (c.f. Eq.~\eqref{e:dE-dpol}), hence the need of including at least
+quadratic terms in the expansion from Eq.~\eqref{e:dD-Taylor} or Eq.~\eqref{e:final-model.General}. 
+
+In comparison to the dipole\hyp{}dipole polarizability approach, 
+quadratic DMS models perform only slightly worse 
+(for example, RMSE = 0.173 and 0.112 kcal/mol when the generalized quadratic DMS
+model and the polarizability model are used, respectively).
+However, quadratic DMS models better predict the induced multipole moments with
+%work better
+%when predicting the induced multipole moments with
+$R^2$ systematically greater than 99\%. 
+Certainly, taking into account the distributed quadrupole polarizabilities
+would greatly reduce errors of the standard distributed polarizability approach.
+Nevertheless, it is clear that the second\hyp{}order
+DMS models are quantitative even at very strong uniform electric fields up to 0.07 a.u.
+%On the other hand, DMS models better predict the induced dipole and quadrupole 
+%moments even in weak fields. 
+
+%
 \begin{table*}%[]
-\caption{{\bf Performance of the density matrix susceptibility tensors of water molecule
+\caption{{\bf Performance of the DMS tensors of water molecule
 in uniform and non\hyp{}uniform electric fields.$^{a,b}$}
 }
 \label{t:results}
@@ -897,35 +955,36 @@ in uniform and non\hyp{}uniform electric fields.$^{a,b}$}
 \begin{tabular}{cddddddcddddcdd}
 %\hline\hline
 \toprule
-\multicolumn{1}{l}{} & \multicolumn{6}{c}{\textbf{Ab Initio DMS}} &  & \multicolumn{4}{c}{\textbf{Generalized DMS}}                                                                                                  &  & \multicolumn{2}{c}{\textbf{Distributed}} \\
+\multicolumn{1}{l}{} & \multicolumn{6}{c}{\textbf{Ab Initio DMS}} &  & \multicolumn{4}{c}{\textbf{Generalized DMS}}
+                                                                  &  & \multicolumn{2}{c}{\textbf{Distributed}} \\
 \cline{2-8}
 \cline{9-12}
 %\cline{14-15}
 \textbf{}         
-& \multicolumn{2}{c}{$\BM{R_{\rm max}=1}$}
-& \multicolumn{2}{c}{$\BM{R_{\rm max}=1^*}$}
-& \multicolumn{2}{c}{$\BM{R_{\rm max}=2^*}$}
+& \multicolumn{2}{c}{$\BM{R_{\rm max}=1}$$^c$}
+& \multicolumn{2}{c}{$\BM{R_{\rm max}=1}$$^d$}
+& \multicolumn{2}{c}{$\BM{R_{\rm max}=2}$$^d$}
 &
-& \multicolumn{2}{c}{$\BM{R_{\rm max}=1}$} 
-& \multicolumn{2}{c}{$\BM{R_{\rm max}=2}$} 
+& \multicolumn{2}{c}{$\BM{R_{\rm max}=1}$$^e$} 
+& \multicolumn{2}{c}{$\BM{R_{\rm max}=2}$$^e$} 
 &  
 & \multicolumn{2}{c}{\textbf{Polarizability}}        \\ \hline
 \multicolumn{15}{c}{} \\ 
 \multicolumn{15}{c}{\textbf{Uniform Electric Field}} \\ 
 \multicolumn{15}{c}{} \\ \hline
 \multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSE (kcal/mol)}}              \\ %\hline
-   & 4.041 & (-) & 4.823 & (-) & 0.231 & (98.40) && 5.0121 & (-) & 0.173 & (99.10) && 0.112 & (99.63) \\ 
+   & 4.041 & (n.d) & 4.823 & (n.d.) & 0.231 & (98.40) && 5.0121 & (n.d.) & 0.173 & (99.10) && 0.112 & (99.63) \\ 
 \multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSD (mD)}}                    \\ %\hline
    & 30.46 & (97.91) & 30.46 & (97.91) & 18.02 & (99.27) && 24.83 & (98.61) & 7.13 & (99.89) && 30.46 & (97.91) \\ 
 \multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSQ (D\AA $\times 10^{-3}$)}} \\ %\hline
    & 47.89 & (69.17) & 39.24 & (79.30) &  8.56 & (99.02) && 37.63 & (80.96) & 3.94 & (99.79) && 50.66 & (65.49) \\ \hline
 \multicolumn{15}{c}{} \\ 
-\multicolumn{15}{c}{\textbf{Non-Uniform Electric Field}$^{c}$} \\ 
+\multicolumn{15}{c}{\textbf{Non-Uniform Electric Field}$^{f}$} \\ 
 \multicolumn{15}{c}{} \\ \hline
 \multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSE (kcal/mol)}}   \\ 
-W & 0.067 & (-)     & - & (-) & - & (-) && 0.076 & (-)     & 0.003 & (99.45) && 0.004 & (98.64)\\ 
-M & 1.072 & (-)     & - & (-) & - & (-) && 1.236 & (-)     & 0.057 & (99.08) && 0.070 & (98.58)\\ 
-S & 4.220 & (-)     & - & (-) & - & (-) && 5.147 & (-)     & 0.402 & (97.25) && 0.332 & (98.13) \\ \hline
+W & 0.067 & (n.d.)     & - & (-) & - & (-) && 0.076 & (-)     & 0.003 & (99.45) && 0.004 & (98.64)\\ 
+M & 1.072 & (n.d.)     & - & (-) & - & (-) && 1.236 & (-)     & 0.057 & (99.08) && 0.070 & (98.58)\\ 
+S & 4.220 & (n.d.)     & - & (-) & - & (-) && 5.147 & (-)     & 0.402 & (97.25) && 0.332 & (98.13) \\ \hline
 \multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSD (mD)}}  \\ 
 W &  3.36 & (98.71) & - & (-) & -  & (-) &&  1.03 & (99.88) &  0.94 & (99.90) &&  3.36 & (98.71) \\ 
 M & 14.72 & (98.50) & - & (-) & -  & (-) &&  7.72 & (99.59) &  4.55 & (99.86) && 14.72 & (98.50)\\ 
@@ -940,64 +999,21 @@ S & 78.07 & (40.53) & - & (-) & - & (-) && 43.33 & (81.68) & 14.40 & (97.98) && 
 \end{ruledtabular}
 %
 \footnotesize{\flushleft{
-$^a$ $R$-squared coefficients are shown in parentheses. `n.d.' stands for `not determined'. \\
-$^b$ Ranks of the density matrix susceptibility models are denoted as $R_{\rm max}$ where $R_{\rm max}$ is the maximum power in the expansion from Eq.~\eqref{e:final-model.General}.\\
-$^c$ `W', `M' and `S' denote `weak', `moderate' and `strong' electric fields 
+$^a$ $R$-squared coefficients are shown in parentheses. `$n.d.$' stands for `not determined'. 
+$^b$ Ranks of the density matrix susceptibility models are denoted as $R_{\rm max}$ 
+where $R_{\rm max}$ is the maximum power in the expansion from Eq.~\eqref{e:final-model.General}.
+$^c$ \emph{Ab initio} HF model, Eq.~\eqref{e:final-model.HF}.
+$^d$ \emph{Ab initio} finite\hyp{}difference model, Eq.~\eqref{e:dD-Taylor}.
+$^e$ Linear\hyp{}regression generalized model, Eq.~\eqref{e:final-model.General}.
+$^f$ `W', `M' and `S' denote `weak', `moderate' and `strong' electric fields 
 that are generated by sets of point charges, respectively (c.f. Table~\ref{t:fields}).\\
 }}
-
 \end{table*}
-%
-\begin{figure}[h]
-\includegraphics[width=0.5\textwidth]{data/dmatpol/water/figure1/fig-1.eps}
-\caption{\label{f:fig-1} {\bf Performance of the density matrix polarization susceptibility tensors of water molecule
-in uniform electric field.} The notation $(R=R_{\max})$ denotes the maximum rank of the electric field
-in the expansion from Eq.~\eqref{e:final-model.General}.
-Electric field magnitudes in a range from 0.0 to 0.07 a.u. were tested in 100 samples with randomly selected 
-directions of electric field.
-} 
-\end{figure}
-%
-All the tested models that are linear with respect to the electric field,
-i.e., Eq.~\eqref{e:final-model.HF} as well as Eqs.~\eqref{e:dD-Taylor} and \eqref{e:final-model.General} 
-truncated at linear susceptibilities, ${\bf B}^{(1)}$,
-incorrectly reproduce the polarization energy.
-Interestingly, the predicted values are in noticeable correlation with the exact estimates with a slope of $\sim$2.
-Incorporation of the second\hyp{}order term
-obtained either by numerical differentiation from Eq.~\eqref{e:B20} (red filled circles) 
-or by using the generalized DMS model (red open circles)
-dramatically reduces the errors
-leading to quantitative accuracy in all tested field magnitudes 
-with the best RMSE of 0.173 kcal/mol ($R^2=99.1\%$) for the generalized DMS model.
-On the other hand, the
-induced dipole and quadrupole moments are reproduced reasonably well already by
-using the first\hyp{}order DMS, ${\bf B}^{(10)}$, with $R^2$ coefficients being 
-greater than 97\% in case of dipole moments and grater than 80\% in case of quadrupole moments.
-This observation can be understood by the fact that the induced dipole
-and quadrupole moment is approximately proportional to the external electric field, whereas the polarization
-energy exhibits quadratic dependence (c.f. Eq.~\eqref{e:dE-dpol}), hence the need of including at least
-quadratic terms in the expansion from Eq.~\eqref{e:dD-Taylor}. 
-
-In comparison to the dipole\hyp{}dipole polarizability approach, 
-Quadratic DMS models perform only slightly worse 
-(for example, RMSE = 0.173 and 0.112 kcal/mol when the generalized quadratic DMS
-model and the polarizability model are used, respectively).
-However, quadratic DMS models better predict he induced multipole moments with
-%work better
-%when predicting the induced multipole moments with
-$R^2$ systematically greater than 99\%. 
-Certainly, taking into account the distributed quadrupole polarizabilities
-would greatly reduce errors of the standard dipole\hyp{}dipole polarizability approach.
-Nevertheless, it is clear that the second\hyp{}order
-DMS models are quantitative even at very strong uniform electric fields up to 0.07 a.u.
-%On the other hand, DMS models better predict the induced dipole and quadrupole 
-%moments even in weak fields. 
-
 
 \subsection{\label{ss:42}Water molecule in spatially non\hyp{}uniform electric field}
 
-To study the capability of the presented distributed models to capture 
-density matrix polarization in inhomogeneous electric fields, we analyse water molecule
+To study the capability of the distributed DMS models to capture 
+density matrix polarization in inhomogeneous electric fields, we analyse a water molecule
 surrounded by point charges.
 Three different types of point charge environment that generate
 weak (0.003 -- 0.007 a.u.), 
@@ -1028,14 +1044,18 @@ respectively.}
 because similar ranges of electric field are experienced by water molecules
 in liquid phase.\cite{Reischl.Kofinger.Dellago.MolPhys.2009,Fried.Wang.Boxer.Ren.Pande.JPCB.2013}
 Performance descriptors of the \emph{ab initio} and generalized 
-models of the density matrix susceptibility, as well as the conventional distributed polarizability
+models of the density matrix susceptibility, as well as 
+the conventional dipole\hyp{}dipole distributed polarizability
 approach, are shown in Table~\ref{t:results}. 
 
-Similarly as in the case of uniform electric field, the linear DMS models, i.e.,
-the \emph{ab initio} DMS model from Eq.~\eqref{e:final-model.HF} as well as
-the linear DMS model, are insufficient to correctly describe the polarization energy,
-although the correlation with benchmark is still very clear with a slope of $\sim2$
-(Figure~\ref{f:fig-2}A). Again, induced dipole moments are reproduced very well even
+Similarly as in uniform electric field, 
+the \emph{ab initio} DMS model from Eq.~\eqref{e:final-model.HF} 
+as well as
+the linear generalized DMS model, are insufficient to correctly describe the polarization energy 
+in non\hyp{}uniform electric field,
+although the correlation with benchmark is still very clear with a slope of $\sim$2
+(Figure~\ref{f:fig-2}A). 
+Again, induced dipole moments are reproduced very well even
 in strong electric fields (RMSD of 44.8~mD and lesser, $R^2>96\%$).
 Induced quadrupole moments are well described only by the generalized DMS model.
 For example, in medium electric fields RMSQ is 10.4$\times 10^{-3}$D\AA{ }with $R^2=93.7\%$
@@ -1076,7 +1096,7 @@ combined with density\hyp{}based methods of interaction energy calculations.\cit
 
 \begin{figure*}[h]
 \includegraphics[width=\textwidth]{data/dmatpol/water/figure1/fig-2.eps}
-\caption{\label{f:fig-2} {\bf Performance of the distributed density matrix susceptibility tensors in moderate
+\caption{\label{f:fig-2} {\bf Performance of the distributed DMS tensors of water molecule in moderate
 non\hyp{}uniform electric fields.}
 Calculations of the electric field\hyp{}induced interaction energies (A-C), dipole moments (D-F) and
 quadrupole moments (G-I). Comparison with the distributed polarizability model is also shown in this Figure
@@ -1094,7 +1114,7 @@ localized molecular orbital. Subsequently, the \emph{ab initio} model served as 
 for the formulation of the generalized model that is, in principle, not limited to the HF theory,
 and takes into account higher\hyp{}order curvatures of the electric field distribution as well.
 The generalized model consisted of a set of adjustable parameters defining the density matrix susceptibilities
-that are able to interact with the electric field and square of electric field.
+that are able to interact with the electric field and square of the electric field.
 The particular density matrix susceptibilities were determined through the least\hyp{}squares 
 linear regression with respect to the training enseble of electrostatically perturbed states.
 
@@ -1116,8 +1136,9 @@ on their further optimization.
 %, especially to reach RMSE below 1 kcal/mole
 %in strong and very strong electric fields (0.05-0.07 a.u.). 
 For this purpose, more general forms of Eq.~\eqref{e:final-model.General}, as well as the choice of distributed
-sites should be further investigated, preferably with post\hyp{}Hartree\hyp{}Fock methods.
-Nevertheless, owing the capability of the proposed approach to correctly capture the 
+sites should be further investigated, preferably with post\hyp{}Hartree\hyp{}Fock methods
+and electronically excited states.
+Nevertheless, owing to the capability of the proposed approach to correctly capture the 
 environment\hyp{}induced changes in the one\hyp{}particle density matrix, 
 the generalized density matrix susceptibility tensors 
 could be used in accurate fragment\hyp{}based calculations of extended molecular aggregates
@@ -1128,6 +1149,8 @@ This project is carried out under POLONEZ programme which has received funding f
 Horizon~2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement 
 No.~665778. This project is funded by National Science Centre, Poland 
 (grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+Many thanks to Robert W.~G{\'o}ra and Robert Zale{\'s}ny 
+for reading and commenting on the manuscript.
 \end{acknowledgments}
 
 %
@@ -1135,12 +1158,10 @@ No.~665778. This project is funded by National Science Centre, Poland
 
 \section{\label{a:orig-dep} Origin-Independence of the Induced Dipole Moment}
 
-We need to be aware that multipole integrals depend on the origin with respect to which they are evaluated.
+Multipole integrals depend on the origin with respect to which they are evaluated.
 However, the induced dipole moments defined in Eq.~\eqref{e:dmu-4-exact.linear-approximation} 
 (or equivalently in Eq.~\eqref{e:dmu-l-vector})
 have to be origin independent. 
-%Let us check if this is the case.
-
 Let us start with noticing that
 %
 \begin{equation}
@@ -1152,10 +1173,10 @@ Further we have
 %
 \begin{equation}
  \left[ \widetilde{\mathbb{K}} \right]_{i\alpha} ({\bf r}_Q) 
- = \left[ \widetilde{\mathbb{K}} \right]_{i\alpha} ({\bf 0}) - {\bf r}_Q \left[ {\bf C}^\dagger {\bf D} \right]_{i\alpha} \;.
+ = \left[ \widetilde{\mathbb{K}} \right]_{i\alpha} ({\bf 0}) - {\bf r}_Q \left[ {\bf C}^\dagger \cdot {\bf D} \right]_{i\alpha} \;.
 \end{equation}
 %
-But ${\bf C}^\dagger {\bf D}={\bf C}^\dagger {\bf C} {\bf C}^\dagger={\bf C}^\dagger$ in orthogonal
+But ${\bf C}^\dagger \cdot {\bf D}={\bf C}^\dagger \cdot {\bf C} \cdot {\bf C}^\dagger={\bf C}^\dagger$ in orthogonal
 AO basis. This implies that
 %
 \begin{multline}
@@ -1171,7 +1192,7 @@ Therefore, it is proved that the polarization\hyp{}induced distributed dipole mo
 defined in Eq.~\eqref{e:dmu-4-exact.linear-approximation} 
 are origin independent.
 Thus, one can compute dipole integrals with respect to any origin and resulting
-susceptibilities ${\bf B}_{\alpha\beta}^{(i)}$ from Eq.~\eqref{e:susceptibility-B} will be uniquely defined.
+susceptibilities ${\bf B}_{\alpha\beta}^{(i;1)}$ from Eq.~\eqref{e:susceptibility-B} will be uniquely defined.
 
 \section{\label{a:blocks} Explicit Formulae for Gradient and Hessian Blocks in Linear Regression DMS Model}
 
@@ -1213,8 +1234,8 @@ The explicit formulae for the gradient are
 %
 \begin{subequations}
  \begin{align}
-  g^{[1]}_{kv} &=-2\sum_N \overline{\delta D}^{(N)} F^{(N)}_{kv} \;,\\
-  g^{[2]}_{kvw} &=-2r_{vw} \sum_N \overline{\delta D}^{(N)} F^{(N)}_{kv} F^{(N)}_{kw} \;.
+  g^{[1]}_{ku} &=-2\sum_N \overline{\delta D}^{(N)} F^{(N)}_{ku} \;,\\
+  g^{[2]}_{kuw} &=-2r_{uw} \sum_N \overline{\delta D}^{(N)} F^{(N)}_{ku} F^{(N)}_{kw} \;.
  \end{align}
 \end{subequations}
 %
@@ -1222,18 +1243,21 @@ The Hessian subsequently follows to be
 %
 \begin{subequations}
  \begin{align}
-  H^{[11]}_{kv,lw} &= 2\sum_N F^{(N)}_{kv} F^{(N)}_{lw} \;,\\
-  H^{[12]}_{kv,lv'w'} &= 2r_{v'w'} \sum_N F^{(N)}_{kv} F^{(N)}_{lv'} F^{(N)}_{lw'}  \;,\\
-  H^{[22]}_{kvw,lv'w'} &= 2r_{vw} r_{v'w'} \sum_N F^{(N)}_{kv} F^{(N)}_{kw} F^{(N)}_{lv'} F^{(N)}_{lw'} \;.
+  H^{[11]}_{ku,lw} &= 2\sum_N F^{(N)}_{ku} F^{(N)}_{lw} \;,\\
+  H^{[12]}_{ku,lu'w'} &= 2r_{u'w'} \sum_N F^{(N)}_{ku} F^{(N)}_{lu'} F^{(N)}_{lw'}  \;,\\
+  H^{[22]}_{kuw,lu'w'} &= 2r_{uw} r_{u'w'} \sum_N F^{(N)}_{ku} F^{(N)}_{kw} F^{(N)}_{lu'} F^{(N)}_{lw'} \;.
  \end{align}
 \end{subequations}
 %
 Note that due to the symmetry of the Hessian matrix, the block $21$
 is a transpose of the block $12$. 
-The composite indices $kv$ and $kvw$ are constructed from the distributed site index $k$
-and the appropriate symmetry\hyp{}corrected Cartesian component 
-of a particular DMS tensor ($v$ for first\hyp{}order,
-and $vw$, $w<v$ for second\hyp{}order susceptibility tensor, respectively).
+The composite indices $ku$ and $kuw$ are constructed from the distributed site index $k$
+and the appropriate symmetry\hyp{}adapted ($w<u$) Cartesian component 
+of a particular DMS tensor: $u$ for the first\hyp{}order,
+and $uw$ for the second\hyp{}order susceptibility tensor, respectively.
+
+% -----------------------
 \bibliography{references}
+% -----------------------
 
 \end{document}
