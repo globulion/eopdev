@@ -1,0 +1,183 @@
+#!/usr/bin/gnuplot
+#
+# ------------------------------------------------
+# Figure 2. Density Matrix Susceptibility Paper.
+# Bartosz Błasiak, Wrocław 20 July 2018
+# ------------------------------------------------
+#
+set terminal epslatex size 14cm,17cm color colortext standalone \
+   font "cmss, 8" \
+   header \
+   "\\newcommand{\\ft}[0]{\\footnotesize}\\usepackage{amsmath}\\usepackage{amssymb}\\usepackage{upgreek}"
+
+# global settings for each subplot
+set border lw 3 lc rgbcolor "#515151"
+unset key
+set grid x y
+
+# output file
+set output 'fig-2.tex'
+set loadpath "./reports/"
+set multiplot
+
+# physical scaling factors
+c1 = 627.509             # --> kcal/mole
+c2 = 2.541765            # --> Debye
+c3 = 2.541765*0.529177249# --> Debye-Angstrom
+
+# origins
+o11x = 0.080; o11y = 0.60;
+o12x = 0.380; o12y = 0.60;
+o13x = 0.680; o13y = 0.60;
+
+o21x = 0.080; o21y = 0.30;
+o22x = 0.380; o22y = 0.30;
+o23x = 0.680; o23y = 0.30;
+
+o31x = 0.080; o31y = 0.00;
+o32x = 0.380; o32y = 0.00;
+o33x = 0.680; o33y = 0.00;
+
+# R2 box position
+ob1x = 0.07; ob1y = 0.86;
+ob2x = 0.59; ob2y = 0.96;
+
+# scale
+s  = 0.32;
+
+# margins
+set bmargin 5
+set lmargin 0
+set rmargin 0
+set tmargin 2
+
+# label positions
+graph_label_x = 0.80
+graph_label_y = 0.14
+
+# ------------------------------------------------------------------------------------------------- #
+set object 388 rectangle from screen 0.01, screen 0.92 to screen 0.99, screen 0.913 fc rgb "#ffdeff" fillstyle solid 0.7 noborder
+set object 389 rectangle from screen 0.01, screen 0.00 to screen 0.99, screen 0.007 fc rgb "#ffdeff" fillstyle solid 0.7 noborder
+set label 488 '\LARGE\shortstack{Ab Initio DMS\\$R_{\text{max}}=1$}' front at screen 0.189, screen 0.96
+set label 489 '\LARGE\shortstack{Generalised DMS\\$R_{\text{max}}=2$}' front at screen 0.47, screen 0.96
+set label 490 '\LARGE\shortstack{Distributed\\Polarisability}' front at screen 0.762, screen 0.96
+# ------------------------------------------------------------------------------------------------- #
+set format x "%2.1f"
+set format y "%2.1f"
+set xrange [-7.0:1.0]
+set yrange [-7.0:1.0]
+
+set xtics (-6.0, -4.0, -2.0, 0.0)
+set ytics (-6.0, -4.0, -2.0, 0.0)
+unset xlabel
+set ylabel "$\\delta E_{\\text{Theory}}^{\\text{Pol}}$ (kcal/mol)"
+set size ratio -1 s,s
+set origin o11x, o11y
+#set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
+#set label 11 "$R^2=0.9826$" front at graph 0.1,0.9 tc rgbcolor "#515151"
+set label 22 "\\Huge \\textbf{A}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+plot "REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c1*($1)):(c1*($2)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set xtics (-6.0, -4.0, -2.0, 0.0)
+set ytics ("" -6.0,"" -4.0,"" -2.0,"" 0.0)
+set xlabel "$\\delta E_{\\text{Full QM}}^{\\text{Pol}}$ (kcal/mol)" offset 0.0,-0.5
+unset ylabel
+set size ratio -1 s, s
+set origin o12x, o12y
+set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
+set label 11 "$R^2=0.9725$" front at graph 0.1,0.9 tc rgbcolor "#515151"
+set label 22 "\\Huge \\textbf{B}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+plot "REPORT.POLAR.G.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c1*($1)):(c1*($2)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set xtics (-6.0, -4.0, -2.0, 0.0)
+set ytics ("" -6.0,"" -4.0,"" -2.0,"" 0.0)
+unset xlabel
+unset ylabel
+set size ratio -1 s, s
+set origin o13x, o13y
+set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
+set label 11 "$R^2=0.9813$" front at graph 0.1,0.9 tc rgbcolor "#515151"
+set label 22 "\\Huge \\textbf{C}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+plot "REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c1*($1)):(c1*($3)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+# ------------------------------------------------------------------------------------------------- #
+
+set format x "%2.2f"
+set format y "%2.2f"
+set xrange [0.0:0.7]
+set yrange [0.0:0.7]
+
+set xtics (0.0, 0.15, 0.3, 0.45, 0.6)
+set ytics (0.0, 0.15, 0.3, 0.45, 0.6)
+unset xlabel
+set ylabel "$\\vert\\delta{\\upmu}\\vert_{\\text{Theory}}$ (D)"
+set size ratio -1 s, s
+set origin o21x, o21y
+set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
+set label 11 "$R^2=0.9692$" front at graph 0.1,0.9 tc rgbcolor "#515151"
+set label 22 "\\Huge \\textbf{D}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+plot "REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c2*($4)):(c2*($5)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set xtics (0.0, 0.15, 0.3, 0.45, 0.6)
+set ytics ("" 0.0,"" 0.15,"" 0.3,"" 0.45,"" 0.6)
+set xlabel "$\\vert\\delta{\\upmu}\\vert_{\\text{Full QM}}$ (D)" offset 0.0,-0.5
+unset ylabel
+set size ratio -1 s, s
+set origin o22x, o22y
+set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
+set label 11 "$R^2=0.9961$" front at graph 0.1,0.9 tc rgbcolor "#515151"
+set label 22 "\\Huge \\textbf{E}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+plot "REPORT.POLAR.G.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c2*($3)):(c2*($4)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set xtics (0.0, 0.15, 0.3, 0.45, 0.6)
+set ytics ("" 0.0,"" 0.15,"" 0.3,"" 0.45,"" 0.6)
+unset xlabel
+unset ylabel
+set size ratio -1 s, s
+set origin o23x, o23y
+set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
+set label 11 "$R^2=0.9692$" front at graph 0.1,0.9 tc rgbcolor "#515151"
+set label 22 "\\Huge \\textbf{F}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+plot "REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c2*($4)):(c2*($6)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+# ------------------------------------------------------------------------------------------------- #
+
+set format x "%3.2f"
+set format y "%3.2f"
+set xrange [0.00:0.25]
+set yrange [0.00:0.25]
+
+set xtics (0.0, 0.05, 0.10, 0.15, 0.20, 0.25)
+set ytics (0.0, 0.05, 0.10, 0.15, 0.20, 0.25)
+unset xlabel
+set ylabel "$\\vert\\delta{\\widetilde{\\Theta}}\\vert_{\\text{Theory}}$ (D\\AA)"
+set size ratio -1 s, s
+set origin o31x, o31y
+set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
+set label 11 "$R^2=0.4053$" front at graph 0.1,0.9 tc rgbcolor "#515151"
+set label 22 "\\Huge \\textbf{G}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+plot "REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c3*($7)):(c3*($8)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set xtics (0.0, 0.05, 0.10, 0.15, 0.20, 0.25)
+set ytics ("" 0.0,"" 0.05,"" 0.10,"" 0.15,"" 0.20,"" 0.25)
+set xlabel "$\\vert\\delta{\\widetilde{\\Theta}}\\vert_{\\text{Full QM}}$ (D\\AA)" offset 0.0,-0.5
+unset ylabel
+set size ratio -1 s, s
+set origin o32x, o32y
+set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
+set label 11 "$R^2=0.9798$" front at graph 0.1,0.9 tc rgbcolor "#515151"
+set label 22 "\\Huge \\textbf{H}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+plot "REPORT.POLAR.G.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c3*($5)):(c3*($6)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+set xtics (0.0, 0.05, 0.10, 0.15, 0.20, 0.25)
+set ytics ("" 0.0,"" 0.05,"" 0.10,"" 0.15,"" 0.20,"" 0.25)
+unset xlabel
+unset ylabel
+set size ratio -1 s, s
+set origin o33x, o33y
+set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
+set label 11 "$R^2=0.5962$" front at graph 0.1,0.9 tc rgbcolor "#515151"
+set label 22 "\\Huge \\textbf{I}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+plot "REPORT.POLAR.A.WATER_CHARGES_2_0_40_0.2_100.DAT" u (c3*($7)):(c3*($9)) w p pt 7 notitle, x w l lw 2 lc 0 notitle
+
+unset multiplot
