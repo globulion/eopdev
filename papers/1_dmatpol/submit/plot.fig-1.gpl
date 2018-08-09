@@ -54,8 +54,8 @@ plot \
      "REPORT.POLAR.A.WATER_EFIELD_1_0_FAVE0.035_100_FF.DAT" u (c1*($1)):(c1*($2)) w p pt 7        lc rgbcolor "#2200FF" notit, \
      "REPORT.POLAR.A.WATER_EFIELD_2_0_FAVE0.035_100_FF.DAT" u (c1*($1)):(c1*($2)) w p pt 7        lc rgbcolor "#FF004D" notit, \
      "REPORT.POLAR.A.WATER_EFIELD_1_0_FAVE0.035_100.DAT"    u (c1*($1)):(c1*($2)) w p pt 5 ps 0.6 lc 0                  notit, \
-     NaN w p pt 7        lc rgbcolor "#2200FF" t "\\small $R_{\\text{max}}=1$, Eq.(5)", \
-     NaN w p pt 7        lc rgbcolor "#FF004D" t "\\small $R_{\\text{max}}=2$, Eq.(5)", \
+     NaN w p pt 7        lc rgbcolor "#2200FF" t "\\small $R_{\\text{max}}=1$, Eq.(5)" , \
+     NaN w p pt 7        lc rgbcolor "#FF004D" t "\\small $R_{\\text{max}}=2$, Eq.(5)" , \
      NaN w p pt 6 ps 1.3 lc rgbcolor "#A091FF" t "\\small $R_{\\text{max}}=1$, Eq.(28)", \
      NaN w p pt 6 ps 1.3 lc rgbcolor "#FF477F" t "\\small $R_{\\text{max}}=2$, Eq.(28)", \
      NaN w p pt 5 ps 0.6 lc 0                  t "\\small $R_{\\text{max}}=1$, Eq.(26)", \

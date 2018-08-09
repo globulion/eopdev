@@ -7,6 +7,7 @@
 \usepackage{graphicx}% Include figure files
 \usepackage{dcolumn}% Align table columns on decimal point
 \usepackage{bm}% bold math
+%\usepackage{txfonts}
 %\usepackage[mathlines]{lineno}% Enable numbering of text and display math
 %\linenumbers\relax % Commence numbering lines
 
@@ -105,6 +106,17 @@
 % trace operator
 \DeclareMathOperator{\Tr}{Tr}
 
+% EU logo
+\newcommand*{\InlineImage}[1]{%
+    \raisebox{-.02\baselineskip}{%
+        \includegraphics[
+        height=\baselineskip,
+        width=\baselineskip,
+        keepaspectratio,
+        ]{#1}%
+    }%
+}
+
 %\draft % marks overfull lines with a black rule on the right
 
 \begin{document}
@@ -160,14 +172,14 @@ chemical systems such as solutions and biomolecules come into play.\cite{
 Xu.Guidez.Bertoni.Gordon.JCP.2018,Tomasi.Mennucci.Cammi.ChemRev.2005}
 Due to this reason, it has been of particular importance nowadays to develop bridging theoretical techniques 
 that link extremely accurate but localised pieces of information with certain knowledge of an atomistic 
-organisation and intermolecular interaction on a relatively large spatial scales, typically ranging beyond 
+organisation and intermolecular interaction on relatively large spatial scales, typically ranging beyond 
 few nanometers. 
 
 The development of hybrid methods such as quantum mechanical\hyp{}molecular mechanical (QM/MM) technique 
 was a revolution in computational chemistry which allows insightful theoretical studies of quantum mechanical
 effects in biological systems because costly quantum mechanical calculations can be combined with lower\hyp{}level 
 and much less expensive classical dynamics.\cite{Warshel.Levitt.JMolBiol.1976,Senn.Thiel.Angew.2009}
-Fruitful incorporation of accurate \emph{ab initio} methods with extensive experimental and semi\hyp{}empirical
+Combination of accurate \emph{ab initio} methods with extensive experimental and semi\hyp{}empirical
 refinings led to development of a wide variety of force fields,\cite{Demerdash.Yap.T-Head-Gordon.AnnuRevPhysChem.2014}
 whereas sophisticated partitioning of Hamiltonian or electron density enabled numerous schemes for efficient fragmentation
 within a QM level.\cite{Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012}
@@ -222,7 +234,7 @@ perturbation susceptibility is assumed to be a property of unperturbed molecule 
 Thus, such DMS could be adapted into an efficient effective one\hyp{}electron fragment potential which in principle, 
 is applicable to an arbitrary level of theory, as long as the one\hyp{}particle densities are available by means of
 quantum chemistry methods. It also means that such a technique would dramatically reduce costs of quantum chemistry 
-calculations because the task of performing full computation on a molecular aggregate would reduce to much simpler 
+calculations because the task of performing full computation on a molecular aggregate would reduce to much simpler
 matrix operations.
 
 The simplest type of perturbation, yet the most relevant for chemistry, is the electrostatic perturbation.
@@ -486,7 +498,7 @@ Here we introduced the auxiliary tensors
  \end{align}
 \end{subequations}
 %
-to simplify the notation. Hence, we have
+to simplify the notation. Hence,
 %
 \begin{equation} \label{e:dmu-l-vector}
   \frac{1}{4} 
@@ -1182,8 +1194,8 @@ described at correlated levels of theory, particularly including the excited sta
 \begin{acknowledgments}
 This project is carried out under POLONEZ programme which has received funding from the European Union's
 Horizon~2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement 
-No.~665778. This project is funded by National Science Centre, Poland 
-(grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+No.~665778. \InlineImage{eu-logo.eps} This project is funded by National Science Centre, Poland 
+(grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship. 
 %Many thanks to Robert W.~G{\'o}ra and Robert Zale{\'s}ny 
 %for reading and commenting on the manuscript.
 \end{acknowledgments}
