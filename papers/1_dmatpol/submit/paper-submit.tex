@@ -226,9 +226,10 @@ and the environment\hyp{}induced perturbation on a molecule, $\delta {\bf P}_i$,
 %
 \begin{equation*} \label{e:initial-model}
   \delta {\bf D} \approx \sum_i^{\text{Sites}} {\bf B}_i
-  \cdot  \delta {\bf P}_i \;.
+  \cdot  \delta {\bf P}_i \;,
 \end{equation*}
 %
+where the `$\cdot$' symbol denotes the inner tensor (dot) product.
 While $\delta {\bf P}_i$ contains critical information about the actual distortion of the electronic cloud,
 perturbation susceptibility is assumed to be a property of unperturbed molecule and is to be precomputed only once. 
 Thus, such DMS could be adapted into an efficient effective one\hyp{}electron fragment potential which in principle, 
@@ -322,6 +323,7 @@ or electronic transition is given by the following Taylor expansion:
    + \ldots 
 \end{equation}
 %
+where the `$\otimes$' symbol denotes the outer tensor product.
 In the above expression, the density matrix susceptibilities 
 are simply equal to the derivatives of the density matrix
 with respect to electric field (up to a multiplicative constant).
@@ -434,98 +436,76 @@ truncating it at linear terms with respect to ${\BM\Delta}$ gives
 \end{subequations}
 %
 The latter equality is true only if the basis set functions are orthogonal, i.e., 
-${\bf C}^{(0)\dagger} \cdot {\bf C}^{(0)}={\bf 1}$,
-which will be the case throughout the entire work, unless stated otherwise.
+${\bf C}^{(0)\dagger} \cdot {\bf C}^{(0)}={\bf 1}$.
+Such a condition is necessary in order to meet the charge conservation
+requirement (see Appendix~\ref{a:orig-dep} for a detailed discussion).
+Therefore orthogonality of AO's is assumed from that point, unless stated otherwise.
+%Also, from this point onwards we assume that the molecular orbitals 
+%and the transformation matrix $\BM \Delta$ are real.
 Substituting the result from Eq.~\eqref{e:dD-1}
 into Eq.~\eqref{e:dmu-exact} leads to
 %
-\begin{multline} \label{e:dmu-4-exact.linear-approximation}
- \frac{1}{2} 
- \delta {\BM{\upmu}}
+%\begin{multline} \label{e:dmu-4-exact.linear-approximation}
+% \frac{1}{2} 
+% \delta {\BM{\upmu}}({\bf r}_Q)
+%  \cong
+%   \Tr{ 
+%    \left[ 
+%         {\mathbb{M}} \cdot {\BM\Delta} \cdot {\bf D}^{(0)}  
+%    \right] }
+%%
+%  +\Tr{ 
+%    \left[ 
+%         {\mathbb{M}} \cdot {\bf D}^{(0)} \cdot {\BM\Delta}^{\dagger}
+%    \right] } \\
+%%
+%  -\Tr{ 
+%    \left[ 
+%         {\mathbb{M}} \cdot {\bf D}^{(0)} \cdot {\BM\Delta} \cdot {\bf D}^{(0)}
+%    \right] }
+%%
+%  -\Tr{ 
+%    \left[ 
+%         {\mathbb{M}} \cdot {\bf D}^{(0)} \cdot {\BM\Delta}^{\dagger} \cdot {\bf D}^{(0)}
+%    \right] } \;.
+%\end{multline}
+%
+%This can be recast to
+%
+\begin{equation}\label{e:dmu-l-vector}
+ \frac{1}{4} 
+ \delta {\BM{\upmu}}({\bf r}_Q)
   \cong
-   \Tr{ 
+  \Re \left\{ 
+ \Tr{ 
     \left[ 
-         {\mathbb{M}} \cdot {\BM\Delta} \cdot {\bf D}^{(0)}  
-    \right] }
+         \delta {\bf C} \cdot \mathbb{L}({\bf r}_Q)
+   \right] }  
+  \right\} \;,
+\end{equation}
 %
-  +\Tr{ 
-    \left[ 
-         {\mathbb{M}} \cdot {\bf D}^{(0)} \cdot {\BM\Delta}^{\dagger}
-    \right] } \\
+where the `$\Re$' symbol denotes the real part,
+ and the intermediate quantity
 %
-  -\Tr{ 
-    \left[ 
-         {\mathbb{M}} \cdot {\bf D}^{(0)} \cdot {\BM\Delta} \cdot {\bf D}^{(0)}
-    \right] }
+\begin{equation} \label{e:L-projector}
+ \mathbb{L}({\bf r}_Q) \equiv {\bf C}^{\dagger} \cdot \mathbb{M}({\bf r}_Q) \cdot \left( {\bf 1} - {\bf D}^{(0)} \right) \;.
+\end{equation}
 %
-  -\Tr{ 
-    \left[ 
-         {\mathbb{M}} \cdot {\bf D}^{(0)} \cdot {\BM\Delta}^{\dagger} \cdot {\bf D}^{(0)}
-    \right] } \;.
-\end{multline}
-%
+Note that $\mathbb{L}({\bf r}_Q)$ contains the projector onto
+the unoccupied MO space at the absence of the external electric field. It means that the
+perturbed solution is constructed from the unperturbed virtual orbitals as well.
+Note also the similarity between Eq.~\eqref{e:L-projector} and Eq.~\eqref{e:dmu-exact}.
 It can be proven (see Appendix~\ref{a:orig-dep}) that such obtained
 induced dipole moment is independent of the origin. 
 This guarantees that the theory fulfils the total charge conservation requirement.
-Therefore,
-in the above result and also in later course of the paper the dipole origin will be omitted. 
-%where the dipole origin was omitted for notational clarity.
+Therefore, in later course of the paper the dipole origin will be omitted. 
 
-Now, if the AO basis is orthogonal, Eq.~\eqref{e:dmu-4-exact.linear-approximation} can be simplified by realising that
-%
-\begin{equation}
- \frac{1}{2} 
- \delta {\BM{\upmu}}
-  \cong
-2 \Tr{ 
-    \left[ 
-         \widetilde{\mathbb{M}} \cdot \delta {\bf C}
-   \right] }  
--
-2 \Tr{ 
-    \left[ 
-         \widetilde{\mathbb{K}} \cdot \delta {\bf C}
-   \right] } \;.
-\end{equation}
-%
-Here we introduced the auxiliary tensors
-%
-\begin{subequations}
- \begin{align}
-   \widetilde{\mathbb{M}}  &\equiv {\bf C}^{(0)\dagger} \cdot {\mathbb{M}}     \;,           \\
-   \widetilde{\mathbb{K}}  &\equiv {\bf C}^{(0)\dagger} \cdot {\mathbb{M}} \cdot {\bf D}^{(0)} \;, \\
-   \widetilde{\mathbb{L}}  &\equiv \widetilde{\mathbb{M}} - \widetilde{\mathbb{K}} \;
- \end{align}
-\end{subequations}
-%
-to simplify the notation. Hence,
-%
-\begin{equation} \label{e:dmu-l-vector}
-  \frac{1}{4} 
- \delta {\BM{\upmu}} %({\bf r}_0) 
-   =
-   \Tr{ 
-    \left[ 
-         \widetilde{\mathbb{L}} \cdot \delta {\bf C}
-    \right] }
-   %
-   \equiv \sum_{i}^{\rm occ} \sum_\alpha {\bf l}_{i\alpha} \delta C_{\alpha i} \;,
-\end{equation}
-%
-where the Cartesian vector
-%
-\begin{equation}\label{e:l-vector}
- {\bf l}_{i\alpha} \equiv \left[ \widetilde{\mathbb{M}} - \widetilde{\mathbb{K}} \right]_{i\alpha} 
-      = \left[  {\bf C}^\dagger \cdot \mathbb{M} \cdot \left( {\bf 1} - {\bf D}^{(0)} \right) \right]_{i\alpha}
-\end{equation}
-%
-and $i$ runs over occupied unperturbed MO's.
-Note that the intermediate quantity $\widetilde{\mathbb{L}}$ contains the projector onto
-the unoccupied MO space at the absence of the external electric field. It means that the
-perturbed solution is constructed from the unperturbed virtual orbitals as well.
+
 Although Eq.~\eqref{e:dmu-l-vector}
-is exact up to first order in ${\BM\Delta}$, it cannot be inverted at this moment to obtain $\delta {\bf C}$
-due to the presence of trace operation, unless the electric field is uniform.
+is exact up to first order in ${\BM\Delta}$, it cannot be inverted at this moment to obtain $\delta {\bf C}$.
+If the orbitals are real, the analytic solution exists
+provided that the electric field is uniform. In a more general case, i.e., when the electric field
+is non\hyp{}uniform, the analytic solution cannot be found without further approximations.
 Let the induced dipole moment be partitioned into separate contributions
 from the occupied localised MO's (LMO's), i.e.,
 %
@@ -533,10 +513,11 @@ from the occupied localised MO's (LMO's), i.e.,
  \delta {\BM{\upmu}} = \sum_i^{\rm occ} \delta {\BM{\upmu}}_i \;,
 \end{equation}
 %
-where
+where the induced dipole moment associated with the $i$th LMO
+is assumed to be linearly dependent on the local electric field, i.e.,
 %
 \begin{equation} \label{e:dmu-dpol}
- \delta {\BM{\upmu}}_i = {\BM{\alpha}}_i \cdot {\bf F}({\bf r}_i) \;.
+ \delta {\BM{\upmu}}_i \approx {\BM{\alpha}}_i \cdot {\bf F}({\bf r}_i) \;.
 \end{equation}
 %
 In Eq.~\eqref{e:dmu-dpol}, ${\BM{\alpha}}_i$ is the distributed dipole\hyp{}dipole polarisability tensor
@@ -545,21 +526,22 @@ is the electric field evaluated at the $i$th LMO charge centroid,
 ${\bf r}_i = \tbraket{\phi_i}{\hat{\bf r}}{\phi_i}$.
 By inserting the above result into Eq.~\eqref{e:dmu-l-vector},
 recasting the right hand side in a matrix form
-and assuming real quantities,
-one can separate the contributions coming from occupied MO's as
+and assuming real orbitals,
+one can separate the contributions coming from the occupied MO's as
 %
 \begin{equation} \label{e:dmu-l-vector-mo-transform-X}
  \frac{1}{4} {\BM{\alpha}}_i \cdot {\bf F}({\bf r}_i) 
    =
-   \delta {\bf c}_i^T \cdot {\bf L}_i \;.
+   \delta {\bf c}_i^{\rm T} \cdot {\bf L}_i \;.
 \end{equation}
 %
-Note that now ${\bf L}_i$ is a matrix of dimension $n \times 3$ and $\delta{\bf c}_i$ is the $i$th column of the
+Note that now ${\bf L}_i \equiv \left[ \mathbb{L} \right]_i$ 
+is a real rectangular matrix of dimension $n \times 3$ and $\delta{\bf c}_i$ is the $i$th column of the
 change in the LCAO-MO matrix due to the polarisation process.
 The solution for $\delta {\bf C}$ is
 %
 \begin{equation} \label{e:mu-ind.matrix.linear.solution}
-  \delta {\bf c}_i^T = \frac{1}{4}
+  \delta {\bf c}_i^{\rm T} = \frac{1}{4}
             {\bf F}({\bf r}_i)  \cdot {\BM{\alpha}}_i \cdot 
                     \left[ {\bf L}_i  \right]^{-1}_{\rm Left} \;,
 \end{equation}
@@ -569,11 +551,11 @@ of ${\bf L}_i$ matrix,
 %
 \begin{equation} 
       \left[ {\bf L}_i  \right]^{-1}_{\rm Left}   \equiv
-       \left[ {\bf L}_i^T \cdot {\bf L}_i \right]^{-1} \cdot {\bf L}_i^T   
+       \left[ {\bf L}_i^{\rm T} \cdot {\bf L}_i \right]^{-1} \cdot {\bf L}_i^{\rm T}   
 \end{equation}
 %
 with the dimension of $3\times n$. Note that the right inverse of ${\bf L}_i$
-does not exist because ${\bf L}_i \cdot {\bf L}_i^T$ is singular due to the fact that usually
+does not exist because ${\bf L}_i \cdot {\bf L}_i^{\rm T}$ is singular due to the fact that usually
 $n > 3$.
 
 \subsubsection{Density Matrix Change}
