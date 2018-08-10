@@ -757,9 +757,12 @@ point charge distributions were selected and exact solutions of HF\hyp{}SCF equa
 performed for each validation procedure.
 In the case of non\hyp{}uniform electric fields, the distribution centres 
 of the \emph{ab initio} DMS model (Eq.~\eqref{e:final-model.HF}) were assumed 
-to be LMO centroids, while atoms were used for the generalised DMS models (Eq.~\eqref{e:final-model.General}).
-This is because various LMO centroids are often located at the same point which would
-introduce linear dependencies in the Hessian matrix from Eq.~\eqref{e:Newton.gH}.
+to be the LMO centroids (resulting in the five\hyp{}centre model), 
+while the atoms were used for the generalised DMS models (Eq.~\eqref{e:final-model.General}, 
+resulting in the three\hyp{}centre models).
+This is because certain LMO centroids are often located at the same point which would
+introduce linear dependencies in the Hessian matrix from Eq.~\eqref{e:Newton.gH}
+when using the generalised DMS scheme.
 
 In order to validate all the models discussed in this contribution,
 the electric field\hyp{}induced polarisation energy, 
@@ -781,7 +784,7 @@ ${\bf V}$ is the one\hyp{}electron external electrostatic potential matrix where
 and $\delta {\bf K}$ are electric field\hyp{}induced changes in the Coulomb and the exchange HF matrices due to 
 the polarisation of the electron density, respectively. 
 In order to compare the performance of the usual 
-distributed dipole\hyp{}dipole polarisability approach,
+distributed dipole\hyp{}dipole polarisability approach,\cite{Li.Netzloff.Gordon.JCP.2006}
 the approximate interaction energy was also evaluated by using the expression:
 %
 \begin{equation}\label{e:dE-dpol}
@@ -835,16 +838,16 @@ the following statistical quality descriptors:
 \begin{enumerate}
  \item Root Mean Square Energy Error (RMSE)
    \begin{equation}\label{e:rmse}
-     {\rm RMSE} = \sqrt{ \frac{1}{N_{\rm max}} \sum_N \left( \delta E^{(N)} - \overline{\delta E^{(N)}}\right)^2 } \;;
+     {\rm RMSE} = \sqrt{ \frac{1}{N_{\rm max}} \sum_N^{N_{\rm max}} \left( \delta E^{(N)} - \overline{\delta E^{(N)}}\right)^2 } \;;
    \end{equation}
  \item Root Mean Square Dipole Error (RMSD)
    \begin{equation}\label{e:rmsd}
-     {\rm RMSD} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N \left( \lvert \delta {\BM\upmu}^{(N)} \rvert 
+     {\rm RMSD} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N^{N_{\rm max}} \left( \lvert \delta {\BM\upmu}^{(N)} \rvert 
                                              - \lvert \overline{\delta {\BM\upmu}^{(N)} \rvert }\right)^2 } \;;
    \end{equation}
  \item Root Mean Square Quadrupole Error (RMSQ)
    \begin{equation}\label{e:rmsq}
-     {\rm RMSQ} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N \left( \lvert \delta \widetilde{\BM\Theta}^{(N)} \rvert 
+     {\rm RMSQ} = \sqrt{ \frac{1}{N_{\rm max}}\sum_N^{N_{\rm max}} \left( \lvert \delta \widetilde{\BM\Theta}^{(N)} \rvert 
                                              - \lvert \overline{\delta \widetilde{\BM\Theta}^{(N)} \rvert }\right)^2 } \;.
    \end{equation}
 \end{enumerate}
@@ -888,7 +891,7 @@ the following finite\hyp{}difference formulae were utilised:
 where 
 the subscripts $u,w=x,y,z$ on the right\hyp{}hand sides denote the derivatives with respect 
 to the Cartesian component of the electric field, and the finite difference
-steps $F_{u(w)}$ were assumed to be 0.0005~a.u for all components. 
+steps $F_{u(w)}$ were assumed to be 0.0005~a.u. for all components. 
 
 \section{\label{s:4}Results and Discussion}
 
@@ -916,7 +919,7 @@ are gathered in Table~\ref{t:results}.
 %
 \begin{figure}[t]
 \includegraphics[width=0.5\textwidth]{fig-1.eps}
-\caption{\label{f:fig-1} {\bf Performance of the DMS tensors of water molecule
+\caption{\label{f:fig-1} {\bf Performance of the DMS tensors of the ground\hyp{}state water molecule
 in uniform electric field.} 
 $R_{\rm max}$ denotes the maximum rank of the electric field
 in the expansion from Eq.~\eqref{e:final-model.General}.
@@ -965,7 +968,7 @@ DMS models are quantitative even at very strong uniform electric fields.
 
 %
 \begin{table*}%[]
-\caption{{\bf Performance of the DMS tensors of water molecule
+\caption{{\bf Performance of the DMS tensors of ground\hyp{}state water molecule
 in uniform and non\hyp{}uniform electric field$^{a,b}$}
 }
 \label{t:results}
@@ -1040,7 +1043,7 @@ moderate (0.01 -- 0.02 a.u.) and strong (0.02 -- 0.05 a.u.)
 electric fields around the water molecule were considered (Table~\ref{t:fields}),
 %
 \begin{table}[b]
-\caption{{\bf Average electric fields in statistical sets of electrostatically perturbed states
+\caption{{\bf Average electric fields in statistical sets of electrostatically perturbed ground states
 of water molecule surrounded by point charges$^a$}
 }
 \label{t:fields}
@@ -1065,11 +1068,11 @@ $^b$ `W', `M' and `S' denote `weak', `moderate' and `strong' electric fields, re
 \end{table}
 %
 because similar ranges of electric field are experienced by water molecules
-in liquid phase.\cite{Reischl.Kofinger.Dellago.MolPhys.2009,Fried.Wang.Boxer.Ren.Pande.JPCB.2013}
+in liquid phase.\cite{Fried.Wang.Boxer.Ren.Pande.JPCB.2013,Reischl.Kofinger.Dellago.MolPhys.2009}
 Performance descriptors of the \emph{ab initio} and generalised 
 models of the density matrix susceptibility, as well as 
 the conventional dipole\hyp{}dipole distributed polarisability
-approach, are shown in Table~\ref{t:results}, whereas the distribution of errors
+approach, are shown in Table~\ref{t:results}, whereas the error distributions
 in strong electric fields are additionally plotted in Figure~\ref{f:fig-2}A--I.
 
 Similarly as in uniform electric field, 
@@ -1084,8 +1087,8 @@ whereas the \emph{ab initio} DMS model yields RMSQ of 28.2$\times 10^{-3}$D\AA{ 
 
 \begin{figure*}[h]
 \includegraphics[width=\textwidth]{fig-2.eps}
-\caption{\label{f:fig-2} {\bf Performance of the distributed DMS tensors of water molecule in strong
-non\hyp{}uniform electric fields.}
+\caption{\label{f:fig-2} {\bf Performance of the distributed DMS tensors of ground\hyp{}state water molecule in strong
+non\hyp{}uniform electric field.}
 In this Figure, `Ab Initio DMS' (panels A, D and G) 
 refers to the model from Eq.~\eqref{e:final-model.HF} and
 `Generalised DMS' (panels B, E and H) 
@@ -1102,17 +1105,17 @@ from Tables~\ref{t:results} and \ref{t:fields}.}
 
 The most sophisticated model studied in this work, the generalised quadratic DMS model, yields excellent predictions 
 of the polarisation energies and induced multipole moments in all strengths of the non\hyp{}uniform electric field tested.
-The errors in predicting polarisation energy are reduced by an order of magnitude when compared with
+The errors in predicting polarisation energy are reduced by over an order of magnitude when compared with
 the linear DMS models. Improvement of accuracy can also be observed in the case of induced multipole moment predictions
-but the effect is less significant (improvement roughly by a factor of 2).
+but the effect is less significant.
+%(improvement roughly by a factor of 2).
 What is particularly interesting is that in weak and moderate electric fields
 the generalised quadratic DMS model performs better than the distributed dipole\hyp{}dipole
 polarisability model, whereas only in strong electric fields the situation is reversed
 (RMSE of 0.402, $R^2=97.2\%$ and 0.332 kcal/mol, $R^2=98.1\%$ for the DMS and polarisability model, respectively; 
 see also Figure~\ref{f:fig-2}B and \ref{f:fig-2}C).
-Nevertheless, the quadratic DMS model yields still very high $R^2$ of 97.2\% 
-even in strong electric fields for polarisation
-energy, and also very high $R^2$ for induced multipole moments.
+Nevertheless, the quadratic DMS model yields still very accurate predictions 
+of polarization energy and induced multipole moments, even in strong electric field.
 
 Recently, it was found by Fried et~al. by performing molecular dynamics simulations with a classical 
 polarisable force field, that the average electric field experienced by water molecule in liquid phase
@@ -1125,7 +1128,10 @@ stronger electric fields in certain geometries of hydrogen bonded clusters,
 even up to 0.055 a.u. according to study by Reischl et~al.\cite{Reischl.Kofinger.Dellago.MolPhys.2009} 
 This electric field magnitude falls into our strong electric field regime (denoted as `S')
 in which the generalised quadratic DMS model still provides accurate predictions (see also error distributions 
-in Figure~\ref{f:fig-2}B, \ref{f:fig-2}E and \ref{f:fig-2}H). 
+in Figure~\ref{f:fig-2}B, \ref{f:fig-2}E and \ref{f:fig-2}H). Therefore, it is believed that
+the generalised quadratic DMS model is capable of accurately describing 
+the polarization of ground\hyp{}state water molecule in inhomogeneous 
+electric fields that are comparable in strength to condensed phase conditions.
 
 
 
@@ -1159,12 +1165,13 @@ in Figure~\ref{f:fig-2}B, \ref{f:fig-2}E and \ref{f:fig-2}H).
 %interaction energies, the atom\hyp{}distributed generalised model can reach quantitative level of accuracy
 %for prediction of interaction energies, dipole moments and even quadrupole moments
 %once, at least quadratic terms with respect to the electric field, are taken into account. 
-In this work, it was demonstrated that the generalized DMS models from Eq.~\eqref{e:final-model.General}
+In this work, it was demonstrated that the generalised DMS models from Eq.~\eqref{e:final-model.General}
 can accurately describe the polarization\hyp{}induced deformation of the one\hyp{}particle ground\hyp{}state electronic density
 due to the uniform and non\hyp{}uniform distribution of electric field.
 It was also shown that the accuracy of the model can be improved by extending the parameter space of the susceptibility tensors.
 Even at the current state of development, the generalised quadratic DMS model
-is of comparable energetic accuracy as the distributed polarisability model (RMSE < 0.4~kcal/mol).
+is of comparable energetic accuracy as the distributed polarisability model (RMSE of 0.4~kcal/mol in strong 
+electric fields and less than 0.06~kcal/mol in moderate and weak fields).
 %It is emphasised here that the model can be easily extended by taking into account
 %third\hyp{}order terms as well if fine accuracy is required.
 %Moreover, the generalized DMS model can be used to any type of one\hyp{}particle density matrices at arbitrary level of theory.
@@ -1175,7 +1182,7 @@ generalised DMS models, which is much more difficult to realise when a conventio
 model is used.
 Therefore, it is believed that
 the generalised DMS approach
-has an important advantage over the multipole\hyp{}based approach, i.e., it provides detailed
+has an important advantage over the multipole\hyp{}based approach, i.e., it provides more detailed
 tensor description of the spatial polarisation of the electron density distribution, that could be
 combined for example with density\hyp{}based methods of interaction energy calculations.\cite{Mandado.Hermida-Ramon.JCTC.2011}
 
@@ -1205,10 +1212,10 @@ No.~665778. \InlineImage{eu-logo.eps} This project is funded by National Science
 
 \section{\label{a:orig-dep} Origin-Independence of the Induced Dipole Moment}
 
-Multipole integrals depend on the origin with respect to which they are evaluated.
-However, the induced dipole moments defined in Eq.~\eqref{e:dmu-4-exact.linear-approximation} 
+Multipole one\hyp{}electron integrals depend on the origin with respect to which they are evaluated.
+However, the induced dipole moment defined in Eq.~\eqref{e:dmu-4-exact.linear-approximation} 
 (or equivalently in Eq.~\eqref{e:dmu-l-vector})
-have to be origin independent. Note that
+has to be origin\hyp{}independent. Note that
 %
 \begin{equation}
  \left[ \widetilde{\mathbb{M}} \right]_{i\alpha} ({\bf r}_Q) 
@@ -1235,14 +1242,15 @@ AO basis which implies that
 \end{multline}
 %
 Therefore, it is proved that the polarisation\hyp{}induced distributed dipole moments 
-defined in Eq.~\eqref{e:dmu-4-exact.linear-approximation} are origin independent.
-Thus, one can compute dipole integrals with respect to any origin and resulting
-susceptibilities ${\bf B}_{\alpha\beta}^{(i;1)}$ from Eq.~\eqref{e:susceptibility-B} will be uniquely defined.
+defined in Eq.~\eqref{e:dmu-4-exact.linear-approximation} are origin\hyp{}independent.
+Thus, one can compute one\hyp{}electron dipole integrals with respect to any origin 
+and resulting the susceptibilities ${\bf B}_{\alpha\beta}^{(i;1)}$ 
+from Eq.~\eqref{e:susceptibility-B} will be uniquely defined.
 
 \section{\label{a:blocks} Explicit Formulae for Gradient and Hessian Blocks in Linear Regression DMS Model}
 
-The gradient vector ${\bf g}$ and Hessian matrix ${\bf H}$ 
-are build from blocks associated with a particular type of parameters, i.e.,
+The gradient vector ${\bf g}$ and the Hessian matrix ${\bf H}$ 
+are built from blocks associated with a particular type of parameters, i.e.,
 %
 \begin{equation}\label{e:Newton.gH}
  {\bf g} = 
