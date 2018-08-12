@@ -435,15 +435,15 @@ truncating it at linear terms with respect to ${\BM\Delta}$ gives
  \end{align}
 \end{subequations}
 %
-The latter equality is true only if the basis set functions are orthogonal, i.e., 
+The latter equality is true in a special case when the basis set functions are orthogonal, i.e., 
 ${\bf C}^{(0)\dagger} \cdot {\bf C}^{(0)}={\bf 1}$.
-Such a condition is necessary in order to meet the charge conservation
-requirement (see Appendix~\ref{a:orig-dep} for a detailed discussion).
-Therefore orthogonality of AO's is assumed from that point, unless stated otherwise.
+%Such a condition is necessary in order to meet the charge conservation
+%requirement (see Appendix~\ref{a:orig-dep} for a detailed discussion).
+%Therefore orthogonality of AO's is assumed from that point, unless stated otherwise.
 %Also, from this point onwards we assume that the molecular orbitals 
 %and the transformation matrix $\BM \Delta$ are real.
-Substituting the result from Eq.~\eqref{e:dD-1}
-into Eq.~\eqref{e:dmu-exact} leads to
+By substituting the McWeeny's result from Eq.~\eqref{e:dD-1}
+into Eq.~\eqref{e:dmu-exact} one can show that
 %
 %\begin{multline} \label{e:dmu-4-exact.linear-approximation}
 % \frac{1}{2} 
@@ -467,10 +467,10 @@ into Eq.~\eqref{e:dmu-exact} leads to
 %  -\Tr{ 
 %    \left[ 
 %         {\mathbb{M}} \cdot {\bf D}^{(0)} \cdot {\BM\Delta}^{\dagger} \cdot {\bf D}^{(0)}
-%    \right] } \;.
+%    \right] } \;,
 %\end{multline}
-%
-%This can be recast to
+%%
+%which can be recast to
 %
 \begin{equation}\label{e:dmu-l-vector}
  \frac{1}{4} 
@@ -481,25 +481,27 @@ into Eq.~\eqref{e:dmu-exact} leads to
     \left[ 
          \delta {\bf C} \cdot \mathbb{L}({\bf r}_Q)
    \right] }  
-  \right\} \;,
+  \right\} \;.
 \end{equation}
 %
-where the `$\Re$' symbol denotes the real part,
- and the intermediate quantity
+In the above expression, the `$\Re$' symbol denotes the real part,
+and the intermediate quantity
 %
 \begin{equation} \label{e:L-projector}
- \mathbb{L}({\bf r}_Q) \equiv {\bf C}^{\dagger} \cdot \mathbb{M}({\bf r}_Q) \cdot \left( {\bf 1} - {\bf D}^{(0)} \right) \;.
+ \mathbb{L}({\bf r}_Q) \equiv {\bf C}^{(0)\dagger} \cdot \mathbb{M}({\bf r}_Q) \cdot \left( {\bf 1} - {\bf D}^{(0)} \right) \;.
 \end{equation}
 %
 Note that $\mathbb{L}({\bf r}_Q)$ contains the projector onto
 the unoccupied MO space at the absence of the external electric field. It means that the
 perturbed solution is constructed from the unperturbed virtual orbitals as well.
-Note also the similarity between Eq.~\eqref{e:L-projector} and Eq.~\eqref{e:dmu-exact}.
-It can be proven (see Appendix~\ref{a:orig-dep}) that such obtained
-induced dipole moment is independent of the origin. 
-This guarantees that the theory fulfils the total charge conservation requirement.
-Therefore, in later course of the paper the dipole origin will be omitted. 
+%Note also the similarity between Eq.~\eqref{e:L-projector} and Eq.~\eqref{e:dmu-exact}.
 
+For the sake of simplicity, 
+the orthogonality of AO's is assumed in this work, unless stated otherwise.
+It is proven in the Appendix~\ref{a:orig-dep} that under such circumstances the
+induced dipole moment obtained in Eq.~\eqref{e:L-projector} is independent of the origin. 
+This guarantees that the theory fulfils the total charge conservation requirement and,
+therefore, in later course of the paper, the dipole origin will be omitted. 
 
 Although Eq.~\eqref{e:dmu-l-vector}
 is exact up to first order in ${\BM\Delta}$, it cannot be inverted at this moment to obtain $\delta {\bf C}$.
@@ -669,33 +671,33 @@ parameterisation of Eq.~\eqref{e:final-model.General}:
 %
 \begin{multline}\label{e:final-model.General.Parameters}
  \delta D^{(N)} = \sum_{i }^M \Big\{ 
-                              \sum_u^{x,y,z} S^{[1]}_{iu} F_{iu}^{(N)} \\
-%               + \sum_{ij}^M \sum_{uw}^{x,y,z} \left( S^{[2]}_{iu} + S^{[2]}_{jw} \right) F_{iu}^{(N)} F_{jw}^{(N)}
-                +             \sum_{u}^{x,y,z} \sum_{w<u} r_{uw} S^{[2]}_{iuw} F_{iu}^{(N)} F_{iw}^{(N)} 
+                              \sum_u^{x,y,z} s^{[1]}_{iu} F_{iu}^{(N)} \\
+%               + \sum_{ij}^M \sum_{uw}^{x,y,z} \left( s^{[2]}_{iu} + s^{[2]}_{jw} \right) F_{iu}^{(N)} F_{jw}^{(N)}
+                +             \sum_{u}^{x,y,z} \sum_{w<u} r_{uw} s^{[2]}_{iuw} F_{iu}^{(N)} F_{iw}^{(N)} 
                         + \ldots \Big\}
 \end{multline}
 %
 (the Greek subscripts were omitted here for notational simplicity).
-In the above equation, $B_u^{(i;1)} = S^{[1]}_{iu}$ and $B_{uw}^{(i;2)} = r_{uw} S^{[2]}_{iuw}$,
+In the above equation, $B_u^{(i;1)} = s^{[1]}_{iu}$ and $B_{uw}^{(i;2)} = r_{uw} s^{[2]}_{iuw}$,
 where $r_{uw}$ is the symmetry factor equal to 1 for diagonal elements and 2 for off\hyp{}diagonal
 elements of $B_{uw}^{(i;2)}$.
 The multiple parameter blocks
-(${\bf S}^{[1]}$, ${\bf S}^{[2]}$ and so on)
+(${\bf s}^{[1]}$, ${\bf s}^{[2]}$ and so on)
 appear in the first power, allowing for linear least\hyp{}squares regression.
 The square bracket superscripts denote the block of the parameter space. 
 
 To determine the optimum set,
 $
- {\bf S} = 
+ {\bf s} = 
 \begin{pmatrix}
-{\bf S}^{[1]} &
-{\bf S}^{[2]} & \cdots
-\end{pmatrix}^T
+{\bf s}^{[1]} &
+{\bf s}^{[2]} & \cdots
+\end{pmatrix}^{\rm T}
 $, we define a loss function $Z$ 
 that is subject to the least\hyp{}squares minimisation,
 %
 \begin{equation}\label{e:Z}
- Z({\bf S}) = \sum_N^{N_{\rm max}} \left( \delta D^{(N)} - \delta \overline{D}^{(N)} \right)^2 \;.
+ Z({\bf s}) = \sum_N^{N_{\rm max}} \left( \delta D^{(N)} - \delta \overline{D}^{(N)} \right)^2 \;.
 \end{equation}
 %
 The Hessian of $Z$ computed with respect to the parameters 
@@ -704,7 +706,7 @@ as long as the electric fields on all distributed sites are different.
 Therefore, the exact solution for the optimal parameters is given by the Newton equation
 %
 \begin{equation}\label{e:Newton}
- {\bf S} = -{\bf H}^{-1} \cdot {\bf g} \;,
+ {\bf s} = -{\bf H}^{-1} \cdot {\bf g} \;,
 \end{equation}
 %
 where ${\bf g}$ and ${\bf H}$ are the gradient vector and the Hessian matrix, respectively.
@@ -794,7 +796,7 @@ When the distributed polarisabilities were used instead of the polarisation\hyp{
 difference density matrices, primitive induced quadrupole moments were computed from
 the induced dipole moments (given in Eq.~\eqref{e:dmu-dpol}) according to
 %
-\begin{equation}
+\begin{equation}\label{e:dTheta-dpol}
   \delta {\BM \Theta} = \sum_i^{\rm occ} 
    \left\{ 
        \delta {\BM \upmu}_i \otimes \left( {\bf r}_i - {\bf r}_{\rm CM} \right) 
@@ -1077,9 +1079,7 @@ refers to the model from Eq.~\eqref{e:final-model.HF} and
 refers to the generalised model with $R_{\rm max}=2$ 
 where $R_{\rm max}$ is the maximum power
 in the expansion from Eq.~\eqref{e:final-model.General}.
-%Calculations of the electric field\hyp{}induced interaction energies (A-C), dipole moments (D-F) and
-%quadrupole moments (G-I). 
-Comparison with the distributed dipole\hyp{}dipole polarisability model 
+Comparison with the distributed dipole\hyp{}dipole polarisability model %(Eq.~\eqref{e:dE-dpol})
 is also shown in this Figure in panels C, F and I. 
 The ensemble of electric fields corresponds to the `S' set
 from Tables~\ref{t:results} and \ref{t:fields}.}
@@ -1152,7 +1152,7 @@ can accurately describe the polarization\hyp{}induced deformation of the one\hyp
 due to the uniform and non\hyp{}uniform distribution of electric field.
 It was also shown that the accuracy of the model can be improved by extending the parameter space of the susceptibility tensors.
 Even at the current state of development, the generalised quadratic DMS model
-is of comparable energetic accuracy as the distributed polarisability model (RMSE of 0.4~kcal/mol in strong 
+is of comparable and quantitative energetic accuracy as the distributed polarisability model (RMSE of 0.4~kcal/mol in strong 
 electric fields and less than 0.06~kcal/mol in moderate and weak fields).
 %It is emphasised here that the model can be easily extended by taking into account
 %third\hyp{}order terms as well if fine accuracy is required.
@@ -1195,39 +1195,58 @@ No.~665778. \InlineImage{eu-logo.eps} This project is funded by National Science
 \section{\label{a:orig-dep} Origin-Independence of the Induced Dipole Moment}
 
 Multipole one\hyp{}electron integrals depend on the origin with respect to which they are evaluated.
-However, the induced dipole moment defined in Eq.~\eqref{e:dmu-4-exact.linear-approximation} 
-(or equivalently in Eq.~\eqref{e:dmu-l-vector})
-has to be origin\hyp{}independent. Note that
+However, the induced dipole moment defined in Eq.~\eqref{e:L-projector} 
+has to be origin\hyp{}independent. Denoting the overlap AO integrals 
+by $S_{\alpha\beta} = \braket{\alpha}{\beta}$,
+it follows that $\mathbb{M}_u({\bf r}_Q) = \mathbb{M}_u({\bf 0}) - u_Q {\bf S}$
+for $u=x,y,z$. Thus,
 %
 \begin{equation}
- \left[ \widetilde{\mathbb{M}} \right]_{i\alpha} ({\bf r}_Q) 
- = \left[ \widetilde{\mathbb{M}} \right]_{i\alpha} ({\bf 0}) - \left[ {\bf C}^\dagger \right]_{i\alpha} {\bf r}_Q  
+ \mathbb{L}_u({\bf r}_Q) = \mathbb{L}_u({\bf 0})
+                          - u_Q {\bf C}^{(0)\dagger} \cdot {\bf S} \cdot \left( {\bf 1} - {\bf D}^{(0)}\right) \;,
 \end{equation}
 %
-and
+where
 %
 \begin{equation}
- \left[ \widetilde{\mathbb{K}} \right]_{i\alpha} ({\bf r}_Q) 
- = \left[ \widetilde{\mathbb{K}} \right]_{i\alpha} ({\bf 0}) - \left[ {\bf C}^\dagger \cdot {\bf D} \right]_{i\alpha} {\bf r}_Q \;.
+ \mathbb{L}_u({\bf 0}) = {\bf C}^{(0)\dagger} \cdot \mathbb{M}_u({\bf 0}) \cdot \left( {\bf 1} - {\bf D}^{(0)}\right) \;.
 \end{equation}
 %
-But ${\bf C}^\dagger \cdot {\bf D}={\bf C}^\dagger \cdot {\bf C} \cdot {\bf C}^\dagger={\bf C}^\dagger$ in orthogonal
-AO basis which implies that
+But
 %
-\begin{multline}
-   \left[ \widetilde{\mathbb{L}} \right]_{i\alpha} ({\bf r}_Q) 
- = \left[ \widetilde{\mathbb{M}} \right]_{i\alpha} ({\bf r}_Q) 
- - \left[ \widetilde{\mathbb{K}} \right]_{i\alpha} ({\bf r}_Q) \\
- = \left[ \widetilde{\mathbb{M}} \right]_{i\alpha} ({\bf 0})   
- - \left[ \widetilde{\mathbb{K}} \right]_{i\alpha} ({\bf 0})
- = \left[ \widetilde{\mathbb{L}} \right]_{i\alpha} ({\bf 0}) \;.
-\end{multline}
+\begin{equation}
+  {\bf C}^{(0)\dagger} \cdot {\bf S} \cdot \left( {\bf 1} - {\bf D}^{(0)}\right) 
+= {\bf C}^{(0)\dagger} \cdot \left( {\bf S} - {\bf 1} \right)
+\end{equation}
 %
-Therefore, it is proved that the polarisation\hyp{}induced distributed dipole moments 
-defined in Eq.~\eqref{e:dmu-4-exact.linear-approximation} are origin\hyp{}independent.
-Thus, one can compute one\hyp{}electron dipole integrals with respect to any origin 
-and resulting the susceptibilities ${\bf B}_{\alpha\beta}^{(i;1)}$ 
-from Eq.~\eqref{e:susceptibility-B} will be uniquely defined.
+since ${\bf C}^{(0)\dagger} \cdot {\bf S} \cdot {\bf C}^{(0)} = {\bf 1}$. 
+In the simplest case of ${\bf S} = {\bf 1}$ (i.e., the AO basis functions are orthogonal) 
+$\mathbb{L}_u({\bf r}_Q) = \mathbb{L}_u({\bf 0})$ which guarantees charge conservation.
+When a non\hyp{}orthogonal AO basis is used, 
+the following general condition must be satisfied:
+%
+\begin{equation}
+ \Re \left\{
+  \Tr{
+  \left[
+  \delta {\bf C} \cdot {\bf C}^{(0)\dagger} \cdot \left( {\bf S} - {\bf 1} \right)  
+ \right]}
+ \right\} = 0
+\end{equation}
+%
+Due to the fact that ${\BM \Delta}$ considered here is accurate only up to first\hyp{}order, 
+the above expression is not valid. 
+Therefore, the polarisation\hyp{}induced distributed dipole moments 
+defined in Eq.~\eqref{e:L-projector} are exactly origin\hyp{}independent
+as long as the AO basis is orthogonalised.
+In such a case, one can compute one\hyp{}electron dipole integrals with respect to any origin 
+and the resulting susceptibilities $\mathbb{B}^{(i;1)}$ 
+from Eq.~\eqref{e:susceptibility-B} will be uniquely defined. They can be back\hyp{}transformed
+to the original (non\hyp{}orthogonal) AO basis, 
+${\bf X} \cdot \mathbb{B}^{(i;1)} \cdot {\bf X}$, where $\bf X$ is an orthogonaliser.
+The numerical tests confirmed that $\Tr\left[\delta{\bf D}\cdot{\bf S}\right] \sim 10^{-16}$
+with $\delta{\bf D}$ given by Eq.~\eqref{e:final-model.HF} and susceptibilities transformed
+to the non\hyp{}orthogonal AO basis.
 
 \section{\label{a:blocks} Explicit Formulae for Gradient and Hessian Blocks in Linear Regression DMS Model}
 
@@ -1255,13 +1274,13 @@ Thus, the gradient element of the $r$th block and Hessian element of the $(rs)$t
 %
 \begin{subequations}
  \begin{align}
-  g^{[r ]}    &\equiv \frac{\partial   Z}{\partial S^{[r]}} 
+  g^{[r ]}    &\equiv \frac{\partial   Z}{\partial s^{[r]}} 
      =-2\sum_N \overline{\delta D}^{(N)}
-               \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S^{[r]}} \;,\\
-  H^{[rs]} &\equiv \frac{\partial^2 Z}{\partial S^{[r]} \partial S^{[s]}}  
+               \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial s^{[r]}} \;,\\
+  H^{[rs]} &\equiv \frac{\partial^2 Z}{\partial s^{[r]} \partial s^{[s]}}  
      = 2\sum_N 
-        \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S^{[r]}}
-        \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial S^{[s]}} \;.
+        \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial s^{[r]}}
+        \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial s^{[s]}} \;.
  \end{align}
 \end{subequations}
 %
@@ -1285,11 +1304,12 @@ The Hessian subsequently follows to be
 \end{subequations}
 %
 Note that due to the symmetry of the Hessian matrix, the block $21$
-is a transpose of the block $12$. 
-The composite indices $ku$ and $kuw$ are constructed from the distributed site index $k$
-and the appropriate symmetry\hyp{}adapted ($w<u$) Cartesian component 
-of a particular DMS tensor: $u$ for the first\hyp{}order,
-and $uw$ for the second\hyp{}order susceptibility tensor, respectively.
+is a transpose of the block $12$. The composite indices $ku$ and $kuw$ 
+are constructed from the distributed site index $k$ and the appropriate 
+symmetry\hyp{}adapted ($w<u$) Cartesian component of a particular DMS tensor: 
+$u$ for the first\hyp{}order, and $uw$ for the second\hyp{}order susceptibility 
+tensor, respectively. The method described above can be easily extended 
+to third and higher orders.
 
 % -----------------------
 \bibliography{references}
