@@ -1,7 +1,7 @@
 %%
 %%   Version 3.1 of 31 July 2018.
 %%
-\documentclass[aip,amsmath,amssymb,reprint,floatfix]{revtex4-1}
+\documentclass[aip,jcp,preprint,amsmath,amssymb,floatfix]{revtex4-1}
 %\documentclass[aip,reprint]{revtex4-1}
 
 \usepackage{graphicx}% Include figure files
@@ -121,7 +121,7 @@
 
 \begin{document}
 
-\preprint{AIP/123-DMS}
+%\preprint{AIP/123-DMS}
 
 \title{One-Particle Density Matrix Polarisation Susceptibility Tensors}
 
@@ -192,7 +192,7 @@ Szabla.Sponer.Jiri.Gora.JPCL.2015,Bednarska.Zalesny.Tian.Murugan.Agren.Bartkowia
 Jedrzejewska.Grabarz.Bartkowiak.Osmialowski.SpectChimActA.2018} 
 (ii) understanding the vibrational properties of molecules in ground and electronically excited states
 (vibrational or vibronic solvatochromisms).\cite{Blasiak.Londergan.Webb.Cho.ACR.2017,
-Xu.Blasiak.Cho.Layfield.Londergan.JPCL.2018} 
+Xu.Blasiak.Cho.Layfield.Londergan.JPCL.2018,Lewis.Gruenke.Oliver.Ballottari.Bassi.Fleming.JPCL.2016} 
 Interface between QM and MM levels is usually realised by electrostatic embedding and only rarely 
 the Pauli exclusion principle and dispersion are additionally included.\cite{List.Olsen.Kongsted.PCCP.2016}
 Unfortunately, it is quite difficult to efficiently treat the environment\hyp{}induced potential operator
@@ -544,8 +544,10 @@ The solution for $\delta {\bf C}$ is
 %
 \begin{equation} \label{e:mu-ind.matrix.linear.solution}
   \delta {\bf c}_i^{\rm T} = \frac{1}{4}
-            {\bf F}({\bf r}_i)  \cdot {\BM{\alpha}}_i \cdot 
+                    {\bf F}^{\rm T}({\bf r}_i) \cdot {\BM{\alpha}}_i^{\rm T} \cdot
                     \left[ {\bf L}_i  \right]^{-1}_{\rm Left} \;,
+%                   {\BM{\alpha}}_i : {\bf F}({\bf r}_i)  \otimes
+%                   \left[ {\bf L}_i  \right]^{-1}_{\rm Left} \;,
 \end{equation}
 %
 where $\left[ {\bf L}_i  \right]^{-1}_{\rm Left}$ is a left inverse
@@ -590,16 +592,18 @@ the expression for $\delta {\bf D}$ from Eq.~\eqref{e:dD-2} to finally give
 %
 where the \emph{density matrix polarisation susceptibility tensor} is
 %
-\begin{multline}  \label{e:susceptibility-B}
+%\begin{multline}  \label{e:susceptibility-B} % PREPRINT
+\begin{equation}  \label{e:susceptibility-B}
  {\bf B}^{(i;1)}_{\alpha\beta} = 
-                               C_{\alpha i} {\bf b}_{\beta}^{(i;1)} + C_{\beta i} {\bf b}_\alpha^{(i;1)} \\
+                               C_{\alpha i} {\bf b}_{\beta}^{(i;1)} + C_{\beta i} {\bf b}_\alpha^{(i;1)} %\\ PREPRINT
                                 - \sum_\gamma 
                                  \left( 
                D_{\alpha\gamma} C_{\beta i} + D_{\beta\gamma} C_{\alpha i}
                                  \right)
                                            {\bf b}_{\gamma}^{(i;1)}
  \;.
-\end{multline}
+\end{equation}
+%\end{multline} % PREPRINT
 %
 Hence, the three dimensional vector ${\bf B}^{(i;1)}_{\alpha\beta}$ 
 describes the local linear polarisation affinity 
@@ -629,13 +633,15 @@ can be used as a guideline to construct a general model of density matrix polari
 Quadratic (and higher\hyp{}order) terms with respect to the electric field
 can be added to the formulation, which leads to
 %
-\begin{multline}\label{e:final-model.General}
+%\begin{multline}\label{e:final-model.General} % PREPRINT
+\begin{equation}\label{e:final-model.General}
  \delta D_{\alpha\beta} = \sum_{i }^M \Big\{
-                                      {\bf B}^{(i ; 1)}_{\alpha\beta} \cdot {\bf F}({\bf r}_i)  \\
+                                      {\bf B}^{(i ; 1)}_{\alpha\beta} \cdot {\bf F}({\bf r}_i)  %\\ PREPRINT
 %                       + \sum_{ij}^M {\bf B}^{(ij; 2)}_{\alpha\beta} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_j)
                         +             {\bf B}^{(i ; 2)}_{\alpha\beta} : {\bf F}({\bf r}_i) \otimes {\bf F}({\bf r}_i) 
                         + \ldots \Big\} \;.
-\end{multline}
+\end{equation}
+%\end{multline} % PREPRINT
 %
 In the above equation, the density matrix susceptibilities
 ${\bf B}^{(i; R)}_{\alpha\beta}$, distributed over $M$ sites,
@@ -669,13 +675,15 @@ are known for each sample (overline symbolises the exact estimate).
 Now, for each pair of the AO indices we construct the following 
 parameterisation of Eq.~\eqref{e:final-model.General}:
 %
-\begin{multline}\label{e:final-model.General.Parameters}
+%\begin{multline}\label{e:final-model.General.Parameters} % PREPRINT
+\begin{equation}\label{e:final-model.General.Parameters}
  \delta D^{(N)} = \sum_{i }^M \Big\{ 
-                              \sum_u^{x,y,z} s^{[1]}_{iu} F_{iu}^{(N)} \\
+                              \sum_u^{x,y,z} s^{[1]}_{iu} F_{iu}^{(N)} %\\ % PREPRINT
 %               + \sum_{ij}^M \sum_{uw}^{x,y,z} \left( s^{[2]}_{iu} + s^{[2]}_{jw} \right) F_{iu}^{(N)} F_{jw}^{(N)}
                 +             \sum_{u}^{x,y,z} \sum_{w<u} r_{uw} s^{[2]}_{iuw} F_{iu}^{(N)} F_{iw}^{(N)} 
                         + \ldots \Big\}
-\end{multline}
+\end{equation}
+%\end{multline} % PREPRINT
 %
 (the Greek subscripts were omitted here for notational simplicity).
 In the above equation, $B_u^{(i;1)} = s^{[1]}_{iu}$ and $B_{uw}^{(i;2)} = r_{uw} s^{[2]}_{iuw}$,
@@ -754,13 +762,15 @@ dipole moment and quadrupole moment were analysed in detail.
 The electric field\hyp{}induced polarisation energy at the HF level, $\delta E^{\rm Pol}$,
 was computed from the following exact formula:
 %
-\begin{multline}\label{e:dE}
+%\begin{multline}\label{e:dE} % PREPRINT
+\begin{equation}\label{e:dE}
  \delta E^{\rm Pol}[{\bf F}] = 
                      \Tr{\left\{ {\bf D}^{(0)} \cdot
-                                \left( 2\delta {\bf J} - \delta {\bf K}  \right) \right\}} \\
+                                \left( 2\delta {\bf J} - \delta {\bf K}  \right) \right\}} %\\ % PREPRINT
                    + \Tr{\left\{ \delta {\bf D} \cdot
                                 \left( {\bf H}^{(0)} + {\bf f}^{(0)} + 2{\bf V} + 2\delta {\bf J} - \delta {\bf K}\right) \right\}} \;.
-\end{multline}
+\end{equation}
+%\end{multline} % PREPRINT
 %
 In Eq.~\eqref{e:dE}, ${\bf f}^{(0)}$ and ${\bf H}^{(0)}$ are the Fock matrix and 
 the one\hyp{}electron core Hamiltonian matrix of an unperturbed HF ground state,
@@ -887,8 +897,8 @@ directly by numerical differentiation. Here we consider DMS up to second order, 
 %
 \begin{subequations}\label{e:exact-DMS}
  \begin{align}
-  {\bf B}^{(10)}_{\alpha\beta} &= \frac{\partial D_{\alpha\beta}}{\partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} \;, \label{e:B10} \\
-  {\bf B}^{(20)}_{\alpha\beta} &= \frac{1}{2} 
+  {\bf B}^{(1)}_{\alpha\beta} &= \frac{\partial D_{\alpha\beta}}{\partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} \;, \label{e:B10} \\
+  {\bf B}^{(2)}_{\alpha\beta} &= \frac{1}{2} 
      \frac{\partial^2 D_{\alpha\beta}}{\partial {\bf F} \otimes \partial {\bf F}}\Bigg|_{{\bf F}={\bf 0}} \;, \label{e:B20}
  \end{align}
 \end{subequations}
@@ -915,7 +925,7 @@ directions of electric field.
 
 All the tested models that are linear with respect to the electric field,
 i.e., from Eq.~\eqref{e:final-model.HF} (black solid squares in Figure~\ref{f:fig-1}) 
-as well as truncated at linear susceptibilities ${\bf B}^{(1)}$ 
+as well as truncated at linear susceptibilities $\mathbb{B}^{(1)}$ 
 from Eqs.~\eqref{e:dD-Taylor} (blue solid circles) and \eqref{e:final-model.General} (blue open circles),
 incorrectly reproduce the polarisation energy.
 Interestingly, the predicted values are in strong
@@ -952,27 +962,29 @@ DMS models are quantitative even at very strong uniform electric fields.
 
 %
 \begin{table*}%[]
-\caption{{\bf Performance of the DMS tensors of ground\hyp{}state water molecule
-in uniform and non\hyp{}uniform electric field$^{a,b}$}
+\caption[Performance of the DMS tensors of ground\hyp{}state water molecule
+in uniform and non\hyp{}uniform electric field]{\label{t:results}
+{\bf Performance of the DMS tensors of ground\hyp{}state water molecule
+in uniform and non\hyp{}uniform electric field}  
+\footnotemark[1]\footnotemark[2]
 }
-\label{t:results}
-\begin{ruledtabular}
+%\begin{ruledtabular}
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{cddddddcddddcdd}
-%\hline\hline
-\toprule
+\hline\hline
+%\toprule
 \multicolumn{1}{l}{} & \multicolumn{6}{c}{\textbf{Ab Initio DMS}} &  & \multicolumn{4}{c}{\textbf{Generalised DMS}}
                                                                   &  & \multicolumn{2}{c}{\textbf{Distributed}} \\
 \cline{2-8}
 \cline{9-12}
 %\cline{14-15}
 \textbf{}         
-& \multicolumn{2}{c}{$\BM{R_{\rm max}=1}$$^c$}
-& \multicolumn{2}{c}{$\BM{R_{\rm max}=1}$$^d$}
-& \multicolumn{2}{c}{$\BM{R_{\rm max}=2}$$^d$}
+& \multicolumn{2}{c}{$\BM{R_{\rm max}=1}$\footnotemark[3]}
+& \multicolumn{2}{c}{$\BM{R_{\rm max}=1}$\footnotemark[4]}
+& \multicolumn{2}{c}{$\BM{R_{\rm max}=2}$\footnotemark[4]}
 &
-& \multicolumn{2}{c}{$\BM{R_{\rm max}=1}$$^e$} 
-& \multicolumn{2}{c}{$\BM{R_{\rm max}=2}$$^e$} 
+& \multicolumn{2}{c}{$\BM{R_{\rm max}=1}$\footnotemark[5]} 
+& \multicolumn{2}{c}{$\BM{R_{\rm max}=2}$\footnotemark[5]} 
 &  
 & \multicolumn{2}{c}{\textbf{Polarisability}}        \\ \hline
 \multicolumn{15}{c}{} \\ 
@@ -985,7 +997,7 @@ in uniform and non\hyp{}uniform electric field$^{a,b}$}
 \multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSQ (D\AA $\times 10^{-3}$)}} \\ %\hline
    & 47.89 & (69.17) & 39.24 & (79.30) &  8.56 & (99.02) && 37.63 & (80.96) & 3.94 & (99.79) && 50.66 & (65.49) \\ \hline
 \multicolumn{15}{c}{} \\ 
-\multicolumn{15}{c}{\textbf{Non-Uniform Electric Field}$^{f}$} \\ 
+\multicolumn{15}{c}{\textbf{Non-Uniform Electric Field}\footnotemark[6]} \\ 
 \multicolumn{15}{c}{} \\ \hline
 \multicolumn{1}{l}{} & \multicolumn{14}{c}{\textbf{RMSE (kcal/mol)}}   \\ 
 W & 0.067 & (n.d.)  & - &  -  & - &  -  && 0.076 & (n.d.)  & 0.003 & (99.45) && 0.004 & (98.64) \\ 
@@ -999,21 +1011,17 @@ S & 44.80 & (96.92) & - &  -  & - &  -  && 33.06 & (98.33) & 15.96 & (99.61) && 
 W &  6.22 & (58.72) & - &  -  & - &  -  &&  1.59 & (97.32) &  1.42 & (97.86) &&  5.45 & (68.29) \\ 
 M & 28.22 & (53.90) & - &  -  & - &  -  && 10.45 & (93.68) &  5.68 & (98.13) && 23.94 & (66.83) \\ 
 S & 78.07 & (40.53) & - &  -  & - &  -  && 43.33 & (81.68) & 14.40 & (97.98) && 64.33 & (59.62) \\ 
-\bottomrule
+%\bottomrule
+\hline\hline
 \end{tabular}%
 }
-\end{ruledtabular}
-%
-\footnotesize{\flushleft{
-$^a$ $R$-squared coefficients are shown in parentheses. `$n.d.$' stands for `not determined'. 
-$^b$ Ranks of the density matrix susceptibility models are denoted as $R_{\rm max}$ 
-where $R_{\rm max}$ is the maximum power in the expansion from Eq.~\eqref{e:final-model.General}.
-$^c$ \emph{Ab initio} HF model, Eq.~\eqref{e:final-model.HF}.
-$^d$ \emph{Ab initio} finite\hyp{}difference model, Eq.~\eqref{e:dD-Taylor}.
-$^e$ Linear\hyp{}regression generalised model, Eq.~\eqref{e:final-model.General}.
-$^f$ `W', `M' and `S' denote `weak', `moderate' and `strong' electric fields 
-that are generated by sets of point charges, respectively (c.f. Table~\ref{t:fields}).\\
-}}
+%\end{ruledtabular}
+\footnotetext[1]{$R$-squared coefficients are shown in parentheses. `$n.d.$' stands for `not determined'.}
+\footnotetext[2]{Ranks of the density matrix susceptibility models are denoted as $R_{\rm max}$ where $R_{\rm max}$ is the maximum power in the expansion from Eq.~\eqref{e:final-model.General}.}
+\footnotetext[3]{\emph{Ab initio} HF model, Eq.~\eqref{e:final-model.HF}.}
+\footnotetext[4]{\emph{Ab initio} finite\hyp{}difference model, Eq.~\eqref{e:dD-Taylor}.}
+\footnotetext[5]{Linear\hyp{}regression generalised model, Eq.~\eqref{e:final-model.General}.}
+\footnotetext[6]{`W', `M' and `S' denote `weak', `moderate' and `strong' electric fields that are generated by sets of point charges, respectively (c.f. Table~\ref{t:fields}).}
 \end{table*}
 
 \subsection{\label{ss:42}Water molecule in spatially non\hyp{}uniform electric field}
@@ -1027,13 +1035,16 @@ moderate (0.01 -- 0.02 a.u.) and strong (0.02 -- 0.05 a.u.)
 electric fields around the water molecule were considered (Table~\ref{t:fields}),
 %
 \begin{table}[b]
-\caption{{\bf Average electric fields in statistical sets of electrostatically perturbed ground states
-of water molecule surrounded by point charges$^a$}
+\caption[Average electric fields in statistical sets of electrostatically perturbed ground states
+of water molecule surrounded by point charges]
+{{\bf Average electric fields in statistical sets of electrostatically perturbed ground states
+of water molecule surrounded by point charges\footnotemark[1]}
 }
 \label{t:fields}
 \begin{ruledtabular}
 \begin{tabular}{ldcdcdcd}
-\multirow{2}{*}{\textbf{Set$^b$}} & \multicolumn{7}{c}{\textbf{Average Electric Field (a.u.)}}      \\
+\multirow{2}{*}{\textbf{Set\footnotemark[2]}} 
+                                  & \multicolumn{7}{c}{\textbf{Average Electric Field (a.u.)}}      \\
                                   & \multicolumn{3}{c}{\textbf{Oxygen Atom}} & \textbf{} 
                                   & \multicolumn{3}{c}{\textbf{Hydrogen Atom}} \\
 \cline{2-4}
@@ -1044,11 +1055,8 @@ of water molecule surrounded by point charges$^a$}
 \end{tabular}
 \end{ruledtabular}
 %
-\footnotesize{\flushleft{
-$^a$ Each set was composed of 100 samples differing in the configuration of 40 charges generated from a uniform distribution.
-$^b$ `W', `M' and `S' denote `weak', `moderate' and `strong' electric fields, respectively.\\
-}}
-
+\footnotetext[1]{Each set was composed of 100 samples differing in the configuration of 40 charges generated from a uniform distribution.}
+\footnotetext[2]{`W', `M' and `S' denote `weak', `moderate' and `strong' electric fields, respectively.}
 \end{table}
 %
 because similar ranges of electric field are experienced by water molecules
@@ -1184,7 +1192,7 @@ described at correlated levels of theory, particularly including the excited sta
 This project is carried out under POLONEZ programme which has received funding from the European Union's
 Horizon~2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement 
 No.~665778. \InlineImage{eu-logo.eps} This project is funded by National Science Centre, Poland 
-(grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship. 
+(registration No.~2016/23/P/ST4/01720) within the POLONEZ 3 fellowship. 
 %Many thanks to Robert W.~G{\'o}ra and Robert Zale{\'s}ny 
 %for reading and commenting on the manuscript.
 \end{acknowledgments}
