@@ -59,8 +59,8 @@ graph_label_y = 0.14
 set object 388 rectangle from screen 0.01, screen 0.92 to screen 0.99, screen 0.913 fc rgb "#ffdeff" fillstyle solid 0.7 noborder
 set object 389 rectangle from screen 0.01, screen 0.00 to screen 0.99, screen 0.007 fc rgb "#ffdeff" fillstyle solid 0.7 noborder
 set label 488 '\LARGE\shortstack{Ab Initio DMS\\$R_{\text{max}}=1$}' front at screen 0.189, screen 0.96
-set label 489 '\LARGE\shortstack{Generalised DMS\\$R_{\text{max}}=2$}' front at screen 0.47, screen 0.96
-set label 490 '\LARGE\shortstack{Distributed\\Polarisability}' front at screen 0.762, screen 0.96
+set label 489 '\LARGE\shortstack{Generalized DMS\\$R_{\text{max}}=2$}' front at screen 0.47, screen 0.96
+set label 490 '\LARGE\shortstack{Distributed\\Polarizability}' front at screen 0.762, screen 0.96
 # ------------------------------------------------------------------------------------------------- #
 set format x "%2.1f"
 set format y "%2.1f"
