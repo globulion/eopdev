@@ -246,8 +246,6 @@ void oepdev::GeneralizedPolarGEFactory::invert_hessian(void)
 }
 void oepdev::GeneralizedPolarGEFactory::compute_parameters(void)
 {
-   //if (hasDipoleDipoleHyperpolarizability_) compute_electric_field_sums();
-   //if (hasQuadrupolePolarizability_       ) compute_electric_field_gradient_sums();
    compute_hessian(); 
    Hessian_->print();
    invert_hessian();
@@ -365,66 +363,6 @@ void oepdev::GeneralizedPolarGEFactory::save(int i, int j)
   } //else {
   //  throw psi::PSIEXCEPTION("The model you refer to is not implemented.");
   //}
-
-  //if (!hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
-  //    for (int n=0; n<nSites_; ++n) {
-  //         for (int z=0; z<3; ++z) {
-  //              double val = Parameters_->get(3*n + z, 0);
-  //              PolarizationSusceptibilities_->dipole_polarizability(n, z)->set(i, j, val);
-  //         }
-  //    }
-  //} else if (hasDipoleDipoleHyperpolarizability_ and !hasQuadrupolePolarizability_) {
-  //    for (int n=0; n<nSites_; ++n) { 
-  //         for (int z1=0; z1<3; ++z1) {
-  //              double val = Parameters_->get(3*n + z1, 0);
-  //              PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
-
-  //              int iz1 = nSites_ * 3 + 3 * n + z1; // Second block
-  //              for (int z2 = 0; z2<3; ++z2) {
-  //                   int iz2 = nSites_ * 3 + 3 * n + z2; // Second block
-
-  //                   val = Parameters_->get(iz1, 0) + Parameters_->get(iz2, 0);
-  //                   PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val*mField_);
-  //              }
-  //         }
-  //    }
-  //} else if (!hasDipoleDipoleHyperpolarizability_ and hasQuadrupolePolarizability_) {
-  //    for (int n=0; n<nSites_; ++n) { 
-  //         for (int z1=0; z1<3; ++z1) {
-  //              double val = Parameters_->get(3*n + z1, 0);
-  //              PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
-
-  //              int iz1 = nSites_ * 3 + 3 * n + z1; // Second block
-  //              for (int z2 = 0; z2<3; ++z2) {
-  //                   int iz2 = nSites_ * 3 + 3 * n + z2; // Second block
-
-  //                   val = Parameters_->get(iz1, 0) + Parameters_->get(iz2, 0);
-  //                   PolarizationSusceptibilities_->quadrupole_polarizability(n, z1*3+z2)->set(i, j, val);
-  //              }
-  //         }
-  //    }
-  //} else if (hasDipoleDipoleHyperpolarizability_ and hasQuadrupolePolarizability_) {
-  //    for (int n=0; n<nSites_; ++n) { 
-  //         for (int z1=0; z1<3; ++z1) {
-  //              double val = Parameters_->get(3*n + z1, 0);
-  //              PolarizationSusceptibilities_->dipole_polarizability(n, z1)->set(i, j, val);
-
-  //              int i1z1 = nSites_ * 3 + 3 * n + z1; // Second block
-  //              int i2z1 = nSites_ * 6 + 3 * n + z1; // Third block
-  //              for (int z2 = 0; z2<3; ++z2) {
-  //                   int i1z2 = nSites_ * 3 + 3 * n + z2; // Second block
-  //                   int i2z2 = nSites_ * 6 + 3 * n + z2; // Third block
-
-  //                   val = Parameters_->get(i1z1, 0) + Parameters_->get(i1z2, 0);
-  //                   PolarizationSusceptibilities_->dipole_dipole_hyperpolarizability(n, z1*3+z2)->set(i, j, val*mField_);
-  //                   val = Parameters_->get(i2z1, 0) + Parameters_->get(i2z2, 0);
-  //                   PolarizationSusceptibilities_->quadrupole_polarizability(n, z1*3+z2)->set(i, j, val);
-  //              }
-  //         }
-  //    }
-  //} else {
-  //  throw psi::PSIEXCEPTION("The model you refer to is not implemented.");
-  //}
 }
 void oepdev::GeneralizedPolarGEFactory::allocate(void)
 {
@@ -434,8 +372,6 @@ void oepdev::GeneralizedPolarGEFactory::allocate(void)
   if (hasDipoleDipoleHyperpolarizability_) nParametersBlock_.push_back(nSites_ * 6);
   if (hasQuadrupolePolarizability_) nParametersBlock_.push_back(nSites_ * 6);
   for (int b=0; b<nParametersBlock_.size(); ++b) nParameters_ += nParametersBlock_[b];
-  //nParameters_ = nBlocks_*(nSites_ * 3);
-  //for (int z=0; z<nBlocks_; ++z) nParametersBlock_.push_back(nSites_ * 3);
 
   // Parameter spaces
   Gradient_   = std::make_shared<psi::Matrix>("Gradient"  , nParameters_, 1);
@@ -594,24 +530,8 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
 
    for (int n=0; n<nSamples_; ++n) {
 
-        // ---> Compute interaction energy <--- // nuclear part is already computed in void compute_samples(void)
+        // ---> Compute interaction energy <--- //
 
-        //double eint_refer = H->vector_dot(referenceStatisticalSet_.DensityMatrixSet[n]);
-        //double eint_model = H->vector_dot(    modelStatisticalSet_.DensityMatrixSet[n]);
-
-        //std::shared_ptr<psi::Matrix> Dn1= D->clone(); Dn1->add(referenceStatisticalSet_.DensityMatrixSet[n]);
-        //std::shared_ptr<psi::Matrix> Dn2= D->clone(); Dn2->add(    modelStatisticalSet_.DensityMatrixSet[n]);
-        //std::shared_ptr<psi::Matrix> G = D->clone(); G->zero();
-        //G->add(VMatrixSet_[n]); G->scale(2.0);
-        //double eint_coul = G->vector_dot(D);
-        //std::shared_ptr<psi::Matrix> G1 = G->clone(); G1->add(referenceStatisticalSet_.JKMatrixSet[n]);
-        //std::shared_ptr<psi::Matrix> G2 = G->clone(); G2->add(    modelStatisticalSet_.JKMatrixSet[n]);
-        //eint_refer+= G1->vector_dot(Dn1);
-        //eint_model+= G2->vector_dot(Dn2);
-
-        //double eint_quad = referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(referenceStatisticalSet_.JKMatrixSet[n]);
-        //double tr_d_f = referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(wfn_->Fa());
-        //double tr_d_v = referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(VMatrixSet_[n]);
         double tr_rest_r = referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(H) + 
                            referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(referenceStatisticalSet_.JKMatrixSet[n]) +
                            referenceStatisticalSet_.JKMatrixSet[n]->vector_dot(D);
@@ -620,10 +540,7 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
                            modelStatisticalSet_.JKMatrixSet[n]->vector_dot(D);
         double tr_2v_r = 2.0 * referenceStatisticalSet_.DensityMatrixSet[n]->vector_dot(VMatrixSet_[n]);
         double tr_2v_m = 2.0 *     modelStatisticalSet_.DensityMatrixSet[n]->vector_dot(VMatrixSet_[n]);
-        //cout << tr_rest_r << "                   " << tr_rest_m << endl;
 
-        //    referenceStatisticalSet_.InducedInteractionEnergySet[n] = -eint_coul;
-        //        modelStatisticalSet_.InducedInteractionEnergySet[n] = -eint_coul;
             referenceStatisticalSet_.InducedInteractionEnergySet[n] = tr_2v_r + tr_rest_r;
                 modelStatisticalSet_.InducedInteractionEnergySet[n] = tr_2v_m + tr_rest_m;
 
@@ -714,12 +631,7 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
 
         // ---> Optional calculations for the Ab Initio Model <--- //
         if (hasAbInitioDipolePolarizability_) {
-        //double eint_abini = H->vector_dot(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
-        //std::shared_ptr<psi::Matrix> Dn3= D->clone(); Dn3->add(abInitioModelStatisticalSet_.DensityMatrixSet[n]);
-        //std::shared_ptr<psi::Matrix> G3 = G->clone();  G3->add(abInitioModelStatisticalSet_.JKMatrixSet[n]);
-        //eint_abini+= G3->vector_dot(Dn3);
-                                                                                                              
-        //abInitioModelStatisticalSet_.InducedInteractionEnergySet[n] = -eint_coul;
+
         double tr_rest_a = abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(H) + 
                            abInitioModelStatisticalSet_.DensityMatrixSet[n]->vector_dot(abInitioModelStatisticalSet_.JKMatrixSet[n]) +
                            abInitioModelStatisticalSet_.JKMatrixSet[n]->vector_dot(D);
