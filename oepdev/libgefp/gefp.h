@@ -570,10 +570,34 @@ class PolarGEFactory : public GenEffParFactory
  * The density matrix susceptibility tensor is represented by:
  * \f[
  *   \delta D_{\alpha\beta} = \sum_i 
- *           {\bf B}_{i;\alpha\beta}^{(10)} \cdot {\bf F}({\bf r}_i)
+ *           {\bf B}_{\alpha\beta}^{(i;1)} \cdot {\bf F}({\bf r}_i)
  * \f]
- * where \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
- * defined for the distributed LMO site at \f$ {\bf r}_i \f$.
+ * where \f$ {\bf B}_{\alpha\beta}^{(i;1)} \f$ is the density matrix dipole polarizability
+ * defined for the distributed LMO site at \f$ {\bf r}_i \f$. Its explicit form is given by
+ * \f[
+ *    {\bf B}_{\alpha\beta}^{(i;1)} = C_{\alpha i}^{(0)} {\bf b}_\beta^{(i;1)}
+ *                                    C_{\beta i}^{(0)} {\bf b}_\alpha^{(i;1)}
+ *                    -\sum_\gamma \left( D_{\alpha\gamma}^{(0)} C_{\beta i}^{(0)} + D_{\beta\gamma}^{(0)} C_{\alpha i}^{(0)} \right) 
+ *                     {\bf b}_\gamma^{(i;1)}
+ * \f]
+ * where the susceptibility of the LCAO-MO coefficient is given by
+ * \f[
+ *      b_{\alpha;w}^{(i;1)} = \frac{1}{4} \sum_u^{x,y,z}
+ *                             \left[ \boldsymbol{\alpha}_i \right]_{uw}
+ *                             \left[ \left[{\bf L}_i\right]^{-1}_{\rm Left} \right]_{u;\alpha}
+ * \f]
+ * for \f$ w=x,y,z \f$. The auxiliary tensor \f$\mathbb{L}\f$ is defined as
+ * \f[
+ *   \mathbb{L} = {\bf C}^{(0){\rm T}} \cdot \mathbb{M} \cdot 
+ *                \left( {\bf 1} - {\bf D}^{(0)} \right)
+ * \f]
+ * where \f$ \mathbb{M} \f$ is the dipole integral vector of matrices in AO representation.
+ * The left inverse of the \f$i\f$-th element is defined as
+ * \f[
+ *  \left[{\bf L}_i\right]^{-1}_{\rm Left} \equiv \left[ {\bf L}_i^{\rm T} \cdot {\bf L}_i \right]^{-1} \cdot {\bf L}_i^{\rm T}
+ * \f]
+ * Note that \f$ {\bf L}_i \equiv [\mathbb{L}]_i \f$ is a \f$ n \times 3 \f$ matrix, whereas its left inverse is a
+ * \f$ 3 \times n \f$ matrix with \f$ n \f$ being the size of the AO basis set.
  */
 class AbInitioPolarGEFactory : public PolarGEFactory
 {
@@ -591,19 +615,32 @@ class AbInitioPolarGEFactory : public PolarGEFactory
  * The density matrix susceptibility tensor is represented by:
  * \f[
  *   \delta D_{\alpha\beta} =  
- *           {\bf B}_{\alpha\beta}^{(10)} \cdot {\bf F}
+ *           {\bf B}_{\alpha\beta}^{(1)} \cdot {\bf F}
+ *         + {\bf B}_{\alpha\beta}^{(2)} : {\bf F} \otimes {\bf F}
  * \f]
- * where \f$ {\bf B}_{\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
+ * where \f$ {\bf B}_{\alpha\beta}^{(1)} \f$ is the density matrix dipole polarizability
  * defined as
  * \f[
- *   {\bf B}_{\alpha\beta}^{(10)} = \frac{\partial D_{\alpha\beta}}{\partial {\bf F}} \Big|_{{\bf F}={\bf 0}} 
+ *   {\bf B}_{\alpha\beta}^{(1)} = \frac{\partial D_{\alpha\beta}}{\partial {\bf F}} \Big|_{{\bf F}={\bf 0}} 
  * \f]
- * This derivative is evaluated numerically from central finite-field 3-point formula,
+ * whereas \f$ {\bf B}_{\alpha\beta}^{(2)} \f$ is the density matrix dipole-dipole hyperpolarizability,
+ * \f[
+ *   {\bf B}_{\alpha\beta}^{(2)} = \frac{1}{2} 
+ *                                 \frac{\partial^2 D_{\alpha\beta}}{\partial {\bf F} \otimes \partial {\bf F}} \Big|_{{\bf F}={\bf 0}} 
+ * \f]
+ * The first derivative is evaluated numerically from central finite-field 3-point formula,
  * \f[
  *  f' = \frac{f(h) - f(-h)}{2h} + \mathfrak{O}(3)
  * \f]
  * where \f$ h \f$ is the differentiation step.
- * This susceptibility works for uniform weak and moderate electric fields.
+ * Second derivatives are evaluated from the following formulae:
+ * \f[
+ *  f_{uu} = \frac{f(h) + f(-h) - 2f(0)}{h^2}
+ * \f]
+ * \f[
+ *  f_{uw} = \frac{f(h,h) + f(-h,-h) + 2f(0) - f(h,0) - f(-h,0) - f(0,h) - f(0,-h)}{2h^2} 
+ * \f]
+ * This susceptibility model works for uniform weak, moderate and strong electric fields.
  */
 class FFAbInitioPolarGEFactory : public PolarGEFactory
 {
