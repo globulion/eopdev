@@ -80,22 +80,22 @@ set {
     esp_vdw_radius_o              5.6
     esp_vdw_radius_n              4.4
     # ==> DmatPol <== #
-    dmatpol_nsamples              100
-    dmatpol_field_scale           0.005
-    dmatpol_ntest_charge          3
-    dmatpol_test_charge           1.0
-    dmatpol_training_mode         CHARGES
-    dmatpol_field_rank            2
-    dmatpol_gradient_rank         1
+    dmatpol_nsamples              10
+    dmatpol_field_scale           0.02
+    dmatpol_ntest_charge          100
+    dmatpol_test_charge           0.1
+    dmatpol_training_mode         EFIELD
+    dmatpol_field_rank            1
+    dmatpol_gradient_rank         0
     dmatpol_scale_1               1.0
-    dmatpol_test_field_x          0.002
-    dmatpol_test_field_y          0.010
-    dmatpol_test_field_z          0.010
+    dmatpol_test_field_x          0.000
+    dmatpol_test_field_y          0.020
+    dmatpol_test_field_z          0.020
     dmatpol_do_ab_initio          True
     dmatpol_out_stats             energy.X.dat
     dmatpol_out_stats_ab_initio   energy.Y.dat
     # ==> General Psi4 Options <== #
-    basis                         6-31G**
+    basis                         6-31G
     scf_type                      direct 
     guess                         core
     e_convergence                 1e-10
