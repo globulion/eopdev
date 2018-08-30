@@ -630,17 +630,18 @@ class AbInitioPolarGEFactory : public PolarGEFactory
  * \f]
  * The first derivative is evaluated numerically from central finite-field 3-point formula,
  * \f[
- *  f' = \frac{f(h) - f(-h)}{2h} + \mathfrak{O}(3)
+ *  f' = \frac{f(h) - f(-h)}{2h} + \mathfrak{O}(h^2)
  * \f]
  * where \f$ h \f$ is the differentiation step.
  * Second derivatives are evaluated from the following formulae:
  * \f[
- *  f_{uu} = \frac{f(h) + f(-h) - 2f(0)}{h^2}
+ *  f_{uu} = \frac{f(h) + f(-h) - 2f(0)}{h^2} + \mathfrak{O}(h^2)
  * \f]
  * \f[
- *  f_{uw} = \frac{f(h,h) + f(-h,-h) + 2f(0) - f(h,0) - f(-h,0) - f(0,h) - f(0,-h)}{2h^2} 
+ *  f_{uw} = \frac{f(h,h) + f(-h,-h) + 2f(0) - f(h,0) - f(-h,0) - f(0,h) - f(0,-h)}{2h^2} + \mathfrak{O}(h^2)
  * \f]
- * This susceptibility model works for uniform weak, moderate and strong electric fields.
+ * As long as the second-order susceptibility is considered, this susceptibility model 
+ * works well for uniform weak, moderate and strong electric fields.
  */
 class FFAbInitioPolarGEFactory : public PolarGEFactory
 {
@@ -679,12 +680,121 @@ class FFAbInitioPolarGEFactory : public PolarGEFactory
  *      - oepdev::LinearNonUniformEFieldPolarGEFactory - linear with respect to electric field, distributed site model
  *      - oepdev::QuadraticNonUniformEFieldPolarGEFactory - quadratic with respect to electric field, distributed site model
  *      - oepdev::LinearGradientNonUniformEFieldPolarGEFactory - linear with respect to electric field 
- *        and linear with respect to electric field gradient, distributed site model
+ *        and linear with respect to electric field gradient, distributed site model. This model does not function now.
  *      - oepdev::QuadraticGradientNonUniformEFieldPolarGEFactory - linear with respect to electric field 
- *        and linear with respect to electric field gradient, distributed site model
+ *        and linear with respect to electric field gradient, distributed site model. This model does not function now.
  *
  * For the non-linear field training, a set of point charges in each training sample is assumed.
  * Distributed models use atomic centers as expansion points.
+ *
+ * ### Determination of the generalized susceptibilities
+ *
+ * Let \f$\left\{ {\bf F}^{(1)}({\bf r}), {\bf F}^{(2)}({\bf r}), \ldots, {\bf F}^{(N)}({\bf r}), \ldots \right\}\f$ 
+ * be a set of \f$N_{\rm max}\f$ distinct and randomly sampled 
+ * spatial distributions of electric field. It is assumed that
+ * the exact difference one-particle density matrices (with respect to the unperturbed state)
+ * defined as
+ * \f[
+ *  \delta \overline{\bf D}^{(N)} \equiv \overline{\bf D}^{(N)} - \overline{\bf D}^{(0)}
+ * \f]
+ * are known for each sample (overline symbolizes the exact estimate).
+ * Now, for each pair of the AO indices the following 
+ * parameterization is constructed:
+ * \f[
+ *  \delta D^{(N)} = \sum_{i }^M \Big\{ 
+ *                               \sum_u^{x,y,z} s^{[1]}_{iu} F_{iu}^{(N)} 
+ *                 +             \sum_{u}^{x,y,z} \sum_{w<u} r_{uw} s^{[2]}_{iuw} F_{iu}^{(N)} F_{iw}^{(N)} 
+ *                         + \ldots \Big\}
+ * \f]
+ * (the Greek subscripts were omitted here for notational simplicity).
+ * In the above equation, \f$B_u^{(i;1)} = s^{[1]}_{iu}\f$ and \f$B_{uw}^{(i;2)} = r_{uw} s^{[2]}_{iuw}\f$,
+ * where \f$r_{uw}\f$ is the symmetry factor equal to 1 for diagonal elements and 2 for off-diagonal
+ * elements of \f$B_{uw}^{(i;2)}\f$.
+ * The multiple parameter blocks
+ * (\f${\bf s}^{[1]}\f$, \f${\bf s}^{[2]}\f$ and so on)
+ * appear in the first power, allowing for linear least-squares regression.
+ * The square bracket superscripts denote the block of the parameter space. 
+ * 
+ * To determine the optimum set,
+ * \f$
+ *  {\bf s} = 
+ * \begin{pmatrix}
+ * {\bf s}^{[1]} &
+ * {\bf s}^{[2]} & \cdots
+ * \end{pmatrix}^{\rm T}
+ * \f$, a loss function \f$ Z \f$ 
+ * that is subject to the least-squares minimization, is defined as
+ * \f[
+ *  Z({\bf s}) = \sum_N^{N_{\rm max}} \left( \delta D^{(N)} - \delta \overline{D}^{(N)} \right)^2 \;.
+ * \f]
+ * The Hessian of \f$ Z \f$ computed with respect to the parameters 
+ * is parameter-independent (constant) and generally non-singular
+ * as long as the electric fields on all distributed sites are different.
+ * Therefore, the exact solution for the optimal parameters is given by the Newton equation
+ * \f[
+ *  {\bf s} = -{\bf H}^{-1} \cdot {\bf g} \;,
+ * \f]
+ * where \f$ {\bf g} \f$ and \f$ {\bf H} \f$ are the gradient vector and the Hessian matrix, respectively.
+ * Note that in this case the dimensions of parameter space for the block 1 and 2 are
+ * equal to \f$ 3M \f$ and \f$ 6M \f$, respectively.
+ * The explicit forms of the gradient and Hessian up to second-order 
+ * are given in the next section.
+ *
+ * ### Explicit Formulae for Gradient and Hessian Blocks in Linear Regression DMS Model
+ *
+ * The gradient vector \f$ {\bf g} \f$ and the Hessian matrix \f$ {\bf H} \f$ 
+ * are built from blocks associated with a particular type of parameters, i.e.,
+ * \f[
+ *  {\bf g} = 
+ * \begin{pmatrix}
+ * {\bf g}^{[1]} \\
+ * {\bf g}^{[2]} 
+ * \end{pmatrix} ,\quad
+ *  {\bf H} = 
+ * \begin{pmatrix}
+ * {\bf H}^{[11]} & {\bf H}^{[12]}  \\
+ * {\bf H}^{[21]} & {\bf H}^{[22]}  
+ * \end{pmatrix} \;,
+ * \f]
+ * where the block indices 1 and 2 correspond to the first- and second-order susceptibilities, respectively.
+ * Note that the second derivatives of \f$ \delta D^{(N)} \f$ 
+ * with respect to the adjustable parameters vanish
+ * due to the linear functional form of the parameterization formula given in the previous section.
+ * Thus, the gradient element of the \f$r\f$-th block and Hessian element of the \f$(rs)\f$-th block read
+ * \f[
+ *  \begin{aligned}
+ *   g^{[r ]}    &\equiv \frac{\partial   Z}{\partial s^{[r]}} 
+ *      =-2\sum_N \overline{\delta D}^{(N)}
+ *                \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial s^{[r]}} \;,\\
+ *   H^{[rs]} &\equiv \frac{\partial^2 Z}{\partial s^{[r]} \partial s^{[s]}}  
+ *      = 2\sum_N 
+ *         \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial s^{[r]}}
+ *         \frac{\partial   \left[ \delta D^{(N)} \right]}{\partial s^{[s]}} \;.
+ *  \end{aligned}
+ * \f]
+ * The explicit formulae for the gradient are
+ * \f[
+ *  \begin{aligned}
+ *   g^{[1]}_{ku} &=-2\sum_N \overline{\delta D}^{(N)} F^{(N)}_{ku} \;,\\
+ *   g^{[2]}_{kuw} &=-2r_{uw} \sum_N \overline{\delta D}^{(N)} F^{(N)}_{ku} F^{(N)}_{kw} \;.
+ *  \end{aligned}
+ * \f]
+ * The Hessian subsequently follows to be
+ * %
+ * \f[
+ *  \begin{aligned}
+ *   H^{[11]}_{ku,lw} &= 2\sum_N F^{(N)}_{ku} F^{(N)}_{lw} \;,\\
+ *   H^{[12]}_{ku,lu'w'} &= 2r_{u'w'} \sum_N F^{(N)}_{ku} F^{(N)}_{lu'} F^{(N)}_{lw'}  \;,\\
+ *   H^{[22]}_{kuw,lu'w'} &= 2r_{uw} r_{u'w'} \sum_N F^{(N)}_{ku} F^{(N)}_{kw} F^{(N)}_{lu'} F^{(N)}_{lw'} \;.
+ *  \end{aligned}
+ * \f]
+ * Note that due to the symmetry of the Hessian matrix, the block 21
+ * is a transpose of the block 12. The composite indices \f$ ku \f$ and \f$ kuw \f$ 
+ * are constructed from the distributed site index \f$ k \f$ and the appropriate 
+ * symmetry-adapted (\f$ w<u \f$) Cartesian component of a particular DMS tensor: 
+ * \f$ u \f$ for the first-order, and \f$ uw \f$ for the second-order susceptibility 
+ * tensor, respectively. The method described above can be easily extended 
+ * to third and higher orders.
  */
 class GeneralizedPolarGEFactory : public PolarGEFactory
 {
@@ -852,7 +962,7 @@ class GeneralizedPolarGEFactory : public PolarGEFactory
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
  *
  * Implements a class of density matrix susceptibility models for parameterization
- * in uniform electric fields.
+ * in the uniform electric field.
  */
 class UniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
 {
@@ -867,7 +977,7 @@ class UniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
  *
  * Implements a class of density matrix susceptibility models for parameterization
- * in non-uniform electric fields.
+ * in the non-uniform electric field generated by point charges.
  */
 class NonUniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
 {
@@ -881,7 +991,7 @@ class NonUniformEFieldPolarGEFactory : public GeneralizedPolarGEFactory
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
  *
- * Implements the density matrix susceptibility model of the form
+ * Implements the generalized density matrix susceptibility model of the form
  * \f[
  *   \delta D_{\alpha\beta} \approx
  *           {\bf B}_{\alpha\beta}^{(10)} \cdot {\bf F}
@@ -900,7 +1010,7 @@ class LinearUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
  *
- * Implements the density matrix susceptibility model of the form
+ * Implements the generalized density matrix susceptibility model of the form
  * \f[
  *   \delta D_{\alpha\beta} \approx 
  *           {\bf B}_{\alpha\beta}^{(10)} \cdot {\bf F}
@@ -921,7 +1031,7 @@ class QuadraticUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
  *
- * Implements the density matrix susceptibility model of the form
+ * Implements the generalized density matrix susceptibility model of the form
  * \f[
  *   \delta D_{\alpha\beta} \approx \sum_i
  *           {\bf B}_{i;\alpha\beta}^{(10)} \cdot {\bf F}({\bf r}_i)
@@ -929,6 +1039,7 @@ class QuadraticUniformEFieldPolarGEFactory : public UniformEFieldPolarGEFactory
  * where:
  *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
  *    defined for the distributed site at \f$ {\bf r}_i \f$.
+ *
  */
 class LinearNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
 {
@@ -941,7 +1052,7 @@ class LinearNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFacto
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
  *
- * Implements the density matrix susceptibility model of the form
+ * Implements the generalized density matrix susceptibility model of the form
  * \f[
  *   \delta D_{\alpha\beta} \approx \sum_i
  *              \left\{ 
@@ -965,7 +1076,7 @@ class QuadraticNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFa
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
  *
- * Implements the density matrix susceptibility model of the form
+ * Implements the generalized density matrix susceptibility model of the form
  * \f[
  *   \delta D_{\alpha\beta} \approx \sum_i
  *              \left\{ 
@@ -977,6 +1088,8 @@ class QuadraticNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFa
  *  - \f$ {\bf B}_{i;\alpha\beta}^{(10)} \f$ is the density matrix dipole polarizability
  *  - \f$ {\bf B}_{i;\alpha\beta}^{(01)} \f$ is the density matrix quadrupole polarizability
  * all defined for the distributed site at \f$ {\bf r}_i \f$.
+ *
+ * \note This model is not available now and probably will be deprecated in the future.
  */
 class LinearGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
 {
@@ -989,7 +1102,7 @@ class LinearGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPola
 
 /** \brief Polarization GEFP Factory with Least-Squares Parameterization.
  *
- * Implements the density matrix susceptibility model of the form
+ * Implements the generalized density matrix susceptibility model of the form
  * \f[
  *   \delta D_{\alpha\beta} \approx \sum_i
  *              \left\{ 
@@ -1003,6 +1116,8 @@ class LinearGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPola
  *  - \f$ {\bf B}_{i;\alpha\beta}^{(20)} \f$ is the density matrix dipole-dipole hyperpolarizability
  *  - \f$ {\bf B}_{i;\alpha\beta}^{(01)} \f$ is the density matrix quadrupole polarizability
  * all defined for the distributed site at \f$ {\bf r}_i \f$.
+ *
+ * \note This model is not available now and probably will be deprecated in the future.
  */
 class QuadraticGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
 {

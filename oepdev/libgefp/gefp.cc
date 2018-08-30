@@ -303,6 +303,10 @@ std::shared_ptr<oepdev::GenEffParFactory> oepdev::GenEffParFactory::build(const 
        const int rank_field    = opt.get_int("DMATPOL_FIELD_RANK");
        const int rank_gradient = opt.get_int("DMATPOL_GRADIENT_RANK");
 
+       // Check if gradient models are requested
+       if (rank_gradient > 0) 
+           throw psi::PSIEXCEPTION("Gradient models are not available now and probably will be deprecated in the future.");
+
        if (mode == "NONE") {
           {return std::make_shared<oepdev::AbInitioPolarGEFactory>(wfn, opt);}
        } else {
