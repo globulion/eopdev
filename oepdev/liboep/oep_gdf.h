@@ -155,14 +155,14 @@ class SingleGeneralizedDensityFit : public GeneralizedDensityFit
  * \f]
  * with \f$ \rho({\bf r}) \f$ being the effective one-electron density associated with \f$ \hat{v} \f$.
  * 
- * \subsection doublegdfdetails Theory behind the double DF scheme
+ * \subsection doublegdfdetails Theory behind the double GDF scheme
  *
- * In order to perform the generalized density fitting in a incomplete auxiliary basis set, 
+ * In order to perform the generalized density fitting in an incomplete auxiliary basis set, 
  * one must apply the following formula:
  * \f[
  *   {\bf G} = {\bf A}^{-1} \cdot {\bf B}
  * \f]
- * where one encounters the need of evaluation the following *three-electron integrals*
+ * where one encounters the need of evaluation of the following *three-electron integrals*
  * \f[
  *  B_{\xi i} = \left( \xi \vert\vert \hat{v} i \right) 
  *  \equiv \iiint d{\bf r}' d{\bf r}'' d{\bf r}'''
