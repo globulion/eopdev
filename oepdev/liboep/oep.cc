@@ -279,6 +279,7 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s2() 
 {
+// TODO
 }
 void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
 void RepulsionEnergyOEPotential::print_header(void) const {}

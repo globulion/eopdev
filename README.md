@@ -40,7 +40,7 @@ Places to go:
 
 References
 ----------
-[1] [B. Błasiak, `One-Particle Density Matrix Polarization Susceptibility Tensors', *Submitted* **2018** XX, XXX](https://jcp.peerx-press.org/cgi-bin/main.plex?form_type=status_details&j_id=62&ms_id=829529&ms_rev_no=0&ms_id_key=ftdKSMZ2dANZfpmR3tI2bC8g)
+[1] [B. Błasiak, "One-Particle Density Matrix Polarization Susceptibility Tensors", *Submitted* **2018** XX, XXX](https://jcp.peerx-press.org/cgi-bin/main.plex?form_type=status_details&j_id=62&ms_id=829529&ms_rev_no=0&ms_id_key=ftdKSMZ2dANZfpmR3tI2bC8g)
 
 
 
