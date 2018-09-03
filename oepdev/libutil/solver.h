@@ -189,12 +189,12 @@ class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
  *                        + \sum_{y\in B}\sum_{\mu    \nu   \in A} q_y V_{\mu    \nu   }^{(y)} 
  *                          \left(D_{\mu    \nu   }^{(\alpha)} + D_{\mu    \nu   }^{(\beta)}\right)
  *                        + \sum_{y\in B}\sum_{x\in A} \frac{q_xZ_y}{\lvert {\bf r}_x - {\bf r}_y\rvert}
- *                        + \sum_{x\in A}\sum_{\lambda\sigma\in B} Z_x V_{\lambda\sigma}^{(x)} 
+ *                        + \sum_{x\in A}\sum_{\lambda\sigma\in B} q_x V_{\lambda\sigma}^{(x)} 
  *                          \left(D_{\lambda\sigma}^{(\alpha)} + D_{\lambda\sigma}^{(\beta)}\right)
  *                        \right]
  * \f]
  * If the basis set is large and the number of ESP centres \f$ q_{x(y)} \f$ is sufficient,
- * the sum of first two contrubutions equals the sum of the latter two contributions.
+ * the sum of first two contributions equals the sum of the latter two contributions.
  *
  * *Notes:* 
  *   - This solver also computes and prints the ESP-ESP point charge interaction energy,
