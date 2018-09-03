@@ -131,6 +131,8 @@ class WavefunctionUnion : public Wavefunction
     std::vector<SharedBasisSet> l_primary_;
     /// List of auxiliary basis functions per molecule
     std::vector<SharedBasisSet> l_auxiliary_;
+    /// List of intermediate basis functions per molecule
+    std::vector<SharedBasisSet> l_intermediate_;
     /// List of original isolated wavefunctions (electrons unrelaxed)
     std::vector<SharedWavefunction> l_wfn_;
     /// List of names of isolated wavefunctions
@@ -231,6 +233,9 @@ class WavefunctionUnion : public Wavefunction
 
     /// Get the auxiliary basis set object of the *n*th fragment
     SharedBasisSet l_auxiliary (int n) const {return l_auxiliary_[n];}
+
+    /// Get the intermediate basis set object of the *n*th fragment
+    SharedBasisSet l_intermediate (int n) const {return l_intermediate_[n];}
 
     /// Get the wavefunction object of the *n*th fragment
     SharedWavefunction l_wfn (int n) const {return l_wfn_[n];}

@@ -116,9 +116,14 @@ int read_options(std::string name, Options& options)
         /*- The amount of information printed to the output file -*/
         options.add_int    ("PRINT"                 , 1                          );
 
-        /*- Basis set for OEP density fitting -*/                                   
+        /*- Auxiliary basis set for OEP density fitting -*/                                   
         options.add_str    ("DF_BASIS_OEP"          , "sto-3g"                   );
 
+        /*- Intermediate basis set for OEP density fitting -*/                                   
+        options.add_str    ("DF_BASIS_INT"          , "aug-cc-pVDZ-jkfit"        );
+
+        /*- Type of Density Fitting -*/
+        options.add_str    ("OEPDEV_DF_TYPE"        , "DOUBLE"                   );
 
         // ---> OEPDEV: Main Routine  <--- //
 
@@ -266,9 +271,9 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         if      (o_oep_build_type == "ELECTROSTATIC_ENERGY") 
                    oep = oepdev::OEPotential::build("ELECTROSTATIC ENERGY"  , ref_wfn, options);        
         else if (o_oep_build_type == "REPULSION_ENERGY")
-                   oep = oepdev::OEPotential::build("REPULSION ENERGY"      , ref_wfn, ref_wfn->basisset(), options);
+                   oep = oepdev::OEPotential::build("REPULSION ENERGY"      , ref_wfn, ref_wfn->basisset(), ref_wfn->basisset(), options);
         else if (o_oep_build_type == "CT_ENERGY")
-                   oep = oepdev::OEPotential::build("CHARGE TRANSFER ENERGY", ref_wfn, ref_wfn->basisset(), options);
+                   oep = oepdev::OEPotential::build("CHARGE TRANSFER ENERGY", ref_wfn, ref_wfn->basisset(), ref_wfn->basisset(), options);
         else if (o_oep_build_type == "EET_COUPLING")
                    oep = oepdev::OEPotential::build("EET COUPLING CONSTANT" , ref_wfn, options);
         else 

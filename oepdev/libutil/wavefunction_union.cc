@@ -42,6 +42,8 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    SharedBasisSet primary_2  = basissets_["BASIS_2"];
    SharedBasisSet auxiliary_1  = basissets_["BASIS_DF_OEP_1"];
    SharedBasisSet auxiliary_2  = basissets_["BASIS_DF_OEP_2"];
+   SharedBasisSet intermediate_1  = basissets_["BASIS_INT_OEP_1"];
+   SharedBasisSet intermediate_2  = basissets_["BASIS_INT_OEP_2"];
    SharedWavefunction wfn_1  = solve_scf(molecule_1, primary_1, functional, options_, psio_);
    SharedWavefunction wfn_2  = solve_scf(molecule_2, primary_2, functional, options_, psio_);
    int nvir_1                = wfn_1->nmo() - wfn_1->doccpi()[0];
@@ -59,6 +61,7 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    l_wfn_           .push_back(wfn_1                    ); l_wfn_           .push_back(wfn_2                       );
    l_primary_       .push_back(primary_1                ); l_primary_       .push_back(primary_2                   );
    l_auxiliary_     .push_back(auxiliary_1              ); l_auxiliary_     .push_back(auxiliary_2                 );
+   l_intermediate_  .push_back(intermediate_1           ); l_intermediate_  .push_back(intermediate_2              );
    l_name_          .push_back(wfn_1->name()            ); l_name_          .push_back(wfn_2->name()               );
    l_nbf_           .push_back(primary_1->nbf()         ); l_nbf_           .push_back(primary_2->nbf()            );
    l_nmo_           .push_back(wfn_1->nmo()             ); l_nmo_           .push_back(wfn_2->nmo()                );
@@ -204,7 +207,6 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
 
 
    // <==== Compute One-Electron Property object ====> //
-   //oeprop_ = std::make_shared<OEProp>(static_cast<SharedWavefunction>(shared_from_this()));
    oeprop_ = std::make_shared<OEProp>(ref_wfn);
    oeprop_->set_title(" One-Electron Properties of Wavefunction Union");
    oeprop_->set_Da_ao(Da_);

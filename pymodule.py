@@ -84,20 +84,30 @@ def run_oepdev(name, **kwargs):
       
        molecule_A     = molecule.extract_subsets(1)                                                               
        molecule_B     = molecule.extract_subsets(2)
-                                                                                                                 
+
+       # --- primary                                                                                                                 
        basis_A        = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("BASIS"),
                                                  puream=ref_wfn.basisset().has_puream())
        basis_B        = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS"),
                                                  puream=ref_wfn.basisset().has_puream())
+       # --- auxiliary
        basis_df_oep_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                  puream=ref_wfn.basisset().has_puream())
        basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                  puream=ref_wfn.basisset().has_puream())
+       # --- intermediate
+       basis_int_oep_A= psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"),
+                                                 puream=ref_wfn.basisset().has_puream())
+       basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"),
+                                                 puream=ref_wfn.basisset().has_puream())
+
                                                                                                                  
-       ref_wfn.set_basisset("BASIS_1"       , basis_A       )
-       ref_wfn.set_basisset("BASIS_2"       , basis_B       )
-       ref_wfn.set_basisset("BASIS_DF_OEP_1", basis_df_oep_A)
-       ref_wfn.set_basisset("BASIS_DF_OEP_2", basis_df_oep_B)
+       ref_wfn.set_basisset("BASIS_1"        , basis_A        )
+       ref_wfn.set_basisset("BASIS_2"        , basis_B        )
+       ref_wfn.set_basisset("BASIS_DF_OEP_1" , basis_df_oep_A )
+       ref_wfn.set_basisset("BASIS_DF_OEP_2" , basis_df_oep_B )
+       ref_wfn.set_basisset("BASIS_INT_OEP_1", basis_int_oep_A)
+       ref_wfn.set_basisset("BASIS_INT_OEP_2", basis_int_oep_B)
 
     # Ensure IWL files have been written when not using DF/CD
     proc_util.check_iwl_file_from_scf_type(psi4.core.get_option('SCF', 'SCF_TYPE'), ref_wfn)
