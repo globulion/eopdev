@@ -68,6 +68,8 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     SharedBasisSet primary_;
     /// Auxiliary Basis set
     SharedBasisSet auxiliary_;
+    /// Intermediate Basis set
+    SharedBasisSet intermediate_;
 
     /// Name of this OEP;
     std::string name_;
@@ -96,11 +98,12 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     /**\brief General OEP object
      *
-     * @param wfn        - wavefunction
-     * @param auxiliary  - basis set for density fitting of OEP's
-     * @param options    - Psi4 options
+     * @param wfn          - wavefunction
+     * @param auxiliary    - auxiliary basis set for density fitting of OEP's
+     * @param intermediate - intermediate basis set for density fitting of OEP's
+     * @param options      - Psi4 options
      */
-    OEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, Options& options);
+    OEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options);
 
     /// Destructor
     virtual ~OEPotential();
@@ -119,13 +122,14 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     /**\brief Build general OEP object
      *
-     * @param type       - OEP category
-     * @param wfn        - wavefunction
-     * @param auxiliary  - basis set for density fitting of OEP's
-     * @param options    - Psi4 options
+     * @param type         - OEP category
+     * @param wfn          - wavefunction
+     * @param auxiliary    - auxiliary basis set for density fitting of OEP's
+     * @param intermediate - intermediate basis set for density fitting of OEP's
+     * @param options      - Psi4 options
      */
     static std::shared_ptr<OEPotential> build(const std::string& category, SharedWavefunction wfn, 
-                                              SharedBasisSet auxiliary, Options& options);
+                                              SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options);
 
 
     // <--- Methods/Computers ---> //
@@ -219,7 +223,7 @@ class ElectrostaticEnergyOEPotential : public OEPotential
 class RepulsionEnergyOEPotential : public OEPotential 
 {
   public:
-    RepulsionEnergyOEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, Options& options);
+    RepulsionEnergyOEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options);
     RepulsionEnergyOEPotential(SharedWavefunction wfn, Options& options);
 
     virtual ~RepulsionEnergyOEPotential();
@@ -248,7 +252,7 @@ class RepulsionEnergyOEPotential : public OEPotential
 class ChargeTransferEnergyOEPotential : public OEPotential 
 {
   public:
-    ChargeTransferEnergyOEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, Options& options);
+    ChargeTransferEnergyOEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options);
     ChargeTransferEnergyOEPotential(SharedWavefunction wfn, Options& options);
 
     virtual ~ChargeTransferEnergyOEPotential();
@@ -283,7 +287,7 @@ class ChargeTransferEnergyOEPotential : public OEPotential
 class EETCouplingOEPotential : public OEPotential 
 {
   public:
-    EETCouplingOEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, Options& options);
+    EETCouplingOEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options);
     EETCouplingOEPotential(SharedWavefunction wfn, Options& options);
 
     virtual ~EETCouplingOEPotential();

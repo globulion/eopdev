@@ -1333,10 +1333,12 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
   SharedOEPotential oep_1 = oepdev::OEPotential::build("REPULSION ENERGY",
                                                        wfn_union_->l_wfn(0), 
                                                        wfn_union_->l_auxiliary(0), 
+                                                       wfn_union_->l_intermediate(0), 
                                                        wfn_union_->options());
   SharedOEPotential oep_2 = oepdev::OEPotential::build("REPULSION ENERGY", 
                                                        wfn_union_->l_wfn(1), 
                                                        wfn_union_->l_auxiliary(1), 
+                                                       wfn_union_->l_intermediate(1), 
                                                        wfn_union_->options());
   oep_1->compute();
   oep_2->compute();
@@ -1371,8 +1373,8 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
   std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(Ca_occ_1, Sao_1p2p, Ca_occ_2, true, false, false);
   std::shared_ptr<psi::Matrix> Sba = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true);
   std::shared_ptr<psi::Matrix> Sab = psi::Matrix::doublet(Ca_occ_1, Sao_1p2a, true, false);
-  // ===> Compute S^-1 term <=== //
 
+  // ===> Compute S^-1 term <=== //
   std::shared_ptr<psi::Matrix> SSG1= psi::Matrix::triplet(Smo, Sba, oep_1->matrix("Murrell-etal.S1"), 
                                                           false, false, false);
   std::shared_ptr<psi::Matrix> SSG2= psi::Matrix::triplet(Smo, Sab, oep_2->matrix("Murrell-etal.S1"), 

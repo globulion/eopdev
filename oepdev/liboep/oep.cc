@@ -4,6 +4,7 @@
 #include "../libutil/integrals_iter.h"
 #include "psi4/libqt/qt.h"
 #include "psi4/libciomr/libciomr.h"
+#include "oep_gdf.h"
 
 
 using namespace oepdev;
@@ -16,9 +17,10 @@ OEPotential::OEPotential(SharedWavefunction wfn, Options& options)
 {
     common_init();
 }
-OEPotential::OEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, Options& options) 
+OEPotential::OEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options) 
    : wfn_(wfn),
      auxiliary_(auxiliary),
+     intermediate_(intermediate),
      options_(options)
 {
     common_init();
@@ -45,14 +47,14 @@ std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, Sha
    return oep;
 }
 std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, SharedWavefunction wfn, 
-                                                                           SharedBasisSet auxiliary, Options& options)
+                                                                           SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options)
 {
    std::shared_ptr<OEPotential> oep;
 
    if      (category == "ELECTROSTATIC ENERGY"  )  throw PSIEXCEPTION("OEPDEV: OEPotential build. DF-based OEP not available for Electrostatic Energy!");
-   else if (category == "REPULSION ENERGY"      )  oep = std::make_shared< RepulsionEnergyOEPotential>(wfn, auxiliary, options);
-   else if (category == "CHARGE TRANSFER ENERGY")  oep = std::make_shared< ChargeTransferEnergyOEPotential>(wfn, auxiliary, options);
-   else if (category == "EET COUPLING CONSTANT" )  oep = std::make_shared<    EETCouplingOEPotential>(wfn, auxiliary, options);
+   else if (category == "REPULSION ENERGY"      )  oep = std::make_shared< RepulsionEnergyOEPotential>(wfn, auxiliary, intermediate, options);
+   else if (category == "CHARGE TRANSFER ENERGY")  oep = std::make_shared< ChargeTransferEnergyOEPotential>(wfn, auxiliary, intermediate, options);
+   else if (category == "EET COUPLING CONSTANT" )  oep = std::make_shared<    EETCouplingOEPotential>(wfn, auxiliary, intermediate, options);
    else  
             throw PSIEXCEPTION("OEPDEV: OEPotential build. Unrecognized OEP category.");
 
@@ -168,8 +170,8 @@ RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(SharedWavefunction wfn, O
 }
 
 RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(SharedWavefunction wfn, 
-                                                       SharedBasisSet auxiliary, Options& options) 
- : OEPotential(wfn, auxiliary, options)
+                                                       SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options) 
+ : OEPotential(wfn, auxiliary, intermediate, options)
 { 
    common_init();
 }
@@ -201,24 +203,21 @@ void RepulsionEnergyOEPotential::compute(const std::string& oepType)
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s1() 
 {
+   // ---> Determine the target basis set for generalized density fitting <--- //
+   std::shared_ptr<psi::BasisSet> target = intermediate_;
+   if (options_.get_str("OEPDEV_DF_TYPE") == "SINGLE") target = auxiliary_;
+
    // ===> Allocate <=== //
-   std::shared_ptr<psi::Matrix> Vao = std::make_shared<psi::Matrix>("Vao" , primary_->nbf(), auxiliary_->nbf());
-   std::shared_ptr<psi::Matrix> Sao = std::make_shared<psi::Matrix>("Sao" , auxiliary_->nbf(), auxiliary_->nbf());
+   std::shared_ptr<psi::Matrix> Vao = std::make_shared<psi::Matrix>("Vao" , primary_->nbf(), target->nbf());
    std::shared_ptr<psi::Matrix> Ca_occ = wfn_->Ca_subset("AO","OCC");
 
-   psi::IntegralFactory fact_a(auxiliary_, auxiliary_);
-   psi::IntegralFactory fact_1(primary_, auxiliary_);
-   psi::IntegralFactory fact_2(primary_, primary_, primary_, auxiliary_);
+   psi::IntegralFactory fact_1(primary_, target);
+   psi::IntegralFactory fact_2(primary_, primary_, primary_, target);
   
    std::shared_ptr<psi::OneBodyAOInt> potInt(fact_1.ao_potential());
-   std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact_a.ao_overlap());
 
    // ===> Compute One-Electron Integrals <=== //
    potInt->compute(Vao);
-   ovlInt->compute(Sao);
-
-   //psi::shared_ptr<psi::Matrix> I = psi::Matrix::doublet(Sao, Sao, false, false);
-   //I->print();
 
    // ===> Compute Nuclear Contribution to DF Vector <=== //
    std::shared_ptr<psi::Matrix> V = psi::Matrix::doublet(Vao, Ca_occ, true, false);
@@ -257,21 +256,11 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    }
    }
 
-   //// ===> Perform Generalized Density Fitting <=== // 
-   Sao->invert();
-   std::shared_ptr<psi::Matrix> G = psi::Matrix::doublet(Sao, V, false, false);
-   //G->set_name("G(S^{-1})");
-   //double** pS = Sao->pointer();
-   //double** v = V->pointer();  
-   //int Q = auxiliary_->nbf();
-   //int N = wfn_->doccpi()[0];
-   //int* ipiv = init_int_array(Q);
-   ////C_DGESV(Q, N, &(pS[0][0]), Q, &(ipiv[0]), &(v[0][0]), Q);
-   //int info = C_DGESV(Q, N, Sao->pointer()[0], Q, ipiv, V->pointer()[0], Q);
-   //cout << info << endl;
-
-   //free(ipiv);
-   //V->print();
+   // ===> Perform The Generalized Density Fitting <=== // 
+   std::shared_ptr<oepdev::GeneralizedDensityFit> gdf;
+   if (options_.get_str("OEPDEV_DF_TYPE") == "SINGLE") {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, V);}
+   else                                                {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, intermediate_, V);}
+   std::shared_ptr<psi::Matrix> G = gdf->compute();
    
    // ===> Save and Finish <=== //
    oepTypes_.at("Murrell-etal.S1").matrix->copy(G);
@@ -293,8 +282,9 @@ ChargeTransferEnergyOEPotential::ChargeTransferEnergyOEPotential(SharedWavefunct
 }
 
 ChargeTransferEnergyOEPotential::ChargeTransferEnergyOEPotential(SharedWavefunction wfn, 
-                                                                 SharedBasisSet auxiliary, Options& options) 
- : OEPotential(wfn, auxiliary, options)
+                                                                 SharedBasisSet auxiliary, 
+                                                                 SharedBasisSet intermediate, Options& options) 
+ : OEPotential(wfn, auxiliary, intermediate, options)
 { 
    common_init();
 }
@@ -336,8 +326,9 @@ EETCouplingOEPotential::EETCouplingOEPotential(SharedWavefunction wfn, Options& 
 }
 
 EETCouplingOEPotential::EETCouplingOEPotential(SharedWavefunction wfn, 
-                                               SharedBasisSet auxiliary, Options& options) 
- : OEPotential(wfn, auxiliary, options)
+                                               SharedBasisSet auxiliary, 
+                                               SharedBasisSet intermediate, Options& options) 
+ : OEPotential(wfn, auxiliary, intermediate, options)
 { 
    common_init();
 }

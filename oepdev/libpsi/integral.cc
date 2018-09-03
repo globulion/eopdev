@@ -46,7 +46,7 @@ void oepdev::TwoBodyAOInt::compute(psi::Matrix& result, int ibs1, int ibs2)
         for (int j = 0; j < ns2; ++j) {
             int nj = bs2->shell(j).ncartesian();
 
-            // Compute the shell (automatically transforms to pure am in needed)
+            // Compute the shell (automatically transforms to pure am if needed)
             compute_shell(i, j);
 
             // For each integral that we got put in its contribution

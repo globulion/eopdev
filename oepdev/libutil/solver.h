@@ -38,6 +38,12 @@ using SharedOEPotential        = std::shared_ptr<OEPotential>;
  *  - `ELECTROSTATIC ENERGY`
  *  - `REPULSION ENERGY`
  *  - `CHARGE TRANSFER ENERGY`
+ *
+ * Options controlling the generalized density fitting (GDF):
+ *  - `OEPDEV_DF_TYPE` - type of the GDF. Default: `DOUBLE`.
+ *  - `DF_BASIS_OEP` - auxiliary basis set. Default: `sto-3g`.
+ *  - `DF_BASIS_INT` - intermediate basis set. Relevant only if double GDF is used. Default: `aug-cc-pVDZ-jkfit`. 
+ *     Note that intermediate basis set should be nearly complete.
  */
 class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
 {

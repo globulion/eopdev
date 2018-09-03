@@ -8,7 +8,7 @@
 #include "psi4/libmints/wavefunction.h"
 #include "psi4/libmints/basisset.h"
 #include "psi4/libmints/matrix.h"
-#include "psi4/libmints/vector.h"
+#include "../libpsi/integral.h"
 
 namespace oepdev{
 
@@ -37,9 +37,20 @@ using namespace std;
 class GeneralizedDensityFit
 {
   public: 
+    /**\brief Factory for Single GDF Computer.
+     * @param bs_auxiliary - auxiliary basis set
+     * @param v_vector     - the matrix with \f$ V_{\xi i} \f$ elements
+     * @return Generalized Density Fit Computer.
+     */
     static std::shared_ptr<GeneralizedDensityFit> build(std::shared_ptr<psi::BasisSet> bs_auxiliary,
                                                         std::shared_ptr<psi::Matrix> v_vector);
 
+    /**\brief Factory for Double GDF Computer.
+     * @param bs_auxiliary    - auxiliary basis set
+     * @param bs_intermediate - intermediate basis set
+     * @param v_vector        - the matrix with \f$ V_{\epsilon i} \f$ elements
+     * @return Generalized Density Fit Computer.
+     */
     static std::shared_ptr<GeneralizedDensityFit> build(std::shared_ptr<psi::BasisSet> bs_auxiliary,
                                                         std::shared_ptr<psi::BasisSet> bs_intermediate,
                                                         std::shared_ptr<psi::Matrix> v_vector);
@@ -50,17 +61,28 @@ class GeneralizedDensityFit
     /// Destructor
     virtual ~GeneralizedDensityFit();
    
-    /// Perform the generalized density fit 
-    void compute(void) = 0;
+    /**\brief Perform the generalized density fit
+     * @return The OEP coefficients \f$ G_{\xi i} \f$
+     */
+    virtual std::shared_ptr<psi::Matrix> compute(void) = 0;
 
-    /// Extract the \f$ G_{\eta i} \f$ coefficients
+    /// Extract the \f$ G_{\xi i} \f$ coefficients
     std::shared_ptr<psi::Matrix> G(void) const {return G_;}
 
   protected: 
-    /// The OEP coefficients \f$ G_{\eta i} \f$
+    /// The OEP coefficients \f$ G_{\xi i} \f$
     std::shared_ptr<psi::Matrix> G_;
     /// The intermediate DF coefficients for \f$ \hat{v}|i) \f$
     std::shared_ptr<psi::Matrix> H_;
+    /// The V matrix \f$ \left( \xi \vert \hat{v} i \right) \f$
+    std::shared_ptr<psi::Matrix> V_;
+
+    /// Number of auxiliary basis set functions
+    int n_a_;
+    /// Number of intermediate basis set functions
+    int n_i_;
+    /// Number of OEP's
+    int n_o_;
 
     /// Basis set: auxiliary
     std::shared_ptr<psi::BasisSet> bs_a_;
@@ -68,9 +90,14 @@ class GeneralizedDensityFit
     std::shared_ptr<psi::BasisSet> bs_i_;
 
     /// Integral factory: aux - aux
-    std::shared_ptr<psi::IntegralFactory> ints_aa_;
+    std::shared_ptr<oepdev::IntegralFactory> ints_aa_;
     /// Integral factory: aux - int
-    std::shared_ptr<psi::IntegralFactory> ints_ai_;
+    std::shared_ptr<oepdev::IntegralFactory> ints_ai_;
+    /// Integral factory: int - int
+    std::shared_ptr<oepdev::IntegralFactory> ints_ii_;
+
+    /// Invert a square matrix and check if the inverse is acceptable
+    void invert_matrix(std::shared_ptr<psi::Matrix>& M);
 };
 
 /**\brief Generalized Density Fitting Scheme - Single Fit.
@@ -106,7 +133,7 @@ class SingleGeneralizedDensityFit : public GeneralizedDensityFit
     SingleGeneralizedDensityFit(std::shared_ptr<psi::BasisSet> bs_auxiliary,
                                 std::shared_ptr<psi::Matrix> v_vector);
     virtual ~SingleGeneralizedDensityFit();
-    void compute(void);
+    std::shared_ptr<psi::Matrix> compute(void);
 };
 
 /**\brief Generalized Density Fitting Scheme - Double Fit.
@@ -195,7 +222,7 @@ class DoubleGeneralizedDensityFit : public GeneralizedDensityFit
                                 std::shared_ptr<psi::BasisSet> bs_intermediate,
                                 std::shared_ptr<psi::Matrix> v_vector);
     virtual ~DoubleGeneralizedDensityFit();
-    void compute(void);
+    std::shared_ptr<psi::Matrix> compute(void);
 };
 /** @}*/
 } // EndNameSpace oepdev

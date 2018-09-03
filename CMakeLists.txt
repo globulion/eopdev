@@ -77,6 +77,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libpsi/potential.cc
                        oepdev/libpsi/integral.cc
                        oepdev/liboep/oep.cc   
+                       oepdev/liboep/oep_gdf.cc   
                        oepdev/libints/recurr.cc
                        oepdev/libints/eri.cc
                        oepdev/libtest/test.cc
