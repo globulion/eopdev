@@ -1,8 +1,129 @@
 //-----------------------------------------------------------
 
 /*! \page intro Introduction
-This page introduces the user to the topic.
-Now you can proceed to the \ref advanced "advanced section".
+    \tableofcontents
+
+Exploring biological phenomena at molecular scale is oftentimes indispensable
+to develop new drugs and intelligent materials. Most of relevant system 
+properties are affected by intermolecular interactions with nearby 
+environment such as solvent
+or closely bound electronic chromophores.
+Studying such molecular aggregates requires rigorous and accurate quantum 
+chemistry methods, the cost of which grows very fast with the number 
+of electrons. 
+Despite many methodologies have been devised to describe 
+energetic and dynamical properties of **extended molecular systems** efficiently and 
+accurately, there exist particularly difficult cases in which 
+modelling is still challenging: 
+
+  - describing electronic transitions in solution or
+  - when coupled with other electronic transition via resonance energy transfer, 
+  - performing molecular dynamics 
+    at very high level of theory including dynamic electron correlation, 
+  - vibrational frequency calculations of particular normal mode in 
+    condensed phases
+ 
+and so on. The reason behind (sometimes prohibitively) 
+high costs of fully *ab initio* calculations in the above areas 
+is the complexity of mathematical models often based on wave functions 
+rather then (conceptually more straightforward) electronic densities. 
+On the other hand, 
+it has been pointed out before
+that the one-electron density 
+distributions are of particular importance in chemistry. It can be 
+thus utilized as a means of developing a general model that 
+re-expresses the physics of intermolecular interactions in terms 
+of effective one-electron functions that are easier to handle 
+in practice.
+
+This Project will focus on finding a unified way to simplify various equations 
+of Quantum Chemistry of extended molecular systems, i.e., 
+molecular aggregates such as interacting chromophores
+and molecules solvated by water and other solvents. 
+Indeed, one of the important difficulties encountered in Quantum Chemistry
+of large systems is the need of evaluation of special kind of numbers
+known as *electron repulsion integrals*, or in short, ERI's. In a typical
+calculation, the amount of ERI's can be as high as tens or even hundreds of millions (!)
+that unfortunately prevents from application of conventional methods when the number of particles
+in question is too large. In the Project, the complicated expressions involving ERI's 
+shall be greatly simplified to reduce the computational costs as much as possible
+while introducing no or minor approximations to the original theories.
+
+\section resprojmeth Research Project Methodology
+
+In this Project the new theoretical protocol based on the 
+one-electron effective potentials (OEP's) is developed. 
+The main principle is to rewrite arbitrary sum of functions \f$ f \f$ 
+of electron repulsion integrals (ERI's) by defining \ref poepdesign "OEP's"
+according to the following general prescription:
+\f{align*}{
+\sum_f f\left[ 
+   \left( {\phi_i^A}{\phi_j^A} \vert\vert {\phi_k^B}{\phi_l^B} \right)
+ \right] &= \left( {\phi_i^A} \vert {v_{kl}^B} \vert {\phi_j^A} \right) \rightarrow 
+ \text{ point charge or density fitting} \\
+\sum_f f\left[ 
+   \left( {\phi_i^A}{\phi_j^B} \vert\vert {\phi_k^B}{\phi_l^B} \right)
+ \right] &= \left( {\phi_i^A} \vert {v_{kl}^B} \vert {\phi_j^B} \right) \rightarrow 
+ \text{ density fitting,} 
+\f}
+where \f$ A \f$ and \f$ B \f$ denote different molecules 
+and \f$ \phi_i \f$ is the \f$ i \f$-th molecular orbital
+or basis function. Here,
+\f$ v_{kl}^B \f$ denotes the \ref poeptypes *ab initio* "OEP matrix element". The technique described above 
+will be applied to simplify expressions for 
+ - short-range excitation 
+   energy transfer couplings between chlorophyll subunits of reaction centres 
+   in photosynthesis
+ - Pauli interaction repulsion energy 
+ - charge-transfer interaction energy
+ - electric field-induced charge density polarization of molecules. 
+
+The above developments might be used 
+in fragment-based *ab initio* molecular dynamics protocols of new generation. 
+
+\section impact Expected Impact on the Development of Science, Civilization and Society
+
+The proposed OEP's are expected to significantly develop 
+the fragment-based methods that are widely used 
+in physical chemistry and modelling of biologically 
+important systems. Owing to universality of OEP's, 
+they could find applications in many branches of chemical science: 
+*non-empirical* molecular dynamics, short-range
+resonance energy transfer in photosynthesis,
+electronic and vibrational solvatochromism, 
+multidimensional spectroscopy and so on. In particular:
+
+ - the OEP-based models of Pauli repulsion energy and charge-transfer (CT) energy
+   could be used to improve the computational performance of the second generation effective fragment
+   potential method (EFP2). At present, the CT term is very time consuming and due to this reasons
+   it is not used in most of applications of EFP2 to perform molecular dynamics simulations.
+ - the OEP-based model of EET couplings could significantly improve modelling of energy transfer
+   in the light harvesting complexes. At present, short-range phenomena (Dexter mechanisms of EET)
+   are very difficult to efficiently and quantitatively asses when performing statistical averaging
+   and applying to large molecular aggregates. Such Dexter effects could be computed by using OEP's
+   in much more efficient manner without loosing high accuracy of parent TDFI-TI method.
+ - the density matrix polarization (DMS) tensors could be used in new generation fragment-based *ab initio*
+   molecular dynamics protocols that rigorously take into consideration electron correlation effects.
+
+Therefore, it is strongly believed that the
+OEP's could have an indirect impact on 
+the design of novel drugs and materials for industry.
+
+\section oepdevcode The OEPDev Code
+
+To pursue the above challenges in the field of computational
+quantum chemistry of extended molecular aggregates,
+the OEPDev platform is developed.
+Accurate and efficient *ab initio* \ref pimplementedmodels "models"
+based on OEP's are implemented in the OEPDev code, along with
+the state-of-the-art benchmark and competiting methods. 
+Written entirely in C++, 
+OEPDev is a plugin to Psi4 quantum chemistry package. Therefore,
+compilation and running the OEPDev code is straightforward and follows
+the API interface similar to the one used in Psi4 with 
+just a few \ref pprogramming "specific programing conventions".
+The detailed discussion about using the OEPDev code
+can be found in \ref advanced "advanced usage section". 
 */
 
 //-----------------------------------------------------------
@@ -85,6 +206,8 @@ possibly putting them into a `std::vector` container in case there is more than 
 
 Here I provide the list of OEP’s that have been already derived within 
 the scope of the OEPDev project. 
+\note Add here a table with all the OEP types along with their symbols used in the OEPDev code
+      (e.g., ```Murrell.etal-S1``` etc).
 
 \section soepcoulomb Electrostatic Energy OEP’s
 
@@ -137,6 +260,10 @@ v_{\xi i}({S^{-1}}) &= \sum_{\kappa\in A} C_{i\kappa}
 \f}
 
 \subsection ssoeppauli2 Second-order contribution in overlap matrix expansion.
+
+To be added here!
+
+\section soepct Charge-Transfer Energy OEP’s
 
 To be added here!
 
@@ -341,9 +468,9 @@ __Table 2.__ Target models vs benchmarks and competitor models.
 /*! \page pprogramming Contributing to oep-dev
     \tableofcontents
 
-  OepDev is a plugin to Psi4. Therefore it should follow the programming etiquette of Psi4. Also,
-  oep-dev has additional programming tips to make the code more versatile and easy in further development.
-  Here, I emphasise on most important aspects regarding the **programming rules**.
+OepDev is a plugin to Psi4. Therefore it should follow the programming etiquette of Psi4. Also,
+oep-dev has additional programming tips to make the code more versatile and easy in further development.
+Here, I emphasise on most important aspects regarding the **programming rules**.
 
 \section smain Main routine and libraries
 
@@ -473,7 +600,20 @@ helps in producing self-maintaining code and is much easier to use. Use:
 // --------------------------------------------------------------------------
 
 /*! \page advanced Advanced Usage
-This page is for advanced users.
-Make sure you have first read \ref intro "the introduction".
+    \tableofcontents
+
+    This section is addressed for advanced users. Make sure you have first read \ref intro "the introduction"
+    before proceeding.
+
+\section padvcodestr OEPDev Code Structure
+
+\subsection smain Main Plugin
+
+\subsection smod Modules
+
+\subsection sdoc Documentation
+
+\section padvclasses OEPDev Classes: Overview
+
 */
 
