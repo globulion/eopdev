@@ -142,7 +142,7 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     virtual void compute(const std::string& oepType) = 0;
 
     /// Compute value of potential in point x, y, z and save at v
-    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) = 0;
+    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) = 0;
 
     /// Write potential to a cube file
     virtual void write_cube(const std::string& oepType, const std::string& fileName);
@@ -203,7 +203,7 @@ class ElectrostaticEnergyOEPotential : public OEPotential
 
     virtual void compute(const std::string& oepType) override;
     virtual void compute_3D(const std::string& oepType, 
-                            const double& x, const double& y, const double& z, double& v) override;
+                            const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) override;
     virtual void print_header() const override;
 
   private:
@@ -230,7 +230,7 @@ class RepulsionEnergyOEPotential : public OEPotential
 
     virtual void compute(const std::string& oepType) override;
     virtual void compute_3D(const std::string& oepType, 
-                            const double& x, const double& y, const double& z, double& v) override;
+                            const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) override;
     virtual void print_header() const override;
 
   private:
@@ -259,7 +259,7 @@ class ChargeTransferEnergyOEPotential : public OEPotential
 
     virtual void compute(const std::string& oepType) override;
     virtual void compute_3D(const std::string& oepType, 
-                            const double& x, const double& y, const double& z, double& v) override;
+                            const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) override;
     virtual void print_header() const override;
 
   private:
@@ -294,7 +294,7 @@ class EETCouplingOEPotential : public OEPotential
 
     virtual void compute(const std::string& oepType) override;
     virtual void compute_3D(const std::string& oepType, 
-                            const double& x, const double& y, const double& z, double& v) override;
+                            const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) override;
     virtual void print_header() const override;
 
   private:

@@ -5,14 +5,14 @@ namespace oepdev{
 
 using namespace std;
 
-ESPSolver::ESPSolver(SharedScalarField3D field)
+ESPSolver::ESPSolver(SharedField3D field)
  : field_(field), nCentres_(field->wfn()->molecule()->natom()),
    centres_(std::make_shared<psi::Matrix>(field->wfn()->molecule()->geometry()))
 {
    common_init();
 }
 
-ESPSolver::ESPSolver(SharedScalarField3D field, psi::SharedMatrix centres)
+ESPSolver::ESPSolver(SharedField3D field, psi::SharedMatrix centres)
  : field_(field), nCentres_(centres->nrow()),
    centres_(std::make_shared<psi::Matrix>(*centres))
 {

@@ -74,12 +74,12 @@ RandomPoints3DIterator::RandomPoints3DIterator(const int& np, const double& pad,
  : Points3DIterator(np), randomDistribution_(std::uniform_real_distribution<double>(-1.0, 1.0))
 {
    // populate vdwRadius
-   vdwRadius_["C"] = 3.000;
-   vdwRadius_["H"] = 1.000;
-   vdwRadius_["N"] = 2.400;
-   vdwRadius_["O"] = 2.600;
-   vdwRadius_["F"] = 2.300;
-   vdwRadius_["Cl"]= 2.900;
+   vdwRadius_["C"] = psi::Process::environment.options.get_double("ESP_VDW_RADIUS_C" );
+   vdwRadius_["H"] = psi::Process::environment.options.get_double("ESP_VDW_RADIUS_H" );
+   vdwRadius_["N"] = psi::Process::environment.options.get_double("ESP_VDW_RADIUS_N" );
+   vdwRadius_["O"] = psi::Process::environment.options.get_double("ESP_VDW_RADIUS_O" );
+   vdwRadius_["F"] = psi::Process::environment.options.get_double("ESP_VDW_RADIUS_F" );
+   vdwRadius_["Cl"]= psi::Process::environment.options.get_double("ESP_VDW_RADIUS_CL");
 
    // Set the centre of the sphere
    Matrix       geom = mol->geometry();
@@ -279,7 +279,7 @@ void CubePointsCollection3D::print() const {
   //psi::outfile->Printf(" ===> Cube 3D Collection <===\n");
 }
 
-void CubePointsCollection3D::write_cube_file(psi::SharedMatrix v, const std::string& name){
+void CubePointsCollection3D::write_cube_file(psi::SharedMatrix v, const std::string& name, const int& col){
     // => Drop the grid out <= //
 
     std::stringstream ss;
@@ -316,46 +316,50 @@ void CubePointsCollection3D::write_cube_file(psi::SharedMatrix v, const std::str
 
     //// Data, striped (x, y, z)
     for (int ind = 0; ind < npoints_; ++ind) {
-        fprintf(fh, "%13.5E", v->get(ind,3));
+        fprintf(fh, "%13.5E", v->get(ind,3+col));
         if (ind % 6 == 5) fprintf(fh,"\n");
     }
 
     fclose(fh);
 }
 
-void ScalarField3D::compute(){
+void Field3D::compute(){
   shared_ptr<Points3DIterator> iter = points_collection()->points_iterator();
   if (!iter) throw psi::PSIEXCEPTION("ERROR!!! No iterator in Potential3D object!\n");
   for (iter->first(); iter->is_done()==false; iter->next()) {
-       data_->set(iter->index(), 0, iter->x());
-       data_->set(iter->index(), 1, iter->y());
-       data_->set(iter->index(), 2, iter->z());
-       data_->set(iter->index(), 3, compute_xyz(iter->x(), iter->y(), iter->z()));
+       std::shared_ptr<psi::Vector> v = compute_xyz(iter->x(), iter->y(), iter->z());
+       data_->set(iter->index(), 0  , iter->x());
+       data_->set(iter->index(), 1  , iter->y());
+       data_->set(iter->index(), 2  , iter->z());
+       for (int i=0; i<nDim_; ++i) 
+       data_->set(iter->index(), 3+i, v->get(i));
   }
   isComputed_ = true;
 }
 
-ScalarField3D::ScalarField3D(const int& np, const double& pad, psi::SharedWavefunction wfn, psi::Options& opt)
+Field3D::Field3D(const int& ndim, const int& np, const double& pad, psi::SharedWavefunction wfn, psi::Options& opt)
  : pointsCollection_(PointsCollection3D::build(np, pad, wfn->molecule())),
-   data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", np, 4)),
+   data_(std::make_shared<Matrix>("XYZ and Potential Values", np, 3+ndim)),
    geom_(psi::Matrix(wfn->molecule()->geometry())), 
-   wfn_(wfn)
+   wfn_(wfn),
+   nDim_(ndim)
 {
    common_init();
 }
 
-ScalarField3D::ScalarField3D(const int& nx, const int& ny, const int& nz,
+Field3D::Field3D(const int& ndim, const int& nx, const int& ny, const int& nz,
                              const double& px, const double& py, const double& pz,
                              std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options)
   : pointsCollection_(PointsCollection3D::build(nx, ny, nz, px, py, pz, wfn->basisset(), options)),
-    data_(std::make_shared<Matrix>("XYZ and Scalar Potential Values", nx*ny*nz, 4)),
+    data_(std::make_shared<Matrix>("XYZ and Potential Values", nx*ny*nz, 3+ndim)),
     geom_(psi::Matrix(wfn->molecule()->geometry())),
-    wfn_(wfn)
+    wfn_(wfn),
+    nDim_(ndim)
 {
     common_init();
 }
 
-void ScalarField3D::common_init()
+void Field3D::common_init()
 {
   primary_= wfn_->basisset();
   nbf_    = wfn_->basisset()->nbf();
@@ -365,23 +369,23 @@ void ScalarField3D::common_init()
   isComputed_ = false;
 }
 
-void ScalarField3D::write_cube_file(const std::string& name)
+void Field3D::write_cube_file(const std::string& name)
 {
    if (points_collection()->get_type() == PointsCollection3D::Cube) {
        compute();
        std::shared_ptr<CubePointsCollection3D> col = std::dynamic_pointer_cast<CubePointsCollection3D>(points_collection());
-       col->write_cube_file(data(), name);
+       for (int i=0; i<nDim_; ++i) col->write_cube_file(data(), name, i);
    }
 }
 
 
-ScalarField3D::~ScalarField3D()
+Field3D::~Field3D()
 {
 
 }
 
 ElectrostaticPotential3D::ElectrostaticPotential3D(const int& npoints, const double& padding, psi::SharedWavefunction wfn, psi::Options& options) 
- : ScalarField3D(npoints, padding, wfn, options)
+ : Field3D(1, npoints, padding, wfn, options)
 {
 
 }
@@ -390,7 +394,7 @@ ElectrostaticPotential3D::ElectrostaticPotential3D(const int& npoints, const dou
 ElectrostaticPotential3D::ElectrostaticPotential3D(const int& nx, const int& ny, const int& nz,
                                                    const double& px, const double& py, const double& pz,
                                                    psi::SharedWavefunction wfn, psi::Options& options)
- : ScalarField3D(nx, ny, nz, px, py, pz, wfn, options)
+ : Field3D(1, nx, ny, nz, px, py, pz, wfn, options)
 { 
 
 }
@@ -406,7 +410,7 @@ void ElectrostaticPotential3D::print() const
    pointsCollection_->print();
 }
 
-double ElectrostaticPotential3D::compute_xyz(const double& x, const double& y, const double& z)
+std::shared_ptr<psi::Vector> ElectrostaticPotential3D::compute_xyz(const double& x, const double& y, const double& z)
 {
    double val = 0.0;
    // ===> Nuclear contribution <=== //
@@ -418,7 +422,7 @@ double ElectrostaticPotential3D::compute_xyz(const double& x, const double& y, c
    }
 
    // ===> Electronic contribution <=== //
-   double v;
+   {double v;
    potInt_->set_charge_field(x, y, z);
    oneInt_ = potInt_;
    oneInt_->compute(pot_);
@@ -429,9 +433,12 @@ double ElectrostaticPotential3D::compute_xyz(const double& x, const double& y, c
              if (i==j) val -= v;
         }
    }
-   pot_->zero();
+   pot_->zero();}
    
-   return val;
+   // save
+   std::shared_ptr<psi::Vector> v = std::make_shared<psi::Vector>("", 1);
+   v->set(0, val);
+   return v;
 }
 
 
@@ -486,25 +493,27 @@ std::shared_ptr<PointsCollection3D> PointsCollection3D::build(const int& nx, con
 }
 
 // Build Random with molecule (vdW radii include)
-std::shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
+std::shared_ptr<Field3D> Field3D::build(const std::string& type, 
                                                const int& np,
                                                const double& padding,
                                                psi::SharedWavefunction wfn,
-                                               psi::Options& options)
+                                               psi::Options& options, const int& ndim)
+// ndim is not used at that moment
 {
-   std::shared_ptr<ScalarField3D> field;
+   std::shared_ptr<Field3D> field;
    if          (type == "ELECTROSTATIC POTENTIAL") field = std::make_shared<ElectrostaticPotential3D>(np, padding, wfn, options);
    else throw psi::PSIEXCEPTION(" ERROR! Incorrect scalar field type requested!\n");
    return field;
 }
 
 // Build CUBE collection with wavefunction
-std::shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type, 
-                                               const int& nx, const int& ny, const int& nz,
-                                               const double& px, const double& py, const double& pz,
-                                               psi::SharedWavefunction wfn, psi::Options& options)
+std::shared_ptr<Field3D> Field3D::build(const std::string& type, 
+                                        const int& nx, const int& ny, const int& nz,
+                                        const double& px, const double& py, const double& pz,
+                                        psi::SharedWavefunction wfn, psi::Options& options, const int& ndim)
+// ndim is not used at that moment
 {
-   std::shared_ptr<ScalarField3D> field;
+   std::shared_ptr<Field3D> field;
    if          (type == "ELECTROSTATIC POTENTIAL") field = std::make_shared<ElectrostaticPotential3D>(nx, ny, nz, px, py, pz, wfn, options);
    else throw psi::PSIEXCEPTION(" ERROR! Incorrect scalar field type requested!\n");
    return field;
@@ -513,56 +522,6 @@ std::shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type,
 
 
 
-
-////////////////////////////////////////////////////////////////////////////////////////////////////
-//Potential3D::Potential3D(SharedMatrix pot) : pot_(std::make_shared<Matrix>(pot)) 
-//{
-//  common_init();
-//}
-//
-//Potential3D::Potential3D(SharedWavefunction wfn) 
-//{
-//  common_init();
-//}
-//
-//Potential3D::Potential3D(SharedOEPotential oep, const std::string& oepType)
-//{
-//  common_init();
-//}
-//
-//void Potential3D::common_init()
-//{
-//
-//}
-//
-//Potential3D::~Potential3D() 
-//{
-//
-//}
-//
-//std::shared_ptr<Potential3D> Potential3D::build(SharedMatrix pot)
-//{
-//   std::shared_ptr<Potential3D> potential = std::make_shared<BarePotential3D>(pot);
-//   return potential;
-//}
-//std::shared_ptr<Potential3D> Potential3D::build(const std::string& type, SharedWavefunction wfn)
-//{
-//   std::shared_ptr<Potential3D> potential;
-//   if     (type == "ELECTROSTATIC") potential = std::make_shared<ElectrostaticPotential3D>(wfn);
-//   else throw PSIEXCEPTION("OEPDEV: Potential3D init. Unknown type of potential specified.");
-//   return potential;
-//}
-//std::shared_ptr<Potential3D> Potential3D::build(SharedOEPotential oep, const std::string& oepType)
-//{
-//   std::shared_ptr<Potential3D> potential = std::make_shared<OEPotential3D>(oep, oepType);
-//   return potential;
-//}
-//
-//void Potential3D::compute(bool cube) 
-//{
-//
-//}
-//
 ///// BarePotential3D
 //BarePotential3D::BarePotential3D(SharedMatrix pot)
 // : Potential3D(pot)
@@ -579,43 +538,5 @@ std::shared_ptr<ScalarField3D> ScalarField3D::build(const std::string& type,
 //{
 //
 //}
-//
-//
-///// ElectrostaticPotential3D
-//ElectrostaticPotential3D::ElectrostaticPotential3D(SharedWavefunction wfn)
-// : Potential3D(wfn)
-//{
-//  common_init();
-//}
-//
-//void ElectrostaticPotential3D::common_init()
-//{
-//
-//}
-//
-//void ElectrostaticPotential3D::compute() 
-//{
-//   
-//   // ===> Nuclear Contribution <=== //
-//}
-//
-//
-///// OEPotential3D
-//OEPotential3D::OEPotential3D(SharedOEPotential oep, const std::string& oepType) 
-// : Potential3D(oep, oepType)
-//{
-//  common_init();
-//}
-//
-//void OEPotential3D::common_init()
-//{
-//
-//}
-//
-//void OEPotential3D::compute() 
-//{
-//
-//}
-
 
 } // EndNameSpace oepdev

@@ -7,7 +7,7 @@
 
 using namespace oepdev;
 
-using SharedField3D = std::shared_ptr<oepdev::ScalarField3D>;
+using SharedField3D = std::shared_ptr<oepdev::Field3D>;
 
 OEPotential::OEPotential(SharedWavefunction wfn, Options& options) 
    : wfn_(wfn),
@@ -63,10 +63,10 @@ void OEPotential::compute(const std::string& oepType) {}
 void OEPotential::compute(void) { for ( auto const& oepType : oepTypes_ ) this->compute(oepType.second.name); }
 void OEPotential::write_cube(const std::string& oepType, const std::string& fileName) 
 {
-   OEPotential3D<OEPotential> cube(60, 60, 60, 10.0, 10.0, 10.0, shared_from_this(), oepType, options_);
-   cube.write_cube_file(fileName);
+   OEPotential3D<OEPotential> oeps3d(oepTypes_[oepType].n, 60, 60, 60, 10.0, 10.0, 10.0, shared_from_this(), oepType, options_);
+   oeps3d.write_cube_file(fileName);
 }
-void OEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
+void OEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
 void OEPotential::rotate(const Matrix& rotmat) {}
 void OEPotential::translate(const Vector& trans) {}
 void OEPotential::superimpose(const Matrix& refGeometry,
@@ -98,7 +98,7 @@ void ElectrostaticEnergyOEPotential::compute(const std::string& oepType)
   if (oepType == "V" || oepType == "TOTAL") {
 
       psi::timer_on("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
-      SharedField3D potential = oepdev::ScalarField3D::build("ELECTROSTATIC POTENTIAL", 
+      SharedField3D potential = oepdev::Field3D::build("ELECTROSTATIC POTENTIAL", 
                                                    options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
                                                    options_.get_double("ESP_PAD_SPHERE"      ), 
                                                    wfn_, options_);
@@ -141,7 +141,7 @@ double ElectrostaticEnergyOEPotential::compute_3D_V(const double& x, const doubl
       potMat_->zero();
  return val;
 }
-void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) 
+void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) 
 {
    double val;
    if (oepType == "V" || oepType == "TOTAL") val = compute_3D_V(x, y, z);
@@ -150,7 +150,7 @@ void ElectrostaticEnergyOEPotential::compute_3D(const std::string& oepType, cons
    }
 
    // Assign final value
-   v = val;
+   v->set(0, val);
 }
 void ElectrostaticEnergyOEPotential::print_header(void) const 
 {
@@ -268,7 +268,7 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s2()
 {
 // TODO
 }
-void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
+void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
 void RepulsionEnergyOEPotential::print_header(void) const {}
 
 // <============== CT Energy ===============> //
@@ -308,7 +308,7 @@ void ChargeTransferEnergyOEPotential::common_init()
 }
 
 void ChargeTransferEnergyOEPotential::compute(const std::string& oepType) {}
-void ChargeTransferEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
+void ChargeTransferEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
 void ChargeTransferEnergyOEPotential::print_header(void) const {}
 
 void ChargeTransferEnergyOEPotential::compute_otto_ladik_v1() {}
@@ -363,5 +363,5 @@ void EETCouplingOEPotential::common_init()
 }
 
 void EETCouplingOEPotential::compute(const std::string& oepType) {}
-void EETCouplingOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, double& v) {}
+void EETCouplingOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
 void EETCouplingOEPotential::print_header(void) const {}

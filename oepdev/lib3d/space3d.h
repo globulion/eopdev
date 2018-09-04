@@ -14,6 +14,7 @@
 #include <map>
 
 #include "psi4/libmints/vector3.h"
+#include "psi4/libmints/vector.h"
 #include "psi4/libmints/matrix.h"
 #include "psi4/libmints/molecule.h"
 #include "psi4/libmints/basisset.h"
@@ -345,58 +346,61 @@ class CubePointsCollection3D : public PointsCollection3D, public psi::CubicScala
 
     virtual void print() const;
 
-    virtual void write_cube_file(psi::SharedMatrix v, const std::string& name);
+    virtual void write_cube_file(psi::SharedMatrix v, const std::string& name, const int& col = 0);
   protected:
 };
 
-
-/** \brief Scalar field in 3D space. Abstract base.
+/** \brief General Vector Dield in 3D Space. Abstract base.
  *
- *  Create scalar field defined at points distributed randomly or as an ordered 
- *  g09 cube-like collection. Currently implemented scalar fields are:
+ *  Create vector field defined at points distributed randomly or as an ordered 
+ *  g09 cube-like collection. Currently implemented fields are:
  *
  *   - Electrostatic potential     - computes electrostatic potential (requires wavefunction)
- *   - Template of generic classes - compute custom scalar fields (requires generic object 
+ *   - Template of generic classes - compute custom vector fields (requires generic object 
  *                                   that is able to compute the field in 3D space)
  *
  *  __Note:__ Always create instances by using static factory methods `build`.
- *  The following types of scalar field are currently implemented:
+ *  The following types of 3D vector fields are currently implemented:
  *   - `ELECTROSTATIC POTENTIAL`
  */
-class ScalarField3D
+class Field3D
 {
   public:
     
     // <--- Constructors and Destructor ---> //
 
     /// Construct potential on random grid by providing wavefunction
-    ScalarField3D(const int& np, const double& pad, psi::SharedWavefunction wfn, psi::Options& options);
+    Field3D(const int& ndim, const int& np, const double& pad, psi::SharedWavefunction wfn, psi::Options& options);
 
     /// Construct potential on cube grid by providing wavefunction
-    ScalarField3D(const int& nx, const int& ny, const int& nz,
-                  const double& px, const double& py, const double& pz,
-                  std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options);
+    Field3D(const int& ndim, 
+            const int& nx, const int& ny, const int& nz,
+            const double& px, const double& py, const double& pz,
+            std::shared_ptr<psi::Wavefunction> wfn, psi::Options& options);
 
     /// Destructor
-    virtual ~ScalarField3D();
+    virtual ~Field3D();
 
 
     // <--- Factory Methods ---> //
 
-    /**\brief Build scalar field of random points.
+    /**\brief Build 3D field of random points.
      *
-     *  @param type    - type of scalar field                                      
+     *  @param ndim    - dimensionality of 3D field (1: scalar field, >2: vector field)
+     *  @param type    - type of 3D field                                      
      *  @param np      - number of points 
      *  @param pad     - radius padding of a minimal sphere enclosing the molecule
      *  @param wfn     - Psi4 Wavefunction containing the molecule
      *  @param options - Psi4 options
      */
-    static shared_ptr<ScalarField3D> build(const std::string& type, const int& np,
-                                           const double& pad, psi::SharedWavefunction wfn, psi::Options& options);
+    static shared_ptr<Field3D> build(const std::string& type, const int& np,
+                                     const double& pad, psi::SharedWavefunction wfn, psi::Options& options,
+                                     const int& ndim = 1);
 
-    /**\brief Build scalar field of points on a g09-cube grid.
+    /**\brief Build 3D field of points on a g09-cube grid.
      *
-     *  @param type    - type of scalar field                                      
+     *  @param ndim    - dimensionality of 3D field (1: scalar field, >2: vector field)
+     *  @param type    - type of 3D field                                      
      *  @param nx      - number of points along x direction
      *  @param ny      - number of points along y direction
      *  @param nz      - number of points along z direction
@@ -406,20 +410,21 @@ class ScalarField3D
      *  @param wfn     - Psi4 Wavefunction containing the molecule
      *  @param options - Psi4 options
      */
-    static shared_ptr<ScalarField3D> build(const std::string& type, const int& nx, const int& ny, const int& nz,
-                                           const double& px, const double& py, const double& pz,
-                                           psi::SharedWavefunction wfn, psi::Options& options);
+    static shared_ptr<Field3D> build(const std::string& type, const int& nx, const int& ny, const int& nz,
+                                     const double& px, const double& py, const double& pz,
+                                     psi::SharedWavefunction wfn, psi::Options& options,
+                                     const int& ndim = 1);
 
 
     // <--- Accessors ---> //
 
-    /// Get the number of points at which the scalar field is defined
+    /// Get the number of points at which the 3D field is defined
     virtual int npoints() const {return pointsCollection_->npoints();}
 
     /// Get the collection of points
     virtual std::shared_ptr<PointsCollection3D> points_collection() const {return pointsCollection_;}
 
-    /// Get the data matrix in a form { [x, y, z, f(x, y, z)] }
+    /// Get the data matrix in a form { [x, y, z, f_1(x, y, z), f_2(x, y, z), ... , f_n(x, y, z) ] } where n = ndim
     virtual std::shared_ptr<psi::Matrix> data() const {return data_;}
 
     /// Get the wavefunction
@@ -431,11 +436,11 @@ class ScalarField3D
 
     // <--- Computers ---> //
 
-    /// Compute the scalar field in each point from the point collection
+    /// Compute the 3D field in each point from the point collection
     virtual void compute();
 
-    /// Compute a value of scalar field at point (x, y, z)
-    virtual double compute_xyz(const double& x, const double& y, const double& z) = 0;
+    /// Compute a value of 3D field at point (x, y, z)
+    virtual std::shared_ptr<psi::Vector> compute_xyz(const double& x, const double& y, const double& z) = 0;
 
 
     // <--- Printers ---> //
@@ -449,10 +454,10 @@ class ScalarField3D
 
   protected:
 
-    /// Collection of points at which the scalar field is to be computed
+    /// Collection of points at which the 3D field is to be computed
     std::shared_ptr<PointsCollection3D> pointsCollection_;
 
-    /// The data matrix in a form { [x, y, z, f(x, y, z)] }
+    /// The data matrix in a form { [x, y, z, f_1(x, y, z), f_2(x, y, z), ..., f_n(x, y, z) ] } where n = nDim_
     std::shared_ptr<psi::Matrix> data_;
 
     /// Wavefunction
@@ -478,6 +483,9 @@ class ScalarField3D
 
     /// Number of basis functions
     int nbf_;
+
+    /// Dimensionality of the 3D field (1: scalar field, 2>: vector field)
+    int nDim_;
 
     /// Has data already computed?
     bool isComputed_;
@@ -515,7 +523,7 @@ class ScalarField3D
  *  \f]
  *  
  */
-class ElectrostaticPotential3D : public ScalarField3D
+class ElectrostaticPotential3D : public Field3D
 {
   public:
     ElectrostaticPotential3D(const int& np, const double& padding, psi::SharedWavefunction wfn, psi::Options& options);
@@ -525,12 +533,11 @@ class ElectrostaticPotential3D : public ScalarField3D
 
     virtual ~ElectrostaticPotential3D();
 
-    virtual double compute_xyz(const double& x, const double& y, const double& z);
+    virtual std::shared_ptr<psi::Vector> compute_xyz(const double& x, const double& y, const double& z);
     virtual void print() const;
 };
 
-
-/** \brief Class template for OEP scalar fields.
+/** \brief Class template for OEP 3D fields.
  *
  *  Used for special type of classes T that contain following public member functions:
  *
@@ -548,8 +555,8 @@ class ElectrostaticPotential3D : public ScalarField3D
  *   };
  *  \endcode
  *
- *  with the `descriptor` of a certain scalar field type,
- *  `x`, `y`, `z` the points in 3D space in which the scalar field
+ *  with the `descriptor` of a certain 3D field type,
+ *  `x`, `y`, `z` the points in 3D space in which the scalar or vector field
  *  has to be computed and stored at `v`. Instances of `T` should store shared
  *  pointer to wavefunction object. List of classes `T` that are
  *  compatible with this class template and are currently implemented in oepdev 
@@ -560,26 +567,28 @@ class ElectrostaticPotential3D : public ScalarField3D
  *  @tparam T the compatible class (e.g. `oepdev::OEPotential`)
  */
 template<class T>
-class OEPotential3D : public ScalarField3D
+class OEPotential3D : public Field3D
 {
   public:
 
     // <--- Constructors and Destructor ---> //
 
-    /** \brief Construct random spherical collection of scalar field of type T.
+    /** \brief Construct random spherical collection of 3D field of type T.
      *
      *  The points are drawn according to uniform distrinution in 3D space.
+     *  @param ndim       - dimensionality of 3D field (1: scalar field, >2: vector field)
      *  @param np         - number of points to draw
      *  @param padding    - spherical padding distance (au)
      *  @param oep        - OEP object of type T
      *  @param oepType    - type of OEP
      */
     //TODO!
-    OEPotential3D(const int& np, const double& padding, std::shared_ptr<T> oep, const std::string& oepType);
+    OEPotential3D(const int& ndim, const int& np, const double& padding, std::shared_ptr<T> oep, const std::string& oepType);
 
-    /** \brief Construct ordered 3D collection of scalar field of type T.
+    /** \brief Construct ordered 3D collection of 3D field of type T.
      *
      *  The points are generated according to Gaussian cube file format.
+     *  @param ndim       - dimensionality of 3D field (1: scalar field, >2: vector field)
      *  @param nx         - number of points along x direction
      *  @param ny         - number of points along y direction
      *  @param nz         - number of points along z direction
@@ -590,36 +599,37 @@ class OEPotential3D : public ScalarField3D
      *  @param oepType    - type of OEP
      *  @param options    - Psi4 options object
      */
-    OEPotential3D(const int& nx, const int& ny, const int& nz, 
+    OEPotential3D(const int& ndim, 
+                  const int& nx, const int& ny, const int& nz, 
                   const double& px, const double& py, const double& pz,
                   std::shared_ptr<T> oep, const std::string& oepType, psi::Options& options);
 
     /// Destructor
     virtual ~OEPotential3D();
     
-    virtual double compute_xyz(const double& x, const double& y, const double& z);
+    virtual std::shared_ptr<psi::Vector> compute_xyz(const double& x, const double& y, const double& z);
     virtual void print() const;
 
   protected:
     /// Shared pointer to the instance of class `T`
     std::shared_ptr<T> oep_;
-    /// Descriptor of the scalar field type stored in instance of `T`
+    /// Descriptor of the 3D field type stored in instance of `T`
     std::string oepType_;
     
 };
 
 template <class T>
-OEPotential3D<T>::OEPotential3D(const int& np, const double& padding, std::shared_ptr<T> oep, const std::string& oepType)
- : ScalarField3D(np, padding, oep->wfn()->molecule()), oep_(oep), oepType_(oepType)
+OEPotential3D<T>::OEPotential3D(const int& ndim, const int& np, const double& padding, std::shared_ptr<T> oep, const std::string& oepType)
+ : Field3D(ndim, np, padding, oep->wfn()->molecule()), oep_(oep), oepType_(oepType)
 {
 
 }
 
 template <class T>
-OEPotential3D<T>::OEPotential3D(const int& nx, const int& ny, const int& nz,
+OEPotential3D<T>::OEPotential3D(const int& ndim, const int& nx, const int& ny, const int& nz,
                                 const double& px, const double& py, const double& pz,
                                 std::shared_ptr<T> oep, const std::string& oepType, psi::Options& options)
- : ScalarField3D(nx, ny, nz, px, py, pz, oep->wfn(), options), oep_(oep), oepType_(oepType)
+ : Field3D(ndim, nx, ny, nz, px, py, pz, oep->wfn(), options), oep_(oep), oepType_(oepType)
 {
 
 }
@@ -637,27 +647,15 @@ void OEPotential3D<T>::print() const
 }
 
 template <class T>
-double OEPotential3D<T>::compute_xyz(const double& x, const double& y, const double& z)
+std::shared_ptr<psi::Vector> OEPotential3D<T>::compute_xyz(const double& x, const double& y, const double& z)
 {
-   double val;
-   oep_->compute_3D(oepType_, x, y, z, val);
-   return val;
+   std::shared_ptr<psi::Vector> v = std::make_shared<psi::Vector>("", nDim_);
+   oep_->compute_3D(oepType_, x, y, z, v);
+   return v;
 }
 
 
-
 /** @}*/ 
-
-
-//class BarePotential3D : public Potential3D
-//{
-//  public:
-//    BarePotential3D(SharedMatrix pot);
-//    virtual void compute();
-//  protected:
-//  private:
-//    void common_init();
-//};
 
 } // EndNameSpace oepdev
 

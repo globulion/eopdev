@@ -7,7 +7,7 @@
 
 namespace psi{
    using namespace std;                                  
-   using SharedVetor          = std::shared_ptr<Vector>;
+   using SharedVetor = std::shared_ptr<Vector>;
 }
 
 
@@ -18,7 +18,7 @@ namespace oepdev{
  
 using namespace std;
 
-using SharedScalarField3D = std::shared_ptr<ScalarField3D>;
+using SharedField3D = std::shared_ptr<oepdev::Field3D>;
 
 /** \brief Charges from Electrostatic Potential (ESP). A solver-type class.
  *
@@ -78,7 +78,7 @@ class ESPSolver
      *  Assume that the centres are on atoms associated with the scalar field.
      *  @param field    - oepdev scalar field object
      */
-    ESPSolver(SharedScalarField3D field);
+    ESPSolver(SharedField3D field);
 
     /** \brief Construct from scalar field.
      *
@@ -86,7 +86,7 @@ class ESPSolver
      *  @param field    - oepdev scalar field object
      *  @param centres  - matrix with coordinates of charge distribution centres
      */
-    ESPSolver(SharedScalarField3D field, psi::SharedMatrix centres);
+    ESPSolver(SharedField3D field, psi::SharedMatrix centres);
 
     /// Destructor
     virtual ~ESPSolver();
@@ -113,7 +113,7 @@ class ESPSolver
     const int nCentres_;
 
     /// Scalar field
-    SharedScalarField3D field_;
+    SharedField3D field_;
 
     /// Charges to be fit
     psi::SharedVector charges_;
