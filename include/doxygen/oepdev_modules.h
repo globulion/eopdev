@@ -232,10 +232,10 @@
  */
 
 /**
- *  @defgroup OEPDEV_3DFIELDS The Three-Dimensional Scalar Fields Library
+ *  @defgroup OEPDEV_3DFIELDS The Three-Dimensional Vector Fields Library
  *  @brief
  *  Handles all sorts of scalar distributions in 3D Euclidean space,
- *  such as potentials defined at particular collection of points.
+ *  such as general vector potentials defined at particular collection of points.
  *  In this Module, you will also find handling both random and ordered
  *  points collections in a form of a G09 cube, as well as handling 
  *  G09 Cube files.
