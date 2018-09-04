@@ -1,11 +1,9 @@
 #include "oep.h"
-#include "../libutil/space3d.h"
-#include "../libutil/esp.h"
+#include "oep_gdf.h"
+#include "../lib3d/esp.h"
 #include "../libutil/integrals_iter.h"
 #include "psi4/libqt/qt.h"
 #include "psi4/libciomr/libciomr.h"
-#include "oep_gdf.h"
-
 
 using namespace oepdev;
 
