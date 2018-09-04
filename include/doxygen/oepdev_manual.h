@@ -476,7 +476,11 @@ Here, I emphasise on most important aspects regarding the **programming rules**.
 
 Oep-dev has only *one* source file in the plugin base directory, i.e., `main.cc`. This is the main
 driver routine that handles the functionality of the whole OEP testing platform: specifies options for 
-Psi4 input file and implements test routines based on the options. Other sources are stored
+Psi4 input file and implements test routines based on the options. 
+Include files directly related to `main.cc` are stored in the `include` directory, where only header
+files are present. Options are specified in `include/oepdev_options.h` whereas macros and defines
+in `include/oepdev_files.h`.
+Other sources are stored
 in `MODULE/libNAME*` directories where `NAME` is the name of the library with sources and header files, 
 whereas `MODULE` is the directory of the oep-dev module.
 
@@ -484,7 +488,7 @@ Things to remember:
 
   1. **No other sources in base directory.** 
      It is not permitted to place any new source or other files in the plugin base directory 
-     (i.e., where `main.cc` resides). 
+     (i.e., where `main.cc` resides).
   2. **Sources in library directories.** 
      Any additional source code has to be placed in `oepdev/libNAME*` directory (either existing one or a new one; in the 
      latter case remember to add the new `*.cc` files to `CMakeLists.txt` in the plugin base directory.
