@@ -2,14 +2,7 @@
 #define _oepdev_libutil_esp_h
 /** @file esp.h */
 
-#include "psi4/libmints/vector.h"
 #include "space3d.h"
-
-namespace psi{
-   using namespace std;                                  
-   using SharedVetor = std::shared_ptr<Vector>;
-}
-
 
 namespace oepdev{
 /** \addtogroup OEPDEV_ESP
@@ -22,15 +15,15 @@ using SharedField3D = std::shared_ptr<oepdev::Field3D>;
 
 /** \brief Charges from Electrostatic Potential (ESP). A solver-type class.
  *
- *  Solves the least-squares problem to fit the generalized charges \f$ q_m \f$, that reproduce
- *  the reference generalized potential \f$ v^{\rm ref}({\bf r}) \f$ supplied by the `ScalarField3D` object:
+ *  Solves the least-squares problem to fit the generalized charges \f$ q_{m;p} \f$, that reproduce
+ *  the reference generalized potential \f$ v_p^{\rm ref}({\bf r}) \f$ supplied by the `Field3D` object:
  *  \f[
- *     \int d{\bf r}' \left[ v^{\rm ref}({\bf r}') - \sum_m \frac{q_m}{\left| {\bf r}' - {\bf r}_m \right|} 
+ *     \int d{\bf r}' \left[ v_p^{\rm ref}({\bf r}') - \sum_m \frac{q_{m;p}}{\left| {\bf r}' - {\bf r}_m \right|} 
  *                    \right]^2  \rightarrow \text{minimize}
  *  \f]
  *  The charges are subject to the following constraint:
  *  \f[
- *      \sum_m q_m = 0
+ *      \sum_m q_{m;p} = 0 \text{ for all $p$}
  *  \f]
  *  ### Method description.
  *  \f$ M \f$ generalized charges is found by solving the matrix equation
@@ -41,21 +34,22 @@ using SharedField3D = std::shared_ptr<oepdev::Field3D>;
  *    \end{pmatrix}^{-1}
  *    \cdot
  *    \begin{pmatrix}
- *    {\bf b}\\ 0
+ *    {\bf b}_p\\ 0
  *    \end{pmatrix}
  *    =
  *    \begin{pmatrix}
- *    {\bf q}\\ \lambda
+ *    {\bf q}_p\\ \lambda
  *    \end{pmatrix} 
  *  \f]
- *  where the \f$ {\bf A} \f$ matrix of dimension \f$ M\times M \f$ and \bf b} vector or length \f$ M \f$
+ *  where the \f$ {\bf A} \f$ matrix of dimension \f$ (M+1)\times (M+1) \f$ and \f$ {\bf b}_p \f$ vector or length \f$ M+1 \f$
  *  are given as 
  *  \f{align*}{
  *    A_{mn} &= \sum_i \frac{1}{r_{im} r_{in}} \\
- *    b_m    &= \sum_i \frac{v^{\rm ref}({\bf r}_m)}{r_{im}}
+ *    b_{m;p}&= \sum_i \frac{v_p^{\rm ref}({\bf r}_m)}{r_{im}}
  *  \f}
  *  In the above equation, summations run over all sample points, at which reference potential
- *  is known.
+ *  is known. The solution is stored in the \f$ M \times N \f$ matrix, where \f$ N \f$ is the dimensionality
+ *  of the 3D vector field (i.e., the number of potentials supplied, \f$ p_{\rm max} \f$).
  * 
  * \note Useful options:
  *  - `ESP_PAD_SPHERE`        - Padding spherical radius for random points selection. Default: `10.0` [A.U.]
@@ -73,17 +67,17 @@ class ESPSolver
 
     // <--- Constructors and Destructor ---> //
 
-    /** \brief Construct from scalar field.
+    /** \brief Construct from 3D vector field.
      *
-     *  Assume that the centres are on atoms associated with the scalar field.
-     *  @param field    - oepdev scalar field object
+     *  Assume that the centres are on atoms associated with the 3D vector field.
+     *  @param field    - oepdev 3D vector field object
      */
     ESPSolver(SharedField3D field);
 
-    /** \brief Construct from scalar field.
+    /** \brief Construct from 3D vector field.
      *
      *  Solve ESP equations for a custom set of charge distribution centres.
-     *  @param field    - oepdev scalar field object
+     *  @param field    - oepdev 3D vector field object
      *  @param centres  - matrix with coordinates of charge distribution centres
      */
     ESPSolver(SharedField3D field, psi::SharedMatrix centres);
@@ -95,7 +89,7 @@ class ESPSolver
     // <--- Accessors ---> //
  
     /// Get the (fit) charges
-    virtual psi::SharedVector charges() const {return charges_;}
+    virtual psi::SharedMatrix charges() const {return charges_;}
 
     /// Get the charge distribution centres
     virtual psi::SharedMatrix centres() const {return centres_;}
@@ -112,11 +106,14 @@ class ESPSolver
     /// Number of fit centres
     const int nCentres_;
 
+    /// Number of fields to fit
+    const int nFields_;
+
     /// Scalar field
     SharedField3D field_;
 
     /// Charges to be fit
-    psi::SharedVector charges_;
+    psi::SharedMatrix charges_;
 
     /// Centres, at which fit charges will reside
     psi::SharedMatrix centres_;
@@ -124,7 +121,7 @@ class ESPSolver
   private:
  
     /// ESP b vector
-    psi::SharedVector bvec__;
+    psi::SharedMatrix bvec__;
 
     /// ESP A matrix 
     psi::SharedMatrix amat__;

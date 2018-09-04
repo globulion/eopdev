@@ -433,6 +433,9 @@ class Field3D
     /// Get the information if data is already computed or not
     virtual bool is_computed() const {return isComputed_;}
 
+    /// Get the number of fields
+    int dimension() const {return nDim_;}
+
 
     // <--- Computers ---> //
 

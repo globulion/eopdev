@@ -106,8 +106,8 @@ void ElectrostaticEnergyOEPotential::compute(const std::string& oepType)
       oepdev::ESPSolver esp(potential);
       esp.compute();
      
-      for (int i=0; i<esp.charges()->dim(); ++i) {
-           oepTypes_["V"].matrix->set(i, 0, esp.charges()->get(i));
+      for (int i=0; i<esp.charges()->nrow(); ++i) {
+           oepTypes_["V"].matrix->set(i, 0, esp.charges()->get(i, 0));
       }
       psi::timer_off("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
 
