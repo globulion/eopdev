@@ -7,14 +7,16 @@ using namespace std;
 
 ESPSolver::ESPSolver(SharedField3D field)
  : field_(field), nFields_(field->dimension()), nCentres_(field->wfn()->molecule()->natom()),
-   centres_(std::make_shared<psi::Matrix>(field->wfn()->molecule()->geometry()))
+   centres_(std::make_shared<psi::Matrix>(field->wfn()->molecule()->geometry())),
+   charge_sums_(nullptr)
 {
    common_init();
 }
 
 ESPSolver::ESPSolver(SharedField3D field, psi::SharedMatrix centres)
  : field_(field), nFields_(field->dimension()), nCentres_(centres->nrow()),
-   centres_(std::make_shared<psi::Matrix>(*centres))
+   centres_(std::make_shared<psi::Matrix>(*centres)),
+   charge_sums_(nullptr)
 {
    common_init();
 }
@@ -29,6 +31,19 @@ void ESPSolver::common_init()
   charges_ = std::make_shared<psi::Matrix>("ESP Fitted Charges", nCentres_  , nFields_   );
   bvec__   = std::make_shared<psi::Matrix>("ESP b vectors"     , nCentres_+1, nFields_   );
   amat__   = std::make_shared<psi::Matrix>("ESP A matrix"      , nCentres_+1, nCentres_+1);
+
+  charge_sums_ = std::make_shared<psi::Vector>("ESP Charge Sums", nCentres_);
+}
+
+void ESPSolver::set_charge_sums(psi::SharedVector s)
+{
+  if (nCentres_ != s->dim()) throw psi::PSIEXCEPTION("The number of charge sums does not equal the number of charges!");
+  for (int i=0; i<nCentres_; ++i) charge_sums_->set(i, s->get(i));
+}
+
+void ESPSolver::set_charge_sums(const double& s)
+{
+  for (int i=0; i<nCentres_; ++i) charge_sums_->set(i, s);
 }
 
 void ESPSolver::compute(void) 
@@ -86,7 +101,7 @@ void ESPSolver::compute_matrices(void)
          }
     }
     for (int iv=0; iv<nFields_; ++iv)
-    bp[nCentres_][iv]        = 0.0;
+    bp[nCentres_][iv]        = charge_sums_->get(iv);
     ap[nCentres_][nCentres_] = 0.0;
 
     // 

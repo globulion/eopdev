@@ -23,18 +23,18 @@ using SharedField3D = std::shared_ptr<oepdev::Field3D>;
  *  \f]
  *  The charges are subject to the following constraint:
  *  \f[
- *      \sum_m q_{m;p} = 0 \text{ for all $p$}
+ *      \sum_m q_{m;p} = Q_p \text{ for all $p$}
  *  \f]
  *  ### Method description.
  *  \f$ M \f$ generalized charges is found by solving the matrix equation
  *  \f[
  *   \begin{pmatrix}
- *    {\bf A} & 0 \\
- *     0      & 1
+ *    {\bf A} & 1 \\
+ *     1      & 0
  *    \end{pmatrix}^{-1}
  *    \cdot
  *    \begin{pmatrix}
- *    {\bf b}_p\\ 0
+ *    {\bf b}_p\\ Q_p
  *    \end{pmatrix}
  *    =
  *    \begin{pmatrix}
@@ -50,6 +50,7 @@ using SharedField3D = std::shared_ptr<oepdev::Field3D>;
  *  In the above equation, summations run over all sample points, at which reference potential
  *  is known. The solution is stored in the \f$ M \times N \f$ matrix, where \f$ N \f$ is the dimensionality
  *  of the 3D vector field (i.e., the number of potentials supplied, \f$ p_{\rm max} \f$).
+ *  As a default, \f$ Q_p = 0 \f$ for all potentials. This can be set by `oepdev::ESPSolver::set_charge_sums` method.
  * 
  * \note Useful options:
  *  - `ESP_PAD_SPHERE`        - Padding spherical radius for random points selection. Default: `10.0` [A.U.]
@@ -95,6 +96,15 @@ class ESPSolver
     virtual psi::SharedMatrix centres() const {return centres_;}
 
 
+    // <--- Mutators ---> //
+
+    /// Set the charge sums \f$ Q_p \f$
+    virtual void set_charge_sums(psi::SharedVector s);
+
+    /// Set the charge sums \f$ Q_p \f$ (equal to all fields)
+    virtual void set_charge_sums(const double& s);
+
+
     // <--- Computers ---> //
 
     /// Perform fitting of effective charges
@@ -117,6 +127,9 @@ class ESPSolver
 
     /// Centres, at which fit charges will reside
     psi::SharedMatrix centres_;
+
+    /// Vector of sums of partial charges
+    psi::SharedVector charge_sums_;
 
   private:
  
