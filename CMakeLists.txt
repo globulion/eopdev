@@ -76,7 +76,11 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/lib3d/esp.cc
                        oepdev/libpsi/potential.cc
                        oepdev/libpsi/integral.cc
-                       oepdev/liboep/oep.cc   
+                       oepdev/liboep/oep_base.cc   
+                       oepdev/liboep/oep_energy_coul.cc   
+                       oepdev/liboep/oep_energy_pauli.cc   
+                       oepdev/liboep/oep_energy_ct.cc   
+                       oepdev/liboep/oep_coupling_eet.cc   
                        oepdev/liboep/oep_gdf.cc   
                        oepdev/libints/recurr.cc
                        oepdev/libints/eri.cc
