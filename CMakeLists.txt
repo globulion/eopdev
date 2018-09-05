@@ -69,7 +69,10 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/cphf.cc
                        oepdev/libutil/wavefunction_union.cc
                        oepdev/libutil/integrals_iter.cc
-                       oepdev/libutil/solver.cc
+                       oepdev/libutil/solver_base.cc
+                       oepdev/libutil/solver_energy_coul.cc
+                       oepdev/libutil/solver_energy_pauli.cc
+                       oepdev/libutil/solver_energy_ct.cc
                        oepdev/libutil/unitary_optimizer.cc
                        oepdev/libutil/scf_perturb.cc
                        oepdev/lib3d/space3d.cc
