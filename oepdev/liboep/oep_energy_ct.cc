@@ -3,7 +3,6 @@
 #include "../lib3d/esp.h"
 #include "../libutil/integrals_iter.h"
 #include "psi4/libqt/qt.h"
-#include "psi4/libciomr/libciomr.h"
 
 using namespace oepdev;
 

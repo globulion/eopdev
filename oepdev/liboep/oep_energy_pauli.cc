@@ -3,7 +3,6 @@
 #include "../lib3d/esp.h"
 #include "../libutil/integrals_iter.h"
 #include "psi4/libqt/qt.h"
-#include "psi4/libciomr/libciomr.h"
 
 using namespace oepdev;
 
@@ -24,7 +23,10 @@ RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(SharedWavefunction wfn,
    common_init();
 }
 
-RepulsionEnergyOEPotential::~RepulsionEnergyOEPotential() {}
+RepulsionEnergyOEPotential::~RepulsionEnergyOEPotential() 
+{
+  delete[] vec_otto_ladik_s2_;
+}
 void RepulsionEnergyOEPotential::common_init() 
 {
    int n1 = wfn_->Ca_subset("AO","OCC")->ncol();
@@ -39,12 +41,15 @@ void RepulsionEnergyOEPotential::common_init()
 
    oepTypes_[type_1.name] = type_1; 
    oepTypes_[type_2.name] = type_2;
+
+   //
+   vec_otto_ladik_s2_ = new double[n1];
 }
 
 void RepulsionEnergyOEPotential::compute(const std::string& oepType) 
 {
   if      (oepType == "Murrell-etal.S1") compute_murrell_etal_s1();
-  else if (oepType ==   "Otto-Ladik.S2") compute_murrell_etal_s2();
+  else if (oepType ==   "Otto-Ladik.S2") compute_otto_ladik_s2();
   else throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s1() 
@@ -112,9 +117,63 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    oepTypes_.at("Murrell-etal.S1").matrix->copy(G);
    //G->print();
 }
-void RepulsionEnergyOEPotential::compute_murrell_etal_s2() 
+void RepulsionEnergyOEPotential::compute_otto_ladik_s2() 
 {
-// TODO
+      psi::timer_on("OEPDEV: Pauli Repulsion Energy OEP (Otto-Ladik.S2) -> fitting ESP charges");
+      //SharedField3D potential = oepdev::Field3D::build("ELECTROSTATIC POTENTIAL", 
+      //                                             options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
+      //                                             options_.get_double("ESP_PAD_SPHERE"      ), 
+      //                                             wfn_, options_);
+      //std::shared_ptr<OEPotential3D<OEPotential>> oeps3d(new OEPotential3D<OEPotential>(oepTypes_["Otto-Ladik.S2"].n, 
+      //                                  60, 60, 60, 10.0, 10.0, 10.0, shared_from_this(), "", options_));
+      std::shared_ptr<OEPotential3D<OEPotential>> oeps3d(new OEPotential3D<OEPotential>(oepTypes_["Otto-Ladik.S2"].n, 
+                                        options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
+                                        options_.get_double("ESP_PAD_SPHERE"      ),
+                                        shared_from_this(), "Otto-Ladik.S2 Repulsion Energy Potential"));
+      oeps3d->compute();
+      ESPSolver esp(oeps3d);
+      esp.set_charge_sums(0.5);
+      esp.compute();
+     
+      for (int i=0; i<esp.charges()->nrow(); ++i) {
+      for (int o=0; o<oepTypes_["Otto_Ladik.S2"].n; ++o) {
+           oepTypes_["Otto-Ladik.S2"].matrix->set(i, o, esp.charges()->get(i, o));
+      }}
+      psi::timer_off("OEPDEV: Pauli Repulsion Energy OEP (Otto-Ladik.S2) -> fitting ESP charges");
 }
-void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
+void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) 
+{
+   double vec;
+   if (oepType == "Otto-Ladik.S2") compute_3D_otto_ladik_s2(x, y, z);
+   else {
+      throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
+   }
+
+   // Assign final value
+   for (int o = 0; o < oepTypes_["Otto-Ladik.S2"].n; ++o) v->set(o, vec_otto_ladik_s2_[o]);
+}
+void RepulsionEnergyOEPotential::compute_3D_otto_ladik_s2(const double& x, const double& y, const double& z)
+{
+  double val = 0.0;
+  // ===> Nuclear contribution <=== //
+  for (int i=0; i<wfn_->molecule()->natom(); ++i) {
+       val+= (double)wfn_->molecule()->Z(i) /
+                 sqrt( pow(wfn_->molecule()->x(i)-x, 2.0) 
+                     + pow(wfn_->molecule()->y(i)-y, 2.0) 
+                     + pow(wfn_->molecule()->z(i)-z, 2.0) );
+  }
+
+  // ===> Electronic contribution <=== //
+  potInt_->set_charge_field(x, y, z);
+  OEInt_ = potInt_;
+  OEInt_->compute(potMat_);
+  std::shared_ptr<psi::Matrix> potMO = psi::Matrix::triplet(cOcc_, potMat_, cOcc_, true, false, false);
+  potMat_->zero();
+  //for (int o=0; o<oepTypes_["Otto-Ladik.S2"].n; ++o) val += 2.0 * potMO->get(o, o);
+  val += 2.0 * potMO->trace();
+
+  for (int o=0; o<oepTypes_["Otto-Ladik.S2"].n; ++o) {
+     vec_otto_ladik_s2_[o] = val - 0.5 * potMO->get(o, o);
+  }
+}
 void RepulsionEnergyOEPotential::print_header(void) const {}

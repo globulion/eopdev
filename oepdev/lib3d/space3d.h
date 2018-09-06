@@ -369,8 +369,11 @@ class Field3D
     
     // <--- Constructors and Destructor ---> //
 
-    /// Construct potential on random grid by providing wavefunction
+    /// Construct potential on random grid by providing wavefunction. Excludes space within vdW volume
     Field3D(const int& ndim, const int& np, const double& pad, psi::SharedWavefunction wfn, psi::Options& options);
+
+    /// Construct potential on random grid by providing molecule. Excludes space within vdW volume
+    /// Field3D(const int& ndim, const int& np, const double& pad, psi::SharedMolecule mol, psi::Options& options);
 
     /// Construct potential on cube grid by providing wavefunction
     Field3D(const int& ndim, 
@@ -384,7 +387,7 @@ class Field3D
 
     // <--- Factory Methods ---> //
 
-    /**\brief Build 3D field of random points.
+    /**\brief Build 3D field of random points. vdW volume is excluded.
      *
      *  @param ndim    - dimensionality of 3D field (1: scalar field, >2: vector field)
      *  @param type    - type of 3D field                                      
@@ -623,7 +626,7 @@ class OEPotential3D : public Field3D
 
 template <class T>
 OEPotential3D<T>::OEPotential3D(const int& ndim, const int& np, const double& padding, std::shared_ptr<T> oep, const std::string& oepType)
- : Field3D(ndim, np, padding, oep->wfn()->molecule()), oep_(oep), oepType_(oepType)
+ : Field3D(ndim, np, padding, oep->wfn(), oep->wfn()->options()), oep_(oep), oepType_(oepType)
 {
 
 }

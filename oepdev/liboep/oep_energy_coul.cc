@@ -1,9 +1,6 @@
 #include "oep.h"
-#include "oep_gdf.h"
 #include "../lib3d/esp.h"
-#include "../libutil/integrals_iter.h"
 #include "psi4/libqt/qt.h"
-#include "psi4/libciomr/libciomr.h"
 
 using namespace oepdev;
 
@@ -61,17 +58,18 @@ double ElectrostaticEnergyOEPotential::compute_3D_V(const double& x, const doubl
       }
 
       // ===> Electronic contribution <=== //
-      double v;
+      // double v;
       potInt_->set_charge_field(x, y, z);
       OEInt_ = potInt_;
       OEInt_->compute(potMat_);
-      for (int i=0; i<primary_->nbf(); ++i) {
-           for (int j=0; j<=i; ++j) {
-                v= (wfn_->Da()->get(i,j) + wfn_->Db()->get(i,j)) * potMat_->get(i,j);
-                val += 2.0*v;
-                if (i==j) val -= v;
-           }
-      }
+      val += 2.0 * potMat_->vector_dot(wfn_->Da()); 
+      //for (int i=0; i<primary_->nbf(); ++i) {
+      //     for (int j=0; j<=i; ++j) {
+      //          v= (wfn_->Da()->get(i,j) + wfn_->Db()->get(i,j)) * potMat_->get(i,j);
+      //          val += 2.0*v;
+      //          if (i==j) val -= v;
+      //     }
+      //}
       potMat_->zero();
  return val;
 }

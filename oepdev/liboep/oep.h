@@ -13,10 +13,8 @@
 #include "psi4/libmints/basisset.h"
 #include "psi4/libmints/matrix.h"
 #include "psi4/libmints/vector.h"
-#include "psi4/libthce/thce.h"
-#include "psi4/libcubeprop/csg.h"
-
-#include "../lib3d/space3d.h"
+#include "../libpsi/integral.h"
+#include "../libpsi/potential.h"
 
 namespace oepdev{
 
@@ -24,7 +22,6 @@ using namespace psi;
 using namespace std;
 using SharedWavefunction = std::shared_ptr<Wavefunction>;
 using SharedBasisSet     = std::shared_ptr<BasisSet>;
-using SharedTensor       = std::shared_ptr<Tensor>;
 using SharedMatrix       = std::shared_ptr<Matrix>;
 using SharedVector       = std::shared_ptr<Vector>;
 /** \addtogroup OEPDEV_OEPS
@@ -84,6 +81,10 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     std::shared_ptr<psi::OneBodyAOInt> OEInt_;
     /// One-electron potential shared pointer
     std::shared_ptr<     PotentialInt> potInt_;
+    /// Occupied orbitals
+    std::shared_ptr<psi::Matrix> cOcc_;
+    /// Virtual orbitals
+    std::shared_ptr<psi::Matrix> cVir_;
 
   public:
 
@@ -239,7 +240,10 @@ class RepulsionEnergyOEPotential : public OEPotential
 
     /// Auxiliary computers
     void compute_murrell_etal_s1();
-    void compute_murrell_etal_s2();
+    void compute_otto_ladik_s2();
+
+    void compute_3D_otto_ladik_s2(const double& x, const double& y, const double& z);
+    double* vec_otto_ladik_s2_;
 };
 
 /**\brief Generalized One-Electron Potential for Charge-Transfer Interaction Energy.

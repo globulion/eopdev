@@ -1,9 +1,5 @@
 #include "oep.h"
-#include "oep_gdf.h"
-#include "../lib3d/esp.h"
-#include "../libutil/integrals_iter.h"
-#include "psi4/libqt/qt.h"
-#include "psi4/libciomr/libciomr.h"
+#include "../lib3d/space3d.h"
 
 using namespace oepdev;
 
@@ -30,6 +26,8 @@ void OEPotential::common_init(void)
    intsFactory_ = std::make_shared<psi::IntegralFactory>(primary_, primary_);
    potMat_      = std::make_shared<psi::Matrix>("Potential Integrals", primary_->nbf(), primary_->nbf());
    potInt_      = std::make_shared<oepdev::PotentialInt>(intsFactory_->spherical_transform(), primary_, primary_, 0);
+   cOcc_        = wfn_->Ca_subset("AO","OCC");
+   cVir_        = wfn_->Ca_subset("AO","VIR");
 }
 std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, SharedWavefunction wfn, Options& options)
 {
