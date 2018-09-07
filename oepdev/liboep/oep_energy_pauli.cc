@@ -54,6 +54,8 @@ void RepulsionEnergyOEPotential::compute(const std::string& oepType)
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s1() 
 {
+   psi::timer_on("OEP    E(Paul) Murrell-etal S1  ");
+
    // ---> Determine the target basis set for generalized density fitting <--- //
    std::shared_ptr<psi::BasisSet> target = intermediate_;
    if (options_.get_str("OEPDEV_DF_TYPE") == "SINGLE") target = auxiliary_;
@@ -116,10 +118,12 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    // ===> Save and Finish <=== //
    oepTypes_.at("Murrell-etal.S1").matrix->copy(G);
    //G->print();
+   psi::timer_off("OEP    E(Paul) Murrell-etal S1  ");
 }
 void RepulsionEnergyOEPotential::compute_otto_ladik_s2() 
 {
-      psi::timer_on("OEPDEV: Pauli Repulsion Energy OEP (Otto-Ladik.S2) -> fitting ESP charges");
+      //psi::timer_on("OEPDEV: Pauli Repulsion Energy OEP (Otto-Ladik.S2) -> fitting ESP charges");
+      psi::timer_on("OEP    E(Paul) Otto-Ladik S2    ");
       //std::shared_ptr<OEPotential3D<OEPotential>> oeps3d(new OEPotential3D<OEPotential>(oepTypes_["Otto-Ladik.S2"].n, 
       //                                  60, 60, 60, 10.0, 10.0, 10.0, shared_from_this(), "", options_));
       std::shared_ptr<OEPotential3D<OEPotential>> oeps3d = this->make_oeps3d("Otto-Ladik.S2");
@@ -137,7 +141,8 @@ void RepulsionEnergyOEPotential::compute_otto_ladik_s2()
            oepTypes_["Otto-Ladik.S2"].matrix->set(i, o, esp.charges()->get(i, o));
       }}
       esp.charges()->print();
-      psi::timer_off("OEPDEV: Pauli Repulsion Energy OEP (Otto-Ladik.S2) -> fitting ESP charges");
+      //psi::timer_off("OEPDEV: Pauli Repulsion Energy OEP (Otto-Ladik.S2) -> fitting ESP charges");
+      psi::timer_off("OEP    E(Paul) Otto-Ladik S2    ");
 }
 void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) 
 {

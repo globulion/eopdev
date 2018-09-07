@@ -586,7 +586,22 @@ Some loose suggestions:
       Avoid also dashes in class names (they are reserved for global functions and class methods). Examples: 
       * good name: `DIISManager`, bad name: `DIIS`.
       * good name: `EETCouplingSolver`, bad name: `EETSolver`, very bad: `EET`.
-      
+     
+\section stime Track timing when evaluating the code
+
+It is useful to track time elapsed for performing a particular task
+by a computer. For this, use `psi::timer_on` and `psi::timer_off` functions defined in `psi4/libqt/qt.h`.
+Psi4 always generates the report file `timer.dat` that contains all the defined timings.
+For example, 
+\code{.cpp}
+#include "psi/libqt/qt.h"
+psi::timer_on("OEP    E(Paul) Murrell-etal S1  ");
+// Your code goes here
+psi::timer_off("OEP    E(Paul) Murrell-etal S1  ");
+\endcode
+To maintain the printout in a neat form, the timing associated with the OEPDev code 
+should be generated via `misc/python/timing.py` utility script.
+
 \section soop Use Object-Oriented Programming
 
 Try to organise your creations in objects having special relationships and data structures. Encapsulation

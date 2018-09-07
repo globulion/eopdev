@@ -57,7 +57,8 @@ double RepulsionEnergySolver::compute_benchmark_density_based() {
   double e_Pauli_kin   = 0.0;
   double e_exch        = 0.0;
 
-  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Density-Based (2012))");
+  //psi::timer_on ("SOLVER: Repulsion Energy Calculations (Density-Based (2012))");
+  psi::timer_on("Solver E(Paul) Density-Based    ");
 
   // ---> Allocate <--- //
   int nbf   = wfn_union_->basisset()->nbf();
@@ -129,7 +130,8 @@ double RepulsionEnergySolver::compute_benchmark_density_based() {
   e_Pauli_Pauli *= 2.0;
 
   // ---> Finish <--- //
-  psi::timer_off("SOLVER: Repulsion Energy Calculations (Density-Based (2012))");
+  //psi::timer_off("SOLVER: Repulsion Energy Calculations (Density-Based (2012))");
+  psi::timer_off("Solver E(Paul) Density-Based    ");
   e = e_Pauli_nuc + e_Pauli_kin + e_Pauli_el + e_Pauli_Pauli;
 
   // ---> Print <--- //
@@ -157,7 +159,8 @@ double RepulsionEnergySolver::compute_benchmark_density_based() {
 double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
 
   // ===> Start computations <=== //
-  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
+  //psi::timer_on ("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
+  psi::timer_on("Solver E(Paul) Hayes-Stone      ");
 
   double e_1, e_2, e_ex;
 
@@ -242,7 +245,8 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
   }
   global_dpd_->buf4_close(&buf);
 
-  psi::timer_off("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
+  //psi::timer_off("SOLVER: Repulsion Energy Calculations (Hayes-Stone (1984))");
+  psi::timer_off("Solver E(Paul) Hayes-Stone      ");
 
   // ---> Close the DPD file <--- //
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
@@ -268,7 +272,8 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
   return e_1+e_2+e_ex;
 }
 double RepulsionEnergySolver::compute_pure_exchange_energy() {
-  psi::timer_on ("SOLVER: HF Exchange Energy Calculations");
+  //psi::timer_on ("SOLVER: HF Exchange Energy Calculations");
+  psi::timer_on("Solver E(Exch) Hayes-Stone      ");
 
   std::shared_ptr<psi::IntegralTransform> integrals = wfn_union_->integrals(); 
   dpd_set_default(integrals->get_dpd_id());
@@ -300,7 +305,8 @@ double RepulsionEnergySolver::compute_pure_exchange_energy() {
   global_dpd_->buf4_close(&buf_1212);
   e_ex *= -2.0;
 
-  psi::timer_off("SOLVER: HF Exchange Energy Calculations");
+  //psi::timer_off("SOLVER: HF Exchange Energy Calculations");
+  psi::timer_off("Solver E(Exch) Hayes-Stone      ");
 
   // ---> Close the DPD file <--- //
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
@@ -310,7 +316,8 @@ double RepulsionEnergySolver::compute_pure_exchange_energy() {
 double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   double e_s1 = 0.0, e_s2 = 0.0, e = 0;
 
-  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell et al.)");
+  //psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell et al.)");
+  psi::timer_on("Solver E(Paul) Murrell-etal     ");
   int nbf_1 = wfn_union_->l_nbf(0);
   int nbf_2 = wfn_union_->l_nbf(1);
 
@@ -462,7 +469,8 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
 
   // ---> Close the DPD file <--- //
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-  psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell et al.)");
+  //psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell et al.)");
+  psi::timer_off("Solver E(Paul) Murrell-etal     ");
 
   // ===> Compute the Exchange Energy <=== //
   double e_exch = compute_pure_exchange_energy();
@@ -490,7 +498,9 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
 double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   double e_s1 = 0.0, e_s2 = 0.0, e = 0;
 
-  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Otto-Ladik)");
+  //psi::timer_on ("SOLVER: Repulsion Energy Calculations (Otto-Ladik)");
+  psi::timer_on("Solver E(Paul) Otto-Ladik       ");
+
   int nbf_1 = wfn_union_->l_nbf(0);
   int nbf_2 = wfn_union_->l_nbf(1);
 
@@ -667,7 +677,8 @@ double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
 
   // ---> Close the DPD file <--- //
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-  psi::timer_off("SOLVER: Repulsion Energy Calculations (Otto-Ladik)");
+  //psi::timer_off("SOLVER: Repulsion Energy Calculations (Otto-Ladik)");
+  psi::timer_off("Solver E(Paul) Otto-Ladik       ");
 
   // ===> Compute the Exchange Energy <=== //
   double e_exch = compute_pure_exchange_energy();
@@ -695,7 +706,9 @@ double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
 double RepulsionEnergySolver::compute_benchmark_efp2() {
   double e_s1 = 0.0, e_s2 = 0.0, e = 0;
 
-  psi::timer_on ("SOLVER: Repulsion Energy Calculations (EFP2)");
+  //psi::timer_on ("SOLVER: Repulsion Energy Calculations (EFP2)");
+  psi::timer_on ("Solver E(Paul) EFP2             ");
+
   int nbf_1 = wfn_union_->l_nbf(0);
   int nbf_2 = wfn_union_->l_nbf(1);
   std::shared_ptr<psi::Molecule> mol_1 = wfn_union_->l_wfn(0)->molecule();
@@ -848,7 +861,8 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
   // ---> Finalize with repulsion <--- //
   e_s1 *=-2.0;
   e_s2 *= 2.0;
-  psi::timer_off("SOLVER: Repulsion Energy Calculations (EFP2)");
+  //psi::timer_off("SOLVER: Repulsion Energy Calculations (EFP2)");
+  psi::timer_off("Solver E(Paul) EFP2             ");
 
   // ===> Compute the Exchange Energy <=== //
   double e_exch_pure = compute_pure_exchange_energy();
@@ -879,7 +893,8 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
 double RepulsionEnergySolver::compute_efp2_exchange_energy(psi::SharedMatrix S, 
           std::vector<psi::SharedVector> R1, std::vector<psi::SharedVector> R2) {
 
- psi::timer_on ("SOLVER: Exchange Energy Calculations (SGO)");
+ //psi::timer_on ("SOLVER: Exchange Energy Calculations (SGO)");
+ psi::timer_on("Solver E(Exch) EFP2(SGO)        ");
 
  double e = 0.0, sab, rab;
 
@@ -894,7 +909,9 @@ double RepulsionEnergySolver::compute_efp2_exchange_energy(psi::SharedMatrix S,
       }
  }
  e *= -4.0;
- psi::timer_off("SOLVER: Exchange Energy Calculations (SGO)");
+ //psi::timer_off("SOLVER: Exchange Energy Calculations (SGO)");
+ psi::timer_off("Solver E(Exch) EFP2(SGO)        ");
+
  return e;
 }
 double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
@@ -913,7 +930,8 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
   oep_1->compute();
   oep_2->compute();
 
-  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
+  //psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
+  psi::timer_on("Solver E(Paul) OEP-Based        ");
 
   // ===> Compute Overlap Matrices <=== //
   int nbf_p1 = wfn_union_->l_nbf(0);
@@ -1011,7 +1029,8 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
   e_s1 *= -2.0;
   e_s2 *=  2.0; 
 
-  psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
+  //psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell-OEP:S1-DF/S2-ESP)");
+  psi::timer_off("Solver E(Paul) OEP-Based        ");
 
   // ===> Compute the Exchange Energy <=== //
   double e_exch_pure = compute_pure_exchange_energy();
@@ -1040,8 +1059,8 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
   return e; 
 }
 double RepulsionEnergySolver::compute_oep_based_murrell_etal_esp() {
-  psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");
-  psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");
+  //psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");
+  //psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");
   throw psi::PSIEXCEPTION("ERROR: MURRELL_ETAL_ESP is not yet implemented!\n");
 }
 // Build: factory static method 

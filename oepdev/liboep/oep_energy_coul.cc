@@ -28,7 +28,8 @@ void ElectrostaticEnergyOEPotential::compute(const std::string& oepType)
 {
   if (oepType == "V" || oepType == "TOTAL") {
 
-      psi::timer_on("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
+      //psi::timer_on("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
+      psi::timer_on("OEP    E(Coul)                  ");
       SharedField3D potential = oepdev::Field3D::build("ELECTROSTATIC POTENTIAL", 
                                                    options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
                                                    options_.get_double("ESP_PAD_SPHERE"      ), 
@@ -40,7 +41,8 @@ void ElectrostaticEnergyOEPotential::compute(const std::string& oepType)
       for (int i=0; i<esp.charges()->nrow(); ++i) {
            oepTypes_["V"].matrix->set(i, 0, esp.charges()->get(i, 0));
       }
-      psi::timer_off("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
+      //psi::timer_off("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
+      psi::timer_off("OEP    E(Coul)                  ");
 
   } else {
       throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");

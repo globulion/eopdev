@@ -36,7 +36,8 @@ double ElectrostaticEnergySolver::compute_oep_based_esp_symmetrized(){
   oep_1->print_header();
   oep_2->print_header();
 
-  psi::timer_on("SOLVER: Electrostatic Energy Calculations (OEP-BASED)");
+  //psi::timer_on("SOLVER: Electrostatic Energy Calculations (OEP-BASED)");
+  psi::timer_on("Solver E(Coul) OEP-Based:MIX    ");
 
   int nbf_1 = wfn_union_->l_primary(0)->nbf();
   int nbf_2 = wfn_union_->l_primary(1)->nbf();
@@ -105,10 +106,12 @@ double ElectrostaticEnergySolver::compute_oep_based_esp_symmetrized(){
   // Finish
   e = 0.5*(e_mol_nuc + e_mol_el + e_nuc_mol + e_el_mol);
 
-  psi::timer_off("SOLVER: Electrostatic Energy Calculations (OEP-BASED)");
+  //psi::timer_off("SOLVER: Electrostatic Energy Calculations (OEP-BASED)");
+  psi::timer_off("Solver E(Coul) OEP-Based:MIX    ");
 
   // ===> ESP(A) ---- ESP(B) <=== //
-  psi::timer_on ("SOLVER: Electrostatic Energy Calculations (ESP-ESP)");
+  //psi::timer_on ("SOLVER: Electrostatic Energy Calculations (ESP-ESP)");
+  psi::timer_on("Solver E(Coul) ESP              ");
 
   for (int i=0; i < Qxyz_1->nrow(); ++i) {
   for (int j=0; j < Qxyz_2->nrow(); ++j) {
@@ -118,7 +121,9 @@ double ElectrostaticEnergySolver::compute_oep_based_esp_symmetrized(){
                   pow( Qxyz_1->get(i,3) - Qxyz_2->get(j,3), 2.0) );
   }
   }
-  psi::timer_off("SOLVER: Electrostatic Energy Calculations (ESP-ESP)");
+  //psi::timer_off("SOLVER: Electrostatic Energy Calculations (ESP-ESP)");
+  psi::timer_off("Solver E(Coul) ESP              ");
+
 
 
   // Print
@@ -156,7 +161,8 @@ double ElectrostaticEnergySolver::compute_benchmark_mo_expanded(){
   double e_nuc_el  = 0.0; 
   double e_el_el   = 0.0;
 
-  psi::timer_on ("SOLVER: Electrostatic Energy Calculations (MO-expanded)");
+  //psi::timer_on ("SOLVER: Electrostatic Energy Calculations (MO-expanded)");
+  psi::timer_on("Solver E(Coul) MO-Expanded      ");
 
   // ===> One electron part <=== //
 
@@ -249,7 +255,8 @@ double ElectrostaticEnergySolver::compute_benchmark_mo_expanded(){
   // ---> Close the DPD file <--- //
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 
-  psi::timer_off("SOLVER: Electrostatic Energy Calculations (MO-expanded)");
+  //psi::timer_off("SOLVER: Electrostatic Energy Calculations (MO-expanded)");
+  psi::timer_off("Solver E(Coul) MO-Expanded      ");
 
   // ---> Sum <--- //
   e = e_nuc_nuc + e_nuc_el + e_el_el;
@@ -276,7 +283,8 @@ double ElectrostaticEnergySolver::compute_benchmark_ao_expanded(){
   double e_nuc_el  = 0.0; 
   double e_el_el   = 0.0;
 
-  psi::timer_on("SOLVER: Electrostatic Energy Calculations (BENCHMARK)");
+  //psi::timer_on("SOLVER: Electrostatic Energy Calculations (BENCHMARK)");
+  psi::timer_on("Solver E(Coul) AO-Expanded      ");
                                       
   SharedWavefunction wfn_1 = wfn_union_->l_wfn(0);
   SharedWavefunction wfn_2 = wfn_union_->l_wfn(1);
@@ -392,7 +400,8 @@ double ElectrostaticEnergySolver::compute_benchmark_ao_expanded(){
   // Finish //
   e = e_nuc_nuc + e_nuc_el + e_el_el;
 
-  psi::timer_off("SOLVER: Electrostatic Energy Calculations (BENCHMARK)");
+  //psi::timer_off("SOLVER: Electrostatic Energy Calculations (BENCHMARK)");
+  psi::timer_on("Solver E(Coul) AO-Expanded      ");
 
   // Print
   if (wfn_union_->options().get_int("PRINT") > 0) {
