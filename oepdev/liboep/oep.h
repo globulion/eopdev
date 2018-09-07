@@ -15,6 +15,7 @@
 #include "psi4/libmints/vector.h"
 #include "../libpsi/integral.h"
 #include "../libpsi/potential.h"
+#include "../lib3d/space3d.h"
 
 namespace oepdev{
 
@@ -144,6 +145,12 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     /// Compute value of potential in point x, y, z and save at v
     virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) = 0;
+
+    /** \brief Create 3D vector field with OEP
+     *  @param oepType - type of OEP. ESP-based OEP is assumed.
+     *  @return Vector field 3D with the OEP values.
+     */
+    std::shared_ptr<OEPotential3D<OEPotential>> make_oeps3d(const std::string& oepType);
 
     /// Write potential to a cube file
     virtual void write_cube(const std::string& oepType, const std::string& fileName);

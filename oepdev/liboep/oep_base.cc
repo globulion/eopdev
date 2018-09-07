@@ -65,6 +65,14 @@ void OEPotential::write_cube(const std::string& oepType, const std::string& file
    oeps3d.write_cube_file(fileName);
 }
 void OEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
+std::shared_ptr<OEPotential3D<OEPotential>> OEPotential::make_oeps3d(const std::string& oepType)
+{
+      std::shared_ptr<OEPotential3D<OEPotential>> oeps3d(new OEPotential3D<OEPotential>(oepTypes_[oepType].n, 
+                                        options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
+                                        options_.get_double("ESP_PAD_SPHERE"      ),
+                                        shared_from_this(), oepType));
+      return oeps3d;
+}
 void OEPotential::rotate(const Matrix& rotmat) {}
 void OEPotential::translate(const Vector& trans) {}
 void OEPotential::superimpose(const Matrix& refGeometry,

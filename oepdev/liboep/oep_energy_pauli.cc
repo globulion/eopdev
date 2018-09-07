@@ -120,37 +120,38 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
 void RepulsionEnergyOEPotential::compute_otto_ladik_s2() 
 {
       psi::timer_on("OEPDEV: Pauli Repulsion Energy OEP (Otto-Ladik.S2) -> fitting ESP charges");
-      //SharedField3D potential = oepdev::Field3D::build("ELECTROSTATIC POTENTIAL", 
-      //                                             options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
-      //                                             options_.get_double("ESP_PAD_SPHERE"      ), 
-      //                                             wfn_, options_);
       //std::shared_ptr<OEPotential3D<OEPotential>> oeps3d(new OEPotential3D<OEPotential>(oepTypes_["Otto-Ladik.S2"].n, 
       //                                  60, 60, 60, 10.0, 10.0, 10.0, shared_from_this(), "", options_));
-      std::shared_ptr<OEPotential3D<OEPotential>> oeps3d(new OEPotential3D<OEPotential>(oepTypes_["Otto-Ladik.S2"].n, 
-                                        options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
-                                        options_.get_double("ESP_PAD_SPHERE"      ),
-                                        shared_from_this(), "Otto-Ladik.S2 Repulsion Energy Potential"));
+      std::shared_ptr<OEPotential3D<OEPotential>> oeps3d = this->make_oeps3d("Otto-Ladik.S2");
+      //std::shared_ptr<OEPotential3D<OEPotential>> oeps3d(new OEPotential3D<OEPotential>(oepTypes_["Otto-Ladik.S2"].n, 
+      //                                  options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
+      //                                  options_.get_double("ESP_PAD_SPHERE"      ),
+      //                                  shared_from_this(), "Otto-Ladik.S2 Repulsion Energy Potential"));
       oeps3d->compute();
       ESPSolver esp(oeps3d);
       esp.set_charge_sums(0.5);
       esp.compute();
      
       for (int i=0; i<esp.charges()->nrow(); ++i) {
-      for (int o=0; o<oepTypes_["Otto_Ladik.S2"].n; ++o) {
+      for (int o=0; o<oepTypes_["Otto-Ladik.S2"].n; ++o) {
            oepTypes_["Otto-Ladik.S2"].matrix->set(i, o, esp.charges()->get(i, o));
       }}
+      esp.charges()->print();
       psi::timer_off("OEPDEV: Pauli Repulsion Energy OEP (Otto-Ladik.S2) -> fitting ESP charges");
 }
 void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) 
 {
    double vec;
-   if (oepType == "Otto-Ladik.S2") compute_3D_otto_ladik_s2(x, y, z);
+   if (oepType == "Otto-Ladik.S2") {
+       this->compute_3D_otto_ladik_s2(x, y, z);
+       // Assign final value
+       for (int o = 0; o < oepTypes_["Otto-Ladik.S2"].n; ++o) v->set(o, vec_otto_ladik_s2_[o]);
+   }
+   else if (oepType == "Murrell-etal.S1" ) {/* nothing to do here */}
    else {
       throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
    }
 
-   // Assign final value
-   for (int o = 0; o < oepTypes_["Otto-Ladik.S2"].n; ++o) v->set(o, vec_otto_ladik_s2_[o]);
 }
 void RepulsionEnergyOEPotential::compute_3D_otto_ladik_s2(const double& x, const double& y, const double& z)
 {
