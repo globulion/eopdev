@@ -20,7 +20,7 @@ using SharedTwoBodyAOInt    = std::shared_ptr<TwoBodyAOInt>;
 
 class AOIntegralsIterator;
 
-/** \addtogroup OEPDEV_INTEGRAL_HELPERS
+/** \addtogroup OEPDEV_UTILITIES
  * @{
  */
 

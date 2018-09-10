@@ -79,7 +79,7 @@ def run_oepdev(name, **kwargs):
                                                puream=ref_wfn.basisset().has_puream())
        ref_wfn.set_basisset("BASIS_DF_OEP", basis_df_oep)
 
-    # case when solver tast on wavefunction union is requested
+    # case when solver task on wavefunction union is requested
     else:
       
        molecule_A     = molecule.extract_subsets(1)                                                               

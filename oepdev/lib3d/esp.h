@@ -5,7 +5,7 @@
 #include "space3d.h"
 
 namespace oepdev{
-/** \addtogroup OEPDEV_ESP
+/** \addtogroup OEPDEV_3DFIELDS
  * @{
  */
  

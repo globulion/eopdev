@@ -14,8 +14,8 @@
 #include "psi4/libmints/potential.h"
 #include "psi4/libmints/integral.h"
 
-#include "wavefunction_union.h"
-#include "integrals_iter.h"
+#include "../libutil/wavefunction_union.h"
+#include "../libutil/integrals_iter.h"
 #include "../libpsi/integral.h"
 #include "../liboep/oep.h"
 

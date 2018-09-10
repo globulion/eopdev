@@ -3,7 +3,8 @@
  *  @brief
  *  Implements the goal of this project: The Generalized One-Electron Potentials
  *  (OEP's). You will find here OEP's for computation of Pauli repulsion energy,
- *  charge-transfer energy and others.
+ *  charge-transfer energy and others. The routines for the generalized density fitting
+ *  are also implemented here. Located at `oepdev/liboep`.
  */
 
 /**
@@ -12,7 +13,7 @@
  *  Implementations of various solvers for molecular properties
  *  as a functions of unperturbed monomeric wavefunctions.
  *  This is the place all target OEP-based models are implemented
- *  and compared with benchmark models.
+ *  and compared with benchmark and competitor models. Located at `oepdev/libsolver`.
  */
 
 /**
@@ -20,14 +21,15 @@
  *  @brief
  *  Implements the GEFP method, the far goal of the OEPDev project.
  *  Here you will find the containers for GEFP parameters, the density matrix
- *  susceptibility tensors and GEFP solvers.
+ *  susceptibility tensors and GEFP solvers. Located at `oepdev/libgefp`.
  */
 
 /**
  *  @defgroup OEPDEV_LIBINTS The Integral Package Library
  *  @brief
- *  Implementations of various one- and two-body
- *  integrals via McMurchie-Davidson recurrence scheme.
+ *  Implementations of various two-, three- or four-centre 
+ *  two-body electron repulsion integrals via utilizing the McMurchie-Davidson recurrence scheme.
+ *  Located at `oepdev/libints` and `oepdev/libpsi`.
  *
  *  Here, we define the primitive Gaussian type functions (GTO's)
  *  \f{align*}{
@@ -225,42 +227,32 @@
  */
 
 /**
- *  @defgroup OEPDEV_INTEGRAL_HELPERS The Integral Helper Library
- *  @brief
- *  You will find here various iterators to go through shells
- *  while computing ERI, or iterators over ERI itself.
- */
-
-/**
  *  @defgroup OEPDEV_3DFIELDS The Three-Dimensional Vector Fields Library
  *  @brief
  *  Handles all sorts of scalar distributions in 3D Euclidean space,
  *  such as general vector potentials defined at particular collection of points.
  *  In this Module, you will also find handling both random and ordered
  *  points collections in a form of a G09 cube, as well as handling 
- *  G09 Cube files.
- */
-
-/**
- *  @defgroup OEPDEV_ESP The Multipole Fitting Library
- *  @brief
- *  Implements methods to fit the generalized multipole moments
- *  of a generalized density distribution based on the input generalized
- *  potential scalar field. Among others, you will find here the 
- *  electrostatic potential (ESP) fitting method.
+ *  G09 Cube files. You will also find solvers used to fit the generalized multipole moments
+ *  of a generalized density distribution, such as the
+ *  electrostatic potential (ESP) fitting method. Located at `oepdev/lib3d`.
  */
 
 /**
  *  @defgroup OEPDEV_DFT The Density Functional Theory Library
  *  @brief
- *  Implements the OEPDev ab initio DFT methods.
+ *  Implements the OEPDev ab initio DFT methods. Located at `oepdev/libdft`.
+ *  Currently, this library is empty.
  */
 
 /**
  *  @defgroup OEPDEV_UTILITIES The OEPDev Utilities
  *  @brief
  *  Contains utility functions such as printing OEPDev preambule 
- *  to the output file, class for wavefunction union etc.
+ *  to the output file, class for wavefunction union, DIIS converger,
+ *  CPHF Solver, SCF solver for external electrostatic perturbations, and others.
+ *  You will also find here various iterators to go through orbital shells
+ *  while computing ERI, or iterators over ERI itself. Located at `oepdev/libutil`.
  */
 
 /**
@@ -268,4 +260,5 @@
  *  @brief
  *  Testing platform at C++ level of code. You should add more tests
  *  here when developing new functionalities, theories or models.
+ *  Located at `oepdev/libtest`.
  */

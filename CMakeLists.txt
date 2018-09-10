@@ -69,25 +69,20 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/cphf.cc
                        oepdev/libutil/wavefunction_union.cc
                        oepdev/libutil/integrals_iter.cc
-                       oepdev/libutil/solver_base.cc
-                       oepdev/libutil/solver_energy_coul.cc
-                       oepdev/libutil/solver_energy_pauli.cc
-                       oepdev/libutil/solver_energy_ct.cc
                        oepdev/libutil/unitary_optimizer.cc
                        oepdev/libutil/scf_perturb.cc
                        oepdev/lib3d/space3d.cc
                        oepdev/lib3d/esp.cc
                        oepdev/libpsi/potential.cc
                        oepdev/libpsi/integral.cc
+                       oepdev/libints/recurr.cc
+                       oepdev/libints/eri.cc
                        oepdev/liboep/oep_base.cc   
                        oepdev/liboep/oep_energy_coul.cc   
                        oepdev/liboep/oep_energy_pauli.cc   
                        oepdev/liboep/oep_energy_ct.cc   
                        oepdev/liboep/oep_coupling_eet.cc   
                        oepdev/liboep/oep_gdf.cc   
-                       oepdev/libints/recurr.cc
-                       oepdev/libints/eri.cc
-                       oepdev/libtest/test.cc
                        oepdev/libgefp/gefp.cc
                        oepdev/libgefp/gefp_polar_base.cc
                        oepdev/libgefp/gefp_polar_uniform_base.cc
@@ -100,4 +95,9 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libgefp/gefp_polar_nonuniform_field_2_grad_1.cc
                        oepdev/libgefp/gefp_polar_abinitio.cc
                        oepdev/libgefp/gefp_polar_ffabinitio.cc
+                       oepdev/libsolver/solver_base.cc
+                       oepdev/libsolver/solver_energy_coul.cc
+                       oepdev/libsolver/solver_energy_pauli.cc
+                       oepdev/libsolver/solver_energy_ct.cc
+                       oepdev/libtest/test.cc
                )

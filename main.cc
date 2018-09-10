@@ -49,8 +49,8 @@
 #include "include/oepdev_options.h"
 #include "oepdev/liboep/oep.h"
 #include "oepdev/libgefp/gefp.h"
-#include "oepdev/libutil/wavefunction_union.h"
-#include "oepdev/libutil/solver.h"
+#include "oepdev/libsolver/solver.h"
+//#include "oepdev/libutil/wavefunction_union.h"
 #include "oepdev/libtest/test.h"
 
 // Typedefs

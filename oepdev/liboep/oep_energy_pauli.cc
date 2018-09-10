@@ -76,7 +76,6 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    std::shared_ptr<psi::Matrix> V = psi::Matrix::doublet(Vao, Ca_occ, true, false);
 
    // ===> Compute Electronic Contribution to DF Vector <=== //
-   if (true) {
    std::shared_ptr<psi::TwoBodyAOInt> tei(fact_2.eri());                                           
    const double * buffer = tei->buffer();
                                                                                                   
@@ -107,7 +106,6 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
              }
         }
    }
-   }
 
    // ===> Perform The Generalized Density Fitting <=== // 
    std::shared_ptr<oepdev::GeneralizedDensityFit> gdf;
@@ -117,20 +115,13 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    
    // ===> Save and Finish <=== //
    oepTypes_.at("Murrell-etal.S1").matrix->copy(G);
-   //G->print();
+   if (options_.get_int("PRINT") > 1) G->print();
    psi::timer_off("OEP    E(Paul) Murrell-etal S1  ");
 }
 void RepulsionEnergyOEPotential::compute_otto_ladik_s2() 
 {
-      //psi::timer_on("OEPDEV: Pauli Repulsion Energy OEP (Otto-Ladik.S2) -> fitting ESP charges");
       psi::timer_on("OEP    E(Paul) Otto-Ladik S2    ");
-      //std::shared_ptr<OEPotential3D<OEPotential>> oeps3d(new OEPotential3D<OEPotential>(oepTypes_["Otto-Ladik.S2"].n, 
-      //                                  60, 60, 60, 10.0, 10.0, 10.0, shared_from_this(), "", options_));
       std::shared_ptr<OEPotential3D<OEPotential>> oeps3d = this->make_oeps3d("Otto-Ladik.S2");
-      //std::shared_ptr<OEPotential3D<OEPotential>> oeps3d(new OEPotential3D<OEPotential>(oepTypes_["Otto-Ladik.S2"].n, 
-      //                                  options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
-      //                                  options_.get_double("ESP_PAD_SPHERE"      ),
-      //                                  shared_from_this(), "Otto-Ladik.S2 Repulsion Energy Potential"));
       oeps3d->compute();
       ESPSolver esp(oeps3d);
       esp.set_charge_sums(0.5);
@@ -140,13 +131,11 @@ void RepulsionEnergyOEPotential::compute_otto_ladik_s2()
       for (int o=0; o<oepTypes_["Otto-Ladik.S2"].n; ++o) {
            oepTypes_["Otto-Ladik.S2"].matrix->set(i, o, esp.charges()->get(i, o));
       }}
-      esp.charges()->print();
-      //psi::timer_off("OEPDEV: Pauli Repulsion Energy OEP (Otto-Ladik.S2) -> fitting ESP charges");
+      if (options_.get_int("PRINT") > 1) esp.charges()->print();
       psi::timer_off("OEP    E(Paul) Otto-Ladik S2    ");
 }
 void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) 
 {
-   double vec;
    if (oepType == "Otto-Ladik.S2") {
        this->compute_3D_otto_ladik_s2(x, y, z);
        // Assign final value

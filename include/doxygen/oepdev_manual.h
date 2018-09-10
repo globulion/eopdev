@@ -626,13 +626,105 @@ helps in producing self-maintaining code and is much easier to use. Use:
 
 \section padvcodestr OEPDev Code Structure
 
-\subsection smain Main Plugin
+As a plugin to Psi4, OEPDev consists of the `main.cc` file with the plugin main routine,
+`include/oepdev_options.h` specifying the options of the plugin, `include/oepdev_files.h`
+defining all global macros and environmental variables, as well as the `oepdev` directory.
+The latter contains the actual OEPDev code that is divided into several subdirectories called
+\ref smod "modules".
+
+\subsection smain Main Routine
+
+Before the actual OEPDev calculations are started, the wavefunction of
+the input molecular aggregate is computed by Psi4. See the plugin driver script
+`pymodule.py` for more details on how the calculation environment is initialized. 
+Subsequently, 
+one out of four types of target operations can be performed by the program:
+
+ 1. `OEP_BUILD` - Compute the OEP effective parameters for one molecule.
+ 2. `DMATPOL`   - Compute the generalized density matrix susceptibility tensors (DMS's) for one molecule.
+ 3. `SOLVER`    - Perform calculations for a molecular aggregate. As for now, only dimers are handled.
+ 4. `TEST`      - Perform the testing routine.
+
+The first two modes are single molecule calculations. `OEP_BUILD` 
+uses the `oepdev::OEPotential::build` static factory to create OEP objects
+whereas `DMATPOL` uses the `oepdev::GenEffParFactory::build` static factory
+to greate generalized effective fragment parameters (GEFP's) for polarization.
+\note In the future, `OEP_BUILD` will be handled also by `oepdev::GenEffParFactory::build`
+      since OEP parameters are part of the GEFP's.
+
+`SOLVER` requires at least molecular dimer
+and the `oepdev::WavefunctionUnion` object (being the Hartree product of the unperturbed 
+monomer wavefunctions) is constructed at the beginning, which is then passed to 
+the `oepdev::OEPDevSolver::build` static factory.
+`TEST` can refer to single- or multiple-molecule calculations, whereby each of the testing routines
+is listed in the `cmake/CTestTestfile.cmake.in` file.
 
 \subsection smod Modules
 
-\subsection sdoc Documentation
+The source code is distributed into directories called modules:
+ - `liboep`
+ - `libgefp`
+ - `libsolver`
+ - `libints`
+ - `libpsi`
+ - `lib3d`
+ - `libutil`
+ - `libtest`
+
+See \ref Modules "Modules" for a detailed description of each of the modules.
 
 \section padvclasses OEPDev Classes: Overview
+
+\subsection ssclassesmoep OEP Module
+
+\subsubsection OEPPotential
+
+\subsubsection GeneralizedDensityFit
+
+\subsection ssclassesmgefp GEFP Module
+
+\subsubsection GenEffPar
+
+\subsubsection GenEffParFactory
+
+\subsubsection GenEffFrag
+
+\subsection ssclassesmsolver OEPDev Solver Module
+
+\subsubsection OEPDevSolver
+
+\section sprog Developing OEP's
+
+OEP's are implemented in a suitable subclass of the `oepdev::OEPotential` base.
+Due to the fact that OEP's can be density-based or ESP-based, the classes 
+`oepdev::GeneralizedDensityFit` as well as `oepdev::ESPSolver` are usually necessary in the implementations. 
+Handling the one-electron integrals (OEI's) and the two-electron integrals (ERI's) 
+in AO basis is implemented in `oepdev::IntegralFactory`. In particular, 
+potential integrals evaluated at arbitrary centres can be accessed
+by using the `oepdev::PotentialInt` instances.
+Useful iterators for looping over AO ERI's the `oepdev::ShellCombinationsIterator`
+and `oepdev::AOIntegralsIterator` classes. Transformations of OEI's to MO basis
+can be easily achieved by transforming AO integral matrices by `cOcc_` and `cVir_`
+members of `OEPotential` instances, e.g., by using the `psi::Matrix::doublet` or `psi::Matrix::triplet`
+static methods. Transformations of ERI's to MO basis can be performed by using
+the `psi4/libtrans/integraltransform.h` library.
+
+It is recommended that the implementation of all the new OEP's follows the following steps:
+
+ 1. **Write the class framework.** 
+    This includes choosing a proper name of a OEPotential subclass, 
+    sketching the constructors and a destructor, and all the necessary methods.
+ 2. **Implement OEP types.** Each type of OEP is implemented, including the 3D
+    vector field in case ESP-based OEP's are of use.
+ 3. **Update base factory method**. Add appropriate entries in the `oepdev::OEPotential::build`
+    static factory method.
+
+Below, we shall go through each of these steps separately and discuss them in detail.
+
+\subsection More about the OEPotential class
+
+\subsection ssoepsubdraft Drafting an OEP subclass
+\subsection 
 
 */
 
