@@ -674,10 +674,34 @@ The source code is distributed into directories called modules:
 See \ref Modules "Modules" for a detailed description of each of the modules.
 
 \section padvclasses OEPDev Classes: Overview
-
 \subsection ssclassesmoep OEP Module
 
+The OEP module located in `oepdev/liboep` consists of the following abstract bases:
+ - `oepdev::OEPotential` implementing the OEP,
+ - `oepdev::GeneralizedDensityFit` implementing the GDF technique.
+
+Each of the bases contains static factory method called `build` that creates instances
+of chosen subclasses.
+The module contains also a structure `oepdev::OEPType` which is a container storing all the data
+associated with a particular OEP: type name, dimensions, OEP coefficients and whether is density-fitted
+or not.
+
 \subsubsection OEPPotential
+
+It is a container and computer class of OEP. Among others, the most important public method
+is `oepdev::OEPotential::compute` which computes all the OEP's (by iterating over all possible OEP types
+within a chosen OEP subclass or category). OEP's can be extracted by `oepdev::OEPotential::oep` method, for instance.
+From protected attributes, each OEPotential instance stores blocks of the LCAO-MO matrices associated with the
+occupied (`cOcc_`) and virtual (`cVir_`) MO's. It also contains the pointers to the primary, auxiliary and intermediate
+basis sets (`primary_`, `auxiliary_` and `intermediate_`, accordingly). Usage example:
+\code{.cpp}
+#include "oepdev/liboep/oep.h"
+oep = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", wfn, options);
+oep->compute();
+oep->write_cube("V", "oep_cube_file");
+\endcode
+So far, four OEPotential subclasses are implemented, from which `oepdev::ElectrostaticEnergyOEPotential`
+and `oepdev::RepulsionEnergyOEPotential` are fully operative, while the rest is under development.
 
 \subsubsection GeneralizedDensityFit
 
@@ -721,10 +745,148 @@ It is recommended that the implementation of all the new OEP's follows the follo
 
 Below, we shall go through each of these steps separately and discuss them in detail.
 
-\subsection More about the OEPotential class
+\subsection ssoepsubdraft Drafting an OEP Subclass
 
-\subsection ssoepsubdraft Drafting an OEP subclass
-\subsection 
+This stage is the design of the overall framework of OEP subclass. The name should end with `OEPotential`
+to maintain the convention used so far. The template for the header file definition can be depicted as follows:
+\code{.cpp}
+class SampleOEPotential : public OEPotential 
+{
+  public:
+    // Purely ESP-based OEP's
+    SampleOEPotential(SharedWavefunction wfn, Options& options);
+
+    // GDF-based OEP's
+    SampleOEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options);
+
+    // Necessary destructor
+    virtual ~SampleOEPotential();
+
+    // Necessary computer 
+    virtual void compute(const std::string& oepType) override;
+
+    // Necessary computer
+    virtual void compute_3D(const std::string& oepType, 
+                            const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) override;
+    // Necessary printer
+    virtual void print_header() const override;
+
+  private:
+    // Set defaults - good practice
+    void common_init();
+
+    // Auxilary computers - exemplary
+    double compute_3D_sample_V(const double& x, const double& y, const double& z);
+};
+\endcode
+The constructors need to call the abstract base constructor and then specialized initializations.
+It is a good practice to put the specialized common initializers in a separate private method
+`common_init` (which is a convention in Psi4 and is adopted also in OEPDev).
+For instance, the exemplary constructor is show below:
+\code{.cpp}
+SampleOEPotential::SampleOEPotential(SharedWavefunction wfn, 
+                                     SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options) 
+ : OEPotential(wfn, auxiliary, intermediate, options)
+{ 
+   common_init();
+}
+
+void SampleOEPotential::common_init() 
+{
+   int n1 = wfn_->Ca_subset("AO","OCC")->ncol();
+   int n2 = auxiliary_->nbf();
+   int n3 = wfn_->molecule()->natom();
+
+   SharedMatrix mat_1 = std::make_shared<psi::Matrix>("G(S^{-1})", n2, n1);
+   SharedMatrix mat_2 = std::make_shared<psi::Matrix>("G(S^{-2})", n3, n1);
+
+   OEPType type_1 = {"Murrell-etal.S1", true , n1, mat_1};
+   OEPType type_2 = {"Otto-Ladik.S2"  , false, n1, mat_2};
+
+   oepTypes_[type_1.name] = type_1; 
+   oepTypes_[type_2.name] = type_2;
+}
+\endcode
+Note that the `oepdev::OEPotential::oepTypes_` attribute, which is a `std::map` of structures `oepdev::OEPType`,
+is initialized here. All the OEP types need to be stated in the constructors.
+Destructors usually call nothing, unless dynamically allocated memory is also of use.
+
+It is also a good practice to already sketch the `compute` method here by adding certain private
+computers, like in the example below:
+\code{.cpp}
+void SampleOEPotential::compute(const std::string& oepType) 
+{
+  if      (oepType == "Murrell-etal.S1") this->compute_murrell_etal_s1();  // calls private method
+  else if (oepType ==   "Otto-Ladik.S2") this->compute_otto_ladik_s2();    // calls private method
+  else throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n"); // for safety
+}
+void SampleOEPotential::compute_murrell_etal_s1() 
+{
+   psi::timer_on ("OEP    E(Paul) Murrell-etal S1  ");
+   /* Your implementation goes here */
+   psi::timer_off("OEP    E(Paul) Murrell-etal S1  ");
+\endcode
+
+\subsubsection  ssoepsubtypes Implementing OEP Types
+
+Implementation of the inner body of `compute` method requires populating the members of `oepTypes_` with
+data. This means, that for each OEP type there has to be a specific implementation of OEP parameters.
+GDF-based OEP's need to create the `psi::Matrix` with OEP parameters and put them into `oepTypes_`.
+In the case of ESP-based OEP's `compute_3D` method has to be additionally implemented before `compute`
+is fully functional. To implement `compute_3D`, `oepdev::OEPotential::make_oeps3d` method is of high
+relevance: it creates `oepdev::OEPotential3D<T>` instances, where `T` is the OEP subclass. These instances
+are `oepdev::Field3D` objects that define OEP's in 3D Euclidean space. For example,
+\code{.cpp}
+void SampleOEPotential::compute_otto_ladik_s2() 
+{
+      // Switch on timer
+      psi::timer_on("OEP    E(Paul) Otto-Ladik S2    ");
+
+      // Create 3D field, automated through `make_oeps3d`. Requires `compute_3D` implementation.
+      std::shared_ptr<OEPotential3D<OEPotential>> oeps3d = this->make_oeps3d("Otto-Ladik.S2");
+      oeps3d->compute();
+
+      // Perform ESP fit to get OEP effective charges
+      ESPSolver esp(oeps3d);
+      esp.set_charge_sums(0.5);
+      esp.compute();
+    
+      // Put the OEP coefficients into `oepTypes_` 
+      for (int i=0; i<esp.charges()->nrow(); ++i) {
+           for (int o=0; o<oepTypes_["Otto-Ladik.S2"].n; ++o) {
+                oepTypes_["Otto-Ladik.S2"].matrix->set(i, o, esp.charges()->get(i, o));
+           }
+      }
+
+      // Switch off timer
+      psi::timer_off("OEP    E(Paul) Otto-Ladik S2    ");
+}
+// Necessary implementation for `make_oeps3d` to work
+void SampleOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) 
+{
+   // Loop over all possibilities for OEP types and exclude illegal names
+   if (oepType == "Otto-Ladik.S2") {
+
+       // this computes the actual values of OEP = v(x,y,z) and stores it in `vec_otto_ladik_s2_`
+       this->compute_3D_otto_ladik_s2(x, y, z); 
+
+       // Assign final value to the buffer vector
+       for (int o = 0; o < oepTypes_["Otto-Ladik.S2"].n; ++o) v->set(o, vec_otto_ladik_s2_[o]);
+
+   }
+   else if (oepType == "Murrell-etal.S1" ) {/* Even if it is not ESP-based OEP, this line is necessary */}
+
+   else {
+      throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n"); // Safety
+   }
+}
+\endcode
+Note that `make_oeps3d` is not overridable and is fully defined in the base. Do not call 
+`oepdev::OEPotential3D` constructors in the OEPotential subclass (it can be done only from the level of the abstract base
+where all the pointers are dynamically converted to an appropriate data type due to polymorphism)!
+
+\subsubsection Updating Abstract Base
+
 
 */
 
