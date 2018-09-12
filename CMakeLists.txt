@@ -73,6 +73,8 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/scf_perturb.cc
                        oepdev/lib3d/space3d.cc
                        oepdev/lib3d/esp.cc
+                       oepdev/lib3d/dmtp_base.cc
+                       oepdev/lib3d/dmtp_camm.cc
                        oepdev/libpsi/potential.cc
                        oepdev/libpsi/integral.cc
                        oepdev/libints/recurr.cc

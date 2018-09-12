@@ -553,7 +553,7 @@ class ElectrostaticPotential3D : public Field3D
  *     public:
  *        void compute_3D(const std::string& descriptor, 
  *                        const double& x, const double& y, const double& z,
- *                        double& v);
+ *                        std::shared_ptr<psi::Vector> &v);
  *                                                                              
  *        shared_ptr<psi::Wavefunction> wfn() const {return wfn_;}
  * 
