@@ -36,6 +36,8 @@ Places to go:
  * [Programming Etiquette](https://github.com/globulion/oepdev/blob/master/doc/git/doc_programming_etiquette.md)
  * [Current Issues](https://github.com/globulion/oepdev/issues)
 
+This wikipages will be updated soon.
+
 *****
 
 References
