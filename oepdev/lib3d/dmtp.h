@@ -48,17 +48,12 @@ class DMTPole
 
     // <--- Constructors and Destructor ---> //
 
-    /** \brief Construct an empty DMTP object from the molecule.
-     *
-     */
-    DMTPole(std::shared_ptr<psi::Molecule> mol, int n);
-
     /** \brief Construct an empty DMTP object from the wavefunction.
      *
      */
     DMTPole(std::shared_ptr<psi::Wavefunction> wfn, int n);
 
-    /** \brief Construct an empty DMTP object from the wavefunction.
+    /** \brief Build an empty DMTP object from the wavefunction.
      *
      */
     static std::shared_ptr<DMTPole> build(std::shared_ptr<psi::Wavefunction> wfn, 
@@ -71,6 +66,10 @@ class DMTPole
   
  
     // <--- Accessors ---> //
+    virtual bool has_charges()       const {return hasCharges_;      }
+    virtual bool has_dipoles()       const {return hasDipoles_;      }
+    virtual bool has_quadrupoles()   const {return hasQuadrupoles_;  }
+    virtual bool has_octupoles()     const {return hasOctupoles_;    }
     virtual bool has_hexadecapoles() const {return hasHexadecapoles_;}
 
 
@@ -112,11 +111,19 @@ class DMTPole
     // <--- Computers ---> //
 
     /// Compute from the one-particle density matrix
-    virtual void compute(psi::SharedMatrix D, int n) = 0;
+    virtual void compute(psi::SharedMatrix D, bool transition, int i) = 0;
     /// Compute from the set of the one-particle density matrices
-    void compute(std::vector<psi::SharedMatrix> D);
+    void compute(std::vector<psi::SharedMatrix> D, std::vector<bool> transition);
+    /// Compute from the ground-state alpha one-particle density matrix (transition=false, i=0)
+    void compute(void);
+
 
   protected:
+
+    /// Compute multipole integrals
+    virtual void compute_integrals();
+    /// Compute order of the integrals
+    virtual void compute_order();
 
     /// Name
     std::string name_;
@@ -133,7 +140,17 @@ class DMTPole
     /// Number of origins
     int nOrigins_;
 
+    /// Maximum order of the multipole
+    int order_;
+
+    /// Multipole integrals
+    std::vector<psi::SharedMatrix> mpInts_;
+
     /// 
+    bool hasCharges_;
+    bool hasDipoles_;
+    bool hasQuadrupoles_;
+    bool hasOctupoles_;
     bool hasHexadecapoles_;
 
     /// DMTP centres
@@ -158,7 +175,10 @@ class CAMM : public DMTPole
  public:
    CAMM(psi::SharedWavefunction wfn, int n);
    virtual ~CAMM();
-   virtual void compute(psi::SharedMatrix D, int n);
+   virtual void compute(psi::SharedMatrix D, bool transition, int n);
+ private:
+   /// Set the distribution sites to atoms
+   void set_sites(void);
 };
 
 /** @}*/
