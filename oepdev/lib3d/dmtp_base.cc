@@ -8,7 +8,10 @@ namespace oepdev{
 using namespace std;
 
 DMTPole::DMTPole(psi::SharedWavefunction wfn, int n) 
- : mol_(wfn->molecule()), wfn_(wfn), nDMTPs_(n),
+ : mol_(wfn->molecule()), 
+   wfn_(wfn), 
+   primary_(wfn->basisset()),
+   nDMTPs_(n),
    name_("none"),
    order_(0),
    nCentres_(0),
@@ -72,6 +75,24 @@ void DMTPole::compute_integrals(void) {
  std::shared_ptr<psi::OneBodyAOInt> aompOBI(integral->ao_multipoles(order_));
  aompOBI->compute(mpInts_);
 }
+void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
+{
+ //TODO
+}
+void DMTPole::recenter(psi::SharedMatrix new_origins)
+{
+ for (int i=0; i<nDMTPs_; ++i) this->recenter(new_origins, i);
+}
+std::vector<double> DMTPole::energy(std::shared_ptr<DMTPole> other, const std::string& type)
+{
+  std::vector<double> energies;
+  for (int i=0; i<nDMTPs_; ++i) energies.push_back(0.0);
+  //TODO
+  // ... if (type == "R-5") ...
+  // Return
+  return energies;
+}
+
 
 // abstract methods
 void DMTPole::compute(psi::SharedMatrix D, bool transition, int i) {/* nothing to implement here */}

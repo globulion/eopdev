@@ -3,18 +3,21 @@
 /** @file dmtp.h */
 
 #include "psi4/libmints/wavefunction.h"
+#include "psi4/libmints/basisset.h"
 #include "psi4/libmints/molecule.h"
 #include "psi4/libmints/matrix.h"
+namespace psi{
+ using SharedBasisSet = std::shared_ptr<BasisSet>;
+}
 
 namespace oepdev{
 
 /** \addtogroup OEPDEV_3DFIELDS
  * @{
  */
- 
+
 using namespace std;
 using namespace psi;
-//using SharedMatrix = std::shared_ptr<psi::Matrix>;
 
 /** \brief Distributed Multipole Analysis Container and Computer. Abstract Base.
  *
@@ -22,29 +25,6 @@ using namespace psi;
 class DMTPole
 {
   public:
-
-    // <--- Qualifiers ---> // ->probably to be deprecated
-
-    ///**
-    // * Type of the DMTP distribution. 
-    // *
-    // * Based on this qualifier the number and positions of the distribution centres and origins are determined.
-    // * `CAMM` - The Cumulative Atomic Multipole Moments 
-    // * `MMM`  - The Molecular Multipole Moments
-    // * `LMTP` - 
-    // * `DMA` - The Distributed Multipole Analysis of Stone
-    // * `ESP` - Electrostatic potential charges
-    // */
-    //enum DistributionType {CAMM, MMM, LMTP, DMA, ESP};
-
-    ///**
-    // * Whether it contains nuclear part or not.
-    // *
-    // * `NucleiIncluded` - Nuclei are included and atomic numbers are added to distributed charges at atomic locations.
-    // * `NucleiExcluded` - Nuclei are excluded.
-    // */
-    //enum NuclearPart {NucleiIncluded, NucleiExcluded};
-
 
     // <--- Constructors and Destructor ---> //
 
@@ -60,7 +40,6 @@ class DMTPole
                                           const std::string& type = "CAMM",
                                           int n = 1);
 
-
     /// Destructor
     virtual ~DMTPole();
   
@@ -71,7 +50,6 @@ class DMTPole
     virtual bool has_quadrupoles()   const {return hasQuadrupoles_;  }
     virtual bool has_octupoles()     const {return hasOctupoles_;    }
     virtual bool has_hexadecapoles() const {return hasHexadecapoles_;}
-
 
     /// Get the distribution centres
     virtual psi::SharedMatrix centres() const {return centres_;}
@@ -107,6 +85,12 @@ class DMTPole
     void set_octupoles(psi::SharedMatrix M, int n) {octupoles_[n] = std::make_shared<psi::Matrix>(M);}
     void set_hexadecapoles(psi::SharedMatrix M, int n) {hexadecapoles_[n] = std::make_shared<psi::Matrix>(M);}
 
+    /// Change origins of the distributed multipole moments of ith set
+    virtual void recenter(psi::SharedMatrix new_origins, int i);
+    /// Change origins of the distributed multipole moments of all sets
+    virtual void recenter(psi::SharedMatrix new_origins);
+
+
 
     // <--- Computers ---> //
 
@@ -117,6 +101,11 @@ class DMTPole
     /// Compute from the ground-state alpha one-particle density matrix (transition=false, i=0)
     void compute(void);
 
+    /// Evaluate generalized interaction energy
+    std::vector<double> energy(std::shared_ptr<DMTPole> other, const std::string& type = "R-5");
+
+
+
 
   protected:
 
@@ -125,12 +114,15 @@ class DMTPole
     /// Compute order of the integrals
     virtual void compute_order();
 
+
     /// Name
     std::string name_;
     /// Molecule associated with this DMTP
     psi::SharedMolecule mol_;
     /// Wavefunction associated with this DMTP
     psi::SharedWavefunction wfn_;
+    /// Basis set (primary)
+    psi::SharedBasisSet primary_;
     /// Number of DMTP's
     int nDMTPs_;
 
@@ -170,6 +162,9 @@ class DMTPole
     virtual void allocate();
 };
 
+/** \brief Cumulative Atomic Multipole Moments.
+ *
+ */
 class CAMM : public DMTPole 
 {
  public:
