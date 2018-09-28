@@ -81,7 +81,7 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     /// One-electron integral shared pointer
     std::shared_ptr<psi::OneBodyAOInt> OEInt_;
     /// One-electron potential shared pointer
-    std::shared_ptr<     PotentialInt> potInt_;
+    std::shared_ptr<oepdev::PotentialInt> potInt_;
     /// Occupied orbitals
     std::shared_ptr<psi::Matrix> cOcc_;
     /// Virtual orbitals
