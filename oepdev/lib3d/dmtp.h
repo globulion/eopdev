@@ -36,8 +36,8 @@ class DMTPole
     /** \brief Build an empty DMTP object from the wavefunction.
      *
      */
-    static std::shared_ptr<DMTPole> build(std::shared_ptr<psi::Wavefunction> wfn, 
-                                          const std::string& type = "CAMM",
+    static std::shared_ptr<DMTPole> build(const std::string& type,
+                                          std::shared_ptr<psi::Wavefunction> wfn, 
                                           int n = 1);
 
     /// Destructor
@@ -68,6 +68,9 @@ class DMTPole
     virtual psi::SharedMatrix quadrupoles(int n) const {return quadrupoles_.at(n);}
     virtual psi::SharedMatrix octupoles(int n) const {return octupoles_.at(n);}
     virtual psi::SharedMatrix hexadecapoles(int n) const {return hexadecapoles_.at(n);}
+
+    virtual int ncentres() const {return nCentres_;}
+    virtual int norigins() const {return nOrigins_;}
 
 
 

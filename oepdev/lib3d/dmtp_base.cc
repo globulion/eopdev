@@ -36,8 +36,8 @@ DMTPole::~DMTPole()
 {
 
 }
-std::shared_ptr<DMTPole> DMTPole::build(std::shared_ptr<psi::Wavefunction> wfn, 
-                                        const std::string& type, 
+std::shared_ptr<DMTPole> DMTPole::build(const std::string& type, 
+                                        std::shared_ptr<psi::Wavefunction> wfn, 
                                         int n)
 {
   std::shared_ptr<DMTPole> dmtp;
@@ -62,7 +62,8 @@ void DMTPole::compute(std::vector<psi::SharedMatrix> D, std::vector<bool> transi
  for (int i=0; i<nDMTPs_; ++i) this->compute(D.at(i), transition.at(i), i);
 }
 void DMTPole::compute(void) {
-  this->compute(wfn_->Da(), false, 0);
+  psi::SharedMatrix D = wfn_->Da(); D->add(wfn_->Db());
+  this->compute(D, false, 0);
 }
 void DMTPole::compute_order(void) {
  order_ = (int)hasCharges_ + (int)hasDipoles_ + (int)hasQuadrupoles_ + (int)hasOctupoles_ + (int)hasHexadecapoles_ - 1;

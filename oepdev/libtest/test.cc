@@ -5,6 +5,7 @@
 #include "../libutil/util.h"
 #include "../libutil/unitary_optimizer.h"
 #include "../libgefp/gefp.h"
+#include "../lib3d/dmtp.h"
 
 using namespace std;
 
@@ -28,6 +29,7 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="UNITARY_OPTIMIZER") result = test_unitaryOptimizer();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="UNITARY_OPTIMIZER_4_2") result = test_unitaryOptimizer_4_2();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="SCF_PERTURB") result = test_scf_perturb();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="CAMM") result = test_camm();
   else throw psi::PSIEXCEPTION("Incorrect test name specified!");
   return result;
 }
@@ -880,3 +882,29 @@ double oepdev::test::Test::test_scf_perturb()
 
   return result;
 }
+double oepdev::test::Test::test_camm(void) {
+  double result = 0.0;
+
+  // Reference CAMM values
+  const double q_ref[3] = {-3.366373E-01, 1.682078E-01, 1.684295E-01};
+
+  // Compute CAMM
+  std::shared_ptr<DMTPole> dmtp = oepdev::DMTPole::build("CAMM", wfn_);
+  dmtp->compute();
+  dmtp->charges(0)->print();
+  std::shared_ptr<psi::Matrix> q = dmtp->charges(0);
+
+  // Accumulate errors
+  for (int n=0; n<dmtp->ncentres(); ++n) {
+       result += sqrt(pow(q->get(n, 0) - q_ref[n] , 2.0));
+  }
+
+
+  // Print result
+  std::cout << std::fixed;
+  std::cout.precision(8);
+  std::cout << " Test result= " << result << std::endl;
+
+  return result;
+}
+
