@@ -78,11 +78,38 @@ void DMTPole::compute_integrals(void) {
 }
 void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
 {
- //TODO
+ psi::SharedMatrix dipoles_new = std::shared_ptr<psi::Matrix>(dipoles_[i]);
+ double** qp = charges_[i]->pointer();
+ double** mp = dipoles_new->pointer();
+
+ // Recenter
+ for (int ic=0; ic<nOrigins_; ++ic) {
+      double rx_o = origins_->get(ic, 0);
+      double ry_o = origins_->get(ic, 1);
+      double rz_o = origins_->get(ic, 2);
+      double rx_n = new_origins->get(ic, 0);
+      double ry_n = new_origins->get(ic, 1);
+      double rz_n = new_origins->get(ic, 2);
+
+      double q = qp[ic][0];
+
+      double mx = mp[ic][0] - q * (rx_n - rx_o);
+      double my = mp[ic][1] - q * (ry_n - ry_o);
+      double mz = mp[ic][2] - q * (rz_n - rz_o);
+
+      // Collect
+      mp[ic][0] = mx;
+      mp[ic][1] = my;
+      mp[ic][2] = mz;
+ }
+
+ // Save
+ dipoles_[i]->copy(dipoles_new);
 }
 void DMTPole::recenter(psi::SharedMatrix new_origins)
 {
  for (int i=0; i<nDMTPs_; ++i) this->recenter(new_origins, i);
+ origins_->copy(new_origins);
 }
 std::vector<double> DMTPole::energy(std::shared_ptr<DMTPole> other, const std::string& type)
 {

@@ -887,16 +887,29 @@ double oepdev::test::Test::test_camm(void) {
 
   // Reference CAMM values
   const double q_ref[3] = {-3.366373E-01, 1.682078E-01, 1.684295E-01};
+  const double m_ref[9] = {1.751974E-01,     1.403032E-01,    -4.528554E-02,
+                           1.331952E-02,     2.019633E-02,    -5.983574E-03,
+                           2.305333E-02,     8.621490E-03,    -3.335370E-03};
+    
+    
+    
+
 
   // Compute CAMM
   std::shared_ptr<DMTPole> dmtp = oepdev::DMTPole::build("CAMM", wfn_);
   dmtp->compute();
   dmtp->charges(0)->print();
+  dmtp->dipoles(0)->print();
   std::shared_ptr<psi::Matrix> q = dmtp->charges(0);
+  std::shared_ptr<psi::Matrix> m = dmtp->dipoles(0);
+ 
 
   // Accumulate errors
   for (int n=0; n<dmtp->ncentres(); ++n) {
        result += sqrt(pow(q->get(n, 0) - q_ref[n] , 2.0));
+       result += sqrt(pow(m->get(n, 0) - m_ref[3*n+0] , 2.0));
+       result += sqrt(pow(m->get(n, 1) - m_ref[3*n+1] , 2.0));
+       result += sqrt(pow(m->get(n, 2) - m_ref[3*n+2] , 2.0));
   }
 
 

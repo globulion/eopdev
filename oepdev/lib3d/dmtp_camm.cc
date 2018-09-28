@@ -180,6 +180,7 @@ void CAMM::compute(psi::SharedMatrix D, bool transition, int i) {
 
  // Change origins from (0, 0, 0) to atomic positions
  this->recenter(centres_, i);
+ origins_->copy(centres_);
 }
 
 } // EndNameSpace oepdev

@@ -71,6 +71,7 @@ class DMTPole
 
     virtual int ncentres() const {return nCentres_;}
     virtual int norigins() const {return nOrigins_;}
+    virtual int n_dmtp() const {return nDMTPs_;}
 
 
 
@@ -101,7 +102,7 @@ class DMTPole
     virtual void compute(psi::SharedMatrix D, bool transition, int i) = 0;
     /// Compute from the set of the one-particle density matrices
     void compute(std::vector<psi::SharedMatrix> D, std::vector<bool> transition);
-    /// Compute from the ground-state alpha one-particle density matrix (transition=false, i=0)
+    /// Compute from the *sum* of the ground-state alpha and beta one-particle density matrices (transition=false, i=0)
     void compute(void);
 
     /// Evaluate generalized interaction energy
