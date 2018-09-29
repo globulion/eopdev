@@ -80,9 +80,19 @@ void DMTPole::compute_integrals(void) {
 void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
 {
  psi::SharedMatrix dipoles_new = std::make_shared<psi::Matrix>(dipoles_[i]);
- double** qp = charges_[i]->pointer();
+ psi::SharedMatrix qdpoles_new = std::make_shared<psi::Matrix>(quadrupoles_[i]);
+ psi::SharedMatrix ocpoles_new = std::make_shared<psi::Matrix>(octupoles_[i]);
+ psi::SharedMatrix hdpoles_new = std::make_shared<psi::Matrix>(hexadecapoles_[i]);
+
+ double** cp = charges_[i]->pointer();
  double** mp = dipoles_[i]->pointer();
  double** mp_= dipoles_new->pointer();
+ double** qp = quadrupoles_[i]->pointer();
+ double** qp_= qdpoles_new->pointer();
+ double** op = octupoles_[i]->pointer();
+ double** op_= ocpoles_new->pointer();
+ double** hd = hexadecapoles_[i]->pointer();
+ double** hd_= hdpoles_new->pointer();
 
  // Recenter
  for (int ic=0; ic<nOrigins_; ++ic) {
@@ -93,20 +103,45 @@ void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
       double ry_n = new_origins->get(ic, 1);
       double rz_n = new_origins->get(ic, 2);
 
-      double q = qp[ic][0];
+      double d1x = rx_n - rx_o;
+      double d1y = ry_n - ry_o;
+      double d1z = rz_n - rz_o;
+      double d2xx = rx_n * rx_n - rx_o * rx_o;
+      double d2xy = rx_n * ry_n - rx_o * ry_o;
+      double d2xz = rx_n * rz_n - rx_o * rz_o;
+      double d2yy = ry_n * ry_n - ry_o * ry_o;
+      double d2yz = ry_n * rz_n - ry_o * rz_o;
+      double d2zz = rz_n * rz_n - rz_o * rz_o;
 
-      double mx = mp[ic][0] - q * (rx_n - rx_o);
-      double my = mp[ic][1] - q * (ry_n - ry_o);
-      double mz = mp[ic][2] - q * (rz_n - rz_o);
+      double c = cp[ic][0];
+
+      double mx = mp[ic][0] - c * d1x;
+      double my = mp[ic][1] - c * d1y;
+      double mz = mp[ic][2] - c * d1z;
+
+      double qxx = qp[ic][0] + c * d2xx - 2.0 * mp[ic][0] * d1x;
+      double qxy = qp[ic][1] + c * d2xy -       mp[ic][0] * d1y - mp[ic][1] * d1x;
+      double qxz = qp[ic][2] + c * d2xz -       mp[ic][0] * d1z - mp[ic][2] * d1x;
+      double qyy = qp[ic][3] + c * d2yy - 2.0 * mp[ic][1] * d1y;
+      double qyz = qp[ic][4] + c * d2yz -       mp[ic][1] * d1z - mp[ic][2] * d1y; 
+      double qzz = qp[ic][5] + c * d2zz - 2.0 * mp[ic][2] * d1z;
 
       // Collect
       mp_[ic][0] = mx;
       mp_[ic][1] = my;
       mp_[ic][2] = mz;
+
+      qp_[ic][0] = qxx;
+      qp_[ic][1] = qxy;
+      qp_[ic][2] = qxz;
+      qp_[ic][3] = qyy;
+      qp_[ic][4] = qyz;
+      qp_[ic][5] = qzz;
  }
 
  // Save
  dipoles_[i]->copy(dipoles_new);
+ quadrupoles_[i]->copy(qdpoles_new);
 }
 void DMTPole::recenter(psi::SharedMatrix new_origins)
 {
