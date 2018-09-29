@@ -74,13 +74,15 @@ void DMTPole::compute_integrals(void) {
  psi::MultipoleSymmetry mpsymm(order_, mol_, integral, wfn_->matrix_factory());
  mpInts_ = mpsymm.create_matrices("Multipole Integrals", true);
  std::shared_ptr<psi::OneBodyAOInt> aompOBI(integral->ao_multipoles(order_));
+ aompOBI->set_origin(psi::Vector3());
  aompOBI->compute(mpInts_);
 }
 void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
 {
- psi::SharedMatrix dipoles_new = std::shared_ptr<psi::Matrix>(dipoles_[i]);
+ psi::SharedMatrix dipoles_new = std::make_shared<psi::Matrix>(dipoles_[i]);
  double** qp = charges_[i]->pointer();
- double** mp = dipoles_new->pointer();
+ double** mp = dipoles_[i]->pointer();
+ double** mp_= dipoles_new->pointer();
 
  // Recenter
  for (int ic=0; ic<nOrigins_; ++ic) {
@@ -98,9 +100,9 @@ void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
       double mz = mp[ic][2] - q * (rz_n - rz_o);
 
       // Collect
-      mp[ic][0] = mx;
-      mp[ic][1] = my;
-      mp[ic][2] = mz;
+      mp_[ic][0] = mx;
+      mp_[ic][1] = my;
+      mp_[ic][2] = mz;
  }
 
  // Save

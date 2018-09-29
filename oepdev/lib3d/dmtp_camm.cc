@@ -99,43 +99,43 @@ void CAMM::compute(psi::SharedMatrix D, bool transition, int i) {
                     double  d = Dp[I][J];
                     q    -= d * Sp[I][J];              
                                                        
-                    mx   -= d * mpInts_[ 0]->get(I,J); 
-                    my   -= d * mpInts_[ 1]->get(I,J);
-                    mz   -= d * mpInts_[ 2]->get(I,J);
+                    mx   += d * mpInts_[ 0]->get(I,J); 
+                    my   += d * mpInts_[ 1]->get(I,J);
+                    mz   += d * mpInts_[ 2]->get(I,J);
                                                         
-                    qxx  -= d * mpInts_[ 3]->get(I,J);
-                    qxy  -= d * mpInts_[ 4]->get(I,J);
-                    qxz  -= d * mpInts_[ 5]->get(I,J);
-                    qyy  -= d * mpInts_[ 6]->get(I,J);
-                    qyz  -= d * mpInts_[ 7]->get(I,J);
-                    qzz  -= d * mpInts_[ 8]->get(I,J);
+                    qxx  += d * mpInts_[ 3]->get(I,J);
+                    qxy  += d * mpInts_[ 4]->get(I,J);
+                    qxz  += d * mpInts_[ 5]->get(I,J);
+                    qyy  += d * mpInts_[ 6]->get(I,J);
+                    qyz  += d * mpInts_[ 7]->get(I,J);
+                    qzz  += d * mpInts_[ 8]->get(I,J);
                                                          
-                    oxxx -= d * mpInts_[ 9]->get(I,J);
-                    oxxy -= d * mpInts_[10]->get(I,J);
-                    oxxz -= d * mpInts_[11]->get(I,J);
-                    oxyy -= d * mpInts_[12]->get(I,J);
-                    oxyz -= d * mpInts_[13]->get(I,J);
-                    oxzz -= d * mpInts_[14]->get(I,J);
-                    oyyy -= d * mpInts_[15]->get(I,J);
-                    oyyz -= d * mpInts_[16]->get(I,J);
-                    oyzz -= d * mpInts_[17]->get(I,J);
-                    ozzz -= d * mpInts_[18]->get(I,J);
+                    oxxx += d * mpInts_[ 9]->get(I,J);
+                    oxxy += d * mpInts_[10]->get(I,J);
+                    oxxz += d * mpInts_[11]->get(I,J);
+                    oxyy += d * mpInts_[12]->get(I,J);
+                    oxyz += d * mpInts_[13]->get(I,J);
+                    oxzz += d * mpInts_[14]->get(I,J);
+                    oyyy += d * mpInts_[15]->get(I,J);
+                    oyyz += d * mpInts_[16]->get(I,J);
+                    oyzz += d * mpInts_[17]->get(I,J);
+                    ozzz += d * mpInts_[18]->get(I,J);
 
-                    hxxxx-= d * mpInts_[19]->get(I,J);
-                    hxxxy-= d * mpInts_[20]->get(I,J);
-                    hxxxz-= d * mpInts_[21]->get(I,J);
-                    hxxyy-= d * mpInts_[22]->get(I,J);
-                    hxxyz-= d * mpInts_[23]->get(I,J);
-                    hxxzz-= d * mpInts_[24]->get(I,J);
-                    hxyyy-= d * mpInts_[25]->get(I,J);
-                    hxyyz-= d * mpInts_[26]->get(I,J);
-                    hxyzz-= d * mpInts_[27]->get(I,J);
-                    hxzzz-= d * mpInts_[28]->get(I,J);
-                    hyyyy-= d * mpInts_[29]->get(I,J);
-                    hyyyz-= d * mpInts_[30]->get(I,J);
-                    hyyzz-= d * mpInts_[31]->get(I,J);
-                    hyzzz-= d * mpInts_[32]->get(I,J);
-                    hzzzz-= d * mpInts_[33]->get(I,J);
+                    hxxxx+= d * mpInts_[19]->get(I,J);
+                    hxxxy+= d * mpInts_[20]->get(I,J);
+                    hxxxz+= d * mpInts_[21]->get(I,J);
+                    hxxyy+= d * mpInts_[22]->get(I,J);
+                    hxxyz+= d * mpInts_[23]->get(I,J);
+                    hxxzz+= d * mpInts_[24]->get(I,J);
+                    hxyyy+= d * mpInts_[25]->get(I,J);
+                    hxyyz+= d * mpInts_[26]->get(I,J);
+                    hxyzz+= d * mpInts_[27]->get(I,J);
+                    hxzzz+= d * mpInts_[28]->get(I,J);
+                    hyyyy+= d * mpInts_[29]->get(I,J);
+                    hyyyz+= d * mpInts_[30]->get(I,J);
+                    hyyzz+= d * mpInts_[31]->get(I,J);
+                    hyzzz+= d * mpInts_[32]->get(I,J);
+                    hzzzz+= d * mpInts_[33]->get(I,J);
                }
            }
       }

@@ -114,9 +114,9 @@ class DMTPole
   protected:
 
     /// Compute multipole integrals
-    virtual void compute_integrals();
+    void compute_integrals();
     /// Compute order of the integrals
-    virtual void compute_order();
+    void compute_order();
 
 
     /// Name
