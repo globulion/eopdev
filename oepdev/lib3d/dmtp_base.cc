@@ -197,16 +197,16 @@ void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
       double oyzz_o = op[ic][8];
       double ozzz_o = op[ic][9];
 
-      double oxxx_n = oxxx_o  - c * d3xxx  + mx_o * d2xx  + mx_o * d2xx  + mx_o * d2xx  - qxx_o * d1x;   
-      double oxxy_n = oxxy_o  - c * d3xxy  + mx_o * d2xy  + my_o * d2xx  + mx_o * d2xy  - qxy_o * d1x;
-      double oxxz_n = oxxz_o  - c * d3xxz  + mx_o * d2xz  + mz_o * d2xx  + mx_o * d2xz  - qxz_o * d1x;
-      double oxyy_n = oxyy_o  - c * d3xyy  + mx_o * d2yy  + my_o * d2xy  + my_o * d2xy  - qxy_o * d1y;
-      double oxyz_n = oxyz_o  - c * d3xyz  + mx_o * d2yz  + mz_o * d2xy  + my_o * d2xz  - qxz_o * d1y;
-      double oxzz_n = oxzz_o  - c * d3xzz  + mx_o * d2zz  + mz_o * d2xz  + mz_o * d2xz  - qxz_o * d1z;
-      double oyyy_n = oyyy_o  - c * d3yyy  + my_o * d2yy  + my_o * d2yy  + my_o * d2yy  - qyy_o * d1y;
-      double oyyz_n = oyyz_o  - c * d3yyz  + my_o * d2yz  + mz_o * d2yy  + my_o * d2yz  - qyz_o * d1y;
-      double oyzz_n = oyzz_o  - c * d3yzz  + my_o * d2zz  + mz_o * d2yz  + mz_o * d2yz  - qyz_o * d1z;
-      double ozzz_n = ozzz_o  - c * d3zzz  + mz_o * d2zz  + mz_o * d2zz  + mz_o * d2zz  - qzz_o * d1z;
+      double oxxx_n = oxxx_o  - c * d3xxx  + mx_o * d2xx + mx_o * d2xx + mx_o * d2xx  - qxx_o * d1x - qxx_o * d1x - qxx_o * d1x;   
+      double oxxy_n = oxxy_o  - c * d3xxy  + mx_o * d2xy + my_o * d2xx + mx_o * d2xy  - qxy_o * d1x - qxx_o * d1y - qxy_o * d1x;
+      double oxxz_n = oxxz_o  - c * d3xxz  + mx_o * d2xz + mz_o * d2xx + mx_o * d2xz  - qxz_o * d1x - qxx_o * d1z - qxz_o * d1x;
+      double oxyy_n = oxyy_o  - c * d3xyy  + mx_o * d2yy + my_o * d2xy + my_o * d2xy  - qxy_o * d1y - qxy_o * d1y - qyy_o * d1x;
+      double oxyz_n = oxyz_o  - c * d3xyz  + mx_o * d2yz + mz_o * d2xy + my_o * d2xz  - qxz_o * d1y - qxy_o * d1z - qyz_o * d1x;
+      double oxzz_n = oxzz_o  - c * d3xzz  + mx_o * d2zz + mz_o * d2xz + mz_o * d2xz  - qxz_o * d1z - qxz_o * d1z - qzz_o * d1x;
+      double oyyy_n = oyyy_o  - c * d3yyy  + my_o * d2yy + my_o * d2yy + my_o * d2yy  - qyy_o * d1y - qyy_o * d1y - qyy_o * d1y;
+      double oyyz_n = oyyz_o  - c * d3yyz  + my_o * d2yz + mz_o * d2yy + my_o * d2yz  - qyz_o * d1y - qyy_o * d1z - qyz_o * d1y;
+      double oyzz_n = oyzz_o  - c * d3yzz  + my_o * d2zz + mz_o * d2yz + mz_o * d2yz  - qyz_o * d1z - qyz_o * d1z - qzz_o * d1y;
+      double ozzz_n = ozzz_o  - c * d3zzz  + mz_o * d2zz + mz_o * d2zz + mz_o * d2zz  - qzz_o * d1z - qzz_o * d1z - qzz_o * d1z;
 
       // Collect
       op_[ic][0] = oxxx_n;

@@ -887,33 +887,38 @@ double oepdev::test::Test::test_camm(void) {
   double result = 0.0;
 
   // Reference CAMM values
-  const double c_ref[3] = {-3.366373E-01,  1.682078E-01,  1.684295E-01};
+                          /* */
+  const double c_ref[3] = {-3.366373E-01,  
+                            1.682078E-01,  
+                            1.684295E-01};
+                          /* X              Y              Z */
   const double m_ref[9] = { 1.751974E-01,  1.403032E-01, -4.528554E-02,
                             1.331952E-02,  2.019633E-02, -5.983574E-03,
                             2.305333E-02,  8.621490E-03, -3.335370E-03};
+                          /* XX             XY             XZ             YY             YZ             ZZ */
   const double q_ref[18]= {-3.461364E+00, -4.200223E-02,  5.218767E-03, -3.455108E+00, -3.522603E-02, -3.585162E+00,
                            -2.246864E-01, -8.106905E-02,  1.017712E-02, -4.150175E-01, -1.340822E-02, -4.758673E-01,
                            -4.343364E-01, -4.277004E-02,  9.403507E-03, -2.190033E-01, -6.733931E-02, -4.612635E-01};
-  const double o_ref[30]= {-1.620214E-02, -2.364673E-03, -2.364673E-03, -2.364673E-03, -4.118915E-01, -2.364673E-03, -1.620214E-02, 
-                           -2.364673E-03, -2.364673E-03, -1.620214E-02,
-                           -2.403612E-02,  1.787315E-02,  1.787315E-02,  1.787315E-02, -7.924737E-01,  1.787315E-02, -2.403612E-02,  
-                            1.787315E-02,  1.787315E-02, -2.403612E-02,
-                            4.116774E-02, -1.776971E-02, -1.776971E-02, -1.776971E-02,  1.433252E-01, -1.776971E-02,  4.116774E-02, 
-                           -1.776971E-02, -1.776971E-02,  4.116774E-02};
-
-    
+                          /* XXX            XXY            XXZ            XYY            XYZ            XZZ            YYY */
+                          /* YYZ            YZZ            ZZZ */
+  const double o_ref[30]= {-4.118915E-01,  1.322068E-01, -1.378869E-02,  2.361463E-02, -2.364673E-03,  3.349728E-02,  -4.066315E-01,
+                            1.213214E-01, -8.290932E-03, -1.620214E-02,
+                           -7.924737E-01,  2.163772E-01, -2.529971E-02, -1.338179E-01,  1.787315E-02, -4.012411E-02,   1.979517E-01,
+                           -2.819298E-02,  3.948758E-02, -2.403612E-02, 
+                            1.433252E-01, -1.065108E-01,  2.453663E-02,  1.064634E-01, -1.776971E-02,  3.281251E-02,  -8.072710E-01,
+                            1.886268E-01, -8.783347E-02,  4.116774E-02};
   // Compute CAMM
   std::shared_ptr<DMTPole> dmtp = oepdev::DMTPole::build("CAMM", wfn_);
   dmtp->compute();
-  dmtp->charges(0)->print();
-  dmtp->dipoles(0)->print();
-  dmtp->quadrupoles(0)->print();
-  dmtp->octupoles(0)->print();
+  dmtp->charges(0)      ->print();
+  dmtp->dipoles(0)      ->print();
+  dmtp->quadrupoles(0)  ->print();
+  dmtp->octupoles(0)    ->print();
   dmtp->hexadecapoles(0)->print();
-  std::shared_ptr<psi::Matrix> c = dmtp->charges(0);
-  std::shared_ptr<psi::Matrix> m = dmtp->dipoles(0);
-  std::shared_ptr<psi::Matrix> q = dmtp->quadrupoles(0);
-  std::shared_ptr<psi::Matrix> o = dmtp->octupoles(0);
+  std::shared_ptr<psi::Matrix> c = dmtp->charges      (0);
+  std::shared_ptr<psi::Matrix> m = dmtp->dipoles      (0);
+  std::shared_ptr<psi::Matrix> q = dmtp->quadrupoles  (0);
+  std::shared_ptr<psi::Matrix> o = dmtp->octupoles    (0);
   std::shared_ptr<psi::Matrix> h = dmtp->hexadecapoles(0);
  
   // Accumulate errors
