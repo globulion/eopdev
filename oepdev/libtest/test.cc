@@ -883,35 +883,44 @@ double oepdev::test::Test::test_scf_perturb()
   return result;
 }
 double oepdev::test::Test::test_camm(void) {
+  // This test is for H2O at HF/6-31* molecule
   double result = 0.0;
 
   // Reference CAMM values
-  const double q_ref[3] = {-3.366373E-01, 1.682078E-01, 1.684295E-01};
-  const double m_ref[9] = {1.751974E-01,     1.403032E-01,    -4.528554E-02,
-                           1.331952E-02,     2.019633E-02,    -5.983574E-03,
-                           2.305333E-02,     8.621490E-03,    -3.335370E-03};
+  const double c_ref[3] = {-3.366373E-01,  1.682078E-01,  1.684295E-01};
+  const double m_ref[9] = { 1.751974E-01,  1.403032E-01, -4.528554E-02,
+                            1.331952E-02,  2.019633E-02, -5.983574E-03,
+                            2.305333E-02,  8.621490E-03, -3.335370E-03};
+  const double q_ref[18]= {-3.461364E+00, -4.200223E-02,  5.218767E-03, -3.455108E+00, -3.522603E-02, -3.585162E+00,
+                           -2.246864E-01, -8.106905E-02,  1.017712E-02, -4.150175E-01, -1.340822E-02, -4.758673E-01,
+                           -4.343364E-01, -4.277004E-02,  9.403507E-03, -2.190033E-01, -6.733931E-02, -4.612635E-01};
     
-    
-    
-
-
   // Compute CAMM
   std::shared_ptr<DMTPole> dmtp = oepdev::DMTPole::build("CAMM", wfn_);
   dmtp->compute();
   dmtp->charges(0)->print();
   dmtp->dipoles(0)->print();
-  std::shared_ptr<psi::Matrix> q = dmtp->charges(0);
+  dmtp->quadrupoles(0)->print();
+  std::shared_ptr<psi::Matrix> c = dmtp->charges(0);
   std::shared_ptr<psi::Matrix> m = dmtp->dipoles(0);
+  std::shared_ptr<psi::Matrix> q = dmtp->quadrupoles(0);
  
-
   // Accumulate errors
   for (int n=0; n<dmtp->ncentres(); ++n) {
-       result += sqrt(pow(q->get(n, 0) - q_ref[n] , 2.0));
+       result += sqrt(pow(c->get(n, 0) - c_ref[n] , 2.0));
+       //
        result += sqrt(pow(m->get(n, 0) - m_ref[3*n+0] , 2.0));
        result += sqrt(pow(m->get(n, 1) - m_ref[3*n+1] , 2.0));
        result += sqrt(pow(m->get(n, 2) - m_ref[3*n+2] , 2.0));
+       //
+       result += sqrt(pow(q->get(n, 0) - q_ref[6*n+0] , 2.0));
+       result += sqrt(pow(q->get(n, 1) - q_ref[6*n+1] , 2.0));
+       result += sqrt(pow(q->get(n, 2) - q_ref[6*n+2] , 2.0));
+       result += sqrt(pow(q->get(n, 3) - q_ref[6*n+3] , 2.0));
+       result += sqrt(pow(q->get(n, 4) - q_ref[6*n+4] , 2.0));
+       result += sqrt(pow(q->get(n, 5) - q_ref[6*n+5] , 2.0));
+       //
   }
-
 
   // Print result
   std::cout << std::fixed;
