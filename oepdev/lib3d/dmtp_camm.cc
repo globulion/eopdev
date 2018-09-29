@@ -9,9 +9,8 @@ CAMM::CAMM(psi::SharedWavefunction wfn, int n)
  : DMTPole(wfn, n)
 {
   name_ = "Cumulative Atomic Multipole Moments";
-  // Distribution centers and origins
-  nCentres_ = mol_->natom();
-  nOrigins_ = nCentres_;
+  // Distribution centres
+  nSites_ = mol_->natom();
   // Available multipoles
   hasCharges_ = true;
   hasDipoles_ = true;

@@ -906,7 +906,7 @@ double oepdev::test::Test::test_camm(void) {
   std::shared_ptr<psi::Matrix> q = dmtp->quadrupoles(0);
  
   // Accumulate errors
-  for (int n=0; n<dmtp->ncentres(); ++n) {
+  for (int n=0; n<dmtp->n_sites(); ++n) {
        result += sqrt(pow(c->get(n, 0) - c_ref[n] , 2.0));
        //
        result += sqrt(pow(m->get(n, 0) - m_ref[3*n+0] , 2.0));

@@ -69,10 +69,8 @@ class DMTPole
     virtual psi::SharedMatrix octupoles(int n) const {return octupoles_.at(n);}
     virtual psi::SharedMatrix hexadecapoles(int n) const {return hexadecapoles_.at(n);}
 
-    virtual int ncentres() const {return nCentres_;}
-    virtual int norigins() const {return nOrigins_;}
+    virtual int n_sites() const {return nSites_;}
     virtual int n_dmtp() const {return nDMTPs_;}
-
 
 
     // <--- Mutators ---> //
@@ -130,11 +128,8 @@ class DMTPole
     /// Number of DMTP's
     int nDMTPs_;
 
-    /// Number of distribution centres
-    int nCentres_;
-
-    /// Number of origins
-    int nOrigins_;
+    /// Number of DMTP sites
+    int nSites_;
 
     /// Maximum order of the multipole
     int order_;
