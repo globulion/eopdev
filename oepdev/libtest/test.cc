@@ -894,6 +894,13 @@ double oepdev::test::Test::test_camm(void) {
   const double q_ref[18]= {-3.461364E+00, -4.200223E-02,  5.218767E-03, -3.455108E+00, -3.522603E-02, -3.585162E+00,
                            -2.246864E-01, -8.106905E-02,  1.017712E-02, -4.150175E-01, -1.340822E-02, -4.758673E-01,
                            -4.343364E-01, -4.277004E-02,  9.403507E-03, -2.190033E-01, -6.733931E-02, -4.612635E-01};
+  const double o_ref[30]= {-1.620214E-02, -2.364673E-03, -2.364673E-03, -2.364673E-03, -4.118915E-01, -2.364673E-03, -1.620214E-02, 
+                           -2.364673E-03, -2.364673E-03, -1.620214E-02,
+                           -2.403612E-02,  1.787315E-02,  1.787315E-02,  1.787315E-02, -7.924737E-01,  1.787315E-02, -2.403612E-02,  
+                            1.787315E-02,  1.787315E-02, -2.403612E-02,
+                            4.116774E-02, -1.776971E-02, -1.776971E-02, -1.776971E-02,  1.433252E-01, -1.776971E-02,  4.116774E-02, 
+                           -1.776971E-02, -1.776971E-02,  4.116774E-02};
+
     
   // Compute CAMM
   std::shared_ptr<DMTPole> dmtp = oepdev::DMTPole::build("CAMM", wfn_);
@@ -901,9 +908,13 @@ double oepdev::test::Test::test_camm(void) {
   dmtp->charges(0)->print();
   dmtp->dipoles(0)->print();
   dmtp->quadrupoles(0)->print();
+  dmtp->octupoles(0)->print();
+  dmtp->hexadecapoles(0)->print();
   std::shared_ptr<psi::Matrix> c = dmtp->charges(0);
   std::shared_ptr<psi::Matrix> m = dmtp->dipoles(0);
   std::shared_ptr<psi::Matrix> q = dmtp->quadrupoles(0);
+  std::shared_ptr<psi::Matrix> o = dmtp->octupoles(0);
+  std::shared_ptr<psi::Matrix> h = dmtp->hexadecapoles(0);
  
   // Accumulate errors
   for (int n=0; n<dmtp->n_sites(); ++n) {
@@ -919,6 +930,17 @@ double oepdev::test::Test::test_camm(void) {
        result += sqrt(pow(q->get(n, 3) - q_ref[6*n+3] , 2.0));
        result += sqrt(pow(q->get(n, 4) - q_ref[6*n+4] , 2.0));
        result += sqrt(pow(q->get(n, 5) - q_ref[6*n+5] , 2.0));
+       //
+       result += sqrt(pow(o->get(n, 0) - o_ref[10*n+0] , 2.0));
+       result += sqrt(pow(o->get(n, 1) - o_ref[10*n+1] , 2.0));
+       result += sqrt(pow(o->get(n, 2) - o_ref[10*n+2] , 2.0));
+       result += sqrt(pow(o->get(n, 3) - o_ref[10*n+3] , 2.0));
+       result += sqrt(pow(o->get(n, 4) - o_ref[10*n+4] , 2.0));
+       result += sqrt(pow(o->get(n, 5) - o_ref[10*n+5] , 2.0));
+       result += sqrt(pow(o->get(n, 6) - o_ref[10*n+6] , 2.0));
+       result += sqrt(pow(o->get(n, 7) - o_ref[10*n+7] , 2.0));
+       result += sqrt(pow(o->get(n, 8) - o_ref[10*n+8] , 2.0));
+       result += sqrt(pow(o->get(n, 9) - o_ref[10*n+9] , 2.0));
        //
   }
 
