@@ -221,7 +221,86 @@ void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
       op_[ic][9] = ozzz_n;
 
       if (hasHexadecapoles_) {
+      double rxxxx_n = rxxx_n * rx_n;  double rxxxx_o = rxxx_o * rx_o;
+      double rxxxy_n = rxxx_n * ry_n;  double rxxxy_o = rxxx_o * ry_o;
+      double rxxxz_n = rxxx_n * rz_n;  double rxxxz_o = rxxx_o * rz_o;
+      double rxxyy_n = rxxy_n * ry_n;  double rxxyy_o = rxxy_o * ry_o;
+      double rxxyz_n = rxxy_n * rz_n;  double rxxyz_o = rxxy_o * rz_o;
+      double rxxzz_n = rxxz_n * rz_n;  double rxxzz_o = rxxz_o * rz_o;
+      double rxyyy_n = rxyy_n * ry_n;  double rxyyy_o = rxyy_o * ry_o;
+      double rxyyz_n = rxyy_n * rz_n;  double rxyyz_o = rxyy_o * rz_o;
+      double rxyzz_n = rxyz_n * rz_n;  double rxyzz_o = rxyz_o * rz_o;
+      double rxzzz_n = rxzz_n * rz_n;  double rxzzz_o = rxzz_o * rz_o;
+      double ryyyy_n = ryyy_n * ry_n;  double ryyyy_o = ryyy_o * ry_o;
+      double ryyyz_n = ryyy_n * rz_n;  double ryyyz_o = ryyy_o * rz_o;
+      double ryyzz_n = ryyz_n * rz_n;  double ryyzz_o = ryyz_o * rz_o;
+      double ryzzz_n = ryzz_n * rz_n;  double ryzzz_o = ryzz_o * rz_o;
+      double rzzzz_n = rzzz_n * rz_n;  double rzzzz_o = rzzz_o * rz_o;
 
+      double d4xxxx = rxxxx_n - rxxxx_o;
+      double d4xxxy = rxxxy_n - rxxxy_o;
+      double d4xxxz = rxxxz_n - rxxxz_o;
+      double d4xxyy = rxxyy_n - rxxyy_o;
+      double d4xxyz = rxxyz_n - rxxyz_o;
+      double d4xxzz = rxxzz_n - rxxzz_o;
+      double d4xyyy = rxyyy_n - rxyyy_o;
+      double d4xyyz = rxyyz_n - rxyyz_o;
+      double d4xyzz = rxyzz_n - rxyzz_o;
+      double d4xzzz = rxzzz_n - rxzzz_o;
+      double d4yyyy = ryyyy_n - ryyyy_o;
+      double d4yyyz = ryyyz_n - ryyyz_o;
+      double d4yyzz = ryyzz_n - ryyzz_o;
+      double d4yzzz = ryzzz_n - ryzzz_o;
+      double d4zzzz = rzzzz_n - rzzzz_o;
+
+      double hxxxx_o = hp[ic][ 0];
+      double hxxxy_o = hp[ic][ 1];
+      double hxxxz_o = hp[ic][ 2];
+      double hxxyy_o = hp[ic][ 3];
+      double hxxyz_o = hp[ic][ 4];
+      double hxxzz_o = hp[ic][ 5];
+      double hxyyy_o = hp[ic][ 6];
+      double hxyyz_o = hp[ic][ 7];
+      double hxyzz_o = hp[ic][ 8];
+      double hxzzz_o = hp[ic][ 9];
+      double hyyyy_o = hp[ic][10];
+      double hyyyz_o = hp[ic][11];
+      double hyyzz_o = hp[ic][12];
+      double hyzzz_o = hp[ic][13];
+      double hzzzz_o = hp[ic][14];
+
+      double hxxxx_n = hxxxx_o + c * d4xxxx;
+      double hxxxy_n = hxxxy_o + c * d4xxxy;
+      double hxxxz_n = hxxxz_o + c * d4xxxz;
+      double hxxyy_n = hxxyy_o + c * d4xxyy;
+      double hxxyz_n = hxxyz_o + c * d4xxyz;
+      double hxxzz_n = hxxzz_o + c * d4xxzz;
+      double hxyyy_n = hxyyy_o + c * d4xyyy;
+      double hxyyz_n = hxyyz_o + c * d4xyyz;
+      double hxyzz_n = hxyzz_o + c * d4xyzz;
+      double hxzzz_n = hxzzz_o + c * d4xzzz;
+      double hyyyy_n = hyyyy_o + c * d4yyyy;
+      double hyyyz_n = hyyyz_o + c * d4yyyz;
+      double hyyzz_n = hyyzz_o + c * d4yyzz;
+      double hyzzz_n = hyzzz_o + c * d4yzzz;
+      double hzzzz_n = hzzzz_o + c * d4zzzz;
+
+      // Collect
+      hp_[ic][ 0] = hxxxx_n; 
+      hp_[ic][ 1] = hxxxy_n;
+      hp_[ic][ 2] = hxxxz_n;
+      hp_[ic][ 3] = hxxyy_n;
+      hp_[ic][ 4] = hxxyz_n;
+      hp_[ic][ 5] = hxxzz_n;
+      hp_[ic][ 6] = hxyyy_n;
+      hp_[ic][ 7] = hxyyz_n;
+      hp_[ic][ 8] = hxyzz_n;
+      hp_[ic][ 9] = hxzzz_n;
+      hp_[ic][10] = hyyyy_n;
+      hp_[ic][11] = hyyyz_n;
+      hp_[ic][12] = hyyzz_n;
+      hp_[ic][13] = hyzzz_n;
+      hp_[ic][14] = hzzzz_n;
 
       }}}} // EndIFHasMultipoles
  }
