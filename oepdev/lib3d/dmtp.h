@@ -21,6 +21,7 @@ using namespace psi;
 
 /** \brief Distributed Multipole Analysis Container and Computer. Abstract Base.
  *
+ * Handles the distributed multipole expansions up to hexadecapole.
  */
 class DMTPole
 {
@@ -28,13 +29,13 @@ class DMTPole
 
     // <--- Constructors and Destructor ---> //
 
-    /** \brief Construct an empty DMTP object from the wavefunction.
-     *
-     */
-    DMTPole(std::shared_ptr<psi::Wavefunction> wfn, int n);
 
     /** \brief Build an empty DMTP object from the wavefunction.
      *
+     *  @param type - DMTP method. Available: `CAMM`.
+     *  @param wfn - wavefunction
+     *  @param n   - number of DMTP sets
+     *  @return DMTP distribution
      */
     static std::shared_ptr<DMTPole> build(const std::string& type,
                                           std::shared_ptr<psi::Wavefunction> wfn, 
@@ -45,47 +46,73 @@ class DMTPole
   
  
     // <--- Accessors ---> //
+
+    /// Has distributed charges?
     virtual bool has_charges()       const {return hasCharges_;      }
+    /// Has distributed dipoles?
     virtual bool has_dipoles()       const {return hasDipoles_;      }
+    /// Has distributed quadrupoles?
     virtual bool has_quadrupoles()   const {return hasQuadrupoles_;  }
+    /// Has distributed octupoles?
     virtual bool has_octupoles()     const {return hasOctupoles_;    }
+    /// Has distributed hexadecapoles?
     virtual bool has_hexadecapoles() const {return hasHexadecapoles_;}
 
-    /// Get the distribution centres
+    /// Get the positions of distribution centres
     virtual psi::SharedMatrix centres() const {return centres_;}
-
-    /// Get the origins
+    /// Get the positions of distribution origins
     virtual psi::SharedMatrix origins() const {return origins_;}
 
-    /// Get the distributed charges, dipoles, quadrupoles, octupoles and hexadecapoles
+    /// Get the distributed charges
     virtual std::vector<psi::SharedMatrix> charges() const {return charges_;}
+    /// Get the distributed dipoles
     virtual std::vector<psi::SharedMatrix> dipoles() const {return dipoles_;}
+    /// Get the distributed quadrupoles
     virtual std::vector<psi::SharedMatrix> quadrupoles() const {return quadrupoles_;}
+    /// Get the distributed octupoles
     virtual std::vector<psi::SharedMatrix> octupoles() const {return octupoles_;}
+    /// Get the distributed hexadecapoles
     virtual std::vector<psi::SharedMatrix> hexadecapoles() const {return hexadecapoles_;}
-    virtual psi::SharedMatrix charges(int n) const {return charges_.at(n);}
-    virtual psi::SharedMatrix dipoles(int n) const {return dipoles_.at(n);}
-    virtual psi::SharedMatrix quadrupoles(int n) const {return quadrupoles_.at(n);}
-    virtual psi::SharedMatrix octupoles(int n) const {return octupoles_.at(n);}
-    virtual psi::SharedMatrix hexadecapoles(int n) const {return hexadecapoles_.at(n);}
+    /// Get the distributed charges for the \f$ i \f$th distribution
+    virtual psi::SharedMatrix charges(int i) const {return charges_.at(i);}
+    /// Get the distributed dipoles for the \f$ i \f$th distribution
+    virtual psi::SharedMatrix dipoles(int i) const {return dipoles_.at(i);}
+    /// Get the distributed quadrupoles for the \f$ i \f$th distribution
+    virtual psi::SharedMatrix quadrupoles(int i) const {return quadrupoles_.at(i);}
+    /// Get the distributed octupoles for the \f$ i \f$th distribution
+    virtual psi::SharedMatrix octupoles(int i) const {return octupoles_.at(i);}
+    /// Get the distributed hexadecapoles for the \f$ i \f$th distribution
+    virtual psi::SharedMatrix hexadecapoles(int i) const {return hexadecapoles_.at(i);}
 
+    /// Get the number of distributed sites
     virtual int n_sites() const {return nSites_;}
+    /// Get the number of distributions
     virtual int n_dmtp() const {return nDMTPs_;}
 
 
     // <--- Mutators ---> //
 
+    /// Set the distributed charges
     void set_charges(std::vector<psi::SharedMatrix> M) {charges_ = M;}
+    /// Set the distributed dipoles
     void set_dipoles(std::vector<psi::SharedMatrix> M) {dipoles_ = M;}
+    /// Set the distributed quadrupoles
     void set_quadrupoles(std::vector<psi::SharedMatrix> M) {quadrupoles_ = M;}
+    /// Set the distributed octupoles
     void set_octupoles(std::vector<psi::SharedMatrix> M) {octupoles_ = M;}
+    /// Set the distributed hexadecapoles
     void set_hexadecapoles(std::vector<psi::SharedMatrix> M) {hexadecapoles_ = M;}
 
-    void set_charges(psi::SharedMatrix M, int n) {charges_[n] = std::make_shared<psi::Matrix>(M);}
-    void set_dipoles(psi::SharedMatrix M, int n) {dipoles_[n] = std::make_shared<psi::Matrix>(M);}
-    void set_quadrupoles(psi::SharedMatrix M, int n) {quadrupoles_[n] = std::make_shared<psi::Matrix>(M);}
-    void set_octupoles(psi::SharedMatrix M, int n) {octupoles_[n] = std::make_shared<psi::Matrix>(M);}
-    void set_hexadecapoles(psi::SharedMatrix M, int n) {hexadecapoles_[n] = std::make_shared<psi::Matrix>(M);}
+    /// Set the distributed charges for the \f$ i \f$th distribution
+    void set_charges(psi::SharedMatrix M, int i) {charges_[i] = std::make_shared<psi::Matrix>(M);}
+    /// Set the distributed dipoles for the \f$ i \f$th distribution
+    void set_dipoles(psi::SharedMatrix M, int i) {dipoles_[i] = std::make_shared<psi::Matrix>(M);}
+    /// Set the distributed quadrupoles for the \f$ i \f$th distribution
+    void set_quadrupoles(psi::SharedMatrix M, int i) {quadrupoles_[i] = std::make_shared<psi::Matrix>(M);}
+    /// Set the distributed octupoles for the \f$ i \f$th distribution
+    void set_octupoles(psi::SharedMatrix M, int i) {octupoles_[i] = std::make_shared<psi::Matrix>(M);}
+    /// Set the distributed hexadecapoles for the \f$ i \f$th distribution
+    void set_hexadecapoles(psi::SharedMatrix M, int i) {hexadecapoles_[i] = std::make_shared<psi::Matrix>(M);}
 
     /// Change origins of the distributed multipole moments of ith set
     virtual void recenter(psi::SharedMatrix new_origins, int i);
@@ -93,31 +120,63 @@ class DMTPole
     virtual void recenter(psi::SharedMatrix new_origins);
 
 
-
     // <--- Computers ---> //
 
-    /// Compute from the one-particle density matrix
+    /// Compute DMTP's from the one-particle density matrix
     virtual void compute(psi::SharedMatrix D, bool transition, int i) = 0;
-    /// Compute from the set of the one-particle density matrices
+    /// Compute DMTP's from the set of the one-particle density matrices
     void compute(std::vector<psi::SharedMatrix> D, std::vector<bool> transition);
-    /// Compute from the *sum* of the ground-state alpha and beta one-particle density matrices (transition=false, i=0)
+    /// Compute DMTP's from the *sum* of the ground-state alpha and beta one-particle density matrices (transition=false, i=0)
     void compute(void);
 
-    /// Evaluate generalized interaction energy
+    /** \brief Evaluate the generalized interaction energy.
+     *
+     *  @param other - interacting DMTP distribution. 
+     *  @param type  - convergence level (see below).
+     *  @return The generalized interaction energy (A.U. units)
+     *
+     *  The following convergence levels are available:
+     *    - `R-1`: includes qq terms.
+     *    - `R-2`: includes dq terms and above.
+     *    - `R-3`: includes qQ, dd terms and above.
+     *    - `R-4`: includes qO, dQ terms and above. 
+     *    - `R-5`: includes qH, dO, QQ terms and above.
+     */
     std::vector<double> energy(std::shared_ptr<DMTPole> other, const std::string& type = "R-5");
 
-
+    /** \brief Evaluate the generalized potential.
+     *
+     *  @param other - interacting DMTP distribution. 
+     *  @param type  - convergence level (see below).
+     *  @return The generalized potential (A.U. units)
+     *
+     *  The following convergence levels are available:
+     *    - `R-1`: includes qq terms.
+     *    - `R-2`: includes dq terms and above.
+     *    - `R-3`: includes qQ, dd terms and above.
+     *    - `R-4`: includes qO, dQ terms and above. 
+     *    - `R-5`: includes qH, dO, QQ terms and above.
+     */
+    std::vector<double> potential(std::shared_ptr<DMTPole> other, const std::string& type = "R-5");
 
 
   protected:
 
+    /** \brief Construct an empty DMTP object from the wavefunction.
+     *
+     *  @param wfn - wavefunction
+     *  @param n   - number of DMTP sets
+     *  Do not use this constructor. Use the DMTPole::build method.
+     */
+    DMTPole(std::shared_ptr<psi::Wavefunction> wfn, int n);
+
+
     /// Compute multipole integrals
     void compute_integrals();
-    /// Compute order of the integrals
+    /// Compute maximum order of the integrals
     void compute_order();
 
-
-    /// Name
+    /// Name of the distribution method
     std::string name_;
     /// Molecule associated with this DMTP
     psi::SharedMolecule mol_;
@@ -125,9 +184,9 @@ class DMTPole
     psi::SharedWavefunction wfn_;
     /// Basis set (primary)
     psi::SharedBasisSet primary_;
+
     /// Number of DMTP's
     int nDMTPs_;
-
     /// Number of DMTP sites
     int nSites_;
 
@@ -137,24 +196,31 @@ class DMTPole
     /// Multipole integrals
     std::vector<psi::SharedMatrix> mpInts_;
 
-    /// 
+    /// Has distributed charges?
     bool hasCharges_;
+    /// Has distributed dipoles?
     bool hasDipoles_;
+    /// Has distributed quadrupoles?
     bool hasQuadrupoles_;
+    /// Has distributed octupoles?
     bool hasOctupoles_;
+    /// Has distributed hexadecapoles?
     bool hasHexadecapoles_;
 
     /// DMTP centres
     psi::SharedMatrix centres_;
-
     /// DMTP origins
     psi::SharedMatrix origins_;
 
-    /// DMTP Multipoles
+    /// DMTP charges
     std::vector<psi::SharedMatrix> charges_;
+    /// DMTP dipoles
     std::vector<psi::SharedMatrix> dipoles_;
+    /// DMTP quadrupoles
     std::vector<psi::SharedMatrix> quadrupoles_;
+    /// DMTP octupoles
     std::vector<psi::SharedMatrix> octupoles_;
+    /// DMTP hexadecapoles
     std::vector<psi::SharedMatrix> hexadecapoles_;
 
     /// Initialize and allocate memory
@@ -163,6 +229,8 @@ class DMTPole
 
 /** \brief Cumulative Atomic Multipole Moments.
  *
+ *  Cumulative atomic multipole representation of the molecular charge distribution. Method of Sokalski and Poirier.
+ *  Ref.: W. A. Sokalski and R. A. Poirier, *Chem. Phys. Lett.*, 98(1) **1983**
  */
 class CAMM : public DMTPole 
 {

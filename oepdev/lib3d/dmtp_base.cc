@@ -269,21 +269,21 @@ void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
       double hyzzz_o = hp[ic][13];
       double hzzzz_o = hp[ic][14];
 
-      double hxxxx_n = hxxxx_o + c * d4xxxx;
-      double hxxxy_n = hxxxy_o + c * d4xxxy;
-      double hxxxz_n = hxxxz_o + c * d4xxxz;
-      double hxxyy_n = hxxyy_o + c * d4xxyy;
-      double hxxyz_n = hxxyz_o + c * d4xxyz;
-      double hxxzz_n = hxxzz_o + c * d4xxzz;
-      double hxyyy_n = hxyyy_o + c * d4xyyy;
-      double hxyyz_n = hxyyz_o + c * d4xyyz;
-      double hxyzz_n = hxyzz_o + c * d4xyzz;
-      double hxzzz_n = hxzzz_o + c * d4xzzz;
-      double hyyyy_n = hyyyy_o + c * d4yyyy;
-      double hyyyz_n = hyyyz_o + c * d4yyyz;
-      double hyyzz_n = hyyzz_o + c * d4yyzz;
-      double hyzzz_n = hyzzz_o + c * d4yzzz;
-      double hzzzz_n = hzzzz_o + c * d4zzzz;
+      double hxxxx_n = hxxxx_o + c * d4xxxx - mx_o * d3xxx - mx_o * d3xxx - mx_o * d3xxx - mx_o * d3xxx + qxx_o * d2xx + qxx_o * d2xx + qxx_o * d2xx + qxx_o * d2xx + qxx_o * d2xx + qxx_o * d2xx - oxxx_o * d1x - oxxx_o * d1x - oxxx_o * d1x - oxxx_o * d1x; 
+      double hxxxy_n = hxxxy_o + c * d4xxxy - mx_o * d3xxy - mx_o * d3xxy - mx_o * d3xxy - my_o * d3xxx + qxx_o * d2xy + qxx_o * d2xy + qxy_o * d2xx + qxy_o * d2xx + qxy_o * d2xx + qxx_o * d2xy - oxxx_o * d1y - oxxy_o * d1x - oxxy_o * d1x - oxxy_o * d1x;
+      double hxxxz_n = hxxxz_o + c * d4xxxz - mx_o * d3xxz - mx_o * d3xxz - mx_o * d3xxz - mz_o * d3xxx + qxx_o * d2xz + qxx_o * d2xz + qxz_o * d2xx + qxz_o * d2xx + qxz_o * d2xx + qxx_o * d2xz - oxxx_o * d1z - oxxz_o * d1x - oxxz_o * d1x - oxxz_o * d1x;
+      double hxxyy_n = hxxyy_o + c * d4xxyy - mx_o * d3xyy - mx_o * d3xyy - my_o * d3xxy - my_o * d3xxy + qxx_o * d2yy + qxy_o * d2xy + qxy_o * d2xy + qyy_o * d2xx + qxy_o * d2xy + qxy_o * d2xy - oxxy_o * d1y - oxxy_o * d1y - oxyy_o * d1x - oxyy_o * d1x;
+      double hxxyz_n = hxxyz_o + c * d4xxyz - mx_o * d3xyz - mx_o * d3xyz - my_o * d3xxz - mz_o * d3xxy + qxx_o * d2yz + qxy_o * d2xz + qxz_o * d2xy + qyz_o * d2xx + qxz_o * d2xy + qxy_o * d2xz - oxxy_o * d1z - oxxz_o * d1y - oxyz_o * d1x - oxyz_o * d1x;
+      double hxxzz_n = hxxzz_o + c * d4xxzz - mx_o * d3xzz - mx_o * d3xzz - mz_o * d3xxz - mz_o * d3xxz + qxx_o * d2zz + qxz_o * d2xz + qxz_o * d2xz + qzz_o * d2xx + qxz_o * d2xz + qxz_o * d2xz - oxxz_o * d1z - oxxz_o * d1z - oxzz_o * d1x - oxzz_o * d1x;
+      double hxyyy_n = hxyyy_o + c * d4xyyy - mx_o * d3yyy - my_o * d3xyy - my_o * d3xyy - my_o * d3xyy + qxy_o * d2yy + qxy_o * d2yy + qyy_o * d2xy + qyy_o * d2xy + qxy_o * d2yy + qyy_o * d2xy - oxyy_o * d1y - oxyy_o * d1y - oxyy_o * d1y - oyyy_o * d1x;
+      double hxyyz_n = hxyyz_o + c * d4xyyz - mx_o * d3yyz - my_o * d3xyz - my_o * d3xyz - mz_o * d3xyy + qxy_o * d2yz + qxy_o * d2yz + qyz_o * d2xy + qyz_o * d2xy + qxz_o * d2yy + qyy_o * d2xz - oxyy_o * d1z - oxyz_o * d1y - oxyz_o * d1y - oyyz_o * d1x;
+      double hxyzz_n = hxyzz_o + c * d4xyzz - mx_o * d3yzz - my_o * d3xzz - mz_o * d3xyz - mz_o * d3xyz + qxy_o * d2zz + qxz_o * d2yz + qyz_o * d2xz + qzz_o * d2xy + qxz_o * d2yz + qyz_o * d2xz - oxyz_o * d1z - oxyz_o * d1z - oxzz_o * d1y - oyzz_o * d1x;
+      double hxzzz_n = hxzzz_o + c * d4xzzz - mx_o * d3zzz - mz_o * d3xzz - mz_o * d3xzz - mz_o * d3xzz + qxz_o * d2zz + qxz_o * d2zz + qzz_o * d2xz + qzz_o * d2xz + qxz_o * d2zz + qzz_o * d2xz - oxzz_o * d1z - oxzz_o * d1z - oxzz_o * d1z - ozzz_o * d1x;
+      double hyyyy_n = hyyyy_o + c * d4yyyy - my_o * d3yyy - my_o * d3yyy - my_o * d3yyy - my_o * d3yyy + qyy_o * d2yy + qyy_o * d2yy + qyy_o * d2yy + qyy_o * d2yy + qyy_o * d2yy + qyy_o * d2yy - oyyy_o * d1y - oyyy_o * d1y - oyyy_o * d1y - oyyy_o * d1y;
+      double hyyyz_n = hyyyz_o + c * d4yyyz - my_o * d3yyz - my_o * d3yyz - my_o * d3yyz - mz_o * d3yyy + qyy_o * d2yz + qyy_o * d2yz + qyz_o * d2yy + qyz_o * d2yy + qyz_o * d2yy + qyy_o * d2yz - oyyy_o * d1z - oyyz_o * d1y - oyyz_o * d1y - oyyz_o * d1y;
+      double hyyzz_n = hyyzz_o + c * d4yyzz - my_o * d3yzz - my_o * d3yzz - mz_o * d3yyz - mz_o * d3yyz + qyy_o * d2zz + qyz_o * d2yz + qyz_o * d2yz + qzz_o * d2yy + qyz_o * d2yz + qyz_o * d2yz - oyyz_o * d1z - oyyz_o * d1z - oyzz_o * d1y - oyzz_o * d1y;
+      double hyzzz_n = hyzzz_o + c * d4yzzz - my_o * d3zzz - mz_o * d3yzz - mz_o * d3yzz - mz_o * d3yzz + qyz_o * d2zz + qyz_o * d2zz + qzz_o * d2yz + qzz_o * d2yz + qyz_o * d2zz + qzz_o * d2yz - oyzz_o * d1z - oyzz_o * d1z - oyzz_o * d1z - ozzz_o * d1y;
+      double hzzzz_n = hzzzz_o + c * d4zzzz - mz_o * d3zzz - mz_o * d3zzz - mz_o * d3zzz - mz_o * d3zzz + qzz_o * d2zz + qzz_o * d2zz + qzz_o * d2zz + qzz_o * d2zz + qzz_o * d2zz + qzz_o * d2zz - ozzz_o * d1z - ozzz_o * d1z - ozzz_o * d1z - ozzz_o * d1z;
 
       // Collect
       hp_[ic][ 0] = hxxxx_n; 
@@ -325,7 +325,15 @@ std::vector<double> DMTPole::energy(std::shared_ptr<DMTPole> other, const std::s
   // Return
   return energies;
 }
-
+std::vector<double> DMTPole::potential(std::shared_ptr<DMTPole> other, const std::string& type)
+{
+  std::vector<double> potentials;
+  for (int i=0; i<nDMTPs_; ++i) potentials.push_back(0.0);
+  //TODO
+  // ... if (type == "R-5") ...
+  // Return
+  return potentials;
+}
 
 // abstract methods
 void DMTPole::compute(psi::SharedMatrix D, bool transition, int i) {/* nothing to implement here */}
