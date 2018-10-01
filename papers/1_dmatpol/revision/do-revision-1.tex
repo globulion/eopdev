@@ -1,0 +1,8 @@
+#!/bin/bash
+base=paper-revision-1
+
+latex  ${base}.tex
+bibtex ${base}.aux
+latex  ${base}.tex
+latex  ${base}.tex
+dvipdf ${base}.dvi
