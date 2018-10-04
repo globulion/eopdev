@@ -1,11 +1,244 @@
 #include "dmtp.h"
 #include "psi4/libmints/integral.h"
 #include "psi4/libmints/multipolesymmetry.h"
+#include <cassert>
 
 
 namespace oepdev{
 
 using namespace std;
+
+// MultipoleConvergence
+
+MultipoleConvergence::MultipoleConvergence(std::shared_ptr<DMTPole> dmtp1, std::shared_ptr<DMTPole> dmtp2,
+                                           MultipoleConvergence::ConvergenceLevel max_clevel) 
+ : dmtp_1_(dmtp1),
+   dmtp_2_(dmtp2),
+   max_clevel_(max_clevel),
+   convergenceList_{}
+{
+   // Check if there is the same amount of DMTPs interacting with each other for sets A and B
+   assert(dmtp_1_->nDMTPs_ == dmtp_2_->nDMTPs_);
+
+   convergenceList_["qq"] = std::make_shared<psi::Vector>("q-q term",dmtp_1_->nDMTPs_);
+   convergenceList_["qD"] = std::make_shared<psi::Vector>("q-D term",dmtp_1_->nDMTPs_);
+   convergenceList_["DD"] = std::make_shared<psi::Vector>("D-D term",dmtp_1_->nDMTPs_);
+   convergenceList_["qQ"] = std::make_shared<psi::Vector>("q-Q term",dmtp_1_->nDMTPs_);
+   convergenceList_["DQ"] = std::make_shared<psi::Vector>("D-Q term",dmtp_1_->nDMTPs_);
+   convergenceList_["qO"] = std::make_shared<psi::Vector>("q-O term",dmtp_1_->nDMTPs_);
+   convergenceList_["QQ"] = std::make_shared<psi::Vector>("Q-Q term",dmtp_1_->nDMTPs_);
+   convergenceList_["DO"] = std::make_shared<psi::Vector>("D-O term",dmtp_1_->nDMTPs_);
+   convergenceList_["qH"] = std::make_shared<psi::Vector>("q-H term",dmtp_1_->nDMTPs_);
+}
+MultipoleConvergence::~MultipoleConvergence() 
+{
+}
+void MultipoleConvergence::compute(MultipoleConvergence::Property property)
+{
+  if      (property == MultipoleConvergence::Property::Energy   ) {this->compute_energy   ();}
+  else if (property == MultipoleConvergence::Property::Potential) {this->compute_potential();}
+}
+std::vector<double> MultipoleConvergence::level(MultipoleConvergence::ConvergenceLevel clevel)
+{
+}
+void MultipoleConvergence::compute_energy()
+{
+   double** r_A_ = dmtp_1_->centres()->pointer();
+   double** r_B_ = dmtp_2_->centres()->pointer();
+
+   for (int N=0; N<dmtp_1_->nDMTPs_; ++N) {
+        double** q_A_ = dmtp_1_->charges_[N]->pointer();
+        double** q_B_ = dmtp_2_->charges_[N]->pointer();
+        double** D_A_ = dmtp_1_->dipoles_[N]->pointer();
+        double** D_B_ = dmtp_2_->dipoles_[N]->pointer();
+        double** Q_A_ = dmtp_1_->quadrupoles_[N]->pointer();
+        double** Q_B_ = dmtp_2_->quadrupoles_[N]->pointer();
+        double** O_A_ = dmtp_1_->octupoles_[N]->pointer();
+        double** O_B_ = dmtp_2_->octupoles_[N]->pointer();
+        double** H_A_ = dmtp_1_->hexadecapoles_[N]->pointer();
+        double** H_B_ = dmtp_2_->hexadecapoles_[N]->pointer();
+
+        double qq = 0.0; // R-1
+        double qD = 0.0; // R-2
+        double DD = 0.0; // R-3
+        double qQ = 0.0; // R-3
+        double DQ = 0.0; // R-4
+        double qO = 0.0; // R-4
+        double QQ = 0.0; // R-5
+        double DO = 0.0; // R-5
+        double qH = 0.0; // R-5
+              
+        for (int i=0; i<dmtp_1_->nSites_; ++i) {
+             double rix = r_A_[i][0];
+             double riy = r_A_[i][1];
+             double riz = r_A_[i][2];
+
+             double qi = q_A_[i][0];
+             double dix, diy, diz;
+             double Qixx, Qixy, Qixz, Qiyy, Qiyz, Qizz;
+             double Oixxx, Oixxy, Oixxz, Oixyy, Oixyz, Oixzz, Oiyyy, Oiyyz, Oiyzz, Oizzz;
+             if (dmtp_1_->hasDipoles_) {
+                 dix = D_A_[i][0]; 
+                 diy = D_A_[i][1];
+                 diz = D_A_[i][2];
+                 if (dmtp_1_->hasQuadrupoles_) {
+                     Qixx = Q_A_[i][0]; 
+                     Qixy = Q_A_[i][1];
+                     Qixz = Q_A_[i][2];
+                     Qiyy = Q_A_[i][3];
+                     Qiyz = Q_A_[i][4];
+                     Qizz = Q_A_[i][5];
+                     if (dmtp_1_->hasOctupoles_) {
+                         Oixxx = O_A_[i][0];
+                         Oixxy = O_A_[i][1]; 
+                         Oixxz = O_A_[i][2]; 
+                         Oixyy = O_A_[i][3]; 
+                         Oixyz = O_A_[i][4]; 
+                         Oixzz = O_A_[i][5]; 
+                         Oiyyy = O_A_[i][6]; 
+                         Oiyyz = O_A_[i][7]; 
+                         Oiyzz = O_A_[i][8]; 
+                         Oizzz = O_A_[i][9]; 
+                         if (dmtp_1_->hasHexadecapoles_) {
+                         }
+                     }
+                 }
+             }
+
+             for (int j=0; j<dmtp_2_->nSites_; ++j) {
+                  double rjx = r_B_[j][0]; 
+                  double rjy = r_B_[j][1];
+                  double rjz = r_B_[j][2];
+                                          
+                  double qj = q_B_[j][0];
+
+                  double rjix = rjx - rix;
+                  double rjiy = rjy - riy;
+                  double rjiz = rjz - riz;
+
+                  double rji1 = 1.0 / sqrt(rjix*rjix+rjiy*rjiy+rjiz*rjiz);
+
+                  // R-1 TERMS
+                  qq += qi * qj * rji1;
+
+                  // R-2 TERMS
+                  if (dmtp_2_->hasDipoles_) {
+                    double djx = D_B_[j][0];                                                             
+                    double djy = D_B_[j][1];
+                    double djz = D_B_[j][2];
+                                                                                                         
+                    double rji2 = rji1 * rji1;
+                    double rji3 = rji1 * rji2;
+                                                                                                         
+                    double dirji = dix * rjix + diy * rjiy + diz * rjiz;
+                    double djrji = djx * rjix + djy * rjiy + djz * rjiz;
+                    qD += ( dirji * qj - djrji * qi ) * rji3;
+                                                                                                         
+                    // R-3 TERMS
+                    if (dmtp_2_->hasQuadrupoles_) {
+                      double Qjxx = Q_B_[j][0];                                                              
+                      double Qjxy = Q_B_[j][1];
+                      double Qjxz = Q_B_[j][2];
+                      double Qjyy = Q_B_[j][3];
+                      double Qjyz = Q_B_[j][4];
+                      double Qjzz = Q_B_[j][5];
+                                                                                                           
+                      double rji5 = rji3 * rji2;
+                      double didj = dix * djx + diy * djy + diz * djz;
+                      double Qirji2 = Qixx * rjix * rjix + Qiyy * rjiy * rjiy + Qizz * rjiz * rjiz +
+                               2.0 * (Qixy * rjix * rjiy + Qixz * rjix * rjiz + Qiyz * rjiy * rjiz);
+                      double Qjrji2 = Qjxx * rjix * rjix + Qjyy * rjiy * rjiy + Qjzz * rjiz * rjiz +
+                               2.0 * (Qjxy * rjix * rjiy + Qjxz * rjix * rjiz + Qjyz * rjiy * rjiz);
+                      DD += -3.0 * dirji * djrji * rji5 + didj * rji3;
+                                                                                                           
+                      qQ += (qj * Qirji2 + qi * Qjrji2) * rji5;
+
+                      // R-4 TERMS
+                      if (dmtp_2_->hasOctupoles_) {
+                        double rji7 = rji5 * rji2;                                                            
+                        double Ojxxx = O_B_[j][0];
+                        double Ojxxy = O_B_[j][1]; 
+                        double Ojxxz = O_B_[j][2]; 
+                        double Ojxyy = O_B_[j][3]; 
+                        double Ojxyz = O_B_[j][4]; 
+                        double Ojxzz = O_B_[j][5]; 
+                        double Ojyyy = O_B_[j][6]; 
+                        double Ojyyz = O_B_[j][7]; 
+                        double Ojyzz = O_B_[j][8]; 
+                        double Ojzzz = O_B_[j][9]; 
+
+                        double Ojrji3 = Ojxxx * rjix * rjix * rjix       +
+                                        Ojxxy * rjix * rjix * rjiy * 3.0 +
+                                        Ojxxz * rjix * rjix * rjiz * 3.0 +  
+                                        Ojxyy * rjix * rjiy * rjiy * 3.0 + 
+                                        Ojxyz * rjix * rjiy * rjiz * 6.0 + 
+                                        Ojxzz * rjix * rjiz * rjiz * 3.0 + 
+                                        Ojyyy * rjiy * rjiy * rjiy       + 
+                                        Ojyyz * rjiy * rjiy * rjiz * 3.0 + 
+                                        Ojyzz * rjix * rjix * rjix * 3.0 + 
+                                        Ojzzz * rjiz * rjiz * rjiz       ; 
+                        double Oirji3 = Oixxx * rjix * rjix * rjix       +
+                                        Oixxy * rjix * rjix * rjiy * 3.0 +
+                                        Oixxz * rjix * rjix * rjiz * 3.0 +  
+                                        Oixyy * rjix * rjiy * rjiy * 3.0 + 
+                                        Oixyz * rjix * rjiy * rjiz * 6.0 + 
+                                        Oixzz * rjix * rjiz * rjiz * 3.0 + 
+                                        Oiyyy * rjiy * rjiy * rjiy       + 
+                                        Oiyyz * rjiy * rjiy * rjiz * 3.0 + 
+                                        Oiyzz * rjix * rjix * rjix * 3.0 + 
+                                        Oizzz * rjiz * rjiz * rjiz       ; 
+
+                        DQ += -2.0 * (Qjxx * dix * rjix + Qjyy * diy * rjiy + Qjzz * diz * rjiz +
+                               2.0 * (Qjxy * dix * rjiy + Qjxz * dix * rjiz + Qjyz * diy * rjiz) 
+                              -       Qixx * djx * rjix + Qiyy * djy * rjiy + Qizz * djz * rjiz -
+                               2.0 * (Qixy * djx * rjiy + Qixz * djx * rjiz + Qiyz * djy * rjiz) 
+                                    ) * rji5
+                              +5.0 * ( dirji * Qjrji2 - djrji * Qirji2 ) * rji7;
+                        qO += ( qj * Oirji3 - qi * Ojrji3 ) * rji7;
+
+                        // R-5 TERMS
+                        if (dmtp_2_->hasHexadecapoles_) {
+                          double rji9 = rji7 * rji2;
+
+                          double QiQj = Qixx * Qjxx + Qiyy * Qjyy + Qizz * Qjzz +
+                                  2.0 *(Qixy * Qjxy + Qixz * Qjxz + Qiyz * Qjyz);
+                          double Qirjix = Qixx * rjix + Qixy * rjiy + Qixz * rjiz;
+                          double Qirjiy = Qixy * rjix + Qiyy * rjiy + Qiyz * rjiz;
+                          double Qirjiz = Qixz * rjix + Qiyz * rjiy + Qizz * rjiz;
+                          double Qjrjix = Qjxx * rjix + Qjxy * rjiy + Qjxz * rjiz;
+                          double Qjrjiy = Qjxy * rjix + Qjyy * rjiy + Qjyz * rjiz;
+                          double Qjrjiz = Qjxz * rjix + Qjyz * rjiy + Qjzz * rjiz;
+
+                          QQ += (35.0 / 3.0) * Qirji2 * Qjrji2 * rji9
+                               -(20.0 / 3.0) *(Qirjix * Qjrjix + Qirjiy * Qjrjiy + Qirjiz * Qjrjiz) * rji7
+                               +( 2.0 / 3.0) * QiQj * rji5;
+                          DO += -7.0 * (djrji * Qirji2 + dirji * Qjrji2) * rji9;
+                        } // EndIfBhasHexadecapoles
+                      } // EndIfBhasOctupoles
+                    } // EndIfBhasQuadrupoles
+                  } // EndIfBhasDipoles
+
+             } // EndForDMTPCentres_B
+        } // EndForDMTPCentres_A
+
+        convergenceList_["qq"]->set(N, qq);
+        convergenceList_["qd"]->set(N, qD);
+        convergenceList_["dd"]->set(N, DD);
+        convergenceList_["qQ"]->set(N, qQ);
+        convergenceList_["dQ"]->set(N, DQ);
+        convergenceList_["qO"]->set(N, qO);
+        convergenceList_["QQ"]->set(N, QQ);
+        convergenceList_["dO"]->set(N, DO);
+        convergenceList_["qH"]->set(N, qH);
+
+   } // EndForDMTPs
+}
+void MultipoleConvergence::compute_potential()
+{
+  throw psi::PSIEXCEPTION("The potential from DMTP's is not implemented yet.");
+}
+
+// DMTPole
 
 DMTPole::DMTPole(psi::SharedWavefunction wfn, int n) 
  : mol_(wfn->molecule()), 
@@ -316,23 +549,22 @@ void DMTPole::recenter(psi::SharedMatrix new_origins)
  for (int i=0; i<nDMTPs_; ++i) this->recenter(new_origins, i);
  origins_->copy(new_origins);
 }
-std::vector<double> DMTPole::energy(std::shared_ptr<DMTPole> other, const std::string& type)
+std::shared_ptr<MultipoleConvergence> DMTPole::energy(std::shared_ptr<DMTPole> other, const std::string& type)
 {
-  std::vector<double> energies;
-  for (int i=0; i<nDMTPs_; ++i) energies.push_back(0.0);
-  //TODO
-  // ... if (type == "R-5") ...
-  // Return
-  return energies;
+  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), other);
+  convergence->compute(MultipoleConvergence::Energy);
+  return convergence;
 }
-std::vector<double> DMTPole::potential(std::shared_ptr<DMTPole> other, const std::string& type)
+std::shared_ptr<MultipoleConvergence> DMTPole::potential(std::shared_ptr<DMTPole> other, const std::string& type)
 {
-  std::vector<double> potentials;
-  for (int i=0; i<nDMTPs_; ++i) potentials.push_back(0.0);
+  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), other);
+  convergence->compute(MultipoleConvergence::Potential);
+  //std::vector<double> potentials;
+  //for (int i=0; i<nDMTPs_; ++i) potentials.push_back(0.0);
   //TODO
   // ... if (type == "R-5") ...
   // Return
-  return potentials;
+  return convergence;
 }
 
 // abstract methods

@@ -20,3 +20,6 @@
 
 /** @}*/
 #endif // oepdev_include_oepdev_files_h
+
+// uncomment to disable assert()
+// #define NDEBUG

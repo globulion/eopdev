@@ -6,6 +6,7 @@
 #include "psi4/libmints/basisset.h"
 #include "psi4/libmints/molecule.h"
 #include "psi4/libmints/matrix.h"
+#include "psi4/libmints/vector.h"
 namespace psi{
  using SharedBasisSet = std::shared_ptr<BasisSet>;
 }
@@ -19,12 +20,39 @@ namespace oepdev{
 using namespace std;
 using namespace psi;
 
+class DMTPole;
+
+/** \brief Multipole Convergence. 
+ *
+ * Handles the convergence of the distributed multipole expansions up to hexadecapole.
+ */
+class MultipoleConvergence
+{
+  public:
+    enum ConvergenceLevel {R1, R2, R3, R4, R5};
+    enum Property {Energy, Potential};
+    MultipoleConvergence(std::shared_ptr<DMTPole> dmtp1, std::shared_ptr<DMTPole> dmtp2, 
+                         ConvergenceLevel max_clevel = R4);
+    virtual ~MultipoleConvergence();
+    void compute(Property property = Energy);
+    std::vector<double> level(ConvergenceLevel clevel = R4);
+  protected:
+    ConvergenceLevel max_clevel_;
+    std::shared_ptr<DMTPole> dmtp_1_;
+    std::shared_ptr<DMTPole> dmtp_2_;
+    std::map<std::string, std::shared_ptr<psi::Vector>> convergenceList_;
+    void compute_energy();
+    void compute_potential();
+};
+
 /** \brief Distributed Multipole Analysis Container and Computer. Abstract Base.
  *
  * Handles the distributed multipole expansions up to hexadecapole.
  */
-class DMTPole
+class DMTPole : public std::enable_shared_from_this<DMTPole>
 {
+  friend class MultipoleConvergence;
+
   public:
 
     // <--- Constructors and Destructor ---> //
@@ -133,7 +161,7 @@ class DMTPole
      *
      *  @param other - interacting DMTP distribution. 
      *  @param type  - convergence level (see below).
-     *  @return The generalized interaction energy (A.U. units)
+     *  @return The generalized interaction energy convergence (A.U. units)
      *
      *  The following convergence levels are available:
      *    - `R-1`: includes qq terms.
@@ -142,13 +170,13 @@ class DMTPole
      *    - `R-4`: includes qO, dQ terms and above. 
      *    - `R-5`: includes qH, dO, QQ terms and above.
      */
-    std::vector<double> energy(std::shared_ptr<DMTPole> other, const std::string& type = "R-5");
+    std::shared_ptr<MultipoleConvergence> energy(std::shared_ptr<DMTPole> other, const std::string& type = "R-5");
 
     /** \brief Evaluate the generalized potential.
      *
      *  @param other - interacting DMTP distribution. 
      *  @param type  - convergence level (see below).
-     *  @return The generalized potential (A.U. units)
+     *  @return The generalized potential convergence (A.U. units)
      *
      *  The following convergence levels are available:
      *    - `R-1`: includes qq terms.
@@ -157,7 +185,7 @@ class DMTPole
      *    - `R-4`: includes qO, dQ terms and above. 
      *    - `R-5`: includes qH, dO, QQ terms and above.
      */
-    std::vector<double> potential(std::shared_ptr<DMTPole> other, const std::string& type = "R-5");
+     std::shared_ptr<MultipoleConvergence> potential(std::shared_ptr<DMTPole> other, const std::string& type = "R-5");
 
 
   protected:
