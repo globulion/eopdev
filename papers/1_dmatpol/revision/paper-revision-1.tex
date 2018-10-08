@@ -1,7 +1,7 @@
 %%
 %%   Version 3.1 of 31 July 2018.
 %%
-\documentclass[aip,jcp,reprint,amsmath,amssymb,floatfix]{revtex4-1}
+\documentclass[aip,jcp,preprint,amsmath,amssymb,floatfix]{revtex4-1}
 %\documentclass[aip,reprint]{revtex4-1}
 
 \usepackage{graphicx}% Include figure files
@@ -367,7 +367,7 @@ of the dipole moment operator defined with respect to origin at ${\bf r}_Q$,
 %
 (In this work the double struck font for matrices of vectors or higher\hyp{}order tensors is used, so that
 in this case ${\mathbb{M}}$ can be considered as a $n \times n$ matrix of vectors of length 3).
-Note that if the total charge is conserved, the induced moments are independent of the origin.
+Note that if the total charge is conserved, the induced dipole moment is independent of the origin.
 
 In the Hartree\hyp{}Fock theory,\cite{Roothaan.RevModPhys.1951} ${\bf D}$ is approximated as
 %
@@ -394,7 +394,7 @@ where $\BM\Delta$ is a square non\hyp{}singular and non\hyp{}symmetric matrix.
 McWeeny showed that
 %
 \begin{equation} \label{e:dmat-change.exact}
- \delta {\bf D} = -{\bf D}^{(0)} + \left[ {\bf D}^{(0)} + {\bf v} \right] \cdot
+ \delta {\bf D} =  {\bf D}^{(0)} + \left[ {\bf D}^{(0)} + {\bf v} \right] \cdot
                                    \left[ {\bf 1} + {\bf v}^\dagger \cdot {\bf v} \right]^{-1} \cdot
                                    \left[ {\bf D}^{(0)} + {\bf v}^\dagger \right] \;,
 \end{equation}
@@ -576,10 +576,10 @@ where the \emph{density matrix polarization susceptibility tensor} is
 %\begin{multline}  \label{e:susceptibility-B} % PREPRINT
 \begin{equation}  \label{e:susceptibility-B}
  {\bf B}^{(i;1)}_{\alpha\beta} = 
-                               C_{\alpha i} {\bf b}_{\beta}^{(i;1)} + C_{\beta i} {\bf b}_\alpha^{(i;1)} %\\ PREPRINT
+                               C_{\alpha i}^{(0)} {\bf b}_{\beta}^{(i;1)} + C_{\beta i}^{(0)} {\bf b}_\alpha^{(i;1)} %\\ PREPRINT
                                 - \sum_\gamma 
                                  \left( 
-               D_{\alpha\gamma} C_{\beta i} + D_{\beta\gamma} C_{\alpha i}
+               D_{\alpha\gamma} C_{\beta i}^{(0)} + D_{\beta\gamma} C_{\alpha i}^{(0)}
                                  \right)
                                            {\bf b}_{\gamma}^{(i;1)}
  \;.
@@ -1104,25 +1104,35 @@ the generalized quadratic DMS model is capable of accurately describing
 the polarization of ground\hyp{}state water molecule in inhomogeneous 
 electric fields that are comparable in strength to condensed phase conditions.
 
-\subsection{\label{s:computational-cost}Computational cost and implementation of the DMS models}
+\subsection{\label{s:computational-cost}Computational cost and automatization of the generalized DMS model}
 
 Although the cost of computation of the perturbed one\hyp{}electron density matrices
-from the DMS tensors and the distribution of the electric field is negligible, 
-obtaining the generalized DMS matrix elements for a particular molecule
-involves substantial amount of full QM calculations necessary to fit the DMS tensor elements.
-This is, however, a relatively expensive operation that has to be performed only once.
+from the generalized DMS tensors and the distribution of the electric field is negligible, 
+obtaining the generalized DMS tensors for a particular molecule
+involves substantial amount of full QM calculations. %necessary to fit the DMS tensor elements.
+This is, however, a relatively expensive operation that has to be performed only once
+when the EFP\hyp{}like strategy is adopted. 
+%Note that the DMS parameters 
+%are environment\hyp{}independent and, due to this reason, could be used
+%as effective fragment parameters.
 %To get statistically relevant set of perturbed states, it is recommended to perform at least 100 
 %full QM calculations. 
-Since each of such preparatory calculations is an independent computational task, 
-its automatization and parallelization is straightforward. Moreover, the implementation
+Note also that each of such preparatory calculations is an independent computational task, 
+and hence, its automatization and parallelization is straightforward. Moreover, the implementation
 of the method does not depend on the level of theory because only the perturbed density matrices
-are needed. The computation of the gradient 
-and Hessian matrix is inexpensive and its efficiency is limited only by the speed of Hessian matrix inversion.
-Therefore, the method can be applied to all molecular fragments at any level of theory, provided
+are needed. The least\hyp{}squares fit, i.e., the computation of the gradient
+and Hessian matrix including its inversion, is inexpensive.
+This step can be implemented in an independent script or program taking as input the
+perturbed density matrices obtained by using any available quantum chemistry package. 
+%and its efficiency is limited only by the speed of Hessian matrix inversion.
+Therefore, the linear regression method to obtain the DMS tensors could be applied 
+to any molecular fragment at a chosen level of theory
+in a fairly black box manner, provided that
 the one\hyp{}particle density matrices are available. In the illustrations shown in this work,
-a set of 100 independent HF/6-311++G** calculations was sufficient to get statistically relevant set of perturbed 
-ground state density matrices. This task was concluded within approximately 5 minutes per each DMS fit
-on a single\hyp{}CPU computer.
+a set of 100 independent full QM calculations was sufficient to get statistically relevant set of perturbed 
+ground state density matrices. 
+%This task was concluded within approximately 5 minutes per each DMS fit
+%on a single\hyp{}CPU computer.
 
 \section{\label{s:5}Summary and a few concluding remarks}
 
