@@ -77,6 +77,9 @@ void MultipoleConvergence::compute_energy()
              double dix, diy, diz;
              double Qixx, Qixy, Qixz, Qiyy, Qiyz, Qizz;
              double Oixxx, Oixxy, Oixxz, Oixyy, Oixyz, Oixzz, Oiyyy, Oiyyz, Oiyzz, Oizzz;
+             double Hixxxx, Hixxxy, Hixxxz, Hixxyy, Hixxyz, Hixxzz, Hixyyy, Hixyyz, Hixyzz, 
+                    Hixzzz, Hiyyyy, Hiyyyz, Hiyyzz, Hiyzzz, Hizzzz;
+
              if (dmtp_1_->hasDipoles_) {
                  dix = D_A_[i][0]; 
                  diy = D_A_[i][1];
@@ -100,6 +103,21 @@ void MultipoleConvergence::compute_energy()
                          Oiyzz = O_A_[i][8]; 
                          Oizzz = O_A_[i][9]; 
                          if (dmtp_1_->hasHexadecapoles_) {
+                             Hixxxx = H_A_[i][ 0]; 
+                             Hixxxy = H_A_[i][ 1];
+                             Hixxxz = H_A_[i][ 2];
+                             Hixxyy = H_A_[i][ 3];
+                             Hixxyz = H_A_[i][ 4];
+                             Hixxzz = H_A_[i][ 5];
+                             Hixyyy = H_A_[i][ 6];
+                             Hixyyz = H_A_[i][ 7];
+                             Hixyzz = H_A_[i][ 8];
+                             Hixzzz = H_A_[i][ 9];
+                             Hiyyyy = H_A_[i][10];
+                             Hiyyyz = H_A_[i][11];
+                             Hiyyzz = H_A_[i][12];
+                             Hiyzzz = H_A_[i][13];
+                             Hizzzz = H_A_[i][14];
                          }
                      }
                  }
@@ -175,7 +193,7 @@ void MultipoleConvergence::compute_energy()
                                         Ojxzz * rjix * rjiz * rjiz * 3.0 + 
                                         Ojyyy * rjiy * rjiy * rjiy       + 
                                         Ojyyz * rjiy * rjiy * rjiz * 3.0 + 
-                                        Ojyzz * rjix * rjix * rjix * 3.0 + 
+                                        Ojyzz * rjiy * rjiz * rjiz * 3.0 + 
                                         Ojzzz * rjiz * rjiz * rjiz       ; 
                         double Oirji3 = Oixxx * rjix * rjix * rjix       +
                                         Oixxy * rjix * rjix * rjiy * 3.0 +
@@ -185,7 +203,7 @@ void MultipoleConvergence::compute_energy()
                                         Oixzz * rjix * rjiz * rjiz * 3.0 + 
                                         Oiyyy * rjiy * rjiy * rjiy       + 
                                         Oiyyz * rjiy * rjiy * rjiz * 3.0 + 
-                                        Oiyzz * rjix * rjix * rjix * 3.0 + 
+                                        Oiyzz * rjiy * rjiz * rjiz * 3.0 + 
                                         Oizzz * rjiz * rjiz * rjiz       ; 
 
                         DQ += -2.0 * (Qjxx * dix * rjix + Qjyy * diy * rjiy + Qjzz * diz * rjiz +
@@ -198,6 +216,22 @@ void MultipoleConvergence::compute_energy()
 
                         // R-5 TERMS
                         if (dmtp_2_->hasHexadecapoles_) {
+                          double Hjxxxx = H_B_[j][ 0]; 
+                          double Hjxxxy = H_B_[j][ 1];
+                          double Hjxxxz = H_B_[j][ 2];
+                          double Hjxxyy = H_B_[j][ 3];
+                          double Hjxxyz = H_B_[j][ 4];
+                          double Hjxxzz = H_B_[j][ 5];
+                          double Hjxyyy = H_B_[j][ 6];
+                          double Hjxyyz = H_B_[j][ 7];
+                          double Hjxyzz = H_B_[j][ 8];
+                          double Hjxzzz = H_B_[j][ 9];
+                          double Hjyyyy = H_B_[j][10];
+                          double Hjyyyz = H_B_[j][11];
+                          double Hjyyzz = H_B_[j][12];
+                          double Hjyzzz = H_B_[j][13];
+                          double Hjzzzz = H_B_[j][14];
+
                           double rji9 = rji7 * rji2;
 
                           double QiQj = Qixx * Qjxx + Qiyy * Qjyy + Qizz * Qjzz +
@@ -209,10 +243,63 @@ void MultipoleConvergence::compute_energy()
                           double Qjrjiy = Qjxy * rjix + Qjyy * rjiy + Qjyz * rjiz;
                           double Qjrjiz = Qjxz * rjix + Qjyz * rjiy + Qjzz * rjiz;
 
+                          double Ojrji2di = Ojxxx * rjix * rjix * dix       +   
+                                            Ojxxy *(rjix * rjix * diy + 2.0 * rjix * rjiy * dix) +
+                                            Ojxxz *(rjix * rjix * diz + 2.0 * rjix * rjiz * dix) +
+                                            Ojxyy *(rjiy * rjiy * dix + 2.0 * rjix * rjiy * diy) +
+                                            Ojxyz *(rjix * rjiy * diz * 2.0 + rjix * rjiz * diy * 2.0 + rjiy * rjiz * dix * 2.0) +
+                                            Ojxzz *(rjiz * rjiz * dix + 2.0 * rjix * rjiz * diz) +
+                                            Ojyyy * rjiy * rjiy * diy       + 
+                                            Ojyyz *(rjiy * rjiy * diz + 2.0 * rjiy * rjiz * diy) +
+                                            Ojyzz *(rjiz * rjiz * diy + 2.0 * rjiy * rjiz * diz) +
+                                            Ojzzz * rjiz * rjiz * diz       ;
+                          double Oirji2dj = Oixxx * rjix * rjix * djx       +   
+                                            Oixxy *(rjix * rjix * djy + 2.0 * rjix * rjiy * djx) +
+                                            Oixxz *(rjix * rjix * djz + 2.0 * rjix * rjiz * djx) +
+                                            Oixyy *(rjiy * rjiy * djx + 2.0 * rjix * rjiy * djy) +
+                                            Oixyz *(rjix * rjiy * djz * 2.0 + rjix * rjiz * djy * 2.0 + rjiy * rjiz * djx * 2.0) +
+                                            Oixzz *(rjiz * rjiz * djx + 2.0 * rjix * rjiz * djz) +
+                                            Oiyyy * rjiy * rjiy * djy       + 
+                                            Oiyyz *(rjiy * rjiy * djz + 2.0 * rjiy * rjiz * djy) +
+                                            Oiyzz *(rjiz * rjiz * djy + 2.0 * rjiy * rjiz * djz) +
+                                            Oizzz * rjiz * rjiz * djz       ;
+                          double Hjrji4 = Hjxxxx * rjix * rjix * rjix * rjix       +     
+                                          Hjxxxy * rjix * rjix * rjix * rjiy * 4.0 +     
+                                          Hjxxxz * rjix * rjix * rjix * rjiz * 4.0 +     
+                                          Hjxxyy * rjix * rjix * rjiy * rjiy * 6.0 +     
+                                          Hjxxyz * rjix * rjix * rjiy * rjiz *12.0 +     
+                                          Hjxxzz * rjix * rjix * rjiz * rjiz * 6.0 +     
+                                          Hjxyyy * rjix * rjiy * rjiy * rjiy * 4.0 +
+                                          Hjxyyz * rjix * rjiy * rjiy * rjiz *12.0 +
+                                          Hjxyzz * rjix * rjiy * rjiz * rjiz *12.0 +
+                                          Hjxzzz * rjix * rjiz * rjiz * rjiz * 4.0 + 
+                                          Hjyyyy * rjiy * rjiy * rjiy * rjiy       +
+                                          Hjyyyz * rjiy * rjiy * rjiy * rjiz * 4.0 +
+                                          Hjyyzz * rjiy * rjiy * rjiz * rjiz * 6.0 +
+                                          Hjyzzz * rjiy * rjiz * rjiz * rjiz * 4.0 +
+                                          Hjzzzz * rjiz * rjiz * rjiz * rjiz       ;
+                          double Hirji4 = Hixxxx * rjix * rjix * rjix * rjix       +     
+                                          Hixxxy * rjix * rjix * rjix * rjiy * 4.0 +     
+                                          Hixxxz * rjix * rjix * rjix * rjiz * 4.0 +     
+                                          Hixxyy * rjix * rjix * rjiy * rjiy * 6.0 +     
+                                          Hixxyz * rjix * rjix * rjiy * rjiz *12.0 +     
+                                          Hixxzz * rjix * rjix * rjiz * rjiz * 6.0 +     
+                                          Hixyyy * rjix * rjiy * rjiy * rjiy * 4.0 +
+                                          Hixyyz * rjix * rjiy * rjiy * rjiz *12.0 +
+                                          Hixyzz * rjix * rjiy * rjiz * rjiz *12.0 +
+                                          Hixzzz * rjix * rjiz * rjiz * rjiz * 4.0 + 
+                                          Hiyyyy * rjiy * rjiy * rjiy * rjiy       +
+                                          Hiyyyz * rjiy * rjiy * rjiy * rjiz * 4.0 +
+                                          Hiyyzz * rjiy * rjiy * rjiz * rjiz * 6.0 +
+                                          Hiyzzz * rjiy * rjiz * rjiz * rjiz * 4.0 +
+                                          Hizzzz * rjiz * rjiz * rjiz * rjiz       ;
+
                           QQ += (35.0 / 3.0) * Qirji2 * Qjrji2 * rji9
                                -(20.0 / 3.0) *(Qirjix * Qjrjix + Qirjiy * Qjrjiy + Qirjiz * Qjrjiz) * rji7
                                +( 2.0 / 3.0) * QiQj * rji5;
-                          DO += -7.0 * (djrji * Qirji2 + dirji * Qjrji2) * rji9;
+                          DO += -7.0 * (djrji * Qirji2 + dirji * Qjrji2) * rji9
+                                +3.0 * (Oirji2dj + Ojrji2di) * rji7;
+                          qH += (qi * Hjrji4 + qj * Hirji4) * rji9;
                         } // EndIfBhasHexadecapoles
                       } // EndIfBhasOctupoles
                     } // EndIfBhasQuadrupoles
@@ -222,13 +309,13 @@ void MultipoleConvergence::compute_energy()
         } // EndForDMTPCentres_A
 
         convergenceList_["qq"]->set(N, qq);
-        convergenceList_["qd"]->set(N, qD);
-        convergenceList_["dd"]->set(N, DD);
+        convergenceList_["qD"]->set(N, qD);
+        convergenceList_["DD"]->set(N, DD);
         convergenceList_["qQ"]->set(N, qQ);
-        convergenceList_["dQ"]->set(N, DQ);
+        convergenceList_["DQ"]->set(N, DQ);
         convergenceList_["qO"]->set(N, qO);
         convergenceList_["QQ"]->set(N, QQ);
-        convergenceList_["dO"]->set(N, DO);
+        convergenceList_["DO"]->set(N, DO);
         convergenceList_["qH"]->set(N, qH);
 
    } // EndForDMTPs
