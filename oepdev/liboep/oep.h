@@ -16,6 +16,7 @@
 #include "../libpsi/integral.h"
 #include "../libpsi/potential.h"
 #include "../lib3d/space3d.h"
+#include "../lib3d/dmtp.h"
 
 namespace oepdev{
 
@@ -25,6 +26,7 @@ using SharedWavefunction = std::shared_ptr<Wavefunction>;
 using SharedBasisSet     = std::shared_ptr<BasisSet>;
 using SharedMatrix       = std::shared_ptr<Matrix>;
 using SharedVector       = std::shared_ptr<Vector>;
+using SharedDMTPole      = std::shared_ptr<DMTPole>;
 /** \addtogroup OEPDEV_OEPS
  * @{
  */
@@ -42,6 +44,8 @@ struct OEPType
     int n;
     /// All OEP's of this type gathered in a matrix form
     SharedMatrix matrix;
+    /// Distributed Multipole Object
+    SharedDMTPole dmtp;
 };
 
 /** \brief Generalized One-Electron Potential: Abstract base.
