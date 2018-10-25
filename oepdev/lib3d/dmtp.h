@@ -35,7 +35,7 @@ class MultipoleConvergence
                          ConvergenceLevel max_clevel = R4);
     virtual ~MultipoleConvergence();
     void compute(Property property = Energy);
-    std::vector<double> level(ConvergenceLevel clevel = R4);
+    std::shared_ptr<psi::Vector> level(ConvergenceLevel clevel = R4);
   protected:
     ConvergenceLevel max_clevel_;
     std::shared_ptr<DMTPole> dmtp_1_;

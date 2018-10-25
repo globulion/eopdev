@@ -73,14 +73,17 @@ def run_oepdev(name, **kwargs):
     # case when OEP build is requested
     if psi4.core.get_global_option("OEPDEV_TARGET").startswith("OEP") \
     or psi4.core.get_global_option("OEPDEV_TARGET").startswith("DMAT") \
-    or psi4.core.get_global_option("OEPDEV_TARGET") == "TEST":
+    or (psi4.core.get_global_option("OEPDEV_TARGET") == "TEST" and 
+        psi4.core.get_global_option("OEPDEV_TEST_MODE") == "MONOMER"):
            
        basis_df_oep = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                puream=ref_wfn.basisset().has_puream())
        ref_wfn.set_basisset("BASIS_DF_OEP", basis_df_oep)
 
-    # case when solver task on wavefunction union is requested
-    else:
+    # case when task on wavefunction union can be requested
+    elif(psi4.core.get_global_option("OEPDEV_TARGET") == "SOLVER") \
+    or  (psi4.core.get_global_option("OEPDEV_TARGET") == "TEST" and
+         psi4.core.get_global_option("OEPDEV_TEST_MODE") == "DIMER"):
       
        molecule_A     = molecule.extract_subsets(1)                                                               
        molecule_B     = molecule.extract_subsets(2)

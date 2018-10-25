@@ -18,7 +18,6 @@ CAMM::CAMM(psi::SharedWavefunction wfn, int n)
   hasOctupoles_ = true;
   hasHexadecapoles_ = true;
   // Allocate memory
-  psi::timer_on("CAMM   Calculation              ");
   this->allocate();
   this->set_sites();
   // Compute necessary integrals
@@ -182,9 +181,6 @@ void CAMM::compute(psi::SharedMatrix D, bool transition, int i) {
  // Change origins from (0, 0, 0) to atomic positions
  this->recenter(centres_, i);
  origins_->copy(centres_);
-
- // Stop the clock
- psi::timer_off("CAMM   Calculation              ");
 }
 
 } // EndNameSpace oepdev

@@ -49,6 +49,9 @@ int read_options(std::string name, Options& options)
         /*- OEPDev test to perform -*/
         options.add_str    ("OEPDEV_TEST_NAME"      , ""                         );
 
+        /*- OEPDev test mode to perform -*/
+        options.add_str    ("OEPDEV_TEST_MODE"      , "MONOMER"                  );
+
 
         // ---> CPHF Global Options  <--- //
 

@@ -64,6 +64,7 @@ set {
     # ==> OEPDEV Routine Specification <== #
     oepdev_target                 test
     oepdev_test_name              DMATPOL_X
+    oepdev_test_mode              monomer
     oepdev_localize               False
     oepdev_enable_trial           False
     # ==> CPHF <== #

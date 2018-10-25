@@ -18,6 +18,7 @@ set {
     # ==> OEPDEV Routine Specification <== #
     oepdev_target                 test
     oepdev_test_name              eri_3_1
+    oepdev_test_mode              monomer
     oepdev_localize               False
     oepdev_enable_trial           False
     # ==> General Psi4 Options <== #

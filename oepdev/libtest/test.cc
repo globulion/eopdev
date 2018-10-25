@@ -4,6 +4,7 @@
 #include "../libutil/cphf.h"
 #include "../libutil/util.h"
 #include "../libutil/unitary_optimizer.h"
+#include "../libutil/wavefunction_union.h"
 #include "../libgefp/gefp.h"
 #include "../lib3d/dmtp.h"
 
@@ -30,6 +31,7 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="UNITARY_OPTIMIZER_4_2") result = test_unitaryOptimizer_4_2();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="SCF_PERTURB") result = test_scf_perturb();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CAMM") result = test_camm();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_ENERGY") result = test_dmtp_energy();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CUSTOM") result = test_custom();
   else throw psi::PSIEXCEPTION("Incorrect test name specified!");
   return result;
@@ -920,8 +922,10 @@ double oepdev::test::Test::test_camm(void) {
                             4.190326E-02, -4.922713E-02,  2.978663E-02,  1.391233E+00, -5.221911E-01, -9.444388E-02, -1.815657E-01, 
                            -1.131796E+00};
   // Compute CAMM
+  psi::timer_on("CAMM   Calculation              ");
   std::shared_ptr<DMTPole> dmtp = oepdev::DMTPole::build("CAMM", wfn_);
   dmtp->compute();
+  psi::timer_off("CAMM   Calculation              ");
   dmtp->charges(0)      ->print();
   dmtp->dipoles(0)      ->print();
   dmtp->quadrupoles(0)  ->print();
@@ -983,4 +987,38 @@ double oepdev::test::Test::test_camm(void) {
 
   return result;
 }
+double oepdev::test::Test::test_dmtp_energy(void) {
+  // Sanity check for multimer test
+  if (options_.get_str("OEPDEV_TEST_MODE") != "DIMER") 
+     throw psi::PSIEXCEPTION("Monomer test mode cannot be used for this test. Set the OEPDEV_TEST_MODE to DIMER");
 
+  // This test is for H2O dimer at 6-31G*
+  double result = 0.0;
+
+  // Create WFN Union
+  std::shared_ptr<oepdev::WavefunctionUnion> wfn_union = std::make_shared<oepdev::WavefunctionUnion>(wfn_, options_);
+
+  // Compute CAMM's for each monomer
+  std::shared_ptr<DMTPole> dmtp_1 = oepdev::DMTPole::build("CAMM", wfn_union->l_wfn(0));
+  std::shared_ptr<DMTPole> dmtp_2 = oepdev::DMTPole::build("CAMM", wfn_union->l_wfn(1));
+  dmtp_1->compute();
+  dmtp_2->compute();
+
+  // Compute interaction energy
+  std::shared_ptr<oepdev::MultipoleConvergence> energy = dmtp_1->energy(dmtp_2, "R-5");
+  double conv_R1 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R1)->get(0);
+  double conv_R2 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R2)->get(0);
+  double conv_R3 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R3)->get(0);
+  double conv_R4 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R4)->get(0);
+  double conv_R5 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R5)->get(0);
+  std::shared_ptr<psi::Vector> conv = std::make_shared<psi::Vector>("Convergence", 5);
+  conv->set(0, conv_R1);  conv->set(1, conv_R2);  conv->set(2, conv_R3);  conv->set(3, conv_R4); conv->set(4, conv_R5);
+  conv->print();
+
+  // Print result
+  std::cout << std::fixed;
+  std::cout.precision(8);
+  std::cout << " Test result= " << result << std::endl;
+
+  return result;
+}

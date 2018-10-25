@@ -38,8 +38,33 @@ void MultipoleConvergence::compute(MultipoleConvergence::Property property)
   if      (property == MultipoleConvergence::Property::Energy   ) {this->compute_energy   ();}
   else if (property == MultipoleConvergence::Property::Potential) {this->compute_potential();}
 }
-std::vector<double> MultipoleConvergence::level(MultipoleConvergence::ConvergenceLevel clevel)
+std::shared_ptr<psi::Vector> MultipoleConvergence::level(MultipoleConvergence::ConvergenceLevel clevel)
 {
+  std::shared_ptr<psi::Vector> result = std::make_shared<psi::Vector>("Result", dmtp_1_->nDMTPs_);
+  // R-1
+  result->add(convergenceList_["qq"]);
+  // R-2
+  if ((clevel > MultipoleConvergence::ConvergenceLevel::R1) && (clevel <= max_clevel_)) {
+      result->add(convergenceList_["qD"]);
+  }
+  // R-3
+  if ((clevel > MultipoleConvergence::ConvergenceLevel::R2) && (clevel <= max_clevel_)) {
+      result->add(convergenceList_["qQ"]);
+      result->add(convergenceList_["DD"]);
+  }
+  // R-4
+  if ((clevel > MultipoleConvergence::ConvergenceLevel::R3) && (clevel <= max_clevel_)) {
+      result->add(convergenceList_["qO"]);
+      result->add(convergenceList_["DQ"]);
+  }
+  // R-5
+  if ((clevel > MultipoleConvergence::ConvergenceLevel::R4) && (clevel <= max_clevel_)) {
+      result->add(convergenceList_["qH"]);
+      result->add(convergenceList_["DO"]);
+      result->add(convergenceList_["QQ"]);
+  }
+
+  return result;
 }
 void MultipoleConvergence::compute_energy()
 {
