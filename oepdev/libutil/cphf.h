@@ -113,7 +113,13 @@ class CPHF {
 
      /// Perturbation X Operator O->V matrices in AO basis
      std::vector<std::shared_ptr<Matrix>> _X_OV_ao_matrices;
- 
+     /// Perturbation X Operator O->V matrices in MO basis
+     std::vector<std::shared_ptr<Matrix>> _X_OV_mo_matrices;
+     /// Electric Field Operator O->V matrices in MO basis
+     std::vector<std::shared_ptr<Matrix>> _F_OV_mo_matrices;
+     /// Transformation from old to new MO's
+     std::shared_ptr<psi::Matrix> _T;
+
    public:
      /// \brief Constructor
      ///
@@ -153,6 +159,30 @@ class CPHF {
 
      /// retrieve the X operator O-V perturbation matrix in AO basis for *x*-th component
      std::shared_ptr<Matrix> X(int x) const {return _X_OV_ao_matrices[x];}
+
+     /// retrieve the X operator O-V perturbation matrix in AO basis for all three Cartesian components
+     std::vector<std::shared_ptr<Matrix>> X(void) const {return _X_OV_ao_matrices;}
+
+     /// retrieve the X operator O-V perturbation matrix in MO basis for *x*-th component
+     std::shared_ptr<Matrix> X_mo(int x) const {return _X_OV_mo_matrices[x];}
+
+     /// retrieve the X operator O-V perturbation matrix in MO basis for all three Cartesian components
+     std::vector<std::shared_ptr<Matrix>> X_mo(void) const {return _X_OV_mo_matrices;}
+
+     /// retrieve the F operator O-V perturbation matrix in MO basis for *x*-th component
+     std::shared_ptr<Matrix> F_mo(int x) const {return _F_OV_mo_matrices[x];}
+
+     /// retrieve the F operator O-V perturbation matrix in MO basis for all three Cartesian components
+     std::vector<std::shared_ptr<Matrix>> F_mo(void) const {return _F_OV_mo_matrices;}
+
+     /// retrieve the transformation from old to new MO's
+     std::shared_ptr<Matrix> T(void) const {return _T;}
+
+     /// retrieve the Cocc
+     std::shared_ptr<Matrix> Cocc(void) const {return _cocc;}
+
+     /// retrieve the Cvir
+     std::shared_ptr<Matrix> Cvir(void) const {return _cvir;}
 
      /// retrieve the *i*-th orbital (LMO) centroid 
      std::shared_ptr<Vector> lmo_centroid(int i) const {return _orbitalCentroids[i];}

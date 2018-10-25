@@ -102,4 +102,5 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libsolver/solver_energy_pauli.cc
                        oepdev/libsolver/solver_energy_ct.cc
                        oepdev/libtest/test.cc
+                       oepdev/libtest/test_custom.cc
                )

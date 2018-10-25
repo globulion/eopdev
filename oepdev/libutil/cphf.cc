@@ -19,7 +19,8 @@ CPHF::CPHF(SharedWavefunction ref_wfn, Options& options) :
             _diis_dim(options.get_int("CPHF_DIIS_DIM")),
             _no(ref_wfn->doccpi()[0]),
             _nv(ref_wfn->nmo()-ref_wfn->doccpi()[0]),
-            _nn(ref_wfn->basisset()->nbf())
+            _nn(ref_wfn->basisset()->nbf()),
+            _T(nullptr)
 {
     if (not (_options.get_str("REFERENCE") == (std::string)"RHF")) {
        throw PSIEXCEPTION("oepdev_util::CPHF now only for RHF wavefunctions!");
@@ -189,33 +190,32 @@ void CPHF::compute(void) {
 
 
     // Transform the Xmo and Fmo vectors to a localized MO basis if requested
-    std::shared_ptr<Matrix> T;
     if (_options.get_bool("CPHF_LOCALIZE") == true) {
         _localizer = Localizer::build(_options.get_str("CPHF_LOCALIZER"), 
                      _wfn->basisset(), _wfn->Ca_subset("AO", "OCC"), _options);
         _localizer->localize();
-        T = _localizer->U();
+        _T = _localizer->U();
     } else {
-        T = std::make_shared<Matrix>("Identity Transformation (no localization of MO's)", _no, _no);
-        T->identity();
+        _T = std::make_shared<Matrix>("Identity Transformation (no localization of MO's)", _no, _no);
+        _T->identity();
     }
 
     // Compute (L)MO centroids
     std::vector<std::shared_ptr<Matrix>> Rmo_LMO;
     for (unsigned int z=0; z<3; z++) {
-         Rmo_LMO.push_back(Matrix::triplet(T, Rmo[z], T, true, false, false));
+         Rmo_LMO.push_back(Matrix::triplet(_T, Rmo[z], _T, true, false, false));
          Rmo_LMO[z]->scale(-1.0);
          Rmo[z].reset();
     }
 
     for (unsigned int z=0; z<3; z++) {
          std::shared_ptr<Matrix> m;
-         m = Matrix::doublet(T, Xmo[z], true, false);
+         m = Matrix::doublet(_T, Xmo[z], true, false);
          Xmo[z]->copy(m);
-         m = Matrix::doublet(T, Fmo[z], true, false);
+         m = Matrix::doublet(_T, Fmo[z], true, false);
          Fmo[z]->copy(m);
     }
-    T->print();
+    _T->print();
 
     // Compute and print the dipole polarizability tensor
 
@@ -266,8 +266,12 @@ void CPHF::compute(void) {
     std::map<int, char> m;
     m[0] = 'X'; m[1] = 'Y'; m[2] = 'Z';
     for (int z=0; z<3; ++z) {
-         _X_OV_ao_matrices.push_back(psi::Matrix::triplet(_cocc, Xmo[z], _cvir, false, false, true));
+         _X_OV_ao_matrices.push_back(psi::Matrix::triplet(psi::Matrix::doublet(_cocc,_T,false,false), Xmo[z], _cvir, false, false, true));
          _X_OV_ao_matrices[z]->set_name(string_sprintf("Perturbation of Operator -%c- (subscpace OCC:VIR, AO basis)", m[z]));
+         _X_OV_mo_matrices.push_back(Xmo[z]);
+         _X_OV_mo_matrices[z]->set_name(string_sprintf("Perturbation of Operator -%c- (subscpace OCC:VIR, MO basis)", m[z]));
+         _F_OV_mo_matrices.push_back(Fmo[z]);
+         _F_OV_mo_matrices[z]->set_name(string_sprintf("Electric Field Operator -%c- (subscpace OCC:VIR, MO basis)", m[z]));
     }
 }
 

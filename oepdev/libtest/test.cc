@@ -30,6 +30,7 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="UNITARY_OPTIMIZER_4_2") result = test_unitaryOptimizer_4_2();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="SCF_PERTURB") result = test_scf_perturb();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CAMM") result = test_camm();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="CUSTOM") result = test_custom();
   else throw psi::PSIEXCEPTION("Incorrect test name specified!");
   return result;
 }
@@ -400,94 +401,6 @@ double oepdev::test::Test::test_dmatPolX(void)
   // Return
   return r_sum;
 }
-//double oepdev::test::Test::test_dpolX(void)
-//{
-//  /* In field perturbation nuclear dipole - field interaction was not added to the total energy */
-//  //std::shared_ptr<oepdev::CPHF> solver = std::make_shared<oepdev::CPHF>(wfn_, options_);
-//  //solver->compute();
-//
-//  // Accumulate errors
-//  double r_sum = 0.0;
-//
-//  // Compute dipole integrals
-//  std::vector<std::shared_ptr<psi::Matrix>> Mao;
-//  int nbf = wfn_->basisset()->nbf();
-//  for (int z=0;z<3;++z) Mao.push_back(std::make_shared<psi::Matrix>("",nbf,nbf));
-//  psi::IntegralFactory ints(wfn_->basisset());
-//  std::shared_ptr<psi::OneBodyAOInt> dipInt(ints.ao_dipole());
-//  dipInt->compute(Mao);
-//
-//  // Compute numerical derivatives of dipole integrals
-//  const double df = 0.0005; double h = 1./(2.0*df);
-//  std::shared_ptr<psi::SuperFunctional> func = oepdev::create_superfunctional("HF", options_);
-//  std::shared_ptr<psi::Matrix> Ca_x1, Ca_x2, Ca_y1, Ca_y2, Ca_z1, Ca_z2;
-// {std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, func, options_, wfn_->psio());
-//  scf->set_perturbation( df   , 0.000, 0.000);
-//  scf->compute_energy(); Ca_x1 = std::make_shared<psi::Matrix>(scf->Ca());}
-// {std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, func, options_, wfn_->psio());
-//  scf->set_perturbation(-df   , 0.000, 0.000);
-//  scf->compute_energy(); Ca_x2 = std::make_shared<psi::Matrix>(scf->Ca());}
-// {std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, func, options_, wfn_->psio());
-//  scf->set_perturbation( 0.000, df   , 0.000); 
-//  scf->compute_energy(); Ca_y1 = std::make_shared<psi::Matrix>(scf->Ca());}
-// {std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, func, options_, wfn_->psio());
-//  scf->set_perturbation( 0.000,-df   , 0.000);
-//  scf->compute_energy(); Ca_y2 = std::make_shared<psi::Matrix>(scf->Ca());}
-// {std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, func, options_, wfn_->psio());
-//  scf->set_perturbation( 0.000, 0.000, df   );
-//  scf->compute_energy(); Ca_z1 = std::make_shared<psi::Matrix>(scf->Ca());}
-// {std::shared_ptr<oepdev::RHFPerturbed> scf = std::make_shared<oepdev::RHFPerturbed>(wfn_, func, options_, wfn_->psio());
-//  scf->set_perturbation( 0.000, 0.000,-df   );
-//  scf->compute_energy(); Ca_z2 = std::make_shared<psi::Matrix>(scf->Ca());}
-//
-//  std::shared_ptr<psi::Matrix> M_x_x1 = psi::Matrix::triplet(Ca_x1, Mao[0], Ca_x1, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_x_x2 = psi::Matrix::triplet(Ca_x2, Mao[0], Ca_x2, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_y_x1 = psi::Matrix::triplet(Ca_x1, Mao[1], Ca_x1, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_y_x2 = psi::Matrix::triplet(Ca_x2, Mao[1], Ca_x2, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_z_x1 = psi::Matrix::triplet(Ca_x1, Mao[2], Ca_x1, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_z_x2 = psi::Matrix::triplet(Ca_x2, Mao[2], Ca_x2, true, false, false);
-//  //
-//  std::shared_ptr<psi::MaRrix> M_x_y1 = psi::Matrix::triplet(Ca_y1, Mao[0], Ca_y1, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_x_y2 = psi::Matrix::triplet(Ca_y2, Mao[0], Ca_y2, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_y_y1 = psi::Matrix::triplet(Ca_y1, Mao[1], Ca_y1, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_y_y2 = psi::Matrix::triplet(Ca_y2, Mao[1], Ca_y2, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_z_y1 = psi::Matrix::triplet(Ca_y1, Mao[2], Ca_y1, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_z_y2 = psi::Matrix::triplet(Ca_y2, Mao[2], Ca_y2, true, false, false);
-//  //
-//  std::shared_ptr<psi::MaRrix> M_x_z1 = psi::Matrix::triplet(Ca_z1, Mao[0], Ca_z1, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_x_z2 = psi::Matrix::triplet(Ca_z2, Mao[0], Ca_z2, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_y_z1 = psi::Matrix::triplet(Ca_z1, Mao[1], Ca_z1, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_y_z2 = psi::Matrix::triplet(Ca_z2, Mao[1], Ca_z2, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_z_z1 = psi::Matrix::triplet(Ca_z1, Mao[2], Ca_z1, true, false, false);
-//  std::shared_ptr<psi::Matrix> M_z_z2 = psi::Matrix::triplet(Ca_z2, Mao[2], Ca_z2, true, false, false);
-//  //
-//  // derivatives
-//  //
-//  std::shared_ptr<psi::MaRrix> dM_x_x = std::make_shared<psi::Matrix>(M_x_x1); dM_x_x->subtract(M_x_x2); dM_x_x->scale(h);
-//  std::shared_ptr<psi::MaRrix> dM_x_y = std::make_shared<psi::Matrix>(M_x_y1); dM_x_y->subtract(M_x_y2); dM_x_y->scale(h);
-//  std::shared_ptr<psi::MaRrix> dM_x_z = std::make_shared<psi::Matrix>(M_x_z1); dM_x_z->subtract(M_x_z2); dM_x_z->scale(h);
-//  //
-//  std::shared_ptr<psi::MaRrix> dM_y_x = std::make_shared<psi::Matrix>(M_y_x1); dM_y_x->subtract(M_y_x2); dM_y_x->scale(h);
-//  std::shared_ptr<psi::MaRrix> dM_y_y = std::make_shared<psi::Matrix>(M_y_y1); dM_y_y->subtract(M_y_y2); dM_y_y->scale(h);
-//  std::shared_ptr<psi::MaRrix> dM_y_z = std::make_shared<psi::Matrix>(M_y_z1); dM_y_z->subtract(M_y_z2); dM_y_z->scale(h);
-//  //
-//  std::shared_ptr<psi::MaRrix> dM_z_x = std::make_shared<psi::Matrix>(M_z_x1); dM_z_x->subtract(M_z_x2); dM_z_x->scale(h);
-//  std::shared_ptr<psi::MaRrix> dM_z_y = std::make_shared<psi::Matrix>(M_z_y1); dM_z_y->subtract(M_z_y2); dM_y_y->scale(h);
-//  std::shared_ptr<psi::MaRrix> dM_z_z = std::make_shared<psi::Matrix>(M_z_z1); dM_z_z->subtract(M_z_z2); dM_z_z->scale(h);
-//
-//  // Compute R tensor and minimize Z[X] to get X
-//  // ...
-//  // Compute the distributed polarizabilities and XPOL-LMO centroids
-//  // ...
-//
-//  // Print
-//  std::cout << std::fixed;
-//  std::cout.precision(8);
-//  std::cout << " Test result= " << r_sum << std::endl;
-//
-//  // Return
-//  return r_sum;
-//}
 double oepdev::test::Test::test_eri_2_2(void)
 {
   // Sizing

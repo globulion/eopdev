@@ -83,6 +83,8 @@ class Test
    /// Test the oepdev::CAMM class
    double test_camm(void);
 
+   /// Test the custom code
+   double test_custom(void);
 
 };
 
