@@ -159,33 +159,35 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 
     /** \brief Evaluate the generalized interaction energy.
      *
-     *  @param other - interacting DMTP distribution. 
-     *  @param type  - convergence level (see below).
+     *  @param other       - interacting DMTP distribution. 
+     *  @param max_clevel  - maximum convergence level (see below).
      *  @return The generalized interaction energy convergence (A.U. units)
      *
      *  The following convergence levels are available:
-     *    - `R-1`: includes qq terms.
-     *    - `R-2`: includes dq terms and above.
-     *    - `R-3`: includes qQ, dd terms and above.
-     *    - `R-4`: includes qO, dQ terms and above. 
-     *    - `R-5`: includes qH, dO, QQ terms and above.
+     *    - `MultipoleConvergence::R1`: includes qq terms.
+     *    - `MultipoleConvergence::R2`: includes dq terms and above.
+     *    - `MultipoleConvergence::R3`: includes qQ, dd terms and above.
+     *    - `MultipoleConvergence::R4`: includes qO, dQ terms and above. 
+     *    - `MultipoleConvergence::R5`: includes qH, dO, QQ terms and above.
      */
-    std::shared_ptr<MultipoleConvergence> energy(std::shared_ptr<DMTPole> other, const std::string& type = "R-5");
+    std::shared_ptr<MultipoleConvergence> energy(std::shared_ptr<DMTPole> other, 
+                                                 MultipoleConvergence::ConvergenceLevel max_clevel = MultipoleConvergence::R5);
 
     /** \brief Evaluate the generalized potential.
      *
-     *  @param other - interacting DMTP distribution. 
-     *  @param type  - convergence level (see below).
+     *  @param other       - interacting DMTP distribution. 
+     *  @param max_clevel  - maximum convergence level (see below).
      *  @return The generalized potential convergence (A.U. units)
      *
      *  The following convergence levels are available:
-     *    - `R-1`: includes qq terms.
-     *    - `R-2`: includes dq terms and above.
-     *    - `R-3`: includes qQ, dd terms and above.
-     *    - `R-4`: includes qO, dQ terms and above. 
-     *    - `R-5`: includes qH, dO, QQ terms and above.
+     *    - `MultipoleConvergence::R1`: includes qq terms.
+     *    - `MultipoleConvergence::R2`: includes dq terms and above.
+     *    - `MultipoleConvergence::R3`: includes qQ, dd terms and above.
+     *    - `MultipoleConvergence::R4`: includes qO, dQ terms and above. 
+     *    - `MultipoleConvergence::R5`: includes qH, dO, QQ terms and above.
      */
-     std::shared_ptr<MultipoleConvergence> potential(std::shared_ptr<DMTPole> other, const std::string& type = "R-5");
+     std::shared_ptr<MultipoleConvergence> potential(std::shared_ptr<DMTPole> other,
+                                                 MultipoleConvergence::ConvergenceLevel max_clevel = MultipoleConvergence::R5);
 
 
   protected:

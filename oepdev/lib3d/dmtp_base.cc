@@ -110,39 +110,75 @@ void MultipoleConvergence::compute_energy()
                  diy = D_A_[i][1];
                  diz = D_A_[i][2];
                  if (dmtp_1_->hasQuadrupoles_) {
-                     Qixx = Q_A_[i][0]; 
-                     Qixy = Q_A_[i][1];
-                     Qixz = Q_A_[i][2];
-                     Qiyy = Q_A_[i][3];
-                     Qiyz = Q_A_[i][4];
-                     Qizz = Q_A_[i][5];
+                     Qixx = Q_A_[i][0] * 1.5; 
+                     Qixy = Q_A_[i][1] * 1.5;
+                     Qixz = Q_A_[i][2] * 1.5;
+                     Qiyy = Q_A_[i][3] * 1.5;
+                     Qiyz = Q_A_[i][4] * 1.5;
+                     Qizz = Q_A_[i][5] * 1.5;
+                     double t = (Qixx + Qiyy + Qizz) / 3.0;
+                     Qixx -= t; Qiyy -= t; Qizz -= t;
                      if (dmtp_1_->hasOctupoles_) {
-                         Oixxx = O_A_[i][0];
-                         Oixxy = O_A_[i][1]; 
-                         Oixxz = O_A_[i][2]; 
-                         Oixyy = O_A_[i][3]; 
-                         Oixyz = O_A_[i][4]; 
-                         Oixzz = O_A_[i][5]; 
-                         Oiyyy = O_A_[i][6]; 
-                         Oiyyz = O_A_[i][7]; 
-                         Oiyzz = O_A_[i][8]; 
-                         Oizzz = O_A_[i][9]; 
+                         Oixxx = O_A_[i][0] * 2.5;
+                         Oixxy = O_A_[i][1] * 2.5; 
+                         Oixxz = O_A_[i][2] * 2.5; 
+                         Oixyy = O_A_[i][3] * 2.5; 
+                         Oixyz = O_A_[i][4] * 2.5; 
+                         Oixzz = O_A_[i][5] * 2.5; 
+                         Oiyyy = O_A_[i][6] * 2.5; 
+                         Oiyyz = O_A_[i][7] * 2.5; 
+                         Oiyzz = O_A_[i][8] * 2.5; 
+                         Oizzz = O_A_[i][9] * 2.5; 
+                         double tx = (Oixxx + Oixyy + Oixzz) / 5.0;
+                         double ty = (Oixxy + Oiyyy + Oiyzz) / 5.0;
+                         double tz = (Oixxz + Oiyyz + Oizzz) / 5.0;
+                         Oixxx -= tx * 3.0;
+                         Oixxy -= ty;
+                         Oixxz -= tz;
+                         Oixyy -= tx;
+                         Oixzz -= tx;
+                         Oiyyy -= ty * 3.0;
+                         Oiyyz -= tz;
+                         Oiyzz -= ty;
+                         Oizzz -= tz * 3.0;
                          if (dmtp_1_->hasHexadecapoles_) {
-                             Hixxxx = H_A_[i][ 0]; 
-                             Hixxxy = H_A_[i][ 1];
-                             Hixxxz = H_A_[i][ 2];
-                             Hixxyy = H_A_[i][ 3];
-                             Hixxyz = H_A_[i][ 4];
-                             Hixxzz = H_A_[i][ 5];
-                             Hixyyy = H_A_[i][ 6];
-                             Hixyyz = H_A_[i][ 7];
-                             Hixyzz = H_A_[i][ 8];
-                             Hixzzz = H_A_[i][ 9];
-                             Hiyyyy = H_A_[i][10];
-                             Hiyyyz = H_A_[i][11];
-                             Hiyyzz = H_A_[i][12];
-                             Hiyzzz = H_A_[i][13];
-                             Hizzzz = H_A_[i][14];
+                             Hixxxx = H_A_[i][ 0] * 4.375; 
+                             Hixxxy = H_A_[i][ 1] * 4.375;
+                             Hixxxz = H_A_[i][ 2] * 4.375;
+                             Hixxyy = H_A_[i][ 3] * 4.375;
+                             Hixxyz = H_A_[i][ 4] * 4.375;
+                             Hixxzz = H_A_[i][ 5] * 4.375;
+                             Hixyyy = H_A_[i][ 6] * 4.375;
+                             Hixyyz = H_A_[i][ 7] * 4.375;
+                             Hixyzz = H_A_[i][ 8] * 4.375;
+                             Hixzzz = H_A_[i][ 9] * 4.375;
+                             Hiyyyy = H_A_[i][10] * 4.375;
+                             Hiyyyz = H_A_[i][11] * 4.375;
+                             Hiyyzz = H_A_[i][12] * 4.375;
+                             Hiyzzz = H_A_[i][13] * 4.375;
+                             Hizzzz = H_A_[i][14] * 4.375;
+                             double txx = (Hixxxx + Hixxyy + Hixxzz) / 7.0;
+                             double txy = (Hixxxy + Hixyyy + Hixyzz) / 7.0;
+                             double txz = (Hixxxz + Hixyyz + Hixzzz) / 7.0;
+                             double tyy = (Hixxyy + Hiyyyy + Hiyyzz) / 7.0;
+                             double tyz = (Hixxyz + Hiyyyz + Hiyzzz) / 7.0;
+                             double tzz = (Hixxzz + Hiyyzz + Hizzzz) / 7.0; 
+                             double th  = (txx + tyy + tzz) / 5.0;
+                             Hixxxx-= 6.0 * txx - 3.0 * th;
+                             Hixxxy-= 3.0 * txy;
+                             Hixxxz-= 3.0 * txz;
+                             Hixxyy-= txx + tyy - th;
+                             Hixxyz-= tyz;
+                             Hixxzz-= txx + tzz - th;
+                             Hixyyy-= 3.0 * txy;
+                             Hixyyz-= txz; 
+                             Hixyzz-= txy;
+                             Hixzzz-= 3.0 * txz;
+                             Hiyyyy-= 6.0 * tyy - 3.0 * th;
+                             Hiyyyz-= 3.0 * tyz;
+                             Hiyyzz-= tyy + tzz - th;
+                             Hiyzzz-= 3.0 * tyz;
+                             Hizzzz-= 6.0 * tzz - 3.0 * th;
                          }
                      }
                  }
@@ -179,12 +215,14 @@ void MultipoleConvergence::compute_energy()
                                                                                                          
                     // R-3 TERMS
                     if (dmtp_2_->hasQuadrupoles_) {
-                      double Qjxx = Q_B_[j][0];                                                              
-                      double Qjxy = Q_B_[j][1];
-                      double Qjxz = Q_B_[j][2];
-                      double Qjyy = Q_B_[j][3];
-                      double Qjyz = Q_B_[j][4];
-                      double Qjzz = Q_B_[j][5];
+                      double Qjxx = Q_B_[j][0] * 1.5;
+                      double Qjxy = Q_B_[j][1] * 1.5;
+                      double Qjxz = Q_B_[j][2] * 1.5;
+                      double Qjyy = Q_B_[j][3] * 1.5;
+                      double Qjyz = Q_B_[j][4] * 1.5;
+                      double Qjzz = Q_B_[j][5] * 1.5;
+                      double t = (Qjxx + Qjyy + Qjzz) / 3.0;
+                      Qjxx -= t; Qjyy -= t; Qjzz -= t;
                                                                                                            
                       double rji5 = rji3 * rji2;
                       double didj = dix * djx + diy * djy + diz * djz;
@@ -199,16 +237,28 @@ void MultipoleConvergence::compute_energy()
                       // R-4 TERMS
                       if (dmtp_2_->hasOctupoles_) {
                         double rji7 = rji5 * rji2;                                                            
-                        double Ojxxx = O_B_[j][0];
-                        double Ojxxy = O_B_[j][1]; 
-                        double Ojxxz = O_B_[j][2]; 
-                        double Ojxyy = O_B_[j][3]; 
-                        double Ojxyz = O_B_[j][4]; 
-                        double Ojxzz = O_B_[j][5]; 
-                        double Ojyyy = O_B_[j][6]; 
-                        double Ojyyz = O_B_[j][7]; 
-                        double Ojyzz = O_B_[j][8]; 
-                        double Ojzzz = O_B_[j][9]; 
+                        double Ojxxx = O_B_[j][0] * 2.5;
+                        double Ojxxy = O_B_[j][1] * 2.5; 
+                        double Ojxxz = O_B_[j][2] * 2.5; 
+                        double Ojxyy = O_B_[j][3] * 2.5; 
+                        double Ojxyz = O_B_[j][4] * 2.5; 
+                        double Ojxzz = O_B_[j][5] * 2.5; 
+                        double Ojyyy = O_B_[j][6] * 2.5; 
+                        double Ojyyz = O_B_[j][7] * 2.5; 
+                        double Ojyzz = O_B_[j][8] * 2.5; 
+                        double Ojzzz = O_B_[j][9] * 2.5; 
+                        double tx = (Ojxxx + Ojxyy + Ojxzz) / 5.0;
+                        double ty = (Ojxxy + Ojyyy + Ojyzz) / 5.0;
+                        double tz = (Ojxxz + Ojyyz + Ojzzz) / 5.0;
+                        Ojxxx -= tx * 3.0;
+                        Ojxxy -= ty;
+                        Ojxxz -= tz;
+                        Ojxyy -= tx;
+                        Ojxzz -= tx;
+                        Ojyyy -= ty * 3.0;
+                        Ojyyz -= tz;
+                        Ojyzz -= ty;
+                        Ojzzz -= tz * 3.0;
 
                         double Ojrji3 = Ojxxx * rjix * rjix * rjix       +
                                         Ojxxy * rjix * rjix * rjiy * 3.0 +
@@ -232,30 +282,55 @@ void MultipoleConvergence::compute_energy()
                                         Oizzz * rjiz * rjiz * rjiz       ; 
 
                         DQ += -2.0 * (Qjxx * dix * rjix + Qjyy * diy * rjiy + Qjzz * diz * rjiz +
-                               2.0 * (Qjxy * dix * rjiy + Qjxz * dix * rjiz + Qjyz * diy * rjiz) 
-                              -       Qixx * djx * rjix + Qiyy * djy * rjiy + Qizz * djz * rjiz -
-                               2.0 * (Qixy * djx * rjiy + Qixz * djx * rjiz + Qiyz * djy * rjiz) 
-                                    ) * rji5
+                                      Qjxy *(dix * rjiy + diy * rjix) +
+                                      Qjxz *(dix * rjiz + diz * rjix) +
+                                      Qjyz *(diy * rjiz + diz * rjiy) -
+                                      Qixx * djx * rjix - Qiyy * djy * rjiy - Qizz * djz * rjiz -
+                                      Qixy *(djx * rjiy + djy * rjix) -
+                                      Qixz *(djx * rjiz + djz * rjix) -
+                                      Qiyz *(djy * rjiz + djz * rjiy)  ) * rji5
                               +5.0 * ( dirji * Qjrji2 - djrji * Qirji2 ) * rji7;
                         qO += ( qj * Oirji3 - qi * Ojrji3 ) * rji7;
 
                         // R-5 TERMS
                         if (dmtp_2_->hasHexadecapoles_) {
-                          double Hjxxxx = H_B_[j][ 0]; 
-                          double Hjxxxy = H_B_[j][ 1];
-                          double Hjxxxz = H_B_[j][ 2];
-                          double Hjxxyy = H_B_[j][ 3];
-                          double Hjxxyz = H_B_[j][ 4];
-                          double Hjxxzz = H_B_[j][ 5];
-                          double Hjxyyy = H_B_[j][ 6];
-                          double Hjxyyz = H_B_[j][ 7];
-                          double Hjxyzz = H_B_[j][ 8];
-                          double Hjxzzz = H_B_[j][ 9];
-                          double Hjyyyy = H_B_[j][10];
-                          double Hjyyyz = H_B_[j][11];
-                          double Hjyyzz = H_B_[j][12];
-                          double Hjyzzz = H_B_[j][13];
-                          double Hjzzzz = H_B_[j][14];
+                          double Hjxxxx = H_B_[j][ 0] * 4.375; 
+                          double Hjxxxy = H_B_[j][ 1] * 4.375;
+                          double Hjxxxz = H_B_[j][ 2] * 4.375;
+                          double Hjxxyy = H_B_[j][ 3] * 4.375;
+                          double Hjxxyz = H_B_[j][ 4] * 4.375;
+                          double Hjxxzz = H_B_[j][ 5] * 4.375;
+                          double Hjxyyy = H_B_[j][ 6] * 4.375;
+                          double Hjxyyz = H_B_[j][ 7] * 4.375;
+                          double Hjxyzz = H_B_[j][ 8] * 4.375;
+                          double Hjxzzz = H_B_[j][ 9] * 4.375;
+                          double Hjyyyy = H_B_[j][10] * 4.375;
+                          double Hjyyyz = H_B_[j][11] * 4.375;
+                          double Hjyyzz = H_B_[j][12] * 4.375;
+                          double Hjyzzz = H_B_[j][13] * 4.375;
+                          double Hjzzzz = H_B_[j][14] * 4.375;
+                          double txx = (Hjxxxx + Hjxxyy + Hjxxzz) / 7.0;
+                          double txy = (Hjxxxy + Hjxyyy + Hjxyzz) / 7.0;
+                          double txz = (Hjxxxz + Hjxyyz + Hjxzzz) / 7.0;
+                          double tyy = (Hjxxyy + Hjyyyy + Hjyyzz) / 7.0;
+                          double tyz = (Hjxxyz + Hjyyyz + Hjyzzz) / 7.0;
+                          double tzz = (Hjxxzz + Hjyyzz + Hjzzzz) / 7.0; 
+                          double th  = (txx + tyy + tzz) / 5.0;
+                          Hjxxxx-= 6.0 * txx - 3.0 * th;
+                          Hjxxxy-= 3.0 * txy;
+                          Hjxxxz-= 3.0 * txz;
+                          Hjxxyy-= txx + tyy - th;
+                          Hjxxyz-= tyz;
+                          Hjxxzz-= txx + tzz - th;
+                          Hjxyyy-= 3.0 * txy;
+                          Hjxyyz-= txz; 
+                          Hjxyzz-= txy;
+                          Hjxzzz-= 3.0 * txz;
+                          Hjyyyy-= 6.0 * tyy - 3.0 * th;
+                          Hjyyyz-= 3.0 * tyz;
+                          Hjyyzz-= tyy + tzz - th;
+                          Hjyzzz-= 3.0 * tyz;
+                          Hjzzzz-= 6.0 * tzz - 3.0 * th;
 
                           double rji9 = rji7 * rji2;
 
@@ -322,7 +397,7 @@ void MultipoleConvergence::compute_energy()
                           QQ += (35.0 / 3.0) * Qirji2 * Qjrji2 * rji9
                                -(20.0 / 3.0) *(Qirjix * Qjrjix + Qirjiy * Qjrjiy + Qirjiz * Qjrjiz) * rji7
                                +( 2.0 / 3.0) * QiQj * rji5;
-                          DO += -7.0 * (djrji * Qirji2 + dirji * Qjrji2) * rji9
+                          DO += -7.0 * (djrji * Oirji3 + dirji * Ojrji3) * rji9
                                 +3.0 * (Oirji2dj + Ojrji2di) * rji7;
                           qH += (qi * Hjrji4 + qj * Hirji4) * rji9;
                         } // EndIfBhasHexadecapoles
@@ -661,15 +736,15 @@ void DMTPole::recenter(psi::SharedMatrix new_origins)
  for (int i=0; i<nDMTPs_; ++i) this->recenter(new_origins, i);
  origins_->copy(new_origins);
 }
-std::shared_ptr<MultipoleConvergence> DMTPole::energy(std::shared_ptr<DMTPole> other, const std::string& type)
+std::shared_ptr<MultipoleConvergence> DMTPole::energy(std::shared_ptr<DMTPole> other, MultipoleConvergence::ConvergenceLevel max_clevel)
 {
-  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), other);
+  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), other, max_clevel);
   convergence->compute(MultipoleConvergence::Energy);
   return convergence;
 }
-std::shared_ptr<MultipoleConvergence> DMTPole::potential(std::shared_ptr<DMTPole> other, const std::string& type)
+std::shared_ptr<MultipoleConvergence> DMTPole::potential(std::shared_ptr<DMTPole> other, MultipoleConvergence::ConvergenceLevel max_clevel)
 {
-  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), other);
+  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), other, max_clevel);
   convergence->compute(MultipoleConvergence::Potential);
   //std::vector<double> potentials;
   //for (int i=0; i<nDMTPs_; ++i) potentials.push_back(0.0);
