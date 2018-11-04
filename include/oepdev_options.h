@@ -3,6 +3,7 @@
 /** @file oepdev_options.h */
 
 namespace psi{
+namespace pybind_plugin{
 
 /** \brief Options for the OEPDev plugin.
  *
@@ -136,6 +137,7 @@ int read_options(std::string name, Options& options)
     return true;
 };
 
+}
 } // EndNameSpace psi
 
 #endif // oepdev_include_oepdev_options_h
