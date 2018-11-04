@@ -4,7 +4,6 @@
 
 #include<cstdio>
 
-#include "psi4/libparallel/parallel.h"
 #include "psi4/libmints/basisset.h"
 #include "psi4/libmints/integral.h"
 

@@ -8,7 +8,6 @@
 #include "../../include/oepdev_files.h"
 
 #include "psi4/psi4-dec.h"
-#include "psi4/libparallel/parallel.h"
 #include "psi4/liboptions/liboptions.h"
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/matrix.h"

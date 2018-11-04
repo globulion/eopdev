@@ -6,7 +6,6 @@
 #include<string>
 #include<vector>
 
-#include "psi4/libparallel/parallel.h"
 #include "psi4/libciomr/libciomr.h"
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/matrix.h"
