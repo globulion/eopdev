@@ -208,7 +208,7 @@ double oepdev::test::Test::test_dmatPol(void)
   double Fz =-0.01;
   double F[3] = {Fx, Fy, Fz};
 
-  std::shared_ptr<psi::Wavefunction> scf_base = solve_scf(wfn_->molecule(),wfn_->basisset(),
+  std::shared_ptr<psi::Wavefunction> scf_base = solve_scf(wfn_->molecule(),wfn_->basisset(),wfn_->get_basisset("DF_BASIS_SCF"),
                       oepdev::create_superfunctional("HF", options_),
                       options_, wfn_->psio());
   std::shared_ptr<psi::scf::RHF> scf = std::make_shared<psi::scf::RHF>(scf_base, 

@@ -1,4 +1,6 @@
 #include "space3d.h"
+#include "psi4/libpsi4util/PsiOutStream.h"
+#include "psi4/libpsi4util/process.h"
 
 
 namespace oepdev{
@@ -291,7 +293,7 @@ void CubePointsCollection3D::write_cube_file(psi::SharedMatrix v, const std::str
     //if (filesystem::path(filepath_).make_absolute().is_directory() == false) {
         printf("Filepath \"%s\" is not valid.  Please create this directory.\n",filepath_.c_str());
         outfile->Printf("Filepath \"%s\" is not valid.  Please create this directory.\n",filepath_.c_str());
-        outfile->Flush();
+        //outfile->Flush(); // -> incompatible with psi4-1.2 and newer
         exit(EXIT_FAILURE);
     }
 
@@ -363,7 +365,7 @@ void Field3D::common_init()
 {
   primary_= wfn_->basisset();
   nbf_    = wfn_->basisset()->nbf();
-  fact_   = std::make_shared<psi::IntegralFactory>(primary_, primary_);
+  fact_   = std::make_shared<psi::IntegralFactory>(primary_);
   pot_    = std::make_shared<psi::Matrix>("POT", nbf_, nbf_);
   potInt_ = std::make_shared<PotentialInt>(fact_->spherical_transform(), primary_, primary_, 0);
   isComputed_ = false;

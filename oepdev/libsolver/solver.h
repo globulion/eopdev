@@ -12,6 +12,7 @@
 
 #include "psi4/libmints/potential.h"
 #include "psi4/libmints/integral.h"
+#include "psi4/libpsi4util/PsiOutStream.h"
 
 #include "../libutil/wavefunction_union.h"
 #include "../libutil/integrals_iter.h"

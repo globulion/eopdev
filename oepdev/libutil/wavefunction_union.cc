@@ -1,5 +1,6 @@
 #include "util.h"
 #include "wavefunction_union.h"
+#include "psi4/libpsi4util/PsiOutStream.h"
 
 namespace oepdev{
 
@@ -42,10 +43,12 @@ void WavefunctionUnion::common_init(SharedWavefunction ref_wfn) {
    SharedBasisSet primary_2  = basissets_["BASIS_2"];
    SharedBasisSet auxiliary_1  = basissets_["BASIS_DF_OEP_1"];
    SharedBasisSet auxiliary_2  = basissets_["BASIS_DF_OEP_2"];
+   SharedBasisSet auxiliary_df_1  = basissets_["BASIS_DF_SCF_1"];
+   SharedBasisSet auxiliary_df_2  = basissets_["BASIS_DF_SCF_2"];
    SharedBasisSet intermediate_1  = basissets_["BASIS_INT_OEP_1"];
    SharedBasisSet intermediate_2  = basissets_["BASIS_INT_OEP_2"];
-   SharedWavefunction wfn_1  = solve_scf(molecule_1, primary_1, functional, options_, psio_);
-   SharedWavefunction wfn_2  = solve_scf(molecule_2, primary_2, functional, options_, psio_);
+   SharedWavefunction wfn_1  = solve_scf(molecule_1, primary_1, auxiliary_df_1, functional, options_, psio_);
+   SharedWavefunction wfn_2  = solve_scf(molecule_2, primary_2, auxiliary_df_2, functional, options_, psio_);
    int nvir_1                = wfn_1->nmo() - wfn_1->doccpi()[0];
    int nvir_2                = wfn_2->nmo() - wfn_2->doccpi()[0];
 
@@ -289,76 +292,76 @@ void WavefunctionUnion::transform_integrals()
     spaces.push_back(space_12o);
     integrals_ = std::make_shared<IntegralTransform>(shared_from_this(), 
                                                      spaces,
-                                                     IntegralTransform::Restricted,
-                                                     IntegralTransform::DPDOnly,
-                                                     IntegralTransform::QTOrder,
-                                                     IntegralTransform::None);
+                                                     IntegralTransform::TransformationType::Restricted,
+                                                     IntegralTransform::OutputType::DPDOnly,
+                                                     IntegralTransform::MOOrdering::QTOrder,
+                                                     IntegralTransform::FrozenOrbitals::None);
 
     integrals_->set_keep_dpd_so_ints(true);
 
     // Trans (11|11)
     timer_on("Trans (11|11)");
-    integrals_->transform_tei(space_1o, space_1o, space_1o, space_1o, IntegralTransform::MakeAndKeep);
+    integrals_->transform_tei(space_1o, space_1o, space_1o, space_1o, IntegralTransform::HalfTrans::MakeAndKeep);
     timer_off("Trans (11|11)");
 
     // Trans (11|12)
     timer_on("Trans (11|12)");
-    integrals_->transform_tei(space_1o, space_1o, space_1o, space_2o, IntegralTransform::ReadAndKeep);
+    integrals_->transform_tei(space_1o, space_1o, space_1o, space_2o, IntegralTransform::HalfTrans::ReadAndKeep);
     timer_off("Trans (11|12)");
 
     // Trans (11|22)
     timer_on("Trans (11|22)");
-    integrals_->transform_tei(space_1o, space_1o, space_2o, space_2o, IntegralTransform::ReadAndNuke);
+    integrals_->transform_tei(space_1o, space_1o, space_2o, space_2o, IntegralTransform::HalfTrans::ReadAndNuke);
     timer_off("Trans (11|22)");
 
     // Trans (12|12)
     timer_on("Trans (12|12)");
-    integrals_->transform_tei(space_1o, space_2o, space_1o, space_2o, IntegralTransform::MakeAndKeep);
+    integrals_->transform_tei(space_1o, space_2o, space_1o, space_2o, IntegralTransform::HalfTrans::MakeAndKeep);
     timer_off("Trans (12|12)");
 
     // Trans (12|22)
     timer_on("Trans (12|22)");
-    integrals_->transform_tei(space_1o, space_2o, space_2o, space_2o, IntegralTransform::ReadAndNuke);
+    integrals_->transform_tei(space_1o, space_2o, space_2o, space_2o, IntegralTransform::HalfTrans::ReadAndNuke);
     timer_off("Trans (12|22)");
 
     // Trans (22|22)
     timer_on("Trans (22|22)");
-    integrals_->transform_tei(space_2o, space_2o, space_2o, space_2o, IntegralTransform::MakeAndNuke);
+    integrals_->transform_tei(space_2o, space_2o, space_2o, space_2o, IntegralTransform::HalfTrans::MakeAndNuke);
     timer_off("Trans (22|22)");
 
     // Trans (OO|OO)
     timer_on("Trans (OO|OO)");
-    integrals_->transform_tei(space_12o, space_12o, space_12o, space_12o, IntegralTransform::MakeAndNuke);
+    integrals_->transform_tei(space_12o, space_12o, space_12o, space_12o, IntegralTransform::HalfTrans::MakeAndNuke);
     timer_off("Trans (OO|OO)");
 
     // Trans (X2|11)
     timer_on("Trans (X2|11)");
-    integrals_->transform_tei(space_1v, space_2o, space_1o, space_1o, IntegralTransform::MakeAndNuke);
+    integrals_->transform_tei(space_1v, space_2o, space_1o, space_1o, IntegralTransform::HalfTrans::MakeAndNuke);
     timer_off("Trans (X2|11)");
 
     // Trans (X1|22)
     timer_on("Trans (X1|22)");
-    integrals_->transform_tei(space_1v, space_1o, space_2o, space_2o, IntegralTransform::MakeAndNuke);
+    integrals_->transform_tei(space_1v, space_1o, space_2o, space_2o, IntegralTransform::HalfTrans::MakeAndNuke);
     timer_off("Trans (X1|22)");
 
     // Trans (X1|21)
     timer_on("Trans (X1|21)");
-    integrals_->transform_tei(space_1v, space_1o, space_2o, space_1o, IntegralTransform::MakeAndNuke);
+    integrals_->transform_tei(space_1v, space_1o, space_2o, space_1o, IntegralTransform::HalfTrans::MakeAndNuke);
     timer_off("Trans (X1|21)");
 
     // Trans (Y1|22)
     timer_on("Trans (Y1|22)");
-    integrals_->transform_tei(space_2v, space_1o, space_2o, space_2o, IntegralTransform::MakeAndNuke);
+    integrals_->transform_tei(space_2v, space_1o, space_2o, space_2o, IntegralTransform::HalfTrans::MakeAndNuke);
     timer_off("Trans (Y1|22)");
 
     // Trans (Y2|11)
     timer_on("Trans (Y2|11)");
-    integrals_->transform_tei(space_2v, space_2o, space_1o, space_1o, IntegralTransform::MakeAndNuke);
+    integrals_->transform_tei(space_2v, space_2o, space_1o, space_1o, IntegralTransform::HalfTrans::MakeAndNuke);
     timer_off("Trans (Y2|11)");
 
     // Trans (Y2|12)
     timer_on("Trans (Y2|12)");
-    integrals_->transform_tei(space_2v, space_2o, space_1o, space_2o, IntegralTransform::MakeAndNuke);
+    integrals_->transform_tei(space_2v, space_2o, space_1o, space_2o, IntegralTransform::HalfTrans::MakeAndNuke);
     timer_off("Trans (Y2|12)");
 
 }

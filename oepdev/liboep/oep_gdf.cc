@@ -1,4 +1,5 @@
 #include "oep_gdf.h"
+#include <iostream>
 
 using namespace oepdev;
 
@@ -32,8 +33,8 @@ void GeneralizedDensityFit::invert_matrix(std::shared_ptr<psi::Matrix>& M) {
        }
   }
   s /= (double)(m->ncol());
-  // cout << " Hessian Matrix Identity Test = " << s << endl; // for debugging
-  if (std::abs(s-1.0)>0.000001) cout << " ----> Warning!! Hessian inverse has numerical error! <----\n";
+  // std::cout << " Hessian Matrix Identity Test = " << s << std::endl; // for debugging
+  if (std::abs(s-1.0)>0.000001) std::cout << " ----> Warning!! Hessian inverse has numerical error! <----\n";
 }
 // SingleGeneralizedDensityFit
 SingleGeneralizedDensityFit::SingleGeneralizedDensityFit(

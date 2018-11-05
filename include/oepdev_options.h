@@ -3,7 +3,7 @@
 /** @file oepdev_options.h */
 
 namespace psi{
-namespace pybind_plugin{
+//namespace oepdev{
 
 /** \brief Options for the OEPDev plugin.
  *
@@ -11,7 +11,7 @@ namespace pybind_plugin{
  *  @param options psi::Options object
  *  @return true
  */
-extern "C"
+extern "C" PSI_API
 int read_options(std::string name, Options& options)
 {
     if (name == "OEPDEV" || options.read_globals()) {
@@ -137,7 +137,7 @@ int read_options(std::string name, Options& options)
     return true;
 };
 
-}
+//}
 } // EndNameSpace psi
 
 #endif // oepdev_include_oepdev_options_h

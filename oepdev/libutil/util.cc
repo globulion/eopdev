@@ -1,8 +1,10 @@
 #include "util.h"
+#include "psi4/libpsi4util/PsiOutStream.h"
 
 namespace oepdev{
 
-extern "C" void preambule(void) {
+extern "C" PSI_API
+void preambule(void) {
       outfile->Printf("                                                                             \n");
       outfile->Printf("    -------------------------------------------------------------------------\n");
       outfile->Printf("          OepDev: One-Electron Effective Potentials Development Routine      \n");
@@ -18,7 +20,8 @@ extern "C" void preambule(void) {
       outfile->Printf("                                                                             \n");
 }
 
-extern "C" std::shared_ptr<SuperFunctional> 
+extern "C" PSI_API
+std::shared_ptr<SuperFunctional> 
 create_superfunctional(std::string name, Options& options) {
   std::shared_ptr<SuperFunctional> functional = SuperFunctional::blank();
   if (name==(std::string)"HF") {
@@ -40,27 +43,32 @@ create_superfunctional(std::string name, Options& options) {
   return functional;
 }
 
-extern "C" std::shared_ptr<Molecule>
+extern "C" PSI_API
+std::shared_ptr<Molecule>
 extract_monomer(std::shared_ptr<const Molecule> molecule_dimer, int id) {
     std::vector<int> real_list; real_list.push_back(id-1);
     std::vector<int> ghost_list;
     return molecule_dimer->extract_subsets(real_list, ghost_list);
 }
 
-extern "C" std::shared_ptr<Wavefunction>
+extern "C" PSI_API
+std::shared_ptr<Wavefunction>
 solve_scf(std::shared_ptr<Molecule> molecule, 
           std::shared_ptr<BasisSet> primary, 
+	  std::shared_ptr<BasisSet> auxiliary,
           std::shared_ptr<SuperFunctional> functional,
           Options& options,
           std::shared_ptr<PSIO> psio) 
 {
     SharedWavefunction scf_base(new Wavefunction(molecule, primary, options));
+    scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
     SharedWavefunction scf = SharedWavefunction(new scf::RHF(scf_base, functional, options, psio));
     scf->compute_energy();
     return scf;
 }
 
-extern "C" double average_moment(std::shared_ptr<psi::Vector> moment)
+extern "C" PSI_API
+double average_moment(std::shared_ptr<psi::Vector> moment)
 {
   const int l = moment->dim();
   if (l == 3) { // Dipole

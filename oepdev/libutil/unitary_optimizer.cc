@@ -4,6 +4,7 @@
 #include <Eigen/Dense>
 #include "psi4/psi4-dec.h"
 #include "unitary_optimizer.h"
+#include "psi4/libpsi4util/PsiOutStream.h"
 
 namespace oepdev {
 

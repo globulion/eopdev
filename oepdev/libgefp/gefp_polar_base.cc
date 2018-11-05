@@ -2,7 +2,6 @@
 #include <iostream>
 #include <fstream>
 
-
 using namespace std;
 
 //-- PolarGEFactory --////////////////////////////////////////////////////////////////////////////////
@@ -518,15 +517,18 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
 
 
    // ---> Printer(s) <--- //
-   std::filebuf fb, fb2;
-   fb.open(options_.get_str("DMATPOL_OUT_STATS"), std::ios::out);
-   std::shared_ptr<std::ostream> os = std::make_shared<std::ostream>(&fb);
-   std::shared_ptr<psi::PsiOutStream> printer = std::make_shared<psi::PsiOutStream>(os), printer_abini;
+   //std::filebuf fb, fb2;
+   //fb.open(options_.get_str("DMATPOL_OUT_STATS"), std::ios::out);
+   //std::shared_ptr<std::ostream> os = std::make_shared<std::ostream>(&fb);
+   //std::shared_ptr<psi::PsiOutStream> printer = std::make_shared<psi::PsiOutStream>(os), printer_abini;
+   std::shared_ptr<psi::PsiOutStream> printer = std::make_shared<psi::PsiOutStream>(options_.get_str("DMATPOL_OUT_STATS")); 
+   std::shared_ptr<psi::PsiOutStream> printer_abini;
    printer->Printf("# Eint(Ref)    Eint(Model)\n");
    if (hasAbInitioDipolePolarizability_) {
-       fb2.open(options_.get_str("DMATPOL_OUT_STATS_AB_INITIO"), std::ios::out);
-       std::shared_ptr<std::ostream> os2 = std::make_shared<std::ostream>(&fb2);               
-       printer_abini = std::make_shared<psi::PsiOutStream>(os2);
+       //fb2.open(options_.get_str("DMATPOL_OUT_STATS_AB_INITIO"), std::ios::out);
+       //std::shared_ptr<std::ostream> os2 = std::make_shared<std::ostream>(&fb2);               
+       //printer_abini = std::make_shared<psi::PsiOutStream>(os2);
+       printer_abini = std::make_shared<psi::PsiOutStream>(options_.get_str("DMATPOL_OUT_STATS_AB_INITIO"));
        printer_abini->Printf("# Eint(Ref)    Eint(Model)\n");
    }
 
@@ -707,8 +709,8 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    jk_->finalize();
 
    // ---> Close the statistical output files <--- //
-   fb.close();
-   if (hasAbInitioDipolePolarizability_) fb2.close();
+   //fb.close();
+   //if (hasAbInitioDipolePolarizability_) fb2.close();
 
    // ---> Compute RMS indicators <--- //
    double rmse = 0.0; double r2e = 1.0; double sre = 0.0; double ste = 0.0;

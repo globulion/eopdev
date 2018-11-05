@@ -1,5 +1,6 @@
 #include "cphf.h"
 #include "../libutil/util.h"
+#include "psi4/libpsi4util/process.h"
 
 namespace oepdev{
 

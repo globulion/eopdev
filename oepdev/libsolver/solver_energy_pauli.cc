@@ -62,7 +62,7 @@ double RepulsionEnergySolver::compute_benchmark_density_based() {
 
   // ---> Allocate <--- //
   int nbf   = wfn_union_->basisset()->nbf();
-  psi::IntegralFactory fact(wfn_union_->basisset(), wfn_union_->basisset());
+  psi::IntegralFactory fact(wfn_union_->basisset());
   std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> kinInt(fact.ao_kinetic());
   std::shared_ptr<psi::OneBodyAOInt> potInt(fact.ao_potential());
@@ -169,7 +169,7 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
   int nbf   = wfn_union_->basisset()->nbf();
 
   // ---> Allocate <--- //
-  psi::IntegralFactory fact(wfn_union_->basisset(), wfn_union_->basisset());
+  psi::IntegralFactory fact(wfn_union_->basisset());
 
   std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> kinInt(fact.ao_kinetic());
@@ -327,10 +327,10 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   std::shared_ptr<psi::Matrix> VaoA22    = std::make_shared<psi::Matrix>("VaoA(2,1)" , nbf_2, nbf_2);
   std::shared_ptr<psi::Matrix> VaoB11    = std::make_shared<psi::Matrix>("VaoB(1,2)" , nbf_1, nbf_1);
   std::shared_ptr<psi::Matrix> Sao12     = std::make_shared<psi::Matrix>("Sao(1,2)"  , nbf_1, nbf_2);
-  psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1));
-  psi::IntegralFactory fact_21(wfn_union_->l_primary(1), wfn_union_->l_primary(0));
-  psi::IntegralFactory fact_11(wfn_union_->l_primary(0), wfn_union_->l_primary(0));
-  psi::IntegralFactory fact_22(wfn_union_->l_primary(1), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(0), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_21(wfn_union_->l_primary(1), wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_11(wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_22(wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1));
   std::shared_ptr<psi::OneBodyAOInt> oneInt, ovlInt(fact_12.ao_overlap());
   std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(),
                                                                                     wfn_union_->l_primary(0),
@@ -510,10 +510,10 @@ double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   std::shared_ptr<psi::Matrix> VaoA22    = std::make_shared<psi::Matrix>("VaoA(2,1)" , nbf_2, nbf_2);
   std::shared_ptr<psi::Matrix> VaoB11    = std::make_shared<psi::Matrix>("VaoB(1,2)" , nbf_1, nbf_1);
   std::shared_ptr<psi::Matrix> Sao12     = std::make_shared<psi::Matrix>("Sao(1,2)"  , nbf_1, nbf_2);
-  psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1));
-  psi::IntegralFactory fact_21(wfn_union_->l_primary(1), wfn_union_->l_primary(0));
-  psi::IntegralFactory fact_11(wfn_union_->l_primary(0), wfn_union_->l_primary(0));
-  psi::IntegralFactory fact_22(wfn_union_->l_primary(1), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(0), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_21(wfn_union_->l_primary(1), wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_11(wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_22(wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1));
   std::shared_ptr<psi::OneBodyAOInt> oneInt, ovlInt(fact_12.ao_overlap());
   std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(),
                                                                                     wfn_union_->l_primary(0),
@@ -728,9 +728,9 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
   for (int z=0; z<3; ++z) R1mo.push_back(std::make_shared<psi::Vector>("R1mo", wfn_union_->l_ndocc(0)));
   for (int z=0; z<3; ++z) R2mo.push_back(std::make_shared<psi::Vector>("R2mo", wfn_union_->l_ndocc(1)));
 
-  psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1));
-  psi::IntegralFactory fact_11(wfn_union_->l_primary(0), wfn_union_->l_primary(0));
-  psi::IntegralFactory fact_22(wfn_union_->l_primary(1), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(0), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_11(wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_22(wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1));
 
   std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact_12.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> kinInt(fact_12.ao_kinetic());
@@ -943,9 +943,9 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
   std::shared_ptr<psi::Matrix> Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
   std::shared_ptr<psi::Matrix> Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_p1, nbf_a2);
 
-  psi::IntegralFactory fact_1p2p(wfn_union_->l_primary  (0), wfn_union_->l_primary  (1));
-  psi::IntegralFactory fact_1a2p(wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1));
-  psi::IntegralFactory fact_1p2a(wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1));
+  psi::IntegralFactory fact_1p2p(wfn_union_->l_primary  (0), wfn_union_->l_primary  (1), wfn_union_->l_primary  (0), wfn_union_->l_primary  (1));
+  psi::IntegralFactory fact_1a2p(wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1), wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1));
+  psi::IntegralFactory fact_1p2a(wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1), wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1));
 
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
@@ -972,8 +972,8 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
   // ===> Compute S^-2 term <=== //
   std::vector<std::shared_ptr<psi::Matrix>> V1_set;
   std::vector<std::shared_ptr<psi::Matrix>> V2_set;
-  psi::IntegralFactory fact_1p1p(wfn_union_->l_primary  (0), wfn_union_->l_primary(0));
-  psi::IntegralFactory fact_2p2p(wfn_union_->l_primary  (1), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_1p1p(wfn_union_->l_primary  (0), wfn_union_->l_primary(0), wfn_union_->l_primary  (0), wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_2p2p(wfn_union_->l_primary  (1), wfn_union_->l_primary(1), wfn_union_->l_primary  (1), wfn_union_->l_primary(1));
 
   for (int nx=0; nx<oep_1->oep("Otto-Ladik.S2").n; ++nx) {
        std::shared_ptr<psi::Matrix> V2 = std::make_shared<psi::Matrix>("V2", nbf_p2, nbf_p2);

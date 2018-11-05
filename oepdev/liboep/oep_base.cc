@@ -23,7 +23,7 @@ void OEPotential::common_init(void)
 {
    name_        = "default";
    primary_     = wfn_->basisset();
-   intsFactory_ = std::make_shared<psi::IntegralFactory>(primary_, primary_);
+   intsFactory_ = std::make_shared<psi::IntegralFactory>(primary_);
    potMat_      = std::make_shared<psi::Matrix>("Potential Integrals", primary_->nbf(), primary_->nbf());
    potInt_      = std::make_shared<oepdev::PotentialInt>(intsFactory_->spherical_transform(), primary_, primary_, 0);
    cOcc_        = wfn_->Ca_subset("AO","OCC");

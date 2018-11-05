@@ -472,7 +472,7 @@ OepDev is a plugin to Psi4. Therefore it should follow the programming etiquette
 oep-dev has additional programming tips to make the code more versatile and easy in further development.
 Here, I emphasise on most important aspects regarding the **programming rules**.
 
-\section smain Main routine and libraries
+\section scontrmain Main routine and libraries
 
 Oep-dev has only *one* source file in the plugin base directory, i.e., `main.cc`. This is the main
 driver routine that handles the functionality of the whole OEP testing platform: specifies options for 
@@ -623,6 +623,64 @@ helps in producing self-maintaining code and is much easier to use. Use:
 
     This section is addressed for advanced users. Make sure you have first read \ref intro "the introduction"
     before proceeding.
+
+\section padvinstall Installation
+
+\subsection spadvpreppsi Preparing Psi4
+
+OEPDev is a Psi4 plugin. It requires 
+  - Psi4, at least 1.2 version (git commit `9d4a61c`)
+  - Eigen3, any newer version
+
+Recently, Psi4 introduced API visibility management. Only certain Psi4 classes
+and functions are *exposed* in the `core.so` library, that is further linked to
+Psi4 plugin shared library. Due to this reason, not all Psi4 functionalities
+can be directly used from outside Psi4. In order to access local API of Psi4
+(also used in the OEPDev code) slight modification of Psi4 code and concomitant
+rebuild is necessary.
+
+In order to expose local API used by OEPDev and hidden within Psi4 1.2,
+two types of small modifications are necessary:
+  - M1: add `PSI_API` macro after required class or function declaration in header file
+  - M2: add `#include "psi4/pragma.h"` line at the include section of an appropriate header file 
+
+Modification M1 is obligatory for all affected files whereas modification M2 needs to be done only
+in headers that do not have "psi4/pragma.h" included explicitly or implicitly.
+The list of Psi4 header files along with the respective changes 
+that need to be done are listed in the table below:
+
+| Psi4 Header File                   | Psi4 Class          | Required Changes |
+|------------------------------------|---------------------|------------------|
+|`libfunctional/superfunctional.h`   | `Superfunctional`   | M1               |
+|`libscf_solver/hf.h`                | `HF`                | M1               |
+|`libscf_solver/rhf.h`               | `RHF`               | M1               |
+|`libcubeprop/csg.h`                 | `CubicScalarGrid`   | M1               |
+|`libmints/onebody.h`                | `OneBodyAOInt`      | M1               | 
+|`libmints/potential.h`              | `PotentialInt`      | M1               | 
+|`libmints/multipoles.h`             | `MultupoleInt`      | M1               |
+|`libmints/multipolesymmetry.h`      | `MultipoleSymmetry` | M1               |
+|`libmints/fjt.h`                    | `Taylor_Fjt`        | M1               |
+|`libmints/fjt.h`                    | `Fjt`               | M1               |
+|`libmints/oeprop.h`                 | `OEProp`            | M1, M2           |
+|`libmints/gshell.h`                 | `GaussianShell`     | M1, M2           |
+
+\subsection spadvcompile Compiltation
+
+After all the above changes have been done in Psi4 (followed by its rebuild)
+compile the OEPDev code by running `compile` script. Make sure Eigen3 path 
+is set to environment variable `EIGEN3_INCLUDE_DIR` (instructions will appear on the screen).
+After compilation is successful, run `ctest` to check if the code works fine.
+
+\note 
+ It may happen, that during code development there will be symbol lookup error when
+ importing `oepdev.so` (in such case OEPDev compiles without error).
+ In such circumstance, probably there some local Psi4 feature that is needed in OEPDev
+ is not exposed by `PSI_API` macro. To fix this, run `c++filt [name]` where `[name]`
+ is the mangled undefined symbol. This will show you which Psi4 class of function
+ is not exposed and requires `PSI_API` (change M1 and perhaps M2 too). Such change requires
+ Psi4 rebuild and recompilation of OEPDev code. In any case, please contact me and report
+ new undefined symbol (blasiak.bartosz@gmail.com).
+
 
 \section padvcodestr OEPDev Code Structure
 

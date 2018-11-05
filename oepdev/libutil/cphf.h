@@ -17,12 +17,6 @@
 #include "psi4/libmints/integral.h"
 #include "psi4/libmints/factory.h"
 #include "psi4/libciomr/libciomr.h"
-#include "psi4/libfock/jk.h"
-#include "psi4/libfock/jk_independent.h"
-#include "psi4/libfock/link.h"
-#include "psi4/libfock/direct_screening.h"
-#include "psi4/libfock/cubature.h"
-#include "psi4/libfock/points.h"
 #include "psi4/libmints/local.h"
 
 #if OEPDEV_USE_PSI4_DIIS_MANAGER == 0

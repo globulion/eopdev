@@ -58,9 +58,9 @@ using SharedLocalizer          = std::shared_ptr<Localizer>;
  *    1. Works only for C1 symmetry! Therefore `this->nirrep() = 1`.
  *    2. Does not set `reference_wavefunction_`
  *    3. Sets `oeprop_` for the union of uncoupled molecules
- *    4. Performs Hadamard sums on `H_`, `Fa_`, `Da_`, `Ca_` and `S_` 
+ *    3. Performs Hadamard sums on `H_`, `Fa_`, `Da_`, `Ca_` and `S_` 
  *       based on uncoupled wavefunctions. 
- *    5. Since it is based on shallow copy of the original Wavefunction,
+ *    4. Since it is based on shallow copy of the original Wavefunction,
  *       it __changes__ contents of this wavefunction. Reallocate and copy if 
  *       you want to keep the original wavefunction.
  *
@@ -164,6 +164,9 @@ class WavefunctionUnion : public Wavefunction
     std::vector<SharedLocalizer> l_localizer_;
     /// List of dictionaries of MO spaces
     std::vector<std::map<const std::string, SharedMOSpace>> l_mospace_;
+
+    /// One-Electron Property
+    std::shared_ptr<psi::OEProp> oeprop_;
 
 
   public:

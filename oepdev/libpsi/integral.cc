@@ -77,7 +77,7 @@ oepdev::IntegralFactory::IntegralFactory(std::shared_ptr<psi::BasisSet> bs1, std
 {
 }
 oepdev::IntegralFactory::IntegralFactory(std::shared_ptr<psi::BasisSet> bs1, std::shared_ptr<psi::BasisSet> bs2) :
- psi::IntegralFactory(bs1, bs2) 
+ psi::IntegralFactory(bs1, bs2, bs1, bs2) 
 {
 }
 oepdev::IntegralFactory::IntegralFactory(std::shared_ptr<psi::BasisSet> bs1) :

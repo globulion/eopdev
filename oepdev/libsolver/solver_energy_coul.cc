@@ -45,8 +45,8 @@ double ElectrostaticEnergySolver::compute_oep_based_esp_symmetrized(){
   std::shared_ptr<psi::Matrix> V1 = std::make_shared<psi::Matrix>("V1", nbf_1, nbf_1);
   std::shared_ptr<psi::Matrix> V2 = std::make_shared<psi::Matrix>("V2", nbf_2, nbf_2);
 
-  psi::IntegralFactory fact_1(wfn_union_->l_primary(0), wfn_union_->l_primary(0));
-  psi::IntegralFactory fact_2(wfn_union_->l_primary(1), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_1(wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_2(wfn_union_->l_primary(1));
 
   std::shared_ptr<psi::OneBodyAOInt> oneInt;
   std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_1.spherical_transform(),
@@ -171,10 +171,10 @@ double ElectrostaticEnergySolver::compute_benchmark_mo_expanded(){
   // ---> Allocate <--- //
   std::shared_ptr<psi::Matrix> VaoA      = std::make_shared<psi::Matrix>("VaoA" , nbf, nbf);
   std::shared_ptr<psi::Matrix> VaoB      = std::make_shared<psi::Matrix>("VaoB" , nbf, nbf);
-  psi::IntegralFactory fact(wfn_union_->basisset(), wfn_union_->basisset());
+  psi::IntegralFactory fact(wfn_union_->basisset());
 
-  psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1));
-  psi::IntegralFactory fact_21(wfn_union_->l_primary(1), wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_12(wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_21(wfn_union_->l_primary(1));
 
   std::shared_ptr<psi::OneBodyAOInt> oneInt;
   std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(),
@@ -299,8 +299,8 @@ double ElectrostaticEnergySolver::compute_benchmark_ao_expanded(){
   std::shared_ptr<psi::Matrix> V1 = std::make_shared<psi::Matrix>("V1", nbf_1, nbf_1);
   std::shared_ptr<psi::Matrix> V2 = std::make_shared<psi::Matrix>("V2", nbf_2, nbf_2);
 
-  psi::IntegralFactory fact_1(wfn_union_->l_primary(0), wfn_union_->l_primary(0));
-  psi::IntegralFactory fact_2(wfn_union_->l_primary(1), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_1(wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_2(wfn_union_->l_primary(1));
 
   std::shared_ptr<psi::OneBodyAOInt> oneInt;
   std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_1.spherical_transform(),
@@ -401,7 +401,7 @@ double ElectrostaticEnergySolver::compute_benchmark_ao_expanded(){
   e = e_nuc_nuc + e_nuc_el + e_el_el;
 
   //psi::timer_off("SOLVER: Electrostatic Energy Calculations (BENCHMARK)");
-  psi::timer_on("Solver E(Coul) AO-Expanded      ");
+  psi::timer_off("Solver E(Coul) AO-Expanded      ");
 
   // Print
   if (wfn_union_->options().get_int("PRINT") > 0) {

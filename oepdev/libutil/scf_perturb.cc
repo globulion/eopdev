@@ -1,4 +1,7 @@
 #include "psi4/libmints/integral.h"
+#include "psi4/libmints/basisset.h"
+#include "psi4/libmints/molecule.h"
+#include "psi4/libqt/qt.h"
 #include "../libpsi/potential.h"
 #include "scf_perturb.h"
 

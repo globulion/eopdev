@@ -1,6 +1,8 @@
 #include "psi4/libmints/gshell.h"
+#include "psi4/libpsi4util/PsiOutStream.h"
 #include "../../include/oepdev_files.h"
 #include "eri.h"
+#include <algorithm>
 
 namespace oepdev{
 using namespace std;

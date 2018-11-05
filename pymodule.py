@@ -47,7 +47,7 @@ def run_oepdev(name, **kwargs):
     # setup
     lowername = name.lower()
     kwargs = p4util.kwargs_lower(kwargs)
-    psi4.core.set_local_option('MYPLUGIN', 'PRINT', 1)
+    #psi4.core.set_local_option('MYPLUGIN', 'PRINT', 1)
 
     # check if Cartesian basis sets are used
     msg = """\
@@ -63,11 +63,11 @@ def run_oepdev(name, **kwargs):
 
     ref_wfn = kwargs.get('ref_wfn', None)
     if ref_wfn is None: 
-       print " [1] Computing HF/SCF for the dimer."
+       print(" [1] Computing HF/SCF for the dimer.")
        ref_wfn = psi4.driver.scf_helper(name, **kwargs)
 
     # grab molecule aggregate and all fragments (now only for dimer)
-    print " [2] Preparing basis sets for the monomers."
+    print(" [2] Preparing basis sets for the monomers.")
     molecule      = ref_wfn.molecule()
 
     # case when OEP build is requested
@@ -75,10 +75,13 @@ def run_oepdev(name, **kwargs):
     or psi4.core.get_global_option("OEPDEV_TARGET").startswith("DMAT") \
     or (psi4.core.get_global_option("OEPDEV_TARGET") == "TEST" and 
         psi4.core.get_global_option("OEPDEV_TEST_MODE") == "MONOMER"):
-           
+
+       basis_df_scf = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"),
+                                               puream=ref_wfn.basisset().has_puream())
        basis_df_oep = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                puream=ref_wfn.basisset().has_puream())
        ref_wfn.set_basisset("BASIS_DF_OEP", basis_df_oep)
+       ref_wfn.set_basisset("BASIS_DF_SCF", basis_df_scf)
 
     # case when task on wavefunction union can be requested
     elif(psi4.core.get_global_option("OEPDEV_TARGET") == "SOLVER") \
@@ -93,12 +96,17 @@ def run_oepdev(name, **kwargs):
                                                  puream=ref_wfn.basisset().has_puream())
        basis_B        = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS"),
                                                  puream=ref_wfn.basisset().has_puream())
-       # --- auxiliary
+       # --- auxiliary (DF-SCF)
+       basis_df_scf_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"),
+                                                 puream=ref_wfn.basisset().has_puream())
+       basis_df_scf_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"),
+                                                 puream=ref_wfn.basisset().has_puream())
+       # --- auxiliary (OEP)
        basis_df_oep_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                  puream=ref_wfn.basisset().has_puream())
        basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                  puream=ref_wfn.basisset().has_puream())
-       # --- intermediate
+       # --- intermediate (OEP)
        basis_int_oep_A= psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"),
                                                  puream=ref_wfn.basisset().has_puream())
        basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"),
@@ -107,16 +115,19 @@ def run_oepdev(name, **kwargs):
                                                                                                                  
        ref_wfn.set_basisset("BASIS_1"        , basis_A        )
        ref_wfn.set_basisset("BASIS_2"        , basis_B        )
+       ref_wfn.set_basisset("BASIS_DF_SCF_1" , basis_df_scf_A )
+       ref_wfn.set_basisset("BASIS_DF_SCF_2" , basis_df_scf_B )
        ref_wfn.set_basisset("BASIS_DF_OEP_1" , basis_df_oep_A )
        ref_wfn.set_basisset("BASIS_DF_OEP_2" , basis_df_oep_B )
        ref_wfn.set_basisset("BASIS_INT_OEP_1", basis_int_oep_A)
        ref_wfn.set_basisset("BASIS_INT_OEP_2", basis_int_oep_B)
 
+
     # Ensure IWL files have been written when not using DF/CD
     proc_util.check_iwl_file_from_scf_type(psi4.core.get_option('SCF', 'SCF_TYPE'), ref_wfn)
 
     # Call the Psi4 plugin
-    print " [3] Running OEPDev plugin."
+    print(" [3] Running OEPDev plugin.")
     oepdev_wfn = psi4.core.plugin('oepdev.so', ref_wfn)
 
     return oepdev_wfn
@@ -127,6 +138,6 @@ psi4.driver.procedures['energy']['oepdev'] = run_oepdev
 
 # Auxiliary routines
 def test(dummy=True):
-    r"An empty test."
+    #r"An empty test."
     if dummy: psi4.core.print_out("\n\n  ==> Running Empty Test <==\n\n")
     pass

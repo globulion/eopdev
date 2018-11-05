@@ -64,7 +64,7 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    std::shared_ptr<psi::Matrix> Vao = std::make_shared<psi::Matrix>("Vao" , primary_->nbf(), target->nbf());
    std::shared_ptr<psi::Matrix> Ca_occ = wfn_->Ca_subset("AO","OCC");
 
-   psi::IntegralFactory fact_1(primary_, target);
+   psi::IntegralFactory fact_1(primary_, target, primary_, target);
    psi::IntegralFactory fact_2(primary_, primary_, primary_, target);
   
    std::shared_ptr<psi::OneBodyAOInt> potInt(fact_1.ao_potential());

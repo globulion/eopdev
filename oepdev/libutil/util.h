@@ -6,6 +6,7 @@
 #include<string>
 #include<cmath>
 #include<map>
+#include<cassert>
 
 #include "psi4/psi4-dec.h"
 #include "psi4/liboptions/liboptions.h"
@@ -53,7 +54,8 @@ using SharedLocalizer          = std::shared_ptr<Localizer>;
 
 /** \brief Print preambule for module OEPDEV
  */
-extern "C" void preambule(void);
+extern "C" PSI_API
+void preambule(void);
 
 /** \brief Format string output.
  *  Example: std::string text = oepdev::string_sprinff("Test %3d, %13.5f", 5, -10.5425);
@@ -78,7 +80,8 @@ std::string string_sprintf( const char* format, Args... args ) {
  *  @param options psi::Options object
  *  @return psi::SharedSuperFunctional object with functional.
  */
-extern "C" std::shared_ptr<SuperFunctional> 
+extern "C" PSI_API
+std::shared_ptr<SuperFunctional> 
 create_superfunctional(std::string name, Options& options);
 
 
@@ -88,7 +91,8 @@ create_superfunctional(std::string name, Options& options);
  *  @param id index of a molecule (starts from 1)
  *  @return psi::SharedMolecule object with indicated monomer
  */
-extern "C" std::shared_ptr<Molecule>
+extern "C" PSI_API
+std::shared_ptr<Molecule>
 extract_monomer(std::shared_ptr<const Molecule> molecule_dimer, int id);
 
 
@@ -96,14 +100,17 @@ extract_monomer(std::shared_ptr<const Molecule> molecule_dimer, int id);
  *
  *  @param molecule psi::SharedMolecule object with molecule
  *  @param primary shared primary basis set 
+ *  @param auxiliary shared auxiliary basis set 
  *  @param functional DFT functional
  *  @param options psi::Options object
  *  @param psio psi::PSIO object
  *  @return psi::SharedWavefunction SCF wavefunction of the molecule
  */
-extern "C" std::shared_ptr<Wavefunction>
+extern "C" PSI_API
+std::shared_ptr<Wavefunction>
 solve_scf(std::shared_ptr<Molecule> molecule, 
           std::shared_ptr<BasisSet> primary, 
+	  std::shared_ptr<BasisSet> auxiliary,
           std::shared_ptr<SuperFunctional> functional,
           Options& options,
           std::shared_ptr<PSIO> psio);
@@ -125,7 +132,8 @@ solve_scf(std::shared_ptr<Molecule> molecule,
  *  \f]
  *     In the above equation, the quadrupole moment elements refer to its traceless form.
  */
-extern "C" double average_moment(std::shared_ptr<psi::Vector> moment);
+extern "C" PSI_API
+double average_moment(std::shared_ptr<psi::Vector> moment);
 
 /** @}*/
 
