@@ -53,8 +53,8 @@
 #include "oepdev/libtest/test.h"
 
 // PyBind11
-//#include <pybind11/pybind11.h>
-//namespace py = pybind11;
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
 
 // Typedefs
 using SharedWavefunction       = std::shared_ptr<psi::Wavefunction>;
@@ -64,7 +64,6 @@ using SharedGEFPFactory        = std::shared_ptr<oepdev::GenEffParFactory>;
 using SharedGEFPParameters     = std::shared_ptr<oepdev::GenEffPar>;
 
 namespace psi{ 
-//namespace oepdev{
 
 /** \brief Main routine of the OEPDev plugin.
  *
@@ -214,35 +213,11 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     return ref_wfn;
 }
 
-//PYBIND11_PLUGIN(pybind_plugin) {
-//  py::module m("pybind_plugln", "document string");
-//  m.def("oepdev", &oepdev, "Run my plugin");
-//  m.def("read_options", &read_options, "Read options for my plugin");
-//  return m.ptr();
-//}
+PYBIND11_MODULE(OEPDev, m) {
+  m.doc() = "pybind_plugin: a simple pybind 11 plugin";
+  m.def("oepdev", &oepdev, "Run my plugin");
+  m.def("read_options", &read_options, "Read options for my plugin");
+}
 
-//PYBIND11_MODULE(pybind_plugin, m) {
-//  m.doc() = "pybind_plugin: a simple pybind 11 plugin";
-//  m.def("oepdev", &oepdev, "Run my plugin");
-//  m.def("read_options", &read_options, "Read options for my plugin");
-//}
-//
-//// old
-//PYBIND11_PLUGIN(example) {
-//    py::module m("example", "documentation string");
-//
-//    m.def("add", [](int a, int b) { return a + b; });
-//
-//    return m.ptr();
-//}
-//
-//// new
-//PYBIND11_MODULE(example, m) {
-//    m.doc() = "documentation string"; // optional
-//
-//    m.def("add", [](int a, int b) { return a + b; });
-//}
-
-//}
 } // EndNameSpace psi
 

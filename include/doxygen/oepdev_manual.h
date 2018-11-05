@@ -673,10 +673,10 @@ After compilation is successful, run `ctest` to check if the code works fine.
 
 \note 
  It may happen, that during code development there will be symbol lookup error when
- importing `oepdev.so` (in such case OEPDev compiles without error).
+ importing `oepdev.so` (in such case OEPDev compiles without error but Python cannot import the module `oepdev`).
  In such circumstance, probably there some local Psi4 feature that is needed in OEPDev
  is not exposed by `PSI_API` macro. To fix this, run `c++filt [name]` where `[name]`
- is the mangled undefined symbol. This will show you which Psi4 class of function
+ is the mangled undefined symbol. This will show you which Psi4 class or function
  is not exposed and requires `PSI_API` (change M1 and perhaps M2 too). Such change requires
  Psi4 rebuild and recompilation of OEPDev code. In any case, please contact me and report
  new undefined symbol (blasiak.bartosz@gmail.com).
