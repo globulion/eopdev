@@ -65,6 +65,9 @@ using SharedGEFPParameters     = std::shared_ptr<oepdev::GenEffPar>;
 
 namespace psi{ 
 
+// Helpers for Python
+void export_dmtp(py::module&);
+
 /** \brief Main routine of the OEPDev plugin.
  *
  *  Created with intention to test various models of the interaction energy 
@@ -213,10 +216,17 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     return ref_wfn;
 }
 
-PYBIND11_MODULE(OEPDev, m) {
-  m.doc() = "pybind_plugin: a simple pybind 11 plugin";
-  m.def("oepdev", &oepdev, "Run my plugin");
-  m.def("read_options", &read_options, "Read options for my plugin");
+
+// Python interface
+PYBIND11_MODULE(oepdev, m) {
+
+  // Export OEPDev-Psi4 Interface
+  m.doc() = "OEPDev: Quantum Chemistry for Extended Molecular Aggregates. Python Interface.";
+  m.def("oepdev", &oepdev, "Run OEPDev plugin");
+  m.def("read_options", &read_options, "Read options for OEPDev plugin");
+
+  // Export OEPDev Functionalities
+  export_dmtp(m);
 }
 
 } // EndNameSpace psi

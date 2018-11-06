@@ -31,15 +31,18 @@
 #
 # @END LICENSE
 #
+cmake_policy(SET CMP0048 NEW)
 
 # The Project
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
-project(oepdev CXX)
-set (OEPDEV_VERSION_MAJOR   "1")
-set (OEPDEV_VERSION_MINOR   "0")
-set (OEPDEV_VERSION_PATCH   "0")
-set (OEPDEV_VERSION "${OEPDEV_VERSION_MAJOR}.${BQC_VERSION_MINOR}.${BQC_VERSION_PATCH}")
-find_package(psi4 1.0 REQUIRED)
+project(oepdev 
+	       VERSION 1.0.2 
+	       LANGUAGES CXX)
+set (OEPDEV_AUTHORS         "Bartosz Błasiak")
+set (OEPDEV_DESCRIPTION     "Quantum Chemistry for Extended Molecular Aggregates")
+set (OEPDEV_URL             "")
+set (OEPDEV_LICENSE         "Private")
+find_package(psi4 1.2 REQUIRED)
 
 # External Numerical Library
 set( EIGEN3_INCLUDE_DIR "$ENV{EIGEN3_INCLUDE_DIR}" )
@@ -61,6 +64,8 @@ include (CTest)
 
 # Configure tests
 include ("cmake/CTestTestfile.cmake.in")
+
+include(psi4OptionsTools)
 
 # Compile
 add_psi4_plugin(oepdev main.cc 
@@ -103,4 +108,5 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libsolver/solver_energy_ct.cc
                        oepdev/libtest/test.cc
                        oepdev/libtest/test_custom.cc
+		       oepdev/export/export_dmtp.cc
                )

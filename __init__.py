@@ -36,7 +36,7 @@
 """Plugin docstring.
 
 """
-__version__ = '1.0.0-alpha'
+__version__ = '1.0.2-alpha'
 __author__  = 'Bartosz Błasiak'
 
 # Load Python modules
@@ -45,6 +45,7 @@ from .pymodule import *
 # Load C++ plugin
 import os
 import psi4
+from .oepdev import *
 plugdir = os.path.split(os.path.abspath(__file__))[0]
 sofile = plugdir + '/' + os.path.split(plugdir)[1] + '.so'
 psi4.core.plugin_load(sofile)
