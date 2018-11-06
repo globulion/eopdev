@@ -1,0 +1,5 @@
+#!/bin/bash
+# this script changes psi4-1.2.1 directory
+# the files are backuped as *.orig file before change
+patch -b -p0 < psi4-1.2.1-psiapi_extend-for-oepdev.patch > patch.log
+echo The list of files changed is saved in patch.log file

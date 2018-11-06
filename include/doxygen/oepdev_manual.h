@@ -629,8 +629,12 @@ helps in producing self-maintaining code and is much easier to use. Use:
 \subsection spadvpreppsi Preparing Psi4
 
 OEPDev is a Psi4 plugin. It requires 
-  - Psi4, at least 1.2 version (git commit `9d4a61c`)
+  - Psi4, at least 1.2 version (git commit `9d4a61c`). Has to be modified (see below)
   - Eigen3, any newer version
+
+\note
+ Before compiling, make sure EFP is enabled in `CMakeLists.txt` (now it is not
+ used in OEPDev but maybe in the future it would).
 
 Recently, Psi4 introduced API visibility management. Only certain Psi4 classes
 and functions are *exposed* in the `core.so` library, that is further linked to
@@ -663,6 +667,10 @@ that need to be done are listed in the table below:
 |`libmints/fjt.h`                    | `Fjt`               | M1               |
 |`libmints/oeprop.h`                 | `OEProp`            | M1, M2           |
 |`libmints/gshell.h`                 | `GaussianShell`     | M1, M2           |
+
+To quickly apply these modifications, use the patch files stored in
+`misc/patch` directory.
+Please makse sure to use a proper patch for a chosen Psi4 version.
 
 \subsection spadvcompile Compiltation
 
