@@ -486,7 +486,7 @@ void DMTPole::compute(std::vector<psi::SharedMatrix> D, std::vector<bool> transi
  for (int i=0; i<nDMTPs_; ++i) this->compute(D.at(i), transition.at(i), i);
 }
 void DMTPole::compute(void) {
-  psi::SharedMatrix D = wfn_->Da(); D->add(wfn_->Db());
+  psi::SharedMatrix D = wfn_->Da()->clone(); D->add(wfn_->Db());
   this->compute(D, false, 0);
 }
 void DMTPole::compute_order(void) {

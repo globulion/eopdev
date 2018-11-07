@@ -25,7 +25,7 @@ oepdev::UniformEFieldPolarGEFactory::~UniformEFieldPolarGEFactory()
 // implementations of abstract methods from base
 void oepdev::UniformEFieldPolarGEFactory::compute_samples(void)
 {
-   std::shared_ptr<psi::Matrix> D = wfn_->Da();
+   std::shared_ptr<psi::Matrix> D = wfn_->Da()->clone();
 
    for (int n=0; n<nSamples_; ++n) {
         std::vector<std::shared_ptr<psi::Vector>> fields;

@@ -23,7 +23,7 @@ void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
 {
    int nq   = options_.get_double("DMATPOL_NTEST_CHARGE");
 
-   std::shared_ptr<psi::Matrix> D = wfn_->Da();
+   std::shared_ptr<psi::Matrix> D = wfn_->Da()->clone();
 
    for (int n=0; n<nSamples_; ++n) {
         std::shared_ptr<psi::Matrix> charges = std::make_shared<psi::Matrix>("Q", nq, 4);

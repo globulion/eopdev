@@ -440,8 +440,8 @@ void oepdev::GeneralizedPolarGEFactory::compute_statistics(void) {
    cout << " Statistical evaluation ...\n";
 
    // ---> Grab some unperturbed quantities <--- //
-   std::shared_ptr<psi::Matrix> H = wfn_->Fa(); H->add(wfn_->H());
-   std::shared_ptr<psi::Matrix> D = wfn_->Da();
+   std::shared_ptr<psi::Matrix> H = wfn_->Fa()->clone(); H->add(wfn_->H());
+   std::shared_ptr<psi::Matrix> D = wfn_->Da()->clone();
 
    // ---> Compute model difference density matrices <--- //
    if (hasQuadrupolePolarizability_) {
