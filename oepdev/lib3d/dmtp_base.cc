@@ -569,12 +569,12 @@ void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
       double qyz_o = qp[ic][4];
       double qzz_o = qp[ic][5];
 
-      double qxx_n = qxx_o + c * d2xx - 2.0 * mx_o * d1x;
-      double qxy_n = qxy_o + c * d2xy -       mx_o * d1y - my_o * d1x;
-      double qxz_n = qxz_o + c * d2xz -       mx_o * d1z - mz_o * d1x;
-      double qyy_n = qyy_o + c * d2yy - 2.0 * my_o * d1y;
-      double qyz_n = qyz_o + c * d2yz -       my_o * d1z - mz_o * d1y; 
-      double qzz_n = qzz_o + c * d2zz - 2.0 * mz_o * d1z;
+      double qxx_n = qxx_o + c * d2xx - 2.0 * mx_o * d1x              - 2.0 * c * d1x * rx_o;
+      double qxy_n = qxy_o + c * d2xy -       mx_o * d1y - my_o * d1x - c * (d1x * ry_o + d1y * rx_o);
+      double qxz_n = qxz_o + c * d2xz -       mx_o * d1z - mz_o * d1x - c * (d1x * rz_o + d1z * rx_o);
+      double qyy_n = qyy_o + c * d2yy - 2.0 * my_o * d1y              - 2.0 * c * d1y * ry_o;
+      double qyz_n = qyz_o + c * d2yz -       my_o * d1z - mz_o * d1y - c * (d1y * rz_o + d1z * ry_o); 
+      double qzz_n = qzz_o + c * d2zz - 2.0 * mz_o * d1z              - 2.0 * c * d1z * rz_o;
 
       // Collect
       qp_[ic][0] = qxx_n;
@@ -628,6 +628,19 @@ void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
       double oyyz_n = oyyz_o  - c * d3yyz  + my_o * d2yz + mz_o * d2yy + my_o * d2yz  - qyz_o * d1y - qyy_o * d1z - qyz_o * d1y;
       double oyzz_n = oyzz_o  - c * d3yzz  + my_o * d2zz + mz_o * d2yz + mz_o * d2yz  - qyz_o * d1z - qyz_o * d1z - qzz_o * d1y;
       double ozzz_n = ozzz_o  - c * d3zzz  + mz_o * d2zz + mz_o * d2zz + mz_o * d2zz  - qzz_o * d1z - qzz_o * d1z - qzz_o * d1z;
+
+      oxxx_n += 3.0 * c * rx_o * d2xx - 3.0 * d1x * rx_o * (2.0 * mx_o + c * rx_o);
+      oxxy_n += c * (2.0 * rx_o * d2xy + ry_o * d2xx) - 2.0 * d1x * (c * rx_o * ry_o + rx_o * my_o + ry_o * mx_o) - d1y * rx_o * (2.0 * mx_o + c * rx_o);
+      oxxz_n += c * (2.0 * rx_o * d2xz + rz_o * d2xx) - 2.0 * d1x * (c * rx_o * rz_o + rx_o * mz_o + rz_o * mx_o) - d1z * rx_o * (2.0 * mx_o + c * rx_o);
+      oxyy_n += c * (2.0 * ry_o * d2xy + rx_o * d2yy) - 2.0 * d1y * (c * ry_o * rx_o + ry_o * mx_o + rx_o * my_o) - d1x * ry_o * (2.0 * my_o + c * ry_o);
+      oxyz_n += c * (d2yz * rx_o + d2xy * rz_o + d2xz * ry_o) - d1x * (c * ry_o * rz_o + ry_o * mz_o + rz_o * my_o)
+	                                                      - d1y * (c * rx_o * rz_o + rx_o * mz_o + rz_o * mx_o)
+							      - d1z * (c * rx_o * ry_o + rx_o * my_o + ry_o * mx_o);
+      oxzz_n += c * (2.0 * rz_o * d2xz + rx_o * d2zz) - 2.0 * d1z * (c * rz_o * rx_o + rz_o * mx_o + rx_o * mz_o) - d1x * rz_o * (2.0 * mz_o + c * rz_o);
+      oyyy_n += 3.0 * c * ry_o * d2yy - 3.0 * d1y * ry_o * (2.0 * my_o + c * ry_o);
+      oyyz_n += c * (2.0 * ry_o * d2yz + rz_o * d2yy) - 2.0 * d1y * (c * ry_o * rz_o + ry_o * mz_o + rz_o * my_o) - d1z * ry_o * (2.0 * my_o + c * ry_o);
+      oyzz_n += c * (2.0 * rz_o * d2yz + ry_o * d2zz) - 2.0 * d1z * (c * rz_o * ry_o + rz_o * my_o + ry_o * mz_o) - d1y * rz_o * (2.0 * mz_o + c * rz_o);
+      ozzz_n += 3.0 * c * rz_o * d2zz - 3.0 * d1z * rz_o * (2.0 * mz_o + c * rz_o);       
 
       // Collect
       op_[ic][0] = oxxx_n;
