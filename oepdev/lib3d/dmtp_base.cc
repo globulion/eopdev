@@ -719,6 +719,10 @@ void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
       double hyzzz_n = hyzzz_o + c * d4yzzz - my_o * d3zzz - mz_o * d3yzz - mz_o * d3yzz - mz_o * d3yzz + qyz_o * d2zz + qyz_o * d2zz + qzz_o * d2yz + qzz_o * d2yz + qyz_o * d2zz + qzz_o * d2yz - oyzz_o * d1z - oyzz_o * d1z - oyzz_o * d1z - ozzz_o * d1y;
       double hzzzz_n = hzzzz_o + c * d4zzzz - mz_o * d3zzz - mz_o * d3zzz - mz_o * d3zzz - mz_o * d3zzz + qzz_o * d2zz + qzz_o * d2zz + qzz_o * d2zz + qzz_o * d2zz + qzz_o * d2zz + qzz_o * d2zz - ozzz_o * d1z - ozzz_o * d1z - ozzz_o * d1z - ozzz_o * d1z;
 
+      // TODO!
+      hxxxx_o += -4.0 * d3xxx * c * rx_o + 6.0 * d2xx * rx_o * (c * rx_o + 2.0 * mx_o) - 4.0 * d1x * rx_o * (c * rx_o * rx_o + 3.0 * mx_o * rx_o + 3.0 * qxx_o);
+      // other correction terms here!
+
       // Collect
       hp_[ic][ 0] = hxxxx_n; 
       hp_[ic][ 1] = hxxxy_n;
