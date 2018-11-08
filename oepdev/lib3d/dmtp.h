@@ -147,6 +147,13 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     /// Change origins of the distributed multipole moments of all sets
     virtual void recenter(psi::SharedMatrix new_origins);
 
+    /// Translate the DMTP sets
+    void translate(psi::SharedVector transl);
+    /// Rotate the DMTP sets
+    void rotate(psi::SharedMatrix rotmat);
+    /// Superimpose the DMTP sets
+    void superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist);
+
 
     // <--- Computers ---> //
 

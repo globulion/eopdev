@@ -1,36 +1,10 @@
 #!/usr/bin/python
 sys.path.insert(0, './..')
 import oepdev
-
-basis {
-
-# assign basset to all atoms
-assign sto-3g-camm-test
-
-# this basis set is to match pyquante-modified
-[ sto-3g-camm-test ]
-cartesian
-****
-H     0
-S   3   1.00
-      3.42525091             0.15432897
-      0.62391373             0.53532814
-      0.16885540             0.44463454
-****
-O     0
-S   3   1.00
-    130.7093200              0.15432897
-     23.8088610              0.53532814
-      6.4436083              0.44463454
-SP   3   1.00
-      5.0331513             -0.09996723             0.15591627
-      1.1695961              0.39951283             0.60768372
-      0.3803890              0.70011547             0.39195739
-****
-}
+import numpy
 
 # test molecule
-molecule h2o {
+molecule h2o2 {
 0 1
 O          0.96944       -4.30612       -2.18132
 H          1.33485       -5.15965       -1.90564
@@ -48,14 +22,9 @@ nocom
 }
 
 set {
-    # ==> OEPDEV Routine Specification <== #
-    oepdev_target                 solver
-    oepdev_solver_type            repulsion_energy
-    oepdev_localize               False
-    oepdev_enable_trial           False
-    df_basis_scf                  aug-cc-pVDZ-jkfit
     # ==> General Psi4 Options <== #
-    scf_type                      df
+    basis                         aug-cc-pVDZ
+    df_basis_scf                  aug-cc-pVDZ-jkfit
     guess                         core
     e_convergence                 1e-11
     d_convergence                 1e-10
@@ -64,19 +33,66 @@ set {
 }
 
 
-# run oepdev
-en, wfn = energy('oepdev', molecule=h2o, return_wfn=True)
+# run psi4
+en, wfn = energy('hf', molecule=h2o2, return_wfn=True)
 
 # use Python interface
-help(oepdev)
-
-camm1 = oepdev.get_camm(wfn)
-camm2 = oepdev.DMTPole.build("CAMM", wfn, 1)
-camm2.compute()
-
-import numpy
-charges1 = numpy.array(camm1.charges(0))
-charges2 = numpy.array(camm2.charges(0))
 print(" CAMM Charges computed by using OEPDev from Python!")
-print(charges1.sum())
-print(charges2.sum())
+
+# create deep copy of wfn
+wfn_c = wfn.c1_deep_copy(wfn.basisset())
+
+# compute CAMM - method 1
+camm1 = oepdev.DMTPole.build("CAMM", wfn, 1)
+camm1.compute()
+
+# compute CAMM - method 2
+camm2 = oepdev.get_camm(wfn)
+
+# grab Mulliken charges
+charges1 = camm1.charges(0)
+charges2 = camm2.charges(0).clone()
+charges1.print_out() # print to the output file
+
+# check if charges grabed are references to camm object attribute charges[0]_ or not
+c1 = numpy.array(camm1.charges(0))
+charges1.set(0, 0, charges1.get(0, 0) + 100.0) # modify
+c2 = numpy.array(camm1.charges(0))
+print(" Change in charges without making a copy = %9.3f" % (c1-c2).sum())
+
+c1 = numpy.array(camm2.charges(0))
+charges2.set(0, 0, 100.0)
+c2 = numpy.array(camm2.charges(0))
+print(" Change in charges after   making a copy = %9.3f" % (c1-c2).sum())
+
+
+# recenter camm2 to global origin (to make AAMM's) ---> bug in recentering - not working yet
+#camm2.recenter(psi4.core.Matrix("Origin of Coordinate system", camm2.n_sites(),3))
+# ... and re-recenter them back to atomic sites (to go back to CAMM's)
+#camm2.recenter(camm2.centres())
+
+
+# move first CAMM set by a vector
+t = psi4.core.Vector("Translation Vector", 3)
+t.set(0, 10.0) # in Bohrs
+t.print_out()
+camm1.translate(t)
+
+# compute interaction energy between CAMM 2 and CAMM 1 (after translation)
+m = camm2.energy(camm1, oepdev.MultipoleConvergence.ConvergenceLevel.R5)
+l1 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R1).get(0) 
+l2 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R2).get(0)
+l3 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R3).get(0)
+l4 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R4).get(0)
+l5 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R5).get(0)
+
+log="""
+ Interaction Energy Convergence:
+ -------------------------------
+   - R1 = %10.6f [a.u.]
+   - R2 = %10.6f [a.u.]
+   - R3 = %10.6f [a.u.]
+   - R4 = %10.6f [a.u.]
+   - R5 = %10.6f [a.u.]
+""" %(l1, l2, l3, l4, l5)
+print(log)

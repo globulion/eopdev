@@ -931,6 +931,11 @@ double oepdev::test::Test::test_camm(void) {
   dmtp->quadrupoles(0)  ->print();
   dmtp->octupoles(0)    ->print();
   dmtp->hexadecapoles(0)->print();
+
+  // Recenter to (0, 0, 0) and then back to atomic centres
+  dmtp->recenter(std::make_shared<psi::Matrix>("", dmtp->n_sites(), 3));
+  dmtp->recenter(dmtp->centres());
+
   std::shared_ptr<psi::Matrix> c = dmtp->charges      (0);
   std::shared_ptr<psi::Matrix> m = dmtp->dipoles      (0);
   std::shared_ptr<psi::Matrix> q = dmtp->quadrupoles  (0);

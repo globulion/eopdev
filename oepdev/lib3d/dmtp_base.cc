@@ -2,6 +2,7 @@
 #include "psi4/libmints/integral.h"
 #include "psi4/libmints/multipolesymmetry.h"
 #include <cassert>
+#include <iostream>
 
 
 namespace oepdev{
@@ -753,6 +754,28 @@ std::shared_ptr<MultipoleConvergence> DMTPole::potential(std::shared_ptr<DMTPole
   // Return
   return convergence;
 }
+/// Translate the DMTP sets
+void DMTPole::translate(psi::SharedVector transl) 
+{
+   double** c = centres_->pointer();
+   double** o = origins_->pointer();
+   for (int i=0; i<nSites_; ++i) {
+	c[i][0] += transl->get(0); o[i][0] += transl->get(0); 
+	c[i][1] += transl->get(1); o[i][1] += transl->get(1);
+	c[i][2] += transl->get(2); o[i][2] += transl->get(2);
+   }
+}
+/// Rotate the DMTP sets
+void DMTPole::rotate(psi::SharedMatrix rotmat) 
+{
+   throw psi::PSIEXCEPTION("DMTP rotation is not implemented yet.");
+}
+/// Superimpose the DMTP sets
+void DMTPole::superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist) 
+{
+   throw psi::PSIEXCEPTION("DMTP superimposition is not implemented yet.");
+}
+
 
 // abstract methods
 void DMTPole::compute(psi::SharedMatrix D, bool transition, int i) {/* nothing to implement here */}
