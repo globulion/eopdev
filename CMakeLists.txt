@@ -69,6 +69,7 @@ include(psi4OptionsTools)
 
 # Compile
 add_psi4_plugin(oepdev main.cc 
+	               # libutil
                        oepdev/libutil/util.cc
                        oepdev/libutil/diis.cc
                        oepdev/libutil/cphf.cc
@@ -76,20 +77,25 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/integrals_iter.cc
                        oepdev/libutil/unitary_optimizer.cc
                        oepdev/libutil/scf_perturb.cc
+		       # lib3d
                        oepdev/lib3d/space3d.cc
                        oepdev/lib3d/esp.cc
                        oepdev/lib3d/dmtp_base.cc
                        oepdev/lib3d/dmtp_camm.cc
+		       # libpsi
                        oepdev/libpsi/potential.cc
                        oepdev/libpsi/integral.cc
+		       # libints
                        oepdev/libints/recurr.cc
                        oepdev/libints/eri.cc
+		       # liboep
                        oepdev/liboep/oep_base.cc   
                        oepdev/liboep/oep_energy_coul.cc   
                        oepdev/liboep/oep_energy_pauli.cc   
                        oepdev/liboep/oep_energy_ct.cc   
                        oepdev/liboep/oep_coupling_eet.cc   
-                       oepdev/liboep/oep_gdf.cc   
+                       oepdev/liboep/oep_gdf.cc
+		       # libgefp  
                        oepdev/libgefp/gefp.cc
                        oepdev/libgefp/gefp_polar_base.cc
                        oepdev/libgefp/gefp_polar_uniform_base.cc
@@ -102,11 +108,26 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libgefp/gefp_polar_nonuniform_field_2_grad_1.cc
                        oepdev/libgefp/gefp_polar_abinitio.cc
                        oepdev/libgefp/gefp_polar_ffabinitio.cc
+		       # libsolver
                        oepdev/libsolver/solver_base.cc
                        oepdev/libsolver/solver_energy_coul.cc
                        oepdev/libsolver/solver_energy_pauli.cc
                        oepdev/libsolver/solver_energy_ct.cc
+		       # libtest
                        oepdev/libtest/test.cc
+		       oepdev/libtest/basic.cc
+		       oepdev/libtest/cphf.cc
+		       oepdev/libtest/camm.cc
+		       oepdev/libtest/dmtp_energy.cc
+		       oepdev/libtest/eri_2_2.cc
+		       oepdev/libtest/eri_3_1.cc
+		       oepdev/libtest/eri_1_1.cc
+		       oepdev/libtest/scf_perturb.cc
+		       oepdev/libtest/dmatpol.cc
+		       oepdev/libtest/dmatpolX.cc
+		       oepdev/libtest/unitary_optimizer.cc
+		       oepdev/libtest/unitary_optimizer_4_2.cc
                        oepdev/libtest/test_custom.cc
+		       # exports
 		       oepdev/export/export_dmtp.cc
                )

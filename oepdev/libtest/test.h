@@ -7,8 +7,10 @@
 #include "psi4/psi4-dec.h"
 #include "psi4/liboptions/liboptions.h"
 #include "psi4/libpsio/psio.h"
+#include "psi4/libpsi4util/PsiOutStream.h"
 
 #include "psi4/libmints/integral.h"
+#include "psi4/libmints/matrix.h"
 #include "psi4/libmints/wavefunction.h"
 #include "psi4/libmints/basisset.h"
 #include "psi4/libqt/qt.h"
@@ -40,12 +42,15 @@ class Test
    /// Pefrorm the test
    double run(void);
 
+
+
   protected: 
    /// Wavefunction object
    std::shared_ptr<psi::Wavefunction> wfn_;
 
    /// Psi4 Options
    psi::Options& options_;
+
 
    // ---> Tests <--- //
 
