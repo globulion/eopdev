@@ -5,7 +5,7 @@
 cmake_cmd=`psi4 --plugin-compile`
 echo ${cmake_cmd}
 ${cmake_cmd}
-make
+make -j`getconf _NPROCESSORS_ONLN`
 #mkdir -p ${OEPDEVLIB_DIR}
 #mv -v oepdev.so ${OEPDEVLIB_DIR}
 

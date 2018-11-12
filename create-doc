@@ -2,10 +2,10 @@
 dir_latex_doc=./doc/doxygen/latex
 dir_base=$PWD
 doxygen Doxygen.config
-cp -v ./misc/latex/* $dir_latex_doc
-cp -v ./misc/latex/algorithmicx/* $dir_latex_doc
+cp -vr ./misc/latex/* $dir_latex_doc
+cp -vr ./misc/latex/algorithmicx/* $dir_latex_doc
 
 cd $dir_latex_doc
-make
+make -j`getconf _NPROCESSORS_ONLN`
 cd $dir_base
 
