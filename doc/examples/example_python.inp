@@ -40,7 +40,7 @@ en, wfn = energy('hf', molecule=h2o2, return_wfn=True)
 print(" CAMM Charges computed by using OEPDev from Python!")
 
 # create deep copy of wfn
-wfn_c = wfn.c1_deep_copy(wfn.basisset())
+#wfn_c = wfn.c1_deep_copy(wfn.basisset())
 
 # compute CAMM - method 1
 camm1 = oepdev.DMTPole.build("CAMM", wfn, 1)

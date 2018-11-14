@@ -67,6 +67,7 @@ namespace psi{
 
 // Helpers for Python
 void export_dmtp(py::module&);
+void export_cphf(py::module&);
 
 /** \brief Main routine of the OEPDev plugin.
  *
@@ -227,6 +228,8 @@ PYBIND11_MODULE(oepdev, m) {
 
   // Export OEPDev Functionalities
   export_dmtp(m);
+  // Export CHPF
+  export_cphf(m);
 }
 
 } // EndNameSpace psi

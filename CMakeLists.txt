@@ -130,4 +130,5 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libtest/test_custom.cc
 		       # exports
 		       oepdev/export/export_dmtp.cc
+		       oepdev/export/export_cphf.cc
                )
