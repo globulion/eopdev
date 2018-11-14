@@ -131,4 +131,5 @@ add_psi4_plugin(oepdev main.cc
 		       # exports
 		       oepdev/export/export_dmtp.cc
 		       oepdev/export/export_cphf.cc
+		       oepdev/export/export_solver.cc
                )
