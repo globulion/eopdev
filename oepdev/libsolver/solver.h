@@ -119,6 +119,7 @@ class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
  * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
  * <tr><td> `ESP_SYMMETRIZED` <td>*Default*. Coulombic energy from ESP charges interacting with nuclei and electronic density.
  *                                Symmetrized with respect to monomers.
+ * <tr><td> `CAMM` <td>Coulombic energy from CAMM distributions.
  * </table>
  *
  * Below the detailed description of the above methods is given.
@@ -215,6 +216,7 @@ class ElectrostaticEnergySolver : public OEPDevSolver
 
   private:
     double compute_oep_based_esp_symmetrized();
+    double compute_oep_based_camm();
     double compute_benchmark_ao_expanded(); 
     double compute_benchmark_mo_expanded();
 };

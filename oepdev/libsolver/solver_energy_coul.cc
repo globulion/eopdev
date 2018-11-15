@@ -1,7 +1,6 @@
-//#include "psi4/libtrans/integraltransform.h"
-//#include "psi4/libdpd/dpd.h"
-
 #include "solver.h"
+#include "../lib3d/dmtp.h"
+#include "psi4/libpsi4util/process.h"
 
 using namespace std;
 using namespace psi;
@@ -15,6 +14,55 @@ ElectrostaticEnergySolver::ElectrostaticEnergySolver(SharedWavefunctionUnion wfn
   methods_benchmark_.push_back("MO_EXPANDED"    );
 }
 ElectrostaticEnergySolver::~ElectrostaticEnergySolver() {}
+double ElectrostaticEnergySolver::compute_oep_based_camm(){
+
+  // ===> [Nuc+El](A) --- El(B) <=== //
+  SharedWavefunction wfn_1 = wfn_union_->l_wfn(0);
+  SharedWavefunction wfn_2 = wfn_union_->l_wfn(1);
+  SharedOEPotential oep_1 = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", wfn_1, wfn_union_->options());
+  SharedOEPotential oep_2 = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", wfn_2, wfn_union_->options());
+
+  oep_1->compute();
+  oep_2->compute();
+
+  psi::timer_on("Solver E(Coul) OEP-Based:CAMM   ");
+
+  double e1 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R1)->get(0);
+  double e2 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R2)->get(0);
+  double e3 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R3)->get(0);
+  double e4 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R4)->get(0);
+  double e5 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R5)->get(0);
+
+  double energy = e5;
+
+  psi::timer_off("Solver E(Coul) OEP-Based:CAMM   ");
+
+  // Save
+  psi::Process::environment.globals["EINT COUL CAMM R-1"] = e1;
+  psi::Process::environment.globals["EINT COUL CAMM R-2"] = e2;
+  psi::Process::environment.globals["EINT COUL CAMM R-3"] = e3;
+  psi::Process::environment.globals["EINT COUL CAMM R-4"] = e4;
+  psi::Process::environment.globals["EINT COUL CAMM R-5"] = e5;
+
+
+  // Print
+  if (wfn_union_->options().get_int("PRINT") > 0) {
+     psi::outfile->Printf("  ==> SOLVER: Enectrostatic energy calculations <==\n");
+     psi::outfile->Printf("  ==>         OEP-based Model (CAMM)            <==\n\n");
+     psi::outfile->Printf("     -------------------------------\n");
+     psi::outfile->Printf("     E(R-1)    = %13.6f\n", e1  );
+     psi::outfile->Printf("     E(R-2)    = %13.6f\n", e2  );
+     psi::outfile->Printf("     E(R-3)    = %13.6f\n", e3  );
+     psi::outfile->Printf("     E(R-4)    = %13.6f\n", e4  );
+     psi::outfile->Printf("     E(R-5)    = %13.6f\n", e5  );
+     psi::outfile->Printf("     -------------------------------\n");
+     psi::outfile->Printf("     E         = %13.6f\n", energy   );
+     psi::outfile->Printf("     -------------------------------\n");
+     psi::outfile->Printf("\n");
+  }
+return energy;
+}
+
 double ElectrostaticEnergySolver::compute_oep_based_esp_symmetrized(){
 
   double e = 0.0;
@@ -147,7 +195,9 @@ return e;
 double ElectrostaticEnergySolver::compute_oep_based(const std::string& method) 
 {
   double e;
-  if (method == "DEFAULT" || method == "ESP_SYMMETRIZED") e = compute_oep_based_esp_symmetrized();
+  if      (method == "DEFAULT" 
+	|| method == "ESP_SYMMETRIZED") {e = compute_oep_based_esp_symmetrized();}
+  else if (method == "CAMM")            {e = compute_oep_based_camm();}
   else 
   {
      throw psi::PSIEXCEPTION("Error. Incorrect OEP-based method specified for electrostatic energy calculations!\n");
@@ -260,6 +310,9 @@ double ElectrostaticEnergySolver::compute_benchmark_mo_expanded(){
 
   // ---> Sum <--- //
   e = e_nuc_nuc + e_nuc_el + e_el_el;
+
+  // ---> Save <--- //
+  psi::Process::environment.globals["EINT COUL EXACT"] = e;
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {

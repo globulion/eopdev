@@ -32,10 +32,10 @@ class MultipoleConvergence
     enum ConvergenceLevel {R1, R2, R3, R4, R5};
     enum Property {Energy, Potential};
     MultipoleConvergence(std::shared_ptr<DMTPole> dmtp1, std::shared_ptr<DMTPole> dmtp2, 
-                         ConvergenceLevel max_clevel = R4);
+                         ConvergenceLevel max_clevel = R5);
     virtual ~MultipoleConvergence();
     void compute(Property property = Energy);
-    std::shared_ptr<psi::Vector> level(ConvergenceLevel clevel = R4);
+    std::shared_ptr<psi::Vector> level(ConvergenceLevel clevel = R5);
   protected:
     ConvergenceLevel max_clevel_;
     std::shared_ptr<DMTPole> dmtp_1_;

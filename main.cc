@@ -155,6 +155,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
             double el1 = solver->compute_benchmark("AO_EXPANDED"    );
             double el2 = solver->compute_benchmark("MO_EXPANDED"    );
             double el3 = solver->compute_oep_based("ESP_SYMMETRIZED");
+	    double el4 = solver->compute_oep_based("CAMM"           );
         }
         else if (o_solver_type == "REPULSION_ENERGY") 
         {

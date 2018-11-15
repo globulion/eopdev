@@ -1,10 +1,12 @@
 #include "oep.h"
 #include "../lib3d/esp.h"
+#include "../lib3d/dmtp.h"
 #include "psi4/libqt/qt.h"
 
 using namespace oepdev;
 
 using SharedField3D = std::shared_ptr<oepdev::Field3D>;
+using SharedDMTPole = std::shared_ptr<oepdev::DMTPole>;
 
 // <============== Electrostatic Energy (demo class) ==============> //
 
@@ -28,8 +30,9 @@ void ElectrostaticEnergyOEPotential::compute(const std::string& oepType)
 {
   if (oepType == "V" || oepType == "TOTAL") {
 
-      //psi::timer_on("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
       psi::timer_on("OEP    E(Coul)                  ");
+
+      // ESP charges
       SharedField3D potential = oepdev::Field3D::build("ELECTROSTATIC POTENTIAL", 
                                                    options_.get_int   ("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom(), 
                                                    options_.get_double("ESP_PAD_SPHERE"      ), 
@@ -41,7 +44,12 @@ void ElectrostaticEnergyOEPotential::compute(const std::string& oepType)
       for (int i=0; i<esp.charges()->nrow(); ++i) {
            oepTypes_["V"].matrix->set(i, 0, esp.charges()->get(i, 0));
       }
-      //psi::timer_off("OEPDEV: Electrostatic Energy OEP -> fitting ESP charges");
+
+      // CAMM
+      SharedDMTPole camm = oepdev::DMTPole::build("CAMM", wfn_);
+      camm->compute();
+      oepTypes_["V"].dmtp = camm;
+
       psi::timer_off("OEP    E(Coul)                  ");
 
   } else {
