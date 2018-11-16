@@ -30,7 +30,7 @@ void ElectrostaticEnergyOEPotential::compute(const std::string& oepType)
 {
   if (oepType == "V" || oepType == "TOTAL") {
 
-      psi::timer_on("OEP    E(Coul)                  ");
+      //psi::timer_on("OEP    E(Coul)                  ");
 
       // ESP charges
       SharedField3D potential = oepdev::Field3D::build("ELECTROSTATIC POTENTIAL", 
@@ -50,7 +50,7 @@ void ElectrostaticEnergyOEPotential::compute(const std::string& oepType)
       camm->compute();
       oepTypes_["V"].dmtp = camm;
 
-      psi::timer_off("OEP    E(Coul)                  ");
+      //psi::timer_off("OEP    E(Coul)                  ");
 
   } else {
       throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");

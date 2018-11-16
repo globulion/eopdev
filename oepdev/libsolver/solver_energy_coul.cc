@@ -456,6 +456,9 @@ double ElectrostaticEnergySolver::compute_benchmark_ao_expanded(){
   //psi::timer_off("SOLVER: Electrostatic Energy Calculations (BENCHMARK)");
   psi::timer_off("Solver E(Coul) AO-Expanded      ");
 
+  // ---> Save <--- //
+  psi::Process::environment.globals["EINT COUL EXACT"] = e;
+
   // Print
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Enectrostatic energy calculations <==\n");

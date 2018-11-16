@@ -27,6 +27,22 @@ void export_solver(py::module &m) {
     py::class_<oepdev::WavefunctionUnion, std::shared_ptr<oepdev::WavefunctionUnion>> WFN(m, "WavefunctionUnion", "The Hartree-Product of multiple wavefunctions");
     WFN
          .def(py::init<std::shared_ptr<psi::Wavefunction>, psi::Options&>())
+	 .def(py::init<
+		       //std::shared_ptr<psi::Wavefunction>,
+		       std::shared_ptr<psi::Molecule>, 
+		       std::shared_ptr<psi::BasisSet>, 
+		       std::shared_ptr<psi::BasisSet>, 
+		       std::shared_ptr<psi::BasisSet>, 
+		       std::shared_ptr<psi::BasisSet>, 
+       		       std::shared_ptr<psi::BasisSet>, 
+		       std::shared_ptr<psi::BasisSet>, 
+		       std::shared_ptr<psi::BasisSet>, 
+		       std::shared_ptr<psi::BasisSet>, 
+		       std::shared_ptr<psi::BasisSet>, 
+		       std::shared_ptr<psi::BasisSet>, 
+		       std::shared_ptr<psi::Wavefunction>,
+		       std::shared_ptr<psi::Wavefunction>, 
+		       psi::Options&>())
     	 .def("transform_integrals",  &oepdev::WavefunctionUnion::transform_integrals, "Transform integrals to MO basis")
         ;
 }

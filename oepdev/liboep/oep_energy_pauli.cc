@@ -54,7 +54,7 @@ void RepulsionEnergyOEPotential::compute(const std::string& oepType)
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s1() 
 {
-   psi::timer_on("OEP    E(Paul) Murrell-etal S1  ");
+   //psi::timer_on("OEP    E(Paul) Murrell-etal S1  ");
 
    // ---> Determine the target basis set for generalized density fitting <--- //
    std::shared_ptr<psi::BasisSet> target = intermediate_;
@@ -116,11 +116,11 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    // ===> Save and Finish <=== //
    oepTypes_.at("Murrell-etal.S1").matrix->copy(G);
    if (options_.get_int("PRINT") > 1) G->print();
-   psi::timer_off("OEP    E(Paul) Murrell-etal S1  ");
+   //psi::timer_off("OEP    E(Paul) Murrell-etal S1  ");
 }
 void RepulsionEnergyOEPotential::compute_otto_ladik_s2() 
 {
-      psi::timer_on("OEP    E(Paul) Otto-Ladik S2    ");
+      //psi::timer_on("OEP    E(Paul) Otto-Ladik S2    ");
       std::shared_ptr<OEPotential3D<OEPotential>> oeps3d = this->make_oeps3d("Otto-Ladik.S2");
       oeps3d->compute();
       ESPSolver esp(oeps3d);
@@ -132,7 +132,7 @@ void RepulsionEnergyOEPotential::compute_otto_ladik_s2()
            oepTypes_["Otto-Ladik.S2"].matrix->set(i, o, esp.charges()->get(i, o));
       }}
       if (options_.get_int("PRINT") > 1) esp.charges()->print();
-      psi::timer_off("OEP    E(Paul) Otto-Ladik S2    ");
+      //psi::timer_off("OEP    E(Paul) Otto-Ladik S2    ");
 }
 void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) 
 {

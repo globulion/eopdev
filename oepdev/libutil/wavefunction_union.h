@@ -178,6 +178,43 @@ class WavefunctionUnion : public Wavefunction
      */
     WavefunctionUnion(SharedWavefunction ref_wfn, Options& options);
 
+    /** \brief Constructor. 
+     *
+     *  Provide molecule dimer and all the required monomer basis sets and wavefunctions.
+     *  @param dimer          - molecule object
+     *  @param primary        - basis set object
+     *  @param auxiliary_df   - basis set object (for DF SCF)
+     *  @param primary_1      - basis set object for 1st monomer
+     *  @param primary_2      - basis set object for 2nd monomer
+     *  @param auxiliary_1    - basis set object for 1st monomer
+     *  @param auxiliary_2    - basis set object for 2nd monomer
+     *  @param auxiliary_df_1 - basis set object for 1st monomer
+     *  @param auxiliary_df_2 - basis set object for 2nd monomer
+     *  @param intermediate_1 - basis set object for 1st monomer
+     *  @param intermediate_2 - basis set object for 2nd monomer
+     *  @param wfn_1          - unperturbed wavefunction object
+     *  @param wfn_2          - unperturbed wavefunction object
+     *  @param options        - Psi4 options
+     */
+     WavefunctionUnion(
+//		SharedWavefunction ref_wfn,
+		SharedMolecule dimer,
+		SharedBasisSet primary,
+		SharedBasisSet auxiliary_df,
+		SharedBasisSet primary_1,
+		SharedBasisSet primary_2,
+		SharedBasisSet auxiliary_1,
+		SharedBasisSet auxiliary_2,
+		SharedBasisSet auxiliary_df_1,
+		SharedBasisSet auxiliary_df_2,
+		SharedBasisSet intermediate_1,
+		SharedBasisSet intermediate_2,
+		SharedWavefunction wfn_1,
+		SharedWavefunction wfn_2,
+		Options& options
+		);
+
+
     /// Destructor
     virtual ~WavefunctionUnion();
 
@@ -303,7 +340,21 @@ class WavefunctionUnion : public Wavefunction
   private:
     /// Finish initialising the object
     void common_init(SharedWavefunction ref_wfn);
-
+    void common_init(
+		SharedWavefunction ref_wfn,
+		SharedMolecule molecule_1,
+		SharedMolecule molecule_2,
+		SharedBasisSet primary_1,
+		SharedBasisSet primary_2,
+		SharedBasisSet auxiliary_1,
+		SharedBasisSet auxiliary_2,
+		SharedBasisSet auxiliary_df_1,
+		SharedBasisSet auxiliary_df_2,
+		SharedBasisSet intermediate_1,
+		SharedBasisSet intermediate_2,
+		SharedWavefunction wfn_1,
+		SharedWavefunction wfn_2
+		);
 };
 
 /** @}*/

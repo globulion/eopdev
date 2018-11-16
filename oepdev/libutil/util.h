@@ -104,6 +104,7 @@ extract_monomer(std::shared_ptr<const Molecule> molecule_dimer, int id);
  *  @param functional DFT functional
  *  @param options psi::Options object
  *  @param psio psi::PSIO object
+ *  @param compute_mints Compute integrals (write IWL TOC entry - necessary when transforming integrals)
  *  @return psi::SharedWavefunction SCF wavefunction of the molecule
  */
 extern "C" PSI_API
@@ -113,7 +114,8 @@ solve_scf(std::shared_ptr<Molecule> molecule,
 	  std::shared_ptr<BasisSet> auxiliary,
           std::shared_ptr<SuperFunctional> functional,
           Options& options,
-          std::shared_ptr<PSIO> psio);
+          std::shared_ptr<PSIO> psio,
+	  bool compute_mints = false);
 
 /** \brief Compute the scalar magnitude of multipole moment.
  *

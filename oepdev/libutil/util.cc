@@ -1,5 +1,6 @@
 #include "util.h"
 #include "psi4/libpsi4util/PsiOutStream.h"
+#include "psi4/libmints/mintshelper.h"
 
 namespace oepdev{
 
@@ -58,11 +59,18 @@ solve_scf(std::shared_ptr<Molecule> molecule,
 	  std::shared_ptr<BasisSet> auxiliary,
           std::shared_ptr<SuperFunctional> functional,
           Options& options,
-          std::shared_ptr<PSIO> psio) 
+          std::shared_ptr<PSIO> psio,
+	  bool compute_mints) 
 {
     SharedWavefunction scf_base(new Wavefunction(molecule, primary, options));
     scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
-    SharedWavefunction scf = SharedWavefunction(new scf::RHF(scf_base, functional, options, psio));
+
+    // Compute integrals (write IWL entry to PSIO)
+    if (compute_mints) {
+      std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
+      mints->integrals();
+    }
+    SharedWavefunction scf = std::make_shared<psi::scf::RHF>(scf_base, functional, options, psio);
     scf->compute_energy();
     return scf;
 }
