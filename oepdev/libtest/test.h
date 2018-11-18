@@ -93,6 +93,9 @@ class Test
    /// Test the custom code
    double test_custom(void);
 
+   /// Test the espsolver
+   double test_espsolver(void);   
+
 };
 
 /** @}*/

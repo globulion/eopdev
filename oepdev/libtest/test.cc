@@ -27,6 +27,7 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CAMM") result = test_camm();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_ENERGY") result = test_dmtp_energy();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CUSTOM") result = test_custom();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="ESPSOLVER") result = test_espsolver();  
   else throw psi::PSIEXCEPTION("Incorrect test name specified!");
   return result;
 }

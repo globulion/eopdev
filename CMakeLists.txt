@@ -128,6 +128,7 @@ add_psi4_plugin(oepdev main.cc
 		       oepdev/libtest/unitary_optimizer.cc
 		       oepdev/libtest/unitary_optimizer_4_2.cc
                        oepdev/libtest/test_custom.cc
+                       oepdev/libtest/espsolver.cc
 		       # exports
 		       oepdev/export/export_dmtp.cc
 		       oepdev/export/export_cphf.cc
