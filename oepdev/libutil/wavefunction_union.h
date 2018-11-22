@@ -342,7 +342,6 @@ class WavefunctionUnion : public Wavefunction
 
   private:
     /// Finish initialising the object
-    void common_init(SharedWavefunction ref_wfn);
     void common_init(
 		SharedWavefunction ref_wfn,
 		SharedMolecule molecule_1,
