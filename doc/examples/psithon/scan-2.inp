@@ -1,0 +1,89 @@
+#!/usr/bin/python
+"""
+ Compute RHF scan (distance-dependence) for Coulombic multipole-based interaction energy
+ Use Python scripting.
+"""
+sys.path.insert(0, './..')
+import oepdev
+import numpy
+import psi4
+from util import make_union, Scanner
+
+# reference structural parameters
+#R0 = 1.500000 # Z-matrix works incorrectly!
+X10= 2.500000
+X20= 3.112217
+
+molecule dimer {
+#0 1
+#O
+#H  1   1.0
+#H  1   1.0  2  104.50
+#--
+#0 1
+#O  2   R    1  180.00  3  0.0
+#H  4   1.0  2  127.75  3  0.0
+#H  4   1.0  2  127.75  3  180.0
+0 1
+ O     0.000000     0.000000     0.000000
+ H     0.000000     0.000000     1.000000
+ H     0.968148     0.000000    -0.250380
+--
+0 1
+ O     0.000000     0.000000     X1
+ H     0.790690     0.000000     X2
+ H    -0.790690     0.000000     X2
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+# psi4 options
+set {
+    guess                         core
+    print                         1
+    puream                        False          # necessary for OEPDev!
+    basis                         6-311++G**
+    scf_type                      df
+}
+# oepdev options
+set oepdev {
+    oepdev_target                 solver
+    oepdev_solver_type            electrostatic_energy
+    oepdev_localize               False
+    df_basis_oep                  aug-cc-pVDZ-jkfit
+}
+
+# reference dimer
+#dimer.R = R0
+dimer.X1 = X10
+dimer.X2 = X20
+en = energy('hf', molecule=dimer)
+
+# run the scan
+scanner = Scanner(dimer)
+out = open('scan-2.dat','w')
+for dR in numpy.linspace(0.0, 3.0, 3):
+    print(" Scan for dz = %10.3f" % dR)
+    #dimer.R = R0 + dR
+    dimer.X1 = X10 + dR
+    dimer.X2 = X20 + dR
+    dimer.update_geometry()
+    un = scanner.make()
+    un.transform_integrals()
+    solver = oepdev.OEPDevSolver.build("ELECTROSTATIC ENERGY", un)
+    solver.compute_benchmark("MO_EXPANDED")
+    solver.compute_oep_based("CAMM")
+    un.clear_dpd()
+    # grab variables
+    e1 = psi4.get_variable("EINT COUL CAMM R-1")
+    e2 = psi4.get_variable("EINT COUL CAMM R-2")
+    e3 = psi4.get_variable("EINT COUL CAMM R-3")
+    e4 = psi4.get_variable("EINT COUL CAMM R-4")
+    e5 = psi4.get_variable("EINT COUL CAMM R-5")
+    e  = psi4.get_variable("EINT COUL EXACT")
+
+    print(dR,e,e1,e2,e3,e4,e5,file=out)
+out.close()

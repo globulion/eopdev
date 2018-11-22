@@ -233,6 +233,9 @@ class WavefunctionUnion : public Wavefunction
     /// Transform Integrals (2- and 4-index transformations)
     void transform_integrals(); 
 
+    /// Close the DPD instance
+    void clear_dpd();
+
 
     // ---> Accessors <--- //
     // ---> Properties of Particular Fragments <--- //

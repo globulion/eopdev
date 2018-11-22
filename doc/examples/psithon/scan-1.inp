@@ -1,0 +1,79 @@
+#!/usr/bin/python
+"""
+ Compute RHF scan (distance-dependence) for Coulombic multipole-based interaction energy
+ Use main oepdev driver to achieve this
+"""
+sys.path.insert(0, './..')
+import oepdev
+import numpy
+import psi4
+
+r_c1_0 = 2.900503
+r_c2_0 = 1.693240
+r_c3_0 = 0.627352
+r_c4_0 = 3.963929
+
+molecule c2h4_c2h2 {
+0 1
+C   0.000000  -0.667578  -2.124659
+C   0.000000   0.667578  -2.124659
+H   0.923621  -1.232253  -2.126185
+H  -0.923621  -1.232253  -2.126185
+H  -0.923621   1.232253  -2.126185
+H   0.923621   1.232253  -2.126185
+--
+0 1
+C   0.000000   0.000000   r_c1
+C   0.000000   0.000000   r_c2
+H   0.000000   0.000000   r_c3
+H   0.000000   0.000000   r_c4
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+
+set oepdev {
+    oepdev_target                 solver
+    oepdev_solver_type            electrostatic_energy
+    oepdev_localize               False
+    df_basis_oep                  aug-cc-pVDZ-jkfit
+}
+set {
+    guess                         core
+    print                         1
+    puream                        False
+    basis                         6-31G*
+    scf_type                      df
+}
+
+# reference molecule
+c2h4_c2h2.r_c1 = r_c1_0 
+c2h4_c2h2.r_c2 = r_c2_0 
+c2h4_c2h2.r_c3 = r_c3_0 
+c2h4_c2h2.r_c4 = r_c4_0 
+
+# run the scan
+out = open('scan-1.dat','w')
+for dz in numpy.linspace(0.0, 1.0, 10):
+    print(" Scan for dz = %10.3f" % dz)
+    c2h4_c2h2.r_c1 = r_c1_0 + dz
+    c2h4_c2h2.r_c2 = r_c2_0 + dz
+    c2h4_c2h2.r_c3 = r_c3_0 + dz
+    c2h4_c2h2.r_c4 = r_c4_0 + dz
+    c2h4_c2h2.update_geometry()
+
+    en, wfn = energy('oepdev', molecule=c2h4_c2h2, return_wfn=True)
+
+    e1 = psi4.get_variable("EINT COUL CAMM R-1")
+    e2 = psi4.get_variable("EINT COUL CAMM R-2")
+    e3 = psi4.get_variable("EINT COUL CAMM R-3")
+    e4 = psi4.get_variable("EINT COUL CAMM R-4")
+    e5 = psi4.get_variable("EINT COUL CAMM R-5")
+    e  = psi4.get_variable("EINT COUL EXACT")
+
+    line = "%8.4f %14.6f %14.6f %14.6f %14.6f %14.6f %14.6f" % (dz,e,e1,e2,e3,e4,e5)
+    print(line,file=out)
+out.close()

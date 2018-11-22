@@ -9,7 +9,7 @@ using namespace std;
 
 
 WavefunctionUnion::WavefunctionUnion(SharedWavefunction ref_wfn, Options& options) 
-   : Wavefunction(options), hasLocalizedOrbitals_(false)
+   : Wavefunction(options), hasLocalizedOrbitals_(false), integrals_(nullptr)
 {
    // Primary Sanity-check
    if (ref_wfn->molecule()->nfragments()==1) throw 
@@ -45,7 +45,8 @@ WavefunctionUnion::WavefunctionUnion(
 		Options& options
 		)
  : Wavefunction(options),
-   hasLocalizedOrbitals_(false)
+   hasLocalizedOrbitals_(false),
+   integrals_(nullptr)
 {
    //TODO Implement sanity checks (multiplicity, symmetry, number of fragments)
    // If passed sanity-checks, then initialize the object
@@ -822,6 +823,10 @@ SharedVector WavefunctionUnion::epsilon_subset_helper(SharedVector epsilon, cons
     }
 
     return C2;
+}
+void WavefunctionUnion::clear_dpd() {
+  // Destruct the IntegralTransform object
+  this->integrals_.reset();
 }
 
 

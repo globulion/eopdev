@@ -28,7 +28,6 @@ void export_solver(py::module &m) {
     WFN
          .def(py::init<std::shared_ptr<psi::Wavefunction>, psi::Options&>())
 	 .def(py::init<
-		       //std::shared_ptr<psi::Wavefunction>,
 		       std::shared_ptr<psi::Molecule>, 
 		       std::shared_ptr<psi::BasisSet>, 
 		       std::shared_ptr<psi::BasisSet>, 
@@ -44,6 +43,7 @@ void export_solver(py::module &m) {
 		       std::shared_ptr<psi::Wavefunction>, 
 		       psi::Options&>())
     	 .def("transform_integrals",  &oepdev::WavefunctionUnion::transform_integrals, "Transform integrals to MO basis")
+	 .def("clear_dpd", &oepdev::WavefunctionUnion::clear_dpd, "Clear the DPD instance (necessary at the end of work)")
         ;
 }
 
