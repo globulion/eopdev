@@ -27,7 +27,6 @@ void export_dmtp(py::module &m) {
     typedef std::vector<psi::SharedMatrix> (oepdev::DMTPole::*get_vecmat)(void) const;
     typedef void (oepdev::DMTPole::*set_matrix_int)(psi::SharedMatrix, int);
     typedef void (oepdev::DMTPole::*set_vecmat)(std::vector<psi::SharedMatrix>);
-    typedef void (oepdev::DMTPole::*recenter_set)(psi::SharedMatrix, int);
     typedef void (oepdev::DMTPole::*recenter_all)(psi::SharedMatrix);
 
     /* Function get_camm */
@@ -90,7 +89,6 @@ void export_dmtp(py::module &m) {
 
   	.def       ("n_sites"          ,                 &oepdev::DMTPole::n_sites                    , "Number of DMTP sites", py::return_value_policy::copy)
   	.def       ("n_dmtp"           ,                 &oepdev::DMTPole::n_dmtp                     , "Number of DMTP sets", py::return_value_policy::copy)
-  	.def       ("recenter"         , recenter_set(   &oepdev::DMTPole::recenter)                  , "Change origins of the distributed multipole moments of ith set")
   	.def       ("recenter"         , recenter_all(   &oepdev::DMTPole::recenter)                  , "Change origins of the distributed multipole moments of all sets")
 	.def       ("translate"        ,                 &oepdev::DMTPole::translate                  , "Translate the DMTP sets")
 	.def       ("rotate"           ,                 &oepdev::DMTPole::rotate                     , "Rotate the DMTP sets")

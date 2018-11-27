@@ -279,7 +279,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
      *  each distributed site of multipoles is independent of the others.
      *  TODO - Finish for octupoles and hexadecapoles! -> define the permutation operators!
      */
-    virtual void recenter(psi::SharedMatrix new_origins)
+    virtual void recenter(psi::SharedMatrix new_origins);
 
     /// Translate the DMTP sets
     void translate(psi::SharedVector transl);
