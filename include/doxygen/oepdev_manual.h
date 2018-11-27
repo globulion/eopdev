@@ -465,7 +465,7 @@ __Table 2.__ Target models vs benchmarks and competitor models.
 
 //--------------------------------------------------------------------------------------------
 
-/*! \page pprogramming Contributing to oep-dev
+/*! \page pprogramming Contributing to OEP-Dev
     \tableofcontents
 
 OepDev is a plugin to Psi4. Therefore it should follow the programming etiquette of Psi4. Also,

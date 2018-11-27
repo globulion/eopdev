@@ -2,7 +2,7 @@
 ![alt text](https://github.com/globulion/oepdev/raw/master/doc/images/toc.png "Logo Title Text 1")
 *****
 
-oep-dev
+OEP-Dev
 =======
 
 Generalized One-Electron Potentials: Development Platform.
@@ -23,17 +23,16 @@ In particular, the plugin tests the models of:
 
 *******
   1. the Pauli exchange-repulsion interaction energy    (Project II ) 
-  2. the Induction interaction energy                   (Project III)
-  3. the excitation energy transfer couplings           (Project I  )
+  2. the charge-transfer interaction energy             (Project I  ) 
+  3. the polarization of electronic density             (Project III)
+  4. the excitation energy transfer couplings           (Project I  )
 
 *******
 
 against reference solutions (exact or other approximations). 
 
 Places to go:
- * [OEP Design](https://github.com/globulion/oepdev/blob/master/doc/git/doc_oep_design.md)
- * [Implemented Models](https://github.com/globulion/oepdev/blob/master/doc/git/doc_implemented_models.md)
- * [Programming Etiquette](https://github.com/globulion/oepdev/blob/master/doc/git/doc_programming_etiquette.md)
+ * [OEP-Dev Code](https://github.com/globulion/oepdev)
  * [Current Issues](https://github.com/globulion/oepdev/issues)
 
 This wikipages will be updated soon.
@@ -42,7 +41,7 @@ This wikipages will be updated soon.
 
 References
 ----------
-[1] [B. Błasiak, "One-Particle Density Matrix Polarization Susceptibility Tensors", *Submitted* **2018** XX, XXX](https://jcp.peerx-press.org/cgi-bin/main.plex?form_type=status_details&j_id=62&ms_id=829529&ms_rev_no=0&ms_id_key=ftdKSMZ2dANZfpmR3tI2bC8g)
+[[1]](https://doi.org/10.1063/1.5051995) B. Błasiak, "One-Particle Density Matrix Polarization Susceptibility Tensors", *J. Chem. Phys.* **149**, 164115 (2018) 
 
 
 

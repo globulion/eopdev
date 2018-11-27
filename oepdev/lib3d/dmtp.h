@@ -25,29 +25,99 @@ class DMTPole;
 /** \brief Multipole Convergence. 
  *
  * Handles the convergence of the distributed multipole expansions up to hexadecapole.
+ * Takes shared pointers to existing DMTPole objects and computes the generalized
+ * property:
+ *  - energy
+ *  - potential
+ *  from the DMTP sets. The results are stored in vector of length equal to the number
+ *  of DMTP's in a set decribed by DMTPole objects given. 
+ *
+ * \note
+ *  The number of DMTP's in each object has to be the same.
  */
 class MultipoleConvergence
 {
   public:
+    /** 
+     * Convergence level of the multipole expansion:
+     *
+     * @param R1 - qq term
+     * @param R2 - qd and sum of the above
+     * @param R3 - qQ, dd and sum of the above
+     * @param R4 - qO, dQ and sum of the above
+     * @param R5 - qH, dO, QQ and sum of the above
+     *
+     */
     enum ConvergenceLevel {R1, R2, R3, R4, R5};
+
+    /** 
+     * Property to be evaluated from interacting DMTP's:
+     *
+     * @param Energy    - generalized energy
+     * @param Potential - generalized potential
+     *
+     */
     enum Property {Energy, Potential};
+
+    /** \brief Construct from two shared DMTPole objects.
+     *
+     * @param dmtp1      - first DMTPole object
+     * @param dmtp2      - second DMTPole object
+     * @param max_clevel - maximul allowed convergence level
+     */
     MultipoleConvergence(std::shared_ptr<DMTPole> dmtp1, std::shared_ptr<DMTPole> dmtp2, 
                          ConvergenceLevel max_clevel = R5);
+
+    /// Destructor
     virtual ~MultipoleConvergence();
+
+    /** Compute the generalized property
+     * 
+     *  @param property - generalized Property
+     */
     void compute(Property property = Energy);
+
+    /** Grab the generalized property at specified level of convergence
+     * 
+     * @param clevel - ConvergenceLevel
+     * @return vector of results (each element corresponds to each DMTP pair in a set)
+     */
     std::shared_ptr<psi::Vector> level(ConvergenceLevel clevel = R5);
+
+
   protected:
+
+    /// Maximum allowed convergence level
     ConvergenceLevel max_clevel_;
+    /// First DMTP set
     std::shared_ptr<DMTPole> dmtp_1_;
+    /// Second DMTP set
     std::shared_ptr<DMTPole> dmtp_2_;
+    /// Dictionary of available convergence level results
     std::map<std::string, std::shared_ptr<psi::Vector>> convergenceList_;
+
+    /// Compute the generalized energy
     void compute_energy();
+    /// Void compute the generalized potential
     void compute_potential();
 };
 
 /** \brief Distributed Multipole Analysis Container and Computer. Abstract Base.
  *
- * Handles the distributed multipole expansions up to hexadecapole.
+ * Handles the distributed multipole expansions up to hexadecapoles.
+ * Distributed centres as well as DMTP origins 
+ * are allowed to be located in arbitrary points in space.
+ * The object describes a set of \f$ N \f$ DMTP's, that can be generated
+ * by providing one-particle density matrices in AO basis. 
+ * Nuclear contributions can be switched on or off separately 
+ * for each DMTP within a set. The following operations on the DMTP sets are
+ * available through the API:
+ *  - translation
+ *  - rotation
+ *  - superimposition
+ *  - recentering the origins
+ *  - computing the generalized property from another DMTP set
+ * /TODO
  */
 class DMTPole : public std::enable_shared_from_this<DMTPole>
 {
@@ -268,10 +338,33 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
  *
  *  Cumulative atomic multipole representation of the molecular charge distribution. Method of Sokalski and Poirier.
  *  Ref.: W. A. Sokalski and R. A. Poirier, *Chem. Phys. Lett.*, 98(1) **1983**
+ *
+ *  # Methodology.
+ *  The distributed multipole moments are computed in the following way: 
+ *   - first the atomic additive multipole moments (AAMM's) with origins set to the global
+ *     coordinate system origin are computed. AO basis set partitioning is used
+ *     to dostribute the AAMM's onto the atomic centres.
+ *   - subsequently, the AAMM's origins are moved to the corresponding atomic site. 
+ *
+ *   The computation of the AAMM's is performed according to the following prescription:
+ *   \f[
+ *   M^{(A)}_{uw\ldots z} 
+ *   = \sum_{\alpha\in A} \sum_{\beta\in{\rm all AO's}} 
+ *     D_{\alpha\beta}^{\rm OED} 
+ *     \left< \alpha \vert \mathscr{M}_{uw\ldots z} ({\bf 0}) \vert \beta \right>
+ *   \f]
+ *   where \f$ M^{(A)}_{uw\ldots z} \f$ denotes the \f$ (uw\ldots z) \f$-th component
+ *   of the multipole centered at atomic site \f$ A \f$, the symbol \f$ \mathscr{M}({\bf 0}) \f$
+ *   is the associated quantum mechanical operator and \f$ D_{\alpha\beta}^{\rm OED} \f$ is the (generalized) 
+ *   one-particle density matrx element in AO basis (Greek indices).
+ *
+ *   Recentering of the multipole moments is described in the documentation of oepdev::DMTPole::recenter.
+ *
  */
 class CAMM : public DMTPole 
 {
  public:
+   /// Construct CAMM DMTPole object
    CAMM(psi::SharedWavefunction wfn, int n);
    virtual ~CAMM();
    virtual void compute(psi::SharedMatrix D, bool transition, int n);
