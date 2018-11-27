@@ -117,7 +117,6 @@ class MultipoleConvergence
  *  - superimposition
  *  - recentering the origins
  *  - computing the generalized property from another DMTP set
- * /TODO
  */
 class DMTPole : public std::enable_shared_from_this<DMTPole>
 {
@@ -212,10 +211,75 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     /// Set the distributed hexadecapoles for the \f$ i \f$th distribution
     void set_hexadecapoles(psi::SharedMatrix M, int i) {hexadecapoles_[i] = std::make_shared<psi::Matrix>(M);}
 
-    /// Change origins of the distributed multipole moments of ith set
-    virtual void recenter(psi::SharedMatrix new_origins, int i);
-    /// Change origins of the distributed multipole moments of all sets
-    virtual void recenter(psi::SharedMatrix new_origins);
+    /** 
+     *  Change origins of the distributed multipole moments of all sets
+     *
+     *  @param new_origins - matrix with coordinates of the new origins \f$ \{ {\bf r}_{\rm new} \}\f$.
+     *  \note The number of origins has to be equal to the number of distributed centres.
+     *
+     *  Recentering of the multipoles affects the distributed dipoles and higher moments.
+     *  The moments are given as
+     *  \f{align*}{
+     *   q_{\rm new}  &= q_{\rm old} \\
+     *   {\boldsymbol{\upmu}}_{\rm new}   &= {\boldsymbol{\upmu}}_{\rm old} - q_{\rm old} {\boldsymbol \Delta}^{(1)} \\
+     *   {\boldsymbol{\Theta}}_{\rm new}  &= {\boldsymbol{\Theta}}_{\rm old} + q_{\rm old} {\boldsymbol \Delta}^{(2)}
+     *       - \sum_{\mathscr{P}_2} \mathscr{P}_2 \left[
+     *          \left(
+     *          {\boldsymbol{\upmu}}_{\rm old} + q_{\rm old} {\bf r}_{\rm old} 
+     *          \right)
+     *          \otimes {\boldsymbol \Delta}^{(1)} 
+     *          \right] \\
+     *   {\boldsymbol{\Omega}}_{\rm new}  &= {\boldsymbol{\Omega}}_{\rm old} - q_{\rm old} {\boldsymbol \Delta}^{(3)}
+     *       + \sum_{\mathscr{P}_3} \mathscr{P}_3 \left[ 
+     *            \left(
+     *            {\boldsymbol{\upmu}}_{\rm old} + q_{\rm old} {\bf r}_{\rm old}
+     *            \right)
+     *            \otimes {\boldsymbol \Delta}^{(2)}
+     *              \right]
+     *       - \sum_{\mathscr{P}_6} \mathscr{P}_6 \left[ 
+     *            \left(
+     *            {\boldsymbol{\Theta}}_{\rm old} + q_{\rm old} {\bf r}_{\rm old}^2 
+     *                                    + {\boldsymbol{\upmu}}_{\rm old} \otimes {\bf r}_{\rm old}
+     *            \right)
+     *            \otimes {\boldsymbol \Delta}^{(1)}
+     *              \right] \\
+     *    {\boldsymbol{\Xi}}_{\rm new}  &= {\boldsymbol{\Xi}}_{\rm old} + q_{\rm old} {\boldsymbol \Delta}^{(4)}
+     *        - \sum_{\mathscr{P}_3} \mathscr{P}_3 \left[ 
+     *            \left(
+     *            {\boldsymbol{\upmu}}_{\rm old} + q_{\rm old} {\bf r}_{\rm old}^3
+     *            \right)
+     *            \otimes {\boldsymbol \Delta}^{(3)}
+     *              \right]
+     *        + \sum_{\mathscr{P}_3} \mathscr{P}_3 \left[ 
+     *            \left(
+     *            q_{\rm old} {\bf r}_{\rm old}^2 +
+     *            {\boldsymbol{\upmu}}_{\rm old} \otimes {\bf r}_{\rm old} +
+     *            {\boldsymbol{\Theta}}_{\rm old}
+     *            \right)
+     *            \otimes {\boldsymbol \Delta}^{(2)}
+     *              \right]
+     *        - \sum_{\mathscr{P}_3} \mathscr{P}_3 \left[ 
+     *            \left(
+     *            q_{\rm old} {\bf r}_{\rm old}^3 +
+     *            {\boldsymbol{\upmu}}_{\rm old} {\bf r}_{\rm old}^3 +
+     *            {\boldsymbol{\Theta}}_{\rm old} \otimes {\bf r}_{\rm old}^2 +
+     *            {\boldsymbol{\Omega}}_{\rm old}
+     *            \right)
+     *            \otimes {\boldsymbol \Delta}^{(1)}
+     *              \right]
+     *  \f}
+     *  where 
+     *  \f{align*}{
+     *   {\boldsymbol \Delta}^{(1)} &\equiv {\bf r}_{\rm new}   - {\bf r}_{\rm old}   \\
+     *   {\boldsymbol \Delta}^{(2)} &\equiv {\bf r}_{\rm new}^2 - {\bf r}_{\rm old}^2 \\
+     *   {\boldsymbol \Delta}^{(3)} &\equiv {\bf r}_{\rm new}^3 - {\bf r}_{\rm old}^3 \\
+     *   {\boldsymbol \Delta}^{(4)} &\equiv {\bf r}_{\rm new}^4 - {\bf r}_{\rm old}^4
+     *  \f}
+     *  In the above equations, the distributed centre label was omitted (redundant) as 
+     *  each distributed site of multipoles is independent of the others.
+     *  TODO - Finish for octupoles and hexadecapoles! -> define the permutation operators!
+     */
+    virtual void recenter(psi::SharedMatrix new_origins)
 
     /// Translate the DMTP sets
     void translate(psi::SharedVector transl);
@@ -282,6 +346,9 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     void compute_integrals();
     /// Compute maximum order of the integrals
     void compute_order();
+
+    /// Change origins of the distributed multipole moments of ith set
+    virtual void recenter(psi::SharedMatrix new_origins, int i);
 
     /// Name of the distribution method
     std::string name_;
