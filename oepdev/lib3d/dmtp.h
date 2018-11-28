@@ -120,6 +120,10 @@ class MultipoleConvergence
  */
 class DMTPole : public std::enable_shared_from_this<DMTPole>
 {
+  /**
+   * Convergence of multipole moment series.
+   * @relates MultipoleConvergence
+   */
   friend class MultipoleConvergence;
 
   public:
@@ -225,28 +229,32 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
      *   {\boldsymbol{\Theta}}_{\rm new}  &= {\boldsymbol{\Theta}}_{\rm old} + q_{\rm old} {\boldsymbol \Delta}^{(2)}
      *       - \sum_{\mathscr{P}_2} \mathscr{P}_2 \left[
      *          \left(
-     *          {\boldsymbol{\upmu}}_{\rm old} + q_{\rm old} {\bf r}_{\rm old} 
+     *          q_{\rm old} {\bf r}_{\rm old} +
+     *          {\boldsymbol{\upmu}}_{\rm old} 
      *          \right)
      *          \otimes {\boldsymbol \Delta}^{(1)} 
      *          \right] \\
      *   {\boldsymbol{\Omega}}_{\rm new}  &= {\boldsymbol{\Omega}}_{\rm old} - q_{\rm old} {\boldsymbol \Delta}^{(3)}
      *       + \sum_{\mathscr{P}_3} \mathscr{P}_3 \left[ 
      *            \left(
-     *            {\boldsymbol{\upmu}}_{\rm old} + q_{\rm old} {\bf r}_{\rm old}
+     *            q_{\rm old} {\bf r}_{\rm old} +
+     *            {\boldsymbol{\upmu}}_{\rm old}
      *            \right)
      *            \otimes {\boldsymbol \Delta}^{(2)}
      *              \right]
      *       - \sum_{\mathscr{P}_6} \mathscr{P}_6 \left[ 
      *            \left(
-     *            {\boldsymbol{\Theta}}_{\rm old} + q_{\rm old} {\bf r}_{\rm old}^2 
-     *                                    + {\boldsymbol{\upmu}}_{\rm old} \otimes {\bf r}_{\rm old}
+     *            q_{\rm old} {\bf r}_{\rm old}^2  +
+     *            {\boldsymbol{\upmu}}_{\rm old} \otimes {\bf r}_{\rm old} +
+     *            {\boldsymbol{\Theta}}_{\rm old} 
      *            \right)
      *            \otimes {\boldsymbol \Delta}^{(1)}
      *              \right] \\
      *    {\boldsymbol{\Xi}}_{\rm new}  &= {\boldsymbol{\Xi}}_{\rm old} + q_{\rm old} {\boldsymbol \Delta}^{(4)}
      *        - \sum_{\mathscr{P}_3} \mathscr{P}_3 \left[ 
      *            \left(
-     *            {\boldsymbol{\upmu}}_{\rm old} + q_{\rm old} {\bf r}_{\rm old}^3
+     *            q_{\rm old} {\bf r}_{\rm old} +
+     *            {\boldsymbol{\upmu}}_{\rm old} 
      *            \right)
      *            \otimes {\boldsymbol \Delta}^{(3)}
      *              \right]
@@ -254,15 +262,15 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
      *            \left(
      *            q_{\rm old} {\bf r}_{\rm old}^2 +
      *            {\boldsymbol{\upmu}}_{\rm old} \otimes {\bf r}_{\rm old} +
-     *            {\boldsymbol{\Theta}}_{\rm old}
+     *            {\boldsymbol{\Theta}}_{\rm old} 
      *            \right)
      *            \otimes {\boldsymbol \Delta}^{(2)}
      *              \right]
      *        - \sum_{\mathscr{P}_3} \mathscr{P}_3 \left[ 
      *            \left(
      *            q_{\rm old} {\bf r}_{\rm old}^3 +
-     *            {\boldsymbol{\upmu}}_{\rm old} {\bf r}_{\rm old}^3 +
-     *            {\boldsymbol{\Theta}}_{\rm old} \otimes {\bf r}_{\rm old}^2 +
+     *            {\boldsymbol{\upmu}}_{\rm old} \otimes {\bf r}_{\rm old}^2 +
+     *            {\boldsymbol{\Theta}}_{\rm old} \otimes {\bf r}_{\rm old} +
      *            {\boldsymbol{\Omega}}_{\rm old}
      *            \right)
      *            \otimes {\boldsymbol \Delta}^{(1)}
@@ -337,6 +345,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
      *
      *  @param wfn - wavefunction
      *  @param n   - number of DMTP sets
+     *
      *  Do not use this constructor. Use the DMTPole::build method.
      */
     DMTPole(std::shared_ptr<psi::Wavefunction> wfn, int n);
@@ -401,7 +410,8 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     virtual void allocate();
 };
 
-/** \brief Cumulative Atomic Multipole Moments.
+/** 
+ *  \brief Cumulative Atomic Multipole Moments.
  *
  *  Cumulative atomic multipole representation of the molecular charge distribution. Method of Sokalski and Poirier.
  *  Ref.: W. A. Sokalski and R. A. Poirier, *Chem. Phys. Lett.*, 98(1) **1983**
@@ -415,7 +425,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
  *
  *   The computation of the AAMM's is performed according to the following prescription:
  *   \f[
- *   M^{(A)}_{uw\ldots z} 
+ *   M^{(A)}_{uw\ldots z} ({\bf 0})
  *   = \sum_{\alpha\in A} \sum_{\beta\in{\rm all AO's}} 
  *     D_{\alpha\beta}^{\rm OED} 
  *     \left< \alpha \vert \mathscr{M}_{uw\ldots z} ({\bf 0}) \vert \beta \right>
