@@ -29,11 +29,11 @@ double oepdev::test::Test::test_dmtp_energy(void) {
 
   // Compute interaction energy
   std::shared_ptr<oepdev::MultipoleConvergence> energy = dmtp_1->energy(dmtp_2, oepdev::MultipoleConvergence::ConvergenceLevel::R5);
-  double conv_R1 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R1)->get(0);
-  double conv_R2 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R2)->get(0);
-  double conv_R3 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R3)->get(0);
-  double conv_R4 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R4)->get(0);
-  double conv_R5 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R5)->get(0);
+  double conv_R1 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R1)->get(0,0);
+  double conv_R2 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R2)->get(0,0);
+  double conv_R3 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R3)->get(0,0);
+  double conv_R4 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R4)->get(0,0);
+  double conv_R5 = energy->level(oepdev::MultipoleConvergence::ConvergenceLevel::R5)->get(0,0);
   std::shared_ptr<psi::Vector> conv = std::make_shared<psi::Vector>("Convergence", 5);
   conv->set(0, conv_R1);  conv->set(1, conv_R2);  conv->set(2, conv_R3);  conv->set(3, conv_R4); conv->set(4, conv_R5);
   conv->print();

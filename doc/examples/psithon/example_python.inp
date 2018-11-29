@@ -80,11 +80,11 @@ camm1.translate(t)
 
 # compute interaction energy between CAMM 2 and CAMM 1 (after translation)
 m = camm2.energy(camm1, oepdev.MultipoleConvergence.ConvergenceLevel.R5)
-l1 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R1).get(0) 
-l2 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R2).get(0)
-l3 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R3).get(0)
-l4 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R4).get(0)
-l5 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R5).get(0)
+l1 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R1).get(0,0) 
+l2 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R2).get(0,0)
+l3 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R3).get(0,0)
+l4 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R4).get(0,0)
+l5 = m.level(oepdev.MultipoleConvergence.ConvergenceLevel.R5).get(0,0)
 
 log="""
  Interaction Energy Convergence:

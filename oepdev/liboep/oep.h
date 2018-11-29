@@ -177,8 +177,11 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     /// Retrieve the potentials
     OEPType oep(const std::string& oepType) const {return oepTypes_.at(oepType);}
 
-    /// Retrieve the potentials in a matrix form
+    /// Retrieve the potentials of a particular OEP type in a matrix form
     SharedMatrix matrix(const std::string& oepType) const { return oepTypes_.at(oepType).matrix; }
+
+    /// Retrieve the number of a particular OEP type
+    int n(const std::string& oepType) const {return oepTypes_.at(oepType).n;}
 
     /// Retrieve wavefunction object
     SharedWavefunction wfn() const {return wfn_;}

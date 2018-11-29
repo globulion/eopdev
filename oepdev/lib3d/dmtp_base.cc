@@ -18,18 +18,15 @@ MultipoleConvergence::MultipoleConvergence(std::shared_ptr<DMTPole> dmtp1, std::
    max_clevel_(max_clevel),
    convergenceList_{}
 {
-   // Check if there is the same amount of DMTPs interacting with each other for sets A and B
-   assert(dmtp_1_->nDMTPs_ == dmtp_2_->nDMTPs_);
-
-   convergenceList_["qq"] = std::make_shared<psi::Vector>("q-q term",dmtp_1_->nDMTPs_);
-   convergenceList_["qD"] = std::make_shared<psi::Vector>("q-D term",dmtp_1_->nDMTPs_);
-   convergenceList_["DD"] = std::make_shared<psi::Vector>("D-D term",dmtp_1_->nDMTPs_);
-   convergenceList_["qQ"] = std::make_shared<psi::Vector>("q-Q term",dmtp_1_->nDMTPs_);
-   convergenceList_["DQ"] = std::make_shared<psi::Vector>("D-Q term",dmtp_1_->nDMTPs_);
-   convergenceList_["qO"] = std::make_shared<psi::Vector>("q-O term",dmtp_1_->nDMTPs_);
-   convergenceList_["QQ"] = std::make_shared<psi::Vector>("Q-Q term",dmtp_1_->nDMTPs_);
-   convergenceList_["DO"] = std::make_shared<psi::Vector>("D-O term",dmtp_1_->nDMTPs_);
-   convergenceList_["qH"] = std::make_shared<psi::Vector>("q-H term",dmtp_1_->nDMTPs_);
+   convergenceList_["qq"] = std::make_shared<psi::Matrix>("q-q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["qD"] = std::make_shared<psi::Matrix>("q-D term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["DD"] = std::make_shared<psi::Matrix>("D-D term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["qQ"] = std::make_shared<psi::Matrix>("q-Q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["DQ"] = std::make_shared<psi::Matrix>("D-Q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["qO"] = std::make_shared<psi::Matrix>("q-O term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["QQ"] = std::make_shared<psi::Matrix>("Q-Q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["DO"] = std::make_shared<psi::Matrix>("D-O term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["qH"] = std::make_shared<psi::Matrix>("q-H term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
 }
 MultipoleConvergence::~MultipoleConvergence() 
 {
@@ -39,9 +36,9 @@ void MultipoleConvergence::compute(MultipoleConvergence::Property property)
   if      (property == MultipoleConvergence::Property::Energy   ) {this->compute_energy   ();}
   else if (property == MultipoleConvergence::Property::Potential) {this->compute_potential();}
 }
-std::shared_ptr<psi::Vector> MultipoleConvergence::level(MultipoleConvergence::ConvergenceLevel clevel)
+std::shared_ptr<psi::Matrix> MultipoleConvergence::level(MultipoleConvergence::ConvergenceLevel clevel)
 {
-  std::shared_ptr<psi::Vector> result = std::make_shared<psi::Vector>("Result", dmtp_1_->nDMTPs_);
+  std::shared_ptr<psi::Matrix> result = std::make_shared<psi::Matrix>("Result", dmtp_1_->nDMTPs_, dmtp_2_->nDMTPs_);
   // R-1
   result->add(convergenceList_["qq"]);
   // R-2
@@ -72,17 +69,18 @@ void MultipoleConvergence::compute_energy()
    double** r_A_ = dmtp_1_->centres()->pointer();
    double** r_B_ = dmtp_2_->centres()->pointer();
 
-   for (int N=0; N<dmtp_1_->nDMTPs_; ++N) {
-        double** q_A_ = dmtp_1_->charges_[N]->pointer();
-        double** q_B_ = dmtp_2_->charges_[N]->pointer();
-        double** D_A_ = dmtp_1_->dipoles_[N]->pointer();
-        double** D_B_ = dmtp_2_->dipoles_[N]->pointer();
-        double** Q_A_ = dmtp_1_->quadrupoles_[N]->pointer();
-        double** Q_B_ = dmtp_2_->quadrupoles_[N]->pointer();
-        double** O_A_ = dmtp_1_->octupoles_[N]->pointer();
-        double** O_B_ = dmtp_2_->octupoles_[N]->pointer();
-        double** H_A_ = dmtp_1_->hexadecapoles_[N]->pointer();
-        double** H_B_ = dmtp_2_->hexadecapoles_[N]->pointer();
+   for (int N1=0; N1<dmtp_1_->nDMTPs_; ++N1) {
+   for (int N2=0; N2<dmtp_2_->nDMTPs_; ++N2) {
+        double** q_A_ = dmtp_1_->charges_[N1]->pointer();
+        double** q_B_ = dmtp_2_->charges_[N2]->pointer();
+        double** D_A_ = dmtp_1_->dipoles_[N1]->pointer();
+        double** D_B_ = dmtp_2_->dipoles_[N2]->pointer();
+        double** Q_A_ = dmtp_1_->quadrupoles_[N1]->pointer();
+        double** Q_B_ = dmtp_2_->quadrupoles_[N2]->pointer();
+        double** O_A_ = dmtp_1_->octupoles_[N1]->pointer();
+        double** O_B_ = dmtp_2_->octupoles_[N2]->pointer();
+        double** H_A_ = dmtp_1_->hexadecapoles_[N1]->pointer();
+        double** H_B_ = dmtp_2_->hexadecapoles_[N2]->pointer();
 
         double qq = 0.0; // R-1
         double qD = 0.0; // R-2
@@ -409,17 +407,17 @@ void MultipoleConvergence::compute_energy()
              } // EndForDMTPCentres_B
         } // EndForDMTPCentres_A
 
-        convergenceList_["qq"]->set(N, qq);
-        convergenceList_["qD"]->set(N, qD);
-        convergenceList_["DD"]->set(N, DD);
-        convergenceList_["qQ"]->set(N, qQ);
-        convergenceList_["DQ"]->set(N, DQ);
-        convergenceList_["qO"]->set(N, qO);
-        convergenceList_["QQ"]->set(N, QQ);
-        convergenceList_["DO"]->set(N, DO);
-        convergenceList_["qH"]->set(N, qH);
+        convergenceList_["qq"]->set(N1, N2, qq);
+        convergenceList_["qD"]->set(N1, N2, qD);
+        convergenceList_["DD"]->set(N1, N2, DD);
+        convergenceList_["qQ"]->set(N1, N2, qQ);
+        convergenceList_["DQ"]->set(N1, N2, DQ);
+        convergenceList_["qO"]->set(N1, N2, qO);
+        convergenceList_["QQ"]->set(N1, N2, QQ);
+        convergenceList_["DO"]->set(N1, N2, DO);
+        convergenceList_["qH"]->set(N1, N2, qH);
 
-   } // EndForDMTPs
+   }} // EndForDMTPs
 }
 void MultipoleConvergence::compute_potential()
 {

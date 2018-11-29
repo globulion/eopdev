@@ -234,8 +234,9 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * <tr><td> `OTTO_LADIK`        <td>Approximate Pauli Repulsion energy at HF level from Otto and Ladik (1975).
  * <tr><td> `EFP2`              <td>Approximate Pauli Repulsion energy at HF level from EFP2 model.
  * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
- * <tr><td> `MURRELL_ETAL_MIX`  <td>*Default*. OEP-Murrell et al's: S1 term via DF-OEP, S2 term via ESP-OEP.
- * <tr><td> `MURRELL_ETAL_ESP`  <td>OEP-Murrell et al's: S1 and S2 via ESP-OEP
+ * <tr><td> `MURRELL_ETAL_GDF_ESP`  <td>*Default*. OEP-Murrell et al's: S1 term via DF-OEP, S2 term via ESP-OEP.
+ * <tr><td> `MURRELL_ETAL_GDF_CAMM` <td>OEP-Murrell et al's: S1 term via DF-OEP, S2 term via CAMM-OEP.
+ * <tr><td> `MURRELL_ETAL_ESP`  <td>OEP-Murrell et al's: S1 and S2 via ESP-OEP (not implemented)
  * </table>
  * *Note:*
  *   - This solver also computes and prints the exchange energy at HF level (formulae are given below)
@@ -537,7 +538,9 @@ class RepulsionEnergySolver : public OEPDevSolver
     double compute_benchmark_efp2();
 
     /// Murrell et al's/OEP: S1-DF, S2-ESP (2017-2018)
-    double compute_oep_based_murrell_etal_mix();
+    double compute_oep_based_murrell_etal_gdf_esp();
+    /// Murrell et al's/OEP: S1-DF, S2-CAMM (2017-2018)
+    double compute_oep_based_murrell_etal_gdf_camm();
     /// Murrell et al's/OEP: S1-ESP, S2-ESP (2017-2018)
     double compute_oep_based_murrell_etal_esp();
 

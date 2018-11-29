@@ -27,11 +27,11 @@ double ElectrostaticEnergySolver::compute_oep_based_camm(){
 
   psi::timer_on("Solver E(Coul) OEP-Based:CAMM   ");
 
-  double e1 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R1)->get(0);
-  double e2 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R2)->get(0);
-  double e3 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R3)->get(0);
-  double e4 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R4)->get(0);
-  double e5 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R5)->get(0);
+  double e1 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R1)->get(0,0);
+  double e2 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R2)->get(0,0);
+  double e3 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R3)->get(0,0);
+  double e4 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R4)->get(0,0);
+  double e5 = (oep_1->oep("V").dmtp->energy(oep_2->oep("V").dmtp))->level(oepdev::MultipoleConvergence::R5)->get(0,0);
 
   double energy = e5;
 

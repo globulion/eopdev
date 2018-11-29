@@ -36,7 +36,7 @@ void export_dmtp(py::module &m) {
     py::class_<oepdev::MultipoleConvergence, std::shared_ptr<oepdev::MultipoleConvergence>> MC(m, "MultipoleConvergence", "Handles the convergence of the distributed multipole expansions up to hexadecapole.");
     MC
 	.def(py::init<std::shared_ptr<oepdev::DMTPole>, std::shared_ptr<oepdev::DMTPole>, oepdev::MultipoleConvergence::ConvergenceLevel>())
-        .def("compute", &oepdev::MultipoleConvergence::compute, "")
+        .def("compute", &oepdev::MultipoleConvergence::compute, "Compute generalized property based on distributed multipole expansion sets")
 	.def("level", &oepdev::MultipoleConvergence::level, "", py::return_value_policy::take_ownership)
     ;
 
@@ -95,6 +95,8 @@ void export_dmtp(py::module &m) {
 	.def       ("superimpose"      ,                 &oepdev::DMTPole::superimpose                , "Superimpose the DMTP sets")
 	.def       ("energy"           ,                 &oepdev::DMTPole::energy                     , "Evaluate the generalized energy", py::return_value_policy::take_ownership)
 	.def       ("potential"        ,                 &oepdev::DMTPole::potential                  , "Evaluate the generalized potential", py::return_value_policy::take_ownership)
+	.def       ("print_header"     ,                 &oepdev::DMTPole::print_header               , "Print header info to output file")
+	.def       ("print"            ,                 &oepdev::DMTPole::print                      , "Print the multipoles to output file")
         ;
 }
 

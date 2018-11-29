@@ -117,7 +117,10 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
 				   ref_wfn->get_basisset("BASIS_DF_INT"), 
 				   options);
         else if (o_oep_build_type == "CT_ENERGY")
-                   oep = oepdev::OEPotential::build("CHARGE TRANSFER ENERGY", ref_wfn, ref_wfn->basisset(), ref_wfn->basisset(), options);
+                   oep = oepdev::OEPotential::build("CHARGE TRANSFER ENERGY", ref_wfn, 
+				   ref_wfn->get_basisset("BASIS_DF_OEP"), 
+				   ref_wfn->get_basisset("BASIS_DF_INT"), 
+				   options);
         else if (o_oep_build_type == "EET_COUPLING")
                    oep = oepdev::OEPotential::build("EET COUPLING CONSTANT" , ref_wfn, options);
         else 
@@ -167,10 +170,11 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
             std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("REPULSION ENERGY", wfn_union);
                                                                                                                             
             double e_stone = solver->compute_benchmark("HAYES_STONE"  );
-            double e_dens  = solver->compute_benchmark("DENSITY_BASED");
+            //double e_dens  = solver->compute_benchmark("DENSITY_BASED");
             double e_murr  = solver->compute_benchmark("MURRELL_ETAL" );
-            double e_oep1  = solver->compute_oep_based("MURRELL_ETAL_MIX");
             double e_otla  = solver->compute_benchmark("OTTO_LADIK"   );
+            double e_oep1  = solver->compute_oep_based("MURRELL_ETAL_GDF_ESP");
+	    double e_oep2  = solver->compute_oep_based("MURRELL_ETAL_GDF_CAMM");
             double e_efp2  = solver->compute_benchmark("EFP2"         );        
         } 
         else 

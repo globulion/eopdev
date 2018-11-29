@@ -29,11 +29,10 @@ class DMTPole;
  * property:
  *  - energy
  *  - potential
- *  from the DMTP sets. The results are stored in vector of length equal to the number
- *  of DMTP's in a set decribed by DMTPole objects given. 
+ *  from the DMTP sets. The results are stored in matrix of size (N1, N2) where 
+ *  N1 and N2 are equal to the number
+ *  of DMTP's in a set decribed by according DMTPole object given. 
  *
- * \note
- *  The number of DMTP's in each object has to be the same.
  */
 class MultipoleConvergence
 {
@@ -82,7 +81,7 @@ class MultipoleConvergence
      * @param clevel - ConvergenceLevel
      * @return vector of results (each element corresponds to each DMTP pair in a set)
      */
-    std::shared_ptr<psi::Vector> level(ConvergenceLevel clevel = R5);
+    std::shared_ptr<psi::Matrix> level(ConvergenceLevel clevel = R5);
 
 
   protected:
@@ -94,7 +93,7 @@ class MultipoleConvergence
     /// Second DMTP set
     std::shared_ptr<DMTPole> dmtp_2_;
     /// Dictionary of available convergence level results
-    std::map<std::string, std::shared_ptr<psi::Vector>> convergenceList_;
+    std::map<std::string, std::shared_ptr<psi::Matrix>> convergenceList_;
 
     /// Compute the generalized energy
     void compute_energy();

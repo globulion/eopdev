@@ -7,6 +7,8 @@ using namespace std;
 using namespace psi;
 using namespace oepdev;
 
+using SharedMTPConv = std::shared_ptr<oepdev::MultipoleConvergence>;
+
 // ===> Repulsion Energy <=== //
 RepulsionEnergySolver::RepulsionEnergySolver(SharedWavefunctionUnion wfn_union)
  : OEPDevSolver(wfn_union)
@@ -18,7 +20,8 @@ RepulsionEnergySolver::RepulsionEnergySolver(SharedWavefunctionUnion wfn_union)
   methods_benchmark_.push_back("OTTO_LADIK"      );
   methods_benchmark_.push_back("EFP2"            );
   // OEP-based
-  methods_oepBased_ .push_back("MURRELL_ETAL_MIX");
+  methods_oepBased_ .push_back("MURRELL_ETAL_GDF_ESP");
+  methods_oepBased_ .push_back("MURRELL_ETAL_GDF_CAMM");
   methods_oepBased_ .push_back("MURRELL_ETAL_ESP");
 }
 RepulsionEnergySolver::~RepulsionEnergySolver() {}
@@ -26,8 +29,9 @@ double RepulsionEnergySolver::compute_oep_based(const std::string& method)
 {
   double e = 0.0;
   if      (method == "DEFAULT" || 
-           method == "MURRELL_ETAL_MIX")  e = compute_oep_based_murrell_etal_mix();
-  else if (method == "MURRELL_ETAL_ESP")  e = compute_oep_based_murrell_etal_esp();
+           method == "MURRELL_ETAL_GDF_ESP")  e = compute_oep_based_murrell_etal_gdf_esp();
+  else if (method == "MURRELL_ETAL_GDF_CAMM") e = compute_oep_based_murrell_etal_gdf_camm();
+  else if (method == "MURRELL_ETAL_ESP"    )  e = compute_oep_based_murrell_etal_esp();
   else 
   {
      throw psi::PSIEXCEPTION("Error. Incorrect OEP-based method specified for repulsion energy calculations!\n");
@@ -914,7 +918,102 @@ double RepulsionEnergySolver::compute_efp2_exchange_energy(psi::SharedMatrix S,
 
  return e;
 }
-double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
+double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
+  double e = 0.0, e_s1 = 0.0, e_s2 = 0.0;
+
+  SharedOEPotential oep_1 = oepdev::OEPotential::build("REPULSION ENERGY",
+                                                       wfn_union_->l_wfn(0), 
+                                                       wfn_union_->l_auxiliary(0), 
+                                                       wfn_union_->l_intermediate(0), 
+                                                       wfn_union_->options());
+  SharedOEPotential oep_2 = oepdev::OEPotential::build("REPULSION ENERGY", 
+                                                       wfn_union_->l_wfn(1), 
+                                                       wfn_union_->l_auxiliary(1), 
+                                                       wfn_union_->l_intermediate(1), 
+                                                       wfn_union_->options());
+  oep_1->compute();
+  oep_2->compute();
+
+  // ===> Compute Overlap Matrices <=== //
+  int nbf_p1 = wfn_union_->l_nbf(0);
+  int nbf_p2 = wfn_union_->l_nbf(1);
+  int nbf_a1 = wfn_union_->l_auxiliary(0)->nbf();
+  int nbf_a2 = wfn_union_->l_auxiliary(1)->nbf();
+
+  std::shared_ptr<psi::Matrix> Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_p1, nbf_p2);
+  std::shared_ptr<psi::Matrix> Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
+  std::shared_ptr<psi::Matrix> Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_p1, nbf_a2);
+
+  psi::IntegralFactory fact_1p2p(wfn_union_->l_primary  (0), wfn_union_->l_primary  (1), wfn_union_->l_primary  (0), wfn_union_->l_primary  (1));
+  psi::IntegralFactory fact_1a2p(wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1), wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1));
+  psi::IntegralFactory fact_1p2a(wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1), wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1));
+
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2a(fact_1p2a.ao_overlap());
+
+  ovlInt_1p2p->compute(Sao_1p2p);
+  ovlInt_1a2p->compute(Sao_1a2p);
+  ovlInt_1p2a->compute(Sao_1p2a);
+
+  std::shared_ptr<psi::Matrix> Ca_occ_1 = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
+  std::shared_ptr<psi::Matrix> Ca_occ_2 = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
+
+  std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(Ca_occ_1, Sao_1p2p, Ca_occ_2, true, false, false);
+  std::shared_ptr<psi::Matrix> Sba = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true);
+  std::shared_ptr<psi::Matrix> Sab = psi::Matrix::doublet(Ca_occ_1, Sao_1p2a, true, false);
+
+  // ===> Compute S^-1 term <=== //
+  std::shared_ptr<psi::Matrix> SSG1= psi::Matrix::triplet(Smo, Sba, oep_1->matrix("Murrell-etal.S1"), 
+                                                          false, false, false);
+  std::shared_ptr<psi::Matrix> SSG2= psi::Matrix::triplet(Smo, Sab, oep_2->matrix("Murrell-etal.S1"), 
+                                                          true, false, false);
+  e_s1  = SSG1->trace() + SSG2->trace();
+  e_s1 *= -2.0;
+
+  // ===> Compute S^-2 term <=== //
+  SharedMTPConv conv_aB = oep_1->oep("Otto-Ladik.S2.CAMM.a").dmtp->energy(oep_2->oep("Otto-Ladik.S2.CAMM.A").dmtp);
+  SharedMTPConv conv_bA = oep_2->oep("Otto-Ladik.S2.CAMM.a").dmtp->energy(oep_1->oep("Otto-Ladik.S2.CAMM.A").dmtp);
+
+  psi::SharedMatrix level_aB = conv_aB->level(MultipoleConvergence::ConvergenceLevel::R4);
+  psi::SharedMatrix level_bA = conv_bA->level(MultipoleConvergence::ConvergenceLevel::R4);
+
+  for (int i=0; i< oep_1->n("Otto-Ladik.S2.CAMM.a"); ++i) {
+  for (int j=0; j< oep_2->n("Otto-Ladik.S2.CAMM.a"); ++j) {
+      double sij = Sab->get(i,j);
+      e_s2 += sij * sij * (level_aB->get(i,j) + level_bA->get(j,i));
+  }
+  }
+  e_s2 *= 2.0;
+  
+  // ===> Compute the Exchange Energy <=== //
+  double e_exch_pure = compute_pure_exchange_energy();
+  double e_exch_efp2 = 0.0;//compute_efp2_exchange_energy(Smo12, R1mo, R2mo);
+
+  // ===> Finish <=== //
+  e = e_s1 + e_s2;
+
+  // ---> Print <--- //
+  if (wfn_union_->options().get_int("PRINT") > 0) {
+     psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
+     psi::outfile->Printf("  ==>    OEP-Based (Murrell-etal; S1-GDF/S2-CAMM)    <==\n\n");
+     psi::outfile->Printf("     E S^-1    = %13.6f\n", e_s1                             );
+     psi::outfile->Printf("     E S^-2    = %13.6f\n", e_s2                             );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     E REP     = %13.6f\n", e                                );
+     psi::outfile->Printf("     E EX      = %13.6f\n", e_exch_pure                      );
+   //psi::outfile->Printf("     E EX(SGO) = %13.6f\n", e_exch_efp2                      );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     EXREP     = %13.6f\n", e+e_exch_pure                    );
+   //psi::outfile->Printf("     EXREP(SGO)= %13.6f\n", e+e_exch_efp2                    );
+     psi::outfile->Printf("\n");
+  }
+ 
+  // Return the Total Repulsion Energy
+  return e; 
+
+}
+double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
   double e = 0.0, e_s1 = 0.0, e_s2 = 0.0;
 
   SharedOEPotential oep_1 = oepdev::OEPotential::build("REPULSION ENERGY",
@@ -1042,16 +1141,16 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
-     psi::outfile->Printf("  ==>         OEP-Based (Murrell-etal; MIX)          <==\n\n");
+     psi::outfile->Printf("  ==>     OEP-Based (Murrell-etal; S1-GDF/S2-ESP)    <==\n\n");
      psi::outfile->Printf("     E S^-1    = %13.6f\n", e_s1                             );
      psi::outfile->Printf("     E S^-2    = %13.6f\n", e_s2                             );
      psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("     E REP     = %13.6f\n", e                                );
      psi::outfile->Printf("     E EX      = %13.6f\n", e_exch_pure                      );
-     psi::outfile->Printf("     E EX(SGO) = %13.6f\n", e_exch_efp2                      );
+   //psi::outfile->Printf("     E EX(SGO) = %13.6f\n", e_exch_efp2                      );
      psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("     EXREP     = %13.6f\n", e+e_exch_pure                    );
-     psi::outfile->Printf("     EXREP(SGO)= %13.6f\n", e+e_exch_efp2                    );
+   //psi::outfile->Printf("     EXREP(SGO)= %13.6f\n", e+e_exch_efp2                    );
      psi::outfile->Printf("\n");
   }
  
