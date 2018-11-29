@@ -339,6 +339,14 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
                                                  MultipoleConvergence::ConvergenceLevel max_clevel = MultipoleConvergence::R5);
 
 
+    // <--- Printers ---> //
+
+    /// Print the header
+    virtual void print_header() const = 0;
+
+    /// Print the contents
+    void print() const;
+
   protected:
 
     /** \brief Construct an empty DMTP object from the wavefunction.
@@ -445,6 +453,7 @@ class CAMM : public DMTPole
    CAMM(psi::SharedWavefunction wfn, int n);
    virtual ~CAMM();
    virtual void compute(psi::SharedMatrix D, bool transition, int n);
+   virtual void print_header(void) const;
  private:
    /// Set the distribution sites to atoms
    void set_sites(void);

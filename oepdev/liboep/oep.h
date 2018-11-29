@@ -185,11 +185,18 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
 
     // <--- Mutators ---> //
+
+    /// Set the name of this OEP
     void set_name(const std::string& name) {name_ = name;}
 
 
     // <--- Printers ---> //
+
+    /// Header information
     virtual void print_header() const = 0;
+
+    /// Print the contents (OEP data)
+    void print() const;
 
 
   private:
@@ -251,7 +258,9 @@ class RepulsionEnergyOEPotential : public OEPotential
 
     /// Auxiliary computers
     void compute_murrell_etal_s1();
-    void compute_otto_ladik_s2();
+    void compute_otto_ladik_s2_esp();
+    void compute_otto_ladik_s2_camm_a();
+    void compute_otto_ladik_s2_camm_A();
 
     void compute_3D_otto_ladik_s2(const double& x, const double& y, const double& z);
     double* vec_otto_ladik_s2_;

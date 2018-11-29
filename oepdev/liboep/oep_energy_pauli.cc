@@ -1,12 +1,14 @@
 #include "oep.h"
 #include "oep_gdf.h"
 #include "../lib3d/esp.h"
+#include "../lib3d/dmtp.h"
 #include "../libutil/integrals_iter.h"
 #include "psi4/libqt/qt.h"
 
 using namespace oepdev;
 
 using SharedField3D = std::shared_ptr<oepdev::Field3D>;
+using SharedDMTPole = std::shared_ptr<oepdev::DMTPole>;
 
 // <============== Repulsion Energy ==============> //
 
@@ -29,6 +31,8 @@ RepulsionEnergyOEPotential::~RepulsionEnergyOEPotential()
 }
 void RepulsionEnergyOEPotential::common_init() 
 {
+   name_ = "HF Repulsion Energy";
+
    int n1 = wfn_->Ca_subset("AO","OCC")->ncol();
    int n2 = auxiliary_->nbf();
    int n3 = wfn_->molecule()->natom();
@@ -36,11 +40,15 @@ void RepulsionEnergyOEPotential::common_init()
    SharedMatrix mat_1 = std::make_shared<psi::Matrix>("G(S^{-1})", n2, n1);
    SharedMatrix mat_2 = std::make_shared<psi::Matrix>("G(S^{-2})", n3, n1);
 
-   OEPType type_1 = {"Murrell-etal.S1", true , n1, mat_1};
-   OEPType type_2 = {"Otto-Ladik.S2"  , false, n1, mat_2};
+   OEPType type_1 = {"Murrell-etal.S1"       , true , n1, mat_1};
+   OEPType type_2 = {"Otto-Ladik.S2.ESP"     , false, n1, mat_2};
+   OEPType type_3 = {"Otto-Ladik.S2.CAMM.a"  , false, n1, std::make_shared<psi::Matrix>()};
+   OEPType type_4 = {"Otto-Ladik.S2.CAMM.A"  , false, n1, std::make_shared<psi::Matrix>()};
 
    oepTypes_[type_1.name] = type_1; 
    oepTypes_[type_2.name] = type_2;
+   oepTypes_[type_3.name] = type_3;
+   oepTypes_[type_4.name] = type_4;
 
    //
    vec_otto_ladik_s2_ = new double[n1];
@@ -49,7 +57,9 @@ void RepulsionEnergyOEPotential::common_init()
 void RepulsionEnergyOEPotential::compute(const std::string& oepType) 
 {
   if      (oepType == "Murrell-etal.S1") compute_murrell_etal_s1();
-  else if (oepType ==   "Otto-Ladik.S2") compute_otto_ladik_s2();
+  else if (oepType == "Otto-Ladik.S2.ESP") compute_otto_ladik_s2_esp();
+  else if (oepType == "Otto-Ladik.S2.CAMM.a") compute_otto_ladik_s2_camm_a();
+  else if (oepType == "Otto-Ladik.S2.CAMM.A") compute_otto_ladik_s2_camm_A();
   else throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s1() 
@@ -118,28 +128,102 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    if (options_.get_int("PRINT") > 1) G->print();
    //psi::timer_off("OEP    E(Paul) Murrell-etal S1  ");
 }
-void RepulsionEnergyOEPotential::compute_otto_ladik_s2() 
+void RepulsionEnergyOEPotential::compute_otto_ladik_s2_esp() 
 {
-      //psi::timer_on("OEP    E(Paul) Otto-Ladik S2    ");
-      std::shared_ptr<OEPotential3D<OEPotential>> oeps3d = this->make_oeps3d("Otto-Ladik.S2");
+      //psi::timer_on("OEP    E(Paul) Otto-Ladik.S2.ESP    ");
+      std::shared_ptr<OEPotential3D<OEPotential>> oeps3d = this->make_oeps3d("Otto-Ladik.S2.ESP");
       oeps3d->compute();
       ESPSolver esp(oeps3d);
       esp.set_charge_sums(0.5);
       esp.compute();
      
       for (int i=0; i<esp.charges()->nrow(); ++i) {
-      for (int o=0; o<oepTypes_["Otto-Ladik.S2"].n; ++o) {
-           oepTypes_["Otto-Ladik.S2"].matrix->set(i, o, esp.charges()->get(i, o));
+      for (int o=0; o<oepTypes_["Otto-Ladik.S2.ESP"].n; ++o) {
+           oepTypes_["Otto-Ladik.S2.ESP"].matrix->set(i, o, esp.charges()->get(i, o));
       }}
       if (options_.get_int("PRINT") > 1) esp.charges()->print();
-      //psi::timer_off("OEP    E(Paul) Otto-Ladik S2    ");
+      //psi::timer_off("OEP    E(Paul) Otto-Ladik.S2.ESP    ");
+}
+void RepulsionEnergyOEPotential::compute_otto_ladik_s2_camm_a() 
+{
+   // ==> Sizing <== //
+   int nocc = oepTypes_["Otto-Ladik.S2.CAMM.a"].n;
+   int nbf = primary_->nbf();
+
+   // ==> Initialize CAMM object <== //
+   SharedDMTPole camm = oepdev::DMTPole::build("CAMM", wfn_, nocc);
+
+   // ==> Compute the vector of OED's <== //
+   std::vector<psi::SharedMatrix> oeds;
+   std::vector<bool> trans;
+   for (int i=0; i<nocc; ++i) {
+
+        // ==> Exclude nuclear part <== //
+	trans.push_back(true);
+
+	// ==> Set up OED <== //
+	psi::SharedMatrix oed = std::make_shared<psi::Matrix>("", nbf, nbf);
+	double** oed_p = oed->pointer();
+
+	for (int a=0; a<nbf; ++a) {
+        for (int b=0; b<nbf; ++b) {
+	     oed_p[a][b] = cOcc_->get(a,i) * cOcc_->get(b,i);
+        }
+	}
+	oeds.push_back(oed);
+   }
+
+   // ==> Compute CAMM sets <== //
+   camm->compute(oeds, trans);
+
+   // ==> Save <== //
+   oepTypes_["Otto-Ladik.S2.CAMM.a"].dmtp = camm;
+
+}
+void RepulsionEnergyOEPotential::compute_otto_ladik_s2_camm_A() 
+{
+   // ==> Sizing <== //
+   int nocc = oepTypes_["Otto-Ladik.S2.CAMM.A"].n;
+   int nbf = primary_->nbf();
+
+   // ==> Initialize CAMM object <== //
+   SharedDMTPole camm = oepdev::DMTPole::build("CAMM", wfn_, nocc);
+   SharedMatrix Da = wfn_->Da()->clone();
+
+   // ==> Compute the vector of OED's <== //
+   std::vector<psi::SharedMatrix> oeds;
+   std::vector<bool> trans;
+   for (int i=0; i<nocc; ++i) {
+
+        // ==> Include nuclear part <== //
+	trans.push_back(false);
+
+	// ==> Set up OED <== //
+	psi::SharedMatrix oed = std::make_shared<psi::Matrix>("", nbf, nbf);
+	double** oed_p = oed->pointer();
+
+	for (int a=0; a<nbf; ++a) {
+        for (int b=0; b<nbf; ++b) {
+	     oed_p[a][b] = cOcc_->get(a,i) * cOcc_->get(b,i);
+        }
+	}
+	oed->scale(-0.5);
+	oed->axpy(2.0, Da);
+	oeds.push_back(oed);
+   }
+
+   // ==> Compute CAMM sets <== //
+   camm->compute(oeds, trans);
+
+   // ==> Save <== //
+   oepTypes_["Otto-Ladik.S2.CAMM.A"].dmtp = camm;
 }
 void RepulsionEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) 
 {
-   if (oepType == "Otto-Ladik.S2") {
+   if (oepType == "Otto-Ladik.S2.ESP") {
        this->compute_3D_otto_ladik_s2(x, y, z);
        // Assign final value
-       for (int o = 0; o < oepTypes_["Otto-Ladik.S2"].n; ++o) v->set(o, vec_otto_ladik_s2_[o]);
+       for (int o = 0; o < oepTypes_["Otto-Ladik.S2.ESP"].n; ++o) v->set(o, vec_otto_ladik_s2_[o]);
    }
    else if (oepType == "Murrell-etal.S1" ) {/* nothing to do here */}
    else {
@@ -164,11 +248,17 @@ void RepulsionEnergyOEPotential::compute_3D_otto_ladik_s2(const double& x, const
   OEInt_->compute(potMat_);
   std::shared_ptr<psi::Matrix> potMO = psi::Matrix::triplet(cOcc_, potMat_, cOcc_, true, false, false);
   potMat_->zero();
-  //for (int o=0; o<oepTypes_["Otto-Ladik.S2"].n; ++o) val += 2.0 * potMO->get(o, o);
+  //for (int o=0; o<oepTypes_["Otto-Ladik.S2.ESP"].n; ++o) val += 2.0 * potMO->get(o, o);
   val += 2.0 * potMO->trace();
 
-  for (int o=0; o<oepTypes_["Otto-Ladik.S2"].n; ++o) {
+  for (int o=0; o<oepTypes_["Otto-Ladik.S2.ESP"].n; ++o) {
      vec_otto_ladik_s2_[o] = val - 0.5 * potMO->get(o, o);
   }
 }
-void RepulsionEnergyOEPotential::print_header(void) const {}
+void RepulsionEnergyOEPotential::print_header(void) const 
+{
+	psi::outfile->Printf("\n ===> Repulsion Energy OEPotential <=== \n");
+	psi::outfile->Printf(  " ===>           HF level           <=== \n\n");
+        psi::outfile->Printf(  "      S-1 term: Murrell et.al\n");
+        psi::outfile->Printf(  "      S-2 term: Otto and Ladik\n");
+}

@@ -112,7 +112,10 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         if      (o_oep_build_type == "ELECTROSTATIC_ENERGY") 
                    oep = oepdev::OEPotential::build("ELECTROSTATIC ENERGY"  , ref_wfn, options);        
         else if (o_oep_build_type == "REPULSION_ENERGY")
-                   oep = oepdev::OEPotential::build("REPULSION ENERGY"      , ref_wfn, ref_wfn->basisset(), ref_wfn->basisset(), options);
+                   oep = oepdev::OEPotential::build("REPULSION ENERGY", ref_wfn, 
+				   ref_wfn->get_basisset("BASIS_DF_OEP"), 
+				   ref_wfn->get_basisset("BASIS_DF_INT"), 
+				   options);
         else if (o_oep_build_type == "CT_ENERGY")
                    oep = oepdev::OEPotential::build("CHARGE TRANSFER ENERGY", ref_wfn, ref_wfn->basisset(), ref_wfn->basisset(), options);
         else if (o_oep_build_type == "EET_COUPLING")
@@ -121,6 +124,8 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
              throw psi::PSIEXCEPTION("OEPDEV: Invalid OEP build category selected!");
 
         oep->compute();
+	oep->print_header();
+	oep->print();
 
     }
     // ===> Density Matrix Susceptibility Tensor Model <=== //

@@ -975,7 +975,7 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
   psi::IntegralFactory fact_1p1p(wfn_union_->l_primary  (0), wfn_union_->l_primary(0), wfn_union_->l_primary  (0), wfn_union_->l_primary(0));
   psi::IntegralFactory fact_2p2p(wfn_union_->l_primary  (1), wfn_union_->l_primary(1), wfn_union_->l_primary  (1), wfn_union_->l_primary(1));
 
-  for (int nx=0; nx<oep_1->oep("Otto-Ladik.S2").n; ++nx) {
+  for (int nx=0; nx<oep_1->oep("Otto-Ladik.S2.ESP").n; ++nx) {
        std::shared_ptr<psi::Matrix> V2 = std::make_shared<psi::Matrix>("V2", nbf_p2, nbf_p2);
 
        std::shared_ptr<psi::OneBodyAOInt> oneInt;
@@ -983,9 +983,9 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
                                                                                          wfn_union_->l_primary(1),
                                                                                          wfn_union_->l_primary(1));
 
-       std::shared_ptr<psi::Matrix> Qxyz_1 = std::make_shared<psi::Matrix>("Q OEP 1", oep_1->matrix("Otto-Ladik.S2")->nrow(), 4); 
+       std::shared_ptr<psi::Matrix> Qxyz_1 = std::make_shared<psi::Matrix>("Q OEP 1", oep_1->matrix("Otto-Ladik.S2.ESP")->nrow(), 4); 
        for (int i=0; i < Qxyz_1->nrow(); ++i) {
-            Qxyz_1->set(i, 0, oep_1->matrix("Otto-Ladik.S2")->get(i,nx));
+            Qxyz_1->set(i, 0, oep_1->matrix("Otto-Ladik.S2.ESP")->get(i,nx));
             Qxyz_1->set(i, 1, oep_1->wfn()->molecule()->x(i));
             Qxyz_1->set(i, 2, oep_1->wfn()->molecule()->y(i));
             Qxyz_1->set(i, 3, oep_1->wfn()->molecule()->z(i));
@@ -997,7 +997,7 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
        V2_set.push_back(psi::Matrix::triplet(Ca_occ_2, V2, Ca_occ_2, true, false, false));
   }
 
-  for (int ny=0; ny<oep_2->oep("Otto-Ladik.S2").n; ++ny) {
+  for (int ny=0; ny<oep_2->oep("Otto-Ladik.S2.ESP").n; ++ny) {
        std::shared_ptr<psi::Matrix> V1 = std::make_shared<psi::Matrix>("V1", nbf_p1, nbf_p1);
 
        std::shared_ptr<psi::OneBodyAOInt> oneInt;
@@ -1005,9 +1005,9 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
                                                                                          wfn_union_->l_primary(0),
                                                                                          wfn_union_->l_primary(0));
 
-       std::shared_ptr<psi::Matrix> Qxyz_2 = std::make_shared<psi::Matrix>("Q OEP 2", oep_2->matrix("Otto-Ladik.S2")->nrow(), 4); 
+       std::shared_ptr<psi::Matrix> Qxyz_2 = std::make_shared<psi::Matrix>("Q OEP 2", oep_2->matrix("Otto-Ladik.S2.ESP")->nrow(), 4); 
        for (int i=0; i < Qxyz_2->nrow(); ++i) {
-            Qxyz_2->set(i, 0, oep_2->matrix("Otto-Ladik.S2")->get(i,ny));
+            Qxyz_2->set(i, 0, oep_2->matrix("Otto-Ladik.S2.ESP")->get(i,ny));
             Qxyz_2->set(i, 1, oep_2->wfn()->molecule()->x(i));
             Qxyz_2->set(i, 2, oep_2->wfn()->molecule()->y(i));
             Qxyz_2->set(i, 3, oep_2->wfn()->molecule()->z(i));
@@ -1019,8 +1019,8 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_mix() {
        V1_set.push_back(psi::Matrix::triplet(Ca_occ_1, V1, Ca_occ_1, true, false, false));
   }
 
-  for (int ox=0; ox< oep_1->oep("Otto-Ladik.S2").n; ++ox) {
-  for (int oy=0; oy< oep_2->oep("Otto-Ladik.S2").n; ++oy) {
+  for (int ox=0; ox< oep_1->oep("Otto-Ladik.S2.ESP").n; ++ox) {
+  for (int oy=0; oy< oep_2->oep("Otto-Ladik.S2.ESP").n; ++oy) {
        double v = Smo->get(ox, oy);
        e_s2 += v * v * (V2_set[ox]->get(oy, oy) + V1_set[oy]->get(ox, ox));
   }

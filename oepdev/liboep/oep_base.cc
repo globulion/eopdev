@@ -79,3 +79,20 @@ void OEPotential::superimpose(const Matrix& refGeometry,
                               const std::vector<int>& supList,
                               const std::vector<int>& reordList) {}
 void OEPotential::print_header(void) const {}
+void OEPotential::print(void) const {
+  psi::outfile->Printf("\n\n ===> OEP %10s data <===\n\n", name_.c_str());
+
+  for ( auto const& oepType : oepTypes_ ) {
+   psi::outfile->Printf("\n --> Type: %s <--\n\n", oepType.second.name.c_str());
+
+   // ==> Print GDF parameters <== //
+   if (oepType.second.is_density_fitted){
+   psi::outfile->Printf(  "     Density-Fitted\n\n");
+   oepType.second.matrix->print();
+   } else {
+   psi::outfile->Printf(  "     Multipole-Based\n\n");
+   oepType.second.matrix->print();
+   if (oepType.second.dmtp) oepType.second.dmtp->print();
+   } 
+  }
+}

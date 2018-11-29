@@ -793,8 +793,17 @@ void DMTPole::superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist)
    throw psi::PSIEXCEPTION("DMTP superimposition is not implemented yet.");
 }
 
-
+void DMTPole::print(void) const
+{
+	centres_->print();
+	origins_->print();
+	for (int i=0; i<nDMTPs_; ++i) {
+           charges_[i]->print();
+	   dipoles_[i]->print();
+	}
+}
 // abstract methods
 void DMTPole::compute(psi::SharedMatrix D, bool transition, int i) {/* nothing to implement here */}
+void DMTPole::print_header(void) const {/* nothing to implement here */}
 
 } // EndNameSpace oepdev

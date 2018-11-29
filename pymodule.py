@@ -80,8 +80,11 @@ def run_oepdev(name, **kwargs):
                                                puream=ref_wfn.basisset().has_puream())
        basis_df_oep = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                puream=ref_wfn.basisset().has_puream())
+       basis_df_int = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("DF_BASIS_INT"),
+                                               puream=ref_wfn.basisset().has_puream())
        ref_wfn.set_basisset("BASIS_DF_OEP", basis_df_oep)
        ref_wfn.set_basisset("BASIS_DF_SCF", basis_df_scf)
+       ref_wfn.set_basisset("BASIS_DF_INT", basis_df_int)
 
     # case when task on wavefunction union can be requested
     elif(psi4.core.get_global_option("OEPDEV_TARGET") == "SOLVER") \
