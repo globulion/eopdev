@@ -33,6 +33,13 @@ class DMTPole;
  *  N1 and N2 are equal to the number
  *  of DMTP's in a set decribed by according DMTPole object given. 
  *
+ * \note
+ *  Useful options:
+ *    * `DMTP_CONVER` - level of multipole series convergence (available: `R1`, `R2`, `R3`, `R4` and `R5`).
+ *                      Default: `R5`.
+ *
+ * \see DMTPole
+ *
  */
 class MultipoleConvergence
 {
@@ -116,6 +123,10 @@ class MultipoleConvergence
  *  - superimposition
  *  - recentering the origins
  *  - computing the generalized property from another DMTP set
+ *
+ *
+ * \see MultipoleConvergence
+ *
  */
 class DMTPole : public std::enable_shared_from_this<DMTPole>
 {
@@ -298,11 +309,18 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 
     // <--- Computers ---> //
 
-    /// Compute DMTP's from the one-particle density matrix
-    virtual void compute(psi::SharedMatrix D, bool transition, int i) = 0;
-    /// Compute DMTP's from the set of the one-particle density matrices
-    void compute(std::vector<psi::SharedMatrix> D, std::vector<bool> transition);
-    /// Compute DMTP's from the *sum* of the ground-state alpha and beta one-particle density matrices (transition=false, i=0)
+    /** 
+     * Compute DMTP's from the set of the one-particle density matrices.
+     *
+     * @param D - list of one-particle density matrices
+     * @param t - list of flags determining if density is of transition type or not
+     */
+    void compute(std::vector<psi::SharedMatrix> D, std::vector<bool> t);
+    /** 
+     * Compute DMTP's from the *sum* of the ground-state alpha and beta one-particle density matrices (t=false, i=0).
+     *
+     * Results in a usual DMTP analysis of a molecule's charge density distribution.
+     */
     void compute(void);
 
     /** \brief Evaluate the generalized interaction energy.
@@ -358,6 +376,8 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     DMTPole(std::shared_ptr<psi::Wavefunction> wfn, int n);
 
 
+    /// Compute DMTP's from the one-particle density matrix
+    virtual void compute(psi::SharedMatrix D, bool transition, int i) = 0;
     /// Compute multipole integrals
     void compute_integrals();
     /// Compute maximum order of the integrals
@@ -455,7 +475,7 @@ class CAMM : public DMTPole
    virtual void print_header(void) const;
  private:
    /// Set the distribution sites to atoms
-   void set_sites(void);
+   void initialize_sites(void);
 };
 
 /** @}*/

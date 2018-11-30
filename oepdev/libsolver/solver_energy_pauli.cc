@@ -975,12 +975,20 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
   SharedMTPConv conv_aB = oep_1->oep("Otto-Ladik.S2.CAMM.a").dmtp->energy(oep_2->oep("Otto-Ladik.S2.CAMM.A").dmtp);
   SharedMTPConv conv_bA = oep_2->oep("Otto-Ladik.S2.CAMM.a").dmtp->energy(oep_1->oep("Otto-Ladik.S2.CAMM.A").dmtp);
 
-  psi::SharedMatrix level_aB = conv_aB->level(MultipoleConvergence::ConvergenceLevel::R4);
-  psi::SharedMatrix level_bA = conv_bA->level(MultipoleConvergence::ConvergenceLevel::R4);
+  MultipoleConvergence::ConvergenceLevel clevel;
+  if      (options_.get_str("DMTP_CONVER") == "R1") clevel = MultipoleConvergence::ConvergenceLevel::R1;
+  else if (options_.get_str("DMTP_CONVER") == "R2") clevel = MultipoleConvergence::ConvergenceLevel::R2;
+  else if (options_.get_str("DMTP_CONVER") == "R3") clevel = MultipoleConvergence::ConvergenceLevel::R3;
+  else if (options_.get_str("DMTP_CONVER") == "R4") clevel = MultipoleConvergence::ConvergenceLevel::R4;
+  else if (options_.get_str("DMTP_CONVER") == "R5") clevel = MultipoleConvergence::ConvergenceLevel::R5;
+  else {throw psi::PSIEXCEPTION("Incorrect convergence level specified!");}
+
+  psi::SharedMatrix level_aB = conv_aB->level(clevel);
+  psi::SharedMatrix level_bA = conv_bA->level(clevel);
 
   for (int i=0; i< oep_1->n("Otto-Ladik.S2.CAMM.a"); ++i) {
   for (int j=0; j< oep_2->n("Otto-Ladik.S2.CAMM.a"); ++j) {
-      double sij = Sab->get(i,j);
+      double sij = Smo->get(i,j);
       e_s2 += sij * sij * (level_aB->get(i,j) + level_bA->get(j,i));
   }
   }

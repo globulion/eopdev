@@ -56,10 +56,10 @@ void RepulsionEnergyOEPotential::common_init()
 
 void RepulsionEnergyOEPotential::compute(const std::string& oepType) 
 {
-  if      (oepType == "Murrell-etal.S1") compute_murrell_etal_s1();
-  else if (oepType == "Otto-Ladik.S2.ESP") compute_otto_ladik_s2_esp();
-  else if (oepType == "Otto-Ladik.S2.CAMM.a") compute_otto_ladik_s2_camm_a();
-  else if (oepType == "Otto-Ladik.S2.CAMM.A") compute_otto_ladik_s2_camm_A();
+  if      (oepType == "Murrell-etal.S1"     ) compute_murrell_etal_s1()      ;
+  else if (oepType == "Otto-Ladik.S2.ESP"   ) compute_otto_ladik_s2_esp()    ;
+  else if (oepType == "Otto-Ladik.S2.CAMM.a") compute_otto_ladik_s2_camm_a() ;
+  else if (oepType == "Otto-Ladik.S2.CAMM.A") compute_otto_ladik_s2_camm_A() ;
   else throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
 }
 void RepulsionEnergyOEPotential::compute_murrell_etal_s1() 

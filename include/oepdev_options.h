@@ -91,6 +91,11 @@ int read_options(std::string name, Options& options)
         options.add_double ("ESP_VDW_RADIUS_CL"     ,  2.9                       );
 
 
+        // ---> DMTP Global Options  <--- //
+        
+	/*- DMTP: convergence level -*/
+	options.add_str    ("DMTP_CONVER"           ,  "R5"                      );
+
         // ---> DmatPol Global Options  <--- //
 
         /*- DmatPol training mode -*/

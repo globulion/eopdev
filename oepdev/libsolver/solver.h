@@ -99,6 +99,9 @@ class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
    /// Wavefunction union
    SharedWavefunctionUnion wfn_union_;
 
+   /// Options
+   psi::Options& options_;
+
    /// Names of all OEP-based methods implemented for a solver
    std::vector<std::string> methods_oepBased_;
 

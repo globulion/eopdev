@@ -22,7 +22,7 @@ void export_dmtp(py::module &m) {
     // Function pointer types
     typedef std::shared_ptr<oepdev::DMTPole> (*build_dmtp)(const std::string&, psi::SharedWavefunction, int);
     typedef void (oepdev::DMTPole::*compute_default)(void);
-    typedef void (oepdev::DMTPole::*compute_dmatrix)(psi::SharedMatrix, bool, int);
+    typedef void (oepdev::DMTPole::*compute_dmatrix)(std::vector<psi::SharedMatrix>, std::vector<bool>);
     typedef psi::SharedMatrix (oepdev::DMTPole::*get_matrix_int)(int) const;
     typedef std::vector<psi::SharedMatrix> (oepdev::DMTPole::*get_vecmat)(void) const;
     typedef void (oepdev::DMTPole::*set_matrix_int)(psi::SharedMatrix, int);

@@ -19,7 +19,7 @@ CAMM::CAMM(psi::SharedWavefunction wfn, int n)
   hasHexadecapoles_ = true;
   // Allocate memory
   this->allocate();
-  this->set_sites();
+  this->initialize_sites();
   // Compute necessary integrals
   this->compute_integrals();
 }
@@ -27,7 +27,7 @@ CAMM::~CAMM()
 {
 
 }
-void CAMM::set_sites(void) 
+void CAMM::initialize_sites(void) 
 {
   for (int n=0; n<mol_->natom(); ++n) {
        double x = mol_->x(n);

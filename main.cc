@@ -170,7 +170,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
             std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("REPULSION ENERGY", wfn_union);
                                                                                                                             
             double e_stone = solver->compute_benchmark("HAYES_STONE"  );
-            //double e_dens  = solver->compute_benchmark("DENSITY_BASED");
+          //double e_dens  = solver->compute_benchmark("DENSITY_BASED");
             double e_murr  = solver->compute_benchmark("MURRELL_ETAL" );
             double e_otla  = solver->compute_benchmark("OTTO_LADIK"   );
             double e_oep1  = solver->compute_oep_based("MURRELL_ETAL_GDF_ESP");

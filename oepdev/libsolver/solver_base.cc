@@ -8,7 +8,7 @@ using namespace psi;
 using namespace oepdev;
 
 OEPDevSolver::OEPDevSolver(SharedWavefunctionUnion wfn_union)
- : wfn_union_(wfn_union), methods_oepBased_(), methods_benchmark_()
+ : wfn_union_(wfn_union), methods_oepBased_(), methods_benchmark_(), options_(wfn_union->options())
 {
   
 }
