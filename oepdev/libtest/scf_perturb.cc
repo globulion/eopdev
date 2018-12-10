@@ -36,8 +36,8 @@ double oepdev::test::Test::test_scf_perturb()
   const double energy_charge = scf_charge->reference_energy();
 
   // Accumulate errors
-  result += sqrt(pow(energy_field - energy_field_ref , 2.0));
-  result += sqrt(pow(energy_charge- energy_charge_ref, 2.0));
+  result += pow(energy_field - energy_field_ref , 2.0);
+  result += pow(energy_charge- energy_charge_ref, 2.0);
 
   // Print result
   std::cout << std::fixed;
