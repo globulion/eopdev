@@ -26,7 +26,7 @@ double oepdev::test::Test::test_cphf(void)
   const double*  r = pol_ref;
   for (int i=0; i<3; ++i) {
        for (int j=0; j<3; ++j) {
-            r_sum += sqrt(pow(p[i][j] - *r, 2.0));
+            r_sum += pow(p[i][j] - *r, 2.0);
             r++;
        }
   }

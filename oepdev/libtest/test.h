@@ -94,7 +94,7 @@ class Test
    double test_custom(void);
 
    /// Test the espsolver
-   double test_espsolver(void);   
+   double test_esp_solver(void);   
 
 };
 

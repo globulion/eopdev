@@ -5,22 +5,25 @@
 
 using namespace std;
 
-double oepdev::test::Test::test_espsolver(void)
+double oepdev::test::Test::test_esp_solver(void)
 {
   // Reference data for MeNH2 at RHF/6-311++G** 
   const double charge_ref[7] = { -1.043052,  0.458551,   0.372558,
-                                 0.374973,  -0.030429,  -0.103094,
+                                  0.374973, -0.030429,  -0.103094,
                                  -0.029507};
 
 
+  // ESP settings
+  const double pad = options_.get_double("ESP_PAD_SPHERE");
+  const int npoints = options_.get_double("ESP_NPOINTS_PER_ATOM") * wfn_->molecule()->natom();
 
+  // Perform ESP
   psi::timer_on("Test: ESPSolver   Calculation              ");
-  std::shared_ptr<ElectrostaticPotential3D> field = std::make_shared<oepdev::ElectrostaticPotential3D>(10000, 5.5, wfn_, options_);
+  std::shared_ptr<ElectrostaticPotential3D> field = std::make_shared<oepdev::ElectrostaticPotential3D>(npoints, pad, wfn_, options_);
   field->compute();
   std::shared_ptr<ESPSolver> esp = std::make_shared<oepdev::ESPSolver>(field);
   esp->compute();
   psi::timer_off("Test: ESPSolver   Calculation              ");
-  
 
   esp->charges()->print();
 

@@ -65,46 +65,47 @@ double oepdev::test::Test::test_camm(void) {
  
   // Accumulate errors
   for (int n=0; n<dmtp->n_sites(); ++n) {
-       result += sqrt(pow(c->get(n, 0) - c_ref[n] , 2.0));
+       result += pow(c->get(n, 0) - c_ref[n] , 2.0);
        //
-       result += sqrt(pow(m->get(n, 0) - m_ref[3*n+0] , 2.0));
-       result += sqrt(pow(m->get(n, 1) - m_ref[3*n+1] , 2.0));
-       result += sqrt(pow(m->get(n, 2) - m_ref[3*n+2] , 2.0));
+       result += pow(m->get(n, 0) - m_ref[3*n+0] , 2.0);
+       result += pow(m->get(n, 1) - m_ref[3*n+1] , 2.0);
+       result += pow(m->get(n, 2) - m_ref[3*n+2] , 2.0);
        //
-       result += sqrt(pow(q->get(n, 0) - q_ref[6*n+0] , 2.0));
-       result += sqrt(pow(q->get(n, 1) - q_ref[6*n+1] , 2.0));
-       result += sqrt(pow(q->get(n, 2) - q_ref[6*n+2] , 2.0));
-       result += sqrt(pow(q->get(n, 3) - q_ref[6*n+3] , 2.0));
-       result += sqrt(pow(q->get(n, 4) - q_ref[6*n+4] , 2.0));
-       result += sqrt(pow(q->get(n, 5) - q_ref[6*n+5] , 2.0));
+       result += pow(q->get(n, 0) - q_ref[6*n+0] , 2.0);
+       result += pow(q->get(n, 1) - q_ref[6*n+1] , 2.0);
+       result += pow(q->get(n, 2) - q_ref[6*n+2] , 2.0);
+       result += pow(q->get(n, 3) - q_ref[6*n+3] , 2.0);
+       result += pow(q->get(n, 4) - q_ref[6*n+4] , 2.0);
+       result += pow(q->get(n, 5) - q_ref[6*n+5] , 2.0);
        //
-       result += sqrt(pow(o->get(n, 0) - o_ref[10*n+0] , 2.0));
-       result += sqrt(pow(o->get(n, 1) - o_ref[10*n+1] , 2.0));
-       result += sqrt(pow(o->get(n, 2) - o_ref[10*n+2] , 2.0));
-       result += sqrt(pow(o->get(n, 3) - o_ref[10*n+3] , 2.0));
-       result += sqrt(pow(o->get(n, 4) - o_ref[10*n+4] , 2.0));
-       result += sqrt(pow(o->get(n, 5) - o_ref[10*n+5] , 2.0));
-       result += sqrt(pow(o->get(n, 6) - o_ref[10*n+6] , 2.0));
-       result += sqrt(pow(o->get(n, 7) - o_ref[10*n+7] , 2.0));
-       result += sqrt(pow(o->get(n, 8) - o_ref[10*n+8] , 2.0));
-       result += sqrt(pow(o->get(n, 9) - o_ref[10*n+9] , 2.0));
+       result += pow(o->get(n, 0) - o_ref[10*n+0] , 2.0);
+       result += pow(o->get(n, 1) - o_ref[10*n+1] , 2.0);
+       result += pow(o->get(n, 2) - o_ref[10*n+2] , 2.0);
+       result += pow(o->get(n, 3) - o_ref[10*n+3] , 2.0);
+       result += pow(o->get(n, 4) - o_ref[10*n+4] , 2.0);
+       result += pow(o->get(n, 5) - o_ref[10*n+5] , 2.0);
+       result += pow(o->get(n, 6) - o_ref[10*n+6] , 2.0);
+       result += pow(o->get(n, 7) - o_ref[10*n+7] , 2.0);
+       result += pow(o->get(n, 8) - o_ref[10*n+8] , 2.0);
+       result += pow(o->get(n, 9) - o_ref[10*n+9] , 2.0);
        //
-       result += sqrt(pow(h->get(n, 0) - h_ref[15*n+ 0] , 2.0));
-       result += sqrt(pow(h->get(n, 1) - h_ref[15*n+ 1] , 2.0));
-       result += sqrt(pow(h->get(n, 2) - h_ref[15*n+ 2] , 2.0));
-       result += sqrt(pow(h->get(n, 3) - h_ref[15*n+ 3] , 2.0));
-       result += sqrt(pow(h->get(n, 4) - h_ref[15*n+ 4] , 2.0));
-       result += sqrt(pow(h->get(n, 5) - h_ref[15*n+ 5] , 2.0));
-       result += sqrt(pow(h->get(n, 6) - h_ref[15*n+ 6] , 2.0));
-       result += sqrt(pow(h->get(n, 7) - h_ref[15*n+ 7] , 2.0));
-       result += sqrt(pow(h->get(n, 8) - h_ref[15*n+ 8] , 2.0));
-       result += sqrt(pow(h->get(n, 9) - h_ref[15*n+ 9] , 2.0));
-       result += sqrt(pow(h->get(n,10) - h_ref[15*n+10] , 2.0));
-       result += sqrt(pow(h->get(n,11) - h_ref[15*n+11] , 2.0));
-       result += sqrt(pow(h->get(n,12) - h_ref[15*n+12] , 2.0));
-       result += sqrt(pow(h->get(n,13) - h_ref[15*n+13] , 2.0));
-       result += sqrt(pow(h->get(n,14) - h_ref[15*n+14] , 2.0));
+       result += pow(h->get(n, 0) - h_ref[15*n+ 0] , 2.0);
+       result += pow(h->get(n, 1) - h_ref[15*n+ 1] , 2.0);
+       result += pow(h->get(n, 2) - h_ref[15*n+ 2] , 2.0);
+       result += pow(h->get(n, 3) - h_ref[15*n+ 3] , 2.0);
+       result += pow(h->get(n, 4) - h_ref[15*n+ 4] , 2.0);
+       result += pow(h->get(n, 5) - h_ref[15*n+ 5] , 2.0);
+       result += pow(h->get(n, 6) - h_ref[15*n+ 6] , 2.0);
+       result += pow(h->get(n, 7) - h_ref[15*n+ 7] , 2.0);
+       result += pow(h->get(n, 8) - h_ref[15*n+ 8] , 2.0);
+       result += pow(h->get(n, 9) - h_ref[15*n+ 9] , 2.0);
+       result += pow(h->get(n,10) - h_ref[15*n+10] , 2.0);
+       result += pow(h->get(n,11) - h_ref[15*n+11] , 2.0);
+       result += pow(h->get(n,12) - h_ref[15*n+12] , 2.0);
+       result += pow(h->get(n,13) - h_ref[15*n+13] , 2.0);
+       result += pow(h->get(n,14) - h_ref[15*n+14] , 2.0);
   }
+  result = sqrt(result);
 
   // Print result
   std::cout << std::fixed;
