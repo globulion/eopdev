@@ -1,6 +1,7 @@
 #include "space3d.h"
 #include "psi4/libpsi4util/PsiOutStream.h"
 #include "psi4/libpsi4util/process.h"
+#include "../libutil/util.h"
 
 
 namespace oepdev{
@@ -376,7 +377,10 @@ void Field3D::write_cube_file(const std::string& name)
    if (points_collection()->get_type() == PointsCollection3D::Cube) {
        compute();
        std::shared_ptr<CubePointsCollection3D> col = std::dynamic_pointer_cast<CubePointsCollection3D>(points_collection());
-       for (int i=0; i<nDim_; ++i) col->write_cube_file(data(), name, i);
+       for (int i=0; i<nDim_; ++i) {
+            std::string name_i = oepdev::string_sprintf("%s.%01d", name, i);
+	    col->write_cube_file(data(), name_i, i);
+       }
    }
 }
 

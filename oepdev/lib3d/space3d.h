@@ -12,6 +12,7 @@
 #include <random>
 #include <cmath>
 #include <map>
+#include <cassert>
 
 #include "psi4/libmints/vector3.h"
 #include "psi4/libmints/vector.h"
@@ -43,6 +44,7 @@ namespace oepdev{
 
 
 using namespace std;
+
 
 /** \brief Iterator over a collection of points in 3D space. Abstract base.
  *
