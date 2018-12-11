@@ -378,7 +378,7 @@ void Field3D::write_cube_file(const std::string& name)
        compute();
        std::shared_ptr<CubePointsCollection3D> col = std::dynamic_pointer_cast<CubePointsCollection3D>(points_collection());
        for (int i=0; i<nDim_; ++i) {
-            std::string name_i = oepdev::string_sprintf("%s.%01d", name, i);
+            std::string name_i = oepdev::string_sprintf("%s-%d", name.c_str(), i);
 	    col->write_cube_file(data(), name_i, i);
        }
    }
