@@ -56,7 +56,7 @@ class DensityDecomposition:
         if not self.monomers_computed: self.compute_monomers()
         raise NotImplementedError
 
-    def compute_no(self, D, orthogonalize_first=None, order='descending'):
+    def natural_orbitals(self, D, orthogonalize_first=None, order='descending'):
         """Compute the Natural Orbitals from a given ODPM"""
         if orthogonalize_first is not None:
            S = orthogonalize_first

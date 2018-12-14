@@ -45,7 +45,7 @@ solver.compute_monomers()
 
 # compute natural orbitals
 wfn = solver.data["wfn"][1]
-occ, orb = solver.compute_no(wfn.Da(), orthogonalize_first=wfn.S(), order='descending')
+occ, orb = solver.natural_orbitals(wfn.Da(), orthogonalize_first=wfn.S(), order='descending')
 
 # print the natural occupation numbers
 print(" Natural Occupation Numbers of monomer 2")
