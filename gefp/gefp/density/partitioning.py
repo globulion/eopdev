@@ -56,7 +56,7 @@ class DensityDecomposition:
         if not self.monomers_computed: self.compute_monomers()
         raise NotImplementedError
 
-    def compute_no(self, D, orthogonalize_first=None):
+    def compute_no(self, D, orthogonalize_first=None, order='descending'):
         """Compute the Natural Orbitals from a given ODPM"""
         if orthogonalize_first is not None:
            S = orthogonalize_first
@@ -64,7 +64,8 @@ class DensityDecomposition:
         else:
            D_ = D
         n, U = numpy.linalg.eigh(D_)
-        return n, U
+        if order=='ascending': return n, U
+        else:                  return n[::-1], U[:,::-1]
 
     def _orthogonalize_OPDM(self, D, S):
         "Transforms the one-particle density matrix to orthogonal space"
