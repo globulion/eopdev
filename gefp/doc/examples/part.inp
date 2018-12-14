@@ -1,0 +1,53 @@
+#!/usr/bin/python3
+import oepdev
+import gefp
+
+# test molecule
+molecule h2o {
+0 1
+O          0.96944       -4.30612       -2.18132
+H          1.33485       -5.15965       -1.90564
+H          0.84646       -3.85901       -1.31466
+--
+0 1
+O          0.67961       -3.28639        0.35954
+H          1.28440       -2.98969        1.06083
+H         -0.15242       -2.83702        0.58835
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+set 
+{
+    # ==> General Psi4 Options <== #
+    basis                         6-31G*
+    scf_type                      df
+    guess                         core
+    e_convergence                 1e-11
+    d_convergence                 1e-10
+    print                         1
+    puream                        False
+    freeze_core                   True
+    onepdm                        False
+    opdm_relax                    False
+    cc_type                       df
+    df_basis_cc                   cc-pvdz-ri
+}
+
+# create density decomposition solver
+solver = gefp.density.partitioning.DensityDecomposition(h2o, method='cc2')
+
+# compute unperturbed monomer wavefunctions (ACBS)
+solver.compute_monomers()
+
+# compute natural orbitals
+wfn = solver.data["wfn"][1]
+occ, orb = solver.compute_no(wfn.Da(), orthogonalize_first=wfn.S(), order='descending')
+
+# print the natural occupation numbers
+print(" Natural Occupation Numbers of monomer 2")
+for i, o in enumerate(occ):
+    print(" %3d %13.6f" % (i+1, o))
