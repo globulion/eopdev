@@ -1,7 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 setup(name='GEFP-OEP',
       version='1.0.0',
@@ -9,5 +9,5 @@ setup(name='GEFP-OEP',
       author='Bartosz Błasiak',
       author_email='blasiak.bartosz@gmail.com',
       url='',
-      packages=['gefp'],
+      packages=find_packages(),
      )
