@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+sys.path.insert(0, './../../../..')
 import oepdev
 import gefp
 
@@ -35,13 +36,32 @@ set
     opdm_relax                    False
     cc_type                       df
     df_basis_cc                   cc-pvdz-ri
+    # ==> OepDev Options <== #
+    oepdev_target                 solver
+    oepdev_solver_type            repulsion_energy
+    oepdev_localize               True
+    oepdev_df_type                double
+    df_basis_oep                  6-311G
+    df_basis_int                  aug-cc-pVDZ-jkfit
+   #df_basis_int                  6-31G*
+    dmtp_conver                   R1
+    esp_npoints_per_atom          4000
+    esp_pad_sphere                5.0
+    esp_vdw_radius_h              3.0
+    esp_vdw_radius_o              4.6
 }
 
 # create density decomposition solver
-solver = gefp.density.partitioning.DensityDecomposition(h2o, method='cc2')
+solver = gefp.density.partitioning.DensityDecomposition(h2o, method='hf', ACBS=False)
 
 # compute unperturbed monomer wavefunctions (ACBS)
 solver.compute_monomers()
+
+# compute one-electron Pauli deformation density
+dD = solver.deformation_density('pauli')
+
+# compute Pauli repulsion energy
+solver.compute_repulsion()
 
 # compute natural orbitals
 wfn = solver.data["wfn"][1]
@@ -51,3 +71,6 @@ occ, orb = solver.natural_orbitals(wfn.Da(), orthogonalize_first=wfn.S(), order=
 print(" Natural Occupation Numbers of monomer 2")
 for i, o in enumerate(occ):
     print(" %3d %13.6f" % (i+1, o))
+
+# run oepdev
+#energy('oepdev', molecule=h2o)
