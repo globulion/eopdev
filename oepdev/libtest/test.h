@@ -94,7 +94,10 @@ class Test
    double test_custom(void);
 
    /// Test the espsolver
-   double test_esp_solver(void);   
+   double test_esp_solver(void);
+   /// Test the espsolver
+   double test_points_collection3d(void);
+   
 
 };
 
