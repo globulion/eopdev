@@ -16,8 +16,11 @@ class DensityDecomposition:
 """
     def __init__(self, aggregate, method='hf', ACBS=True, jk_type='direct', **kwargs):
         "Initialize all attributes"
-        self.aggregate   = aggregate
-        self.method      = method
+        # molecular aggregate
+        self.aggregate   = aggregate    
+        # level of theory
+        self.method      = method       
+        # wavefunction data of each unperturbed fragment
         self.data        = {"wfn": [],  # unperturbed wavefunction
                             "ene": [],  # unperturbed total energy
                             "odm": [],  # unperturbed one-particle density matrix
@@ -27,11 +30,39 @@ class DensityDecomposition:
                             "nbf": [],  # number of basis functions 
                             "ofm": [],  # MO offset
                             "ofb": [],  # AO offset
-                                        } 
+                            } 
+        # variables
+        self.vars        = {"e_cou_1"     : None,   # coulombic energy, 1el part
+                            "e_cou_2"     : None,   # coulombic energy, 2el part
+                            "e_cou_t"     : None,   # coulombic energy, (1+2)el part
+                            "e_rep_1"     : None,   # repulsion energy, 1el part
+                            "e_rep_2"     : None,   # repulsion energy, 2el part
+                            "e_rep_t"     : None,   # repulsion energy, (1+2)el part
+                            "e_exc_t"     : None,   # exchange energy
+                            "e_pol_t"     : None,   # polarization energy, (1+2)el part
+                            "e_pol_ind_t" : None,   # induction part of polarization energy, (1+2)el part
+                            "e_pol_disp_t": None,   # dispersion part of polarization energy, (1+2)el part
+                            "e_pol_ct_t"  : None,   # charge-transfer part of polarization energy, (1+2)el part
+                            "e_t"         : None,   # total interaction energy
+                            }
+        # additional options
         self.kwargs      = kwargs
+        # basis-set mode (ACBS: aggregate-centred basis set)
         self.acbs        = ACBS
-        self.monomers_computed = False
 
+        # what is already computed
+        self.monomers_computed      = False   # unperturbed monomenr wavefunctions at arbitrary level of theory
+        self.coulomb_computed       = False   # partitioning of 1st-order electrostatic energy
+        self.pauli_computed         = False   # partitioning of Pauli exchange-repulsion energy
+        self.polarization_computed  = False   # partitioning of polarization energy
+        self.in_induction_computed  = False   # induction part of polarization energy
+        self.in_dispersion_computed = False   # dispersion part of polarization energy
+        self.in_ct_computed         = False   # charge-transfer part of polarization energy
+        self.dms_ind_computed       = False   # density matrix polarization susceptibility tensors for induction
+        self.dms_disp_computed      = False   # density matrix polarization susceptibility tensors for dispersion
+        self.dms_ct_computed        = False   # density matrix polarization susceptibility tensors for charge-transfer
+
+        # basis set and JK object for entire aggregate
         self.bfs = psi4.core.BasisSet.build(aggregate, "BASIS", psi4.core.get_global_option("BASIS"), puream=-1)
         self.global_jk = psi4.core.JK.build(self.bfs, jk_type=jk_type)
         self.global_jk.set_memory(int(5e8))
@@ -101,27 +132,40 @@ class DensityDecomposition:
         mints = psi4.core.MintsHelper(self.bfs)
         V = mints.ao_potential()
         T = mints.ao_kinetic()
-        #V.add(T)
+        V.add(T)
 
         # ---     Repulsion energy
         # ------- one-electron part
-        #e_rep_1 = 2.0 * self.compute_1el_energy(dD, numpy.array(V))
-        #e_rep_2 = 2.0 * self.compute_2el_energy(dD, dD + 2.0 * dD, type='j')
-        #e_rep   = e_rep_1 + e_rep_2
-        #print(e_rep_1)
-        #print(e_rep_2)
-        #print(e_rep  )
-        e_rep_1_k = 2.0 * self.compute_1el_energy(dD, numpy.array(T))
-        e_rep_1_p = 2.0 * self.compute_1el_energy(dD, numpy.array(V))
-        e_rep_1   = e_rep_1_k + e_rep_1_p
-        e_rep_2_e = 4.0 * self.compute_2el_energy(dD, D, 'j')
-        e_rep_2_p = 2.0 * self.compute_2el_energy(dD, dD, 'j')
-        e_rep_2   = e_rep_2_e + e_rep_2_p
-        e_rep     = e_rep_1 + e_rep_2
-        print(e_rep_1_k, e_rep_1_p, e_rep_1)
-        print(e_rep_2_e, e_rep_2_p, e_rep_2)
-        print(e_rep)
+        e_rep_1 = 2.0 * self.compute_1el_energy(dD, numpy.array(V))
+        e_rep_2 = 2.0 * self.compute_2el_energy(dD, dD + 2.0 * D, type='j')
+        e_rep_t  = e_rep_1 + e_rep_2
+        self.vars["e_rep_1"] = e_rep_1
+        self.vars["e_rep_2"] = e_rep_2
+        self.vars["e_rep_t"] = e_rep_t
+        self.pauli_computed = True
+        #e_rep_1_k = 2.0 * self.compute_1el_energy(dD, numpy.array(T))
+        #e_rep_1_p = 2.0 * self.compute_1el_energy(dD, numpy.array(V))
+        #e_rep_1   = e_rep_1_k + e_rep_1_p
+        #e_rep_2_e = 4.0 * self.compute_2el_energy(dD, D, 'j')
+        #e_rep_2_p = 2.0 * self.compute_2el_energy(dD, dD, 'j')
+        #e_rep_2   = e_rep_2_e + e_rep_2_p
+        #e_rep     = e_rep_1 + e_rep_2
+        #print(e_rep_1_k, e_rep_1_p, e_rep_1)
+        #print(e_rep_2_e, e_rep_2_p, e_rep_2)
+        #print(e_rep)
         return
+
+    def __repr__(self):
+        log = ""
+        if self.monomers_computed:
+           log += " Monomers computed.\n"
+        if self.pauli_computed:
+           log += " Pauli repulsion energy:\n"
+           log += " E_REP_1=%12.6f E_REP_2=%12.6f E_REP_T=%12.6f\n" % (self.vars["e_rep_1"],
+                                                                       self.vars["e_rep_2"],
+                                                                       self.vars["e_rep_t"])
+
+        return str(log)
 
     def natural_orbitals(self, D, orthogonalize_first=None, order='descending', original_ao_mo=True):
         "Compute the Natural Orbitals from a given ODPM"
@@ -143,7 +187,7 @@ class DensityDecomposition:
         E, U = numpy.linalg.eigh(M)
         Ex = E.copy(); Ex.fill(0.0)
         for i in range(len(E)):
-            if (E[i]>0.0) : Ex[i] = E[i]**x
+            if (E[i]>0.0) : Ex[i] = numpy.power(E[i], x)
             else: Ex[i] = 1.0
         Mx = numpy.dot(U, numpy.dot(numpy.diag(Ex), U.T))
         return Mx
@@ -208,6 +252,8 @@ class DensityDecomposition:
                 ofb_j = self.data["ofb"][j]
                 S_ao_ij = self._compute_overlap_ao(wfn_i, wfn_j)
                 S_mo_ij = self.triplet(noc_i.T, S_ao_ij, noc_j)
+                #S_ao_ji = self._compute_overlap_ao(wfn_j, wfn_i)
+                #S_mo_ji = self.triplet(noc_j.T, S_ao_ji, noc_i)
                 S_mo_t[ofm_i:ofm_i+nmo_i, ofm_j:ofm_j+nmo_j] = S_mo_ij 
                 S_mo_t[ofm_j:ofm_j+nmo_j, ofm_i:ofm_i+nmo_i] = S_mo_ij.T
 
@@ -221,6 +267,8 @@ class DensityDecomposition:
         Doo_ao_t = self.triplet(CW, K, CW.T)
         D_ao_t = self.triplet(C_ao_mo_t, numpy.diag(n_mo_t), C_ao_mo_t.T)
         #dD_ao_pauli = Doo_ao_t - D_ao_t
+
+        #Doo_ao_t = self.triplet(C_ao_mo_t, numpy.linalg.inv(S_mo_t), C_ao_mo_t.T) 
 
         return Doo_ao_t, D_ao_t
 

@@ -31,10 +31,11 @@ set
     d_convergence                 1e-10
     print                         1
     puream                        False
-    freeze_core                   True
+    freeze_core                   False
     onepdm                        False
     opdm_relax                    False
     cc_type                       df
+    df_basis_scf                  cc-pvdz-jkfit
     df_basis_cc                   cc-pvdz-ri
     # ==> OepDev Options <== #
     oepdev_target                 solver
@@ -63,14 +64,16 @@ dD = solver.deformation_density('pauli')
 # compute Pauli repulsion energy
 solver.compute_repulsion()
 
+print(solver)
+
 # compute natural orbitals
 wfn = solver.data["wfn"][1]
 occ, orb = solver.natural_orbitals(wfn.Da(), orthogonalize_first=wfn.S(), order='descending')
 
 # print the natural occupation numbers
-print(" Natural Occupation Numbers of monomer 2")
-for i, o in enumerate(occ):
-    print(" %3d %13.6f" % (i+1, o))
+#print(" Natural Occupation Numbers of monomer 2")
+#for i, o in enumerate(occ):
+#    print(" %3d %13.6f" % (i+1, o))
 
 # run oepdev
 #energy('oepdev', molecule=h2o)
