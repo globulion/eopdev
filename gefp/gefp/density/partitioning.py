@@ -52,7 +52,8 @@ class DensityDecomposition:
                             "e_pol_ind_t" : None,   # induction part of polarization energy, (1+2)el part
                             "e_pol_disp_t": None,   # dispersion part of polarization energy, (1+2)el part
                             "e_pol_ct_t"  : None,   # charge-transfer part of polarization energy, (1+2)el part
-                            "e_t"         : None,   # total interaction energy
+                            "e_t"         : 0.0 ,   # total interaction energy
+                            "e_fqm_t"     : None,   # total interaction energy (full QM)
                             }
         # additional options
         self.kwargs      = kwargs
@@ -94,10 +95,13 @@ class DensityDecomposition:
     def compute(self): 
         "Perform the full density decomposition"
         # compute monomer wavefunctions
-        if not self.monomers_computed: self.compute_monomers()
+        if not self.monomers_computed          : self.compute_monomers()
         # compute densities
-        if not self.densities_computed: self.compute_densities()
-        raise NotImplementedError
+        if not self.densities_computed         : self.compute_densities()
+        # compute interaction energies
+        if not self.energy_coulomb_computed    : self.compute_coulomb()
+        if not self.energy_pauli_computed      : self.compute_pauli()
+        if not self.energy_full_QM_computed    : self.compute_full_QM()
 
     def compute_monomers(self):
         "Compute all isolated (unperturbed) monomer wavefunctions"
@@ -176,54 +180,42 @@ class DensityDecomposition:
             for j in range(i):
                 e_cou_n += self._nuclear_repulsion_energy(i, j)
 
+        # electronic contribution
         for i in range(self.aggregate.nfragments()):
+            V_i = self._V_n(i)
             if self.acbs is False:
-               D_i = self._block_fragment_ao_matrix(D, keep_frags=[i], off_diagonal=False)
+                D_i = self._block_fragment_ao_matrix(self.matrix["d"], keep_frags=[i], off_diagonal=False)
             else:
                n_i = self._block_fragment_mo_matrix(numpy.diag(self.matrix["n"]), keep_frags=[i], off_diagonal=False)
                c_i = self.matrix["c"]
                D_i = self.triplet(c_i, n_i, c_i.T)
               
             for j in range(i):
+               V_j = self._V_n(j)
                if self.acbs is False:
-                  D_j = self._block_fragment_ao_matrix(D, keep_frags=[j], off_diagonal=False)
+                  D_j = self._block_fragment_ao_matrix(self.matrix["d"], keep_frags=[j], off_diagonal=False)
                else:
                   n_j = self._block_fragment_mo_matrix(numpy.diag(self.matrix["n"]), keep_frags=[j], off_diagonal=False)
                   c_j = self.matrix["c"]
                   D_j = self.triplet(c_j, n_j, c_j.T)
 
+               e_cou_1 += 2.0 * self.compute_1el_energy(D_i, V_j)
+               e_cou_1 += 2.0 * self.compute_1el_energy(D_j, V_i)
                e_cou_2 += 4.0 * self.compute_2el_energy(D_i  , D_j  , type='j')
+        e_cou_t = e_cou_n + e_cou_1 + e_cou_2
 
         # save
         self.vars["e_cou_n"] = e_cou_n
         self.vars["e_cou_1"] = e_cou_1
         self.vars["e_cou_2"] = e_cou_2
         self.vars["e_cou_t"] = e_cou_t
+        self.vars["e_t"    ]+= e_cou_t
 
         self.energy_coulomb_computed = True
         return
 
-    def _nuclear_repulsion_energy(self, i, j):
-        "Compute nuclear repulsion energy between molecules i and j"
-        mol_i = self.aggregate.extract_subsets(i+1)
-        mol_j = self.aggregate.extract_subsets(j+1)
-        energy = 0.0
-        for ni in range(mol_i.natom()):
-            xi = mol_i.x(ni)
-            yi = mol_i.y(ni)
-            zi = mol_i.z(ni)
-            Zi = mol_i.Z(ni)
-            for nj in range(mol_j.natom()):
-                xj = mol_j.x(nj)
-                yj = mol_j.y(nj)
-                zj = mol_j.z(nj)
-                Zj = mol_j.Z(nj)
 
-                rij = math.sqrt((xi-xj)**2 + (yi-yj)**2 + (zi-zj)**2)
-                energy += Zi*Zj/rij
-        return energy
-
-    def compute_repulsion(self):
+    def compute_pauli(self):
         "Compute repulsion energy and its components"
         assert self.monomers_computed is True
         assert self.densities_computed is True
@@ -238,7 +230,6 @@ class DensityDecomposition:
         H.add(T)
         del mints
 
-        # ---     Repulsion energy
         # ------- one-electron part
         e_rep_1 = 2.0 * self.compute_1el_energy(dD, numpy.array(H))
         e_rep_2 = 2.0 * self.compute_2el_energy(dD, dD + 2.0 * D, type='j')
@@ -260,6 +251,7 @@ class DensityDecomposition:
         self.vars["e_rep_t"] = e_rep_t
         self.vars["e_exc_t"] = e_exc_t
         self.vars["e_exr_t"] = e_exr_t
+        self.vars["e_t"    ]+= e_exr_t
 
         self.energy_pauli_computed = True
         return
@@ -275,6 +267,7 @@ class DensityDecomposition:
         for i in range(self.aggregate.nfragments()):
             e_fqm_t -= self.data["ene"][i]
         self.vars["e_fqm_t"] = e_fqm_t
+        self.vars["e_pol_t"] = e_fqm_t - self.vars["e_cou_t"] - self.vars["e_exr_t"]
 
         self.energy_full_QM_computed = True
         return
@@ -337,12 +330,18 @@ class DensityDecomposition:
         energy = numpy.dot(JorK, D_right).trace()
         return energy
 
+
+
     # ---- printers ---- #
 
     def __repr__(self):
-        log = " Density-Based interaction energy decomposition\n\n"
+        log = "\n\n"
+        log+= " ===> Density-Based interaction energy decomposition <=== \n\n"
         if self.monomers_computed:
            log += " Monomers computed at %s/%s level of theory.\n" % (self.method.upper(), self.bfs.name())
+           log += " Total number of basis functions  = %d\n" % self.nbf_t
+           log += " Total number of natural orbitals = %d\n" % self.nmo_t
+           log += "\n"
         if self.energy_coulomb_computed:
            log += " @Sec: Coulombic energy:\n"
            log += "       E_COU_1=%12.6f E_COU_2=%12.6f E_NUC_T=%12.6f\n" % (self.vars["e_cou_1"],
@@ -358,8 +357,9 @@ class DensityDecomposition:
                                                                              self.vars["e_exr_t"])
         if self.energy_full_QM_computed:
            log += " @Sec: Full QM energy:\n"
-           log += "       E_COU_T=%12.6f\n"                                % self.vars["e_fqm_t"]
-
+           log += "       E_POL_T=%12.6f\n"                                % self.vars["e_pol_t"]
+           log += "       E_FQM_T=%12.6f\n"                                % self.vars["e_fqm_t"]
+        log += "\n"
         return str(log)
 
     def print_out(self):
@@ -428,13 +428,59 @@ class DensityDecomposition:
             psi4.core.clean()
         return
 
-
     def _deformation_density_pauli(self):
         Doo = self.matrix["doo"]
         D   = self.matrix["d"]
         return Doo, D
 
+    def _V(self, mol, bfs):
+      "Potential matrix of mol's nuclei in bfs AO basis"
+      ep = psi4.core.ExternalPotential()
+      BohrToAngstrom = 0.5291772086
+      for a in range(mol.natom()):
+          q = mol.Z(a)
+          x = mol.x(a) * BohrToAngstrom
+          y = mol.y(a) * BohrToAngstrom
+          z = mol.z(a) * BohrToAngstrom
+          ep.addCharge(q, x, y, z)
+      V = numpy.array(ep.computePotentialMatrix(bfs), numpy.float64)
+      return V
+
+    def _V_n(self, n):
+        "Potential matrix due to n-th fragment nuclei in ACBS"
+        id_m = [n+1]
+        id_g = list(range(1, self.aggregate.nfragments()+1))
+        id_g.pop(n)
+        frag = self.aggregate.extract_subsets(id_m, id_g)
+        V_n = self._V(frag, self.bfs)
+        return V_n
+
+    def _nuclear_repulsion_energy(self, i, j):
+        "Compute nuclear repulsion energy between molecules i and j"
+        mol_i = self.aggregate.extract_subsets(i+1)
+        mol_j = self.aggregate.extract_subsets(j+1)
+        energy = 0.0
+        for ni in range(mol_i.natom()):
+            xi = mol_i.x(ni)
+            yi = mol_i.y(ni)
+            zi = mol_i.z(ni)
+            Zi = mol_i.Z(ni)
+            for nj in range(mol_j.natom()):
+                xj = mol_j.x(nj)
+                yj = mol_j.y(nj)
+                zj = mol_j.z(nj)
+                Zj = mol_j.Z(nj)
+
+                rij = math.sqrt((xi-xj)**2 + (yi-yj)**2 + (zi-zj)**2)
+                energy += Zi*Zj/rij
+        return energy
+
+
+
+
+
     # ---- protected utilities ---- # 
+
 
     def _orthogonalize_OPDM(self, D, S):
         "Transforms the one-particle density matrix to orthogonal space"
@@ -498,3 +544,6 @@ class DensityDecomposition:
                nbf_i = self.data["nbf"][i]
                M_diag[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i] = numpy.array(M[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i], numpy.float64)
         return M_diag
+
+
+
