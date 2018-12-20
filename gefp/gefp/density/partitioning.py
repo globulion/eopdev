@@ -14,7 +14,7 @@ class DensityDecomposition:
  Density-Based Decomposition Scheme from Mandado and Hermida-Ramon
  JCTC 2011
 """
-    def __init__(self, aggregate, method='hf', ACBS=True, jk_type='direct', **kwargs):
+    def __init__(self, aggregate, method='hf', ACBS=True, jk_type='direct', no_cutoff=0.000, **kwargs):
         "Initialize all attributes"
         # molecular aggregate
         self.aggregate   = aggregate    
@@ -34,12 +34,13 @@ class DensityDecomposition:
         # variables
         self.vars        = {"e_cou_1"     : None,   # coulombic energy, 1el part
                             "e_cou_2"     : None,   # coulombic energy, 2el part
-                            "e_cou_t"     : None,   # coulombic energy, (1+2)el part
+                            "e_cou_t"     : None,   # coulombic energy
                             "e_rep_1"     : None,   # repulsion energy, 1el part
                             "e_rep_2"     : None,   # repulsion energy, 2el part
                             "e_rep_t"     : None,   # repulsion energy, (1+2)el part
                             "e_exc_t"     : None,   # exchange energy
-                            "e_pol_t"     : None,   # polarization energy, (1+2)el part
+                            "e_exr_t"     : None,   # exchange-repulsion energy
+                            "e_pol_t"     : None,   # polarization energy
                             "e_pol_ind_t" : None,   # induction part of polarization energy, (1+2)el part
                             "e_pol_disp_t": None,   # dispersion part of polarization energy, (1+2)el part
                             "e_pol_ct_t"  : None,   # charge-transfer part of polarization energy, (1+2)el part
@@ -49,6 +50,8 @@ class DensityDecomposition:
         self.kwargs      = kwargs
         # basis-set mode (ACBS: aggregate-centred basis set)
         self.acbs        = ACBS
+        # cutoff for NO occupancies
+        self.no_cutoff   = no_cutoff
 
         # what is already computed
         self.monomers_computed      = False   # unperturbed monomenr wavefunctions at arbitrary level of theory
@@ -68,10 +71,14 @@ class DensityDecomposition:
         self.global_jk.set_memory(int(5e8))
         self.global_jk.initialize()
 
+        # sizing
+        self.nmo_t      = None
+        self.nbf_t      = self.bfs.nbf()
+
         # sanity checks
-        if self.acbs: 
-           print (" Only monomer-centred AO basis set computations are implemented so far.")
-           sys.exit(1)
+        #if self.acbs: 
+        #   print (" Only monomer-centred AO basis set computations are implemented so far.")
+        #   sys.exit(1)
 
     def compute_monomers(self):
         "Compute all isolated (unperturbed) monomer wavefunctions"
@@ -81,6 +88,7 @@ class DensityDecomposition:
 
     def _compute_monomers(self, do_acbs):
         "Compute monomer wavefunctions in aggregate-centred basis set"
+        self.nmo_t = 0
         ofm_n = 0
         ofb_n = 0
         for n in range(self.aggregate.nfragments()):
@@ -102,132 +110,40 @@ class DensityDecomposition:
             self.data['odm'].append(D)
             self.data['non'].append(N)
             self.data['noc'].append(C)
+
+            self.data['nmo'].append(C.shape[1])
+            self.nmo_t += self.data['nmo'][n]
+            self.data['nbf'].append(c_wfn.basisset().nbf()) 
+            self.data['ofm'].append(ofm_n)
+            self.data['ofb'].append(ofb_n)
+            ofm_n += self.data['nmo'][n]
             if not do_acbs: 
-               self.data['nmo'].append(c_wfn.basisset().nbf())
-               self.data['nbf'].append(c_wfn.basisset().nbf()) 
-               self.data['ofm'].append(ofm_n)
-               self.data['ofb'].append(ofb_n)
-               ofm_n += self.data['nmo'][n]
                ofb_n += self.data['nbf'][n]
 
             psi4.core.clean()
         return
 
-    #def _compute_monomers_mcbs(self):  ### -> deprecate
-    #    "Compute monomer wavefunctions in monomer-centred basis set"
-    #    raise NotImplementedError
+    def compute_densities(self):
+        "Compute all the density matrices necessary"
+        raise NotImplementedError
+        return
 
     def compute(self): 
         "Perform the full density decomposition"
         # compute monomer wavefunctions
         if not self.monomers_computed: self.compute_monomers()
         raise NotImplementedError
-    def compute_repulsion(self):
-        "Compute repulsion energy and its components"
-        # orthogonalized and non-orthogonalized OPDM's
-        Doo, D = self._deformation_density_pauli()
-        # deformation density matrix
-        dD = Doo - D
-        # core Hamiltonian
-        mints = psi4.core.MintsHelper(self.bfs)
-        V = mints.ao_potential()
-        T = mints.ao_kinetic()
-        V.add(T)
 
-        # ---     Repulsion energy
-        # ------- one-electron part
-        e_rep_1 = 2.0 * self.compute_1el_energy(dD, numpy.array(V))
-        e_rep_2 = 2.0 * self.compute_2el_energy(dD, dD + 2.0 * D, type='j')
-        e_rep_t  = e_rep_1 + e_rep_2
-        self.vars["e_rep_1"] = e_rep_1
-        self.vars["e_rep_2"] = e_rep_2
-        self.vars["e_rep_t"] = e_rep_t
-        self.pauli_computed = True
-        #e_rep_1_k = 2.0 * self.compute_1el_energy(dD, numpy.array(T))
-        #e_rep_1_p = 2.0 * self.compute_1el_energy(dD, numpy.array(V))
-        #e_rep_1   = e_rep_1_k + e_rep_1_p
-        #e_rep_2_e = 4.0 * self.compute_2el_energy(dD, D, 'j')
-        #e_rep_2_p = 2.0 * self.compute_2el_energy(dD, dD, 'j')
-        #e_rep_2   = e_rep_2_e + e_rep_2_p
-        #e_rep     = e_rep_1 + e_rep_2
-        #print(e_rep_1_k, e_rep_1_p, e_rep_1)
-        #print(e_rep_2_e, e_rep_2_p, e_rep_2)
-        #print(e_rep)
-        return
-
-    def __repr__(self):
-        log = ""
-        if self.monomers_computed:
-           log += " Monomers computed.\n"
-        if self.pauli_computed:
-           log += " Pauli repulsion energy:\n"
-           log += " E_REP_1=%12.6f E_REP_2=%12.6f E_REP_T=%12.6f\n" % (self.vars["e_rep_1"],
-                                                                       self.vars["e_rep_2"],
-                                                                       self.vars["e_rep_t"])
-
-        return str(log)
-
-    def natural_orbitals(self, D, orthogonalize_first=None, order='descending', original_ao_mo=True):
-        "Compute the Natural Orbitals from a given ODPM"
-        if orthogonalize_first is not None:
-           S = orthogonalize_first
-           D_ = self._orthogonalize_OPDM(D, S)
-        else:
-           D_ = D
-        n, U = numpy.linalg.eigh(D_)
-        n[numpy.where(n<0.0)] = 0.0
-        if original_ao_mo:
-           assert orthogonalize_first is not None
-           U = numpy.dot(self._orthogonalizer(orthogonalize_first), U)
-        if order=='ascending': return n, U
-        else:                  return n[::-1], U[:,::-1]
-
-    def matrix_power(self, M, x):
-        "Computes the well-behaved matrix power"
-        E, U = numpy.linalg.eigh(M)
-        Ex = E.copy(); Ex.fill(0.0)
-        for i in range(len(E)):
-            if (E[i]>0.0) : Ex[i] = numpy.power(E[i], x)
-            else: Ex[i] = 1.0
-        Mx = numpy.dot(U, numpy.dot(numpy.diag(Ex), U.T))
-        return Mx
-    def compute_1el_energy(self, D, Hcore):
-        "Compute generalized 1-electron energy"
-        energy = numpy.dot(D, Hcore).trace()
-        return energy
-    def compute_2el_energy(self, D_left, D_right, type='j'):
-        "Compute generalized 2-electron energy"
-        assert self.global_jk is not None
-        self.global_jk.C_clear()
-        self.global_jk.C_left_add(psi4.core.Matrix.from_array(D_left, ""))
-        I = numpy.identity(D_left.shape[0], numpy.float64)
-        self.global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
-        self.global_jk.compute()
-        if   type.lower() == 'j': JorK = numpy.array(self.global_jk.J()[0])
-        elif type.lower() == 'k': JorK = numpy.array(self.global_jk.K()[0])
-        energy = numpy.dot(JorK, D_right).trace()
-        return energy
-    def deformation_density(self, name):
-        "Compute the deformation density matrix"
-        if name.lower() == "pauli": 
-           Doo, D = self._deformation_density_pauli()
-        dD = Doo - D
-        return dD
     def _deformation_density_pauli(self):
-        if self.acbs: Doo, D = self._deformation_density_pauli_acbs()
-        else        : Doo, D = self._deformation_density_pauli_mcbs()
+        Doo, D = self._deformation_density_pauli()
         return Doo, D
-    def _deformation_density_pauli_acbs(self):
-        raise NotImplementedError
-    def _deformation_density_pauli_mcbs(self):
+    #def _deformation_density_pauli_acbs(self): --> deprecate
+    #    raise NotImplementedError
+    def _deformation_density_pauli(self):
         "Compute Pauli deformation density"
-        nmo_t = 0; nbf_t = 0
-        for i in range(self.aggregate.nfragments()):
-            nmo_t += self.data["nmo"][i]
-            nbf_t += self.data["nbf"][i]
-        S_mo_t    = numpy.zeros((nmo_t, nmo_t), numpy.float64)
-        W_mo_t    = numpy.zeros((nmo_t       ), numpy.float64)
-        C_ao_mo_t = numpy.zeros((nbf_t, nmo_t), numpy.float64)
+        S_mo_t    = numpy.zeros((self.nmo_t, self.nmo_t), numpy.float64)
+        W_mo_t    = numpy.zeros((self.nmo_t            ), numpy.float64)
+        C_ao_mo_t = numpy.zeros((self.nbf_t, self.nmo_t), numpy.float64)
 
         for i in range(self.aggregate.nfragments()):
             wfn_i = self.data["wfn"][i]
@@ -252,25 +168,125 @@ class DensityDecomposition:
                 ofb_j = self.data["ofb"][j]
                 S_ao_ij = self._compute_overlap_ao(wfn_i, wfn_j)
                 S_mo_ij = self.triplet(noc_i.T, S_ao_ij, noc_j)
-                #S_ao_ji = self._compute_overlap_ao(wfn_j, wfn_i)
-                #S_mo_ji = self.triplet(noc_j.T, S_ao_ji, noc_i)
                 S_mo_t[ofm_i:ofm_i+nmo_i, ofm_j:ofm_j+nmo_j] = S_mo_ij 
                 S_mo_t[ofm_j:ofm_j+nmo_j, ofm_i:ofm_i+nmo_i] = S_mo_ij.T
 
         n_mo_t = W_mo_t * W_mo_t
 
-        WSW = self.triplet(numpy.diag(W_mo_t), S_mo_t, numpy.diag(W_mo_t))
-        CW  = self.doublet(C_ao_mo_t, numpy.diag(W_mo_t))
-        WSWm12 = self.matrix_power(WSW, -0.5)
-        K = self.triplet(WSWm12, numpy.diag(n_mo_t), WSWm12)
+        WSW = self.triplet(numpy.diag(W_mo_t), S_mo_t, numpy.diag(W_mo_t))      # mo::mo
+        WSWm12 = self.matrix_power(WSW, -0.5)                                   # mo::mo
+        K = self.triplet(WSWm12, numpy.diag(n_mo_t), WSWm12)                    # mo::mo
+        CW  = self.doublet(C_ao_mo_t, numpy.diag(W_mo_t))                       # ao::mo
 
-        Doo_ao_t = self.triplet(CW, K, CW.T)
-        D_ao_t = self.triplet(C_ao_mo_t, numpy.diag(n_mo_t), C_ao_mo_t.T)
-        #dD_ao_pauli = Doo_ao_t - D_ao_t
-
-        #Doo_ao_t = self.triplet(C_ao_mo_t, numpy.linalg.inv(S_mo_t), C_ao_mo_t.T) 
+        Doo_ao_t = self.triplet(CW, K, CW.T)                                    # ao::ao
+        D_ao_t = self.triplet(C_ao_mo_t, numpy.diag(n_mo_t), C_ao_mo_t.T)       # ao::ao
 
         return Doo_ao_t, D_ao_t
+
+    def compute_repulsion(self):
+        "Compute repulsion energy and its components"
+        # orthogonalized and non-orthogonalized OPDM's
+        Doo, D = self._deformation_density_pauli()
+        # deformation density matrix
+        dD = Doo - D
+        # core Hamiltonian
+        mints = psi4.core.MintsHelper(self.bfs)
+        H = mints.ao_potential()
+        T = mints.ao_kinetic()
+        H.add(T)
+        del mints
+
+        # ---     Coulombic energy
+        #e_coul_1 = 
+        # ---     Repulsion energy
+        # ------- one-electron part
+        e_rep_1 = 2.0 * self.compute_1el_energy(dD, numpy.array(H))
+        e_rep_2 = 2.0 * self.compute_2el_energy(dD, dD + 2.0 * D, type='j')
+        e_rep_t  = e_rep_1 + e_rep_2
+        # ---     Exchange energy
+        e_exc_t =-1.0 * ( self.compute_2el_energy(Doo, Doo, type='k', k_diag=False) - \
+                          self.compute_2el_energy(D  , D  , type='k', k_diag=True, d_diag=self.data["odm"])   )
+        e_exr_t = e_exc_t + e_rep_t
+        # save
+        self.vars["e_rep_1"] = e_rep_1
+        self.vars["e_rep_2"] = e_rep_2
+        self.vars["e_rep_t"] = e_rep_t
+        self.vars["e_exc_t"] = e_exc_t
+        self.vars["e_exr_t"] = e_exr_t
+
+        self.pauli_computed = True
+        return
+
+    def __repr__(self):
+        log = " Density-Based interaction energy decomposition\n\n"
+        if self.monomers_computed:
+           log += " Monomers computed at %s/%s level of theory.\n" % (self.method.upper(), self.bfs.name())
+        #if self.
+        if self.pauli_computed:
+           log += " @Sec: Pauli repulsion energy:\n"
+           log += "       E_REP_1=%12.6f E_REP_2=%12.6f E_REP_T=%12.6f\n" % (self.vars["e_rep_1"],
+                                                                             self.vars["e_rep_2"],
+                                                                             self.vars["e_rep_t"])
+           log += "       E_EXC  =%12.6f E_EXREP=%12.6f\n"                % (self.vars["e_exc_t"],
+                                                                             self.vars["e_exr_t"])
+
+        return str(log)
+
+    def natural_orbitals(self, D, orthogonalize_first=None, order='descending', original_ao_mo=True):
+        "Compute the Natural Orbitals from a given ODPM"
+        if orthogonalize_first is not None:
+           S = orthogonalize_first
+           D_ = self._orthogonalize_OPDM(D, S)
+        else:
+           D_ = D
+        n, U = numpy.linalg.eigh(D_)
+        n[numpy.where(n<0.0)] = 0.0
+        if original_ao_mo:
+           assert orthogonalize_first is not None
+           U = numpy.dot(self._orthogonalizer(orthogonalize_first), U)
+        if self.no_cutoff != 0.0:
+           ids = numpy.where(n>=self.no_cutoff)
+           n = n[ids]
+           U =(U.T[ids]).T
+        if order=='ascending': 
+           pass
+        elif order=='descending':
+           n = n[  ::-1]
+           U = U[:,::-1]
+        else: raise ValueError("Incorrect order of NO orbitals. Possible only ascending or descending.")
+        return n, U
+
+    def deformation_density(self, name):
+        "Compute the deformation density matrix"
+        if name.lower() == "pauli": 
+           Doo, D = self._deformation_density_pauli()
+        dD = Doo - D
+        return dD
+
+    def compute_1el_energy(self, D, Hcore):
+        "Compute generalized 1-electron energy"
+        energy = numpy.dot(D, Hcore).trace()
+        return energy
+
+    def compute_2el_energy(self, D_left, D_right, type='j', k_diag=False, d_diag=None):
+        "Compute generalized 2-electron energy"
+        assert self.global_jk is not None
+        if type.lower() == 'k' and k_diag is True:
+           assert d_diag is not None
+           if self.acbs is False: JorK = self._diagonal_K(d_diag, None)
+           else                 : JorK = self._diagonal_K(None, D_left)
+        else:
+           self.global_jk.C_clear()                                           
+           self.global_jk.C_left_add(psi4.core.Matrix.from_array(D_left, ""))
+           I = numpy.identity(D_left.shape[0], numpy.float64)
+           self.global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+           self.global_jk.compute()
+           if   type.lower() == 'j': JorK = numpy.array(self.global_jk.J()[0])
+           elif type.lower() == 'k': JorK = numpy.array(self.global_jk.K()[0])
+           else: raise ValueError("Incorrect type of JK matrix. Only J ro K allowed.")
+        energy = numpy.dot(JorK, D_right).trace()
+        return energy
+
 
     # ---- public utilities ---- # 
 
@@ -281,6 +297,17 @@ class DensityDecomposition:
     def triplet(self, A, B, C):
         "Compute triple matrix product: result = ABC"
         return numpy.dot(A, numpy.dot(B, C))
+
+    def matrix_power(self, M, x):
+        "Computes the well-behaved matrix power"
+        E, U = numpy.linalg.eigh(M)
+        Ex = E.copy(); Ex.fill(0.0)
+        for i in range(len(E)):
+            if (E[i]>0.0) : Ex[i] = numpy.power(E[i], x)
+            else: Ex[i] = 1.0
+        Mx = numpy.dot(U, numpy.dot(numpy.diag(Ex), U.T))
+        return Mx
+
 
     # ---- protected utilities ---- # 
 
@@ -309,4 +336,68 @@ class DensityDecomposition:
         S = numpy.array(mints.ao_overlap(wfn_i.basisset(),
                                          wfn_j.basisset()))
         return S
-       
+
+    def _diagonal_K(self, D_list, D):
+        "Compute K matrix from only fragment-diagonal contributions of density matrix in D_list"
+        #assert self.acbs is False
+        if self.acbs is False:
+           assert D is None
+           K = numpy.zeros((self.nbf_t, self.nbf_t), numpy.float64)
+           for i in range(self.aggregate.nfragments()):                                  
+               jk = psi4.core.JK.build(self.data["wfn"][i].basisset(), jk_type='direct')
+               jk.set_memory(int(5e8))
+               jk.initialize()
+               jk.C_clear()
+                                                                                         
+               D_i = numpy.array(D_list[i], numpy.float64)
+               jk.C_left_add(psi4.core.Matrix.from_array(D_i, ""))
+               I = numpy.identity(D_i.shape[0], numpy.float64)
+               jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+               jk.compute()
+               K_i = numpy.array(jk.K()[0])
+                                                                                         
+               ofb_i = self.data["ofb"][i]
+               nbf_i = self.data["nbf"][i]
+               K[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i] = K_i
+        else:
+           assert D_list is None
+           K = numpy.zeros((self.nbf_t, self.nbf_t), numpy.float64)
+           for i in range(self.aggregate.nfragments()):                                  
+               self.global_jk.C_clear()
+                                                                                         
+               D_i = self._block_fragment_ao_matrix(D, keep_frags=[i], off_diagonal=False)
+               self.global_jk.C_left_add(psi4.core.Matrix.from_array(D_i, ""))
+               I = numpy.identity(D_i.shape[0], numpy.float64)
+               self.global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+               self.global_jk.compute()
+               K_i = numpy.array(self.global_jk.K()[0])
+                                                                                         
+               ofb_i = self.data["ofb"][i]
+               nbf_i = self.data["nbf"][i]
+               K += K_i
+
+        return K
+
+    def _block_fragment_ao_matrix(self, M, keep_frags=[], off_diagonal=False):
+        "Returns the block-fragment form of matrix M (AO-basis) with fragments as each block. Keep only indicated fragments."
+        M_frag = M.copy(); M_frag.fill(0.0)
+        for i in range(self.aggregate.nfragments()):
+            if i in keep_frags:
+               ofb_i = self.data["ofb"][i]
+               nbf_i = self.data["nbf"][i]
+               M_frag[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i] = numpy.array(M[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i], numpy.float64)
+               # keep offdiagonals
+               if off_diagonal is True:
+                  raise NotImplementedError
+        return M_frag
+
+    def _block_diagonal_ao_matrix(self, M, zero_frags=[]):
+        "Returns the block-diagonal form of matrix M (AO-basis) with fragments as each block. Zero-out indicated fragments"
+        M_diag = M.copy(); M_diag.fill(0.0)
+        for i in range(self.aggregate.nfragments()):
+            if not i in zero_frags:
+               ofb_i = self.data["ofb"][i]
+               nbf_i = self.data["nbf"][i]
+               M_diag[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i] = numpy.array(M[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i], numpy.float64)
+        return M_diag
+

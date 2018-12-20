@@ -35,8 +35,9 @@ set
     onepdm                        False
     opdm_relax                    False
     cc_type                       df
-    df_basis_scf                  cc-pvdz-jkfit
-    df_basis_cc                   cc-pvdz-ri
+    df_basis_scf                  aug-cc-pvdz-jkfit
+    df_basis_cc                   aug-cc-pvdz-ri
+    df_basis_sapt                 aug-cc-pvdz-ri
     # ==> OepDev Options <== #
     oepdev_target                 solver
     oepdev_solver_type            repulsion_energy
@@ -53,10 +54,13 @@ set
 }
 
 # create density decomposition solver
-solver = gefp.density.partitioning.DensityDecomposition(h2o, method='hf', ACBS=False)
+solver = gefp.density.partitioning.DensityDecomposition(h2o, method='ccsd', ACBS=False, no_cutoff=0.0)
 
 # compute unperturbed monomer wavefunctions (ACBS)
 solver.compute_monomers()
+nmo = solver.data["nmo"]
+print(solver.nmo_t)
+print(nmo[0], nmo[1])
 
 # compute one-electron Pauli deformation density
 dD = solver.deformation_density('pauli')
@@ -76,4 +80,5 @@ occ, orb = solver.natural_orbitals(wfn.Da(), orthogonalize_first=wfn.S(), order=
 #    print(" %3d %13.6f" % (i+1, o))
 
 # run oepdev
+#energy('sapt0', molecule=h2o)
 #energy('oepdev', molecule=h2o)
