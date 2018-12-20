@@ -54,31 +54,34 @@ set
 }
 
 # create density decomposition solver
-solver = gefp.density.partitioning.DensityDecomposition(h2o, method='ccsd', ACBS=False, no_cutoff=0.0)
+solver = gefp.density.partitioning.DensityDecomposition(h2o, method='hf', ACBS=True, no_cutoff=0.0)
 
 # compute unperturbed monomer wavefunctions (ACBS)
 solver.compute_monomers()
+solver.compute_densities()
 nmo = solver.data["nmo"]
-print(solver.nmo_t)
-print(nmo[0], nmo[1])
 
 # compute one-electron Pauli deformation density
 dD = solver.deformation_density('pauli')
-
-# compute Pauli repulsion energy
-solver.compute_repulsion()
-
-print(solver)
 
 # compute natural orbitals
 wfn = solver.data["wfn"][1]
 occ, orb = solver.natural_orbitals(wfn.Da(), orthogonalize_first=wfn.S(), order='descending')
 
 # print the natural occupation numbers
-#print(" Natural Occupation Numbers of monomer 2")
-#for i, o in enumerate(occ):
-#    print(" %3d %13.6f" % (i+1, o))
+print(" Natural Occupation Numbers of monomer 2")
+for i, o in enumerate(occ):
+    print(" %3d %13.6f" % (i+1, o))
 
-# run oepdev
-#energy('sapt0', molecule=h2o)
-#energy('oepdev', molecule=h2o)
+# compute Pauli repulsion energy
+solver.compute_repulsion()
+
+# print the solver information on screen and to the output file
+print(solver)
+solver.print_out()
+
+# run SAPT
+energy('sapt0', molecule=h2o)
+
+# run oepdev (now only HF is supported)
+energy('oepdev', molecule=h2o)
