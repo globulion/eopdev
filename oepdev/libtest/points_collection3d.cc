@@ -30,7 +30,9 @@ double oepdev::test::Test::test_points_collection3d(void)
   field->write_cube_file("cube_file");
 
  // Iterator
-  shared_ptr<Points3DIterator> iter = oepdev::Points3DIterator::build(3, 3, 3, 3.898543, 3.781046, 3.162960, -10.799993, -2.848328, -4.963252);
+  //shared_ptr<Points3DIterator> iter = oepdev::Points3DIterator::build(3, 3, 3, 3.898543, 3.781046, 3.162960, -10.799993, -2.848328, -4.963252);
+  // its not good to construct a new iterator again manually: use already existing iterator object:
+  shared_ptr<Points3DIterator> iter = field->points_collection()->points_iterator();
 
   //Accumulate errors
   double r_sum = 0.0;
