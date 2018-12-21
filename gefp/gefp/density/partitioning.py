@@ -1,12 +1,16 @@
 #!/usr/bin/python3
 #*-* coding: utf-8 *-*
+"""
+ Partitioning module.
+ Bartosz Błasiak, Gundelfingen, Dec 2018
+"""
 
 import sys
-import psi4
-import oepdev
 import math
 import numpy
 import numpy.linalg
+import psi4
+import oepdev
 
 __all__ = ["DensityDecomposition"]
 
@@ -16,7 +20,7 @@ class DensityDecomposition:
  JCTC 2011
  Usage:
 """
-    def __init__(self, aggregate, method='hf', ACBS=True, jk_type='direct', no_cutoff=0.000, **kwargs):
+    def __init__(self, aggregate, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, **kwargs):
         "Initialize all attributes"
         # molecular aggregate
         self.aggregate   = aggregate    
@@ -38,6 +42,8 @@ class DensityDecomposition:
                        "c"   : None,    # unperturbed LCAO-NO coefficients
                        "n"   : None,    # unperturbed occupation numbers
                        "doo" : None,    # orthogonalized unpolarized 1-electron density
+                       "dpp" : None,    # orthogonalized polarized 1-electron density
+                       "dqm" : None,    # full QM 1-electron density
                        }
         # variables
         self.vars        = {"e_cou_1"     : None,   # coulombic energy, 1el part
@@ -58,7 +64,7 @@ class DensityDecomposition:
         # additional options
         self.kwargs      = kwargs
         # basis-set mode (ACBS: aggregate-centred basis set)
-        self.acbs        = ACBS
+        self.acbs        = acbs
         # cutoff for NO occupancies
         self.no_cutoff   = no_cutoff
 
@@ -77,7 +83,7 @@ class DensityDecomposition:
         self.dms_ct_computed        = False   # density matrix polarization susceptibility tensors for charge-transfer
 
         # basis set and JK object for entire aggregate
-        self.bfs = psi4.core.BasisSet.build(aggregate, "BASIS", psi4.core.get_global_option("BASIS"), puream=-1, **kwargs)
+        self.bfs = psi4.core.BasisSet.build(aggregate, "BASIS", psi4.core.get_global_option("BASIS"), **kwargs)
         self.global_jk = psi4.core.JK.build(self.bfs, jk_type=jk_type)
         self.global_jk.set_memory(int(5e8))
         self.global_jk.initialize()
@@ -102,6 +108,26 @@ class DensityDecomposition:
         if not self.energy_coulomb_computed    : self.compute_coulomb()
         if not self.energy_pauli_computed      : self.compute_pauli()
         if not self.energy_full_QM_computed    : self.compute_full_QM()
+
+    def deformation_density(self, name):
+        "Compute the deformation 1-particle density matrix"
+        Doo, D = self._deformation_density_pauli()
+        if   name.lower().startswith("fqm"):
+             dD = self.matrix["dqm"] - D
+        elif name.lower().startswith("pau"): 
+             dD = Doo - D
+        elif name.lower().startswith("pol"):
+             dD = self.matrix["dqm"] - Doo
+        elif name.lower().startswith("ind"):
+             raise NotImplementedError
+        elif name.lower().startswith("dis"):
+             raise NotImplementedError
+        else: 
+             raise ValueError("Incorrect name of density. Only pau, pol, ind, dis, tot or fqm are available.")
+        return dD
+
+
+    # ---- public interface (expert) ---- #
 
     def compute_monomers(self):
         "Compute all isolated (unperturbed) monomer wavefunctions"
@@ -261,7 +287,10 @@ class DensityDecomposition:
         assert self.monomers_computed is True
 
         self.aggregate.activate_all_fragments()
-        c_ene, c_wfn = psi4.energy(self.method, molecule=self.aggregate, return_wfn=True, **self.kwargs)
+        c_ene, c_wfn = psi4.properties(self.method, molecule=self.aggregate, return_wfn=True, 
+                                       properties=["DIPOLE","NO_OCCUPATIONS"], **self.kwargs)
+
+        self.matrix["dqm"] = c_wfn.Da()
 
         e_fqm_t = c_ene
         for i in range(self.aggregate.nfragments()):
@@ -295,21 +324,6 @@ class DensityDecomposition:
            U = U[:,::-1]
         else: raise ValueError("Incorrect order of NO orbitals. Possible only ascending or descending.")
         return n, U
-
-    def deformation_density(self, name):
-        "Compute the deformation density matrix"
-        if   name.lower().startswith("pau"): 
-             Doo, D = self._deformation_density_pauli()
-             dD = Doo - D
-        elif name.lower().startswith("pol"):
-             raise NotImplementedError
-        elif name.lower().startswith("ind"):
-             raise NotImplementedError
-        elif name.lower().startswith("dis"):
-             raise NotImplementedError
-        else: 
-             raise ValueError("Incorrect name of density. Only pau, pol, ind or dis are available.")
-        return dD
 
     def compute_1el_energy(self, D, Hcore):
         "Compute generalized 1-electron energy"
@@ -544,6 +558,3 @@ class DensityDecomposition:
                nbf_i = self.data["nbf"][i]
                M_diag[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i] = numpy.array(M[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i], numpy.float64)
         return M_diag
-
-
-
