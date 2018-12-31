@@ -8,9 +8,9 @@ import sys
 
 def check_python_version():
     python_version = sys.version_info
-    print " Python version is ", python_version[:3]
+    print(" Python version is ", python_version[:3])
     if not python_version[:2] in [(3, 3), (3, 4), (3, 5), (3, 6), (3, 7)]: 
-       print " VersionError: GEFP-OEP requires Python 3.3 or higher!"
+       print(" VersionError: GEFP-OEP requires Python 3.3 or higher!")
        sys.exit(-1)
     return
 
@@ -32,15 +32,13 @@ def Main(argv):
                    'Topic :: Software Development :: Libraries :: Python Modules',
                    ]
     extensions  = []
-    print " Installing has started!"
+    print(" Installing has started!")
     setup(name                         =  'GEFP-OEP'  , 
           version                      =  '1.0.0'     ,
           description                  =  'Generalized Effective Fragment Potentials (GEFP) derived from One-Electron Potential (OEP) Method',
           long_description             =   open("README.md").read(),
           author                       =  'Bartosz Błasiak'      ,
           author_email                 =  'blasiak.bartosz@gmail.com',
-          contributors                 = [],
-          contributors_emails          = [],
           url                          =  '',
           license                      =   open("LICENSE.md").read(),
           requires                     = ['numpy (>=1.10.0)', 'psi4', 'oepdev'],

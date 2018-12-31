@@ -1,0 +1,13 @@
+doc/doxygen
+!doc/doxygen/latex/refman.pdf
+tests/oepdev/*.out
+CMakeFiles
+CMakeCache*
+oepdev.so
+*.pyc
+Dart*
+Testing
+CTest*
+CMake*
+!CMakeLists.txt
+Makefile
