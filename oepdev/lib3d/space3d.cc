@@ -21,6 +21,12 @@ Points3DIterator::~Points3DIterator()
 
 }
 
+void Points3DIterator::rewind() {
+  done_ = false;
+  index_= 0;
+  current_.index = 0;
+}
+
 CubePoints3DIterator::CubePoints3DIterator(
                         const int& nx, const int& ny, const int& nz,
                         const double& dx, const double& dy, const double& dz,
@@ -41,9 +47,11 @@ CubePoints3DIterator::~CubePoints3DIterator()
 
 void CubePoints3DIterator::first() 
 {
+  ii_ = 0; jj_ = 0; kk_ = 0;
   current_.x = ox_;
   current_.y = oy_;
   current_.z = oz_;
+  rewind();
 }
 void CubePoints3DIterator::next() 
 {
@@ -165,6 +173,7 @@ void RandomPoints3DIterator::draw_random_point()
 
 void RandomPoints3DIterator::first()
 {
+   rewind();
    draw_random_point();
 }
 
@@ -245,9 +254,9 @@ CubePointsCollection3D::CubePointsCollection3D(Collection collectionType,
        if (x >= xmax) xmax = x;
        if (y >= ymax) ymax = y;
        if (z >= zmax) zmax = z;
-       if (x <  xmin) xmin = x;
-       if (y <  ymin) ymin = y;
-       if (z <  zmin) zmin = z;
+       if (x <= xmin) xmin = x;
+       if (y <= ymin) ymin = y;
+       if (z <= zmin) zmin = z;
   }
   xmin -= px;  xmax += px;
   ymin -= py;  ymax += py;
@@ -264,6 +273,10 @@ CubePointsCollection3D::CubePointsCollection3D(Collection collectionType,
   double oz = zmin;
   
   // Point3D iterator
+  cout << std::fixed;
+  cout.precision(8);
+  cout << dx << " " << dy << " " << dz << " " << endl;
+  cout << ox << " " << oy << " " << oz << " " << endl;
   pointsIterator_ = make_shared<CubePoints3DIterator>(nx, ny, nz, dx, dy, dz, ox, oy, oz);
 
   // Initialize the Grid
@@ -338,6 +351,7 @@ void Field3D::compute(){
        data_->set(iter->index(), 3+i, v->get(i));
   }
   isComputed_ = true;
+  iter->rewind();
 }
 
 Field3D::Field3D(const int& ndim, const int& np, const double& pad, psi::SharedWavefunction wfn, psi::Options& opt)

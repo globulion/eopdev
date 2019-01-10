@@ -132,6 +132,9 @@ class Points3DIterator
     /// Step to next iteration
     virtual void next() = 0;
 
+    /// Rewind to the beginning
+    virtual void rewind();
+
 
   protected:
 
