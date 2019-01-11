@@ -166,7 +166,7 @@ class DensityDecomposition:
         if not self.energy_pauli_computed      : self.compute_pauli()
         if not self.energy_full_QM_computed    : self.compute_full_QM()
         if polar_approx:
-            if not self.polar_approx_computed  : self.compute_polar()
+            if not self.energy_polar_approx_computed  : self.compute_polar()
 
     def deformation_density(self, name):
         """\
@@ -331,8 +331,8 @@ class DensityDecomposition:
 
         # ------- one-electron part
         e_rep_1 = 2.0 * self.compute_1el_energy(dD, numpy.array(H))
+        # ------- two-electron part
         e_rep_2 = 2.0 * self.compute_2el_energy(dD, dD + 2.0 * D, type='j')
-        e_rep_t  = e_rep_1 + e_rep_2
         # ---     Exchange energy
         e_exc_t =-self.compute_2el_energy(Doo, Doo, type='k')
         for i in range(self.aggregate.nfragments()):
@@ -343,6 +343,7 @@ class DensityDecomposition:
                c_i = self.matrix["c"]
                D_i = self.triplet(c_i, n_i, c_i.T)
             e_exc_t += self.compute_2el_energy(D_i  , D_i  , type='k')
+        e_rep_t = e_rep_1 + e_rep_2
         e_exr_t = e_exc_t + e_rep_t
         # save
         self.vars["e_rep_1"] = e_rep_1
@@ -357,11 +358,29 @@ class DensityDecomposition:
 
     def compute_polar(self):
         "Compute approximate polarization interaction energy"
-        raise NotImplementedError
+        #raise NotImplementedError
 
         assert self.monomers_computed is True
         assert self.densities_computed is True
 
+        # orthogonalized and non-orthogonalized OPDM's
+        Doo, D = self._deformation_density_pauli()
+        dD_pau = self.deformation_density("pau")
+        dD_pol = self.deformation_density("pol")
+        # core Hamiltonian
+        mints = psi4.core.MintsHelper(self.bfs)
+        H = mints.ao_potential()
+        T = mints.ao_kinetic()
+        H.add(T)
+        del mints
+
+        e_pol_1 = 2.0 * self.compute_1el_energy(dD_pol, numpy.array(H))
+        e_pol_2 = 2.0 * self.compute_2el_energy(dD_pol, dD_pol + 2.0 * (dD_pau + D), type='j')
+        e_pol_2+= 0.0 # add here!
+
+        e_pol_a = e_pol_1 + e_pol_2
+
+        self.vars["e_pol_a"] = e_pol_a
 
         self.energy_polar_approx_computed = True
         return
