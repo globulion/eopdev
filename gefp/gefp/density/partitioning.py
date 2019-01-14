@@ -233,8 +233,8 @@ class DensityDecomposition:
         c_ene, c_wfn = psi4.properties(self.method, molecule=self.aggregate, return_wfn=True, 
                                        properties=["DIPOLE","NO_OCCUPATIONS"], **self.kwargs)
 
-        self.matrix["dqm"] = c_wfn.Da()
         N, C = self.natural_orbitals(c_wfn.Da(), orthogonalize_first=c_wfn.S(), order='descending')
+        self.matrix["dqm"] = c_wfn.Da()
         self.matrix["nqm"] = N
         self.matrix["cqm"] = C
         self.matrix["sqm"] = c_wfn.S()
@@ -381,15 +381,26 @@ class DensityDecomposition:
         # ------- two-electron part
         e_rep_2 = 2.0 * self.compute_2el_energy(dD, dD + 2.0 * D, type='j')
         # ---     Exchange energy
-        e_exc_t =-self.compute_2el_energy(Doo, Doo, type='k')
+        Dunp = self._generalized_density_matrix(self.matrix["noo"], self.matrix["coo"])
+        #D0   = self._generalized_density_matrix(self.matrix["n"]  , self.matrix["c"  ])
+
+        #e_exc_t = self.compute_2el_energy(D0  , D0  , type='k')
+        #e_exc_t-= self.compute_2el_energy(Dunp, Dunp, type='k')
+
+        #e_exc_t =-self.compute_2el_energy(Doo, Doo, type='k')
+        e_exc_t =-self.compute_2el_energy(Dunp, Dunp, type='k')
+        if self.acbs is False: 
+           print(" Warning: Exchange energy is wrong in MCBS mode for now (ACBS=False)")
+           sys.exit(1)
         for i in range(self.aggregate.nfragments()):
             if self.acbs is False:
                D_i = self._block_fragment_ao_matrix(D, keep_frags=[i], off_diagonal=False)
             else: 
-               n_i = self._block_fragment_mo_matrix(numpy.diag(self.matrix["n"]), keep_frags=[i], off_diagonal=False)
+               w_i = self._block_fragment_mo_matrix(numpy.diag(numpy.sqrt(self.matrix["n"])), keep_frags=[i], off_diagonal=False)
                c_i = self.matrix["c"]
-               D_i = self.triplet(c_i, n_i, c_i.T)
+               D_i = self.triplet(c_i, w_i, c_i.T)
             e_exc_t += self.compute_2el_energy(D_i  , D_i  , type='k')
+
         e_rep_t = e_rep_1 + e_rep_2
         e_exr_t = e_exc_t + e_rep_t
         # save
@@ -437,15 +448,17 @@ class DensityDecomposition:
         Dpol = self._generalized_density_matrix(self.matrix["nqm"], self.matrix["cqm"])
         Dunp = self._generalized_density_matrix(self.matrix["noo"], self.matrix["coo"])
 
-        e_ex_pol = self.compute_2el_energy(Dunp, Dunp, type='k')
-        e_ex_pol-= self.compute_2el_energy(Dpol, Dpol, type='k')
+        e_ex_pol_a = self.compute_2el_energy(Dunp, Dunp, type='k')
+        e_ex_pol_a-= self.compute_2el_energy(Dpol, Dpol, type='k')
 
-        e_pol_a = e_pol_1 + e_pol_2 + e_ex_pol
+        e_pol_a = e_pol_1 + e_pol_2 + e_ex_pol_a
 
-        self.vars["e_pol_1" ] = e_pol_1
-        self.vars["e_pol_2" ] = e_pol_2
-        self.vars["e_ex_pol"] = e_ex_pol
-        self.vars["e_pol_a" ] = e_pol_a
+        self.vars["e_pol_1"   ] = e_pol_1
+        self.vars["e_pol_2"   ] = e_pol_2
+        self.vars["e_ex_pol_a"] = e_ex_pol_a
+        self.vars["e_pol_a"   ] = e_pol_a
+
+        self.vars["e_ex_pol"  ] = self.vars["e_pol_t"] - e_pol_1 - e_pol_2
 
         self.energy_polar_approx_computed = True
         return
@@ -523,14 +536,18 @@ class DensityDecomposition:
                                                                              self.vars["e_exr_t"])
         if self.energy_polar_approx_computed:
            log += " @Sec: Polarization energy (Approx):\n"
+           log += "       E_POL_1=%12.6f E_POL_2=%12.6f E_EXP_A=%12.6f\n"  %(self.vars["e_pol_1"],
+                                                                             self.vars["e_pol_2"],
+                                                                             self.vars["e_ex_pol_a"])
            log += "       E_POL_A=%12.6f\n"                                % self.vars["e_pol_a"]
 
         if self.energy_full_QM_computed:
            log += " @Sec: Polarization energy (Exact):\n"
-           log += "       E_POL_1=%12.6f E_POL_2=%12.6f E_EXPOL=%12.6f\n"  %(self.vars["e_pol_1"],
-                                                                             self.vars["e_pol_2"],
-                                                                             self.vars["e_ex_pol"])
            log += "       E_POL_T=%12.6f\n"                                % self.vars["e_pol_t"]
+           if self.energy_polar_approx_computed:
+              log += "         E_EXP_T=%12.6f\n"                           % self.vars["e_ex_pol"]
+              log += "         E_EXP_A=%12.6f\n"                           % self.vars["e_ex_pol_a"]
+              log += "         error  =%12.6f\n"                           %(self.vars["e_ex_pol_a"]-self.vars["e_ex_pol"])
 
         if self.energy_full_QM_computed:
            log += " @Sec: Full QM energy:\n"
