@@ -53,6 +53,15 @@ class DensityDecomposition:
    dD_pauli = solver.deformation_density('pau')
    dD_pol   = solver.deformation_density('pol')
    dD       = solver.deformation_density('fqm')
+
+   # dictionaries:
+   # 1. accessing variables
+   solver.vars 
+   # 2. accessing aggregate data
+   solver.matrix
+   # 3. accessing unperturbed fragment data (expert)
+   solver.data
+
                                                                                                             
    print(solver)
    solver.print_out()
@@ -66,7 +75,7 @@ class DensityDecomposition:
         self.aggregate   = aggregate    
         # level of theory
         self.method      = method       
-        # wavefunction data of each unperturbed fragment
+        # unperturbed fragment data
         self.data        = {"wfn": [],  # unperturbed wavefunction
                             "ene": [],  # unperturbed total energy
                             "odm": [],  # unperturbed one-particle density matrix
@@ -77,13 +86,19 @@ class DensityDecomposition:
                             "ofm": [],  # MO offset
                             "ofb": [],  # AO offset
                             } 
-        # matrices in aggregate AO/MO basis
+        # aggregate data: matrices in aggregate AO/MO basis
         self.matrix = {"d"   : None,    # unperturbed 1-electron density
                        "c"   : None,    # unperturbed LCAO-NO coefficients
-                       "n"   : None,    # unperturbed occupation numbers
+                       "n"   : None,    # unperturbed NO occupation numbers
                        "doo" : None,    # orthogonalized unpolarized 1-electron density
-                       "dpp" : None,    # orthogonalized polarized 1-electron density
-                       "dqm" : None,    # full QM 1-electron density
+                       "coo" : None,    # orthogonalized unpolarized LCAO-NO coefficients
+                       "noo" : None,    # orthogonalized unpolarized NO occupation numbers
+                       "dqm" : None,    # orthogonalized polarized 1-electron density (full QM 1-electron density)
+                       "cqm" : None,    # orthogonalized polarized LCAO-NO coefficients (full QM)
+                       "nqm" : None,    # orthogonalized polarized NO occupation numbers (full QM)
+                       "dpp" : None,    # orthogonalized polarized 1-electron density (approximated)
+                       "cpp" : None,    # orthogonalized polarized LCAO-NO coefficients (approximated)
+                       "npp" : None,    # orthogonalized polarized NO occupation numbers (approximated)
                        }
         # variables
         self.vars        = {"e_cou_1"     : None,   # coulombic energy, 1el part
@@ -159,14 +174,16 @@ class DensityDecomposition:
 """
         # compute monomer wavefunctions
         if not self.monomers_computed          : self.compute_monomers()
+        # compute full QM
+        if not self.energy_full_QM_computed    : self.compute_full_QM()
         # compute densities
         if not self.densities_computed         : self.compute_densities()
         # compute interaction energies
         if not self.energy_coulomb_computed    : self.compute_coulomb()
         if not self.energy_pauli_computed      : self.compute_pauli()
-        if not self.energy_full_QM_computed    : self.compute_full_QM()
+        if not self.energy_polar_computed      : self.compute_polar()
         if polar_approx:
-            if not self.energy_polar_approx_computed  : self.compute_polar()
+            if not self.energy_polar_approx_computed  : self.compute_polar_approx()
 
     def deformation_density(self, name):
         """\
@@ -249,10 +266,15 @@ class DensityDecomposition:
         Doo_ao_t = self.triplet(CW, K, CW.T)                                    # ao::ao
         D_ao_t = self.triplet(C_ao_mo_t, numpy.diag(n_mo_t), C_ao_mo_t.T)       # ao::ao
 
+        # NO analysis of Antisymmetrized wavefunction
+        noo, coo = self.natural_orbitals(Doo_ao_t.copy(), orthogonalize_first=self.matrix["sqm"], order='descending')
+
         # save
         self.matrix["n"] = n_mo_t
         self.matrix["c"] = C_ao_mo_t
         self.matrix["d"] = D_ao_t
+        self.matrix["noo"] = noo
+        self.matrix["coo"] = coo
         self.matrix["doo"] = Doo_ao_t
 
         # set up state of the object
@@ -357,11 +379,20 @@ class DensityDecomposition:
         return
 
     def compute_polar(self):
+        "Compute exact polarization energy"
+        assert self.monomers_computed is True
+        assert self.energy_coulomb_computed is True
+
+        self.vars["e_pol_t"] = self.vars["e_fqm_t"] - self.vars["e_cou_t"] - self.vars["e_exr_t"]
+        return
+
+    def compute_polar_approx(self):
         "Compute approximate polarization interaction energy"
         #raise NotImplementedError
 
         assert self.monomers_computed is True
         assert self.densities_computed is True
+        assert self.energy_full_QM_computed is True
 
         # orthogonalized and non-orthogonalized OPDM's
         Doo, D = self._deformation_density_pauli()
@@ -376,11 +407,20 @@ class DensityDecomposition:
 
         e_pol_1 = 2.0 * self.compute_1el_energy(dD_pol, numpy.array(H))
         e_pol_2 = 2.0 * self.compute_2el_energy(dD_pol, dD_pol + 2.0 * (dD_pau + D), type='j')
-        e_pol_2+= 0.0 # add here!
 
-        e_pol_a = e_pol_1 + e_pol_2
+        # exchange-polarization energy
+        Dpol = self._generalized_density_matrix(self.matrix["nqm"], self.matrix["cqm"])
+        Dunp = self._generalized_density_matrix(self.matrix["noo"], self.matrix["coo"])
 
-        self.vars["e_pol_a"] = e_pol_a
+        e_ex_pol = self.compute_2el_energy(Dunp, Dunp, type='k')
+        e_ex_pol-= self.compute_2el_energy(Dpol, Dpol, type='k')
+
+        e_pol_a = e_pol_1 + e_pol_2 + e_ex_pol
+
+        self.vars["e_pol_1" ] = e_pol_1
+        self.vars["e_pol_2" ] = e_pol_2
+        self.vars["e_ex_pol"] = e_ex_pol
+        self.vars["e_pol_a" ] = e_pol_a
 
         self.energy_polar_approx_computed = True
         return
@@ -394,12 +434,15 @@ class DensityDecomposition:
                                        properties=["DIPOLE","NO_OCCUPATIONS"], **self.kwargs)
 
         self.matrix["dqm"] = c_wfn.Da()
+        N, C = self.natural_orbitals(c_wfn.Da(), orthogonalize_first=c_wfn.S(), order='descending')
+        self.matrix["nqm"] = N
+        self.matrix["cqm"] = C
+        self.matrix["sqm"] = c_wfn.S()
 
         e_fqm_t = c_ene
         for i in range(self.aggregate.nfragments()):
             e_fqm_t -= self.data["ene"][i]
         self.vars["e_fqm_t"] = e_fqm_t
-        self.vars["e_pol_t"] = e_fqm_t - self.vars["e_cou_t"] - self.vars["e_exr_t"]
 
         self.energy_full_QM_computed = True
         return
@@ -481,6 +524,9 @@ class DensityDecomposition:
 
         if self.energy_full_QM_computed:
            log += " @Sec: Polarization energy (Exact):\n"
+           log += "       E_POL_1=%12.6f E_POL_2=%12.6f E_EXPOL=%12.6f\n"  %(self.vars["e_pol_1"],
+                                                                             self.vars["e_pol_2"],
+                                                                             self.vars["e_ex_pol"])
            log += "       E_POL_T=%12.6f\n"                                % self.vars["e_pol_t"]
 
         if self.energy_full_QM_computed:
@@ -627,6 +673,14 @@ class DensityDecomposition:
         sm = 1.0/numpy.sqrt(s)
         X = numpy.dot(u, numpy.dot(numpy.diag(sm), u.T))
         return X
+
+    def _generalized_density_matrix(self, n, c):
+        "Compute occupation-weighted 1-electron density matrix in AO basis"
+        ns = numpy.sqrt(n); N = c.shape[0]
+        D  = numpy.zeros((N, N), numpy.float64)
+        for i in range(len(n)):
+            D += ns[i] * numpy.outer(c[:,i], c[:,i])
+        return D
 
     def _compute_overlap_ao(self, wfn_i, wfn_j):
         "Compute AO overlap matrix between fragments"
