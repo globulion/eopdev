@@ -99,6 +99,7 @@ class DensityDecomposition:
                        "dpp" : None,    # orthogonalized polarized 1-electron density (approximated)
                        "cpp" : None,    # orthogonalized polarized LCAO-NO coefficients (approximated)
                        "npp" : None,    # orthogonalized polarized NO occupation numbers (approximated)
+                       "sqm" : None,    # overlap matrix in AO basis
                        }
         # variables
         self.vars        = {"e_cou_1"     : None,   # coulombic energy, 1el part
@@ -224,8 +225,32 @@ class DensityDecomposition:
         self._compute_monomers()
         self.monomers_computed = True
 
+    def compute_full_QM(self):
+        "Compute full QM interaction energy"
+        assert self.monomers_computed is True
+
+        self.aggregate.activate_all_fragments()
+        c_ene, c_wfn = psi4.properties(self.method, molecule=self.aggregate, return_wfn=True, 
+                                       properties=["DIPOLE","NO_OCCUPATIONS"], **self.kwargs)
+
+        self.matrix["dqm"] = c_wfn.Da()
+        N, C = self.natural_orbitals(c_wfn.Da(), orthogonalize_first=c_wfn.S(), order='descending')
+        self.matrix["nqm"] = N
+        self.matrix["cqm"] = C
+        self.matrix["sqm"] = c_wfn.S()
+
+        e_fqm_t = c_ene
+        for i in range(self.aggregate.nfragments()):
+            e_fqm_t -= self.data["ene"][i]
+        self.vars["e_fqm_t"] = e_fqm_t
+
+        self.energy_full_QM_computed = True
+        return
+
     def compute_densities(self):
         "Compute all the necessary density matrices"
+        assert self.monomers_computed is True
+
         S_mo_t    = numpy.zeros((self.nmo_t, self.nmo_t), numpy.float64)
         W_mo_t    = numpy.zeros((self.nmo_t            ), numpy.float64)
         C_ao_mo_t = numpy.zeros((self.nbf_t, self.nmo_t), numpy.float64)
@@ -423,28 +448,6 @@ class DensityDecomposition:
         self.vars["e_pol_a" ] = e_pol_a
 
         self.energy_polar_approx_computed = True
-        return
-
-    def compute_full_QM(self):
-        "Compute full QM interaction energy"
-        assert self.monomers_computed is True
-
-        self.aggregate.activate_all_fragments()
-        c_ene, c_wfn = psi4.properties(self.method, molecule=self.aggregate, return_wfn=True, 
-                                       properties=["DIPOLE","NO_OCCUPATIONS"], **self.kwargs)
-
-        self.matrix["dqm"] = c_wfn.Da()
-        N, C = self.natural_orbitals(c_wfn.Da(), orthogonalize_first=c_wfn.S(), order='descending')
-        self.matrix["nqm"] = N
-        self.matrix["cqm"] = C
-        self.matrix["sqm"] = c_wfn.S()
-
-        e_fqm_t = c_ene
-        for i in range(self.aggregate.nfragments()):
-            e_fqm_t -= self.data["ene"][i]
-        self.vars["e_fqm_t"] = e_fqm_t
-
-        self.energy_full_QM_computed = True
         return
 
     def natural_orbitals(self, D, orthogonalize_first=None, order='descending', original_ao_mo=True):
