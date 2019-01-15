@@ -162,7 +162,7 @@ class DensityDecomposition:
 
     # ---- public interface ---- #
 
-    def compute(self, polar_approx = False): 
+    def compute(self, polar_approx = True): 
         """\
  Perform the full density and interaction energy decompositions.
 
@@ -171,7 +171,7 @@ class DensityDecomposition:
                    also the approximated polarization energy using
                    NO-expansion of exchange-correlation 2-electron density
                    and exact Pauli, polarization and unperturbed 1-electron densities.
-                   Default: False
+                   Default: True
 
  Notes:
   o Exact polarization energy is always computed as a difference between
@@ -237,6 +237,10 @@ class DensityDecomposition:
         self.aggregate.activate_all_fragments()
         c_ene, c_wfn = psi4.properties(self.method, molecule=self.aggregate, return_wfn=True, 
                                        properties=["DIPOLE","NO_OCCUPATIONS"], **self.kwargs)
+        if self.method.lower().startswith('cc'):
+           psi4.core.set_global_option("DERTYPE", "FIRST")
+           psi4.core.set_global_option("WFN", self.method.upper())
+           psi4.core.ccdensity(c_wfn)
 
         N, C = self.natural_orbitals(c_wfn.Da(), orthogonalize_first=c_wfn.S(), order='descending')
         self.matrix["dqm"] = c_wfn.Da()
@@ -395,8 +399,8 @@ class DensityDecomposition:
         #e_exc_t =-self.compute_2el_energy(Doo, Doo, type='k')
         e_exc_t =-self.compute_2el_energy(Dunp, Dunp, type='k')
         if self.acbs is False: 
-           print(" Warning: Exchange energy is wrong in MCBS mode for now (ACBS=False)")
-           sys.exit(1)
+           print(" Warning: Exchange energy is wrong in MCBS mode for post-SCF levels (ACBS=False)")
+          #sys.exit(1)
         for i in range(self.aggregate.nfragments()):
             if self.acbs is False:
                D_i = self._block_fragment_ao_matrix(D, keep_frags=[i], off_diagonal=False)
@@ -510,7 +514,7 @@ class DensityDecomposition:
         self.global_jk.compute()
         if   type.lower() == 'j': JorK = numpy.array(self.global_jk.J()[0])
         elif type.lower() == 'k': JorK = numpy.array(self.global_jk.K()[0])
-        else: raise ValueError("Incorrect type of JK matrix. Only J ro K allowed.")
+        else: raise ValueError("Incorrect type of JK matrix. Only J or K allowed.")
         energy = numpy.dot(JorK, D_right).trace()
         return energy
 
@@ -524,50 +528,59 @@ class DensityDecomposition:
         log+= " ===> Density-Based interaction energy decomposition <=== \n\n"
 
         if self.monomers_computed:
-           log += " %s/%s level of theory.\n"                  %(self.method.upper(), self.bfs.name())
-           log += " Total number of basis functions  = %d\n"   % self.nbf_t
-           log += " Total number of natural orbitals = %d\n"   % self.nmo_t
-           log += " Natural orbital threshold        = %.8f\n" % self.no_cutoff
+           log += "   %s/%s level of theory.\n"                  %(self.method.upper(), self.bfs.name())
+           log += "   Total number of basis functions  = %d\n"   % self.nbf_t
+           log += "   Total number of natural orbitals = %d\n"   % self.nmo_t
+           log += "   Natural orbital threshold        = %.8f\n" % self.no_cutoff
            log += "\n\n"
 
         if self.energy_coulomb_computed:
-           log += " DDS Results\n"
+           log += "   DDS Results\n"                                                                              
            log += " ---------------------------------------------------------------------------------------\n"
-           log += "                                [A.U.]                [kcal/mole]          [kJ/mole]    \n"
+           log += "                                  [A.U.]                [kcal/mole]          [kJ/mole]    \n"
            log += " ---------------------------------------------------------------------------------------\n"
-           log += " Electrostatics         " + self._print_line(self.vars["e_cou_t"]) + "\n"
-          #log += "   E-coul(nuclear)      " + self._print_line(self.vars["e_cou_n"]) + "\n"
-          #log += "   E-coul(1)            " + self._print_line(self.vars["e_cou_1"]) + "\n"
-          #log += "   E-coul(2)            " + self._print_line(self.vars["e_cou_2"]) + "\n"
+           log += "   Electrostatics         " + self._print_line(self.vars["e_cou_t"]) + "\n"
+          #log += "     E-coul(nuclear)      " + self._print_line(self.vars["e_cou_n"]) + "\n"
+          #log += "     E-coul(1)            " + self._print_line(self.vars["e_cou_1"]) + "\n"
+          #log += "     E-coul(2)            " + self._print_line(self.vars["e_cou_2"]) + "\n"
            log += "\n"
 
         if self.energy_pauli_computed:
-           log += " Exchange-Repulsion     " + self._print_line(self.vars["e_exr_t"]) + "\n"
+           log += "   Exchange-Repulsion     " + self._print_line(self.vars["e_exr_t"]) + "\n"
            log += "\n"
-           log += "   E-exchange           " + self._print_line(self.vars["e_exc_t"]) + "\n"
-           log += "   E-repul              " + self._print_line(self.vars["e_rep_t"]) + "\n"
-           log += "     E-repul(1)         " + self._print_line(self.vars["e_rep_1"]) + "\n"
-           log += "     E-repul(2)         " + self._print_line(self.vars["e_rep_2"]) + "\n"
+           log += "     E-exchange           " + self._print_line(self.vars["e_exc_t"]) + "\n"
+           log += "     E-repul              " + self._print_line(self.vars["e_rep_t"]) + "\n"
+           log += "       E-repul(1)         " + self._print_line(self.vars["e_rep_1"]) + "\n"
+           log += "       E-repul(2)         " + self._print_line(self.vars["e_rep_2"]) + "\n"
            log += "\n"
 
 
         if self.energy_full_QM_computed:
-           log += " Polarization           " + self._print_line(self.vars["e_pol_t"]) + "\n"
+           log += "   Polarization           " + self._print_line(self.vars["e_pol_t"]) + "\n"
            log += "\n"
         if self.energy_polar_approx_computed:
-           log += "   E-polar(el)          " + self._print_line(self.vars["e_pol_e"]) + "\n"
-           log += "     E-polar(1)         " + self._print_line(self.vars["e_pol_1"]) + "\n"
-           log += "     E-polar(2)         " + self._print_line(self.vars["e_pol_2"]) + "\n"
-           log += "   E-ex-pol             " + self._print_line(self.vars["e_exp_t"]) + "\n"
-           log += "     E-ex-pol(no)       " + self._print_line(self.vars["e_exp_a"]) + "\n"
+           log += "     E-polar(el)          " + self._print_line(self.vars["e_pol_e"]) + "\n"
+           log += "       E-polar(1)         " + self._print_line(self.vars["e_pol_1"]) + "\n"
+           log += "       E-polar(2)         " + self._print_line(self.vars["e_pol_2"]) + "\n"
+           log += "     E-ex-pol             " + self._print_line(self.vars["e_exp_t"]) + "\n"
+           log += "       E-ex-pol(no)       " + self._print_line(self.vars["e_exp_a"]) + "\n"
+       #if not self.method.lower().startswith('hf'):
+       #   log += "       E-ex-pol(no-scaled)" + self._print_line(self.vars["e_exp_a"]*1.5) + "\n"
            log += "\n"
-           log += " Polarization (approx)  " + self._print_line(self.vars["e_pol_a"]) + "\n"
+           log += "   Polarization (approx)  " + self._print_line(self.vars["e_pol_a"]) + "\n"
+       #if not self.method.lower().startswith('hf'):
+       #   e = self.vars["e_pol_e"] + self.vars["e_exp_a"]*1.5
+       #   log += "   Polar (approx-SC)      " + self._print_line(e) + "\n"
         if self.energy_full_QM_computed:
            log += "\n"
 
         if self.energy_full_QM_computed:
-           log += " Supramolecular Energy  " + self._print_line(self.vars["e_fqm_t"]) + "\n"
-           log += " DDS Energy             " + self._print_line(self.vars["e_t"    ]) + "\n"
+           log += "   Supramolecular Energy  " + self._print_line(self.vars["e_fqm_t"]) + "\n"
+           log += "   DDS Energy             " + self._print_line(self.vars["e_t"    ]) + "\n"
+       #if not self.method.lower().startswith('hf'):
+       #   e = self.vars["e_cou_t"] + self.vars["e_exr_t"] + e
+       #   log += "   DDS Energy-SC          " + self._print_line(e) + "\n"
+       #if self.energy_full_QM_computed:
            log += " ---------------------------------------------------------------------------------------\n"
            log += "\n"
 
@@ -618,6 +631,12 @@ class DensityDecomposition:
 
             c_ene, c_wfn = psi4.properties(self.method, molecule=current_molecule, return_wfn=True, 
                                            properties=['DIPOLE', 'NO_OCCUPATIONS'], **self.kwargs)
+
+            if self.method.lower().startswith('cc'):
+               psi4.core.set_global_option("DERTYPE", "FIRST")
+               psi4.core.set_global_option("WFN", self.method.upper())
+               psi4.core.ccdensity(c_wfn)
+
             D = numpy.array(c_wfn.Da(), numpy.float64)
             N, C = self.natural_orbitals(D, orthogonalize_first=c_wfn.S(), order='descending')
 
