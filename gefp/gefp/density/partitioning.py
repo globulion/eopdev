@@ -112,10 +112,15 @@ class DensityDecomposition:
                             "e_exr_t"     : None,   # exchange-repulsion energy
                             "e_pol_t"     : None,   # polarization energy (exact)
                             "e_pol_a"     : None,   # polarization energy (approximated)
+                            "e_pol_1"     : None,   # polarization energy, 1el part
+                            "e_pol_2"     : None,   # polarization energy, 2el part
+                            "e_pol_e"     : None,   # polarization energy, (1+2)el part
+                            "e_exp_t"     : None,   # polarization energy, exchange-correlation part (exact)
+                            "e_exp_a"     : None,   # polarization energy, exchange-correlation part (approximated)
                             "e_pol_ind_t" : None,   # induction part of polarization energy, (1+2)el part
                             "e_pol_disp_t": None,   # dispersion part of polarization energy, (1+2)el part
                             "e_pol_ct_t"  : None,   # charge-transfer part of polarization energy, (1+2)el part
-                            "e_t"         : 0.0 ,   # total interaction energy
+                            "e_t"         : 0.0 ,   # total interaction energy (DDS)
                             "e_fqm_t"     : None,   # total interaction energy (full QM)
                             }
         # additional options
@@ -448,17 +453,20 @@ class DensityDecomposition:
         Dpol = self._generalized_density_matrix(self.matrix["nqm"], self.matrix["cqm"])
         Dunp = self._generalized_density_matrix(self.matrix["noo"], self.matrix["coo"])
 
-        e_ex_pol_a = self.compute_2el_energy(Dunp, Dunp, type='k')
-        e_ex_pol_a-= self.compute_2el_energy(Dpol, Dpol, type='k')
+        e_exp_a = self.compute_2el_energy(Dunp, Dunp, type='k')
+        e_exp_a-= self.compute_2el_energy(Dpol, Dpol, type='k')
 
-        e_pol_a = e_pol_1 + e_pol_2 + e_ex_pol_a
+        e_pol_e = e_pol_1 + e_pol_2
+        e_pol_a = e_pol_e + e_exp_a
 
+        self.vars["e_pol_e"   ] = e_pol_e 
         self.vars["e_pol_1"   ] = e_pol_1
         self.vars["e_pol_2"   ] = e_pol_2
-        self.vars["e_ex_pol_a"] = e_ex_pol_a
+        self.vars["e_exp_a"   ] = e_exp_a
         self.vars["e_pol_a"   ] = e_pol_a
 
-        self.vars["e_ex_pol"  ] = self.vars["e_pol_t"] - e_pol_1 - e_pol_2
+        self.vars["e_exp_t"   ] = self.vars["e_pol_t"] - e_pol_1 - e_pol_2
+        self.vars["e_t"       ]+= e_pol_a
 
         self.energy_polar_approx_computed = True
         return
@@ -511,48 +519,58 @@ class DensityDecomposition:
     # ---- printers ---- #
 
     def __repr__(self):
+        "Print final results"
         log = "\n\n"
         log+= " ===> Density-Based interaction energy decomposition <=== \n\n"
 
         if self.monomers_computed:
-           log += " Monomers computed at %s/%s level of theory.\n" % (self.method.upper(), self.bfs.name())
-           log += " Total number of basis functions  = %d\n" % self.nbf_t
-           log += " Total number of natural orbitals = %d\n" % self.nmo_t
-           log += "\n"
+           log += " %s/%s level of theory.\n"                  %(self.method.upper(), self.bfs.name())
+           log += " Total number of basis functions  = %d\n"   % self.nbf_t
+           log += " Total number of natural orbitals = %d\n"   % self.nmo_t
+           log += " Natural orbital threshold        = %.8f\n" % self.no_cutoff
+           log += "\n\n"
 
         if self.energy_coulomb_computed:
-           log += " @Sec: Coulombic energy:\n"
-           log += "       E_COU_1=%12.6f E_COU_2=%12.6f E_NUC_T=%12.6f\n" % (self.vars["e_cou_1"],
-                                                                             self.vars["e_cou_2"],
-                                                                             self.vars["e_cou_n"])
-           log += "       E_COU_T=%12.6f\n"                               %  self.vars["e_cou_t"] 
+           log += " DDS Results\n"
+           log += " ---------------------------------------------------------------------------------------\n"
+           log += "                                [A.U.]                [kcal/mole]          [kJ/mole]    \n"
+           log += " ---------------------------------------------------------------------------------------\n"
+           log += " Electrostatics         " + self._print_line(self.vars["e_cou_t"]) + "\n"
+          #log += "   E-coul(nuclear)      " + self._print_line(self.vars["e_cou_n"]) + "\n"
+          #log += "   E-coul(1)            " + self._print_line(self.vars["e_cou_1"]) + "\n"
+          #log += "   E-coul(2)            " + self._print_line(self.vars["e_cou_2"]) + "\n"
+           log += "\n"
 
         if self.energy_pauli_computed:
-           log += " @Sec: Pauli repulsion energy:\n"
-           log += "       E_REP_1=%12.6f E_REP_2=%12.6f E_REP_T=%12.6f\n" % (self.vars["e_rep_1"],
-                                                                             self.vars["e_rep_2"],
-                                                                             self.vars["e_rep_t"])
-           log += "       E_EXC  =%12.6f E_EXREP=%12.6f\n"                % (self.vars["e_exc_t"],
-                                                                             self.vars["e_exr_t"])
+           log += " Exchange-Repulsion     " + self._print_line(self.vars["e_exr_t"]) + "\n"
+           log += "\n"
+           log += "   E-exchange           " + self._print_line(self.vars["e_exc_t"]) + "\n"
+           log += "   E-repul              " + self._print_line(self.vars["e_rep_t"]) + "\n"
+           log += "     E-repul(1)         " + self._print_line(self.vars["e_rep_1"]) + "\n"
+           log += "     E-repul(2)         " + self._print_line(self.vars["e_rep_2"]) + "\n"
+           log += "\n"
+
+
+        if self.energy_full_QM_computed:
+           log += " Polarization           " + self._print_line(self.vars["e_pol_t"]) + "\n"
+           log += "\n"
         if self.energy_polar_approx_computed:
-           log += " @Sec: Polarization energy (Approx):\n"
-           log += "       E_POL_1=%12.6f E_POL_2=%12.6f E_EXP_A=%12.6f\n"  %(self.vars["e_pol_1"],
-                                                                             self.vars["e_pol_2"],
-                                                                             self.vars["e_ex_pol_a"])
-           log += "       E_POL_A=%12.6f\n"                                % self.vars["e_pol_a"]
+           log += "   E-polar(el)          " + self._print_line(self.vars["e_pol_e"]) + "\n"
+           log += "     E-polar(1)         " + self._print_line(self.vars["e_pol_1"]) + "\n"
+           log += "     E-polar(2)         " + self._print_line(self.vars["e_pol_2"]) + "\n"
+           log += "   E-ex-pol             " + self._print_line(self.vars["e_exp_t"]) + "\n"
+           log += "     E-ex-pol(no)       " + self._print_line(self.vars["e_exp_a"]) + "\n"
+           log += "\n"
+           log += " Polarization (approx)  " + self._print_line(self.vars["e_pol_a"]) + "\n"
+        if self.energy_full_QM_computed:
+           log += "\n"
 
         if self.energy_full_QM_computed:
-           log += " @Sec: Polarization energy (Exact):\n"
-           log += "       E_POL_T=%12.6f\n"                                % self.vars["e_pol_t"]
-           if self.energy_polar_approx_computed:
-              log += "         E_EXP_T=%12.6f\n"                           % self.vars["e_ex_pol"]
-              log += "         E_EXP_A=%12.6f\n"                           % self.vars["e_ex_pol_a"]
-              log += "         error  =%12.6f\n"                           %(self.vars["e_ex_pol_a"]-self.vars["e_ex_pol"])
+           log += " Supramolecular Energy  " + self._print_line(self.vars["e_fqm_t"]) + "\n"
+           log += " DDS Energy             " + self._print_line(self.vars["e_t"    ]) + "\n"
+           log += " ---------------------------------------------------------------------------------------\n"
+           log += "\n"
 
-        if self.energy_full_QM_computed:
-           log += " @Sec: Full QM energy:\n"
-           log += "       E_FQM_T=%12.6f\n"                                % self.vars["e_fqm_t"]
-        log += "\n"
         return str(log)
 
     def print_out(self):
@@ -709,7 +727,6 @@ class DensityDecomposition:
                                          wfn_j.basisset()))
         return S
 
-
     def _block_fragment_ao_matrix(self, M, keep_frags=[], off_diagonal=False):
         "Returns the block-fragment form of matrix M (AO-basis) with fragments as each block. Keep only indicated fragments."
         M_frag = M.copy(); M_frag.fill(0.0)
@@ -745,3 +762,19 @@ class DensityDecomposition:
                nbf_i = self.data["nbf"][i]
                M_diag[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i] = numpy.array(M[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i], numpy.float64)
         return M_diag
+
+    def _print_line(self, value, type='e'):
+        "Print one line of report in multiple units"
+        line = ''
+        # energy output
+        # ---> [A.U.]  [kcal/mole]  [kJ/mole]
+        if type == 'e':
+           c1 = 627.5096080306   # A.U. to kcal/mole
+           c2 = 2625.5002        # A.U. to kJ/mole
+        # other output
+        else: raise NotImplementedError
+
+        v1 = value * c1
+        v2 = value * c2
+        line = "%18.8f   %18.8f   %18.8f" % (value, v1, v2)
+        return line
