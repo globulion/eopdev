@@ -41,13 +41,14 @@ class DensityDecomposition:
   o jk_type   - type of Psi4 JK object.
   o no_cutoff - cutoff for natural occupancies threshold. All natural orbitals
                 with occupancies less or equal to the threshold will be neglected.
+  o xc_scale  - scaling parameter for exchange-correlation density
   o kwargs    - additional Psi4-relevant options.
 
  -------------------------------------------------------------------------------------------------------------
 
  Usage example:
 
-   solver = DensityDecomposition(aggr, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, **kwargs) 
+   solver = DensityDecomposition(aggr, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, **kwargs) 
    solver.compute(polar_approx=False)
                                                                                                             
    dD_pauli = solver.deformation_density('pau')
@@ -69,7 +70,7 @@ class DensityDecomposition:
  -------------------------------------------------------------------------------------------------------------
                                                                       Last Revision: Gundelfingen, 11 Jan 2019
 """
-    def __init__(self, aggregate, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, **kwargs):
+    def __init__(self, aggregate, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, **kwargs):
         "Initialize all attributes"
         # molecular aggregate
         self.aggregate   = aggregate    
@@ -120,15 +121,21 @@ class DensityDecomposition:
                             "e_pol_ind_t" : None,   # induction part of polarization energy, (1+2)el part
                             "e_pol_disp_t": None,   # dispersion part of polarization energy, (1+2)el part
                             "e_pol_ct_t"  : None,   # charge-transfer part of polarization energy, (1+2)el part
-                            "e_t"         : 0.0 ,   # total interaction energy (DDS)
+                            "e_dds_t"     : 0.0 ,   # total interaction energy (DDS)
                             "e_fqm_t"     : None,   # total interaction energy (full QM)
                             }
+        # recommended XC density scaling factors
+        self.xc_recommended = {"hf"          : 1.00000,
+                               "mp2/6-311G**": 0.89   ,
+                               }
         # additional options
         self.kwargs      = kwargs
         # basis-set mode (ACBS: aggregate-centred basis set)
         self.acbs        = acbs
         # cutoff for NO occupancies
         self.no_cutoff   = no_cutoff
+        # scaling factor of exchange-correlation occupation weight
+        self.xc_scale = xc_scale
 
         # what is already computed
         self.monomers_computed            = False   # unperturbed monomenr wavefunctions at arbitrary level of theory 
@@ -157,6 +164,7 @@ class DensityDecomposition:
 
         # sanity checks
         assert(self.aggregate.nfragments() >= 2), "Aggregate needs to have at least two fragments!"
+        assert(not (self.method.lower()=='hf' and xc_scale!=1.0)), "Scaling parameter for XC density has to be 1.0 in HF theory!"
         None
 
 
@@ -364,7 +372,7 @@ class DensityDecomposition:
         self.vars["e_cou_1"] = e_cou_1
         self.vars["e_cou_2"] = e_cou_2
         self.vars["e_cou_t"] = e_cou_t
-        self.vars["e_t"    ]+= e_cou_t
+        self.vars["e_dds_t"]+= e_cou_t
 
         self.energy_coulomb_computed = True
         return
@@ -405,7 +413,11 @@ class DensityDecomposition:
             if self.acbs is False:
                D_i = self._block_fragment_ao_matrix(D, keep_frags=[i], off_diagonal=False)
             else: 
-               w_i = self._block_fragment_mo_matrix(numpy.diag(numpy.sqrt(self.matrix["n"])), keep_frags=[i], off_diagonal=False)
+               w_i = numpy.sqrt(self.matrix["n"])
+               #scale = self.xc_scale ** (1.0 - w_i)
+               scale = math.sqrt(self.xc_scale)
+               w_i*= scale
+               w_i = self._block_fragment_mo_matrix(numpy.diag(w_i), keep_frags=[i], off_diagonal=False)
                c_i = self.matrix["c"]
                D_i = self.triplet(c_i, w_i, c_i.T)
             e_exc_t += self.compute_2el_energy(D_i  , D_i  , type='k')
@@ -418,7 +430,7 @@ class DensityDecomposition:
         self.vars["e_rep_t"] = e_rep_t
         self.vars["e_exc_t"] = e_exc_t
         self.vars["e_exr_t"] = e_exr_t
-        self.vars["e_t"    ]+= e_exr_t
+        self.vars["e_dds_t"]+= e_exr_t
 
         self.energy_pauli_computed = True
         return
@@ -470,7 +482,7 @@ class DensityDecomposition:
         self.vars["e_pol_a"   ] = e_pol_a
 
         self.vars["e_exp_t"   ] = self.vars["e_pol_t"] - e_pol_1 - e_pol_2
-        self.vars["e_t"       ]+= e_pol_a
+        self.vars["e_dds_t"   ]+= e_pol_a
 
         self.energy_polar_approx_computed = True
         return
@@ -576,7 +588,9 @@ class DensityDecomposition:
 
         if self.energy_full_QM_computed:
            log += "   Supramolecular Energy  " + self._print_line(self.vars["e_fqm_t"]) + "\n"
-           log += "   DDS Energy             " + self._print_line(self.vars["e_t"    ]) + "\n"
+           log += "   DDS Energy             " + self._print_line(self.vars["e_dds_t"]) + "\n" 
+           err  = self.vars["e_dds_t"] - self.vars["e_fqm_t"]
+           log += "     Error                " + self._print_line(err) + "\n"
        #if not self.method.lower().startswith('hf'):
        #   e = self.vars["e_cou_t"] + self.vars["e_exr_t"] + e
        #   log += "   DDS Energy-SC          " + self._print_line(e) + "\n"
@@ -735,8 +749,11 @@ class DensityDecomposition:
         "Compute occupation-weighted 1-electron density matrix in AO basis"
         ns = numpy.sqrt(n); N = c.shape[0]
         D  = numpy.zeros((N, N), numpy.float64)
+        #scale = self.xc_scale ** (1.0 - ns)
+        scale = math.sqrt(self.xc_scale)
+        ns *= scale
         for i in range(len(n)):
-            D += ns[i] * numpy.outer(c[:,i], c[:,i])
+            D += ns[i] * numpy.outer(c[:,i], c[:,i]) 
         return D
 
     def _compute_overlap_ao(self, wfn_i, wfn_j):
