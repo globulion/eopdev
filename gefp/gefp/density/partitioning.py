@@ -42,13 +42,14 @@ class DensityDecomposition:
   o no_cutoff - cutoff for natural occupancies threshold. All natural orbitals
                 with occupancies less or equal to the threshold will be neglected.
   o xc_scale  - scaling parameter for exchange-correlation density
+  o l_dds     - compute also linear DDS total interaction energy
   o kwargs    - additional Psi4-relevant options.
 
  -------------------------------------------------------------------------------------------------------------
 
  Usage example:
 
-   solver = DensityDecomposition(aggr, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, **kwargs) 
+   solver = DensityDecomposition(aggr, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, l_dds=True, **kwargs) 
    solver.compute(polar_approx=False)
                                                                                                             
    dD_pauli = solver.deformation_density('pau')
@@ -70,7 +71,7 @@ class DensityDecomposition:
  -------------------------------------------------------------------------------------------------------------
                                                                       Last Revision: Gundelfingen, 11 Jan 2019
 """
-    def __init__(self, aggregate, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, **kwargs):
+    def __init__(self, aggregate, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, l_dds=True, **kwargs):
         "Initialize all attributes"
         # molecular aggregate
         self.aggregate   = aggregate    
@@ -122,6 +123,7 @@ class DensityDecomposition:
                             "e_pol_disp_t": None,   # dispersion part of polarization energy, (1+2)el part
                             "e_pol_ct_t"  : None,   # charge-transfer part of polarization energy, (1+2)el part
                             "e_dds_t"     : 0.0 ,   # total interaction energy (DDS)
+                            "e_dds_l_t"   : 0.0,    # total interaction energy (L-DDS)
                             "e_fqm_t"     : None,   # total interaction energy (full QM)
                             }
         # recommended XC density scaling factors
@@ -136,6 +138,8 @@ class DensityDecomposition:
         self.no_cutoff   = no_cutoff
         # scaling factor of exchange-correlation occupation weight
         self.xc_scale = xc_scale
+        # linear DDS
+        self.l_dds = l_dds
 
         # what is already computed
         self.monomers_computed            = False   # unperturbed monomenr wavefunctions at arbitrary level of theory 
@@ -305,6 +309,42 @@ class DensityDecomposition:
         K = self.triplet(WSWm12, numpy.diag(n_mo_t), WSWm12)                    # mo::mo
         CW  = self.doublet(C_ao_mo_t, numpy.diag(W_mo_t))                       # ao::mo
 
+        # test of WSW-1/2 Taylor expansion
+        delta = S_mo_t.copy()
+        for i in range(delta.shape[0]): delta[i,i] = 0.0
+        delta2 = self.doublet(delta, delta)
+        delta3 = self.doublet(delta, delta2)
+        Wm12 = self.matrix_power(numpy.diag(W_mo_t), -0.5)
+        Wm1  = self.matrix_power(numpy.diag(W_mo_t), -1.0)
+       #print(Wm1.diagonal())
+       #print(W_mo_t)
+        WSWm12_a0= Wm1.copy()
+        WSWm12_a1= Wm1.copy()
+        WSWm12_a1-= self.triplet(Wm12, delta , Wm12) * 1.0/2.0
+        WSWm12_a2 = WSWm12_a1.copy()
+        #WSWm12_a2+=(self.doublet(Wm1, delta) + self.doublet(delta, Wm1)) * 1.0/4.0
+        WSWm12_a2+= self.triplet(Wm12, delta2, Wm12) * 3.0/8.0
+        WSWm12_a3 = WSWm12_a2.copy()
+        WSWm12_a3-= self.triplet(Wm12, delta3, Wm12) * 5.0/16.0
+
+        def rms(m1, m2): return ((m1-m2) * (m1-m2)).sum()
+
+       #print()
+       #print(WSWm12.diagonal())
+       #print(WSWm12_a0.diagonal())
+       #print(WSWm12_a1.diagonal())
+       #print(WSWm12_a2.diagonal())
+       #print(WSWm12_a3.diagonal())
+
+        #print(WSWm12   [0,1])
+        #print(WSWm12_a1[0,1])
+        #print(WSWm12_a2[0,1])
+
+       #print(rms(WSWm12, WSWm12_a0))
+       #print(rms(WSWm12, WSWm12_a1))
+       #print(rms(WSWm12, WSWm12_a2))
+       #print(rms(WSWm12, WSWm12_a3))
+
         Doo_ao_t = self.triplet(CW, K, CW.T)                                    # ao::ao
         D_ao_t = self.triplet(C_ao_mo_t, numpy.diag(n_mo_t), C_ao_mo_t.T)       # ao::ao
 
@@ -373,6 +413,8 @@ class DensityDecomposition:
         self.vars["e_cou_2"] = e_cou_2
         self.vars["e_cou_t"] = e_cou_t
         self.vars["e_dds_t"]+= e_cou_t
+        if self.l_dds:
+           self.vars["e_dds_l_t"]+= e_cou_t
 
         self.energy_coulomb_computed = True
         return
@@ -399,10 +441,11 @@ class DensityDecomposition:
         e_rep_2 = 2.0 * self.compute_2el_energy(dD, dD + 2.0 * D, type='j')
         # ---     Exchange energy
         Dunp = self._generalized_density_matrix(self.matrix["noo"], self.matrix["coo"])
-        #D0   = self._generalized_density_matrix(self.matrix["n"]  , self.matrix["c"  ])
 
-        #e_exc_t = self.compute_2el_energy(D0  , D0  , type='k')
-        #e_exc_t-= self.compute_2el_energy(Dunp, Dunp, type='k')
+        if self.l_dds:
+          #print(" E(dpau-dpau) = %13.8f" % (4.0 * self.compute_2el_energy(dD, dD, type='j')))
+           self.vars["i_dpau_dpau"] = 4.0 * self.compute_2el_energy(dD, dD, type='j')
+
 
         #e_exc_t =-self.compute_2el_energy(Doo, Doo, type='k')
         e_exc_t =-self.compute_2el_energy(Dunp, Dunp, type='k')
@@ -431,6 +474,9 @@ class DensityDecomposition:
         self.vars["e_exc_t"] = e_exc_t
         self.vars["e_exr_t"] = e_exr_t
         self.vars["e_dds_t"]+= e_exr_t
+        if self.l_dds:
+           self.vars["e_dds_l_t"] += e_exr_t
+           self.vars["e_dds_l_t"] -= self.vars["i_dpau_dpau"]
 
         self.energy_pauli_computed = True
         return
@@ -445,8 +491,6 @@ class DensityDecomposition:
 
     def compute_polar_approx(self):
         "Compute approximate polarization interaction energy"
-        #raise NotImplementedError
-
         assert self.monomers_computed is True
         assert self.densities_computed is True
         assert self.energy_full_QM_computed is True
@@ -464,6 +508,16 @@ class DensityDecomposition:
 
         e_pol_1 = 2.0 * self.compute_1el_energy(dD_pol, numpy.array(H))
         e_pol_2 = 2.0 * self.compute_2el_energy(dD_pol, dD_pol + 2.0 * (dD_pau + D), type='j')
+
+        if self.l_dds:
+          #print(" E(dpol-dpol) = %13.8f" % (2.0 * self.compute_2el_energy(dD_pol, dD_pol, type='j')))
+          #print(" E(dpol-dpau) = %13.8f" % (4.0 * self.compute_2el_energy(dD_pol, dD_pau, type='j')))
+          #print(" E(dpol-d   ) = %13.8f" % (4.0 * self.compute_2el_energy(dD_pol,  D    , type='j')))
+          #print(" E(dpol-hcor) = %13.8f" % e_pol_1)
+           self.vars["i_dpol_dpol"] = 2.0 * self.compute_2el_energy(dD_pol, dD_pol, type='j')
+           self.vars["i_dpol_dpau"] = 4.0 * self.compute_2el_energy(dD_pol, dD_pau, type='j')
+           self.vars["i_dpol_d   "] = 4.0 * self.compute_2el_energy(dD_pol,  D    , type='j')
+           self.vars["i_dpol_hcor"] = e_pol_1
 
         # exchange-polarization energy
         Dpol = self._generalized_density_matrix(self.matrix["nqm"], self.matrix["cqm"])
@@ -483,6 +537,9 @@ class DensityDecomposition:
 
         self.vars["e_exp_t"   ] = self.vars["e_pol_t"] - e_pol_1 - e_pol_2
         self.vars["e_dds_t"   ]+= e_pol_a
+        if self.l_dds:
+           self.vars["e_dds_l_t"] += e_pol_a
+           self.vars["e_dds_l_t"] -= self.vars["i_dpol_dpau"] + self.vars["i_dpol_dpol"]
 
         self.energy_polar_approx_computed = True
         return
@@ -576,25 +633,22 @@ class DensityDecomposition:
            log += "       E-polar(2)         " + self._print_line(self.vars["e_pol_2"]) + "\n"
            log += "     E-ex-pol             " + self._print_line(self.vars["e_exp_t"]) + "\n"
            log += "       E-ex-pol(no)       " + self._print_line(self.vars["e_exp_a"]) + "\n"
-       #if not self.method.lower().startswith('hf'):
-       #   log += "       E-ex-pol(no-scaled)" + self._print_line(self.vars["e_exp_a"]*1.5) + "\n"
            log += "\n"
            log += "   Polarization (approx)  " + self._print_line(self.vars["e_pol_a"]) + "\n"
-       #if not self.method.lower().startswith('hf'):
-       #   e = self.vars["e_pol_e"] + self.vars["e_exp_a"]*1.5
-       #   log += "   Polar (approx-SC)      " + self._print_line(e) + "\n"
         if self.energy_full_QM_computed:
            log += "\n"
 
         if self.energy_full_QM_computed:
            log += "   Supramolecular Energy  " + self._print_line(self.vars["e_fqm_t"]) + "\n"
            log += "   DDS Energy             " + self._print_line(self.vars["e_dds_t"]) + "\n" 
+           if self.l_dds:
+            log +="   L-DDS Energy           " + self._print_line(self.vars["e_dds_l_t"]) + "\n" 
+           log += "\n"
            err  = self.vars["e_dds_t"] - self.vars["e_fqm_t"]
-           log += "     Error                " + self._print_line(err) + "\n"
-       #if not self.method.lower().startswith('hf'):
-       #   e = self.vars["e_cou_t"] + self.vars["e_exr_t"] + e
-       #   log += "   DDS Energy-SC          " + self._print_line(e) + "\n"
-       #if self.energy_full_QM_computed:
+           log += "     DDS Error            " + self._print_line(err) + "\n"
+           if self.l_dds:
+            err  = self.vars["e_dds_l_t"] - self.vars["e_fqm_t"]
+            log +="     L-DDS Error          " + self._print_line(err) + "\n"
            log += " ---------------------------------------------------------------------------------------\n"
            log += "\n"
 
@@ -616,13 +670,13 @@ class DensityDecomposition:
         "Compute triple matrix product: result = ABC"
         return numpy.dot(A, numpy.dot(B, C))
 
-    def matrix_power(self, M, x):
-        "Computes the well-behaved matrix power"
+    def matrix_power(self, M, x, eps=1e-6):
+        "Computes the well-behaved matrix power. All eigenvalues below or equal eps are ignored"
         E, U = numpy.linalg.eigh(M)
         Ex = E.copy(); Ex.fill(0.0)
         for i in range(len(E)):
-            if (E[i]>0.0) : Ex[i] = numpy.power(E[i], x)
-            else: Ex[i] = 1.0
+            if (E[i]>0.0+eps) : Ex[i] = numpy.power(E[i], x)
+            else: Ex[i] = 0.0
         Mx = numpy.dot(U, numpy.dot(numpy.diag(Ex), U.T))
         return Mx
 
