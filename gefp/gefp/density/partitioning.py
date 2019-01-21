@@ -16,17 +16,68 @@ __all__ = ["DensityDecomposition"]
 
 class DensityDecomposition:
     """
- Density-Based Decomposition Scheme from Mandado and Hermida-Ramon
- JCTC 2011
- Usage:
+ -------------------------------------------------------------------------------------------------------------
+
+ Density-Based Decomposition Scheme of Mandado and Hermida-Ramon
+ with partitioning of polarization deformation density into induction,
+ dispersion and charge-transfer contributions.
+
+                     --> DDS <--
+         --> Density Decomposition Scheme <--
+
+ References: 
+  * Mandado and Hermida-Ramon, J. Chem. Theory Comput. 2011, 7, 633-641. (JCTC 2011)
+  * Błasiak, J. Chem. Phys. 2018 149 (16), 164115. (JCP 2018)
+
+ -------------------------------------------------------------------------------------------------------------
+
+ Constructor arguments and options:
+
+  o aggregate - Psi4 molecular aggregate with at least two fragments
+  o method    - QM method (hf, mp2, cc2, ccsd)
+  o acbs      - use aggregate-centred basis set for calculations of wavefunctions. 
+                Otherwise use monomer-centred basis sets and composite Hadamard 
+                addition of AO spaces. ACBS=False result in no correction for BSSE.
+  o jk_type   - type of Psi4 JK object.
+  o no_cutoff - cutoff for natural occupancies threshold. All natural orbitals
+                with occupancies less or equal to the threshold will be neglected.
+  o xc_scale  - scaling parameter for exchange-correlation density
+  o l_dds     - compute also linear DDS total interaction energy
+  o kwargs    - additional Psi4-relevant options.
+
+ -------------------------------------------------------------------------------------------------------------
+
+ Usage example:
+
+   solver = DensityDecomposition(aggr, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, l_dds=True, **kwargs) 
+   solver.compute(polar_approx=False)
+                                                                                                            
+   dD_pauli = solver.deformation_density('pau')
+   dD_pol   = solver.deformation_density('pol')
+   dD       = solver.deformation_density('fqm')
+
+   # dictionaries:
+   # 1. accessing variables
+   solver.vars 
+   # 2. accessing aggregate data
+   solver.matrix
+   # 3. accessing unperturbed fragment data (expert)
+   solver.data
+
+                                                                                                            
+   print(solver)
+   solver.print_out()
+
+ -------------------------------------------------------------------------------------------------------------
+                                                                      Last Revision: Gundelfingen, 11 Jan 2019
 """
-    def __init__(self, aggregate, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, **kwargs):
+    def __init__(self, aggregate, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, l_dds=True, **kwargs):
         "Initialize all attributes"
         # molecular aggregate
         self.aggregate   = aggregate    
         # level of theory
         self.method      = method       
-        # wavefunction data of each unperturbed fragment
+        # unperturbed fragment data
         self.data        = {"wfn": [],  # unperturbed wavefunction
                             "ene": [],  # unperturbed total energy
                             "odm": [],  # unperturbed one-particle density matrix
@@ -37,13 +88,20 @@ class DensityDecomposition:
                             "ofm": [],  # MO offset
                             "ofb": [],  # AO offset
                             } 
-        # matrices in aggregate AO/MO basis
+        # aggregate data: matrices in aggregate AO/MO basis
         self.matrix = {"d"   : None,    # unperturbed 1-electron density
                        "c"   : None,    # unperturbed LCAO-NO coefficients
-                       "n"   : None,    # unperturbed occupation numbers
+                       "n"   : None,    # unperturbed NO occupation numbers
                        "doo" : None,    # orthogonalized unpolarized 1-electron density
-                       "dpp" : None,    # orthogonalized polarized 1-electron density
-                       "dqm" : None,    # full QM 1-electron density
+                       "coo" : None,    # orthogonalized unpolarized LCAO-NO coefficients
+                       "noo" : None,    # orthogonalized unpolarized NO occupation numbers
+                       "dqm" : None,    # orthogonalized polarized 1-electron density (full QM 1-electron density)
+                       "cqm" : None,    # orthogonalized polarized LCAO-NO coefficients (full QM)
+                       "nqm" : None,    # orthogonalized polarized NO occupation numbers (full QM)
+                       "dpp" : None,    # orthogonalized polarized 1-electron density (approximated)
+                       "cpp" : None,    # orthogonalized polarized LCAO-NO coefficients (approximated)
+                       "npp" : None,    # orthogonalized polarized NO occupation numbers (approximated)
+                       "sqm" : None,    # overlap matrix in AO basis
                        }
         # variables
         self.vars        = {"e_cou_1"     : None,   # coulombic energy, 1el part
@@ -54,33 +112,49 @@ class DensityDecomposition:
                             "e_rep_t"     : None,   # repulsion energy, (1+2)el part
                             "e_exc_t"     : None,   # exchange energy
                             "e_exr_t"     : None,   # exchange-repulsion energy
-                            "e_pol_t"     : None,   # polarization energy
+                            "e_pol_t"     : None,   # polarization energy (exact)
+                            "e_pol_a"     : None,   # polarization energy (approximated)
+                            "e_pol_1"     : None,   # polarization energy, 1el part
+                            "e_pol_2"     : None,   # polarization energy, 2el part
+                            "e_pol_e"     : None,   # polarization energy, (1+2)el part
+                            "e_exp_t"     : None,   # polarization energy, exchange-correlation part (exact)
+                            "e_exp_a"     : None,   # polarization energy, exchange-correlation part (approximated)
                             "e_pol_ind_t" : None,   # induction part of polarization energy, (1+2)el part
                             "e_pol_disp_t": None,   # dispersion part of polarization energy, (1+2)el part
                             "e_pol_ct_t"  : None,   # charge-transfer part of polarization energy, (1+2)el part
-                            "e_t"         : 0.0 ,   # total interaction energy
+                            "e_dds_t"     : 0.0 ,   # total interaction energy (DDS)
+                            "e_dds_l_t"   : 0.0,    # total interaction energy (L-DDS)
                             "e_fqm_t"     : None,   # total interaction energy (full QM)
                             }
+        # recommended XC density scaling factors
+        self.xc_recommended = {"hf"          : 1.00000,
+                               "mp2/6-311G**": 0.89   ,
+                               }
         # additional options
         self.kwargs      = kwargs
         # basis-set mode (ACBS: aggregate-centred basis set)
         self.acbs        = acbs
         # cutoff for NO occupancies
         self.no_cutoff   = no_cutoff
+        # scaling factor of exchange-correlation occupation weight
+        self.xc_scale = xc_scale
+        # linear DDS
+        self.l_dds = l_dds
 
         # what is already computed
-        self.monomers_computed      = False   # unperturbed monomenr wavefunctions at arbitrary level of theory
-        self.densities_computed     = False   # density matrices necessary in full basis set
-        self.energy_coulomb_computed= False   # partitioning of 1st-order electrostatic energy
-        self.energy_pauli_computed  = False   # partitioning of Pauli exchange-repulsion energy
-        self.energy_polar_computed  = False   # partitioning of polarization energy
-        self.energy_ind_computed    = False   # induction part of polarization energy
-        self.energy_disp_computed   = False   # dispersion part of polarization energy
-        self.energy_ct_compute      = False   # charge-transfer part of polarization energy
-        self.energy_full_QM_computed= False   # full QM total interaction energy
-        self.dms_ind_computed       = False   # density matrix polarization susceptibility tensors for induction
-        self.dms_disp_computed      = False   # density matrix polarization susceptibility tensors for dispersion
-        self.dms_ct_computed        = False   # density matrix polarization susceptibility tensors for charge-transfer
+        self.monomers_computed            = False   # unperturbed monomenr wavefunctions at arbitrary level of theory 
+        self.densities_computed           = False   # density matrices necessary in full basis set
+        self.energy_coulomb_computed      = False   # partitioning of 1st-order electrostatic energy
+        self.energy_pauli_computed        = False   # partitioning of Pauli exchange-repulsion energy
+        self.energy_polar_computed        = False   # partitioning of polarization energy (full QM)
+        self.energy_polar_approx_computed = False   # partitioning of polarization energy (approximated)
+        self.energy_ind_computed          = False   # induction part of polarization energy                                  
+        self.energy_disp_computed         = False   # dispersion part of polarization energy
+        self.energy_ct_compute            = False   # charge-transfer part of polarization energy
+        self.energy_full_QM_computed      = False   # full QM total interaction energy
+        self.dms_ind_computed             = False   # density matrix polarization susceptibility tensors for induction
+        self.dms_disp_computed            = False   # density matrix polarization susceptibility tensors for dispersion
+        self.dms_ct_computed              = False   # density matrix polarization susceptibility tensors for charge-transfer
 
         # basis set and JK object for entire aggregate
         self.bfs = psi4.core.BasisSet.build(aggregate, "BASIS", psi4.core.get_global_option("BASIS"), **kwargs)
@@ -93,25 +167,57 @@ class DensityDecomposition:
         self.nbf_t      = self.bfs.nbf()
 
         # sanity checks
+        assert(self.aggregate.nfragments() >= 2), "Aggregate needs to have at least two fragments!"
+        assert(not (self.method.lower()=='hf' and xc_scale!=1.0)), "Scaling parameter for XC density has to be 1.0 in HF theory!"
         None
 
 
     # ---- public interface ---- #
 
-    def compute(self): 
-        "Perform the full density decomposition"
+    def compute(self, polar_approx = True): 
+        """\
+ Perform the full density and interaction energy decompositions.
+
+ Options: 
+  o polar_approx - in addition to exact polarization energy, compute 
+                   also the approximated polarization energy using
+                   NO-expansion of exchange-correlation 2-electron density
+                   and exact Pauli, polarization and unperturbed 1-electron densities.
+                   Default: True
+
+ Notes:
+  o Exact polarization energy is always computed as a difference between
+    the full QM interaction energy and all the remaining energies (Coulombic,
+    exchange and repulsion energies).
+"""
         # compute monomer wavefunctions
         if not self.monomers_computed          : self.compute_monomers()
+        # compute full QM
+        if not self.energy_full_QM_computed    : self.compute_full_QM()
         # compute densities
         if not self.densities_computed         : self.compute_densities()
         # compute interaction energies
         if not self.energy_coulomb_computed    : self.compute_coulomb()
         if not self.energy_pauli_computed      : self.compute_pauli()
-        if not self.energy_full_QM_computed    : self.compute_full_QM()
+        if not self.energy_polar_computed      : self.compute_polar()
+        if polar_approx:
+            if not self.energy_polar_approx_computed  : self.compute_polar_approx()
 
     def deformation_density(self, name):
-        "Compute the deformation 1-particle density matrix"
+        """\
+ Compute the deformation 1-particle density matrix. 
+ Returns density matrix in AO basis of entire molecular aggregate.
+
+ Possible <name> entries:
+  o fqm      - full QM deformation density
+  o pau      - Pauli-repulsion denformation density
+  o pol      - polarization deformation density
+  o ind      - induction part of polarization deformation density
+  o dis      - dispersion part of polarization deformation density
+  o ct       - charge-transfer part of polarization deformation density
+"""
         Doo, D = self._deformation_density_pauli()
+
         if   name.lower().startswith("fqm"):
              dD = self.matrix["dqm"] - D
         elif name.lower().startswith("pau"): 
@@ -122,8 +228,10 @@ class DensityDecomposition:
              raise NotImplementedError
         elif name.lower().startswith("dis"):
              raise NotImplementedError
+        elif name.lower().startswith("ct"):
+             raise NotImplementedError
         else: 
-             raise ValueError("Incorrect name of density. Only pau, pol, ind, dis, tot or fqm are available.")
+             raise ValueError("Incorrect name of density. Only pau, pol, ind, dis, ct or fqm are available.")
         return dD
 
 
@@ -134,8 +242,36 @@ class DensityDecomposition:
         self._compute_monomers()
         self.monomers_computed = True
 
+    def compute_full_QM(self):
+        "Compute full QM interaction energy"
+        assert self.monomers_computed is True
+
+        self.aggregate.activate_all_fragments()
+        c_ene, c_wfn = psi4.properties(self.method, molecule=self.aggregate, return_wfn=True, 
+                                       properties=["DIPOLE","NO_OCCUPATIONS"], **self.kwargs)
+        if self.method.lower().startswith('cc'):
+           psi4.core.set_global_option("DERTYPE", "FIRST")
+           psi4.core.set_global_option("WFN", self.method.upper())
+           psi4.core.ccdensity(c_wfn)
+
+        N, C = self.natural_orbitals(c_wfn.Da(), orthogonalize_first=c_wfn.S(), order='descending')
+        self.matrix["dqm"] = c_wfn.Da()
+        self.matrix["nqm"] = N
+        self.matrix["cqm"] = C
+        self.matrix["sqm"] = c_wfn.S()
+
+        e_fqm_t = c_ene
+        for i in range(self.aggregate.nfragments()):
+            e_fqm_t -= self.data["ene"][i]
+        self.vars["e_fqm_t"] = e_fqm_t
+
+        self.energy_full_QM_computed = True
+        return
+
     def compute_densities(self):
         "Compute all the necessary density matrices"
+        assert self.monomers_computed is True
+
         S_mo_t    = numpy.zeros((self.nmo_t, self.nmo_t), numpy.float64)
         W_mo_t    = numpy.zeros((self.nmo_t            ), numpy.float64)
         C_ao_mo_t = numpy.zeros((self.nbf_t, self.nmo_t), numpy.float64)
@@ -173,13 +309,54 @@ class DensityDecomposition:
         K = self.triplet(WSWm12, numpy.diag(n_mo_t), WSWm12)                    # mo::mo
         CW  = self.doublet(C_ao_mo_t, numpy.diag(W_mo_t))                       # ao::mo
 
+        # test of WSW-1/2 Taylor expansion
+        delta = S_mo_t.copy()
+        for i in range(delta.shape[0]): delta[i,i] = 0.0
+        delta2 = self.doublet(delta, delta)
+        delta3 = self.doublet(delta, delta2)
+        Wm12 = self.matrix_power(numpy.diag(W_mo_t), -0.5)
+        Wm1  = self.matrix_power(numpy.diag(W_mo_t), -1.0)
+       #print(Wm1.diagonal())
+       #print(W_mo_t)
+        WSWm12_a0= Wm1.copy()
+        WSWm12_a1= Wm1.copy()
+        WSWm12_a1-= self.triplet(Wm12, delta , Wm12) * 1.0/2.0
+        WSWm12_a2 = WSWm12_a1.copy()
+        #WSWm12_a2+=(self.doublet(Wm1, delta) + self.doublet(delta, Wm1)) * 1.0/4.0
+        WSWm12_a2+= self.triplet(Wm12, delta2, Wm12) * 3.0/8.0
+        WSWm12_a3 = WSWm12_a2.copy()
+        WSWm12_a3-= self.triplet(Wm12, delta3, Wm12) * 5.0/16.0
+
+        def rms(m1, m2): return ((m1-m2) * (m1-m2)).sum()
+
+       #print()
+       #print(WSWm12.diagonal())
+       #print(WSWm12_a0.diagonal())
+       #print(WSWm12_a1.diagonal())
+       #print(WSWm12_a2.diagonal())
+       #print(WSWm12_a3.diagonal())
+
+        #print(WSWm12   [0,1])
+        #print(WSWm12_a1[0,1])
+        #print(WSWm12_a2[0,1])
+
+       #print(rms(WSWm12, WSWm12_a0))
+       #print(rms(WSWm12, WSWm12_a1))
+       #print(rms(WSWm12, WSWm12_a2))
+       #print(rms(WSWm12, WSWm12_a3))
+
         Doo_ao_t = self.triplet(CW, K, CW.T)                                    # ao::ao
         D_ao_t = self.triplet(C_ao_mo_t, numpy.diag(n_mo_t), C_ao_mo_t.T)       # ao::ao
+
+        # NO analysis of Antisymmetrized wavefunction
+        noo, coo = self.natural_orbitals(Doo_ao_t.copy(), orthogonalize_first=self.matrix["sqm"], order='descending')
 
         # save
         self.matrix["n"] = n_mo_t
         self.matrix["c"] = C_ao_mo_t
         self.matrix["d"] = D_ao_t
+        self.matrix["noo"] = noo
+        self.matrix["coo"] = coo
         self.matrix["doo"] = Doo_ao_t
 
         # set up state of the object
@@ -235,7 +412,9 @@ class DensityDecomposition:
         self.vars["e_cou_1"] = e_cou_1
         self.vars["e_cou_2"] = e_cou_2
         self.vars["e_cou_t"] = e_cou_t
-        self.vars["e_t"    ]+= e_cou_t
+        self.vars["e_dds_t"]+= e_cou_t
+        if self.l_dds:
+           self.vars["e_dds_l_t"]+= e_cou_t
 
         self.energy_coulomb_computed = True
         return
@@ -258,18 +437,35 @@ class DensityDecomposition:
 
         # ------- one-electron part
         e_rep_1 = 2.0 * self.compute_1el_energy(dD, numpy.array(H))
+        # ------- two-electron part
         e_rep_2 = 2.0 * self.compute_2el_energy(dD, dD + 2.0 * D, type='j')
-        e_rep_t  = e_rep_1 + e_rep_2
         # ---     Exchange energy
-        e_exc_t =-self.compute_2el_energy(Doo, Doo, type='k')
+        Dunp = self._generalized_density_matrix(self.matrix["noo"], self.matrix["coo"])
+
+        if self.l_dds:
+          #print(" E(dpau-dpau) = %13.8f" % (4.0 * self.compute_2el_energy(dD, dD, type='j')))
+           self.vars["i_dpau_dpau"] = 4.0 * self.compute_2el_energy(dD, dD, type='j')
+
+
+        #e_exc_t =-self.compute_2el_energy(Doo, Doo, type='k')
+        e_exc_t =-self.compute_2el_energy(Dunp, Dunp, type='k')
+        if self.acbs is False: 
+           print(" Warning: Exchange energy is wrong in MCBS mode for post-SCF levels (ACBS=False)")
+          #sys.exit(1)
         for i in range(self.aggregate.nfragments()):
             if self.acbs is False:
                D_i = self._block_fragment_ao_matrix(D, keep_frags=[i], off_diagonal=False)
             else: 
-               n_i = self._block_fragment_mo_matrix(numpy.diag(self.matrix["n"]), keep_frags=[i], off_diagonal=False)
+               w_i = numpy.sqrt(self.matrix["n"])
+               #scale = self.xc_scale ** (1.0 - w_i)
+               scale = math.sqrt(self.xc_scale)
+               w_i*= scale
+               w_i = self._block_fragment_mo_matrix(numpy.diag(w_i), keep_frags=[i], off_diagonal=False)
                c_i = self.matrix["c"]
-               D_i = self.triplet(c_i, n_i, c_i.T)
+               D_i = self.triplet(c_i, w_i, c_i.T)
             e_exc_t += self.compute_2el_energy(D_i  , D_i  , type='k')
+
+        e_rep_t = e_rep_1 + e_rep_2
         e_exr_t = e_exc_t + e_rep_t
         # save
         self.vars["e_rep_1"] = e_rep_1
@@ -277,28 +473,75 @@ class DensityDecomposition:
         self.vars["e_rep_t"] = e_rep_t
         self.vars["e_exc_t"] = e_exc_t
         self.vars["e_exr_t"] = e_exr_t
-        self.vars["e_t"    ]+= e_exr_t
+        self.vars["e_dds_t"]+= e_exr_t
+        if self.l_dds:
+           self.vars["e_dds_l_t"] += e_exr_t
+           self.vars["e_dds_l_t"] -= self.vars["i_dpau_dpau"]
 
         self.energy_pauli_computed = True
         return
 
-    def compute_full_QM(self):
-        "Compute full QM interaction energy"
+    def compute_polar(self):
+        "Compute exact polarization energy"
         assert self.monomers_computed is True
+        assert self.energy_coulomb_computed is True
 
-        self.aggregate.activate_all_fragments()
-        c_ene, c_wfn = psi4.properties(self.method, molecule=self.aggregate, return_wfn=True, 
-                                       properties=["DIPOLE","NO_OCCUPATIONS"], **self.kwargs)
+        self.vars["e_pol_t"] = self.vars["e_fqm_t"] - self.vars["e_cou_t"] - self.vars["e_exr_t"]
+        return
 
-        self.matrix["dqm"] = c_wfn.Da()
+    def compute_polar_approx(self):
+        "Compute approximate polarization interaction energy"
+        assert self.monomers_computed is True
+        assert self.densities_computed is True
+        assert self.energy_full_QM_computed is True
 
-        e_fqm_t = c_ene
-        for i in range(self.aggregate.nfragments()):
-            e_fqm_t -= self.data["ene"][i]
-        self.vars["e_fqm_t"] = e_fqm_t
-        self.vars["e_pol_t"] = e_fqm_t - self.vars["e_cou_t"] - self.vars["e_exr_t"]
+        # orthogonalized and non-orthogonalized OPDM's
+        Doo, D = self._deformation_density_pauli()
+        dD_pau = self.deformation_density("pau")
+        dD_pol = self.deformation_density("pol")
+        # core Hamiltonian
+        mints = psi4.core.MintsHelper(self.bfs)
+        H = mints.ao_potential()
+        T = mints.ao_kinetic()
+        H.add(T)
+        del mints
 
-        self.energy_full_QM_computed = True
+        e_pol_1 = 2.0 * self.compute_1el_energy(dD_pol, numpy.array(H))
+        e_pol_2 = 2.0 * self.compute_2el_energy(dD_pol, dD_pol + 2.0 * (dD_pau + D), type='j')
+
+        if self.l_dds:
+          #print(" E(dpol-dpol) = %13.8f" % (2.0 * self.compute_2el_energy(dD_pol, dD_pol, type='j')))
+          #print(" E(dpol-dpau) = %13.8f" % (4.0 * self.compute_2el_energy(dD_pol, dD_pau, type='j')))
+          #print(" E(dpol-d   ) = %13.8f" % (4.0 * self.compute_2el_energy(dD_pol,  D    , type='j')))
+          #print(" E(dpol-hcor) = %13.8f" % e_pol_1)
+           self.vars["i_dpol_dpol"] = 2.0 * self.compute_2el_energy(dD_pol, dD_pol, type='j')
+           self.vars["i_dpol_dpau"] = 4.0 * self.compute_2el_energy(dD_pol, dD_pau, type='j')
+           self.vars["i_dpol_d   "] = 4.0 * self.compute_2el_energy(dD_pol,  D    , type='j')
+           self.vars["i_dpol_hcor"] = e_pol_1
+
+        # exchange-polarization energy
+        Dpol = self._generalized_density_matrix(self.matrix["nqm"], self.matrix["cqm"])
+        Dunp = self._generalized_density_matrix(self.matrix["noo"], self.matrix["coo"])
+
+        e_exp_a = self.compute_2el_energy(Dunp, Dunp, type='k')
+        e_exp_a-= self.compute_2el_energy(Dpol, Dpol, type='k')
+
+        e_pol_e = e_pol_1 + e_pol_2
+        e_pol_a = e_pol_e + e_exp_a
+
+        self.vars["e_pol_e"   ] = e_pol_e 
+        self.vars["e_pol_1"   ] = e_pol_1
+        self.vars["e_pol_2"   ] = e_pol_2
+        self.vars["e_exp_a"   ] = e_exp_a
+        self.vars["e_pol_a"   ] = e_pol_a
+
+        self.vars["e_exp_t"   ] = self.vars["e_pol_t"] - e_pol_1 - e_pol_2
+        self.vars["e_dds_t"   ]+= e_pol_a
+        if self.l_dds:
+           self.vars["e_dds_l_t"] += e_pol_a
+           self.vars["e_dds_l_t"] -= self.vars["i_dpol_dpau"] + self.vars["i_dpol_dpol"]
+
+        self.energy_polar_approx_computed = True
         return
 
     def natural_orbitals(self, D, orthogonalize_first=None, order='descending', original_ao_mo=True):
@@ -340,7 +583,7 @@ class DensityDecomposition:
         self.global_jk.compute()
         if   type.lower() == 'j': JorK = numpy.array(self.global_jk.J()[0])
         elif type.lower() == 'k': JorK = numpy.array(self.global_jk.K()[0])
-        else: raise ValueError("Incorrect type of JK matrix. Only J ro K allowed.")
+        else: raise ValueError("Incorrect type of JK matrix. Only J or K allowed.")
         energy = numpy.dot(JorK, D_right).trace()
         return energy
 
@@ -349,31 +592,66 @@ class DensityDecomposition:
     # ---- printers ---- #
 
     def __repr__(self):
+        "Print final results"
         log = "\n\n"
         log+= " ===> Density-Based interaction energy decomposition <=== \n\n"
+
         if self.monomers_computed:
-           log += " Monomers computed at %s/%s level of theory.\n" % (self.method.upper(), self.bfs.name())
-           log += " Total number of basis functions  = %d\n" % self.nbf_t
-           log += " Total number of natural orbitals = %d\n" % self.nmo_t
-           log += "\n"
+           log += "   %s/%s level of theory.\n"                  %(self.method.upper(), self.bfs.name())
+           log += "   Total number of basis functions  = %d\n"   % self.nbf_t
+           log += "   Total number of natural orbitals = %d\n"   % self.nmo_t
+           log += "   Natural orbital threshold        = %.8f\n" % self.no_cutoff
+           log += "\n\n"
+
         if self.energy_coulomb_computed:
-           log += " @Sec: Coulombic energy:\n"
-           log += "       E_COU_1=%12.6f E_COU_2=%12.6f E_NUC_T=%12.6f\n" % (self.vars["e_cou_1"],
-                                                                             self.vars["e_cou_2"],
-                                                                             self.vars["e_cou_n"])
-           log += "       E_COU_T=%12.6f\n"                               %  self.vars["e_cou_t"] 
+           log += "   DDS Results\n"                                                                              
+           log += " ---------------------------------------------------------------------------------------\n"
+           log += "                                  [A.U.]                [kcal/mole]          [kJ/mole]    \n"
+           log += " ---------------------------------------------------------------------------------------\n"
+           log += "   Electrostatics         " + self._print_line(self.vars["e_cou_t"]) + "\n"
+          #log += "     E-coul(nuclear)      " + self._print_line(self.vars["e_cou_n"]) + "\n"
+          #log += "     E-coul(1)            " + self._print_line(self.vars["e_cou_1"]) + "\n"
+          #log += "     E-coul(2)            " + self._print_line(self.vars["e_cou_2"]) + "\n"
+           log += "\n"
+
         if self.energy_pauli_computed:
-           log += " @Sec: Pauli repulsion energy:\n"
-           log += "       E_REP_1=%12.6f E_REP_2=%12.6f E_REP_T=%12.6f\n" % (self.vars["e_rep_1"],
-                                                                             self.vars["e_rep_2"],
-                                                                             self.vars["e_rep_t"])
-           log += "       E_EXC  =%12.6f E_EXREP=%12.6f\n"                % (self.vars["e_exc_t"],
-                                                                             self.vars["e_exr_t"])
+           log += "   Exchange-Repulsion     " + self._print_line(self.vars["e_exr_t"]) + "\n"
+           log += "\n"
+           log += "     E-exchange           " + self._print_line(self.vars["e_exc_t"]) + "\n"
+           log += "     E-repul              " + self._print_line(self.vars["e_rep_t"]) + "\n"
+           log += "       E-repul(1)         " + self._print_line(self.vars["e_rep_1"]) + "\n"
+           log += "       E-repul(2)         " + self._print_line(self.vars["e_rep_2"]) + "\n"
+           log += "\n"
+
+
         if self.energy_full_QM_computed:
-           log += " @Sec: Full QM energy:\n"
-           log += "       E_POL_T=%12.6f\n"                                % self.vars["e_pol_t"]
-           log += "       E_FQM_T=%12.6f\n"                                % self.vars["e_fqm_t"]
-        log += "\n"
+           log += "   Polarization           " + self._print_line(self.vars["e_pol_t"]) + "\n"
+           log += "\n"
+        if self.energy_polar_approx_computed:
+           log += "     E-polar(el)          " + self._print_line(self.vars["e_pol_e"]) + "\n"
+           log += "       E-polar(1)         " + self._print_line(self.vars["e_pol_1"]) + "\n"
+           log += "       E-polar(2)         " + self._print_line(self.vars["e_pol_2"]) + "\n"
+           log += "     E-ex-pol             " + self._print_line(self.vars["e_exp_t"]) + "\n"
+           log += "       E-ex-pol(no)       " + self._print_line(self.vars["e_exp_a"]) + "\n"
+           log += "\n"
+           log += "   Polarization (approx)  " + self._print_line(self.vars["e_pol_a"]) + "\n"
+        if self.energy_full_QM_computed:
+           log += "\n"
+
+        if self.energy_full_QM_computed:
+           log += "   Supramolecular Energy  " + self._print_line(self.vars["e_fqm_t"]) + "\n"
+           log += "   DDS Energy             " + self._print_line(self.vars["e_dds_t"]) + "\n" 
+           if self.l_dds:
+            log +="   L-DDS Energy           " + self._print_line(self.vars["e_dds_l_t"]) + "\n" 
+           log += "\n"
+           err  = self.vars["e_dds_t"] - self.vars["e_fqm_t"]
+           log += "     DDS Error            " + self._print_line(err) + "\n"
+           if self.l_dds:
+            err  = self.vars["e_dds_l_t"] - self.vars["e_fqm_t"]
+            log +="     L-DDS Error          " + self._print_line(err) + "\n"
+           log += " ---------------------------------------------------------------------------------------\n"
+           log += "\n"
+
         return str(log)
 
     def print_out(self):
@@ -392,13 +670,13 @@ class DensityDecomposition:
         "Compute triple matrix product: result = ABC"
         return numpy.dot(A, numpy.dot(B, C))
 
-    def matrix_power(self, M, x):
-        "Computes the well-behaved matrix power"
+    def matrix_power(self, M, x, eps=1e-6):
+        "Computes the well-behaved matrix power. All eigenvalues below or equal eps are ignored"
         E, U = numpy.linalg.eigh(M)
         Ex = E.copy(); Ex.fill(0.0)
         for i in range(len(E)):
-            if (E[i]>0.0) : Ex[i] = numpy.power(E[i], x)
-            else: Ex[i] = 1.0
+            if (E[i]>0.0+eps) : Ex[i] = numpy.power(E[i], x)
+            else: Ex[i] = 0.0
         Mx = numpy.dot(U, numpy.dot(numpy.diag(Ex), U.T))
         return Mx
 
@@ -421,6 +699,12 @@ class DensityDecomposition:
 
             c_ene, c_wfn = psi4.properties(self.method, molecule=current_molecule, return_wfn=True, 
                                            properties=['DIPOLE', 'NO_OCCUPATIONS'], **self.kwargs)
+
+            if self.method.lower().startswith('cc'):
+               psi4.core.set_global_option("DERTYPE", "FIRST")
+               psi4.core.set_global_option("WFN", self.method.upper())
+               psi4.core.ccdensity(c_wfn)
+
             D = numpy.array(c_wfn.Da(), numpy.float64)
             N, C = self.natural_orbitals(D, orthogonalize_first=c_wfn.S(), order='descending')
 
@@ -515,13 +799,23 @@ class DensityDecomposition:
         X = numpy.dot(u, numpy.dot(numpy.diag(sm), u.T))
         return X
 
+    def _generalized_density_matrix(self, n, c):
+        "Compute occupation-weighted 1-electron density matrix in AO basis"
+        ns = numpy.sqrt(n); N = c.shape[0]
+        D  = numpy.zeros((N, N), numpy.float64)
+        #scale = self.xc_scale ** (1.0 - ns)
+        scale = math.sqrt(self.xc_scale)
+        ns *= scale
+        for i in range(len(n)):
+            D += ns[i] * numpy.outer(c[:,i], c[:,i]) 
+        return D
+
     def _compute_overlap_ao(self, wfn_i, wfn_j):
         "Compute AO overlap matrix between fragments"
         mints = psi4.core.MintsHelper(wfn_i.basisset())
         S = numpy.array(mints.ao_overlap(wfn_i.basisset(),
                                          wfn_j.basisset()))
         return S
-
 
     def _block_fragment_ao_matrix(self, M, keep_frags=[], off_diagonal=False):
         "Returns the block-fragment form of matrix M (AO-basis) with fragments as each block. Keep only indicated fragments."
@@ -558,3 +852,19 @@ class DensityDecomposition:
                nbf_i = self.data["nbf"][i]
                M_diag[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i] = numpy.array(M[ofb_i:ofb_i+nbf_i, ofb_i:ofb_i+nbf_i], numpy.float64)
         return M_diag
+
+    def _print_line(self, value, type='e'):
+        "Print one line of report in multiple units"
+        line = ''
+        # energy output
+        # ---> [A.U.]  [kcal/mole]  [kJ/mole]
+        if type == 'e':
+           c1 = 627.5096080306   # A.U. to kcal/mole
+           c2 = 2625.5002        # A.U. to kJ/mole
+        # other output
+        else: raise NotImplementedError
+
+        v1 = value * c1
+        v2 = value * c2
+        line = "%18.8f   %18.8f   %18.8f" % (value, v1, v2)
+        return line
