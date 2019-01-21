@@ -22,8 +22,8 @@ class DensityDecomposition:
  with partitioning of polarization deformation density into induction,
  dispersion and charge-transfer contributions.
 
-                     --> DDS <--
-         --> Density Decomposition Scheme <--
+                           --> DDS <--
+               --> Density Decomposition Scheme <--
 
  References: 
   * Mandado and Hermida-Ramon, J. Chem. Theory Comput. 2011, 7, 633-641. (JCTC 2011)
