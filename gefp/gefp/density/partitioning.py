@@ -123,7 +123,7 @@ class DensityDecomposition:
                             "e_pol_disp_t": None,   # dispersion part of polarization energy, (1+2)el part
                             "e_pol_ct_t"  : None,   # charge-transfer part of polarization energy, (1+2)el part
                             "e_dds_t"     : 0.0 ,   # total interaction energy (DDS)
-                            "e_dds_l_t"   : 0.0,    # total interaction energy (L-DDS)
+                            "e_dds_l_t"   : 0.0 ,   # total interaction energy (L-DDS)
                             "e_fqm_t"     : None,   # total interaction energy (full QM)
                             }
         # recommended XC density scaling factors
