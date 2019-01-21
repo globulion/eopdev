@@ -13,7 +13,7 @@ add_test (NAME SCF_PERTURB           COMMAND "psi4" "tests/oepdev/scf_perturb.in
 add_test (NAME CAMM                  COMMAND "psi4" "tests/oepdev/camm.inp"                 "tests/oepdev/camm.out"       )
 add_test (NAME DMTP_ENERGY           COMMAND "psi4" "tests/oepdev/dmtp_energy.inp"          "tests/oepdev/dmtp_energy.out")
 add_test (NAME ESP_SOLVER            COMMAND "psi4" "tests/oepdev/esp_solver.inp"           "tests/oepdev/esp_solver.out" )
-add_test (NAME POINTS_COLLECTION3D    COMMAND "psi4" "tests/oepdev/points_collection3d.inp"   "tests/oepdev/points_collection3d.out" )
+add_test (NAME POINTS_COLLECTION3D   COMMAND "psi4" "tests/oepdev/points_collection3d.inp"  "tests/oepdev/points_collection3d.out" )
 
 
 # [2] Test result
