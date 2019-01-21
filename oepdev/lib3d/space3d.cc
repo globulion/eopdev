@@ -273,10 +273,6 @@ CubePointsCollection3D::CubePointsCollection3D(Collection collectionType,
   double oz = zmin;
   
   // Point3D iterator
-  cout << std::fixed;
-  cout.precision(8);
-  cout << dx << " " << dy << " " << dz << " " << endl;
-  cout << ox << " " << oy << " " << oz << " " << endl;
   pointsIterator_ = make_shared<CubePoints3DIterator>(nx, ny, nz, dx, dy, dz, ox, oy, oz);
 
   // Initialize the Grid

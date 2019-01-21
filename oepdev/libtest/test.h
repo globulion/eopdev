@@ -90,14 +90,15 @@ class Test
    /// Test the oepdev::DMTP class for energy calculations
    double test_dmtp_energy(void);
 
-   /// Test the custom code
-   double test_custom(void);
-
-   /// Test the espsolver
+   /// Test the oepdev::ESPSolver
    double test_esp_solver(void);
-   /// Test the espsolver
+
+   /// Test the cube file generation (oepdev::Field3D electrostatic potential and oepdev::Points3DIterator for cube collection)
    double test_points_collection3d(void);
-   
+
+
+   /// Test the custom code (to be deprecated)
+   double test_custom(void);
 
 };
 
