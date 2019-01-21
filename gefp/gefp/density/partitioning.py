@@ -404,7 +404,7 @@ class DensityDecomposition:
 
                e_cou_1 += 2.0 * self.compute_1el_energy(D_i, V_j)
                e_cou_1 += 2.0 * self.compute_1el_energy(D_j, V_i)
-               e_cou_2 += 4.0 * self.compute_2el_energy(D_i  , D_j  , type='j')
+               e_cou_2 += 4.0 * self.compute_2el_energy(D_i, D_j, type='j')
         e_cou_t = e_cou_n + e_cou_1 + e_cou_2
 
         # save
@@ -443,8 +443,9 @@ class DensityDecomposition:
         Dunp = self._generalized_density_matrix(self.matrix["noo"], self.matrix["coo"])
 
         if self.l_dds:
-          #print(" E(dpau-dpau) = %13.8f" % (4.0 * self.compute_2el_energy(dD, dD, type='j')))
-           self.vars["i_dpau_dpau"] = 4.0 * self.compute_2el_energy(dD, dD, type='j')
+          #print(" E(dpau-dpau) = %13.8f" % (2.0 * self.compute_2el_energy(dD, dD, type='j')))
+           self.vars["i_dpau_dpau"] = 2.0 * self.compute_2el_energy(dD, dD, type='j')
+           self.vars["i_dpau_d"   ] = 4.0 * self.compute_2el_energy(dD,  D, type='j')
 
 
         #e_exc_t =-self.compute_2el_energy(Doo, Doo, type='k')
@@ -516,7 +517,7 @@ class DensityDecomposition:
           #print(" E(dpol-hcor) = %13.8f" % e_pol_1)
            self.vars["i_dpol_dpol"] = 2.0 * self.compute_2el_energy(dD_pol, dD_pol, type='j')
            self.vars["i_dpol_dpau"] = 4.0 * self.compute_2el_energy(dD_pol, dD_pau, type='j')
-           self.vars["i_dpol_d   "] = 4.0 * self.compute_2el_energy(dD_pol,  D    , type='j')
+           self.vars["i_dpol_d"   ] = 4.0 * self.compute_2el_energy(dD_pol,  D    , type='j')
            self.vars["i_dpol_hcor"] = e_pol_1
 
         # exchange-polarization energy
@@ -606,7 +607,7 @@ class DensityDecomposition:
         if self.energy_coulomb_computed:
            log += "   DDS Results\n"                                                                              
            log += " ---------------------------------------------------------------------------------------\n"
-           log += "                                  [A.U.]                [kcal/mole]          [kJ/mole]    \n"
+           log += "                                  [A.U.]                [kcal/mole]          [kJ/mole]  \n"
            log += " ---------------------------------------------------------------------------------------\n"
            log += "   Electrostatics         " + self._print_line(self.vars["e_cou_t"]) + "\n"
           #log += "     E-coul(nuclear)      " + self._print_line(self.vars["e_cou_n"]) + "\n"
@@ -621,6 +622,9 @@ class DensityDecomposition:
            log += "     E-repul              " + self._print_line(self.vars["e_rep_t"]) + "\n"
            log += "       E-repul(1)         " + self._print_line(self.vars["e_rep_1"]) + "\n"
            log += "       E-repul(2)         " + self._print_line(self.vars["e_rep_2"]) + "\n"
+           if self.l_dds:
+            log+= "         E-dpau-d         " + self._print_line(self.vars["i_dpau_d"   ]) + "\n"
+            log+= "         E-dpau-dpau      " + self._print_line(self.vars["i_dpau_dpau"]) + "\n"
            log += "\n"
 
 
@@ -631,6 +635,11 @@ class DensityDecomposition:
            log += "     E-polar(el)          " + self._print_line(self.vars["e_pol_e"]) + "\n"
            log += "       E-polar(1)         " + self._print_line(self.vars["e_pol_1"]) + "\n"
            log += "       E-polar(2)         " + self._print_line(self.vars["e_pol_2"]) + "\n"
+           if self.l_dds:
+            log+= "         E-dpol-hcore     " + self._print_line(self.vars["i_dpol_hcor"]) + "\n"
+            log+= "         E-dpol-d         " + self._print_line(self.vars["i_dpol_d"   ]) + "\n"
+            log+= "         E-dpol-dpol      " + self._print_line(self.vars["i_dpol_dpol"]) + "\n"
+            log+= "         E-dpol-dpau      " + self._print_line(self.vars["i_dpol_dpau"]) + "\n"
            log += "     E-ex-pol             " + self._print_line(self.vars["e_exp_t"]) + "\n"
            log += "       E-ex-pol(no)       " + self._print_line(self.vars["e_exp_a"]) + "\n"
            log += "\n"
