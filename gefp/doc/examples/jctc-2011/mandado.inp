@@ -6,6 +6,46 @@ import numpy
 
 memory 2 gb
 
+def analyze_population_dimer(title, d, s, n, out_name='x.dat'):
+    "Analyze density matrices for dimer case"
+    print(" %s" % title)
+    out = open(out_name,'w')
+    d_d1 = d[:n,:n]
+    d_d2 = d[n:,n:]
+    d_o1 = d[:n,n:]
+    d_o2 = d[n:,:n]
+    
+    ds = numpy.dot(d, s)
+    
+    d_aa = d[:n, :n] ; s_aa = s[:n, :n]
+    d_bb = d[n:, n:] ; s_bb = s[n:, n:]
+    d_ab = d[:n, n:] ; s_ab = s[:n, n:]
+    d_ba = d[n:, :n] ; s_ba = s[n:, :n]
+    
+    n_tot = 2.0 * ds.trace()
+    n_aa  = 2.0 * numpy.dot(d_aa, s_aa).trace()
+    n_bb  = 2.0 * numpy.dot(d_bb, s_bb).trace()
+    n_ab  = 2.0 * numpy.dot(d_ab, s_ba).trace()
+    n_ba  = 2.0 * numpy.dot(d_ba, s_ab).trace()
+    diff = n_tot - (n_aa + n_bb + n_ab + n_ba)
+    
+    print("Sum of N   : %16.8f %16.8f" % (n_tot, diff))
+    print("Sum of N_AA: %16.8f       Diagonal: %16.8f" % (n_aa,d_d1.sum()))
+    print("Sum of N_BB: %16.8f       Diagonal: %16.8f" % (n_bb,d_d2.sum()))
+    print("Sum of N_AB: %16.8f       Offdiagl: %16.8f" % (n_ab,d_o1.sum()))
+    print("Sum of N_BA: %16.8f                       " %  n_ba)
+    print("\n")
+    
+   #print("Offdiagl: %16.8f" % (d_o2).sum())
+    log = ''
+    for i in range(len(d)):
+        log += len(d) * "%16.6E" % tuple(d[i])
+        log += "\n"
+    out.write(log)
+    out.close()
+    return
+
+
 # test molecule
 molecule h2o {
 0 1
@@ -151,6 +191,7 @@ set
     # ==> General Psi4 Options <== #
     basis                         6-311++G(2d,2p)
     #basis                         6-311G**
+    #basis                      6-31G*
     scf_type                      df
     guess                         core
     e_convergence                 1e-11
@@ -185,7 +226,7 @@ set
 }
 
 # create density decomposition solver
-solver = gefp.density.partitioning.DensityDecomposition(h2o, method='hf', acbs=False, no_cutoff=0.00000, xc_scale=1.00, l_dds=False, taylor=False)
+solver = gefp.density.partitioning.DensityDecomposition(me, method='hf', acbs=True, no_cutoff=0.00000, xc_scale=1.0, l_dds=False, taylor=False, verbose=False, erase_dpol_offdiag=False)
 
 # compute unperturbed monomer wavefunctions
 solver.compute(polar_approx=True)
@@ -195,23 +236,19 @@ print(solver)
 solver.print_out()
 
 # save polarization density
-out = open('d.dat','w')
-d = solver.deformation_density('pol')
-n = int(d.shape[0]/2)
-d_d1 = d[:n,:n]
-d_d2 = d[n:,n:]
-d_o1 = d[:n,n:]
-d_o2 = d[n:,:n]
-print("Diagonal: %16.8f" % (d_d1*d_d1).sum())
-print("Diagonal: %16.8f" % (d_d2*d_d2).sum())
-print("Offdiagl: %16.8f" % (d_o1*d_o1).sum())
-print("Offdiagl: %16.8f" % (d_o2*d_o2).sum())
-log = ''
-for i in range(len(d)):
-    log += len(d) * "%16.6E" % tuple(numpy.abs(d[i]))
-    log += "\n"
-out.write(log)
-out.close()
+d_fqm = solver.deformation_density('fqm')
+d_pau = solver.deformation_density('pau')
+d_pol = solver.deformation_density('pol')
+D0_fqm = numpy.array(solver.matrix["d"])
+D_fqm  = numpy.array(solver.matrix["dqm"])
+s      = numpy.array(solver.matrix["sqm"])
+n = int(s.shape[0]/2)
+
+analyze_population_dimer("UNPERTURBED DENSITY", D0_fqm,s, n, 'd.oqm.dat')
+analyze_population_dimer("EXACT DENSITY      ", D_fqm, s, n, 'd.dqm.dat')
+analyze_population_dimer("DELTA EXACT        ", d_fqm, s, n, 'd.fqm.dat')
+analyze_population_dimer("DELTA PAULI PRNCPL ", d_pau, s, n, 'd.pau.dat')
+analyze_population_dimer("DELTA POLARIZATION ", d_pol, s, n, 'd.pol.dat')
 
 # run SAPT
 #energy('sapt0', molecule=h2o)
