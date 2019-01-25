@@ -7,6 +7,9 @@ Bartosz Błasiak, Gundelfingen, Dec 2018
 """
 
 from . import density
-__all__ = ['density']
-__author__='Bartosz Błasiak'
-__version__='1.0.0'
+from . import math
+
+__author__ =  'Bartosz Błasiak'
+__version__=  '1.0.1'
+
+__all__    = ['density', 'math']

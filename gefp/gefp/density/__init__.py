@@ -5,5 +5,7 @@ Density Subpackage.
 Bartosz Błasiak, Gundelfingen, Dec 2018
 """
 from . import partitioning
-__all__ = ["partitioning"]
+from . import scf
+
+__all__ = ["partitioning", "scf"]
 __author__="Bartosz Błasiak"
