@@ -167,9 +167,7 @@ def rotate_ao_matrix(M, rot_3d, bfs):
 
     max_am = bfs.max_am()
     assert max_am <= 4, "Agnular momenta larger than 4 are not supported!"
-
-    if max_am > 1:
-       assert bfs.has_puream() is False, "Sorry. Only Cartesian basis sets (puream = False) are supported at present."
+    assert bfs.has_puream() is False, "Sorry. Only Cartesian basis sets (puream = False) are supported at present."
 
     # indices per angular momentum
     idx = {x: [] for x in range(max_am+1)}
@@ -188,13 +186,14 @@ def rotate_ao_matrix(M, rot_3d, bfs):
 
     def populate_R(am, r):
         n_p_groups = int(len(idx[am]) / nam[am])
+        g_c = 0
         for group in range(n_p_groups):
-            g_c = group
-            g_n = group + nam[am]
+            g_n = g_c + nam[am]
             idx_g = idx[am][g_c:g_n]
             for ir,i in enumerate(idx_g):
                 for jr,j in enumerate(idx_g):
                     R[i,j] = r[ir,jr]
+            g_c+= nam[am]
 
     # --- s block
     None
