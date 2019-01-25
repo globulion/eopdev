@@ -172,14 +172,13 @@ def rotate_ao_matrix(M, rot_3d, bfs):
        assert bfs.has_puream() is False, "Sorry. Only Cartesian basis sets (puream = False) are supported at present."
 
     # indices per angular momentum
-    idx = {}
+    idx = {x: [] for x in range(max_am+1)}
     for i in range(bfs.nbf()):
         i_shell = bfs.ao_to_shell(i)
-        am      = bfs.shell(i).am
-        idx[am] = []
+        am      = bfs.shell(i_shell).am
         idx[am].append(i)
     for am in range(max_am+1):
-        assert len(idx[am]) % nam[am]
+        assert len(idx[am]) % nam[am] == 0
 
     # build rotation matrix
     R = numpy.identity(M.shape[0], numpy.float64)
@@ -188,12 +187,14 @@ def rotate_ao_matrix(M, rot_3d, bfs):
     #if max_am > 2: r3= numpy.matrix_power(rot_3d, 3).transpose([1-1,4-1,2-1,5-1,3-1,6-1])
 
     def populate_R(am, r):
-        n_p_groups = len(idx[am]) / nam[am]
+        n_p_groups = int(len(idx[am]) / nam[am])
         for group in range(n_p_groups):
             g_c = group
             g_n = group + nam[am]
             idx_g = idx[am][g_c:g_n]
-            R[idx_g].T[idx_g].T = r.copy()
+            for ir,i in enumerate(idx_g):
+                for jr,j in enumerate(idx_g):
+                    R[i,j] = r[ir,jr]
 
     # --- s block
     None
@@ -205,7 +206,7 @@ def rotate_ao_matrix(M, rot_3d, bfs):
     if max_am > 1: raise NotImplementedError
     
     # rotate
-    M_rot = numpy.linalg.multi_dot(R, M.copy(), R.T)
+    M_rot = numpy.linalg.multi_dot([R.T, numpy.array(M), R])
 
     # return
     return M_rot
