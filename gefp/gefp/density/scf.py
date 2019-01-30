@@ -80,7 +80,7 @@ class SCF:
          V = self._mints.ao_potential()
          guess = T.clone()
          guess.add(V)
-         guess = numpy.asarray(H)
+         guess = numpy.asarray(guess)
       else: guess = numpy.asarray(guess)
 
       self.V_ext = V_ext

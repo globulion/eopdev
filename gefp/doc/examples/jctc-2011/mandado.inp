@@ -226,7 +226,7 @@ set
 }
 
 # create density decomposition solver
-solver = gefp.density.partitioning.DensityDecomposition(me, method='hf', acbs=True, no_cutoff=0.00000, xc_scale=1.0, l_dds=False, taylor=False, verbose=False, erase_dpol_offdiag=False)
+solver = gefp.density.partitioning.DensityDecomposition(h2o, method='hf', acbs=True, no_cutoff=0.00000, xc_scale=1.0, l_dds=False, taylor=False, verbose=False, erase_dpol_offdiag=False)
 
 # compute unperturbed monomer wavefunctions
 solver.compute(polar_approx=True)
