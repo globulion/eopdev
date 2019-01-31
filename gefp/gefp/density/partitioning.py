@@ -73,7 +73,7 @@ class DensityDecomposition:
                                                                       Last Revision: Gundelfingen, 11 Jan 2019
 """
     def __init__(self, aggregate, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, l_dds=True, 
-                       taylor=False, erase_dpol_offdiag=False, verbose=False, **kwargs):
+                       cc_relax=True, taylor=False, erase_dpol_offdiag=False, verbose=False, **kwargs):
         "Initialize all attributes"
         # molecular aggregate
         self.aggregate   = aggregate    
@@ -138,13 +138,17 @@ class DensityDecomposition:
         self.acbs        = acbs
         # cutoff for NO occupancies
         self.no_cutoff   = no_cutoff
-        # scaling factor of exchange-correlation occupation weight
-        self.xc_scale = xc_scale
-        self.taylor = taylor
-        self.erase_dpol_offdiag = erase_dpol_offdiag
-        self.verbose = verbose
+        # relax density matrix for coupled cluster
+        self.cc_relax = cc_relax
         # linear DDS
         self.l_dds = l_dds
+        # verbose mode
+        self.verbose = verbose
+        # scaling factor of exchange-correlation occupation weight
+        self.xc_scale = xc_scale
+
+        self.taylor = taylor
+        self.erase_dpol_offdiag = erase_dpol_offdiag
 
         # what is already computed
         self.monomers_computed            = False   # unperturbed monomenr wavefunctions at arbitrary level of theory 
@@ -256,17 +260,18 @@ class DensityDecomposition:
         self.aggregate.activate_all_fragments()
         c_ene, c_wfn = psi4.properties(self.method, molecule=self.aggregate, return_wfn=True, 
                                        properties=["DIPOLE","NO_OCCUPATIONS"], **self.kwargs)
-        if self.method.lower().startswith('cc'):
+        if self.method.lower().startswith('cc') and self.cc_relax is True:
            psi4.core.set_global_option("DERTYPE", "FIRST")
            psi4.core.set_global_option("WFN", self.method.upper())
            psi4.core.ccdensity(c_wfn)
 
-        N, C = self.natural_orbitals(c_wfn.Da(), orthogonalize_first=c_wfn.S(), order='descending', no_cutoff=0.0)
+        D = c_wfn.Da().to_array(dense=True)
+        N, C = self.natural_orbitals(D, orthogonalize_first=c_wfn.S().to_array(dense=True), order='descending', no_cutoff=0.0)
         if self.verbose is True: print("Sum of natural orbital occupations for nqm= %13.6f" % N.sum())
-        self.matrix["dqm"] = c_wfn.Da()
+        self.matrix["dqm"] = D
         self.matrix["nqm"] = N
         self.matrix["cqm"] = C
-        self.matrix["sqm"] = c_wfn.S()
+        self.matrix["sqm"] = c_wfn.S().to_array(dense=True)
 
         e_fqm_t = c_ene
         for i in range(self.aggregate.nfragments()):
@@ -292,7 +297,7 @@ class DensityDecomposition:
             nbf_i = self.data["nbf"][i]
             ofm_i = self.data["ofm"][i]
             ofb_i = self.data["ofb"][i]
-            S_ao_ii = wfn_i.S()
+            S_ao_ii = wfn_i.S().to_array(dense=True)
             S_mo_ii = self.triplet(noc_i.T, S_ao_ii, noc_i)
             S_mo_t[ofm_i:ofm_i+nmo_i, ofm_i:ofm_i+nmo_i] = S_mo_ii
             W_mo_t[ofm_i:ofm_i+nmo_i] = numpy.sqrt(non_i)
@@ -452,8 +457,8 @@ class DensityDecomposition:
            I = numpy.identity(D_1.shape[0], numpy.float64)
            self.global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
            self.global_jk.compute()
-           J = numpy.array(self.global_jk.J()[0])
-           K = numpy.array(self.global_jk.K()[0])
+           J = self.global_jk.J()[0].to_array(dense=True)
+           K = self.global_jk.K()[0].to_array(dense=True)
                                                                                                                                                     
            V1 = self._V_n(1) + 2.0 * J 
                                                                                                                                                     
@@ -475,8 +480,8 @@ class DensityDecomposition:
            I = numpy.identity(D_2.shape[0], numpy.float64)
            self.global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
            self.global_jk.compute()
-           J = numpy.array(self.global_jk.J()[0])
-           K = numpy.array(self.global_jk.K()[0])
+           J = self.global_jk.J()[0].to_array(dense=True)
+           K = self.global_jk.K()[0].to_array(dense=True)
                                                                                                                                                     
            V2 = self._V_n(0) + 2.0 * J 
                                                                                                                                                     
@@ -582,7 +587,7 @@ class DensityDecomposition:
         del mints
 
         # ------- one-electron part
-        e_rep_1 = 2.0 * self.compute_1el_energy(dD, numpy.array(H))
+        e_rep_1 = 2.0 * self.compute_1el_energy(dD, H.to_array(dense=True))
         # ------- two-electron part
         e_rep_2 = 2.0 * self.compute_2el_energy(dD, dD + 2.0 * D, type='j')
 
@@ -660,7 +665,7 @@ class DensityDecomposition:
         H.add(T)
         del mints
 
-        e_pol_1 = 2.0 * self.compute_1el_energy(dD_pol, numpy.array(H))
+        e_pol_1 = 2.0 * self.compute_1el_energy(dD_pol, H.to_array(dense=True))
         e_pol_2 = 2.0 * self.compute_2el_energy(dD_pol, dD_pol + 2.0 * (dD_pau + D), type='j')
 
         if self.l_dds:
@@ -737,8 +742,8 @@ class DensityDecomposition:
         I = numpy.identity(D_left.shape[0], numpy.float64)
         self.global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
         self.global_jk.compute()
-        if   type.lower() == 'j': JorK = numpy.array(self.global_jk.J()[0])
-        elif type.lower() == 'k': JorK = numpy.array(self.global_jk.K()[0])
+        if   type.lower() == 'j': JorK = self.global_jk.J()[0].to_array(dense=True)
+        elif type.lower() == 'k': JorK = self.global_jk.K()[0].to_array(dense=True)
         else: raise ValueError("Incorrect type of JK matrix. Only J or K allowed.")
         energy = numpy.dot(JorK, D_right).trace()
         return energy
@@ -867,13 +872,13 @@ class DensityDecomposition:
             c_ene, c_wfn = psi4.properties(self.method, molecule=current_molecule, return_wfn=True, 
                                            properties=['DIPOLE', 'NO_OCCUPATIONS'], **self.kwargs)
 
-            if self.method.lower().startswith('cc'):
+            if self.method.lower().startswith('cc') and self.cc_relax is True:
                psi4.core.set_global_option("DERTYPE", "FIRST")
                psi4.core.set_global_option("WFN", self.method.upper())
                psi4.core.ccdensity(c_wfn)
 
-            D = numpy.array(c_wfn.Da(), numpy.float64)
-            N, C = self.natural_orbitals(D, orthogonalize_first=c_wfn.S(), order='descending')
+            D = c_wfn.Da().to_array(dense=True)
+            N, C = self.natural_orbitals(D, orthogonalize_first=c_wfn.S().to_array(dense=True), order='descending')
             if self.verbose is True: print("Sum of natural orbital occupations for n(%d)= %13.6f" % (n, N.sum()))
 
             self.data['wfn'].append(c_wfn)
@@ -909,7 +914,7 @@ class DensityDecomposition:
           y = mol.y(a) * BohrToAngstrom
           z = mol.z(a) * BohrToAngstrom
           ep.addCharge(q, x, y, z)
-      V = numpy.array(ep.computePotentialMatrix(bfs), numpy.float64)
+      V = ep.computePotentialMatrix(bfs).to_array(dense=True)
       return V
 
     def _V_n(self, n):
@@ -981,9 +986,8 @@ class DensityDecomposition:
     def _compute_overlap_ao(self, wfn_i, wfn_j):
         "Compute AO overlap matrix between fragments"
         mints = psi4.core.MintsHelper(wfn_i.basisset())
-        S = numpy.array(mints.ao_overlap(wfn_i.basisset(),
-                                         wfn_j.basisset()))
-        return S
+        S_ij = mints.ao_overlap(wfn_i.basisset(), wfn_j.basisset()).to_array(dense=True)
+        return S_ij
 
     def _block_fragment_ao_matrix(self, M, keep_frags=[], off_diagonal=False):
         "Returns the block-fragment form of matrix M (AO-basis) with fragments as each block. Keep only indicated fragments."
