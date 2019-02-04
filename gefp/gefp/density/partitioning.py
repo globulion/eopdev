@@ -602,9 +602,10 @@ class DensityDecomposition:
 
         for i in range(self.aggregate.nfragments()):
             w_i = numpy.sqrt(self.matrix["n"])
-            print(" Test: Molecule %d: %16.3f" % (i+1, _f_test(w_i)))
+            #print(" Test: Molecule %d: %16.3f" % (i+1, self._f_test(w_i)))
             c_i = self.matrix["c"]
             scale = math.sqrt(self.xc_scale)
+            #scale = math.sqrt(2.0*self._f_test(w_i))
             w_i*= scale
             w_i = self._block_fragment_mo_matrix(numpy.diag(w_i), keep_frags=[i], off_diagonal=False)
             D_i = self.triplet(c_i, w_i, c_i.T)
@@ -978,8 +979,11 @@ class DensityDecomposition:
         ns = numpy.sqrt(n); N = c.shape[0]
         D  = numpy.zeros((N, N), numpy.float64)
         #scale = self.xc_scale ** (1.0 - ns)
-        print(" Test: %16.3f" % (_f_test(n)))
+        #print(" Test: %16.3f" % (self._f_test(n)))
         scale = math.sqrt(self.xc_scale)
+        #print("Scale", scale)
+        #scale = math.sqrt(self._f_test(n))
+        #print("Next Scale", scale)
         ns *= scale
         for i in range(n.size):
             D += ns[i] * numpy.outer(c[:,i], c[:,i]) 
@@ -1048,6 +1052,6 @@ class DensityDecomposition:
         for i in range(len(n)):
             for j in range(len(n)):
                 _f += math.sqrt(n[i] * n[j])
-        _f = N*N / _f
+        _f = N / math.sqrt(_f)
         return _f
 
