@@ -602,6 +602,7 @@ class DensityDecomposition:
 
         for i in range(self.aggregate.nfragments()):
             w_i = numpy.sqrt(self.matrix["n"])
+            print(" Test: Molecule %d: %16.3f" % (i+1, _f_test(w_i)))
             c_i = self.matrix["c"]
             scale = math.sqrt(self.xc_scale)
             w_i*= scale
@@ -977,6 +978,7 @@ class DensityDecomposition:
         ns = numpy.sqrt(n); N = c.shape[0]
         D  = numpy.zeros((N, N), numpy.float64)
         #scale = self.xc_scale ** (1.0 - ns)
+        print(" Test: %16.3f" % (_f_test(n)))
         scale = math.sqrt(self.xc_scale)
         ns *= scale
         for i in range(n.size):
@@ -1040,4 +1042,12 @@ class DensityDecomposition:
         v2 = value * c2
         line = "%18.8f   %18.8f   %18.8f" % (value, v1, v2)
         return line
+    def _f_test(self, n):
+        N = n.sum()
+        _f = 0.0
+        for i in range(len(n)):
+            for j in range(len(n)):
+                _f += math.sqrt(n[i] * n[j])
+        _f = N*N / _f
+        return _f
 
