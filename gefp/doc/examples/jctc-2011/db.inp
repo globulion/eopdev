@@ -1,0 +1,87 @@
+#!/usr/bin/python3
+sys.path.insert(0, './../../../../..')
+import oepdev
+import gefp
+import numpy
+
+memory 10 gb
+
+def run_dds(name, **kwargs):
+
+    kwargs = p4util.kwargs_lower(kwargs)
+    xc_scale = 1.0
+    xc_scale_test = False
+    acbs     = True
+    no_cutoff= 0.0
+    l_dds    = False
+    taylor   = False
+    verbose  = False
+    cc_relax = True
+    if 'xc_scale'      in kwargs.keys(): xc_scale      = kwargs["xc_scale"     ]  
+    if 'xc_scale_test' in kwargs.keys(): xc_scale_test = kwargs["xc_scale_test"]
+    if 'verbose'       in kwargs.keys(): verbose       = kwargs["verbose"      ]
+    if 'cc_relax'      in kwargs.keys(): cc_relax      = kwargs["cc_relax"     ]
+
+    mol = kwargs.pop('molecule', core.get_active_molecule())
+    mol.update_geometry()
+    print(" DDS Calculations for %s" % mol.name())
+
+    solver = gefp.density.partitioning.DensityDecomposition(mol, method=name, acbs=acbs, xc_scale=xc_scale, 
+              cc_relax=cc_relax, xc_scale_test=xc_scale_test,
+              no_cutoff=no_cutoff, l_dds=l_dds, taylor=taylor, verbose=verbose, erase_dpol_offdiag=False)
+    solver.compute(polar_approx=True)
+
+    c = 627.5096080306 # A.U. to kcal/mole
+    e_fqm = solver.vars["e_fqm_t"] * c
+    e_dds = solver.vars["e_dds_t"] * c
+    set_variable("FQM TOTAL ENERGY", e_fqm)
+    set_variable("DDS TOTAL ENERGY", e_dds)
+
+    dds_error = e_dds - e_fqm
+    return dds_error
+
+procedures["energy"]["dds"  ] = run_dds
+
+
+set 
+{
+    # ==> General Psi4 Options <== #
+   #basis                         6-311++G(2d,2p)
+    basis                         6-31G*
+    scf_type                      df
+    guess                         core
+    e_convergence                 1e-11
+    d_convergence                 1e-10
+    print                         1
+    puream                        False
+    freeze_core                   False
+    tpdm                          True
+    onepdm                        False
+    opdm_relax                    True
+    cc_type                       df
+    df_basis_scf                  aug-cc-pvdz-jkfit
+    df_basis_cc                   aug-cc-pvdz-ri
+    df_basis_sapt                 aug-cc-pvdz-ri
+    # 
+    perturb_h                     True
+    perturb_with                  dipole
+    perturb_dipole                [ 0.00, 0.00, -0.00]
+}
+
+method='cc2'
+basis_str = core.get_global_option("BASIS")
+
+subset    = list(range(1,25))                      # 6-31G* and all mp2 - 24
+#subset   = [1,2,4,5,6,7,8,20,10]
+subset_cc = [1,2,3,4,5,6,7,8,9,10,13,15,16,19,20]  # ccpvdz   - 15
+subset_cc = [1,2,3,4,5,6,7,8,  10,13,15,16,19,20]  # 6-311G*  - 14
+subset_cc = [1,2,  4,5,6,7,8,  10,13,15,16,19,20]  # ccpvdz ccsd - 13
+subset_cc = [1,2,  4,5,6,7,8,  10,      16,19,20]  # 6-311G* ccsd - 11
+
+database(method, 'A24_hcn_bb', xc_scale=1.0, xc_scale_test=True, db_func=run_dds, subset=subset, #benchmark='S220',
+          symm=0, cp=0, tabulate=['FQM TOTAL ENERGY','DDS TOTAL ENERGY'])
+print(" Done!")
+
+os.system("./parse.py db.out")
+os.system("mv result.dat result.new.%s.%s.dat" % (method, basis_str))
+os.system("mv db.out db.new.%s.%s.out" % (method, basis_str))

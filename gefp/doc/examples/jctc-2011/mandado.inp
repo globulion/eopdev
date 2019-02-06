@@ -4,7 +4,7 @@ import oepdev
 import gefp
 import numpy
 
-memory 2 gb
+memory 10 gb
 
 def analyze_population_dimer(title, d, s, n, out_name='x.dat'):
     "Analyze density matrices for dimer case"
@@ -63,6 +63,44 @@ symmetry c1
 noreorient
 nocom
 }
+
+# test molecule
+molecule phoh {
+0 1
+C         -5.12472        0.83601       -0.06730
+C         -3.76034        1.09692        0.07261
+C         -3.27676        2.39388       -0.09943
+C         -4.16263        3.42141       -0.40740
+H         -2.21360        2.58514        0.01134
+C         -6.00557        1.87232       -0.37846
+H         -3.07419        0.29055        0.31538
+H         -5.49985       -0.17522        0.06585
+C         -5.52375        3.17062       -0.54821
+O         -3.72482        4.70166       -0.57816
+H         -6.20391        3.98107       -0.79093
+H         -7.06768        1.66943       -0.48929
+H         -2.75153        4.70065       -0.49685
+--
+0 1
+C          0.69747        7.10005       -2.72929
+C          0.25718        7.74731       -1.57383
+C         -0.25606        7.00643       -0.50894
+C         -0.32696        5.62084       -0.61579
+H         -0.60960        7.52304        0.37746
+C          0.62631        5.70921       -2.82249
+H          0.30606        8.83134       -1.50779
+H          1.09144        7.67991       -3.56026
+C          0.10882        4.96633       -1.76196
+O         -0.86218        4.86635        0.38747
+H          0.96793        5.20589       -3.72300
+H         -0.88589        5.41158        1.19443
+H          0.04770        3.88407       -1.83368
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
 
 # test molecule
 molecule h2 {
@@ -189,9 +227,9 @@ nocom
 set 
 {
     # ==> General Psi4 Options <== #
-    basis                         6-311++G(2d,2p)
+    #basis                         6-311++G(2d,2p)
     #basis                         6-311G**
-    #basis                      6-31G*
+    basis                      6-31G*
     scf_type                      df
     guess                         core
     e_convergence                 1e-11
@@ -226,7 +264,7 @@ set
 }
 
 # create density decomposition solver
-solver = gefp.density.partitioning.DensityDecomposition(h2o, method='hf', acbs=True, no_cutoff=0.00000, xc_scale=1.0, l_dds=False, taylor=False, verbose=False, erase_dpol_offdiag=False)
+solver = gefp.density.partitioning.DensityDecomposition(xu, method='mp2', acbs=True, no_cutoff=0.00000, xc_scale=1.0, l_dds=False, taylor=False, verbose=False, erase_dpol_offdiag=False, xc_scale_test=0)
 
 # compute unperturbed monomer wavefunctions
 solver.compute(polar_approx=True)
@@ -235,20 +273,22 @@ solver.compute(polar_approx=True)
 print(solver)
 solver.print_out()
 
-# save polarization density
-d_fqm = solver.deformation_density('fqm')
-d_pau = solver.deformation_density('pau')
-d_pol = solver.deformation_density('pol')
-D0_fqm = numpy.array(solver.matrix["d"])
-D_fqm  = numpy.array(solver.matrix["dqm"])
-s      = numpy.array(solver.matrix["sqm"])
-n = int(s.shape[0]/2)
-
-analyze_population_dimer("UNPERTURBED DENSITY", D0_fqm,s, n, 'd.oqm.dat')
-analyze_population_dimer("EXACT DENSITY      ", D_fqm, s, n, 'd.dqm.dat')
-analyze_population_dimer("DELTA EXACT        ", d_fqm, s, n, 'd.fqm.dat')
-analyze_population_dimer("DELTA PAULI PRNCPL ", d_pau, s, n, 'd.pau.dat')
-analyze_population_dimer("DELTA POLARIZATION ", d_pol, s, n, 'd.pol.dat')
-
-# run SAPT
-#energy('sapt0', molecule=h2o)
+do_density_anal = False
+if do_density_anal:
+   # save polarization density
+   d_fqm = solver.deformation_density('fqm')
+   d_pau = solver.deformation_density('pau')
+   d_pol = solver.deformation_density('pol')
+   D0_fqm = numpy.array(solver.matrix["d"])
+   D_fqm  = numpy.array(solver.matrix["dqm"])
+   s      = numpy.array(solver.matrix["sqm"])
+   n = int(s.shape[0]/2)
+   
+   analyze_population_dimer("UNPERTURBED DENSITY", D0_fqm,s, n, 'd.oqm.dat')
+   analyze_population_dimer("EXACT DENSITY      ", D_fqm, s, n, 'd.dqm.dat')
+   analyze_population_dimer("DELTA EXACT        ", d_fqm, s, n, 'd.fqm.dat')
+   analyze_population_dimer("DELTA PAULI PRNCPL ", d_pau, s, n, 'd.pau.dat')
+   analyze_population_dimer("DELTA POLARIZATION ", d_pol, s, n, 'd.pol.dat')
+   
+   # run SAPT
+   #energy('sapt0', molecule=h2o)
