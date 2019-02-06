@@ -73,7 +73,7 @@ class DensityDecomposition:
                                                                       Last Revision: Gundelfingen, 11 Jan 2019
 """
     def __init__(self, aggregate, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, l_dds=True, 
-                       cc_relax=True, taylor=False, erase_dpol_offdiag=False, verbose=False, **kwargs):
+                       cc_relax=True, taylor=False, erase_dpol_offdiag=False, verbose=False, xc_scale_test=False, **kwargs):
         "Initialize all attributes"
         # molecular aggregate
         self.aggregate   = aggregate    
@@ -146,6 +146,7 @@ class DensityDecomposition:
         self.verbose = verbose
         # scaling factor of exchange-correlation occupation weight
         self.xc_scale = xc_scale
+        self.xc_scale_test= xc_scale_test
 
         self.taylor = taylor
         self.erase_dpol_offdiag = erase_dpol_offdiag
@@ -279,6 +280,14 @@ class DensityDecomposition:
         self.vars["e_fqm_t"] = e_fqm_t
 
         self.energy_full_QM_computed = True
+
+        # XC scaling factor test
+        xc_scale_test = math.sqrt(self._f_test(N))
+        A = 1.00 # 9.01266
+        B = 0.00 #-7.03388
+        xc_scale_test = A * xc_scale_test + B
+        print(" Model XC Scale = %15.6f" % xc_scale_test)
+        if self.xc_scale_test: self.xc_scale = xc_scale_test
         return
 
     def compute_densities(self):
@@ -1048,10 +1057,12 @@ class DensityDecomposition:
         return line
     def _f_test(self, n):
         N = n.sum()
-        _f = 0.0
+        _f1, _f2 = 0.0, 0.0
         for i in range(len(n)):
             for j in range(len(n)):
-                _f += math.sqrt(n[i] * n[j])
-        _f = N / math.sqrt(_f)
-        return _f
+                _f1 += math.sqrt(n[i] * n[j])
+                #_f2 += math.sqrt(n[i] * n[j])
+        _f1 = N*N / _f1
+        #_f2 = N / _f2
+        return _f1
 
