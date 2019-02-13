@@ -1,6 +1,7 @@
 #include "util.h"
 #include "psi4/libpsi4util/PsiOutStream.h"
 #include "psi4/libmints/mintshelper.h"
+//#include "psi4/libdpd/dpd.h"
 
 namespace oepdev{
 
@@ -96,5 +97,66 @@ double average_moment(std::shared_ptr<psi::Vector> moment)
                                                   + (1.0/3.0)*(pow((qa_xx-ta) - (qa_yy-ta), 2.0)));
   } else {throw PSIEXCEPTION("Wrong size of multipole moment vector!");}
 }
+
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix> calculate_Kij(std::shared_ptr<psi::Wavefunction> wfn, std::shared_ptr<psi::Matrix> C){
+
+  // Initialize the K_ij matrix
+  int n = C->ncol();
+  std::shared_ptr<psi::Matrix> Kij = std::make_shared<psi::Matrix>("Exchange Integrals in MO basis", n, n);
+  double** pKij = Kij->pointer();
+
+  // Compute ERI's
+  std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(wfn->basisset());
+  mints->integrals();
+
+  // Transform ERI's
+  std::shared_ptr<psi::MOSpace> space = psi::MOSpace::all;
+  std::vector<std::shared_ptr<psi::MOSpace>> spaces; spaces.push_back(space);
+
+  std::shared_ptr<psi::IntegralTransform> tr = std::make_shared<psi::IntegralTransform>(wfn, spaces,
+                  psi::IntegralTransform::TransformationType::Restricted,
+                  psi::IntegralTransform::OutputType::DPDOnly,
+                  psi::IntegralTransform::MOOrdering::QTOrder,
+                  psi::IntegralTransform::FrozenOrbitals::None);
+
+  tr->set_orbitals(C);
+  tr->transform_tei(space, space, space, space);
+
+  // Read integrals and save
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+
+  dpd_set_default(tr->get_dpd_id());
+  dpdbuf4 buf;
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
+                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+
+  for (int h = 0; h < wfn->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+       for (int pq = 0; pq < buf.params->rowtot[h]; ++pq) {
+            int p = buf.params->roworb[h][pq][0];
+            int q = buf.params->roworb[h][pq][1];
+            for (int rs = 0; rs < buf.params->coltot[h]; ++rs) {
+      	   int r = buf.params->colorb[h][rs][0];
+      	   int s = buf.params->colorb[h][rs][1];
+      	   if ((p==r) && (q==s)) {
+      	       pKij[p][q] = buf.matrix[h][pq][rs];
+      	     }
+            }
+       }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  //Kij->print();
+  return Kij;
+}
+
 
 } // EndNameSpace oepdev

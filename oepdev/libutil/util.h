@@ -137,6 +137,17 @@ solve_scf(std::shared_ptr<Molecule> molecule,
 extern "C" PSI_API
 double average_moment(std::shared_ptr<psi::Vector> moment);
 
+/** \brief Compute the exchange integral matrix in MO basis.
+ *
+ *  @param wfn    - Wavefunction object
+ *  @param C      - molecular orbital coefficients (AO x MO)
+ *  @return       - K_ij matrix
+ *
+ */
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix> calculate_Kij(std::shared_ptr<psi::Wavefunction> wfn, std::shared_ptr<psi::Matrix> C);
+
+
 /** @}*/
 
 } // EndNameSpace oepdev_libutil

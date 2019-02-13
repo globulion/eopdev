@@ -69,6 +69,7 @@ namespace psi{
 void export_dmtp(py::module&);
 void export_cphf(py::module&);
 void export_solver(py::module&);
+void export_util(py::module&);
 
 /** \brief Main routine of the OEPDev plugin.
  *
@@ -246,6 +247,8 @@ PYBIND11_MODULE(oepdev, m) {
   export_cphf(m);
   // Export OEPDevSolver and WavefunctionUnion
   export_solver(m);
+  // Export Utilities
+  export_util(m);
 }
 
 } // EndNameSpace psi
