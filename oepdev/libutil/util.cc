@@ -114,26 +114,26 @@ std::shared_ptr<psi::Matrix> calculate_Kij(std::shared_ptr<psi::Wavefunction> wf
   std::shared_ptr<psi::MOSpace> space = psi::MOSpace::all;
   std::vector<std::shared_ptr<psi::MOSpace>> spaces; spaces.push_back(space);
 
-  std::shared_ptr<psi::IntegralTransform> tr = std::make_shared<psi::IntegralTransform>(wfn, spaces,
+  psi::IntegralTransform tr(wfn, spaces,
                   psi::IntegralTransform::TransformationType::Restricted,
                   psi::IntegralTransform::OutputType::DPDOnly,
                   psi::IntegralTransform::MOOrdering::QTOrder,
                   psi::IntegralTransform::FrozenOrbitals::None);
 
-  tr->set_orbitals(C);
-  tr->transform_tei(space, space, space, space);
+  tr.set_orbitals(C);
+  tr.transform_tei(space, space, space, space);
 
   // Read integrals and save
   std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
 
-  dpd_set_default(tr->get_dpd_id());
+  dpd_set_default(tr.get_dpd_id());
   dpdbuf4 buf;
   psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
   psio->tocprint(PSIF_LIBTRANS_DPD);
 
   global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
-                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
-                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+                         tr.DPD_ID("[A,A]"  ), tr.DPD_ID("[A,A]"  ),
+                         tr.DPD_ID("[A>=A]+"), tr.DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
 
   for (int h = 0; h < wfn->nirrep(); ++h) {
        global_dpd_->buf4_mat_irrep_init(&buf, h);
