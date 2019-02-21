@@ -8,7 +8,8 @@
 __all__ = ["Superimposer"     ,
            "rotation_matrix"  ,
            "rotate_ao_matrix" , 
-           "make_r2"]
+           "make_r2"          ,
+           "move_atom_along_bond"]
 
 import sys
 import math
@@ -307,3 +308,18 @@ def rotate_ao_matrix(M, rot_3d, bfs, return_rot=False, aomo=False):
     # return
     if return_rot: return M_rot, R
     else: return M_rot
+
+
+def move_atom_along_bond(mol, a1, a2, t, units='bohr'):
+    "Translate atom a1 in the molecule along the bond a1-a2 by amount t"
+    if units.lower().startswith('ang'): t*= 1.889725989 # Angstrom to Bohr
+    xyz = mol.geometry().to_array(dense=True)
+    v1  = xyz[a1-1]
+    v2  = xyz[a2-1]
+    u   = v1 - v2
+    u  /= numpy.linalg.norm(u)
+    xyz[a1-1] += u*t
+    geom = psi4.core.Matrix.from_array(xyz)
+    mol.set_geometry(geom)
+    return
+

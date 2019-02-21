@@ -74,7 +74,7 @@ class DFT:
       # Natural Orbitals from current OPDM
       D = self._wfn.Da().to_array(dense=True)
       S = self._wfn.S ().to_array(dense=True)
-      self.n, self.c = self.natural_orbitals(D, orthogonalize_first=S, order='descending', no_cutoff=0.0, renormalize=True)
+      self.n, self.c = self.natural_orbitals(D, orthogonalize_first=S, order='descending', no_cutoff=0.0, renormalize=False)
       #print(self.n, self.n.sum())
       return
 
@@ -442,19 +442,25 @@ class DFT:
              #exit()
              return a0
          def f2(x, c):
-             return math.exp(-c*x*x)
+             return math.exp(-c*x)
          def calc_a0(x, y, a, b, c):
              a0 = f2(x, c) * f1(y, a, b)
              return a0
 
          N = n.sum()
 
-         u = 0.64
+         u = 0.74
          x = I_d / N**u
-         y = I_n * 2.0 / N
+         y = I_n * 2.0 / N**(-0.24)
+         # with exp(-Cx^2)
          A = 0.04437981 # 0.04450706 # 0.0573076
          B = 0.92331502 # 0.92454078 # 1.05693425
          C = 3.94820784 # 4.00406427 # 4.54670322 
+
+         # with exp(-Cx)
+         A = 0.058713  # 0.05871278
+         B = 1.5727958 # 1.24226418
+         C = 0.88809613 # 0.87847818
          a = calc_a0(x, y, A, B, C)
 
          print(" A0(BBI) = %13.6f" % a)
@@ -534,10 +540,11 @@ class DFT:
 
   def _generalized_density_matrix(self, n, c):
       "Compute occupation-weighted 1-electron density matrix in AO basis"
-      ns = n.copy(); N = c.shape[0]
+      ns = n.real.copy(); N = c.shape[0]
+      cs = c.real.copy()
       D  = numpy.zeros((N, N), numpy.float64)
       for i in range(n.size):
-          D += ns[i] * numpy.outer(c[:,i], c[:,i]) 
+          D += ns[i] * numpy.outer(cs[:,i], cs[:,i]) 
       return D
 
   def run(self, maxit=30, conv=1.0e-7, guess=None, damp=0.01, ndamp=10, verbose=True, V_ext=None):
@@ -636,6 +643,10 @@ class DFT:
       else:
          D_ = D
       n, U = numpy.linalg.eigh(D_)
+      if n.max() > 1.0 or n.min() < 0.0:
+         print(" Warning! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
+      if ((n.max() - 1.0) > 0.00001 or (n.min() < -0.00001)):
+         raise ValueError("Unphysical NO populations detected! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
       n[numpy.where(n<0.0)] = 0.0
       if original_ao_mo:
          assert orthogonalize_first is not None
@@ -656,6 +667,10 @@ class DFT:
          d/= numpy.float64(n.size)
          n+= d
          n[numpy.where(n<0.0)] = 0.0
+         n[numpy.where(n>1.0)] = 1.0
+         if ( abs(n.sum() - numpy.round(n.sum())) > 1.e-7):
+            print(n.sum(), numpy.round(n.sum()))
+            print(" Warning: nsum=%14.4E delta=%14.4E" % (n.sum(), n.sum() - numpy.round(n.sum())))
       return n, U
 
   def _orthogonalize_OPDM(self, D, S):
