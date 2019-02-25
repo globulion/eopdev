@@ -718,6 +718,10 @@ class DensityDecomposition:
         else:
            D_ = D
         n, U = numpy.linalg.eigh(D_)
+        if n.max() > 1.0 or n.min() < 0.0:
+           print(" Warning! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
+        if ((n.max() - 1.0) > 0.00001 or (n.min() < -0.00001)):
+           raise ValueError("Unphysical NO populations detected! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
         n[numpy.where(n<0.0)] = 0.0
         if original_ao_mo:
            assert orthogonalize_first is not None
@@ -734,10 +738,13 @@ class DensityDecomposition:
            U = U[:,::-1]
         else: raise ValueError("Incorrect order of NO orbitals. Possible only ascending or descending.")
         if renormalize is True:
+          if ( abs(n.sum() - numpy.round(n.sum())) > 1.e-7):
+             print(" Warning: nsum=%14.4E delta=%14.4E" % (n.sum(), n.sum() - numpy.round(n.sum())))
            d = numpy.round(n.sum()) - n.sum()
            d/= numpy.float64(n.size)
            n+= d
            n[numpy.where(n<0.0)] = 0.0
+           n[numpy.where(n>1.0)] = 1.0
         return n, U
 
     def compute_1el_energy(self, D, Hcore):

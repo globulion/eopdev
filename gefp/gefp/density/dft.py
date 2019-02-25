@@ -694,14 +694,13 @@ class DFT:
          U = U[:,::-1]
       else: raise ValueError("Incorrect order of NO orbitals. Possible only ascending or descending.")
       if renormalize is True:
+        if ( abs(n.sum() - numpy.round(n.sum())) > 1.e-7):
+           print(" Warning: nsum=%14.4E delta=%14.4E" % (n.sum(), n.sum() - numpy.round(n.sum())))
          d = numpy.round(n.sum()) - n.sum()
          d/= numpy.float64(n.size)
          n+= d
          n[numpy.where(n<0.0)] = 0.0
          n[numpy.where(n>1.0)] = 1.0
-         if ( abs(n.sum() - numpy.round(n.sum())) > 1.e-7):
-            print(n.sum(), numpy.round(n.sum()))
-            print(" Warning: nsum=%14.4E delta=%14.4E" % (n.sum(), n.sum() - numpy.round(n.sum())))
       return n, U
 
   def _orthogonalize_OPDM(self, D, S):
