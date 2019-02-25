@@ -73,7 +73,7 @@ class DensityDecomposition:
                                                                       Last Revision: Gundelfingen, 11 Jan 2019
 """
     def __init__(self, aggregate, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, l_dds=True, 
-                       cc_relax=True, taylor=False, erase_dpol_offdiag=False, verbose=False, xc_scale_test=False, **kwargs):
+                       cc_relax=True, verbose=False, **kwargs):
         "Initialize all attributes"
         # molecular aggregate
         self.aggregate   = aggregate    
@@ -146,10 +146,6 @@ class DensityDecomposition:
         self.verbose = verbose
         # scaling factor of exchange-correlation occupation weight
         self.xc_scale = xc_scale
-        self.xc_scale_test= xc_scale_test
-
-        self.taylor = taylor
-        self.erase_dpol_offdiag = erase_dpol_offdiag
 
         # what is already computed
         self.monomers_computed            = False   # unperturbed monomenr wavefunctions at arbitrary level of theory 
@@ -280,14 +276,6 @@ class DensityDecomposition:
         self.vars["e_fqm_t"] = e_fqm_t
 
         self.energy_full_QM_computed = True
-
-        # XC scaling factor test
-        xc_scale_test = math.sqrt(self._f_test(N))
-        A = 1.00 # 9.01266
-        B = 0.00 #-7.03388
-        xc_scale_test = A * xc_scale_test + B
-        print(" Model XC Scale = %15.6f" % xc_scale_test)
-        if self.xc_scale_test: self.xc_scale = xc_scale_test
         return
 
     def compute_densities(self):
@@ -329,79 +317,10 @@ class DensityDecomposition:
         WSW = self.triplet(numpy.diag(W_mo_t), S_mo_t, numpy.diag(W_mo_t))      # mo::mo
         WSWm12 = self.matrix_power(WSW, -0.5)                                   # mo::mo
 
-        if 0:
-            # test of WSW-1/2 Taylor expansion
-            delta = S_mo_t.copy()
-            for i in range(delta.shape[0]): delta[i,i] = 0.0
-            delta2 = self.doublet(delta, delta)
-            delta3 = self.doublet(delta, delta2)
-            Wm12 = self.matrix_power(numpy.diag(W_mo_t), -0.5)
-            Wm1  = self.matrix_power(numpy.diag(W_mo_t), -1.0)
-           #print(Wm1.diagonal())
-           #print(W_mo_t)
-            WSWm12_a0= Wm1.copy()
-            WSWm12_a1= Wm1.copy()
-            WSWm12_a1-= self.triplet(Wm12, delta , Wm12) * 1.0/2.0
-            WSWm12_a2 = WSWm12_a1.copy()
-            #WSWm12_a2+=(self.doublet(Wm1, delta) + self.doublet(delta, Wm1)) * 1.0/4.0
-            WSWm12_a2+= self.triplet(Wm12, delta2, Wm12) * 3.0/8.0
-            WSWm12_a3 = WSWm12_a2.copy()
-            WSWm12_a3-= self.triplet(Wm12, delta3, Wm12) * 5.0/16.0
-    
-            def rms(m1, m2): return math.sqrt(((m1-m2) * (m1-m2)).sum())
-    
-           #print()
-           #print(WSWm12.diagonal())
-           #print(WSWm12_a0.diagonal())
-           #print(WSWm12_a1.diagonal())
-           #print(WSWm12_a2.diagonal())
-           #print(WSWm12_a3.diagonal())
-    
-            #print(WSWm12   [0,1])
-            #print(WSWm12_a1[0,1])
-            #print(WSWm12_a2[0,1])
-    
-            print(rms(WSWm12, WSWm12_a0))
-            print(rms(WSWm12, WSWm12_a1))
-            print(rms(WSWm12, WSWm12_a2))
-            print(rms(WSWm12, WSWm12_a3))
-            if self.taylor is not False:
-                if   self.taylor == 0: WSWm12 = WSWm12_a0
-                elif self.taylor == 1: WSWm12 = WSWm12_a1
-                elif self.taylor == 2: WSWm12 = WSWm12_a2
-                elif self.taylor == 3: WSWm12 = WSWm12_a3
-                else: raise NotImplementedError
-
         K = self.triplet(WSWm12, numpy.diag(n_mo_t), WSWm12)                    # mo::mo
         CW  = self.doublet(C_ao_mo_t, numpy.diag(W_mo_t))                       # ao::mo
         Doo_ao_t = self.triplet(CW, K, CW.T)                                    # ao::ao
         D_ao_t = self.triplet(C_ao_mo_t, numpy.diag(n_mo_t), C_ao_mo_t.T)       # ao::ao
-
-
-        if self.taylor is not False:
-           delta = S_mo_t.copy()
-           for i in range(delta.shape[0]): delta[i,i] = 0.0
-           delta2 = self.doublet(delta, delta)
-           delta3 = self.doublet(delta, delta2)
-
-           K0 = numpy.diag(n_mo_t)
-           K1 = K0 - self.triplet(numpy.diag(W_mo_t), delta , numpy.diag(W_mo_t))
-           K2 = K1 + self.triplet(numpy.diag(W_mo_t), delta2, numpy.diag(W_mo_t))
-           K3 = K2 - self.triplet(numpy.diag(W_mo_t), delta3, numpy.diag(W_mo_t))
-
-           Kr = self.triplet(numpy.diag(W_mo_t), K, numpy.diag(W_mo_t))
-           def rms(m1, m2): return math.sqrt(((m1-m2) * (m1-m2)).sum())
-
-           print(" RMS Taylor = 0: %14.6f" % rms(K0, Kr))
-           print(" RMS Taylor = 1: %14.6f" % rms(K1, Kr))
-           print(" RMS Taylor = 2: %14.6f" % rms(K2, Kr))
-           print(" RMS Taylor = 3: %14.6f" % rms(K3, Kr))
-
-           if   self.taylor == 0: Doo_ao_t = self.triplet(C_ao_mo_t, K0, C_ao_mo_t.T)
-           elif self.taylor == 1: Doo_ao_t = self.triplet(C_ao_mo_t, K1, C_ao_mo_t.T)
-           elif self.taylor == 2: Doo_ao_t = self.triplet(C_ao_mo_t, K2, C_ao_mo_t.T)
-           elif self.taylor == 3: Doo_ao_t = self.triplet(C_ao_mo_t, K3, C_ao_mo_t.T)
-           else: raise NotImplementedError
 
         # NO analysis of Antisymmetrized wavefunction
         noo, coo = self.natural_orbitals(Doo_ao_t.copy(), orthogonalize_first=self.matrix["sqm"], order='descending', no_cutoff=0.0)
@@ -417,111 +336,6 @@ class DensityDecomposition:
 
         # set up state of the object
         self.densities_computed = True
-
-
-        # test exchange-polarization commutability hypothesis
-        if 0:
-           def rms(m1, m2): return math.sqrt(((m1-m2) * (m1-m2)).sum())                                                                             
-           doo, do = self._deformation_density_pauli()
-           d       = self.matrix['dqm']
-           delta_dpol = self.deformation_density('pol')
-                                                                                                                                                    
-           do_pol = do + delta_dpol
-           n, c = self.natural_orbitals(do_pol.copy(), orthogonalize_first=self.matrix["sqm"], order='descending', no_cutoff=0.0, renormalize=True)
-           w = numpy.sqrt(n)
-           print(n)
-           print("Sum of natural orbital occupations for ntest= %13.6f" % n.sum())
-                                                                                                                                                    
-           s = self.triplet(c.T, self.matrix["sqm"], c)
-           wsw = self.triplet(numpy.diag(w), s, numpy.diag(w))
-           wswm12 = self.matrix_power(wsw, -0.5)
-           k = self.triplet(wswm12, numpy.diag(n), wswm12)
-           cw= self.doublet(c, numpy.diag(w))
-           d_test = self.triplet(cw, k, cw.T)
-                                                                                                                                                    
-           n_el_test = 2.0 * self.doublet(d_test, self.matrix["sqm"]).trace()
-           n_el_o    = 2.0 * self.doublet(do    , self.matrix["sqm"]).trace()
-           n_el_qm   = 2.0 * self.doublet(d     , self.matrix["sqm"]).trace()
-           print(" N-el FQM = %13.6f" % n_el_qm)
-           print(" N-el D0  = %13.6f" % n_el_o )
-           print(" N-el test= %13.6f" % n_el_test )
-                                                                                                                                                    
-           print(" RMS dqm-do= %13.6f" % rms(d, do))
-           print(" RMS dqm-dt= %13.6f" % rms(d, d_test))
-           print(" RMS dqm-doo=%13.6f" % rms(d, self.matrix["doo"]))
-                                                                                                                                                    
-           # compute polarized 0-th order density for 1st monomer
-           print(" Computing SCF of first monomer in presence of second one")
-           s1 = SCF(self.data["wfn"][0])
-                                                                                                                                                    
-           # --- V nuc
-           V1_nuc = self._V_n(1)
-           # --- J
-           n_1 = self._block_fragment_mo_matrix(numpy.diag(self.matrix["n"]), keep_frags=[1], off_diagonal=False)
-           c_1 = self.matrix["c"]
-           D_1 = self.triplet(c_1, n_1, c_1.T)
-                                                                                                                                                    
-           self.global_jk.C_clear()                                           
-           self.global_jk.C_left_add(psi4.core.Matrix.from_array(D_1, ""))
-           I = numpy.identity(D_1.shape[0], numpy.float64)
-           self.global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
-           self.global_jk.compute()
-           J = self.global_jk.J()[0].to_array(dense=True)
-           K = self.global_jk.K()[0].to_array(dense=True)
-                                                                                                                                                    
-           V1 = self._V_n(1) + 2.0 * J 
-                                                                                                                                                    
-           s1.run(V_ext=V1, guess=self.data["wfn"][0].Fa(), verbose=True, maxit=100)
-           print(self.data["ene"][0], s1.E)
-                                                                                                                                                    
-           print(" Computing SCF of second monomer in presence of first one")
-           s2 = SCF(self.data["wfn"][1])
-                                                                                                                                                    
-           # --- V nuc
-           V2_nuc = self._V_n(0)
-           # --- J
-           n_2 = self._block_fragment_mo_matrix(numpy.diag(self.matrix["n"]), keep_frags=[0], off_diagonal=False)
-           c_2 = self.matrix["c"]
-           D_2 = self.triplet(c_2, n_2, c_2.T)
-                                                                                                                                                    
-           self.global_jk.C_clear()                                           
-           self.global_jk.C_left_add(psi4.core.Matrix.from_array(D_2, ""))
-           I = numpy.identity(D_2.shape[0], numpy.float64)
-           self.global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
-           self.global_jk.compute()
-           J = self.global_jk.J()[0].to_array(dense=True)
-           K = self.global_jk.K()[0].to_array(dense=True)
-                                                                                                                                                    
-           V2 = self._V_n(0) + 2.0 * J 
-                                                                                                                                                    
-           s2.run(V_ext=V2, guess=self.data["wfn"][1].Fa(), verbose=True, maxit=100)
-           print(self.data["ene"][1], s2.E)
-                                                                                                                                                    
-           n1, c1 = self.natural_orbitals(s1.D.copy(), orthogonalize_first=self.matrix["sqm"], order='descending', no_cutoff=0.0)
-           n2, c2 = self.natural_orbitals(s2.D.copy(), orthogonalize_first=self.matrix["sqm"], order='descending', no_cutoff=0.0)
-                                                                                                                                                    
-           # density matrix
-           dp = numpy.zeros(self.matrix["sqm"].shape, numpy.float64)
-           for i in range(n1.size): dp += n1[i] * numpy.outer(c1[:,i], c1[:,i])
-           for i in range(n2.size): dp += n2[i] * numpy.outer(c2[:,i], c2[:,i])
-                                                                                                                                                    
-           n_el_dp = 2.0 * self.doublet(self.matrix["sqm"], dp).trace()
-           print(" N-el dp  = %13.6f" % n_el_dp )
-           print(" RMS dqm-dp= %13.6f" % rms(d, dp))
-                                                                                                                                                    
-           #n, c = self.natural_orbitals(dp.copy(), orthogonalize_first=self.matrix["sqm"], order='descending', no_cutoff=0.0)
-           n = numpy.hstack((n1, n2))
-           c = numpy.hstack((c1, c2))
-           w = numpy.sqrt(n)
-                                                                                                                                                    
-           # compute test dp matrix
-           s = self.triplet(c.T, self.matrix["sqm"], c)
-           wsw = self.triplet(numpy.diag(w), s, numpy.diag(w))
-           wswm12 = self.matrix_power(wsw, -0.5)
-           k = self.triplet(wswm12, numpy.diag(n), wswm12)
-           cw= self.doublet(c, numpy.diag(w))
-           dp_test = self.triplet(cw, k, cw.T)
-           print(" RMS dqm-dt= %13.6f" % rms(d, dp_test))
         return 
 
     def compute_coulomb(self):
@@ -611,10 +425,8 @@ class DensityDecomposition:
 
         for i in range(self.aggregate.nfragments()):
             w_i = numpy.sqrt(self.matrix["n"])
-            #print(" Test: Molecule %d: %16.3f" % (i+1, self._f_test(w_i)))
             c_i = self.matrix["c"]
             scale = math.sqrt(self.xc_scale)
-            #scale = math.sqrt(2.0*self._f_test(w_i))
             w_i*= scale
             w_i = self._block_fragment_mo_matrix(numpy.diag(w_i), keep_frags=[i], off_diagonal=False)
             D_i = self.triplet(c_i, w_i, c_i.T)
@@ -655,19 +467,6 @@ class DensityDecomposition:
         Doo, D = self._deformation_density_pauli()
         dD_pau = self.deformation_density("pau")
         dD_pol = self.deformation_density("pol")
-
-        if self.erase_dpol_offdiag is True: 
-           for i in range(self.aggregate.nfragments()):
-               ofb_i = self.data["ofb"][i]
-               nbf_i = self.data["nbf"][i]
-               for j in range(self.aggregate.nfragments()):
-                   if i!=j:
-                      ofb_j = self.data["ofb"][j]
-                      nbf_j = self.data["nbf"][j]
-                      dD_pol[ofb_i:ofb_i+nbf_i, ofb_j:ofb_j+nbf_j].fill(0.0)
-           #n = int(dD_pol.shape[0]/2)                            
-           #dD_pol[:n,n:].fill(0.0)
-           #dD_pol[n:,:n].fill(0.0)
 
         # core Hamiltonian
         mints = psi4.core.MintsHelper(self.bfs)
@@ -719,7 +518,7 @@ class DensityDecomposition:
            D_ = D
         n, U = numpy.linalg.eigh(D_)
         if n.max() > 1.0 or n.min() < 0.0:
-           print(" Warning! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
+           if self.verbose is True: print(" Warning! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
         if ((n.max() - 1.0) > 0.00001 or (n.min() < -0.00001)):
            raise ValueError("Unphysical NO populations detected! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
         n[numpy.where(n<0.0)] = 0.0
@@ -738,8 +537,8 @@ class DensityDecomposition:
            U = U[:,::-1]
         else: raise ValueError("Incorrect order of NO orbitals. Possible only ascending or descending.")
         if renormalize is True:
-          if ( abs(n.sum() - numpy.round(n.sum())) > 1.e-7):
-             print(" Warning: nsum=%14.4E delta=%14.4E" % (n.sum(), n.sum() - numpy.round(n.sum())))
+           if ( abs(n.sum() - numpy.round(n.sum())) > 1.e-7):
+              if self.verbose is True: print(" Warning: nsum=%14.4E delta=%14.4E" % (n.sum(), n.sum() - numpy.round(n.sum())))
            d = numpy.round(n.sum()) - n.sum()
            d/= numpy.float64(n.size)
            n+= d
@@ -994,12 +793,7 @@ class DensityDecomposition:
         "Compute occupation-weighted 1-electron density matrix in AO basis"
         ns = numpy.sqrt(n.real); N = c.shape[0]
         D  = numpy.zeros((N, N), numpy.float64)
-        #scale = self.xc_scale ** (1.0 - ns)
-        #print(" Test: %16.3f" % (self._f_test(n)))
         scale = math.sqrt(self.xc_scale)
-        #print("Scale", scale)
-        #scale = math.sqrt(self._f_test(n))
-        #print("Next Scale", scale)
         ns *= scale
         for i in range(n.size):
             D += ns[i] * numpy.outer(c.real[:,i], c.real[:,i]) 
@@ -1062,14 +856,3 @@ class DensityDecomposition:
         v2 = value * c2
         line = "%18.8f   %18.8f   %18.8f" % (value, v1, v2)
         return line
-    def _f_test(self, n):
-        N = n.sum()
-        _f1, _f2 = 0.0, 0.0
-        for i in range(len(n)):
-            for j in range(len(n)):
-                _f1 += math.sqrt(n[i] * n[j])
-                #_f2 += math.sqrt(n[i] * n[j])
-        _f1 = N*N / _f1
-        #_f2 = N / _f2
-        return _f1
-
