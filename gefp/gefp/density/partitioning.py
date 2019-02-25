@@ -985,7 +985,7 @@ class DensityDecomposition:
 
     def _generalized_density_matrix(self, n, c):
         "Compute occupation-weighted 1-electron density matrix in AO basis"
-        ns = numpy.sqrt(n); N = c.shape[0]
+        ns = numpy.sqrt(n.real); N = c.shape[0]
         D  = numpy.zeros((N, N), numpy.float64)
         #scale = self.xc_scale ** (1.0 - ns)
         #print(" Test: %16.3f" % (self._f_test(n)))
@@ -995,7 +995,7 @@ class DensityDecomposition:
         #print("Next Scale", scale)
         ns *= scale
         for i in range(n.size):
-            D += ns[i] * numpy.outer(c[:,i], c[:,i]) 
+            D += ns[i] * numpy.outer(c.real[:,i], c.real[:,i]) 
         return D
 
     def _compute_overlap_ao(self, wfn_i, wfn_j):
