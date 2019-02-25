@@ -117,7 +117,7 @@ class DFT:
       return E
   def _compute_XC_energy(self, n, c, dmft, **kwargs):
       E = None
-      MO_list = ('bb1', 'bb2', 'bb3', 'pow', 'gu', 'cga', 'chf', 'mbb_pc',
+      MO_list = ('bb1', 'bb2', 'bb3', 'pow', 'gu', 'cga', 'chf', 'mbb_pc', 'bbc1', 'bbc2', 'mbb0',
               'bbh', 'bbh2', 'bbt', 'bbg', 'bbb', 'bbx', 'bbq2', 'bby', 'bbp', 'bbz', 'bbi')
 
       # Summation in AO space using JK object
@@ -134,11 +134,14 @@ class DFT:
 
   def fij(self, n, dmft, **kwargs):
       if   dmft.lower() == 'mbb': f = self._fij_mbb(n)
-      elif dmft.lower() == 'mbb_pc': f = self._fij_mbb_PC(n)
+      elif dmft.lower() == 'mbb_pc': f = self._fij_mbb_PC(n)  # same as bbc1
+      elif dmft.lower() == 'mbb0': f = self._fij_mbb_0(n)
       elif dmft.lower() == 'hf' : f = self._fij_hf (n)
       elif dmft.lower() == 'chf': f = self._fij_chf(n)
       elif dmft.lower() == 'cga': f = self._fij_cga(n)
       elif dmft.lower() == 'gu' : f = self._fij_gu (n)
+      elif dmft.lower() == 'bbc1':f = self._fij_bbc1(n)
+      elif dmft.lower() == 'bbc2':f = self._fij_bbc2(n)
       elif dmft.lower() == 'bb1': f = self._fij_bb1(n)
       elif dmft.lower() == 'bb2': f = self._fij_bb2(n, kwargs["gamma"])
       elif dmft.lower() == 'bb3': f = self._fij_bb3(n)
@@ -193,7 +196,27 @@ class DFT:
       ns = numpy.sqrt(n)
       return numpy.outer(ns, ns)
   def _fij_mbb_PC(self, n):
+      "Equivalent to BBC1"
       f = self._fij_mbb(n) * self._pc(n)
+      return f
+  def _fij_mbb_0(self, n):
+      "MBB without exchange at all"
+      f = numpy.diag(n)
+      return f
+  def _fij_bbc1(self, n):
+      f = self._fij_mbb_PC(n)
+      return f
+  def _fij_bbc2(self, n):
+      f = self._fij_mbb_PC(n)
+      f_hf = self._fij_hf(n)
+      m = n.copy(); m.fill(0.0)
+      m[numpy.where(n>=0.5)] =  1.0  # strong
+      m[numpy.where(n< 0.5)] = -1.0  # weak
+      for i in range(len(n)):
+          for j in range(len(n)):
+              if i!=j:
+                 if m[i] > 0 and m[j] > 0:
+                    f[i,j] = f_hf[i,j]
       return f
   def _fij_power(self, n, p):
       nn = numpy.outer(n, n)
@@ -412,6 +435,7 @@ class DFT:
          c_02 =  2.00444
          I_n = (n*(1.0 - n)).sum()
          I_d = numpy.sqrt(n*(1.0 - n)).sum() / 2.0 - I_n
+         S   = numpy.sqrt(n).sum()
          if pc:
             c_10 = -0.207746
             c_01 = -0.254876
@@ -435,7 +459,7 @@ class DFT:
              H = 1./(1 + math.exp(-b/a))
              G = 1./(1 + math.exp((1.0-b)/a))
              arg = abs(1./(x*(H-G) + G) - 1.0)
-             if arg < 1.e-6: arg = 0.000001
+             if arg < 1.e-40: arg = 0.00000000000001
              a0 = b + a * math.log(arg)
              #print(abs(1./(x*(H-G) + G) - 1.0))
              #print(" AO = %14.5f" % a0)
@@ -450,8 +474,9 @@ class DFT:
          N = n.sum()
 
          u = 0.74
-         x = I_d / N**u
-         y = I_n * 2.0 / N**(-0.24)
+         D =-0.04508491
+         x = I_d / S**(1.0)
+         y = I_n * 2.0 / N
          # with exp(-Cx^2)
          A = 0.04437981 # 0.04450706 # 0.0573076
          B = 0.92331502 # 0.92454078 # 1.05693425
@@ -461,6 +486,12 @@ class DFT:
          A = 0.058713  # 0.05871278
          B = 1.5727958 # 1.24226418
          C = 0.88809613 # 0.87847818
+
+         # new fitting (FCI/aug-cc-pvTZ)
+         A = 0.03614488 #  0.0389451  #  
+         B = 0.90184505 #  0.91592284 #  
+         C = 0.70143966 #  0.63247296 #  
+         D =-0.04508491
          a = calc_a0(x, y, A, B, C)
 
          print(" A0(BBI) = %13.6f" % a)
