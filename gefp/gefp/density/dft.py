@@ -118,7 +118,7 @@ class DFT:
   def _compute_XC_energy(self, n, c, dmft, **kwargs):
       E = None
       MO_list = ('bb1', 'bb2', 'bb3', 'pow', 'gu', 'cga', 'chf', 'mbb_pc', 'bbc1', 'bbc2', 'mbb0',
-              'bbh', 'bbh2', 'bbt', 'bbg', 'bbb', 'bbx', 'bbq2', 'bby', 'bbp', 'bbz', 'bbi')
+              'bbh', 'bbh2', 'bbt', 'bbg', 'bbb', 'bbx', 'bbq2', 'bby', 'bbp', 'bbz', 'bbi', 'bb_opt', 'bb_opt_2', 'bb_opt_2_p')
 
       # Summation in AO space using JK object
       if dmft.lower() not in MO_list:
@@ -150,6 +150,10 @@ class DFT:
       elif dmft.lower() == 'bby': f = self._fij_bby(n, kwargs["coeffs"], kwargs["kmax"])
       elif dmft.lower() == 'bbz': f = self._fij_bbz(n, kwargs["coeffs"], kwargs["kmax"], kwargs["pc"])
       elif dmft.lower() == 'bbi': f = self._fij_bbZ(n, kwargs["kmax"], kwargs["pc"], kwargs["ao"])
+      elif dmft.lower() == 'bb_opt': f = self._fij_bbopt(n, kwargs["kmax"], kwargs["coeffs"])
+      elif dmft.lower() == 'bb_opt_2': f = self._fij_bbopt_2(n, kwargs["kmax"], kwargs["coeffs"])
+     #elif dmft.lower() == 'bb_opt_2_p': f = self._fij_bbopt_2(n, kwargs["kmax"], coeffs=[-0.14881973,5.16901966,-23.44068276,-0.66111539,1.32165395])
+      elif dmft.lower() == 'bb_opt_2_p': f = self._fij_bbopt_2(n, kwargs["kmax"], coeffs=[ 1.14633566,7.31708483,-23.28681062,-0.80297864,1.27633697])
       elif dmft.lower() == 'bbq2': f = self._fij_bbq2(n)
       elif dmft.lower() == 'bbh': f = self._fij_bbh(n)
       elif dmft.lower() == 'bbh2':f = self._fij_bbh2(n)
@@ -425,6 +429,64 @@ class DFT:
       print( " Sum of a: %13.4f" % a_sum)
       if pc: f *= self._pc(n)
       return f
+  def _fij_bbopt(self, n, kmax, coeffs):
+      "well-optimized dmft functional"
+      def calc_a0_well_2(I_D, I_N, S, A, B, C, D, E, F, G, H):
+          x = math.log(I_D/S + 1.0)
+          y =-math.log(2.0 * I_N/S)
+          a_0 = A + B*y + C*y*y + D*x*y + E*x*y*y + F*x + G*x*x + H*x*x*y
+          a_0 = math.exp(a_0)
+          return a_0
+
+      I_n = (n*(1.0 - n)).sum()
+      I_d = numpy.sqrt(n*(1.0 - n)).sum() / 2.0 - I_n
+      S   = numpy.sqrt(n).sum()
+      N   = n.sum()
+
+      A, B, C, D, E, F, G, H = coeffs
+      a = calc_a0_well_2(I_d, I_n, S, A, B, C, D, E, F, G, H)
+      #print(" A0(BBI) = %13.6f" % a)
+
+      a_sum = a
+      f = a * self._fij_mbb(n)
+      if a<1:
+         for k in range(1,kmax+1):                   
+             a_k = a * math.exp(k*math.log(1.0 - a))
+             f += a_k * self._fij_bbbk(n, k)
+             a_sum += a_k
+      #else: f = self._fij_mbb(n)
+      #print( " Sum of a: %13.4f" % a_sum)
+      return f
+  def _fij_bbopt_2(self, n, kmax, coeffs):
+      "well-optimized dmft functional"
+      def calc_a0_well_2(I_D, I_N, S, A, B, C, D, W):
+          x = math.log(I_D/S + 1.0)
+          y =-math.log(2.0 * I_N/S)
+          a_0 = W/( 1.0 + math.exp(A + B*y + D*y*y + C*x*y)) + math.exp(x) + 1.0 - W
+          print(" X = %14.6f  Y = %14.6f  A = %14.6f" % (x, y, a_0))
+          return a_0
+
+      I_n = (n*(1.0 - n)).sum()
+      I_d = numpy.sqrt(n*(1.0 - n)).sum() / 2.0 - I_n
+      S   = numpy.sqrt(n).sum()
+      N   = n.sum()
+
+      A, B, C, D, W = coeffs
+      a = calc_a0_well_2(I_d, I_n, S, A, B, C, D, W)
+      #print(" A0(BBI) = %13.6f" % a)
+
+      a_sum = a
+      f = a * self._fij_mbb(n)
+      if a<1:
+         for k in range(1,kmax+1):                   
+             a_k = a * math.exp(k*math.log(1.0 - a))
+             f += a_k * self._fij_bbbk(n, k)
+             a_sum += a_k
+      #else: f = self._fij_mbb(n)
+      #print( " Sum of a: %13.4f" % a_sum)
+      return f
+
+
   def _fij_bbZ(self, n, kmax, pc, ao=None):
       #print(" Coefficients: ", coeffs[0])
       if ao is None:
@@ -470,6 +532,27 @@ class DFT:
          def calc_a0(x, y, a, b, c):
              a0 = f2(x, c) * f1(y, a, b)
              return a0
+         def calc_a0_lin(I_N, N, S):
+             x = math.log(S/N - 1.0)
+             y = math.log(2.0 * I_N/N)
+             # FCI/STO-3G
+             A = 0.739242
+             B =-0.349756
+             C = 1.56737
+             a_0 = A*x + B*y + C
+             return a_0
+         def calc_a0_well(I_D, I_N, N, A, B, C, D):
+             x = math.log(I_D/N + 1.0)
+             y =-math.log(2.0 * I_N/N)
+             a_0 = math.exp(x)*(A*y*y+B*y+C*x*y+D)
+             return a_0
+         def calc_a0_well_2(I_D, I_N, S, A, B, C, D, E, F, G, H):
+             x = math.log(I_D/S + 1.0)
+             y =-math.log(2.0 * I_N/S)
+             a_0 = A + B*y + C*y*y + D*x*y + E*x*y*y + F*x + G*x*x + H*x*x*y
+             a_0 = math.exp(a_0)
+             return a_0
+
 
          N = n.sum()
 
@@ -494,6 +577,25 @@ class DFT:
          D =-0.04508491
          a = calc_a0(x, y, A, B, C)
 
+         a = calc_a0_lin(I_n, N, S)
+
+         # new fitting (FCI/aug-cc-pVTZ)
+         A = 0.0830253
+         B =-0.543444
+         C = 3.12916
+         D = 0.961993
+         a = calc_a0_well(I_d, I_n, N, A, B, C, D)
+
+         # new fitting (FCI/aug-cc-pVTZ)
+         A =  0.00806763
+         B = -0.177793
+         C = -0.0139493
+         D =-16.8878
+         E =  4.10119
+         F =  3.00987
+         G = 90.0324
+         H = 47.6213
+         a = calc_a0_well_2(I_d, I_n, S, A, B, C, D, E, F, G, H)
          print(" A0(BBI) = %13.6f" % a)
 
 
@@ -694,8 +796,8 @@ class DFT:
          U = U[:,::-1]
       else: raise ValueError("Incorrect order of NO orbitals. Possible only ascending or descending.")
       if renormalize is True:
-        if ( abs(n.sum() - numpy.round(n.sum())) > 1.e-7):
-           print(" Warning: nsum=%14.4E delta=%14.4E" % (n.sum(), n.sum() - numpy.round(n.sum())))
+         if ( abs(n.sum() - numpy.round(n.sum())) > 1.e-7):
+            print(" Warning: nsum=%14.4E delta=%14.4E" % (n.sum(), n.sum() - numpy.round(n.sum())))
          d = numpy.round(n.sum()) - n.sum()
          d/= numpy.float64(n.size)
          n+= d
