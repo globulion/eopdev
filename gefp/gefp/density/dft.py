@@ -117,7 +117,7 @@ class DFT:
       return E
   def _compute_XC_energy(self, n, c, dmft, **kwargs):
       E = None
-      MO_list = ('bb1', 'bb2', 'bb3', 'pow', 'gu', 'cga', 'chf', 'mbb_pc', 'bbc1', 'bbc2', 'mbb0',
+      MO_list = ('bb1', 'bb2', 'bb3', 'pow', 'gu', 'cga', 'chf', 'mbb_pc', 'bbc1', 'bbc2', 'mbb0', 'bb_pade_p',
               'bbh', 'bbh2', 'bbt', 'bbg', 'bbb', 'bbx', 'bbq2', 'bby', 'bbp', 'bbz', 'bbi', 'bb_opt', 'bb_opt_2', 'bb_opt_2_p')
 
       # Summation in AO space using JK object
@@ -152,6 +152,7 @@ class DFT:
       elif dmft.lower() == 'bbi': f = self._fij_bbZ(n, kwargs["kmax"], kwargs["pc"], kwargs["ao"])
       elif dmft.lower() == 'bb_opt': f = self._fij_bbopt(n, kwargs["kmax"], kwargs["coeffs"])
       elif dmft.lower() == 'bb_opt_2': f = self._fij_bbopt_2(n, kwargs["kmax"], kwargs["coeffs"])
+      elif dmft.lower() == 'bb_pade_p': f = self._fij_bbpade(n, kwargs["kmax"], coeffs=[4.19679,-164.543,5.92545,94.7776,0.0,-0.475193,-31.6913,-226.502,17.1221,91.8458,0.0,-1.81797,-49.7973])
      #elif dmft.lower() == 'bb_opt_2_p': f = self._fij_bbopt_2(n, kwargs["kmax"], coeffs=[-0.14881973,5.16901966,-23.44068276,-0.66111539,1.32165395])
       elif dmft.lower() == 'bb_opt_2_p': f = self._fij_bbopt_2(n, kwargs["kmax"], coeffs=[ 1.14633566,7.31708483,-23.28681062,-0.80297864,1.27633697])
       elif dmft.lower() == 'bbq2': f = self._fij_bbq2(n)
@@ -457,6 +458,34 @@ class DFT:
       #else: f = self._fij_mbb(n)
       #print( " Sum of a: %13.4f" % a_sum)
       return f
+  def _fij_bbpade(self, n, kmax, coeffs):
+      "well-optimized dmft functional"
+      def calc_a0_well_2(I_D, I_N, S, A0, A1, A2, A3, A4, A5, A6, B1, B2, B3, B4, B5, B6):
+          x = math.log(I_D/S + 1.0)
+          y =-math.log(2.0 * I_N/S)
+          a_0 = (A0+A1*x+A2*y+A3*x*y+A5*y*y+A6*x*y*y)/(1.0+B1*x+B2*y+B3*x*y+B5*y*y+B6*x*y*y)
+          return a_0
+
+      I_n = (n*(1.0 - n)).sum()
+      I_d = numpy.sqrt(n*(1.0 - n)).sum() / 2.0 - I_n
+      S   = numpy.sqrt(n).sum()
+      N   = n.sum()
+
+      A0, A1, A2, A3, A4, A5, A6, B1, B2, B3, B4, B5, B6 = coeffs
+      a = calc_a0_well_2(I_d, I_n, S, A0, A1, A2, A3, A4, A5, A6, B1, B2, B3, B4, B5, B6)
+      #print(" A0(BBI) = %13.6f" % a)
+
+      a_sum = a
+      f = a * self._fij_mbb(n)
+      if a<1:
+         for k in range(1,kmax+1):                   
+             a_k = a * math.exp(k*math.log(1.0 - a))
+             f += a_k * self._fij_bbbk(n, k)
+             a_sum += a_k
+      #else: f = self._fij_mbb(n)
+      #print( " Sum of a: %13.4f" % a_sum)
+      return f
+
   def _fij_bbopt_2(self, n, kmax, coeffs):
       "well-optimized dmft functional"
       def calc_a0_well_2(I_D, I_N, S, A, B, C, D, W):
