@@ -196,9 +196,34 @@ class DFT:
       n_new[m] += step
       return n_new
 
-  def _grad_n(self, n, fij, C):
+  def _grad_n(self, n, fij, C, Kij, dmft, step, **kwargs):
       "Energy gradient wrt NO occupation numbers"
-      raise NotImplementedError
+      nn = len(n)
+
+      # 1-electron contributon
+      Hmm = numpy.dot(C.T, numpy.dot(self.H.to_array(dense=True), C)).diagonal()
+      grad = 2.0 * Hmm
+
+      # 2-electron contribution
+      D = numpy.dot(C, numpy.dot(2.0*numpy.diag(n), C.T))
+      I = numpy.identity(nn, numpy.float64)
+
+      # J-type
+      self._jk.C_clear()
+      self._jk.C_left_add(psi4.core.Matrix.from_array(D, ""))
+      self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+      self._jk.compute()
+      J = self._jk.J()[0].to_array(dense=True)
+
+      for m in range(nn):
+          CCm = numpy.outer(C[:,m], C[:,m])
+          grad[m] += 2.0 * (numpy.dot(J, CCm)).trace()
+
+      # K-type
+      for m in range(nn):
+          fij_m = self.fij_1(n, m, dmft, step, **kwargs)
+          grad -=(numpy.dot(Kij, fij_m)).trace()
+
       return grad
 
   def _grad_C(self, n, fij, C):
@@ -248,9 +273,9 @@ class DFT:
       self._jk.do_K(True)
       return grad
 
-  def _gradient(self, n, fij, C):
+  def _gradient(self, n, fij, C, Kij, dmft, step, **kwargs):
 
-      dE_n = self._grad_n(n, fij, C)
+      dE_n = self._grad_n(n, fij, C, Kij, dmft, step, **kwargs)
       dE_C = self._grad_C(n, fij, C)
 
       gradient = numpy.hstack([dE_n, dE_C.ravel()])
