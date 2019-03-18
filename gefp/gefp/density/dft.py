@@ -104,8 +104,6 @@ class DFT:
       E = E_N + E_1 + E_H + E_XC
       return E
 
-
-
   def _compute_hcore_energy(self):
       H = self.H.to_array(dense=True)
       D = self.D.to_array(dense=True)
@@ -164,6 +162,170 @@ class DFT:
       elif dmft.lower() == 'bbx': f = self._fij_BBX(n, kwargs["coeffs"], kwargs["kmax"])
       else: raise NotImplementedError
       return f
+
+  def fij_1(self, n, m, dmft, step=0.000001, **kwargs):
+      "Derivatives of f_ij wrt n_m"
+      if   dmft.lower() == 'hf': f_m = self._fij_1_hf(n)
+      elif dmft.lower() == 'mbb': f_m = self._fij_1_numerical(n, m, step, self._fij_mbb, **kwargs)
+      elif dmft.lower() == 'bb_pade': f_m = self._fij_1_numerical(n, m, step, self._ij_bbpade, **kwargs)
+      else: raise NotImplementedError
+      return f_m
+
+  def _fij_1_hf(self, n, m):
+      "First analytical derivatives of fij_HF wrt n_m"
+      nn = len(n)
+      fij_m = numpy.zeros((nn,nn), numpy.float64)
+      for i in range(nn):
+          for j in range(nn):
+              v = 0.0
+              if   (i==m) and (j!=m): v = n[j]
+              elif (j==m) and (i!=m): v = n[i]
+              elif (i==j==m): v = 2.0*n[m]
+              fij_m[i, j] = v
+      return fij_m
+
+  def _fij_1m_numerical(self, n, m, step, func, **kwargs):
+      "First numerical derivatives of fij_func wrt n_m. Uses Forward second-order finite difference with O(step^2)"
+      n_p1 = self._n_m(n, m, +1.0*step)
+      n_p2 = self._n_m(n, m, +2.0*step)
+      fij_m = (-3.0*func(n, **kwargs) + 4.0*func(n_p1, **kwargs) - func(n_p2, **kwargs))/(2.0 * step)
+      return fij_m
+
+  def _n_m(self, n, m, step):
+      n_new = n.copy()
+      n_new[m] += step
+      return n_new
+
+  def _grad_n(self, n, fij, C):
+      "Energy gradient wrt NO occupation numbers"
+      raise NotImplementedError
+      return grad
+
+  def _grad_C(self, n, fij, C):
+      "Energy gradient wrt LCAO-NO wavefunction coefficients"
+      nn = len(n)
+
+      # 1-electron contributon
+      Ham = numpy.dot(self.H.to_array(dense=True), C)
+      grad = Ham * n
+
+      # 2-electron contribution
+      I = numpy.identity(nn, numpy.float64)
+
+      # J-type
+      self._jk.C_clear()                                           
+      self._jk.do_J(True)
+      self._jk.do_K(False)
+
+      for m in range(nn):
+          Am = self._A(n, C, m)
+          self._jk.C_left_add(psi4.core.Matrix.from_array(A_m, ""))
+          self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+      self._jk.compute()
+
+      for m in range(nn):
+          Jm = self._jk.J()[m].to_array(dense=True)
+          grad += numpy.dot(Jm, C)
+
+      # K-type
+      self._jk.C_clear()                                           
+      self._jk.do_J(False)
+      self._jk.do_K(True)
+
+      for m in range(nn):
+          Bm = self._A(fij, C, m)
+          self._jk.C_left_add(psi4.core.Matrix.from_array(B_m, ""))
+          self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+      self._jk.compute()
+
+      for m in range(nn):
+          Km = self._jk.K()[m].to_array(dense=True)
+          grad -= numpy.dot(Km, C)
+
+      # finalize
+      grad *= 4.0
+      self._jk.do_J(True)
+      self._jk.do_K(True)
+      return grad
+
+  def _gradient(self, n, fij, C):
+
+      dE_n = self._grad_n(n, fij, C)
+      dE_C = self._grad_C(n, fij, C)
+
+      gradient = numpy.hstack([dE_n, dE_C.ravel()])
+      return gradient
+
+  def _st_step(self, n_old_1, fij_old_1, C_old_1, 
+                     n_old_2, fij_old_2, C_old_2):
+      "Next steepest-descents step"
+      nn = len(n_old_1)
+
+      x_old_1= numpy.hstack([n_old_1, C_old_1.ravel()])
+      x_old_2= numpy.hstack([n_old_2, C_old_2.ravel()])
+
+      gradient_1 = self._gradient(n_old_1, fij_old_1, C_old_1)
+      gradient_2 = self._gradient(n_old_2, fij_old_2, C_old_2)
+
+      norm = numpy.linalg.norm(gradient_1 - gradient_2)
+      g = numpy.dot(x_old_1 - x_old_2, gradient_1 - gradient_2) / norm**2
+
+      x_new = x_old_1 - g * gradient_1
+      n_new = x_new[:nn]
+      C_new = x_new[nn:].reshape(nn,nn)
+      return n_new, C_new
+
+  def _st_run(self, n, fij, C, g_0 = 0.0001):
+      "Run Steepest-Descents minimization algorithm"
+      nn = len(n)
+      # Compute starting energy
+      fij = ...
+      E0 = ...
+      # Compute first guess
+      x_old_2 = numpy.hstack([n, C.ravel()])
+      gradient_2 = self._gradient(n, fij, C)
+      x_old_1 = x_old_2 - g_0 * gradient_2
+
+      n_old_1 = x_old_1[:nn]
+      C_old_1 = x_old_1[nn:].reshape(nn,nn)
+      fij_old_1 = ...
+
+      n_old_2 = n.copy()
+      C_old_2 = C.copy()
+      fij_old_2 = fij.copy()
+
+      # Start iterations
+      stop = False
+      iteration = 1
+      while stop is False:
+          n_new, C_new = self._st_step(n_old_1, fij_old_1, C_old_1, n_old_2, fij_old_2, C_old_2)
+          n_new, C_new = self._projection(n_new, C_new)
+
+          fij_new = ...
+
+          n_old_2 = n_old_1.copy()
+          fij_old_2 = fij_old_1.copy()
+          C_old_2 = C_old_1.copy()
+
+          n_old_1 = n_new.copy()
+          fij_old_1 = fij_new.copy()
+          C_old_1 = C_new.copy()
+
+          # compute current energy
+          E = ...
+
+          # check if converged?
+          if abs(E-E0) < 0.00001: stop = True
+
+          # check if max iterations were exceeded
+          if iteration >= 10: stop = True
+          iteration += 1
+      return
+
+  def _projection(self, n, C):
+      "Find n_new and C_new such that new density matrix is N-representable"
+      raise NotImplementedError
+      return n_new, C_new
 
   def Kij(self, c):
       "Exchange (ij|ji) integral matrix"
@@ -807,8 +969,8 @@ class DFT:
       n, U = numpy.linalg.eigh(D_)
       if n.max() > 1.0 or n.min() < 0.0:
          print(" Warning! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
-      if ((n.max() - 1.0) > 0.00001 or (n.min() < -0.00001)):
-         raise ValueError("Unphysical NO populations detected! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
+      #if ((n.max() - 1.0) > 0.00001 or (n.min() < -0.00001)):
+      #   raise ValueError("Unphysical NO populations detected! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
       n[numpy.where(n<0.0)] = 0.0
       if original_ao_mo:
          assert orthogonalize_first is not None
