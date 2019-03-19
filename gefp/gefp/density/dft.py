@@ -385,9 +385,41 @@ class DMFT:
 
   # ----- Density-Matrix Projection Algorithm ----- #
 
+  def _a(self, a, mu):
+      a_ = a.copy();
+      for i in range(len(a)):
+          u = a[i] + mu
+          if   u <= 0.0: a_[i] = 0.0
+          elif u >= 1.0: a_[i] = 1.0
+      return a_
+
   def _projection(self, n, C):
       "Find n_new and C_new such that new density matrix is N-representable"
       raise NotImplementedError
+      # compute pre-density matrix
+      D = numpy.linalg.triple_dot(C, numpy.diag(n), C.T)
+      D_ = self._orthogonalize_OPDM(D, self.S)
+      a, b = numpy.linalg.eigh(D_)
+      # 
+      Zk = lambda mu, a: (a.sum() - self.Np)**2
+      # start secant search for root mu such that Zk = 0
+      stop = False
+      mu_0= 0.0
+      mu_1= 0.0001
+      a_0 = self._a(a, mu_0)
+      a_1 = self._a(a, mu_1)
+      Z_0 = Zk(mu_0, a_0)
+      Z_1 = Zk(mu_1, a_1)
+      while stop is False:
+          mu_k = mu_1 - Z_1 * (mu_1 - mu_0) / (Z_1 - Z_0)
+          a_k = self._a(a, mu_k)
+          Z_k = Zk(mu_k, a_k)
+          if Z_k < 0.00001: stop = True
+          mu_0 = mu_1  ; Z_0 = Z_1
+          mu_1 = mu_k  ; Z_1 = Z_k
+      # compute the projected density matrix
+      n_new = a_k
+      C_new = b
       return n_new, C_new
 
 
