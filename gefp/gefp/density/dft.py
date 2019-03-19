@@ -13,23 +13,23 @@ import numpy.linalg
 import psi4
 import oepdev
 
-__all__ = ["DFT"]
+__all__ = ["DMFT"]
 
 
-class DFT:
+class DMFT:
   """
  ---------------------------------------------------------------------------------------------------------------
-                                              The DFT method
+                                              The DMFT method
  ---------------------------------------------------------------------------------------------------------------
 
- Demo for DFT method (closed shells). Implements DFT density matrix projected gradient algorithm (TODO)
+ Demo for DMFT method (closed shells). Implements DMFT density matrix projected gradient algorithm (TODO)
 
  Usage:
-  dft = DFT(wfn)
-  e = dft.static_energy(dmft='MBB')
-  dft.run(maxit=30, conv=1.0e-7, guess=None, damp=0.01, ndamp=10, verbose=True, V_ext=None)
+  dmft = DMFT(wfn)
+  e = dmft.static_energy(dmft='MBB')
+  dmft.run(maxit=30, conv=1.0e-7, guess=None, damp=0.01, ndamp=10, verbose=True, V_ext=None)
 
- The above example runs DFT on 'molecule' psi4.core.Molecule object 
+ The above example runs DMFT on 'molecule' psi4.core.Molecule object 
  starting from core Hamiltonian as guess (guess=None) 
  and convergence 1.0E-7 A.U. in total energy with 30 maximum iterations
  (10 of which are performed by damping of the Fock matrix with damping coefficient of 0.01).
@@ -37,7 +37,7 @@ class DFT:
  ---------------------------------------------------------------------------------------------------------------
                                                                        Last Revision: Gundelfingen, Feb 7th 2019
 """
-  def __init__(self, wfn):
+  def __init__(self, wfn, guess='current', V_ext=None):
       "Initialize BasisSet, Wavefunction and JK objects"
       # Wavefunction
       self._wfn = wfn#.c1_deep_copy(wfn.basisset())
@@ -53,30 +53,47 @@ class DFT:
       self._jk = psi4.core.JK.build(self._bfs, jk_type="Direct")
       self._jk.set_memory(int(5e8))
       self._jk.initialize()
-      ### Accessors
-      # nuclear repulsion energy
+      # Nuclear repulsion energy
       self.e_nuc = self._mol.nuclear_repulsion_energy()
-      # Total Energy
-      self.E = self._wfn.energy()
-      # Density Matrix
-      self.D = self._wfn.Da()
-      # LCAO-MO coeffs
-      self.C = None #self._wfn.Ca()
-      # Fock matrix 
-      self.F = None #self._wfn.Fa()
-      # Hcore matrix
-      self.H = self._wfn.H()
-      # Overlap integrals and orthogonalizer
-      self.S = numpy.asarray( self._mints.ao_overlap() )
-      self.X = self._orthogonalizer(self.S)
+
+      ### Constant AO matrices
       # External potential
-      self.V_ext = None
-      # Natural Orbitals from current OPDM
-      D = self._wfn.Da().to_array(dense=True)
-      S = self._wfn.S ().to_array(dense=True)
-      self.n, self.c = self.natural_orbitals(D, orthogonalize_first=S, order='descending', no_cutoff=0.0, renormalize=False)
-      #print(self.n, self.n.sum())
+      self.V_ext = V_ext
+      if V_ext is not None and guess == 'current':
+          raise ValueError(" External potential can only be set for 'HCore' guess!")
+      # Hcore matrix
+      self.H = self._wfn.H().to_array(dense=True)
+      # Overlap integrals and orthogonalizer
+      self.S = self._wfn.S ().to_array(dense=True) #numpy.asarray( self._mints.ao_overlap() )
+      self.X = self._orthogonalizer(self.S)
+
+      ### Current OPDM and total energy
+      if guess == 'current':  # Guess based on current density matrix from the input wavefunction
+         assert self.V_ext is None
+         self.E = self._wfn.energy()
+         self.D = self._wfn.Da().to_array(dense=True)
+      elif guess == 'hcore':  # Guess based on one-electron Hamiltonian
+         if self.V_ext is not None: self.H += self.V_ext
+         e, c = numpy.linalg.eigh(self.H.to_array(dense=True))
+         c = c[:,::-1]
+         N = self.wfn.nalpha()
+         D = numpy.zeros((self._bfs.nbf(), self._bfs.nbf()), numpy.float64)
+         for i in range(N):
+             D += numpy.outer(c[:,i], c[:,i])
+         self.D = D
+         self.E = 0.0
+      else:
+         raise ValueError("Only 'Current' or 'HCore' ODPM's are supported as starting points.")
+      # Natural Orbitals
+      self.n, self.c = self.natural_orbitals(self.D, orthogonalize_first=self.S, 
+                            order='descending', no_cutoff=0.0, renormalize=False)
       return
+
+  def run(self, dmft, 
+              maxit=30, conv=1.0e-7, g_0=0.0001, step=0.000001, verbose=True, **kwargs):
+      "Solve SCF-DMFT equations (public interface)"
+      success = self._run(dmft, maxit, conv, g_0, step, verbose, self.n, self.c, **kwargs)
+      return success
 
   def static_energy(self, dmft='MBB', **kwargs):
       """\
@@ -99,104 +116,157 @@ class DFT:
       # Hartree 2-electron energy
       E_H = self._compute_hartree_energy()
       # Exchange-Correlation energy
-      E_XC = self._compute_XC_energy(self.n, self.c, dmft, **kwargs)
+      E_XC = self._compute_XC_energy(dmft, **kwargs)
       # Total energy
       E = E_N + E_1 + E_H + E_XC
       return E
 
-  def _compute_hcore_energy(self):
-      H = self.H.to_array(dense=True)
-      D = self.D.to_array(dense=True)
-      E = 2.0 * self.compute_1el_energy(D, H)
-      return E
-  def _compute_hartree_energy(self):
-      D = self.D.to_array(dense=True)
-      E = 2.0 * self.compute_2el_energy(D, D, type='j')
-      return E
-  def _compute_XC_energy(self, n, c, dmft, **kwargs):
-      E = None
-      MO_list = ('bb1', 'bb2', 'bb3', 'pow', 'gu', 'cga', 'chf', 'mbb_pc', 'bbc1', 'bbc2', 'mbb0', 'bb_pade_p',
-              'bbh', 'bbh2', 'bbt', 'bbg', 'bbb', 'bbx', 'bbq2', 'bby', 'bbp', 'bbz', 'bbi', 'bb_opt', 'bb_opt_2', 'bb_opt_2_p')
-
-      # Summation in AO space using JK object
-      if dmft.lower() not in MO_list:
-         if   dmft.lower() == 'mbb':  D = self._generalized_density_matrix(numpy.sqrt(n), c) 
-         elif dmft.lower() == 'hf':   D = self._generalized_density_matrix(n, c)
-         E = -1.0 * self.compute_2el_energy(D, D, type='k')
-      # summation in MO space
-      else:
-         fij = self.fij(n, dmft, **kwargs)
-         Kij = self.Kij(c)
-         E = -1.0 * numpy.dot(fij, Kij).trace()
-      return E
+  # --- Public interface (expert) --- #
 
   def fij(self, n, dmft, **kwargs):
-      if   dmft.lower() == 'mbb': f = self._fij_mbb(n)
-      elif dmft.lower() == 'mbb_pc': f = self._fij_mbb_PC(n)  # same as bbc1
-      elif dmft.lower() == 'mbb0': f = self._fij_mbb_0(n)
-      elif dmft.lower() == 'hf' : f = self._fij_hf (n)
-      elif dmft.lower() == 'chf': f = self._fij_chf(n)
-      elif dmft.lower() == 'cga': f = self._fij_cga(n)
-      elif dmft.lower() == 'gu' : f = self._fij_gu (n)
-      elif dmft.lower() == 'bbc1':f = self._fij_bbc1(n)
-      elif dmft.lower() == 'bbc2':f = self._fij_bbc2(n)
-      elif dmft.lower() == 'bb1': f = self._fij_bb1(n)
-      elif dmft.lower() == 'bb2': f = self._fij_bb2(n, kwargs["gamma"])
-      elif dmft.lower() == 'bb3': f = self._fij_bb3(n)
-      elif dmft.lower() == 'bbp': f = self._fij_bbp(n)
-      elif dmft.lower() == 'bbb': f = self._fij_bbb(n, kwargs["kmax"], kwargs["scale"])
-      elif dmft.lower() == 'bby': f = self._fij_bby(n, kwargs["coeffs"], kwargs["kmax"])
-      elif dmft.lower() == 'bbz': f = self._fij_bbz(n, kwargs["coeffs"], kwargs["kmax"], kwargs["pc"])
-      elif dmft.lower() == 'bbi': f = self._fij_bbZ(n, kwargs["kmax"], kwargs["pc"], kwargs["ao"])
-      elif dmft.lower() == 'bb_opt': f = self._fij_bbopt(n, kwargs["kmax"], kwargs["coeffs"])
-      elif dmft.lower() == 'bb_opt_2': f = self._fij_bbopt_2(n, kwargs["kmax"], kwargs["coeffs"])
-      elif dmft.lower() == 'bb_pade_p': f = self._fij_bbpade(n, kwargs["kmax"], coeffs=[4.19679,-164.543,5.92545,94.7776,0.0,-0.475193,-31.6913,-226.502,17.1221,91.8458,0.0,-1.81797,-49.7973])
-     #elif dmft.lower() == 'bb_opt_2_p': f = self._fij_bbopt_2(n, kwargs["kmax"], coeffs=[-0.14881973,5.16901966,-23.44068276,-0.66111539,1.32165395])
-      elif dmft.lower() == 'bb_opt_2_p': f = self._fij_bbopt_2(n, kwargs["kmax"], coeffs=[ 1.14633566,7.31708483,-23.28681062,-0.80297864,1.27633697])
-      elif dmft.lower() == 'bbq2': f = self._fij_bbq2(n)
-      elif dmft.lower() == 'bbh': f = self._fij_bbh(n)
-      elif dmft.lower() == 'bbh2':f = self._fij_bbh2(n)
-      elif dmft.lower() == 'pow': f = self._fij_power(n, kwargs["pow_exp"])
-      elif dmft.lower() == 'bbt': f = self._fij_bbt(n, kwargs["bbt_coeffs"], kwargs["bbt_kmax"], kwargs["bbt_hf"], kwargs["bbt_log"])
-      elif dmft.lower() == 'bbg': f = self._fij_bbg(n, kwargs["coeffs"], kwargs["kmax"])
-      elif dmft.lower() == 'bbx': f = self._fij_BBX(n, kwargs["coeffs"], kwargs["kmax"])
-      else: raise NotImplementedError
+      "Compute Exchange-Correlation Coefficients"
+      if   dmft.lower() == 'mbb'           : f = self._fij_mbb(n)
+      elif dmft.lower() == 'mbb_pc'        : f = self._fij_mbb_PC(n)  # same as bbc1
+      elif dmft.lower() == 'mbb0'          : f = self._fij_mbb_0(n)
+      elif dmft.lower() == 'hf'            : f = self._fij_hf (n)
+      elif dmft.lower() == 'chf'           : f = self._fij_chf(n)
+      elif dmft.lower() == 'cga'           : f = self._fij_cga(n)
+      elif dmft.lower() == 'gu'            : f = self._fij_gu (n)
+      elif dmft.lower() == 'bbc1'          : f = self._fij_bbc1(n)
+      elif dmft.lower() == 'bbc2'          : f = self._fij_bbc2(n)
+      elif dmft.lower() == 'bb1'           : f = self._fij_bb1(n)
+      elif dmft.lower() == 'bb2'           : f = self._fij_bb2(n, kwargs["gamma"])
+      elif dmft.lower() == 'bb3'           : f = self._fij_bb3(n)
+      elif dmft.lower() == 'bbp'           : f = self._fij_bbp(n)
+      elif dmft.lower() == 'bbb'           : f = self._fij_bbb(n, kwargs["kmax"], kwargs["scale"])
+      elif dmft.lower() == 'bby'           : f = self._fij_bby(n, kwargs["coeffs"], kwargs["kmax"])
+      elif dmft.lower() == 'bbz'           : f = self._fij_bbz(n, kwargs["coeffs"], kwargs["kmax"], kwargs["pc"])
+      elif dmft.lower() == 'bbi'           : f = self._fij_bbZ(n, kwargs["kmax"], kwargs["pc"], kwargs["ao"])
+      elif dmft.lower() == 'bb_opt'        : f = self._fij_bbopt(n, kwargs["kmax"], kwargs["coeffs"])
+      elif dmft.lower() == 'bb_opt_2'      : f = self._fij_bbopt_2(n, kwargs["kmax"], kwargs["coeffs"])
+      elif dmft.lower() == 'bb_pade_p'     : f = self._fij_bbpade(n, kwargs["kmax"], coeffs=[4.19679,-164.543,5.92545,94.7776,0.0,-0.475193,-31.6913,-226.502,17.1221,91.8458,0.0,-1.81797,-49.7973])
+     #elif dmft.lower() == 'bb_opt_2_p'    : f = self._fij_bbopt_2(n, kwargs["kmax"], coeffs=[-0.14881973,5.16901966,-23.44068276,-0.66111539,1.32165395])
+      elif dmft.lower() == 'bb_opt_2_p'    : f = self._fij_bbopt_2(n, kwargs["kmax"], coeffs=[ 1.14633566,7.31708483,-23.28681062,-0.80297864,1.27633697])
+      elif dmft.lower() == 'bbq2'          : f = self._fij_bbq2(n)
+      elif dmft.lower() == 'bbh'           : f = self._fij_bbh(n)
+      elif dmft.lower() == 'bbh2'          : f = self._fij_bbh2(n)
+      elif dmft.lower() == 'pow'           : f = self._fij_power(n, kwargs["pow_exp"])
+      elif dmft.lower() == 'bbt'           : f = self._fij_bbt(n, kwargs["bbt_coeffs"], kwargs["bbt_kmax"], kwargs["bbt_hf"], kwargs["bbt_log"])
+      elif dmft.lower() == 'bbg'           : f = self._fij_bbg(n, kwargs["coeffs"], kwargs["kmax"])
+      elif dmft.lower() == 'bbx'           : f = self._fij_BBX(n, kwargs["coeffs"], kwargs["kmax"])
+      else: raise ValueError("The functional %s is not available. Misspelling error?" % dmft.lower())
       return f
 
-  def fij_1(self, n, m, dmft, step=0.000001, **kwargs):
-      "Derivatives of f_ij wrt n_m"
-      if   dmft.lower() == 'hf': f_m = self._fij_1_hf(n)
-      elif dmft.lower() == 'mbb': f_m = self._fij_1_numerical(n, m, step, self._fij_mbb, **kwargs)
-      elif dmft.lower() == 'bb_pade': f_m = self._fij_1_numerical(n, m, step, self._ij_bbpade, **kwargs)
+  def fij_1(self, n, m, dmft, step=None, **kwargs):
+      "Compute first derivatives of EX coefficients wrt the m-th NO occupancy"
+      if   dmft.lower() == 'hf'       : f_m = self._fij_1_hf(n)
+      elif dmft.lower() == 'mbb'      : f_m = self._fij_1_numerical(n, m, step, self._fij_mbb, **kwargs)
+      elif dmft.lower() == 'bb_pade'  : f_m = self._fij_1_numerical(n, m, step, self._ij_bbpade, **kwargs)
       else: raise NotImplementedError
       return f_m
 
-  def _fij_1_hf(self, n, m):
-      "First analytical derivatives of fij_HF wrt n_m"
+  def Kij(self, c):
+      "Exchange (ij|ji) integral matrix"
+      C = psi4.core.Matrix.from_array(c, "Natural Orbitals LCAO matrix")
+      #eri_K_ij = oepdev.calculate_Kij(self._wfn.c1_deep_copy(self._wfn.basisset()), C).to_array(dense=True)
+      eri_K_ij = oepdev.calculate_Kij(self._wfn, C).to_array(dense=True)
+      psi4.core.clean()
+
+      #bfs = self._wfn.basisset()
+      #mints = psi4.core.MintsHelper(bfs)
+      #eri = numpy.asarray(mints.ao_eri(bfs, bfs,
+      #                                 bfs, bfs))
+      #eri_K_ij = numpy.einsum("ijkl,ia,jb,kb,la->ab", eri, c, c, c, c) 
+      return eri_K_ij
+
+
+
+  # ===> protected <=== #
+
+  # ----- Steepest-Descents Algorithm ----- #
+
+  def _run(self, dmft, maxit, conv, g_0, step, verbose, n, C, **kwargs):
+      "Run DMFT-SCF with the Steepest-Descents minimization and density matrix projection algorithm (protected interface)"
+
       nn = len(n)
-      fij_m = numpy.zeros((nn,nn), numpy.float64)
-      for i in range(nn):
-          for j in range(nn):
-              v = 0.0
-              if   (i==m) and (j!=m): v = n[j]
-              elif (j==m) and (i!=m): v = n[i]
-              elif (i==j==m): v = 2.0*n[m]
-              fij_m[i, j] = v
-      return fij_m
+      iteration = 0
+      success = False
 
-  def _fij_1m_numerical(self, n, m, step, func, **kwargs):
-      "First numerical derivatives of fij_func wrt n_m. Uses Forward second-order finite difference with O(step^2)"
-      n_p1 = self._n_m(n, m, +1.0*step)
-      n_p2 = self._n_m(n, m, +2.0*step)
-      fij_m = (-3.0*func(n, **kwargs) + 4.0*func(n_p1, **kwargs) - func(n_p2, **kwargs))/(2.0 * step)
-      return fij_m
+      # Exchange-Correlation coefficients
+      fij = self.fij(n, dmft, **kwargs)
 
-  def _n_m(self, n, m, step):
-      n_new = n.copy()
-      n_new[m] += step
-      return n_new
+      # Starting energy
+      self.E = self.static_energy(dmft, **kwargs)
+      E_old = self.E
+      if verbose: print(" @DMFT-SCF Iter %02d. E = %14.8f" % (iteration, E_old))
 
-  def _grad_n(self, n, fij, C, Kij, dmft, step, **kwargs):
+      # First iteration
+      iteration += 1
+      x_old_2 = numpy.hstack([n, C.ravel()])
+      gradient_2 = self._gradient(n, fij, C)
+      x_old_1 = x_old_2 - g_0 * gradient_2
+
+      n_old_1 = x_old_1[:nn]
+      C_old_1 = x_old_1[nn:].reshape(nn,nn)
+      n_old_1, C_old_1 = self._projection(n_old_1, C_old_1)
+      self.D = numpy.linalg.triple_dot(C_old_1, numpy.diag(n_old_1), C_old_1.T)
+      self.n = n_old_1.copy()
+      self.c = C_old_1.copy()
+      E_new = self.static_energy(dmft, **kwargs)
+      if verbose: print(" @DMFT-SCF Iter %02d. E = %14.8f" % (iteration, E_new))
+
+      # Prepare for further iterations
+      fij_old_1 = self.fij(n_old_1, dmft, **kwargs)
+
+      n_old_2 = n.copy()
+      C_old_2 = C.copy()
+      fij_old_2 = fij.copy()
+
+      # Continue iterations with changing step of SD
+      stop = False
+      while stop is False:
+          # New density matrix and XC coefficients
+          n_new, C_new = self._st_step(n_old_1, fij_old_1, C_old_1, n_old_2, fij_old_2, C_old_2, dmft, step, **kwargs)
+          n_new, C_new = self._projection(n_new, C_new)
+          fij_new = self.fij(n_new, dmft, **kwargs)
+          self.D = numpy.linalg.triple_dot(C_new, numpy.diag(n_new), C_new.T)
+          self.n = n_new.copy()
+          self.c = C_new.copy()
+
+          # compute current energy
+          E_new = self.static_energy(dmft, **kwargs)
+          if verbose: print(" @DMFT-SCF Iter %02d. E = %14.8f" % (iteration, E_new))
+
+          # check if converged?
+          if abs(E_new-E_old) < conv: 
+             stop = True
+             success = True
+
+          # check if max iterations were exceeded
+          if iteration >= maxit: 
+             stop = True
+             success = False
+
+          # prepare for next iteration
+          iteration += 1
+          E_old = E_new
+          self.E = E_old
+
+          n_old_2 = n_old_1.copy()
+          fij_old_2 = fij_old_1.copy()
+          C_old_2 = C_old_1.copy()
+
+          n_old_1 = n_new.copy()
+          fij_old_1 = fij_new.copy()
+          C_old_1 = C_new.copy()
+
+      if verbose and success:
+         print(" DMFT-SCF iterations converged.")
+      if verbose and not success:
+         print(" DMFT-SCF iterations did not converge.")
+      return success
+
+  def _grad_n(self, n, fij, C, dmft, step, **kwargs):
       "Energy gradient wrt NO occupation numbers"
       nn = len(n)
 
@@ -210,6 +280,8 @@ class DFT:
 
       # J-type
       self._jk.C_clear()
+      self._jk.set_do_J(True)
+      self._jk.set_do_K(False)
       self._jk.C_left_add(psi4.core.Matrix.from_array(D, ""))
       self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
       self._jk.compute()
@@ -220,10 +292,12 @@ class DFT:
           grad[m] += 2.0 * (numpy.dot(J, CCm)).trace()
 
       # K-type
+      Kij = self.Kij(C)
       for m in range(nn):
           fij_m = self.fij_1(n, m, dmft, step, **kwargs)
-          grad -=(numpy.dot(Kij, fij_m)).trace()
+          grad[m] -=(numpy.dot(Kij, fij_m)).trace()
 
+      self._jk.set_do_K(True)
       return grad
 
   def _grad_C(self, n, fij, C):
@@ -258,7 +332,7 @@ class DFT:
       self._jk.do_K(True)
 
       for m in range(nn):
-          Bm = self._A(fij, C, m)
+          Bm = self._B(fij, C, m)
           self._jk.C_left_add(psi4.core.Matrix.from_array(B_m, ""))
           self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
       self._jk.compute()
@@ -273,24 +347,32 @@ class DFT:
       self._jk.do_K(True)
       return grad
 
-  def _gradient(self, n, fij, C, Kij, dmft, step, **kwargs):
+  def _A(self, n, C, m):
+      Am = 2.0 * self.D * n[m]
+      return Am
+  def _B(self, fij, C, m):
+      Bm = numpy.linalg.triple_dot(C, numpy.diag(fij[:,m]), C.T)
+      return Bm
 
-      dE_n = self._grad_n(n, fij, C, Kij, dmft, step, **kwargs)
+  def _gradient(self, n, fij, C, dmft, step, **kwargs):
+      "Gradient vector in the parameter space of n x C.ravel()"
+      dE_n = self._grad_n(n, fij, C, dmft, step, **kwargs)
       dE_C = self._grad_C(n, fij, C)
 
       gradient = numpy.hstack([dE_n, dE_C.ravel()])
       return gradient
 
   def _st_step(self, n_old_1, fij_old_1, C_old_1, 
-                     n_old_2, fij_old_2, C_old_2):
-      "Next steepest-descents step"
+                     n_old_2, fij_old_2, C_old_2,
+                     dmft, step, **kwargs):
+      "Next Steepest-Descents Step"
       nn = len(n_old_1)
 
       x_old_1= numpy.hstack([n_old_1, C_old_1.ravel()])
       x_old_2= numpy.hstack([n_old_2, C_old_2.ravel()])
 
-      gradient_1 = self._gradient(n_old_1, fij_old_1, C_old_1)
-      gradient_2 = self._gradient(n_old_2, fij_old_2, C_old_2)
+      gradient_1 = self._gradient(n_old_1, fij_old_1, C_old_1, dmft, step, **kwargs)
+      gradient_2 = self._gradient(n_old_2, fij_old_2, C_old_2, dmft, step, **kwargs)
 
       norm = numpy.linalg.norm(gradient_1 - gradient_2)
       g = numpy.dot(x_old_1 - x_old_2, gradient_1 - gradient_2) / norm**2
@@ -300,76 +382,54 @@ class DFT:
       C_new = x_new[nn:].reshape(nn,nn)
       return n_new, C_new
 
-  def _st_run(self, n, fij, C, g_0 = 0.0001):
-      "Run Steepest-Descents minimization algorithm"
-      nn = len(n)
-      # Compute starting energy
-      fij = ...
-      E0 = ...
-      # Compute first guess
-      x_old_2 = numpy.hstack([n, C.ravel()])
-      gradient_2 = self._gradient(n, fij, C)
-      x_old_1 = x_old_2 - g_0 * gradient_2
 
-      n_old_1 = x_old_1[:nn]
-      C_old_1 = x_old_1[nn:].reshape(nn,nn)
-      fij_old_1 = ...
-
-      n_old_2 = n.copy()
-      C_old_2 = C.copy()
-      fij_old_2 = fij.copy()
-
-      # Start iterations
-      stop = False
-      iteration = 1
-      while stop is False:
-          n_new, C_new = self._st_step(n_old_1, fij_old_1, C_old_1, n_old_2, fij_old_2, C_old_2)
-          n_new, C_new = self._projection(n_new, C_new)
-
-          fij_new = ...
-
-          n_old_2 = n_old_1.copy()
-          fij_old_2 = fij_old_1.copy()
-          C_old_2 = C_old_1.copy()
-
-          n_old_1 = n_new.copy()
-          fij_old_1 = fij_new.copy()
-          C_old_1 = C_new.copy()
-
-          # compute current energy
-          E = ...
-
-          # check if converged?
-          if abs(E-E0) < 0.00001: stop = True
-
-          # check if max iterations were exceeded
-          if iteration >= 10: stop = True
-          iteration += 1
-      return
+  # ----- Density-Matrix Projection Algorithm ----- #
 
   def _projection(self, n, C):
       "Find n_new and C_new such that new density matrix is N-representable"
       raise NotImplementedError
       return n_new, C_new
 
-  def Kij(self, c):
-      "Exchange (ij|ji) integral matrix"
-      C = psi4.core.Matrix.from_array(c, "Natural Orbitals LCAO matrix")
-      #eri_K_ij = oepdev.calculate_Kij(self._wfn.c1_deep_copy(self._wfn.basisset()), C).to_array(dense=True)
-      eri_K_ij = oepdev.calculate_Kij(self._wfn, C).to_array(dense=True)
-      psi4.core.clean()
 
-      #bfs = self._wfn.basisset()
-      #mints = psi4.core.MintsHelper(bfs)
-      #eri = numpy.asarray(mints.ao_eri(bfs, bfs,
-      #                                 bfs, bfs))
-      #eri_K_ij = numpy.einsum("ijkl,ia,jb,kb,la->ab", eri, c, c, c, c) 
-      return eri_K_ij
 
-  # --- exchange-correlation density functionals --- #
+  # ----- Energy Components ----- #
+
+  def _compute_hcore_energy(self):
+      "1-Electron Energy"
+      H = self.H.copy()
+      D = self.D.copy()
+      E = 2.0 * self.compute_1el_energy(D, H)
+      return E
+
+  def _compute_hartree_energy(self):
+      "2-Electron Energy: Hartree"
+      D = self.D.copy()
+      E = 2.0 * self.compute_2el_energy(D, D, type='j')
+      return E
+
+  def _compute_XC_energy(self, dmft, **kwargs):
+      "2-Electron Energy: Exchange-Correlation"
+      E = None
+      MO_list = ('bb1', 'bb2', 'bb3', 'pow', 'gu', 'cga', 'chf', 'mbb_pc', 'bbc1', 'bbc2', 'mbb0', 'bb_pade_p',
+              'bbh', 'bbh2', 'bbt', 'bbg', 'bbb', 'bbx', 'bbq2', 'bby', 'bbp', 'bbz', 'bbi', 'bb_opt', 'bb_opt_2', 'bb_opt_2_p')
+
+      # Summation in AO space using JK object
+      if dmft.lower() not in MO_list:
+         if   dmft.lower() == 'mbb':  D = self._generalized_density_matrix(numpy.sqrt(self.n), self.c) 
+         elif dmft.lower() == 'hf':   D = self._generalized_density_matrix(self.n, self.c)
+         E = -1.0 * self.compute_2el_energy(D, D, type='k')
+      # summation in MO space
+      else:
+         fij = self.fij(self.n, dmft, **kwargs)
+         Kij = self.Kij(self.c)
+         E = -1.0 * numpy.dot(fij, Kij).trace()
+      return E
+
+
+  # ----- DMFT Functionals: Exchange-Correlation Coefficients ----- #
 
   def _pc(self, n):
-      "phase correction according to BBC1 functional"
+      "Phase correction according to BBC1 functional"
       m = n.copy(); m.fill(0.0)
       m[numpy.where(n>=0.5)] =  1.0  # strong
       m[numpy.where(n< 0.5)] = -1.0  # weak
@@ -379,26 +439,27 @@ class DFT:
               if i!=j:
                 if m[i] < 0 and m[j] < 0:
                   pc[i,j] = -1.0
-      #print(pc)
       return pc
-
   def _fij_hf(self, n):
+      "The Hartree-Fock (HF) Functional"
       return numpy.outer(n, n)
   def _fij_mbb(self, n):
+      "The Muller-Buijse-Baerends (MBB) Functional"
       ns = numpy.sqrt(n)
       return numpy.outer(ns, ns)
-  def _fij_mbb_PC(self, n):
-      "Equivalent to BBC1"
-      f = self._fij_mbb(n) * self._pc(n)
-      return f
   def _fij_mbb_0(self, n):
-      "MBB without exchange at all"
+      "The MBB Functional with Zero Exchange (MMB0)"
       f = numpy.diag(n)
       return f
   def _fij_bbc1(self, n):
+      "The BBC1 Functional"
       f = self._fij_mbb_PC(n)
       return f
+  def _fij_mbb_PC(self, n):  # remove
+      f = self._fij_mbb(n) * self._pc(n)
+      return f
   def _fij_bbc2(self, n):
+      "The BBC2 Functional"
       f = self._fij_mbb_PC(n)
       f_hf = self._fij_hf(n)
       m = n.copy(); m.fill(0.0)
@@ -411,24 +472,61 @@ class DFT:
                     f[i,j] = f_hf[i,j]
       return f
   def _fij_power(self, n, p):
+      "The Power Functional"
       nn = numpy.outer(n, n)
       return nn**p
   def _fij_chf(self, n):
+      "The Corrected Hartree-Fock (CHF) Functional"
       f = self._fij_hf(n)
       ns = n * (1.0 - n)
       f += numpy.sqrt(numpy.outer(ns, ns))
       return f
   def _fij_cga(self, n):
+      "The CGA Functional"
       f = self._fij_hf(n)
       ns = n * (2.0 - n)
       f += numpy.sqrt(numpy.outer(ns, ns))
       f/= 2.0
       return f
   def _fij_gu(self, n):
+      "The GU Functional"
       f = self._fij_mbb(n)
       ns = n - n*n
       f -= numpy.diag(ns)
       return f
+  def _fij_bbbk(self, n, k):
+      "The BBB-(k) Functional"
+      W = 1.0/float(k+1)
+      K = float(k*(k+1))
+      U = float(k+1)
+      f = self._fij_mbb(n)
+      f = 2.0**W * ( f**U )
+      de= ( n[:,numpy.newaxis]**K + n[numpy.newaxis,:]**K )**W
+      for i in range(len(n)):
+          for j in range(len(n)):
+              de_ij = de[i,j]
+              if de_ij < 1.0e-20: f[i,j] = 0.0
+              else: f[i,j] = f[i,j] / de_ij
+      return f
+  def _fij_bbb(self, n, a0, kmax):
+      "The MBB-MBB0 Interpolation Functional with Exponential Decay (MBB/ED)"
+      f = a0 * self._fij_mbb(n)
+      a_sum = 0.0
+      if a0<1:
+         for k in range(1,kmax+1):                   
+             ak = a0 * math.exp(k*math.log(1.0 - a0))
+             f += ak * self._fij_bbbk(n, k)
+             a_sum += ak
+      #else: f = self._fij_mbb(n)
+      #print( " Sum of a: %13.4f" % a_sum)
+      return f
+  def _fij_bbb2(self, n, a0, b0, kmax):
+      "The MBB-MBB0 Interpolation Functional with Damped Oscillatory Exponential Decay (MBB/DED)"
+      return NotImplementedError
+
+
+  # other functionals
+
   def _fij_bbh(self, n):
       f = 2.0 * self._fij_hf(n)
       f/= n[:,numpy.newaxis] + n[numpy.newaxis,:]
@@ -563,7 +661,6 @@ class DFT:
       #   for k in range(2, bbt_kmax+1):
       #       f += Ds[k-2] * self._fij_bbk(n, k)
       return f
-
   def _fij_bbk(self, n, k):
       f = 2.0**(1.0/k) * self._fij_hf(n)
       f/= ( n[:,numpy.newaxis]**k + n[numpy.newaxis,:]**k )**(1.0/k)
@@ -871,21 +968,34 @@ class DFT:
       return f
 
 
-  def _fij_bbbk(self, n, k):
-      W = 1.0/float(k+1)
-      K = float(k*(k+1))
-      U = float(k+1)
-      f = self._fij_mbb(n)
-      f = 2.0**W * ( f**U )
-      de= ( n[:,numpy.newaxis]**K + n[numpy.newaxis,:]**K )**W
-      for i in range(len(n)):
-          for j in range(len(n)):
-              de_ij = de[i,j]
-              if de_ij < 1.0e-20: f[i,j] = 0.0
-              else: f[i,j] = f[i,j] / de_ij
-      return f
+
+  def _fij_1_hf(self, n, m):
+      "First analytical derivatives of fij_HF wrt n_m"
+      nn = len(n)
+      fij_m = numpy.zeros((nn,nn), numpy.float64)
+      for i in range(nn):
+          for j in range(nn):
+              v = 0.0
+              if   (i==m) and (j!=m): v = n[j]
+              elif (j==m) and (i!=m): v = n[i]
+              elif (i==j==m): v = 2.0*n[m]
+              fij_m[i, j] = v
+      return fij_m
+
+  def _fij_1m_numerical(self, n, m, step, func, **kwargs):
+      "First numerical derivatives of fij_func wrt n_m. Uses Forward second-order finite difference with O(step^2)"
+      n_p1 = self._n_m(n, m, +1.0*step)
+      n_p2 = self._n_m(n, m, +2.0*step)
+      fij_m = (-3.0*func(n, **kwargs) + 4.0*func(n_p1, **kwargs) - func(n_p2, **kwargs))/(2.0 * step)
+      return fij_m
+
+  def _n_m(self, n, m, step):
+      n_new = n.copy()
+      n_new[m] += step
+      return n_new
 
 
+  # --- auxiliary --- # 
 
   def _generalized_density_matrix(self, n, c):
       "Compute occupation-weighted 1-electron density matrix in AO basis"
@@ -895,84 +1005,6 @@ class DFT:
       for i in range(n.size):
           D += ns[i] * numpy.outer(cs[:,i], cs[:,i]) 
       return D
-
-  def run(self, maxit=30, conv=1.0e-7, guess=None, damp=0.01, ndamp=10, verbose=True, V_ext=None):
-      "Solve SCF (public interface)"
-
-      raise NotImplementedError
-
-      # prepare H_core
-      if guess is None:
-         # Form Hcore                    
-         T = self._mints.ao_kinetic()
-         V = self._mints.ao_potential()
-         guess = T.clone()
-         guess.add(V)
-         guess = numpy.asarray(guess)
-      else: guess = numpy.asarray(guess)
-
-      # external one-electron potential
-      self.V_ext = V_ext
-      if self.V_ext is not None:
-         guess  += self.V_ext
-         self.H += self.V_ext
-
-      self._run(guess, maxit, conv, damp, ndamp, verbose)
-      return
-
-
-  # --- protected --- #
-
-  def _run(self, guess, maxit, conv, damp, ndamp, verbose):
-      "Solve SCF (protected interface)"
-      raise NotImplementedError
-      # First step: Guess density matrix
-      F    = numpy.dot(self.X, numpy.dot(guess, self.X)) 
-      E, C = numpy.linalg.eigh(F)
-      C    = numpy.dot(self.X, C)
-      idx = numpy.argsort(E)
-      C = C[:,idx]
-      C = C[:,:self._ndocc]
-      D = numpy.dot(C,C.T)
-      
-      niter = 0
-      e_old = 1e8
-      e_new = 1e7
-      F_old = guess.copy()
-      while (abs(e_old - e_new) > conv):
-        niter += 1
-        # form Fock matrix
-        self._jk.C_clear()
-        self._jk.C_left_add(psi4.core.Matrix.from_array(C, "C matrix"))
-        self._jk.compute()
-        F_new = self.H + 2.0 * numpy.asarray(self._jk.J()[0]) - numpy.asarray(self._jk.K()[0])
-        if niter < ndamp: 
-           F = damp * F_old + (1.0 - damp) * F_new
-        else:             
-           F = F_new
-        F_old = F.copy()
-        # compute total energy
-        e_old = e_new
-        e_new = numpy.trace( numpy.dot(D, self.H + F) ) + self.e_nuc
-        if verbose: print(" @SCF Iter %02d. E = %14.8f" % (niter, e_new))
-        # transform Fock matrix to orthogonal AO basis           
-        F = numpy.dot(self.X, numpy.dot(F, self.X))
-        # diagonalize the Fock matrix
-        E, C = numpy.linalg.eigh(F)
-        # convert LCAO-MO coefficiets to non-orthogonal AO basis
-        C = numpy.dot(self.X, C)
-        # form density matrix
-        idx = numpy.argsort(E) 
-        C = C[:,idx]
-        C = C[:,:self._ndocc]
-        D = numpy.dot(C,C.T)
-        # save
-        self.D = D.copy()
-        self.E = e_new
-        self.F = F_old.copy()
-        self.C = C.copy()
-        if niter > maxit: break
-      return
 
   #def _orthogonalizer(self, S):
   #    "Form orthogonalizer"
