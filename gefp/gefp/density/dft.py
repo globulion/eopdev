@@ -287,14 +287,10 @@ class DMFT:
       self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
       self._jk.compute()
       J = self._jk.J()[0].to_array(dense=True)
-      grad += 2.0 * numpy.linalg.multi_dot([C.T, J, C]).diagonal()
-
-      #for m in range(nn):
-      #    CCm = numpy.outer(C[:,m], C[:,m])
-      #    grad[m] += 2.0 * (numpy.dot(J, CCm)).trace()
+      grad += 4.0 * numpy.linalg.multi_dot([C.T, J, C]).diagonal()
 
       # K-type
-      Kij = self.Kij(C)
+      Kij = self.Kij(self.c)
       for m in range(nn):
           fij_m = self.fij_1(n, m, dmft, step, **kwargs)
           grad[m] -=(numpy.dot(Kij, fij_m)).trace()
@@ -386,7 +382,7 @@ class DMFT:
       norm = numpy.linalg.norm(gradient_1 - gradient_2)
       g = numpy.dot(x_old_1 - x_old_2, gradient_1 - gradient_2) / norm**2
 
-      x_new = x_old_1 - 0.00001 * gradient_1
+      x_new = x_old_1 - 0.0001 * gradient_1
       n_new = x_new[:nn]
       C_new = x_new[nn:].reshape(nn,nn)
       return n_new, C_new
