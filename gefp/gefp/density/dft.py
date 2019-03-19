@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #*-* coding: utf-8 *-*
 """
- DFT module.
+ DMFT module.
  Bartosz Błasiak, Gundelfingen, Feb 2019
 """
 
@@ -45,8 +45,6 @@ class DMFT:
       self._mol = self._wfn.molecule()
       # Basis set
       self._bfs = self._wfn.basisset()
-      # Number of alpha electrons
-      self._ndocc = self._wfn.nalpha()
       # Integral calculator
       self._mints = psi4.core.MintsHelper(self._bfs)
       # JK object
@@ -55,6 +53,8 @@ class DMFT:
       self._jk.initialize()
       # Nuclear repulsion energy
       self.e_nuc = self._mol.nuclear_repulsion_energy()
+      # Number of electron pairs
+      self.Np = self._wfn.nalpha()
 
       ### Constant AO matrices
       # External potential
@@ -64,7 +64,7 @@ class DMFT:
       # Hcore matrix
       self.H = self._wfn.H().to_array(dense=True)
       # Overlap integrals and orthogonalizer
-      self.S = self._wfn.S ().to_array(dense=True) #numpy.asarray( self._mints.ao_overlap() )
+      self.S = self._wfn.S().to_array(dense=True) #numpy.asarray( self._mints.ao_overlap() )
       self.X = self._orthogonalizer(self.S)
 
       ### Current OPDM and total energy
@@ -74,11 +74,10 @@ class DMFT:
          self.D = self._wfn.Da().to_array(dense=True)
       elif guess == 'hcore':  # Guess based on one-electron Hamiltonian
          if self.V_ext is not None: self.H += self.V_ext
-         e, c = numpy.linalg.eigh(self.H.to_array(dense=True))
+         e, c = numpy.linalg.eigh(self.H)
          c = c[:,::-1]
-         N = self.wfn.nalpha()
          D = numpy.zeros((self._bfs.nbf(), self._bfs.nbf()), numpy.float64)
-         for i in range(N):
+         for i in range(self.Np):
              D += numpy.outer(c[:,i], c[:,i])
          self.D = D
          self.E = 0.0
@@ -159,7 +158,7 @@ class DMFT:
 
   def fij_1(self, n, m, dmft, step=None, **kwargs):
       "Compute first derivatives of EX coefficients wrt the m-th NO occupancy"
-      if   dmft.lower() == 'hf'       : f_m = self._fij_1_hf(n)
+      if   dmft.lower() == 'hf'       : f_m = self._fij_1_hf(n, m)
       elif dmft.lower() == 'mbb'      : f_m = self._fij_1_numerical(n, m, step, self._fij_mbb, **kwargs)
       elif dmft.lower() == 'bb_pade'  : f_m = self._fij_1_numerical(n, m, step, self._ij_bbpade, **kwargs)
       else: raise NotImplementedError
@@ -203,13 +202,13 @@ class DMFT:
       # First iteration
       iteration += 1
       x_old_2 = numpy.hstack([n, C.ravel()])
-      gradient_2 = self._gradient(n, fij, C)
+      gradient_2 = self._gradient(n, fij, C, dmft, step, **kwargs)
       x_old_1 = x_old_2 - g_0 * gradient_2
 
       n_old_1 = x_old_1[:nn]
       C_old_1 = x_old_1[nn:].reshape(nn,nn)
       n_old_1, C_old_1 = self._projection(n_old_1, C_old_1)
-      self.D = numpy.linalg.triple_dot(C_old_1, numpy.diag(n_old_1), C_old_1.T)
+      self.D = numpy.linalg.multi_dot([C_old_1, numpy.diag(n_old_1), C_old_1.T])
       self.n = n_old_1.copy()
       self.c = C_old_1.copy()
       E_new = self.static_energy(dmft, **kwargs)
@@ -224,12 +223,13 @@ class DMFT:
 
       # Continue iterations with changing step of SD
       stop = False
+      iteration += 1
       while stop is False:
           # New density matrix and XC coefficients
           n_new, C_new = self._st_step(n_old_1, fij_old_1, C_old_1, n_old_2, fij_old_2, C_old_2, dmft, step, **kwargs)
           n_new, C_new = self._projection(n_new, C_new)
           fij_new = self.fij(n_new, dmft, **kwargs)
-          self.D = numpy.linalg.triple_dot(C_new, numpy.diag(n_new), C_new.T)
+          self.D = numpy.linalg.multi_dot([C_new, numpy.diag(n_new), C_new.T])
           self.n = n_new.copy()
           self.c = C_new.copy()
 
@@ -260,6 +260,7 @@ class DMFT:
           fij_old_1 = fij_new.copy()
           C_old_1 = C_new.copy()
 
+      print(n_new)
       if verbose and success:
          print(" DMFT-SCF iterations converged.")
       if verbose and not success:
@@ -271,7 +272,7 @@ class DMFT:
       nn = len(n)
 
       # 1-electron contributon
-      Hmm = numpy.dot(C.T, numpy.dot(self.H.to_array(dense=True), C)).diagonal()
+      Hmm = numpy.linalg.multi_dot([C.T, self.H, C]).diagonal()
       grad = 2.0 * Hmm
 
       # 2-electron contribution
@@ -280,16 +281,17 @@ class DMFT:
 
       # J-type
       self._jk.C_clear()
-      self._jk.set_do_J(True)
-      self._jk.set_do_K(False)
-      self._jk.C_left_add(psi4.core.Matrix.from_array(D, ""))
+      #self._jk.set_do_J(True)
+      #self._jk.set_do_K(False)
+      self._jk.C_left_add(psi4.core.Matrix.from_array(self.D, ""))
       self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
       self._jk.compute()
       J = self._jk.J()[0].to_array(dense=True)
+      grad += 2.0 * numpy.linalg.multi_dot([C.T, J, C]).diagonal()
 
-      for m in range(nn):
-          CCm = numpy.outer(C[:,m], C[:,m])
-          grad[m] += 2.0 * (numpy.dot(J, CCm)).trace()
+      #for m in range(nn):
+      #    CCm = numpy.outer(C[:,m], C[:,m])
+      #    grad[m] += 2.0 * (numpy.dot(J, CCm)).trace()
 
       # K-type
       Kij = self.Kij(C)
@@ -297,7 +299,7 @@ class DMFT:
           fij_m = self.fij_1(n, m, dmft, step, **kwargs)
           grad[m] -=(numpy.dot(Kij, fij_m)).trace()
 
-      self._jk.set_do_K(True)
+      #self._jk.set_do_K(True)
       return grad
 
   def _grad_C(self, n, fij, C):
@@ -305,7 +307,7 @@ class DMFT:
       nn = len(n)
 
       # 1-electron contributon
-      Ham = numpy.dot(self.H.to_array(dense=True), C)
+      Ham = numpy.dot(self.H, C)
       grad = Ham * n
 
       # 2-electron contribution
@@ -313,45 +315,52 @@ class DMFT:
 
       # J-type
       self._jk.C_clear()                                           
-      self._jk.do_J(True)
-      self._jk.do_K(False)
+      #self._jk.set_do_J(True)
+      #self._jk.set_do_K(False)
 
-      for m in range(nn):
-          Am = self._A(n, C, m)
-          self._jk.C_left_add(psi4.core.Matrix.from_array(A_m, ""))
-          self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+      self._jk.C_left_add(psi4.core.Matrix.from_array(self.D, ""))
+      self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
       self._jk.compute()
+      J = self._jk.J()[0].to_array(dense=True)
+      J = 2.0 * numpy.dot(J, C)
+      for m in range(nn): grad[:,m] += n[m] * J[:,m]
 
-      for m in range(nn):
-          Jm = self._jk.J()[m].to_array(dense=True)
-          grad += numpy.dot(Jm, C)
+      #for m in range(nn):
+      #    Am = self._A(n, C, m)
+      #    self._jk.C_left_add(psi4.core.Matrix.from_array(Am, ""))
+      #    self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+      #self._jk.compute()
+
+      #for m in range(nn):
+      #    Jm = self._jk.J()[m].to_array(dense=True)
+      #    grad[:,m] += numpy.dot(Jm, C[:,m])
 
       # K-type
       self._jk.C_clear()                                           
-      self._jk.do_J(False)
-      self._jk.do_K(True)
+      #self._jk.set_do_J(False)
+      #self._jk.set_do_K(True)
 
       for m in range(nn):
           Bm = self._B(fij, C, m)
-          self._jk.C_left_add(psi4.core.Matrix.from_array(B_m, ""))
+          self._jk.C_left_add(psi4.core.Matrix.from_array(Bm, ""))
           self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
       self._jk.compute()
 
       for m in range(nn):
           Km = self._jk.K()[m].to_array(dense=True)
-          grad -= numpy.dot(Km, C)
+          grad[:,m] -= numpy.dot(Km, C[:,m])
 
       # finalize
       grad *= 4.0
-      self._jk.do_J(True)
-      self._jk.do_K(True)
+      #self._jk.set_do_J(True)
+      #self._jk.set_do_K(True)
       return grad
 
   def _A(self, n, C, m):
       Am = 2.0 * self.D * n[m]
       return Am
   def _B(self, fij, C, m):
-      Bm = numpy.linalg.triple_dot(C, numpy.diag(fij[:,m]), C.T)
+      Bm = numpy.linalg.multi_dot([C, numpy.diag(fij[:,m]), C.T])
       return Bm
 
   def _gradient(self, n, fij, C, dmft, step, **kwargs):
@@ -377,7 +386,7 @@ class DMFT:
       norm = numpy.linalg.norm(gradient_1 - gradient_2)
       g = numpy.dot(x_old_1 - x_old_2, gradient_1 - gradient_2) / norm**2
 
-      x_new = x_old_1 - g * gradient_1
+      x_new = x_old_1 - 0.00001 * gradient_1
       n_new = x_new[:nn]
       C_new = x_new[nn:].reshape(nn,nn)
       return n_new, C_new
@@ -391,35 +400,42 @@ class DMFT:
           u = a[i] + mu
           if   u <= 0.0: a_[i] = 0.0
           elif u >= 1.0: a_[i] = 1.0
+          else: a_[i] = u
       return a_
 
   def _projection(self, n, C):
       "Find n_new and C_new such that new density matrix is N-representable"
-      raise NotImplementedError
       # compute pre-density matrix
-      D = numpy.linalg.triple_dot(C, numpy.diag(n), C.T)
+      D = numpy.linalg.multi_dot([C, numpy.diag(n), C.T])
       D_ = self._orthogonalize_OPDM(D, self.S)
       a, b = numpy.linalg.eigh(D_)
       # 
-      Zk = lambda mu, a: (a.sum() - self.Np)**2
+      Zk = lambda mu, n: (n.sum() - self.Np)**2
       # start secant search for root mu such that Zk = 0
       stop = False
       mu_0= 0.0
-      mu_1= 0.0001
+      mu_1= 0.01
       a_0 = self._a(a, mu_0)
       a_1 = self._a(a, mu_1)
       Z_0 = Zk(mu_0, a_0)
       Z_1 = Zk(mu_1, a_1)
+
+      niter = 0
       while stop is False:
           mu_k = mu_1 - Z_1 * (mu_1 - mu_0) / (Z_1 - Z_0)
           a_k = self._a(a, mu_k)
           Z_k = Zk(mu_k, a_k)
-          if Z_k < 0.00001: stop = True
+          if Z_k < 0.00000000001 or niter > 100: stop = True
           mu_0 = mu_1  ; Z_0 = Z_1
           mu_1 = mu_k  ; Z_1 = Z_k
+          niter += 1
       # compute the projected density matrix
       n_new = a_k
       C_new = b
+      # sort
+      idx = numpy.argsort(n_new)[::-1]
+      n_new = n_new[idx]
+      C_new = C_new[:,idx]
       return n_new, C_new
 
 
@@ -1010,11 +1026,11 @@ class DMFT:
               v = 0.0
               if   (i==m) and (j!=m): v = n[j]
               elif (j==m) and (i!=m): v = n[i]
-              elif (i==j==m): v = 2.0*n[m]
+              elif (i==j==m)        : v = n[m]*2.0
               fij_m[i, j] = v
       return fij_m
 
-  def _fij_1m_numerical(self, n, m, step, func, **kwargs):
+  def _fij_1_numerical(self, n, m, step, func, **kwargs):
       "First numerical derivatives of fij_func wrt n_m. Uses Forward second-order finite difference with O(step^2)"
       n_p1 = self._n_m(n, m, +1.0*step)
       n_p2 = self._n_m(n, m, +2.0*step)
