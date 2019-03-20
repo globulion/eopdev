@@ -10,6 +10,7 @@ import sys
 import math
 import numpy
 import numpy.linalg
+import scipy.optimize
 import psi4
 import oepdev
 
@@ -57,21 +58,26 @@ class DMFT:
       self.Np = self._wfn.nalpha()
 
       ### Constant AO matrices
+      # Overlap integrals and orthogonalizer
+      self.S = self._wfn.S().to_array(dense=True) #numpy.asarray( self._mints.ao_overlap() )
+      self.X = self._orthogonalizer(self.S)
+      self.Y = numpy.linalg.inv(self.X)
+      # Hcore matrix
+      self.H = self._wfn.H().to_array(dense=True)
+      #self.H = numpy.linalg.multi_dot([self.X, self.H, self.X])
       # External potential
       self.V_ext = V_ext
       if V_ext is not None and guess == 'current':
           raise ValueError(" External potential can only be set for 'HCore' guess!")
-      # Hcore matrix
-      self.H = self._wfn.H().to_array(dense=True)
-      # Overlap integrals and orthogonalizer
-      self.S = self._wfn.S().to_array(dense=True) #numpy.asarray( self._mints.ao_overlap() )
-      self.X = self._orthogonalizer(self.S)
+      #if V_ext is not None:
+      #   self.V_ext = numpy.linalg.multi_dot([self.X, self.V_ext, self.X])
 
       ### Current OPDM and total energy
       if guess == 'current':  # Guess based on current density matrix from the input wavefunction
          assert self.V_ext is None
          self.E = self._wfn.energy()
          self.D = self._wfn.Da().to_array(dense=True)
+         #self.D = self._orthogonalize_OPDM(self.D, self.S)
       elif guess == 'hcore':  # Guess based on one-electron Hamiltonian
          if self.V_ext is not None: self.H += self.V_ext
          e, c = numpy.linalg.eigh(self.H)
@@ -80,12 +86,12 @@ class DMFT:
          for i in range(self.Np):
              D += numpy.outer(c[:,i], c[:,i])
          self.D = D
-         self.E = 0.0
+         self.E = 2.0*e.sum() + self.e_nuc
       else:
          raise ValueError("Only 'Current' or 'HCore' ODPM's are supported as starting points.")
       # Natural Orbitals
       self.n, self.c = self.natural_orbitals(self.D, orthogonalize_first=self.S, 
-                            order='descending', no_cutoff=0.0, renormalize=False)
+                            order='descending', no_cutoff=0.0, renormalize=False, original_ao_mo=True)
       return
 
   def run(self, dmft, 
@@ -160,7 +166,8 @@ class DMFT:
       "Compute first derivatives of EX coefficients wrt the m-th NO occupancy"
       if   dmft.lower() == 'hf'       : f_m = self._fij_1_hf(n, m)
       elif dmft.lower() == 'mbb'      : f_m = self._fij_1_numerical(n, m, step, self._fij_mbb, **kwargs)
-      elif dmft.lower() == 'bb_pade'  : f_m = self._fij_1_numerical(n, m, step, self._ij_bbpade, **kwargs)
+      elif dmft.lower() == 'bb_pade'  : f_m = self._fij_1_numerical(n, m, step, self._fij_bbpade, **kwargs)
+      elif dmft.lower() == 'gu'       : f_m = self._fij_1_numerical(n, m, step, self._fij_gu)
       else: raise NotImplementedError
       return f_m
 
@@ -197,22 +204,23 @@ class DMFT:
       # Starting energy
       self.E = self.static_energy(dmft, **kwargs)
       E_old = self.E
-      if verbose: print(" @DMFT-SCF Iter %02d. E = %14.8f" % (iteration, E_old))
+      if verbose: print(" @DMFT-SCF Iter %2d. E = %14.8f" % (iteration, E_old))
 
       # First iteration
       iteration += 1
-      x_old_2 = numpy.hstack([n, C.ravel()])
+      C_ = numpy.dot(self.Y, C)
+      x_old_2 = numpy.hstack([n, C_.ravel()])
       gradient_2 = self._gradient(n, fij, C, dmft, step, **kwargs)
       x_old_1 = x_old_2 - g_0 * gradient_2
 
       n_old_1 = x_old_1[:nn]
-      C_old_1 = x_old_1[nn:].reshape(nn,nn)
-      n_old_1, C_old_1 = self._projection(n_old_1, C_old_1)
+      C_old_1_= x_old_1[nn:].reshape(nn,nn) ; C_old_1 = numpy.dot(self.X, C_old_1_)
+      n_old_1, C_old_1 = self._density_matrix_projection(n_old_1, C_old_1)
       self.D = numpy.linalg.multi_dot([C_old_1, numpy.diag(n_old_1), C_old_1.T])
       self.n = n_old_1.copy()
       self.c = C_old_1.copy()
       E_new = self.static_energy(dmft, **kwargs)
-      if verbose: print(" @DMFT-SCF Iter %02d. E = %14.8f" % (iteration, E_new))
+      if verbose: print(" @DMFT-SCF Iter %2d. E = %14.8f" % (iteration, E_new))
 
       # Prepare for further iterations
       fij_old_1 = self.fij(n_old_1, dmft, **kwargs)
@@ -227,7 +235,7 @@ class DMFT:
       while stop is False:
           # New density matrix and XC coefficients
           n_new, C_new = self._st_step(n_old_1, fij_old_1, C_old_1, n_old_2, fij_old_2, C_old_2, dmft, step, **kwargs)
-          n_new, C_new = self._projection(n_new, C_new)
+          n_new, C_new = self._density_matrix_projection(n_new, C_new)
           fij_new = self.fij(n_new, dmft, **kwargs)
           self.D = numpy.linalg.multi_dot([C_new, numpy.diag(n_new), C_new.T])
           self.n = n_new.copy()
@@ -235,7 +243,7 @@ class DMFT:
 
           # compute current energy
           E_new = self.static_energy(dmft, **kwargs)
-          if verbose: print(" @DMFT-SCF Iter %02d. E = %14.8f" % (iteration, E_new))
+          if verbose: print(" @DMFT-SCF Iter %2d. E = %14.8f" % (iteration, E_new))
 
           # check if converged?
           if abs(E_new-E_old) < conv: 
@@ -260,9 +268,9 @@ class DMFT:
           fij_old_1 = fij_new.copy()
           C_old_1 = C_new.copy()
 
-      print(n_new)
       if verbose and success:
          print(" DMFT-SCF iterations converged.")
+         print(" Final Energy = %14.8f" % self.E)
       if verbose and not success:
          print(" DMFT-SCF iterations did not converge.")
       return success
@@ -350,6 +358,9 @@ class DMFT:
       grad *= 4.0
       #self._jk.set_do_J(True)
       #self._jk.set_do_K(True)
+
+      # transform gradient to orthogonal AO basis
+      grad = numpy.dot(self.X, grad)
       return grad
 
   def _A(self, n, C, m):
@@ -360,7 +371,7 @@ class DMFT:
       return Bm
 
   def _gradient(self, n, fij, C, dmft, step, **kwargs):
-      "Gradient vector in the parameter space of n x C.ravel()"
+      "Gradient vector in the parameter space of n x C.ravel(). Returns gradient in orthogonal AO basis"
       dE_n = self._grad_n(n, fij, C, dmft, step, **kwargs)
       dE_C = self._grad_C(n, fij, C)
 
@@ -373,24 +384,33 @@ class DMFT:
       "Next Steepest-Descents Step"
       nn = len(n_old_1)
 
-      x_old_1= numpy.hstack([n_old_1, C_old_1.ravel()])
-      x_old_2= numpy.hstack([n_old_2, C_old_2.ravel()])
+      # transform C to orthogonal AO basis
+      C_old_1_ = numpy.dot(self.Y, C_old_1)
+      C_old_2_ = numpy.dot(self.Y, C_old_2)
+
+      x_old_1= numpy.hstack([n_old_1, C_old_1_.ravel()])
+      x_old_2= numpy.hstack([n_old_2, C_old_2_.ravel()])
 
       gradient_1 = self._gradient(n_old_1, fij_old_1, C_old_1, dmft, step, **kwargs)
       gradient_2 = self._gradient(n_old_2, fij_old_2, C_old_2, dmft, step, **kwargs)
 
       norm = numpy.linalg.norm(gradient_1 - gradient_2)
       g = numpy.dot(x_old_1 - x_old_2, gradient_1 - gradient_2) / norm**2
-
-      x_new = x_old_1 - 0.0001 * gradient_1
+      #print(" G = ", g)
+      g = abs(g)
+      x_new = x_old_1 - g * gradient_1
       n_new = x_new[:nn]
-      C_new = x_new[nn:].reshape(nn,nn)
+      C_new_= x_new[nn:].reshape(nn,nn)
+
+      # transform C back to original AO basis
+      C_new = numpy.dot(self.X, C_new_)
       return n_new, C_new
 
 
   # ----- Density-Matrix Projection Algorithm ----- #
 
   def _a(self, a, mu):
+      "Projected occupation numbers"
       a_ = a.copy();
       for i in range(len(a)):
           u = a[i] + mu
@@ -399,18 +419,54 @@ class DMFT:
           else: a_[i] = u
       return a_
 
-  def _projection(self, n, C):
+  def _find_mu(self, n):
+      "Search for mu"
+      mu = 0.0
+      def obj(mu, x):
+          u = self._a(x, mu)
+          Z = (u.sum() - self.Np)**2
+          return Z
+
+      R = scipy.optimize.minimize(obj, mu, args=(n,))
+      mu = R.x
+      return mu
+
+  def _density_matrix_projection(self, n, C, mu_tol=0.00000000001, mu_iter=1000):
       "Find n_new and C_new such that new density matrix is N-representable"
       # compute pre-density matrix
-      D = numpy.linalg.multi_dot([C, numpy.diag(n), C.T])
-      D_ = self._orthogonalize_OPDM(D, self.S)
+      preD = numpy.linalg.multi_dot([C, numpy.diag(n), C.T]) # cannot be here self.D because it is pre-density matrix!
+      D_ = self._orthogonalize_OPDM(preD, self.S)
+      a, b = numpy.linalg.eigh(D_)
+      #print(" Init sum = %14.6f" % a.sum())
+
+      mu = self._find_mu(a)
+
+      # compute the projected density matrix
+      n_new = self._a(a, mu)
+      #print(" Nsum = ", n_new.sum())
+      C_new_= b
+
+      # sort (descending order)
+      idx = numpy.argsort(n_new)[::-1]
+      n_new = n_new [  idx]
+      C_new_= C_new_[:,idx]
+      C_new = numpy.dot(self.X, C_new_)
+      return n_new, C_new
+
+  def _density_matrix_projection_old(self, n, C, mu_tol=0.00000000001, mu_iter=1000):
+      "Find n_new and C_new such that new density matrix is N-representable"
+      # compute pre-density matrix
+      preD = numpy.linalg.multi_dot([C, numpy.diag(n), C.T]) # cannot be here self.D because it is pre-density matrix!
+      D_ = self._orthogonalize_OPDM(preD, self.S)
       a, b = numpy.linalg.eigh(D_)
       # 
-      Zk = lambda mu, n: (n.sum() - self.Np)**2
+      Zk = lambda mu, x: (x.sum() - self.Np)**2
+      print(" Init sum = %14.6f" % a.sum())
+
       # start secant search for root mu such that Zk = 0
       stop = False
-      mu_0= 0.0
-      mu_1= 0.01
+      mu_0=-0.0
+      mu_1= 0.02
       a_0 = self._a(a, mu_0)
       a_1 = self._a(a, mu_1)
       Z_0 = Zk(mu_0, a_0)
@@ -418,20 +474,29 @@ class DMFT:
 
       niter = 0
       while stop is False:
-          mu_k = mu_1 - Z_1 * (mu_1 - mu_0) / (Z_1 - Z_0)
+          dZ = Z_1 - Z_0
+          #if abs(dZ) > mu_tol: mu_k = mu_1 - Z_1 * (mu_1 - mu_0) / dZ
+          #else: break
+          mu_k = mu_1 - Z_1 * (mu_1 - mu_0) / dZ
           a_k = self._a(a, mu_k)
           Z_k = Zk(mu_k, a_k)
-          if Z_k < 0.00000000001 or niter > 100: stop = True
+          #if Z_k < mu_tol or niter > mu_iter: stop = True
+          if Z_k < mu_tol: stop = True
           mu_0 = mu_1  ; Z_0 = Z_1
           mu_1 = mu_k  ; Z_1 = Z_k
+          a_1 = a_k
           niter += 1
+
       # compute the projected density matrix
       n_new = a_k
-      C_new = b
-      # sort
+      print(" Nsum = ", n_new.sum())
+      C_new_= b
+
+      # sort (descending order)
       idx = numpy.argsort(n_new)[::-1]
-      n_new = n_new[idx]
-      C_new = C_new[:,idx]
+      n_new = n_new [  idx]
+      C_new_= C_new_[:,idx]
+      C_new = numpy.dot(self.X, C_new_)
       return n_new, C_new
 
 
