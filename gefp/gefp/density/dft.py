@@ -13,6 +13,7 @@ import numpy.linalg
 import scipy.optimize
 import psi4
 import oepdev
+from . import functional
 
 __all__ = ["DMFT"]
 
