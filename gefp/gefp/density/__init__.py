@@ -9,5 +9,5 @@ from . import scf
 from . import dft
 from . import functional
 
-__all__ = ["partitioning", "scf", "dft", "functional"]
+__all__ = ["partitioning", "scf", "dft", "dmft", "functional"]
 __author__="Bartosz Błasiak"
