@@ -17,6 +17,93 @@ import oepdev
 __all__ = ["DMFT"]
 
 
+class SolverDMFT:
+  """
+"""
+  def __init__(self, algorithm='sd', projection='R-set'):
+      self.implemented_algorithms = ['sd']
+      self.algorithm = algorithm
+      self.projection = projection
+
+
+      # sanity checks
+      if algorithm.lower() not in self.implemented_algorithms:
+         raise ValueError(" Algorithm %s is not implemented!" % algorithm)
+
+  def _run_sd(self, x_0, dmft, obj_func, grad_func, dens_func, g_0, maxit, conv, **kwargs):
+      iteration = 0
+      success = False
+
+      # Starting energy
+      self.E = obj_func(x_0, **kwargs)
+      E_old = self.E
+      if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (iteration, E_old))
+
+      # First iteration
+      iteration += 1
+      x_old_2 = x_0
+      gradient_2 = grad_func(x_0)
+      x_old_1 = x_old_2 - g_0 * gradient_2
+      self.D = dens_func(x_old_1)
+
+      E_new = obj_func(x_old_1, **kwargs)
+      if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (iteration, E_new))
+
+      # Prepare for further iterations
+      fij_old_1 = self.fij(n_old_1, dmft, **kwargs)
+
+      n_old_2 = n.copy()
+      C_old_2 = C.copy()
+      fij_old_2 = fij.copy()
+
+      # Continue iterations with changing step of SD
+      stop = False
+      iteration += 1
+      while stop is False:
+          # New density matrix and XC coefficients
+          x_new = self._st_step(x_old_1, x_old_2, **kwargs)
+          self.D = dens_func(x_new)
+
+          # compute current energy
+          E_new = obj_func(x_new, **kwargs)
+          if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (iteration, E_new))
+
+          # check if converged?
+          if abs(E_new-E_old) < conv: 
+             stop = True
+             success = True
+
+          # check if max iterations were exceeded
+          if iteration >= maxit: 
+             stop = True
+             success = False
+
+          # prepare for next iteration
+          iteration += 1
+          E_old = E_new
+          self.E = E_old
+
+          x_old_2 = x_old_1.copy()
+          x_old_1 = x_new.copy()
+
+      if verbose and success:
+         print(" DMFT iterations converged.")
+         print(" Final Energy = %14.8f" % self.E)
+      if verbose and not success:
+         print(" DMFT iterations did not converge.")
+      return success
+
+  def run(self, x_0, dmft):
+      if self.algorithm.lower() == 'sd-par': 
+         #self._run(x_0, dmft, obj_func=, grad_func, dens_func, g_0=0.0001, maxit=100, conv=0.0001, **kwargs)
+         raise NotImplementedError
+
+  def grad(self):
+      return G
+
+
+
+
 class DMFT:
   """
  ---------------------------------------------------------------------------------------------------------------
@@ -94,10 +181,16 @@ class DMFT:
                             order='descending', no_cutoff=0.0, renormalize=False, original_ao_mo=True)
       return
 
-  def run(self, dmft, 
+  def run(self, dmft, algorithm='sd-par',
               maxit=30, conv=1.0e-7, g_0=0.0001, step=0.000001, verbose=True, **kwargs):
       "Solve SCF-DMFT equations (public interface)"
-      success = self._run(dmft, maxit, conv, g_0, step, verbose, self.n, self.c, **kwargs)
+      if algorithm.lower() == 'sd-par':
+         success = self._run(dmft, maxit, conv, g_0, step, verbose, self.n, self.c, **kwargs)
+      elif algorithm.lower() == 'sd-proj-r':
+         success = self._run_proj_R(dmft, maxit, conv, g_0, step, verbose, self.n, self.c, **kwargs)
+      elif algorithm.lower() == 'sd-proj-t':
+         success = self._run_proj_T(dmft, maxit, conv, g_0, step, verbose, self.n, self.c, **kwargs)
+      else: raise ValueError(" Unknown algorithm %s" % algorithm)
       return success
 
   def static_energy(self, dmft='MBB', **kwargs):
@@ -168,6 +261,7 @@ class DMFT:
       elif dmft.lower() == 'mbb'      : f_m = self._fij_1_numerical(n, m, step, self._fij_mbb, **kwargs)
       elif dmft.lower() == 'bb_pade'  : f_m = self._fij_1_numerical(n, m, step, self._fij_bbpade, **kwargs)
       elif dmft.lower() == 'gu'       : f_m = self._fij_1_numerical(n, m, step, self._fij_gu)
+      elif dmft.lower() == 'chf'      : f_m = self._fij_1_numerical(n, m, step, self._fij_chf)
       else: raise NotImplementedError
       return f_m
 
@@ -406,6 +500,170 @@ class DMFT:
       C_new = numpy.dot(self.X, C_new_)
       return n_new, C_new
 
+  # ----- Density Projection Steepest Descents ----- #
+
+  def _make_P(self, n, C):
+      return numpy.linalg.multi_dot([C, numpy.diag(numpy.sqrt(n)), C.T])
+  def _make_D(self, n, C):
+      return numpy.linalg.multi_dot([C, numpy.diag(n), C.T])
+
+  # ----- ST-Proj-R Algorithm ----- #
+
+  def _run_proj_R(self, dmft, maxit, conv, g_0, step, verbose, n, C, **kwargs):
+      "Run DMFT-SCF with the Steepest-Descents minimization and density matrix projection algorithm (protected interface)"
+
+      nn = len(n)
+      iteration = 0
+      success = False
+
+      # Exchange-Correlation coefficients
+      fij = self.fij(n, dmft, **kwargs)
+
+      # Starting energy
+      self.E = self.static_energy(dmft, **kwargs)
+      E_old = self.E
+      if verbose: print(" @DMFT-SCF Iter %2d. E = %14.8f" % (iteration, E_old))
+
+      # First iteration
+      iteration += 1
+      C_ = numpy.dot(self.Y, C)
+      x_old_2 = numpy.hstack([n, C_.ravel()])
+      gradient_2 = self._gradient(n, fij, C, dmft, step, **kwargs)
+      x_old_1 = x_old_2 - g_0 * gradient_2
+
+      n_old_1 = x_old_1[:nn]
+      C_old_1_= x_old_1[nn:].reshape(nn,nn) ; C_old_1 = numpy.dot(self.X, C_old_1_)
+      n_old_1, C_old_1 = self._density_matrix_projection(n_old_1, C_old_1)
+      self.D = numpy.linalg.multi_dot([C_old_1, numpy.diag(n_old_1), C_old_1.T])
+      self.n = n_old_1.copy()
+      self.c = C_old_1.copy()
+      E_new = self.static_energy(dmft, **kwargs)
+      if verbose: print(" @DMFT-SCF Iter %2d. E = %14.8f" % (iteration, E_new))
+
+      # Prepare for further iterations
+      fij_old_1 = self.fij(n_old_1, dmft, **kwargs)
+
+      n_old_2 = n.copy()
+      C_old_2 = C.copy()
+      fij_old_2 = fij.copy()
+
+      # Continue iterations with changing step of SD
+      stop = False
+      iteration += 1
+      while stop is False:
+          # New density matrix and XC coefficients
+          n_new, C_new = self._st_step(n_old_1, fij_old_1, C_old_1, n_old_2, fij_old_2, C_old_2, dmft, step, **kwargs)
+          n_new, C_new = self._density_matrix_projection(n_new, C_new)
+          fij_new = self.fij(n_new, dmft, **kwargs)
+          self.D = numpy.linalg.multi_dot([C_new, numpy.diag(n_new), C_new.T])
+          self.n = n_new.copy()
+          self.c = C_new.copy()
+
+          # compute current energy
+          E_new = self.static_energy(dmft, **kwargs)
+          if verbose: print(" @DMFT-SCF Iter %2d. E = %14.8f" % (iteration, E_new))
+
+          # check if converged?
+          if abs(E_new-E_old) < conv: 
+             stop = True
+             success = True
+
+          # check if max iterations were exceeded
+          if iteration >= maxit: 
+             stop = True
+             success = False
+
+          # prepare for next iteration
+          iteration += 1
+          E_old = E_new
+          self.E = E_old
+
+          n_old_2 = n_old_1.copy()
+          fij_old_2 = fij_old_1.copy()
+          C_old_2 = C_old_1.copy()
+
+          n_old_1 = n_new.copy()
+          fij_old_1 = fij_new.copy()
+          C_old_1 = C_new.copy()
+
+      if verbose and success:
+         print(" DMFT-SCF iterations converged.")
+         print(" Final Energy = %14.8f" % self.E)
+      if verbose and not success:
+         print(" DMFT-SCF iterations did not converge.")
+      return success
+
+
+  def _gradient_proj_R(self, n, fij, C, dmft, step, **kwargs):
+      "Gradient vector in the parameter space of n x C.ravel(). Returns gradient in orthogonal AO basis"
+      dE_D = self._grad_D(n, fij, C, dmft, step, **kwargs)
+      gradient = dE_D
+      return gradient
+
+  def _gradient_proj_P(self, n, c, dmft, **kwargs):
+      # 1-electron contribution + 2-electron Hartree contribution
+      if dmft.lower()!= 'mbb': raise NotImplementedError
+
+      P  = self._make_P(n, c)
+      PS = numpy.dot(P, self.S)
+      D  = numpy.linalg.multi_dot([P, self.S, P])
+      I  = numpy.identity(len(P))
+
+      self._jk.C_clear()
+      self._jk.C_left_add(psi4.core.Matrix.from_array(D, ""))
+      self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+      self._jk.compute()
+      J = self._jk.J()[0].to_array(dense=True)
+
+      Jh = self.H + 2.0*J
+      grad = numpy.dot(Jh, PS)
+      grad+= grad.T
+      
+
+      # 2-electron contribution: Exchange-Correlation
+      #f  = self.fij(n, dmft, **kwargs)
+      #dP = self._grad_P_xc(f, n, c)
+      dP = self._jk.K()[0].to_array(dense=True)
+      grad -= dP
+      # 
+      Si = numpy.linalg.inv(self.S)
+      grad = 2.0 * numpy.linalg.multi_dot([Si, grad, Si])
+      return grad
+
+  def _st_step_proj_P(self, n_old_1, fij_old_1, C_old_1, 
+                            n_old_2, fij_old_2, C_old_2,
+                            dmft, step, **kwargs):
+      raise NotImplementedError
+      "Next Steepest-Descents Step"
+      nn = len(n_old_1)
+
+      # transform C to orthogonal AO basis
+      C_old_1_ = numpy.dot(self.Y, C_old_1)
+      C_old_2_ = numpy.dot(self.Y, C_old_2)
+
+      P_old_1_ = self._make_P(n_old_1, C_old_1_)
+      P_old_2_ = self._make_P(n_old_2, C_old_2_)
+
+      x_old_1= P_old_1_.ravel()
+      x_old_2= P_old_2_.ravel()
+
+      gradient_1 = self._gradient_proj_P(n_old_1, fij_old_1, C_old_1, dmft, step, **kwargs)
+      gradient_2 = self._gradient_proj_P(n_old_2, fij_old_2, C_old_2, dmft, step, **kwargs)
+
+      norm = numpy.linalg.norm(gradient_1 - gradient_2)
+      g = numpy.dot(x_old_1 - x_old_2, gradient_1 - gradient_2) / norm**2
+      #print(" G = ", g)
+      g = abs(g)
+      x_new = x_old_1 - g * gradient_1
+      n_new = x_new[:nn]
+      C_new_= x_new[nn:].reshape(nn,nn)
+
+      # transform C back to original AO basis
+      C_new = numpy.dot(self.X, C_new_)
+
+      return n_new, C_new
+
+
 
   # ----- Density-Matrix Projection Algorithm ----- #
 
@@ -586,8 +844,11 @@ class DMFT:
       return nn**p
   def _fij_chf(self, n):
       "The Corrected Hartree-Fock (CHF) Functional"
-      f = self._fij_hf(n)
-      ns = n * (1.0 - n)
+      nm = n.copy()
+      nm[numpy.where(nm<0.0)] = 0.0
+      f = self._fij_hf(nm)
+      ns = nm * (1.0 - nm)
+      ns[numpy.where(ns<0.0)] = 0.0
       f += numpy.sqrt(numpy.outer(ns, ns))
       return f
   def _fij_cga(self, n):
@@ -599,8 +860,10 @@ class DMFT:
       return f
   def _fij_gu(self, n):
       "The GU Functional"
-      f = self._fij_mbb(n)
-      ns = n - n*n
+      nm = n.copy()
+      nm[numpy.where(nm<0.0)] = 0.0
+      f = self._fij_mbb(nm)
+      ns = nm - nm*nm
       f -= numpy.diag(ns)
       return f
   def _fij_bbbk(self, n, k):
