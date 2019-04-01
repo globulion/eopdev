@@ -67,22 +67,24 @@ def density_matrix_projection(n, c, S, np, type='d'):#OK
  
     # compute pre-density matrix                                                                       
     preD = Density.generalized_density(n, c) # cannot be here self.D because it is pre-density matrix!
-    A = numpy.linalg.multi_dot([S, preD, S])
-    #D_ = Density.orthogonalize_OPDM(preD, self.S)
-    a, b = scipy.linalg.eig(A, S)
+    #A = numpy.linalg.multi_dot([S, preD, S])
+    A = Density.orthogonalize_OPDM(preD, S)
+    #a, b = scipy.linalg.eig(A, S)
+    a, b = numpy.linalg.eigh(A)
+    a = a.real; b = b.real
     #print(" Init sum = %14.6f" % a.sum()) 
                                                                                                      
     muORnu = func_find(a, np)
                                                                                                        
     # compute the projected density matrix
     n_new = func_coef(a, muORnu)
-    #print(" Nsum = ", n_new.sum())
     C_new = b
-                                                                                                       
+
     # sort (descending order)
     idx = numpy.argsort(n_new)[::-1]
     n_new = n_new [  idx]
     C_new = C_new [:,idx]
+    C_new = numpy.dot(Density.orthogonalizer(S), C_new)
     return n_new.real, C_new.real
 
 
@@ -186,6 +188,7 @@ class DMFT(ABC):
         x_0 = self._guess()
                                                                                   
         # [2] Starting energy
+        nn=self._bfs.nbf()
         self._current_energy = self._minimizer(x_0)
         E_old = self._current_energy
         if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (iteration, E_old))
@@ -194,7 +197,7 @@ class DMFT(ABC):
         iteration += 1
         x_old_2    = x_0
         x_old_1    = self._step_0(x_old_2, g_0)
-        self._density(x_old_1)
+        x_old_1    = self._density(x_old_1)
 
         self._current_energy = self._minimizer(x_old_1)
         E_new = self._current_energy
@@ -207,8 +210,8 @@ class DMFT(ABC):
 
             # [4.1] New guess
             x_new = self._step(x_old_1, x_old_2)
-            self._density(x_new)
-                                                                                  
+            x_new = self._density(x_new)
+
             # [4.2] Current energy
             self._current_energy = self._minimizer(x_new)
             E_new = self._current_energy
@@ -331,7 +334,7 @@ class DMFT(ABC):
                                                                                                
         ### Constant AO matrices
         # SCF LCAO-MO coefficients
-        self._Ca= self._wfn.Ca().to_array(dense=True)
+        self._Ca= self._wfn.Ca_subset("AO","ALL").to_array(dense=True)
         # Overlap integrals and orthogonalizer
         self._S = self._wfn.S().to_array(dense=True) #numpy.asarray( self._mints.ao_overlap() )
         self._X = Density.orthogonalizer(self._S)
@@ -350,8 +353,9 @@ class DMFT(ABC):
            D = self._wfn.Da().to_array(dense=True)
         elif guess == 'hcore':  # Guess based on one-electron Hamiltonian
            if self._V_ext is not None: self._H += self._V_ext
-           e, c = numpy.linalg.eigh(self._H)
+           e, c = numpy.linalg.eigh(numpy.linalg.multi_dot([self._X, self._H, self._X]))
            c = c[:,::-1]
+           c = numpy.dot(self._X, c)
            E = 2.0*e.sum() + self.e_nuc
            D = numpy.zeros((self._bfs.nbf(), self._bfs.nbf()), numpy.float64)
            for i in range(self._np):
@@ -471,7 +475,8 @@ class DMFT_NC(DMFT):
         self._current_orbitals    = c
         D = self._current_density.generalized_density(n, c)
         self._current_density.set_D(D)
-        return D
+        x_new = self._pack(n, c)
+        return x_new
 
     def _gradient(self, x):
         "Gradient"
@@ -521,6 +526,7 @@ class DMFT_NC(DMFT):
         # compute new guess
         gradient_2 = self._gradient(self._pack(n2, c2))
         x_new = x_old_2 - g0 * gradient_2
+        
 
         # transform back to AO basis
         n, c_ = self._unpack(x_new)

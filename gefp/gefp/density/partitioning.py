@@ -43,6 +43,7 @@ class Density:
                               renormalize            =  False        , 
                               no_cutoff              =  False        ):
         "Compute the Natural Orbitals from a given ODPM"
+        print(D[0])
         # orthogonalize in MO basis
         if orthogonalize_mo is True:
             if S is not None:
@@ -59,6 +60,7 @@ class Density:
 
         # Diagonalize density matrix in OAO or MO basis
         n, L = numpy.linalg.eigh(D_)
+        print(n.sum())
 
         # LCAO_NO matrix
         if orthogonalize_mo is True:
@@ -164,7 +166,7 @@ class Density:
 
 
 
-class DensityDecomposition(Density):
+class DensityDecomposition:
     """
  -------------------------------------------------------------------------------------------------------------
 
