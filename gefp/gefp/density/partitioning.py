@@ -13,9 +13,157 @@ import psi4
 import oepdev
 from .scf import SCF
 
-__all__ = ["DensityDecomposition"]
+__all__ = ["Density", "DensityDecomposition"]
 
-class DensityDecomposition:
+class Density:
+    """\
+ Electron Density
+"""
+    def __init__(self, D=None, jk=None):
+        self._D = None
+        if D is not None:
+           self._D         =  D.copy()
+        self._global_jk = jk
+
+    def matrix(self):
+        return self._D
+
+    def set_D(self, D): self._D = D.copy()
+
+    def set_jk(self, jk):
+        self._global_jk = jk
+
+    @classmethod
+    def natural_orbitals(cls, D, 
+                              S                      =  None         , 
+                              C                      =  None         , 
+                              orthogonalize_mo       =  True         , 
+                              order                  = 'descending'  , 
+                              return_ao_orthogonal   =  False        , 
+                              renormalize            =  False        , 
+                              no_cutoff              =  False        ):
+        "Compute the Natural Orbitals from a given ODPM"
+        # orthogonalize in MO basis
+        if orthogonalize_mo is True:
+            if S is not None:
+                assert C is not None
+                D_ = numpy.linalg.multi_dot([C.T, S, D, S, C])
+            else:
+                D_ = numpy.linalg.multi_dot([C.T,    D,    C])
+        # orthogonalize in AO basis
+        else:
+            if S is not None:
+               D_ = cls.orthogonalize_OPDM(D, S)
+            else:
+               D_ = D
+
+        # Diagonalize density matrix in OAO or MO basis
+        n, L = numpy.linalg.eigh(D_)
+
+        # LCAO_NO matrix
+        if orthogonalize_mo is True:
+           U = numpy.dot(C, L)
+        else:
+           U = L
+        if return_ao_orthogonal is False:
+           if orthogonalize_mo is False:
+              assert S is not None
+              U = numpy.dot(cls.orthogonalizer(S), U)
+        else:
+           raise NotImplementedError("Returning LCOAO_NO matrix is not supported yet if orthogonalization in MO basis was done!")
+
+        # Warnings and sanity checks
+        if n.max() > 1.0 or n.min() < 0.0:
+           print(" Warning! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
+        if ((n.max() - 1.0) > 0.00001 or (n.min() < -0.00001)):
+           raise ValueError("Unphysical NO populations detected! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
+        n[numpy.where(n<0.0)] = 0.0
+
+        # NO cutoff
+        if no_cutoff is False: no_cutoff = self.no_cutoff
+        if no_cutoff != 0.0:
+           ids = numpy.where(n>=self.no_cutoff)
+           n = n[ids]
+           U =(U.T[ids]).T
+
+        # Order according to occupations
+        if order=='ascending': 
+           pass
+        elif order=='descending':
+           n = n[  ::-1]
+           U = U[:,::-1]
+        else: raise ValueError("Incorrect order of NO orbitals. Possible only ascending or descending.")
+
+        # Renormalize to match correct number of electrons
+        if renormalize is True:
+           if ( abs(n.sum() - numpy.round(n.sum())) > 1.e-7):
+              print(" Warning: nsum=%14.4E delta=%14.4E" % (n.sum(), n.sum() - numpy.round(n.sum())))
+           d = numpy.round(n.sum()) - n.sum()
+           d/= numpy.float64(n.size)
+           n+= d
+           n[numpy.where(n<0.0)] = 0.0
+           n[numpy.where(n>1.0)] = 1.0
+        return n, U
+
+    @classmethod
+    def compute_1el_energy(cls, D, Hcore):
+        "Compute generalized 1-electron energy"
+        energy = numpy.dot(D, Hcore).trace()
+        return energy
+
+    @classmethod
+    def compute_2el_energy(cls, D_left, D_right, type='j'):
+        "Compute generalized 2-electron energy"
+        JorK = cls.generalized_JK(D_left, type)
+        energy = numpy.dot(JorK, D_right).trace()
+        return energy
+
+    @classmethod
+    def generalized_density(cls, n, c, g=1.0):
+        "Generalized matrix G = C n**g C.T"
+        ng = n.copy() if g==1.0 else n**g
+        G = numpy.linalg.multi_dot([C, diag(ng), C.T])
+        return G
+
+    #@classmethod
+    def generalized_JK(self, D, type='j'):
+        self._global_jk.C_clear()                                           
+        self._global_jk.C_left_add(psi4.core.Matrix.from_array(D, ""))
+        I = numpy.identity(D.shape[0], numpy.float64)
+        self._global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+        self._global_jk.compute()
+        if   type.lower() == 'j': JorK = self._global_jk.J()[0].to_array(dense=True)
+        elif type.lower() == 'k': JorK = self._global_jk.K()[0].to_array(dense=True)
+        else: raise ValueError("Incorrect type of JK matrix. Only J or K allowed.")
+        return JorK
+
+
+    @classmethod
+    def orthogonalize_OPDM(cls, D, S):
+        "Transforms the one-particle density matrix to orthogonal space"
+        Y = cls.deorthogonalizer(S)
+        return numpy.dot(Y, numpy.dot(D, Y.T))
+
+    @classmethod
+    def deorthogonalizer(cls, S):
+        "Compute the deorthogonalizer matrix from the overlap matrix"
+        s, u = numpy.linalg.eig(S)
+        s = numpy.sqrt(s)
+        Y = numpy.dot(u, numpy.dot(numpy.diag(s), u.T))
+        return Y
+
+    @classmethod
+    def orthogonalizer(cls, S):
+        "Compute the orthogonalizer matrix from the overlap matrix"
+        s, u = numpy.linalg.eig(S)
+        sm = 1.0/numpy.sqrt(s)
+        X = numpy.dot(u, numpy.dot(numpy.diag(sm), u.T))
+        return X
+
+
+
+
+class DensityDecomposition(Density):
     """
  -------------------------------------------------------------------------------------------------------------
 
@@ -171,6 +319,7 @@ class DensityDecomposition:
         self.global_jk = psi4.core.JK.build(self.bfs, jk_type=jk_type)
         self.global_jk.set_memory(int(5e8))
         self.global_jk.initialize()
+        Density.__init__(self.global_jk)
 
         # sizing
         self.nmo_t      = None

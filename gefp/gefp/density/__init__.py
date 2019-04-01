@@ -5,9 +5,10 @@ Density Subpackage.
 Bartosz Błasiak, Gundelfingen, Dec 2018
 """
 from . import partitioning
+from . import functional
+from . import dmft
 from . import scf
 from . import dft
-from . import functional
 
-__all__ = ["partitioning", "scf", "dft", "dmft", "functional"]
+__all__ = ["partitioning", "dmft", "functional", "scf", "dft", ]
 __author__="Bartosz Błasiak"
