@@ -72,20 +72,18 @@ def density_matrix_projection(n, c, S, np, type='d'):#OK
     a, b = scipy.linalg.eig(A, S)
     #print(" Init sum = %14.6f" % a.sum()) 
                                                                                                      
-    mu = func_find(a, np)
+    muORnu = func_find(a, np)
                                                                                                        
     # compute the projected density matrix
-    n_new = func_coef(a, mu)
+    n_new = func_coef(a, muORnu)
     #print(" Nsum = ", n_new.sum())
-    C_new_= b
+    C_new = b
                                                                                                        
     # sort (descending order)
     idx = numpy.argsort(n_new)[::-1]
     n_new = n_new [  idx]
-    C_new_= C_new_[:,idx]
-    C_new = numpy.dot(self.X, C_new_)
-
-    return n_new, C_new
+    C_new = C_new [:,idx]
+    return n_new.real, C_new.real
 
 
 
@@ -195,10 +193,9 @@ class DMFT(ABC):
         # [3] First iteration
         iteration += 1
         x_old_2    = x_0
-        grad_2     = self._gradient(x_0)
-        x_old_1    = x_old_2 - g_0 * grad_2
-        self._density(x_new)
-                                                                                  
+        x_old_1    = self._step_0(x_old_2, g_0)
+        self._density(x_old_1)
+
         self._current_energy = self._minimizer(x_old_1)
         E_new = self._current_energy
         if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (iteration, E_new))
@@ -254,7 +251,7 @@ class DMFT(ABC):
         return NotImplementedError
     def _compute_no_exchange_gradient_P(self):#TODO
         return NotImplementedError
-    def _compute_no_exchange_gradient_nc(self):
+    def _compute_no_exchange_gradient_nc(self, n, c):
         grad_n = self.__grad_n_no_exchange(n, c)
         grad_c = self.__grad_c_no_exchange(n, c)
         grad = numpy.hstack([grad_n, grad_c.ravel()])
@@ -299,6 +296,13 @@ class DMFT(ABC):
         "Steepest-descents step"
         pass
 
+    @abstractmethod
+    def _step_0(self, x0, g0):
+        "Steepest-descents initial step"
+        pass
+
+
+
     def __common_init(self, wfn, xc_functional, V_ext, guess):#OK--->JK!!!
         "Initialize"
         # Wavefunction
@@ -319,6 +323,7 @@ class DMFT(ABC):
         self._jk.set_memory(int(5e8))
         self._jk.initialize()
         self.xc_functional.set_jk(self._jk)
+        self.xc_functional.set_wfn(self._wfn)
         # Nuclear repulsion energy
         self.e_nuc = self._mol.nuclear_repulsion_energy()
         # Number of electron pairs
@@ -371,7 +376,7 @@ class DMFT(ABC):
     def _pack(self, n, c):#OK
         x   = numpy.hstack([n, c.ravel()])
         return x
-    def __grad_n_no_exchange(self, n, c): # TODO ---> JK!!!
+    def __grad_n_no_exchange(self, n, c):
         "Energy gradient wrt NO occupation numbers"                   
         nn = len(n)
                                                                      
@@ -380,12 +385,12 @@ class DMFT(ABC):
         grad = 2.0 * Hmm
                                                                      
         # 2-electron contribution
-        D = numpy.dot(c, numpy.dot(2.0*numpy.diag(n), c.T))
+        #D = numpy.dot(c, numpy.dot(2.0*numpy.diag(n), c.T))
         I = numpy.identity(nn, numpy.float64)
                                                                      
         # J-type
         self._jk.C_clear()
-        self._jk.C_left_add(psi4.core.Matrix.from_array(self._currend_density.matrix(), ""))
+        self._jk.C_left_add(psi4.core.Matrix.from_array(self._current_density.matrix(), ""))
         self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
         self._jk.compute()
         J = self._jk.J()[0].to_array(dense=True)
@@ -394,7 +399,7 @@ class DMFT(ABC):
         # K-type
         # ---> moved to XC_Functional
         return grad
-    def __grad_c_no_exchange(self, n, c): # TODO---> JK!!!
+    def __grad_c_no_exchange(self, n, c):
         "Energy gradient wrt LCAO-NO wavefunction coefficients"
         nn = len(n)
                                                                                              
@@ -421,7 +426,7 @@ class DMFT(ABC):
         # finalize
         grad *= 4.0
                                                                                              
-        # transform gradient to orthogonal AO basis
+        # transform gradient to oAO basis
         grad = numpy.dot(self._X, grad)
         return grad
 
@@ -450,7 +455,7 @@ class DMFT_NC(DMFT):
         n, c = self._unpack(x)
         E_H  = self._compute_no_exchange_energy()
         E_XC = self.xc_functional.energy(n, c)
-        E    = E_N + E_1 + E_H + E_XC
+        E    = E_H + E_XC
         return E
 
     def _guess(self):#OK
@@ -468,39 +473,61 @@ class DMFT_NC(DMFT):
         self._current_density.set_D(D)
         return D
 
-    def _gradient(self, x):#OK-->grad_n and grad_C interface!
+    def _gradient(self, x):
         "Gradient"
         n, c = self._unpack(x)
         dE_n   , dE_c    = self._unpack(self._compute_no_exchange_gradient_nc(n, c))
-        dE_n_xc, dE_c_xc = self._unpack(self.xc_functional.gradient_nc()) # TODO
+        dE_n_xc, dE_c_xc = self._unpack(self.xc_functional.gradient_nc(n, c))
+        dE_c_xc = numpy.dot(self._X, dE_c_xc) # OAO basis
         dE_n += dE_n_xc
         dE_c += dE_c_xc
         gradient = self._pack(dE_n, dE_c)
         return gradient
 
-    def _step(self, x1, x2):#OK
+    def _step(self, x1, x2):
         "Steepest-descents step. Back-transforms to OAO basis for simplicity"
         n1, c1 = self._unpack(x1)
         n2, c2 = self._unpack(x2)
 
-        # transform C to orthogonal AO basis
+        # transform C to OAO basis
         c1_ = numpy.dot(self._Y, c1)
         c2_ = numpy.dot(self._Y, c2)
 
         x_old_1 = self._pack(n1, c1_)
         x_old_2 = self._pack(n2, c2_)
                                                                                        
-        gradient_1 = self._gradient(x_old_1)
-        gradient_2 = self._gradient(x_old_2)
+        gradient_1 = self._gradient(self._pack(n1, c1))
+        gradient_2 = self._gradient(self._pack(n2, c2))
                                                                                        
         norm = numpy.linalg.norm(gradient_1 - gradient_2)
         g = numpy.dot(x_old_1 - x_old_2, gradient_1 - gradient_2) / norm**2
         #print(" G = ", g)
         g = abs(g)
         x_new = x_old_1 - g * gradient_1
-        #n_new = x_new[:nn]
-        #c_new_= x_new[nn:].reshape(nn,nn)
+
+        # transform back to AO basis
+        n, c_ = self._unpack(x_new)
+        x_new = self._pack(n, numpy.dot(self._Y, c_))
         return x_new
+
+    def _step_0(self, x0, g0):#OK
+        "Steepest-descents step. Back-transforms to OAO basis for simplicity"
+        n2, c2 = self._unpack(x0)
+
+        # transform C to OAO basis
+        c2_ = numpy.dot(self._Y, c2)
+        x_old_2 = self._pack(n2, c2_)
+
+        # compute new guess
+        gradient_2 = self._gradient(self._pack(n2, c2))
+        x_new = x_old_2 - g0 * gradient_2
+
+        # transform back to AO basis
+        n, c_ = self._unpack(x_new)
+        x_new = self._pack(n, numpy.dot(self._Y, c_))
+        return x_new
+
+
 
 
 

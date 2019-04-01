@@ -105,24 +105,25 @@ class Density:
            n[numpy.where(n>1.0)] = 1.0
         return n, U
 
-    @classmethod
-    def compute_1el_energy(cls, D, Hcore):
+    #@classmethod
+    def compute_1el_energy(self, D, Hcore):
         "Compute generalized 1-electron energy"
         energy = numpy.dot(D, Hcore).trace()
         return energy
 
-    @classmethod
-    def compute_2el_energy(cls, D_left, D_right, type='j'):
+    #@classmethod
+    def compute_2el_energy(self, D_left, D_right, type='j'):
         "Compute generalized 2-electron energy"
-        JorK = cls.generalized_JK(D_left, type)
+        JorK = self.generalized_JK(D_left, type)
         energy = numpy.dot(JorK, D_right).trace()
         return energy
 
+    #@classmethod
     @classmethod
     def generalized_density(cls, n, c, g=1.0):
         "Generalized matrix G = C n**g C.T"
         ng = n.copy() if g==1.0 else n**g
-        G = numpy.linalg.multi_dot([C, diag(ng), C.T])
+        G = numpy.linalg.multi_dot([c, numpy.diag(ng), c.T])
         return G
 
     #@classmethod

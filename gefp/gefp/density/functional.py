@@ -11,6 +11,8 @@ import math
 import numpy
 from abc import ABC, abstractmethod
 from .partitioning import Density
+import oepdev
+import psi4
 
 __all__ = ["XCFunctional"]
 
@@ -21,14 +23,17 @@ class XCFunctional(ABC, Density):
 """
     default = 'hf'
 
-    def __init__(self, jk=None):
+    def __init__(self, jk=None, wfn=None):
         ABC.__init__(self)
         Density.__init__(self, None, jk)
         self._jk = self._global_jk
+        self._wfn = wfn
 
     def set_jk(self, jk): 
         self._jk = jk
         self._global_jk = jk
+    def set_wfn(self, wfn):
+        self._wfn = wfn
 
     @classmethod
     def create(cls, name=default, **kwargs):
@@ -46,33 +51,29 @@ class XCFunctional(ABC, Density):
 
     @staticmethod
     @abstractmethod
-    def fij_m(n, m): pass
+    def fij_1(n, m): pass
 
     @staticmethod
     @abstractmethod
     def name(): pass
 
-    @classmethod
     @abstractmethod
-    def energy(cls, n, c): 
+    def energy(self, n, c): 
         "Exchange-correlation energy"
         pass
 
-    @classmethod
     @abstractmethod
-    def gradient_D(cls, n, c): 
+    def gradient_D(self, n, c): 
         "Gradient with respect to density matrix"
         pass
 
-    @classmethod
     @abstractmethod
-    def gradient_P(cls, n, c): 
+    def gradient_P(self, n, c): 
         "Gradient with respect to P matrix"
         pass
 
-    @classmethod
     @abstractmethod
-    def gradient_nc(cls, n, c): 
+    def gradient_nc(self, n, c): 
         "Gradient with respect to N and C"
         pass
 
@@ -80,8 +81,7 @@ class XCFunctional(ABC, Density):
     @property
     def abbr(self): return default.upper()
 
-    @classmethod
-    def _correct_negative_occupancies(cls, n):
+    def _correct_negative_occupancies(self, n):
         "Remove negative values of occupancies."
         ns = n.copy()
         ns[ns<0.0] = 0.0
@@ -98,63 +98,61 @@ class HF_XCFunctional(XCFunctional):
     @staticmethod
     def fij(n): return numpy.outer(n, n)
     @staticmethod
-    def fij_m(n, m): 
+    def fij_1(n, m): 
         nn = len(n)                                  
-        fij_m = numpy.zeros((nn,nn), numpy.float64)
+        fij_1 = numpy.zeros((nn,nn), numpy.float64)
         for i in range(nn):
             for j in range(nn):
                 v = 0.0
                 if   (i==m) and (j!=m): v = n[j]
                 elif (j==m) and (i!=m): v = n[i]
                 elif (i==j==m)        : v = n[m]*2.0
-                fij_m[i, j] = v
-        return fij_m
+                fij_1[i, j] = v
+        return fij_1
 
     @staticmethod
     def name(): return "Hartree-Fock Functional XC for closed-shell systems"
     @property
     def abbr(self): return "HF"
 
-    @classmethod
-    def energy(cls, n, c): 
+    def energy(self, n, c): 
         "Exchange-correlation energy"
         D = self.generalized_density(n, c, 1.0)
         xc_energy = -self.compute_2el_energy(D, D, type='k')
         return xc_energy
 
-    @classmethod
-    def gradient_D(cls, n, c): 
+    def gradient_D(self, n, c): 
         "Gradient with respect to density matrix"
         D = self.generalized_density(n, c, 1.0)
         K = self.generalized_JK(D, type='k')
         gradient = -2.0 * K
         return gradient
 
-    @classmethod
-    def gradient_P(cls, n, c):
+    def gradient_P(self, n, c):
         "Gradient with respect to P matrix"
         raise NotImplementedError("Gradient of HF energy are not implemented for P sets.")
 
-    @classmethod
-    def gradient_nc(cls, n, c):#OK --> JK!!!
+    def gradient_nc(self, n, c):
         "Gradient with respect to N and C"
         nn = len(n)
 
         # gradient wrt n
         grad_n = numpy.zeros(nn, numpy.float64)
-        Kij = oepdev.calculate_Kij(self._wfn, c).to_array(dense=True)
+        c_psi4 = psi4.core.Matrix.from_array(c, "")
+        Kij = oepdev.calculate_Kij(self._wfn, c_psi4).to_array(dense=True)
         psi4.core.clean()
 
         for m in range(nn):
-            fij_m = self.fij_1(n, m)
-            grad_n[m] -=(numpy.dot(Kij, fij_m)).trace()
+            fij_1 = self.fij_1(n, m)
+            grad_n[m] -=(numpy.dot(Kij, fij_1)).trace()
 
         # gradient wrt c
         grad_c = numpy.zeros((nn, nn), numpy.float64)
 
-        self._jk.C_clear()                                           
+        self._jk.C_clear()
+        fij = self.fij(n); I = numpy.identity(nn)
         for m in range(nn):
-            Bm = numpy.linalg.multi_dot([c, numpy,diag(fij[:,m]), c.T])
+            Bm = numpy.linalg.multi_dot([c, numpy.diag(fij[:,m]), c.T])
             self._jk.C_left_add(psi4.core.Matrix.from_array(Bm, ""))
             self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
         self._jk.compute()
@@ -182,27 +180,24 @@ class MBB_XCFunctional(XCFunctional):
         ns = numpy.sqrt(self.correct_negative_occupancies(n))
         return numpy.outer(ns, ns)
     @staticmethod
-    def fij_m(n, m): 
+    def fij_1(n, m): 
         raise NotImplementedError("Derivatives of fij for MBB functional were not implemented.")
     @staticmethod
     def name(): return "Muller-Buijse-Baerends XC Functional for closed-shell systems"
     @property
     def abbr(self): return "MBB"
 
-    @classmethod
-    def energy(cls, n, c): 
+    def energy(self, n, c): 
         "Exchange-correlation energy"
         D = self.generalized_density(n, c, 0.5)
         xc_energy = -self.compute_2el_energy(D, D, type='k')
         return xc_energy
 
-    @classmethod
-    def gradient_D(cls, n, c): 
+    def gradient_D(self, n, c): 
         "Gradient with respect to density matrix"
         raise NotImplementedError("Gradient of MBB XC energy are not implemented for D sets.")
 
-    @classmethod
-    def gradient_P(cls, n, c): 
+    def gradient_P(self, n, c): 
         "Gradient with respect to P matrix"
         ns = self.correct_negative_occupancies(n)
         D = self.generalized_density(ns, c, 0.5)
@@ -210,7 +205,6 @@ class MBB_XCFunctional(XCFunctional):
         gradient = -K
         return gradient
 
-    @classmethod
-    def gradient_nc(cls, n, c): 
+    def gradient_nc(self, n, c): 
         "Gradient with respect to N and C"
         raise NotImplementedError("Gradient of MBB XC energy are not implemented for nc sets.")
