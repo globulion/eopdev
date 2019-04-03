@@ -43,7 +43,6 @@ class Density:
                               renormalize            =  False        , 
                               no_cutoff              =  False        ):
         "Compute the Natural Orbitals from a given ODPM"
-        print(D[0])
         # orthogonalize in MO basis
         if orthogonalize_mo is True:
             if S is not None:
@@ -60,7 +59,7 @@ class Density:
 
         # Diagonalize density matrix in OAO or MO basis
         n, L = numpy.linalg.eigh(D_)
-        print(n.sum())
+        #print(n.sum())
 
         # LCAO_NO matrix
         if orthogonalize_mo is True:
@@ -120,7 +119,6 @@ class Density:
         energy = numpy.dot(JorK, D_right).trace()
         return energy
 
-    #@classmethod
     @classmethod
     def generalized_density(cls, n, c, g=1.0):
         "Generalized matrix G = C n**g C.T"

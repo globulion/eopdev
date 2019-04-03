@@ -18,6 +18,39 @@ from .partitioning import Density
 
 __all__ = ["DMFT"]
 
+class Guess(ABC):
+    def __init__(self, n, c): 
+        self._n = n
+        self._c = c
+        super(Guess, self).__init__()
+
+    def D(self): return Density.generalized_density(self._n, self._c)
+    def create(cls, n, c, t='matrix'):
+        if   t.lower() == 'matrix': return Matrix_Guess(n, c)
+        elif t.lower() == 'nc'    : return     NC_Guess(n, c)
+        else: raise ValueError("Not recognized guess type. Only MATRIX and NC are possible.")
+    @abstractmethod
+    def compress(self): pass
+    @abstractmethod
+    def copy(self): pass
+
+class NC_Guess(Guess):
+    def __init__(self, n, c):
+        super(NC_Guess, self).__init__(n, c)
+
+    def compress(self): return numpy.hstack([self._n, self._c.ravel()])
+    def copy(self): return NC_Guess(self._n.copy(), self._c.copy())
+
+class Matrix_Guess(Guess):
+    def __init__(self, n, c):
+        super(Matrix_Guess, self).__init__(n, c)
+
+    def compress(self): return self.D()
+    def copy(self): return Matrix_Guess(self._n.copy(), self._c.copy())
+
+
+
+
 def aaa(a, mu):
     "Projected occupation numbers"
     a_ = a.copy();
@@ -60,7 +93,7 @@ def find_nu(n, np):
     nu = R.x
     return nu
 
-def density_matrix_projection(n, c, S, np, type='d'):#OK
+def density_matrix_projection(n, c, S, np, type='d'):
     "Find n_new and C_new such that new density matrix is N-representable"
     if type.lower() == 'd':
        func_find = find_mu
@@ -75,9 +108,9 @@ def density_matrix_projection(n, c, S, np, type='d'):#OK
     A = Density.orthogonalize_OPDM(preD, S)
     #a, b = scipy.linalg.eig(A, S)
     a, b = numpy.linalg.eigh(A)
-    a = a.real; b = b.real
+    #a = a.real; b = b.real
     #print(" Init sum = %14.6f" % a.sum()) 
-                                                                                                     
+
     muORnu = func_find(a, np)
                                                                                                        
     # compute the projected density matrix
@@ -281,8 +314,13 @@ class DMFT(ABC):
         E   = E_N + E_1 + E_H
         return E
 
-    def _compute_no_exchange_gradient_D(self):#TODO
-        return NotImplementedError
+    def _compute_no_exchange_gradient_D(self):
+        "1-electron and Hartree part of gradient wrt D. Returned in SCF-MO basis."
+        D = self._current_density.matrix()
+        J = self._current_density.generalized_JK(D, type='j')
+        grad = self._H + 2.0 * J
+        grad = numpy.linalg.multi_dot([self._Ca, grad, self._Ca.T])
+        return grad
     def _compute_no_exchange_gradient_P(self):#TODO
         return NotImplementedError
     def _compute_no_exchange_gradient_nc(self, n, c):
@@ -362,7 +400,7 @@ class DMFT(ABC):
         # XC functional
         self._xc_functional = xc_functional
 
-        # Molecule                                                                             
+        # Molecule
         self._mol = self._wfn.molecule()
         # Basis set
         self._bfs = self._wfn.basisset()
@@ -583,6 +621,90 @@ class DMFT_ProjD(DMFT):
 
     @property
     def abbr(self): return "DMFT-ProjD"
+
+
+    # --- Implementation (Protected Interface) --- #
+
+    def _minimizer(self, x):
+        "Minimizer function: Total Energy"
+        E_H  = self._compute_no_exchange_energy()
+        E_XC = self._xc_functional.energy(self._current_occupancies, self_current_orbitals)
+        E    = E_H + E_XC
+        return E
+
+    def _guess(self):
+        "Initial guess"
+        x = Density.generalized_density(self._current_occupancies, self._current_orbitals) 
+        return x
+
+    def _density(self, x):
+        "1-particle density matrix in AO basis"
+        n, c = Density.natural_orbitals(x, self._S, self._Ca, orthogonalize_mo=True,
+                order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False)
+        n, c = density_matrix_projection(n, c, self._S, self._np, type='d')
+        self._current_occupancies = n
+        self._current_orbitals    = c
+        D = self._current_density.generalized_density(n, c)
+        self._current_density.set_D(D)
+        return D
+
+    def _gradient(self, x):
+        "Gradient"
+        n, c = Density.natural_orbitals(x, self._S, self._Ca, orthogonalize_mo=True,
+                order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False)
+        = self._compute_no_exchange_gradient_D()
+        dE_n_xc, dE_c_xc = self._unpack(self._xc_functional      .gradient_nc(n, c))
+        dE_c_xc = numpy.dot(self._X, dE_c_xc) # OAO basis
+        dE_n += dE_n_xc
+        dE_c += dE_c_xc
+        gradient = self._pack(dE_n, dE_c)
+        return gradient
+
+    def _step(self, x1, x2):
+        "Steepest-descents step. Back-transforms to OAO basis for simplicity"
+        n1, c1 = self._unpack(x1)
+        n2, c2 = self._unpack(x2)
+
+        # transform C to OAO basis
+        c1_ = numpy.dot(self._Y, c1)
+        c2_ = numpy.dot(self._Y, c2)
+
+        x_old_1 = self._pack(n1, c1_)
+        x_old_2 = self._pack(n2, c2_)
+                                                                                       
+        gradient_1 = self._gradient(self._pack(n1, c1))
+        gradient_2 = self._gradient(self._pack(n2, c2))
+                                                                                       
+        norm = numpy.linalg.norm(gradient_1 - gradient_2)
+        g = numpy.dot(x_old_1 - x_old_2, gradient_1 - gradient_2) / norm**2
+        #print(" G = ", g)
+        g = abs(g)
+        x_new = x_old_1 - g * gradient_1
+
+        # transform back to AO basis
+        n, c_ = self._unpack(x_new)
+        x_new = self._pack(n, numpy.dot(self._X, c_))
+        return x_new
+
+    def _step_0(self, x0, g0):
+        "Steepest-descents step. Back-transforms to OAO basis for simplicity"
+        n2, c2 = self._unpack(x0)
+
+        # transform C to OAO basis
+        c2_ = numpy.dot(self._Y, c2)
+        x_old_2 = self._pack(n2, c2_)
+
+        # compute new guess
+        gradient_2 = self._gradient(self._pack(n2, c2))
+        x_new = x_old_2 - g0 * gradient_2
+        
+        # transform back to AO basis
+        n, c_ = self._unpack(x_new)
+        x_new = self._pack(n, numpy.dot(self._X, c_))
+        return x_new
+
+
+
 
 class DMFT_ProjP(DMFT):
     def __init__(self, wfn, xc_functional, v_ext, guess):
