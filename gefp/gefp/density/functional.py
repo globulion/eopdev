@@ -11,6 +11,7 @@ import math
 import numpy
 from abc import ABC, abstractmethod
 from .partitioning import Density
+from .parameters import Guess
 import oepdev
 import psi4
 
@@ -163,7 +164,8 @@ class HF_XCFunctional(XCFunctional):
         grad_c *= 4.0
 
         # pack
-        gradient = numpy.hstack([grad_n, grad_c.ravel()])
+        #gradient = numpy.hstack([grad_n, grad_c.ravel()])
+        gradient = Guess.create(grad_n, grad_c, 'nc')
         return gradient
 
 

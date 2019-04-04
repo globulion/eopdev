@@ -15,40 +15,9 @@ import psi4
 from abc import ABC, abstractmethod
 from .functional import XCFunctional
 from .partitioning import Density
+from .parameters import Guess
 
 __all__ = ["DMFT"]
-
-class Guess(ABC):
-    def __init__(self, n, c): 
-        self._n = n
-        self._c = c
-        super(Guess, self).__init__()
-
-    def D(self): return Density.generalized_density(self._n, self._c)
-    def create(cls, n, c, t='matrix'):
-        if   t.lower() == 'matrix': return Matrix_Guess(n, c)
-        elif t.lower() == 'nc'    : return     NC_Guess(n, c)
-        else: raise ValueError("Not recognized guess type. Only MATRIX and NC are possible.")
-    @abstractmethod
-    def compress(self): pass
-    @abstractmethod
-    def copy(self): pass
-
-class NC_Guess(Guess):
-    def __init__(self, n, c):
-        super(NC_Guess, self).__init__(n, c)
-
-    def compress(self): return numpy.hstack([self._n, self._c.ravel()])
-    def copy(self): return NC_Guess(self._n.copy(), self._c.copy())
-
-class Matrix_Guess(Guess):
-    def __init__(self, n, c):
-        super(Matrix_Guess, self).__init__(n, c)
-
-    def compress(self): return self.D()
-    def copy(self): return Matrix_Guess(self._n.copy(), self._c.copy())
-
-
 
 
 def aaa(a, mu):
@@ -327,7 +296,7 @@ class DMFT(ABC):
         "Compute Gradient excluding the Exchange-Correlation Part"
         grad_n = self.__grad_n_no_exchange(n, c)
         grad_c = self.__grad_c_no_exchange(n, c)
-        grad = numpy.hstack([grad_n, grad_c.ravel()])
+        grad = Guess.create(grad_n, grad_c, 'nc')
         return grad
                                                                            
     def _compute_hcore_energy(self):
@@ -375,23 +344,23 @@ class DMFT(ABC):
         pass
 
 
-    def _pack(self, n, c):
-        "Pack the n and c parameters into one hypervector"
-        x   = numpy.hstack([n, c.ravel()])
-        return x
+    #def _pack(self, n, c):
+    #    "Pack the n and c parameters into one hypervector"
+    #    x   = numpy.hstack([n, c.ravel()])
+    #    return x
 
 
-    def _unpack(self, x):
-        "Unpack n and c parameters from the hypervector"
-        dim = self._bfs.nbf()
-        n   = x[:dim]
-        c   = x[dim:].reshape(dim,dim)
-        return n, c
+    #def _unpack(self, x):
+    #    "Unpack n and c parameters from the hypervector"
+    #    dim = self._bfs.nbf()
+    #    n   = x[:dim]
+    #    c   = x[dim:].reshape(dim,dim)
+    #    return n, c
 
 
     # --- Private Interface --- #
 
-    def __common_init(self, wfn, xc_functional, V_ext, guess):#OK--->JK!!!
+    def __common_init(self, wfn, xc_functional, V_ext, guess):
         "Initialize"
         # Wavefunction
         self._wfn = wfn
@@ -424,7 +393,6 @@ class DMFT(ABC):
         self._S = self._wfn.S().to_array(dense=True)
         self._X = Density.  orthogonalizer(self._S)
         self._Y = Density.deorthogonalizer(self._S)
-        #self._Y = numpy.linalg.inv(self._X)
         # Hcore matrix
         self._H = self._wfn.H().to_array(dense=True)
         # External potential
@@ -531,7 +499,7 @@ class DMFT_NC(DMFT):
 
     def _minimizer(self, x):
         "Minimizer function: Total Energy"
-        n, c = self._unpack(x)
+        n, c = x.unpack()
         E_H  = self._compute_no_exchange_energy()
         E_XC = self._xc_functional.energy(n, c)
         E    = E_H + E_XC
@@ -539,72 +507,72 @@ class DMFT_NC(DMFT):
 
     def _guess(self):
         "Initial guess"
-        x = self._pack(self._current_occupancies, self._current_orbitals) 
+        x = Guess.create(self._current_occupancies, self._current_orbitals, 'nc') 
         return x
 
     def _density(self, x):
         "1-particle density matrix in AO basis"
-        n, c = self._unpack(x)
+        n, c = x.unpack()
         n, c = density_matrix_projection(n, c, self._S, self._np, type='d')
         self._current_occupancies = n
         self._current_orbitals    = c
         D = self._current_density.generalized_density(n, c)
         self._current_density.set_D(D)
-        x_new = self._pack(n, c)
+        x_new = Guess.create(n, c, 'nc')
         return x_new
 
     def _gradient(self, x):
         "Gradient"
-        n, c = self._unpack(x)
-        dE_n   , dE_c    = self._unpack(self._compute_no_exchange_gradient_nc(n, c))
-        dE_n_xc, dE_c_xc = self._unpack(self._xc_functional      .gradient_nc(n, c))
+        n, c = x.unpack()
+        dE_n   , dE_c    = self._compute_no_exchange_gradient_nc(n, c).unpack()
+        dE_n_xc, dE_c_xc = self._xc_functional      .gradient_nc(n, c).unpack()
         dE_c_xc = numpy.dot(self._X, dE_c_xc) # OAO basis
         dE_n += dE_n_xc
         dE_c += dE_c_xc
-        gradient = self._pack(dE_n, dE_c)
+        gradient = Guess.create(dE_n, dE_c, 'nc')
         return gradient
 
     def _step(self, x1, x2):
         "Steepest-descents step. Back-transforms to OAO basis for simplicity"
-        n1, c1 = self._unpack(x1)
-        n2, c2 = self._unpack(x2)
+        n1, c1 = x1.unpack() 
+        n2, c2 = x2.unpack()
 
         # transform C to OAO basis
         c1_ = numpy.dot(self._Y, c1)
         c2_ = numpy.dot(self._Y, c2)
 
-        x_old_1 = self._pack(n1, c1_)
-        x_old_2 = self._pack(n2, c2_)
+        x_old_1 = Guess.create(n1, c1_, 'nc')
+        x_old_2 = Guess.create(n2, c2_, 'nc')
                                                                                        
-        gradient_1 = self._gradient(self._pack(n1, c1))
-        gradient_2 = self._gradient(self._pack(n2, c2))
+        gradient_1 = self._gradient(Guess.create(n1, c1, 'nc'))
+        gradient_2 = self._gradient(Guess.create(n2, c2, 'nc'))
                                                                                        
-        norm = numpy.linalg.norm(gradient_1 - gradient_2)
-        g = numpy.dot(x_old_1 - x_old_2, gradient_1 - gradient_2) / norm**2
+        #norm = numpy.linalg.norm(gradient_1 - gradient_2)
+        #g = numpy.dot(x_old_1 - x_old_2, gradient_1 - gradient_2) / norm**2
         #print(" G = ", g)
-        g = abs(g)
+        g = 0.1 #abs(g)
         x_new = x_old_1 - g * gradient_1
 
         # transform back to AO basis
-        n, c_ = self._unpack(x_new)
-        x_new = self._pack(n, numpy.dot(self._X, c_))
+        n, c_ = x_new.unpack()
+        x_new = Guess.create(n, numpy.dot(self._X, c_), 'nc')
         return x_new
 
     def _step_0(self, x0, g0):
         "Steepest-descents step. Back-transforms to OAO basis for simplicity"
-        n2, c2 = self._unpack(x0)
+        n2, c2 = x0.unpack()
 
         # transform C to OAO basis
         c2_ = numpy.dot(self._Y, c2)
-        x_old_2 = self._pack(n2, c2_)
+        x_old_2 = Guess.create(n2, c2_, 'nc')
 
         # compute new guess
-        gradient_2 = self._gradient(self._pack(n2, c2))
+        gradient_2 = self._gradient(Guess.create(n2, c2, 'nc'))
         x_new = x_old_2 - g0 * gradient_2
         
         # transform back to AO basis
-        n, c_ = self._unpack(x_new)
-        x_new = self._pack(n, numpy.dot(self._X, c_))
+        n, c_ = x_new.unpack()
+        x_new = Guess.create(n, numpy.dot(self._X, c_), 'nc')
         return x_new
 
 
@@ -652,7 +620,7 @@ class DMFT_ProjD(DMFT):
         "Gradient"
         n, c = Density.natural_orbitals(x, self._S, self._Ca, orthogonalize_mo=True,
                 order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False)
-        = self._compute_no_exchange_gradient_D()
+        dE_n   , dE_c    = self._unpack(self._compute_no_exchange_gradient_D())
         dE_n_xc, dE_c_xc = self._unpack(self._xc_functional      .gradient_nc(n, c))
         dE_c_xc = numpy.dot(self._X, dE_c_xc) # OAO basis
         dE_n += dE_n_xc
