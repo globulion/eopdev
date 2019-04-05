@@ -12,6 +12,7 @@ import numpy
 import scipy.linalg
 import scipy.optimize
 import psi4
+import oepdev
 from abc import ABC, abstractmethod
 from .functional import XCFunctional
 from .partitioning import Density
@@ -198,7 +199,6 @@ class DMFT(ABC):
         return self._current_occupations
 
     @property
-    @abstractmethod
     def abbr(self): 
         "Abbreviation symbol for the DMFT optimization algorithm"
         pass
@@ -289,9 +289,9 @@ class DMFT(ABC):
         #J = self._current_density.generalized_JK(D, type='j')
         #grad = self._H + 2.0 * J
         c_psi4 = self._wfn.Ca_subset("AO","ALL")
-        gradient = Guess.create( matrix=numpy.linalg.multi_dot([self._Ca, self._H, self._Ca.T]) )
+        gradient  = numpy.linalg.multi_dot([self._Ca, self._H, self._Ca.T])
         gradient += 2.0 * oepdev.calculate_JK(self._wfn, c_psi4)[0].to_array(dense=True)
-        gradient  = Guess.create(matrix=gradient)
+        gradient  = Guess.create(matrix=gradient)  #TODO!
         return gradient
     def _compute_no_exchange_gradient_P(self):#TODO
         return NotImplementedError
@@ -570,7 +570,6 @@ class DMFT_NC(DMFT):
 class DMFT_ProjD(DMFT):
     def __init__(self, wfn, xc_functional, v_ext, guess):
         super(DMFT_ProjD, self).__init__(wfn, xc_functional, v_ext, guess)
-        raise NotImplementedError
 
 
     @staticmethod
@@ -622,12 +621,14 @@ class DMFT_ProjD(DMFT):
         #g = abs(g)
         g = 0.1
         x_new = x1 - g * gradient_1
+        x_new.update(self._S, self._Ca)
         return x_new
 
     def _step_0(self, x0, g0):
         "Steepest-descents step."
         gradient_2 = self._gradient(x0)
         x_new = x0 - g0 * gradient_2
+        x_new.update(self._S, self._Ca)
         return x_new
 
 

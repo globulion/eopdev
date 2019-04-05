@@ -129,7 +129,7 @@ class HF_XCFunctional(XCFunctional):
         #gradient = Guess.create(matrix=-K) # ---> must be in MO basis!!!!!!!!!!!!!!!!!!!!!!!!!!!
         c_psi4 = self._wfn.Ca_subset("AO","ALL")
         gradient = -oepdev.calculate_JK(self._wfn, c_psi4)[1].to_array(dense=True)
-        gradient = Guess.create(matrix=gradient)
+        gradient = Guess.create(matrix=gradient)  # TODO!
         return gradient
 
     def gradient_P(self, n, c):

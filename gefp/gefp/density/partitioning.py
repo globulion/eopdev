@@ -41,7 +41,8 @@ class Density:
                               order                  = 'descending'  , 
                               return_ao_orthogonal   =  False        , 
                               renormalize            =  False        , 
-                              no_cutoff              =  False        ):
+                              no_cutoff              =  False        ,
+                              ignore_large_n         =  False        ):
         "Compute the Natural Orbitals from a given ODPM"
         # orthogonalize in MO basis
         if orthogonalize_mo is True:
@@ -74,10 +75,11 @@ class Density:
            raise NotImplementedError("Returning LCOAO_NO matrix is not supported yet if orthogonalization in MO basis was done!")
 
         # Warnings and sanity checks
-        if n.max() > 1.0 or n.min() < 0.0:
-           print(" Warning! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
-        if ((n.max() - 1.0) > 0.00001 or (n.min() < -0.00001)):
-           raise ValueError("Unphysical NO populations detected! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
+        if not ignore_large_n:
+           if n.max() > 1.0 or n.min() < 0.0:                                                                      
+              print(" Warning! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
+           if ((n.max() - 1.0) > 0.00001 or (n.min() < -0.00001)):
+              raise ValueError("Unphysical NO populations detected! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
         n[numpy.where(n<0.0)] = 0.0
 
         # NO cutoff
