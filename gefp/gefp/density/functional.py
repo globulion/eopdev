@@ -124,9 +124,12 @@ class HF_XCFunctional(XCFunctional):
 
     def gradient_D(self, n, c): 
         "Gradient with respect to density matrix"
-        D = self.generalized_density(n, c, 1.0)
-        K = self.generalized_JK(D, type='k')
-        gradient = -2.0 * K
+        #D = self.generalized_density(n, c, 1.0)
+        #K = self.generalized_JK(D, type='k')
+        #gradient = Guess.create(matrix=-K) # ---> must be in MO basis!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        c_psi4 = self._wfn.Ca_subset("AO","ALL")
+        gradient = -oepdev.calculate_JK(self._wfn, c_psi4)[1].to_array(dense=True)
+        gradient = Guess.create(matrix=gradient)
         return gradient
 
     def gradient_P(self, n, c):
@@ -140,7 +143,7 @@ class HF_XCFunctional(XCFunctional):
         # gradient wrt n
         grad_n = numpy.zeros(nn, numpy.float64)
         c_psi4 = psi4.core.Matrix.from_array(c, "")
-        Kij = oepdev.calculate_Kij(self._wfn, c_psi4).to_array(dense=True)
+        Kij = oepdev.calculate_JK(self._wfn, c_psi4)[1].to_array(dense=True)
         psi4.core.clean()
 
         for m in range(nn):
@@ -164,8 +167,7 @@ class HF_XCFunctional(XCFunctional):
         grad_c *= 4.0
 
         # pack
-        #gradient = numpy.hstack([grad_n, grad_c.ravel()])
-        gradient = Guess.create(grad_n, grad_c, 'nc')
+        gradient = Guess.create(grad_n, grad_c, None, 'nc')
         return gradient
 
 

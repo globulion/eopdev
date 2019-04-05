@@ -183,7 +183,7 @@ class DMFT:
       "Exchange (ij|ji) integral matrix"
       C = psi4.core.Matrix.from_array(c, "Natural Orbitals LCAO matrix")
       #eri_K_ij = oepdev.calculate_Kij(self._wfn.c1_deep_copy(self._wfn.basisset()), C).to_array(dense=True)
-      eri_K_ij = oepdev.calculate_Kij(self._wfn, C).to_array(dense=True)
+      eri_K_ij = oepdev.calculate_JK(self._wfn, C)[1].to_array(dense=True)
       psi4.core.clean()
 
       #bfs = self._wfn.basisset()
