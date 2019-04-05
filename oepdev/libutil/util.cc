@@ -99,12 +99,18 @@ double average_moment(std::shared_ptr<psi::Vector> moment)
 }
 
 extern "C" PSI_API
-std::shared_ptr<psi::Matrix> calculate_Kij(std::shared_ptr<psi::Wavefunction> wfn, std::shared_ptr<psi::Matrix> C){
+std::vector<std::shared_ptr<psi::Matrix>> calculate_JK(std::shared_ptr<psi::Wavefunction> wfn, std::shared_ptr<psi::Matrix> C){
 
-  // Initialize the K_ij matrix
+  // Initialize the J_ij and K_ij matrix
   int n = C->ncol();
+  std::shared_ptr<psi::Matrix> Jij = std::make_shared<psi::Matrix>("Coulomb Integrals in MO basis", n, n);
   std::shared_ptr<psi::Matrix> Kij = std::make_shared<psi::Matrix>("Exchange Integrals in MO basis", n, n);
+  double** pJij = Jij->pointer();
   double** pKij = Kij->pointer();
+
+  std::vector<std::shared_ptr<psi::Matrix>> JK;
+  JK.push_back(Jij);
+  JK.push_back(Kij);
 
   // Compute ERI's
   std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(wfn->basisset());
@@ -142,11 +148,16 @@ std::shared_ptr<psi::Matrix> calculate_Kij(std::shared_ptr<psi::Wavefunction> wf
             int p = buf.params->roworb[h][pq][0];
             int q = buf.params->roworb[h][pq][1];
             for (int rs = 0; rs < buf.params->coltot[h]; ++rs) {
-      	   int r = buf.params->colorb[h][rs][0];
-      	   int s = buf.params->colorb[h][rs][1];
-      	   if ((p==r) && (q==s)) {
-      	       pKij[p][q] = buf.matrix[h][pq][rs];
-      	     }
+         	   int r = buf.params->colorb[h][rs][0];
+        	   int s = buf.params->colorb[h][rs][1];
+		   /* J */
+		   if ((p==q) && (r==s)) {
+		       pJij[p][r] = buf.matrix[h][pq][rs];
+	           }
+		   /* K */
+        	   if ((p==r) && (q==s)) {
+        	       pKij[p][q] = buf.matrix[h][pq][rs];
+      	           }
             }
        }
        global_dpd_->buf4_mat_irrep_close(&buf, h);
@@ -155,7 +166,7 @@ std::shared_ptr<psi::Matrix> calculate_Kij(std::shared_ptr<psi::Wavefunction> wf
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 
   //Kij->print();
-  return Kij;
+  return JK;
 }
 
 
