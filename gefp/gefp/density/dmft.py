@@ -101,42 +101,42 @@ class DMFT(ABC):
  The Density Matrix Functional Theory.
 """
     # Defaults
-    default_xc_functional = XCFunctional.create('hf') # XC functional abbreviation
-    default_algorithm     = 'proj-d'           # Projected gradient algorithm abbreviation           
-    default_convergence   =  0.00001           # Convergence in total energy [A.U.]
-    default_maxiter       =  100               # Maximum number of iterations
-    default_verbose_run   =  True              # Show additional information?
-    default_g0            =  0.0001            # Steepest-descents step scale in the first iteration
-    default_v_ext         =  None              # External 1-electron potential
-    default_guess         = 'hcore'            # Guess for ODPM
-    default_step_mode     = 'search'           # Steepest-Descents step (simple line search)
+    default_xc_functional = XCFunctional.create('hf') # Exchange-Correlation Functional
+    default_algorithm     = 'proj-d'                  # Projected Gradient Algorithm Abbreviation            
+    default_convergence   =  0.00001                  # Convergence in total energy [A.U.]
+    default_maxiter       =  100                      # Maximum number of iterations
+    default_verbose_run   =  True                     # Show additional information?
+    default_g0            =  0.0001                   # Steepest-descents step scale in the first iteration
+    default_v_ext         =  None                     # External 1-electron potential
+    default_guess         = 'hcore'                   # Guess for ODPM
+    default_step_mode     = 'search'                  # Steepest-Descents step (simple line search)
 
     def __init__(self, wfn, xc_functional, v_ext=default_v_ext, guess=default_guess, step_mode=default_step_mode):
         "Initialize"
         # Protected variable namespace
-        self._current_energy           = None       # Total Energy
-        self._current_orbitals         = None       # Natural Orbitals
-        self._current_occupancies      = None       # Natural Orbital Occupation Numbers
-        self._current_density          = None       # 1-Particle Density Matrix in AO Basis
-
-        self._xc_functional            = None       # XC Functional Object
-        self._mol                      = None       # Molecule Object
-        self._wfn                      = None       # Wavefunction Object
-        self._bfs                      = None       # Basis Set Object
-        self._bfs_name                 = None       # Basis Set Abbreviation
-        self._mints                    = None       # Integral Calculator Object
-        self._ints                     = None       # Integral Transform Object (for MO-SCF basis)
-        self._jk                       = None       # JK Object (for AO basis)
-        self._e_nuc                    = None       # Nuclear Repulsion Energy
-        self._np                       = None       # Number of Electron Pairs
-        self._Ca                       = None       # AO-MO Matrix at Hartree-Fock Level (LCAO-MO)
-        self._S                        = None       # AO Overlap Matrix
-        self._X                        = None       # AO Orthogonalizer 
-        self._Y                        = None       # AO Deorthogonalizer
-        self._H                        = None       # AO Core Hamiltonian Matrix
-        self._V_ext                    = None       # AO External Potential Matrix
-        self._H_mo                     = None       # MO-SCF Core Hamiltonian + External Potential Matrix
-        self._step_mode                = None       # Mode of Steepest-Descents Minimization Steps
+        self._current_energy           = None         # Total Energy                                        
+        self._current_orbitals         = None         # Natural Orbitals
+        self._current_occupancies      = None         # Natural Orbital Occupation Numbers
+        self._current_density          = None         # 1-Particle Density Matrix in AO Basis
+                                                                                                            
+        self._xc_functional            = None         # XC Functional Object
+        self._mol                      = None         # Molecule Object
+        self._wfn                      = None         # Wavefunction Object
+        self._bfs                      = None         # Basis Set Object
+        self._bfs_name                 = None         # Basis Set Abbreviation
+        self._mints                    = None         # Integral Calculator Object
+        self._ints                     = None         # Integral Transform Object (for MO-SCF basis)
+        self._jk                       = None         # JK Object (for AO basis)
+        self._e_nuc                    = None         # Nuclear Repulsion Energy
+        self._np                       = None         # Number of Electron Pairs
+        self._Ca                       = None         # AO-MO Matrix at Hartree-Fock Level (LCAO-MO)
+        self._S                        = None         # AO Overlap Matrix
+        self._X                        = None         # AO Orthogonalizer 
+        self._Y                        = None         # AO Deorthogonalizer
+        self._H                        = None         # AO Core Hamiltonian Matrix
+        self._V_ext                    = None         # AO External Potential Matrix
+        self._H_mo                     = None         # MO-SCF Core Hamiltonian + External Potential Matrix
+        self._step_mode                = None         # Mode of Steepest-Descents Minimization Steps
 
         # Initialize all variables
         self.__common_init(wfn, xc_functional, v_ext, guess, step_mode)
@@ -218,7 +218,7 @@ class DMFT(ABC):
 
     # --- Protected Interface --- #
 
-    def _run_dmft(self, conv, maxit, verbose, g_0, **kwargs):#OK
+    def _run_dmft(self, conv, maxit, verbose, g_0, **kwargs):
         "DMFT Iterations"
 
         # [0] Initialize
@@ -227,12 +227,12 @@ class DMFT(ABC):
 
         # [1] Compute Guess
         x_0 = self._guess()
-                                                                                  
+
         # [2] Starting energy
         self._current_energy = self._minimizer(x_0)
         E_old = self._current_energy
         if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (iteration, E_old))
-                                                                                  
+
         # [3] First iteration
         iteration += 1
         x_old_2    = x_0
@@ -242,7 +242,7 @@ class DMFT(ABC):
         self._current_energy = self._minimizer(x_old_1)
         E_new = self._current_energy
         if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (iteration, E_new))
-                                                                                  
+
         # [4] Further iterations
         iteration += 1
         stop       = False
@@ -302,10 +302,10 @@ class DMFT(ABC):
     def _compute_no_exchange_gradient_P(self):#TODO
         return NotImplementedError
 
-    def _compute_no_exchange_gradient_nc(self, n, c):
+    def _compute_no_exchange_gradient_nc(self, x):
         "Compute Gradient excluding the Exchange-Correlation Part"
-        grad_n = self.__grad_n_no_exchange(n, c)
-        grad_c = self.__grad_c_no_exchange(n, c)
+        grad_n = self.__grad_n_no_exchange(*x.unpack())
+        grad_c = self.__grad_c_no_exchange(*x.unpack())
         grad = Guess.create(grad_n, grad_c, None, 'nc')
         return grad
 
@@ -586,7 +586,7 @@ class DMFT_NC(DMFT_AO):
     def _minimizer(self, x):
         "Minimizer function: Total Energy"
         E_H  = self._compute_no_exchange_energy()
-        E_XC = self._xc_functional.energy(*x.unpack(), mode='ao')
+        E_XC = self._xc_functional.energy(x, mode='ao')
         E    = E_H + E_XC
         return E
 
@@ -603,14 +603,13 @@ class DMFT_NC(DMFT_AO):
         self._current_orbitals    = c
         D = self._current_density.generalized_density(n, c)
         self._current_density.set_D(D)
-        x_new = Guess.create(n, c, None, 'nc')
-        return x_new
+        new_guess = Guess.create(n, c, None, 'nc')
+        return new_guess
 
     def _gradient(self, x):
         "Gradient"
-        n, c = x.unpack()
-        dE_n   , dE_c    = self._compute_no_exchange_gradient_nc(n, c).unpack()
-        dE_n_xc, dE_c_xc = self._xc_functional      .gradient_nc(n, c).unpack()
+        dE_n   , dE_c    = self._compute_no_exchange_gradient_nc(x).unpack()
+        dE_n_xc, dE_c_xc = self._xc_functional      .gradient_nc(x).unpack()
         dE_c_xc = numpy.dot(self._X, dE_c_xc) # OAO basis
         dE_n += dE_n_xc
         dE_c += dE_c_xc
@@ -632,7 +631,7 @@ class DMFT_NC(DMFT_AO):
         gradient_1 = self._gradient(Guess.create(n1, c1, None, 'nc'))
         gradient_2 = self._gradient(Guess.create(n2, c2, None, 'nc'))
                                                                                        
-        g = 0.1 #abs(g)
+        g = 0.1
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x_old_1 - x_old_2, gradient_1 - gradient_2)
         x_new = x_old_1 - g * gradient_1
@@ -679,7 +678,7 @@ class DMFT_ProjD(DMFT_MO):
     def _minimizer(self, x):
         "Minimizer function: Total Energy"
         E_H  = self._compute_no_exchange_energy()
-        E_XC = self._xc_functional.energy(*x.unpack(), mode='scf-mo')
+        E_XC = self._xc_functional.energy(x, mode='scf-mo')
         E    = E_H + E_XC
         return E
 
@@ -689,20 +688,20 @@ class DMFT_ProjD(DMFT_MO):
         return x
 
     def _density(self, x):
-        "1-particle density matrix in AO basis"
+        "1-particle density matrix in MO basis: D-projection"
         n, c = x.unpack()
         n, c = density_matrix_projection(n, c, numpy.identity(len(n)), self._np, type='d')
         self._current_occupancies = n
         self._current_orbitals    = c
         D = self._current_density.generalized_density(n, c)
-        self._current_density.set_D(D)  # --> maybe remove since probably could be replaced by smth?
-        density = Guess.create(n=self._current_occupancies, c=self._current_orbitals, t='matrix')
-        return density
+        self._current_density.set_D(D)
+        new_guess = Guess.create(n=self._current_occupancies, c=self._current_orbitals, t='matrix')
+        return new_guess
 
     def _gradient(self, x):
         "Gradient"
         gradient = self._compute_no_exchange_gradient_D()
-        gradient+= self._xc_functional.gradient_D(*x.unpack())
+        gradient+= self._xc_functional.gradient_D(x)
         return gradient
 
     def _step(self, x1, x2):
@@ -730,7 +729,6 @@ class DMFT_ProjD(DMFT_MO):
 class DMFT_ProjP(DMFT_MO):
     def __init__(self, wfn, xc_functional, v_ext, guess, step):
         super(DMFT_ProjP, self).__init__(wfn, xc_functional, v_ext, guess, step)
-        raise NotImplementedError
 
 
     @staticmethod
@@ -739,12 +737,56 @@ class DMFT_ProjP(DMFT_MO):
     @property
     def abbr(self): return "DMFT-ProjP"
 
-    def _compute_initial_NOs(self):
-        "C: MO-SCF to NO matrix"
-        D = self._current_density.matrix()
-        D_mo = numpy.linalg.multi_dot([self._Ca, self._S, D, self._S, self._Ca.T])
-        self._current_density.set_D(D_mo)
-        n, c = Density.natural_orbitals(self._current_density.matrix(), None, None, orthogonalize_mo=False,
-                                       order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False,
-                                       ignore_large_n=False)
-        return n, c
+
+    # --- Implementation (Protected Interface) --- #
+
+    def _minimizer(self, x): #TODO->> make energy_p method in XC functional!
+        "Minimizer function: Total Energy"
+        E_H  = self._compute_no_exchange_energy()
+        E_XC = self._xc_functional.energy_p(x, mode='scf-mo')
+        E    = E_H + E_XC
+        return E
+
+    def _guess(self):#OK
+        "Initial guess"
+        x = Guess.create(n=self._current_occupancies**2, c=self._current_orbitals, t='matrix') 
+        return x
+
+    def _density(self, x):#OK
+        "1-particle density matrix in MO basis: P-projection"
+        p, c = x.unpack()
+        p, c = density_matrix_projection(p, c, numpy.identity(len(n)), self._np, type='p')
+        self._current_occupancies = numpy.sqrt(p)
+        self._current_orbitals    = c
+        D = self._current_density.generalized_density(p, c, 0.5)
+        self._current_density.set_D(D)
+        new_guess = Guess.create(n=p, c=self._current_orbitals, t='matrix')
+        return new_guess
+
+    def _gradient(self, x):#OK
+        "Gradient"
+        gradient = self._compute_no_exchange_gradient_P()
+        gradient+= self._xc_functional.gradient_P(x)
+        return gradient
+
+    def _step(self, x1, x2):#OK
+        "Steepest-descents step."
+        gradient_1 = self._gradient(x1)
+        gradient_2 = self._gradient(x2)
+
+        g = 0.5
+        if self._step_mode.lower() != 'constant': 
+           g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
+        x_new = x1 - g * gradient_1
+        x_new.update()
+        return x_new
+
+    def _step_0(self, x0, g0):#OK
+        "Steepest-descents step."
+        gradient_2 = self._gradient(x0)
+        x_new = x0 - g0 * gradient_2
+        x_new.update()
+        return x_new
+
+
+

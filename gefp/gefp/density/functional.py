@@ -67,22 +67,22 @@ class XCFunctional(ABC, Density):
     def name(): pass
 
     @abstractmethod
-    def energy(self, n, c): 
+    def energy(self, x): 
         "Exchange-correlation energy"
         pass
 
     @abstractmethod
-    def gradient_D(self, n, c): 
+    def gradient_D(self, x): 
         "Gradient with respect to density matrix"
         pass
 
     @abstractmethod
-    def gradient_P(self, n, c): 
+    def gradient_P(self, x): 
         "Gradient with respect to P matrix"
         pass
 
     @abstractmethod
-    def gradient_nc(self, n, c): 
+    def gradient_nc(self, x): 
         "Gradient with respect to N and C"
         pass
 
@@ -124,8 +124,9 @@ class HF_XCFunctional(XCFunctional):
     @property
     def abbr(self): return "HF"
 
-    def energy(self, n, c, mode='scf-mo'): 
+    def energy(self, x, mode='scf-mo'): 
         "Exchange-correlation energy"
+        n, c = x.unpack()
         D = self.generalized_density(n, c, 1.0)
         if mode.lower() == 'scf-mo':
            K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
@@ -135,7 +136,7 @@ class HF_XCFunctional(XCFunctional):
         else: raise ValueError("Only mode=ao or scf-mo is supported as for now. Mistyped?")
         return xc_energy
 
-    def gradient_D(self, n, c): 
+    def gradient_D(self, x): 
         "Gradient with respect to density matrix: MO-SCF basis"
         #D = self.generalized_density(n, c, 1.0)
         #K = self.generalized_JK(D, type='k')
@@ -143,17 +144,18 @@ class HF_XCFunctional(XCFunctional):
         #c_psi4 = self._wfn.Ca_subset("AO","ALL")
         #gradient = -oepdev.calculate_JK(self._wfn, c_psi4)[1].to_array(dense=True)
 
-        D = Density.generalized_density(n, c)
+        D = Density.generalized_density(*x.unpack())
         gradient_K  = -oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
         gradient = Guess.create(matrix=gradient_K)
         return gradient
 
-    def gradient_P(self, n, c):
+    def gradient_P(self, x):
         "Gradient with respect to P matrix"
         raise NotImplementedError("Gradient of HF energy are not implemented for P sets.")
 
-    def gradient_nc(self, n, c):
+    def gradient_nc(self, x):
         "Gradient with respect to N and C"
+        n, c = x.unpack()
         nn = len(n)
 
         # gradient wrt n
@@ -176,7 +178,7 @@ class HF_XCFunctional(XCFunctional):
             self._jk.C_left_add(psi4.core.Matrix.from_array(Bm, ""))
             self._jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
         self._jk.compute()
-                                                                                            
+
         for m in range(nn):
             Km = self._jk.K()[m].to_array(dense=True)
             grad_c[:,m] -= numpy.dot(Km, c[:,m])
@@ -207,24 +209,30 @@ class MBB_XCFunctional(XCFunctional):
     @property
     def abbr(self): return "MBB"
 
-    def energy(self, n, c): 
+    def energy(self, x, mode='scf-mo'): 
         "Exchange-correlation energy"
-        D = self.generalized_density(n, c, 0.5)
-        xc_energy = -self.compute_2el_energy(D, D, type='k')
+        D = self.generalized_density(*x.unpack(), 0.5)
+        if mode.lower() == 'scf-mo':
+           K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
+           xc_energy = -numpy.dot(K, D).trace()
+        elif mode.lower() == 'ao':
+           xc_energy = -self.compute_2el_energy(D, D, type='k')
+        else: raise ValueError("Only mode=ao or scf-mo is supported as for now. Mistyped?")
         return xc_energy
 
-    def gradient_D(self, n, c): 
+    def gradient_D(self, x): 
         "Gradient with respect to density matrix"
         raise NotImplementedError("Gradient of MBB XC energy are not implemented for D sets.")
 
-    def gradient_P(self, n, c): 
+    def gradient_P(self, x):#TODO
         "Gradient with respect to P matrix"
-        ns = self.correct_negative_occupancies(n)
-        D = self.generalized_density(ns, c, 0.5)
-        K = self.generalized_JK(D, type='k')
-        gradient = -K
-        return gradient
+        #ns = self.correct_negative_occupancies(n)
+        #D = self.generalized_density(ns, c, 0.5)
+        #K = self.generalized_JK(D, type='k')
+        #gradient = -K
+        #return gradient
+        raise NotImplementedError
 
-    def gradient_nc(self, n, c): 
+    def gradient_nc(self, x): 
         "Gradient with respect to N and C"
         raise NotImplementedError("Gradient of MBB XC energy are not implemented for nc sets.")
