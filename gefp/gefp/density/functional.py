@@ -24,17 +24,20 @@ class XCFunctional(ABC, Density):
 """
     default = 'hf'
 
-    def __init__(self, jk=None, wfn=None):
+    def __init__(self, jk=None, wfn=None, ints=None):
         ABC.__init__(self)
         Density.__init__(self, None, jk)
         self._jk = self._global_jk
         self._wfn = wfn
+        self._ints = ints
 
     def set_jk(self, jk): 
         self._jk = jk
         self._global_jk = jk
     def set_wfn(self, wfn):
         self._wfn = wfn
+    def set_ints(self, ints):
+        self._ints = ints
 
     @classmethod
     def create(cls, name=default, **kwargs):
@@ -123,13 +126,17 @@ class HF_XCFunctional(XCFunctional):
         return xc_energy
 
     def gradient_D(self, n, c): 
-        "Gradient with respect to density matrix"
+        "Gradient with respect to density matrix: MO-SCF basis"
         #D = self.generalized_density(n, c, 1.0)
         #K = self.generalized_JK(D, type='k')
         #gradient = Guess.create(matrix=-K) # ---> must be in MO basis!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        c_psi4 = self._wfn.Ca_subset("AO","ALL")
-        gradient = -oepdev.calculate_JK(self._wfn, c_psi4)[1].to_array(dense=True)
-        gradient = Guess.create(matrix=gradient)  # TODO!
+        #c_psi4 = self._wfn.Ca_subset("AO","ALL")
+        #gradient = -oepdev.calculate_JK(self._wfn, c_psi4)[1].to_array(dense=True)
+
+        psi4_integrals = self._ints
+        D = Density.generalized_density(n, c)
+        gradient_K  = -oepdev.calculate_JK_r(self._wfn, psi4_integrals, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
+        gradient = Guess.create(matrix=gradient_K)
         return gradient
 
     def gradient_P(self, n, c):

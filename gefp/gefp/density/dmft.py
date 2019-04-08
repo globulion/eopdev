@@ -123,8 +123,9 @@ class DMFT(ABC):
         self._wfn                      = None       # Wavefunction Object
         self._bfs                      = None       # Basis Set Object
         self._bfs_name                 = None       # Basis Set Abbreviation
-        self._mints                    = None       # Integral Calculator Objects
-        self._jk                       = None       # JK Object
+        self._mints                    = None       # Integral Calculator Object
+        self._ints                     = None       # Integral Transform Object (for MO-SCF basis)
+        self._jk                       = None       # JK Object (for AO basis)
         self._e_nuc                    = None       # Nuclear Repulsion Energy
         self._np                       = None       # Number of Electron Pairs
         self._Ca                       = None       # AO-MO Matrix at Hartree-Fock Level (LCAO-MO)
@@ -220,7 +221,6 @@ class DMFT(ABC):
         x_0 = self._guess()
                                                                                   
         # [2] Starting energy
-        nn=self._bfs.nbf()
         self._current_energy = self._minimizer(x_0)
         E_old = self._current_energy
         if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (iteration, E_old))
@@ -285,16 +285,15 @@ class DMFT(ABC):
 
     def _compute_no_exchange_gradient_D(self):
         "1-electron and Hartree part of gradient wrt D. Returned in SCF-MO basis."
-        #D = self._current_density.matrix()
-        #J = self._current_density.generalized_JK(D, type='j')
-        #grad = self._H + 2.0 * J
-        c_psi4 = self._wfn.Ca_subset("AO","ALL")
-        gradient  = numpy.linalg.multi_dot([self._Ca, self._H, self._Ca.T])
-        gradient += 2.0 * oepdev.calculate_JK(self._wfn, c_psi4)[0].to_array(dense=True)
-        gradient  = Guess.create(matrix=gradient)  #TODO!
+        D = self._current_density.matrix() # Must be in MO-SCF basis!
+        gradient_H  = numpy.linalg.multi_dot([self._Ca, self._H, self._Ca.T])
+        gradient_J  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[0].to_array(dense=True)
+        gradient  = Guess.create(matrix = gradient_H + 2.0 * gradient_J)
         return gradient
+
     def _compute_no_exchange_gradient_P(self):#TODO
         return NotImplementedError
+
     def _compute_no_exchange_gradient_nc(self, n, c):
         "Compute Gradient excluding the Exchange-Correlation Part"
         grad_n = self.__grad_n_no_exchange(n, c)
@@ -315,6 +314,10 @@ class DMFT(ABC):
         E = 2.0 * self._current_density.compute_2el_energy(D, D, type='j')
         return E
 
+    @abstractmethod
+    def _compute_initial_NOs(self):
+        "Initial natural orbital analysis"
+        pass
 
     @abstractmethod
     def _minimizer(self, x):
@@ -390,6 +393,24 @@ class DMFT(ABC):
         if V_ext is not None and guess == 'current':
            raise ValueError(" External potential can only be set for 'HCore' guess!")
 
+        # MO integrals in MO-SCF basis
+        #a = psi4.core.MOSpace.all()
+        #self._integral_transform = psi4.core.IntegralTransform(self._wfn, [a],
+        #        psi4.core.IntegralTransform.TransformationType.Restricted,
+        #        psi4.core.IntegralTransform.OutputType.DPDOnly,
+        #        psi4.core.IntegralTransform.MOOrdering.QTOrder,
+        #        initialize=True)
+        #self._integral_transform.transform_tei(a, a, a, a)
+        #oepdev.calculate_JK(self._wfn, self._wfn.Ca_subset("AO","ALL"))
+        psi4.check_iwl_file_from_scf_type(psi4.core.get_global_option('SCF_TYPE'), self._wfn)
+        a = psi4.core.MOSpace.all()
+        spaces = [a]
+        trans_type = psi4.core.IntegralTransform.TransformationType.Restricted
+        self._ints = psi4.core.IntegralTransform(self._wfn, spaces, trans_type)
+        self._ints.transform_tei(a, a, a, a)
+        psi4.core.print_out('Integral transformation complete!\n')
+        self._xc_functional.set_ints(self._ints)
+
         ### Current OPDM and total energy                                                                
         if guess == 'current':  # Guess based on current density matrix from the input wavefunction
            assert self._V_ext is None
@@ -409,9 +430,7 @@ class DMFT(ABC):
         self._current_energy  = E
         self._current_density = Density(D, self._jk)
         # Natural Orbitals
-        self._current_occupancies, self._current_orbitals = \
-                 Density.natural_orbitals(self._current_density.matrix(), self._S, self._Ca, orthogonalize_mo=True,
-                                       order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False)
+        self._current_occupancies, self._current_orbitals = self._compute_initial_NOs() # it also changes _current_density
         return
 
     def __grad_n_no_exchange(self, n, c):
@@ -486,6 +505,13 @@ class DMFT_NC(DMFT):
 
     # --- Implementation (Protected Interface) --- #
 
+
+    def _compute_initial_NOs(self):
+        "C: AO to NO matrix"
+        n, c = Density.natural_orbitals(self._current_density.matrix(), self._S, self._Ca, orthogonalize_mo=True,
+                                       order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False,
+                                       ignore_large_n=False)
+        return n, c
 
     def _minimizer(self, x):
         "Minimizer function: Total Energy"
@@ -581,6 +607,16 @@ class DMFT_ProjD(DMFT):
 
     # --- Implementation (Protected Interface) --- #
 
+    def _compute_initial_NOs(self):
+        "C: MO-SCF to NO matrix"
+        D = self._current_density.matrix()
+        D_mo = numpy.linalg.multi_dot([self._Ca.T, self._S, D, self._S, self._Ca])
+        self._current_density.set_D(D_mo)
+        n, c = Density.natural_orbitals(self._current_density.matrix(), None, None, orthogonalize_mo=False,
+                                       order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False,
+                                       ignore_large_n=False)
+        return n, c
+
     def _minimizer(self, x):
         "Minimizer function: Total Energy"
         E_H  = self._compute_no_exchange_energy()
@@ -596,7 +632,7 @@ class DMFT_ProjD(DMFT):
     def _density(self, x):
         "1-particle density matrix in AO basis"
         n, c = x.unpack()
-        n, c = density_matrix_projection(n, c, self._S, self._np, type='d')
+        n, c = density_matrix_projection(n, c, numpy.identity(len(n)), self._np, type='d')
         self._current_occupancies = n
         self._current_orbitals    = c
         D = self._current_density.generalized_density(n, c)
@@ -621,14 +657,14 @@ class DMFT_ProjD(DMFT):
         #g = abs(g)
         g = 0.1
         x_new = x1 - g * gradient_1
-        x_new.update(self._S, self._Ca)
+        x_new.update()
         return x_new
 
     def _step_0(self, x0, g0):
         "Steepest-descents step."
         gradient_2 = self._gradient(x0)
         x_new = x0 - g0 * gradient_2
-        x_new.update(self._S, self._Ca)
+        x_new.update()
         return x_new
 
 
@@ -645,3 +681,13 @@ class DMFT_ProjP(DMFT):
 
     @property
     def abbr(self): return "DMFT-ProjP"
+
+    def _compute_initial_NOs(self):
+        "C: MO-SCF to NO matrix"
+        D = self._current_density.matrix()
+        D_mo = numpy.linalg.multi_dot([self._Ca, self._S, D, self._S, self._Ca.T])
+        self._current_density.set_D(D_mo)
+        n, c = Density.natural_orbitals(self._current_density.matrix(), None, None, orthogonalize_mo=False,
+                                       order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False,
+                                       ignore_large_n=False)
+        return n, c

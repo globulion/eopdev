@@ -15,6 +15,7 @@ namespace psi{
 void export_util(py::module &m) {
 
     m.def("calculate_JK", &oepdev::calculate_JK, "Calculatr J and K matrices in MO basis", py::return_value_policy::take_ownership);
+    m.def("calculate_JK_r", &oepdev::calculate_JK_r, "Calculatr J and K matrices in MO basis", py::return_value_policy::take_ownership);
 
 }
 

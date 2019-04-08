@@ -29,14 +29,23 @@ class Guess(ABC):
            else: raise ValueError("Not recognized guess type. Only MATRIX and NC are possible.")
         else: return Matrix_Guess(matrix=matrix, n=n, c=c)
 
-    def update(self, S, C):
-        self._n, self._c = Density.natural_orbitals(self.matrix(), S, C, 
-                             orthogonalize_mo=True,
-                             order='descending', 
-                             no_cutoff=0.0, 
-                             renormalize=False, 
-                             return_ao_orthogonal=False,
-                             ignore_large_n=True)
+    def update(self, S=None, C=None):
+        if S is not None and C is not None:
+         self._n, self._c = Density.natural_orbitals(self.matrix(), S, C, 
+                              orthogonalize_mo=True,
+                              order='descending', 
+                              no_cutoff=0.0, 
+                              renormalize=False, 
+                              return_ao_orthogonal=False,
+                              ignore_large_n=True)
+        else:
+         self._n, self._c = Density.natural_orbitals(self.matrix(), None, None,
+                              orthogonalize_mo=False,
+                              order='descending',
+                              no_cutoff=0.0,
+                              renormalize=False,
+                              return_ao_orthogonal=False,
+                              ignore_large_n=True)
 
     def matrix(self): 
         if self._type == 'nc': 

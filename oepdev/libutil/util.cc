@@ -169,5 +169,60 @@ std::vector<std::shared_ptr<psi::Matrix>> calculate_JK(std::shared_ptr<psi::Wave
   return JK;
 }
 
+extern "C" PSI_API
+std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_r(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, std::shared_ptr<psi::Matrix> Dij){
+
+  // Initialize the J_ij and K_ij matrix
+  int n = Dij->ncol();
+  std::shared_ptr<psi::Matrix> Jij = std::make_shared<psi::Matrix>("Coulomb Integrals in MO basis", n, n);
+  std::shared_ptr<psi::Matrix> Kij = std::make_shared<psi::Matrix>("Exchange Integrals in MO basis", n, n);
+  double** pJij = Jij->pointer();
+  double** pKij = Kij->pointer();
+  double** pD   = Dij->pointer();
+
+  std::vector<std::shared_ptr<psi::Matrix>> JK;
+  JK.push_back(Jij);
+  JK.push_back(Kij);
+
+  // Read integrals and save
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+
+  dpd_set_default(tr->get_dpd_id());
+  dpdbuf4 buf;
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
+                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+
+  // J and K
+  for (int h = 0; h < wfn->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+       for (int pq = 0; pq < buf.params->rowtot[h]; ++pq) {
+            int p = buf.params->roworb[h][pq][0];
+            int q = buf.params->roworb[h][pq][1];
+	    double vj_pq = 0.0;
+            for (int rs = 0; rs < buf.params->coltot[h]; ++rs) {
+         	   int r = buf.params->colorb[h][rs][0];
+        	   int s = buf.params->colorb[h][rs][1];
+		   vj_pq      += buf.matrix[h][pq][rs] * pD[r][s];
+		   pKij[p][r] += buf.matrix[h][pq][rs] * pD[q][s];
+            }
+	    pJij[p][q] = vj_pq;
+       }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  //Kij->print();
+  return JK;
+}
+
+
+
 
 } // EndNameSpace oepdev

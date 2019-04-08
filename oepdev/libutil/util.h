@@ -139,6 +139,7 @@ double average_moment(std::shared_ptr<psi::Vector> moment);
 
 /** \brief Compute the Coulomb and exchange integral matrices in MO basis.
  *
+ *  Transforms the AO ERI's based on provided C matrix.
  *  @param wfn    - Wavefunction object
  *  @param C      - molecular orbital coefficients (AO x MO)
  *  @return       - vector with J_ij and K_ij matrix
@@ -146,6 +147,19 @@ double average_moment(std::shared_ptr<psi::Vector> moment);
  */
 extern "C" PSI_API
 std::vector<std::shared_ptr<psi::Matrix>> calculate_JK(std::shared_ptr<psi::Wavefunction> wfn, std::shared_ptr<psi::Matrix> C);
+
+/** \brief Compute the Coulomb and exchange integral matrices in MO basis. 
+ *
+ *  Reads the existing MO ERI's.
+ *  @param wfn    - Wavefunction object
+ *  @param tr     - IntegralTransform object
+ *  @param D      - density matrix in MO basis
+ *  @return       - vector with J_ij and K_ij matrix
+ *
+ */
+extern "C" PSI_API
+std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_r(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, std::shared_ptr<psi::Matrix> Dij);
 
 
 

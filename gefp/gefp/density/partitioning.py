@@ -69,10 +69,11 @@ class Density:
            U = L
         if return_ao_orthogonal is False:
            if orthogonalize_mo is False:
-              assert S is not None
-              U = numpy.dot(cls.orthogonalizer(S), U)
+              if S is not None:
+               U = numpy.dot(cls.orthogonalizer(S), U)
+              else: U = U
         else:
-           raise NotImplementedError("Returning LCOAO_NO matrix is not supported yet if orthogonalization in MO basis was done!")
+           raise NotImplementedError("Returning LCoAO_NO matrix is not supported yet if orthogonalization in MO basis was done!")
 
         # Warnings and sanity checks
         if not ignore_large_n:
