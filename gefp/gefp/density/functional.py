@@ -30,12 +30,17 @@ class XCFunctional(ABC, Density):
         self._jk = self._global_jk
         self._wfn = wfn
         self._ints = ints
+        #
+        self._Ca   = None
+        self._S    = None
 
     def set_jk(self, jk): 
         self._jk = jk
         self._global_jk = jk
     def set_wfn(self, wfn):
         self._wfn = wfn
+        self._Ca  = wfn.Ca_subset("AO","ALL").to_array(dense=True)
+        self._S   = wfn.S().to_array(dense=True)
     def set_ints(self, ints):
         self._ints = ints
 
@@ -149,9 +154,9 @@ class HF_XCFunctional(XCFunctional):
 
         # gradient wrt n
         grad_n = numpy.zeros(nn, numpy.float64)
-        c_psi4 = psi4.core.Matrix.from_array(c, "")
-        Kij = oepdev.calculate_JK(self._wfn, c_psi4)[1].to_array(dense=True)
-        psi4.core.clean()
+        D = Density.generalized_density(n, c)
+        D = numpy.linalg.multi_dot([self._Ca.T, self._S, D, self._S, self._Ca])
+        Kij = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
 
         for m in range(nn):
             fij_1 = self.fij_1(n, m)

@@ -144,7 +144,7 @@ class DMFT(ABC):
  Warning! The D-set is not Lipshitz with %s functional. 
  This will probably result in lack of convergence. Use P-set instead.""" % xc_functional.abbr.upper())
 
-        # Call constructor for meta class
+        # Abstract base meta class
         super(DMFT, self).__init__()
 
 
@@ -206,7 +206,9 @@ class DMFT(ABC):
 
     @staticmethod
     @abstractmethod
-    def name(): pass
+    def name(): 
+        "Full name for the method implemented"
+        pass
 
 
     # --- Protected Interface --- #
@@ -214,6 +216,7 @@ class DMFT(ABC):
     def _run_dmft(self, conv, maxit, verbose, g_0, **kwargs):#OK
         "DMFT Iterations"
 
+        # [0] Initialize
         iteration = 0                                                             
         success = False
 
@@ -358,7 +361,7 @@ class DMFT(ABC):
         # Wavefunction
         self._wfn = wfn
         # Basis set name
-        self._bfs_name = wfn.basisset().name
+        self._bfs_name = wfn.basisset().name()
         # XC functional
         self._xc_functional = xc_functional
 
@@ -488,9 +491,17 @@ class DMFT(ABC):
         return grad
 
 
+class DMFT_AO(DMFT):
+    def __init__(self, wfn, xc_functional, v_ext, guess):
+        super(DMFT_AO, self).__init__(wfn, xc_functional, v_ext, guess)
+
+class DMFT_MO(DMFT):
+    def __init__(self, wfn, xc_functional, v_ext, guess):
+        super(DMFT_MO, self).__init__(wfn, xc_functional, v_ext, guess)
 
 
-class DMFT_NC(DMFT):
+
+class DMFT_NC(DMFT_AO):
     def __init__(self, wfn, xc_functional, v_ext, guess):
         super(DMFT_NC, self).__init__(wfn, xc_functional, v_ext, guess)
 
@@ -593,7 +604,7 @@ class DMFT_NC(DMFT):
 
 
 
-class DMFT_ProjD(DMFT):
+class DMFT_ProjD(DMFT_MO):
     def __init__(self, wfn, xc_functional, v_ext, guess):
         super(DMFT_ProjD, self).__init__(wfn, xc_functional, v_ext, guess)
 
@@ -670,7 +681,7 @@ class DMFT_ProjD(DMFT):
 
 
 
-class DMFT_ProjP(DMFT):
+class DMFT_ProjP(DMFT_MO):
     def __init__(self, wfn, xc_functional, v_ext, guess):
         super(DMFT_ProjP, self).__init__(wfn, xc_functional, v_ext, guess)
         raise NotImplementedError
