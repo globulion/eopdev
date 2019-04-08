@@ -109,8 +109,9 @@ class DMFT(ABC):
     default_g0            =  0.0001            # Steepest-descents step scale in the first iteration
     default_v_ext         =  None              # External 1-electron potential
     default_guess         = 'hcore'            # Guess for ODPM
+    default_step_mode     = 'search'           # Steepest-Descents step (simple line search)
 
-    def __init__(self, wfn, xc_functional, v_ext=default_v_ext, guess=default_guess):
+    def __init__(self, wfn, xc_functional, v_ext=default_v_ext, guess=default_guess, step_mode=default_step_mode):
         "Initialize"
         # Protected variable namespace
         self._current_energy           = None       # Total Energy
@@ -135,9 +136,10 @@ class DMFT(ABC):
         self._H                        = None       # AO Core Hamiltonian Matrix
         self._V_ext                    = None       # AO External Potential Matrix
         self._H_mo                     = None       # MO-SCF Core Hamiltonian + External Potential Matrix
+        self._step_mode                = None       # Mode of Steepest-Descents Minimization Steps
 
         # Initialize all variables
-        self.__common_init(wfn, xc_functional, v_ext, guess)
+        self.__common_init(wfn, xc_functional, v_ext, guess, step_mode)
 
         # Sanity checks
         if self._xc_functional.abbr.lower() != 'hf' and self.abbr.lower() == 'dmft-projd':
@@ -155,11 +157,13 @@ class DMFT(ABC):
     def create(cls, wfn, xc_functional = default_xc_functional, 
                          v_ext         = default_v_ext        ,
                          guess         = default_guess        ,
-                         algorithm     = default_algorithm    ,        **kwargs):
+                         algorithm     = default_algorithm    ,
+                         step_mode     = default_step_mode    ,        **kwargs):
         """\
  Create DMFT solver. 
 """
-        args = [wfn, xc_functional, v_ext, guess]
+        args = [wfn, xc_functional, v_ext, guess, step_mode]
+
         if   algorithm.lower() == 'proj-d': solver = DMFT_ProjD(*args, **kwargs)
         elif algorithm.lower() == 'proj-p': solver = DMFT_ProjP(*args, **kwargs)
         elif algorithm.lower() == 'nc'    : solver = DMFT_NC   (*args, **kwargs)
@@ -304,6 +308,16 @@ class DMFT(ABC):
         grad_c = self.__grad_c_no_exchange(n, c)
         grad = Guess.create(grad_n, grad_c, None, 'nc')
         return grad
+
+    def _estimate_step_size(self, dx, dg):
+        "Estimate step length of steepest descents"
+        DX = dx.matrix().ravel()
+        DG = dg.matrix().ravel()
+        norm = numpy.dot(DG, DG)
+        g    = numpy.dot(DX, DG)/ norm
+        g    = abs(g)
+        return g
+
                   
     @abstractmethod
     def _compute_hcore_energy(self):
@@ -355,7 +369,7 @@ class DMFT(ABC):
 
     # --- Private Interface --- #
 
-    def __common_init(self, wfn, xc_functional, V_ext, guess):
+    def __common_init(self, wfn, xc_functional, V_ext, guess, step_mode):
         "Initialize"
 
         # ---->  Basic Objects <---- #
@@ -383,6 +397,8 @@ class DMFT(ABC):
         self._e_nuc = self._mol.nuclear_repulsion_energy()
         # Number of electron pairs
         self._np = self._wfn.nalpha()
+        # Step mode
+        self._step_mode = step_mode
                                                                                                
         # ---->  Constant AO matrices <---- #
 
@@ -494,8 +510,8 @@ class DMFT(ABC):
 
 
 class DMFT_AO(DMFT):
-    def __init__(self, wfn, xc_functional, v_ext, guess):
-        super(DMFT_AO, self).__init__(wfn, xc_functional, v_ext, guess)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step):
+        super(DMFT_AO, self).__init__(wfn, xc_functional, v_ext, guess, step)
 
     # --- Implementation (Protected Interface) --- #
 
@@ -522,8 +538,8 @@ class DMFT_AO(DMFT):
 
 
 class DMFT_MO(DMFT):
-    def __init__(self, wfn, xc_functional, v_ext, guess):
-        super(DMFT_MO, self).__init__(wfn, xc_functional, v_ext, guess)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step):
+        super(DMFT_MO, self).__init__(wfn, xc_functional, v_ext, guess, step)
 
     # --- Implementation (Protected Interface) --- #
 
@@ -553,8 +569,8 @@ class DMFT_MO(DMFT):
 
 
 class DMFT_NC(DMFT_AO):
-    def __init__(self, wfn, xc_functional, v_ext, guess):
-        super(DMFT_NC, self).__init__(wfn, xc_functional, v_ext, guess)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step):
+        super(DMFT_NC, self).__init__(wfn, xc_functional, v_ext, guess, step)
 
     # --- Implementation (Public) --- #
 
@@ -616,10 +632,9 @@ class DMFT_NC(DMFT_AO):
         gradient_1 = self._gradient(Guess.create(n1, c1, None, 'nc'))
         gradient_2 = self._gradient(Guess.create(n2, c2, None, 'nc'))
                                                                                        
-        #norm = numpy.linalg.norm(gradient_1 - gradient_2)
-        #g = numpy.dot(x_old_1 - x_old_2, gradient_1 - gradient_2) / norm**2
-        #print(" G = ", g)
         g = 0.1 #abs(g)
+        if self._step_mode.lower() != 'constant': 
+           g = self._estimate_step_size(x_old_1 - x_old_2, gradient_1 - gradient_2)
         x_new = x_old_1 - g * gradient_1
 
         # transform back to AO basis
@@ -648,8 +663,8 @@ class DMFT_NC(DMFT_AO):
 
 
 class DMFT_ProjD(DMFT_MO):
-    def __init__(self, wfn, xc_functional, v_ext, guess):
-        super(DMFT_ProjD, self).__init__(wfn, xc_functional, v_ext, guess)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step):
+        super(DMFT_ProjD, self).__init__(wfn, xc_functional, v_ext, guess, step)
 
 
     @staticmethod
@@ -695,11 +710,9 @@ class DMFT_ProjD(DMFT_MO):
         gradient_1 = self._gradient(x1)
         gradient_2 = self._gradient(x2)
 
-        #norm = numpy.linalg.norm(gradient_1 - gradient_2)
-        #g = numpy.dot(x1 - x2, gradient_1 - gradient_2) / norm**2
-        #print(" G = ", g)
-        #g = abs(g)
-        g = 0.1
+        g = 0.5
+        if self._step_mode.lower() != 'constant': 
+           g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
         x_new = x1 - g * gradient_1
         x_new.update()
         return x_new
@@ -715,8 +728,8 @@ class DMFT_ProjD(DMFT_MO):
 
 
 class DMFT_ProjP(DMFT_MO):
-    def __init__(self, wfn, xc_functional, v_ext, guess):
-        super(DMFT_ProjP, self).__init__(wfn, xc_functional, v_ext, guess)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step):
+        super(DMFT_ProjP, self).__init__(wfn, xc_functional, v_ext, guess, step)
         raise NotImplementedError
 
 
