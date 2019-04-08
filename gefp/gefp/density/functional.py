@@ -124,10 +124,15 @@ class HF_XCFunctional(XCFunctional):
     @property
     def abbr(self): return "HF"
 
-    def energy(self, n, c): 
+    def energy(self, n, c, mode='scf-mo'): 
         "Exchange-correlation energy"
         D = self.generalized_density(n, c, 1.0)
-        xc_energy = -self.compute_2el_energy(D, D, type='k')
+        if mode.lower() == 'scf-mo':
+           K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
+           xc_energy = -numpy.dot(K, D).trace()
+        elif mode.lower() == 'ao':
+           xc_energy = -self.compute_2el_energy(D, D, type='k')
+        else: raise ValueError("Only mode=ao or scf-mo is supported as for now. Mistyped?")
         return xc_energy
 
     def gradient_D(self, n, c): 
@@ -138,9 +143,8 @@ class HF_XCFunctional(XCFunctional):
         #c_psi4 = self._wfn.Ca_subset("AO","ALL")
         #gradient = -oepdev.calculate_JK(self._wfn, c_psi4)[1].to_array(dense=True)
 
-        psi4_integrals = self._ints
         D = Density.generalized_density(n, c)
-        gradient_K  = -oepdev.calculate_JK_r(self._wfn, psi4_integrals, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
+        gradient_K  = -oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
         gradient = Guess.create(matrix=gradient_K)
         return gradient
 

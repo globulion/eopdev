@@ -134,6 +134,7 @@ class DMFT(ABC):
         self._Y                        = None       # AO Deorthogonalizer
         self._H                        = None       # AO Core Hamiltonian Matrix
         self._V_ext                    = None       # AO External Potential Matrix
+        self._H_mo                     = None       # MO-SCF Core Hamiltonian + External Potential Matrix
 
         # Initialize all variables
         self.__common_init(wfn, xc_functional, v_ext, guess)
@@ -197,7 +198,7 @@ class DMFT(ABC):
     @property
     def N(self): 
         "NO Occupations"
-        return self._current_occupations
+        return self._current_occupancies
 
     @property
     def abbr(self): 
@@ -289,7 +290,7 @@ class DMFT(ABC):
     def _compute_no_exchange_gradient_D(self):
         "1-electron and Hartree part of gradient wrt D. Returned in SCF-MO basis."
         D = self._current_density.matrix() # Must be in MO-SCF basis!
-        gradient_H  = numpy.linalg.multi_dot([self._Ca, self._H, self._Ca.T])
+        gradient_H  = self._H_mo
         gradient_J  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[0].to_array(dense=True)
         gradient  = Guess.create(matrix = gradient_H + 2.0 * gradient_J)
         return gradient
@@ -303,24 +304,22 @@ class DMFT(ABC):
         grad_c = self.__grad_c_no_exchange(n, c)
         grad = Guess.create(grad_n, grad_c, None, 'nc')
         return grad
-                                                                           
+                  
+    @abstractmethod
     def _compute_hcore_energy(self):
-        "1-Electron Energy"
-        H = self._H.copy()
-        D = self._current_density.matrix()
-        E = 2.0 * self._current_density.compute_1el_energy(D, H)
-        return E
-                                                                           
+        "1-Electron Energy: HCore + Vext"
+        pass
+           
+    @abstractmethod
     def _compute_hartree_energy(self):
         "2-Electron Energy: Hartree"
-        D = self._current_density.matrix()
-        E = 2.0 * self._current_density.compute_2el_energy(D, D, type='j')
-        return E
+        pass
 
     @abstractmethod
     def _compute_initial_NOs(self):
         "Initial natural orbital analysis"
         pass
+
 
     @abstractmethod
     def _minimizer(self, x):
@@ -358,6 +357,9 @@ class DMFT(ABC):
 
     def __common_init(self, wfn, xc_functional, V_ext, guess):
         "Initialize"
+
+        # ---->  Basic Objects <---- #
+
         # Wavefunction
         self._wfn = wfn
         # Basis set name
@@ -382,7 +384,8 @@ class DMFT(ABC):
         # Number of electron pairs
         self._np = self._wfn.nalpha()
                                                                                                
-        ### Constant AO matrices
+        # ---->  Constant AO matrices <---- #
+
         # SCF LCAO-MO coefficients
         self._Ca= self._wfn.Ca_subset("AO","ALL").to_array(dense=True)
         # Overlap integrals and orthogonalizer
@@ -396,35 +399,32 @@ class DMFT(ABC):
         if V_ext is not None and guess == 'current':
            raise ValueError(" External potential can only be set for 'HCore' guess!")
 
-        # MO integrals in MO-SCF basis
-        #a = psi4.core.MOSpace.all()
-        #self._integral_transform = psi4.core.IntegralTransform(self._wfn, [a],
-        #        psi4.core.IntegralTransform.TransformationType.Restricted,
-        #        psi4.core.IntegralTransform.OutputType.DPDOnly,
-        #        psi4.core.IntegralTransform.MOOrdering.QTOrder,
-        #        initialize=True)
-        #self._integral_transform.transform_tei(a, a, a, a)
-        #oepdev.calculate_JK(self._wfn, self._wfn.Ca_subset("AO","ALL"))
+        # ---->  MO integrals in MO-SCF basis <---- #
+
+        # Integral Transform
         psi4.check_iwl_file_from_scf_type(psi4.core.get_global_option('SCF_TYPE'), self._wfn)
-        a = psi4.core.MOSpace.all()
-        spaces = [a]
+        mo_all = psi4.core.MOSpace.all()
+        spaces = [mo_all]
         trans_type = psi4.core.IntegralTransform.TransformationType.Restricted
         self._ints = psi4.core.IntegralTransform(self._wfn, spaces, trans_type)
-        self._ints.transform_tei(a, a, a, a)
+        self._ints.transform_tei(mo_all, mo_all, mo_all, mo_all)
         psi4.core.print_out('Integral transformation complete!\n')
         self._xc_functional.set_ints(self._ints)
 
-        ### Current OPDM and total energy                                                                
-        if guess == 'current':  # Guess based on current density matrix from the input wavefunction
-           assert self._V_ext is None
+        # ---->  Current OPDM and total energy <---- #
+
+        # Guess based on current density matrix from the input wavefunction
+        if guess == 'current':
+           assert self._V_ext is None, "External potential cannot be set with guess=current!"
            E = self._wfn.energy()
            D = self._wfn.Da().to_array(dense=True)
-        elif guess == 'hcore':  # Guess based on one-electron Hamiltonian
+        # Guess based on the one-electron Hamiltonian
+        elif guess == 'hcore':
            if self._V_ext is not None: self._H += self._V_ext
            e, c = numpy.linalg.eigh(numpy.linalg.multi_dot([self._X, self._H, self._X]))
            c = c[:,::-1]
            c = numpy.dot(self._X, c)
-           E = 2.0*e.sum() + self._e_nuc
+           E = self._e_nuc + 2.0 * e.sum()
            D = numpy.zeros((self._bfs.nbf(), self._bfs.nbf()), numpy.float64)
            for i in range(self._np):
                D += numpy.outer(c[:,i], c[:,i])
@@ -432,8 +432,10 @@ class DMFT(ABC):
            raise ValueError("Only 'Current' or 'HCore' ODPM's are supported as starting points.")
         self._current_energy  = E
         self._current_density = Density(D, self._jk)
-        # Natural Orbitals
+        # Initial Natural Orbitals
         self._current_occupancies, self._current_orbitals = self._compute_initial_NOs() # it also changes _current_density
+        # H_core + V_ext in MO-SCF basis
+        self._H_mo = numpy.linalg.multi_dot([self._Ca.T, self._H, self._Ca])
         return
 
     def __grad_n_no_exchange(self, n, c):
@@ -495,10 +497,59 @@ class DMFT_AO(DMFT):
     def __init__(self, wfn, xc_functional, v_ext, guess):
         super(DMFT_AO, self).__init__(wfn, xc_functional, v_ext, guess)
 
+    # --- Implementation (Protected Interface) --- #
+
+    def _compute_hcore_energy(self):
+        "1-Electron Energy"
+        H = self._H.copy()
+        D = self._current_density.matrix()
+        E = 2.0 * self._current_density.compute_1el_energy(D, H)
+        return E
+
+    def _compute_hartree_energy(self):
+        "2-Electron Energy: Hartree ---> AO basis"
+        D = self._current_density.matrix()
+        E = 2.0 * self._current_density.compute_2el_energy(D, D, type='j')
+        return E
+
+    def _compute_initial_NOs(self):
+        "C: AO to NO matrix"
+        n, c = Density.natural_orbitals(self._current_density.matrix(), self._S, self._Ca, orthogonalize_mo=True,
+                                       order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False,
+                                       ignore_large_n=False)
+        return n, c
+
+
+
 class DMFT_MO(DMFT):
     def __init__(self, wfn, xc_functional, v_ext, guess):
         super(DMFT_MO, self).__init__(wfn, xc_functional, v_ext, guess)
 
+    # --- Implementation (Protected Interface) --- #
+
+    def _compute_hcore_energy(self):
+        "1-Electron Energy"
+        H = self._H_mo
+        D = self._current_density.matrix()
+        E = 2.0 * numpy.dot(H, D).trace()
+        return E
+
+    def _compute_hartree_energy(self):
+        "2-Electron Energy: Hartree ---> MO-SCF basis"
+        D = self._current_density.matrix()
+        J = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[0].to_array(dense=True)
+        E = 2.0 * numpy.dot(J, D).trace()
+        return E
+
+    def _compute_initial_NOs(self):
+        "C: MO-SCF to NO matrix"
+        D = self._current_density.matrix()
+        D_mo = numpy.linalg.multi_dot([self._Ca.T, self._S, D, self._S, self._Ca])
+        self._current_density.set_D(D_mo)
+        n, c = Density.natural_orbitals(self._current_density.matrix(), None, None, orthogonalize_mo=False,
+                                       order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False,
+                                       ignore_large_n=False)
+        return n, c
 
 
 class DMFT_NC(DMFT_AO):
@@ -516,18 +567,10 @@ class DMFT_NC(DMFT_AO):
 
     # --- Implementation (Protected Interface) --- #
 
-
-    def _compute_initial_NOs(self):
-        "C: AO to NO matrix"
-        n, c = Density.natural_orbitals(self._current_density.matrix(), self._S, self._Ca, orthogonalize_mo=True,
-                                       order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False,
-                                       ignore_large_n=False)
-        return n, c
-
     def _minimizer(self, x):
         "Minimizer function: Total Energy"
         E_H  = self._compute_no_exchange_energy()
-        E_XC = self._xc_functional.energy(*x.unpack())
+        E_XC = self._xc_functional.energy(*x.unpack(), mode='ao')
         E    = E_H + E_XC
         return E
 
@@ -618,20 +661,10 @@ class DMFT_ProjD(DMFT_MO):
 
     # --- Implementation (Protected Interface) --- #
 
-    def _compute_initial_NOs(self):
-        "C: MO-SCF to NO matrix"
-        D = self._current_density.matrix()
-        D_mo = numpy.linalg.multi_dot([self._Ca.T, self._S, D, self._S, self._Ca])
-        self._current_density.set_D(D_mo)
-        n, c = Density.natural_orbitals(self._current_density.matrix(), None, None, orthogonalize_mo=False,
-                                       order='descending', no_cutoff=0.0, renormalize=False, return_ao_orthogonal=False,
-                                       ignore_large_n=False)
-        return n, c
-
     def _minimizer(self, x):
         "Minimizer function: Total Energy"
         E_H  = self._compute_no_exchange_energy()
-        E_XC = self._xc_functional.energy(*x.unpack())
+        E_XC = self._xc_functional.energy(*x.unpack(), mode='scf-mo')
         E    = E_H + E_XC
         return E
 
