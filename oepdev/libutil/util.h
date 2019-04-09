@@ -162,6 +162,23 @@ std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_r(std::shared_ptr<psi::Wa
 		std::shared_ptr<psi::IntegralTransform> tr, std::shared_ptr<psi::Matrix> Dij);
 
 
+/** \brief Compute the derivative of exchange-correlation energy wrt the density matrix in MO-A basis. 
+ *
+ *  Reads the existing MO ERI's.
+ *  @param wfn    - Wavefunction object
+ *  @param tr     - IntegralTransform object
+ *  @param C      - Transformation matrix MO-B::MO-A (columns are MO-A basis)
+ *  @param A      - Vector of matrices A^(n)_{bd}
+ *  @return       - derivative matrix in MO-A basis
+ *
+ */
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix> calculate_der_D(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, 
+		std::shared_ptr<psi::Matrix> C,
+		std::vector<std::shared_ptr<psi::Matrix>> A);
+
+
 
 
 /** @}*/

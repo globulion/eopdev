@@ -222,6 +222,63 @@ std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_r(std::shared_ptr<psi::Wa
   return JK;
 }
 
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix>
+calculate_der_D(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, 
+		std::shared_ptr<psi::Matrix> C,
+		std::vector<std::shared_ptr<psi::Matrix>> A) {
+  
+  // Initialize derivatives
+  int N = C->ncol(); /* MO-A */
+  int M = C->nrow(); /* MO-B */
+  //std::shared_ptr<psi::Matrix> Deriv = std::make_shared<psi::Matrix>("Derivative of E_XC", N, N);
+  std::shared_ptr<psi::Matrix> T     = std::make_shared<psi::Matrix>("Temporary"         , N, M);
+  double** pT   = T->pointer();
+  double** pC   = C->pointer();
+  std::vector<double**> vA;
+  for (int m=0; m<M; ++m) {
+       vA.push_back(A[m]->pointer());
+  }
+
+  // Read integrals and save
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+
+  dpd_set_default(tr->get_dpd_id());
+  dpdbuf4 buf;
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
+                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+
+  for (int h = 0; h < wfn->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+	for (int sb = 0; sb < buf.params->rowtot[h]; ++sb) {
+	     int s = buf.params->roworb[h][sb][0];
+	     int b = buf.params->roworb[h][sb][1];
+	     for (int cd = 0; cd < buf.params->coltot[h]; ++cd) {
+	          int c = buf.params->colorb[h][cd][0];
+	          int d = buf.params->colorb[h][cd][1];
+	          double sbcd = buf.matrix[h][sb][cd];
+                  for (int m = 0; m < M; ++m) {
+	              pT[s][m] += sbcd * pC[m][c] * vA[m][b][d];
+	          }
+             }
+        }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  // Symmetrize and scale
+  std::shared_ptr<psi::Matrix> Deriv = psi::Matrix::doublet(T, C, false, false);
+  Deriv->add(Deriv->clone()->transpose());
+  //Deriv->scale(2.0);
+  return Deriv;
+}
 
 
 
