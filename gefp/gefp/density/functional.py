@@ -63,6 +63,7 @@ class XCFunctional(ABC, Density):
 """
         if   name.lower() == 'hf' :   xc_functional =  HF_XCFunctional()
         elif name.lower() == 'mbb':   xc_functional = MBB_XCFunctional()
+        elif name.lower() == 'gu' :   xc_functional =  GU_XCFunctional()
         else: raise ValueError("Chosen XC functional is not available! Mistyped?")
         return xc_functional
 
@@ -250,3 +251,67 @@ class MBB_XCFunctional(XCFunctional):
            xc_energy = -self.compute_2el_energy(D, D, type='k')
         else: raise ValueError("Only mode=ao or scf-mo is supported as for now. Mistyped?")
         return xc_energy
+
+
+class GU_XCFunctional(XCFunctional):
+    """
+ The Goedecker-Urmigar Exchange-Correlation Functional.
+"""
+    def __init__(self):
+        super(GU_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "Goedecker-Urmigar XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "GU"
+
+    @staticmethod
+    def fij(n): 
+        ns = n.copy()
+        ns[ns<0.0] = 0.0
+        #ns = numpy.sqrt(self._correct_negative_occupancies(n))
+        f = numpy.outer(ns, ns) - numpy.diag(n - n*n)
+        return f
+        
+    @staticmethod
+    def fij_1(n, m):
+        "P-version"
+        nn = len(n)
+        d = numpy.zeros((nn,nn))
+        d[m,m] -= 2.0 * n[m] - 4.0 * n[m]**3
+        for i in range(nn):
+            for j in range(nn):
+                if i==m: d[i,j] += n[j]
+                if j==m: d[i,j] += n[i]
+        return d
+
+    def energy_P(self, x):#TODO! -> do the integrals look OK?
+        "Exchange-correlation energy: Practical expression is for P-sets."
+        p, c = x.unpack()
+        n = p**2
+        f = self.fij(n)
+        C = numpy.dot(self._Ca, c)
+        K  = oepdev.calculate_JK(self._wfn, psi4.core.Matrix.from_array(C, ""))[1].to_array(dense=True)
+        xc_energy = -numpy.dot(K, f).trace()
+        return xc_energy
+
+    def gradient_P(self, x):#TODO!
+        "Gradient with respect to P matrix"
+        p, c = x.unpack() # C: MO(SCF)-MO(new)
+        nn=len(p)
+
+        A_nj = numpy.zeros((nn,nn))
+        for i in range(nn):
+            for j in range(nn):
+                A_nj[i,j] = self.fij_1(p, j)[i,j]
+
+        An_bd = numpy.einsum("nj,bj,dj->nbd",A_nj,c,c)
+        An_bd_psi = []
+        for i in range(len(An_bd)):
+            An_bd_psi.append(psi4.core.Matrix.from_array(An_bd[i].copy(), ""))
+        del An_bd
+       
+        C_psi = psi4.core.Matrix.from_array(c.T, "") # MO(new)-MO(SCF)
+        gradient = oepdev.calculate_der_D(self._wfn, self._ints, C_psi, An_bd_psi)[1].to_array(dense=True)
+        return Guess.create(matrix=gradient)
