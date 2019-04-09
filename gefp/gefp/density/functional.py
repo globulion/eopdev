@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #*-* coding: utf-8 *-*
 """
- DMFT and DFT Functional module.
+ DMFT Functional module.
  Bartosz Błasiak, Gundelfingen, Mar 2019
 """
 
@@ -9,11 +9,11 @@ import os
 import sys
 import math
 import numpy
+import oepdev
+import psi4
 from abc import ABC, abstractmethod
 from .partitioning import Density
 from .parameters import Guess
-import oepdev
-import psi4
 
 __all__ = ["XCFunctional"]
 
@@ -34,25 +34,41 @@ class XCFunctional(ABC, Density):
         self._Ca   = None
         self._S    = None
 
-    def set_jk(self, jk): 
-        self._jk = jk
-        self._global_jk = jk
     def set_wfn(self, wfn):
+        "Set wavefunction"
         self._wfn = wfn
         self._Ca  = wfn.Ca_subset("AO","ALL").to_array(dense=True)
         self._S   = wfn.S().to_array(dense=True)
+
+    def set_jk(self, jk):
+        "Set JK object for AO tensor contractions"
+        self._jk = jk
+        self._global_jk = jk
+
     def set_ints(self, ints):
+        "Set integral transform object for MO tensor contractions"
         self._ints = ints
 
     @classmethod
     def create(cls, name=default, **kwargs):
         """\
- Create a functional. Available functionals:
+ Create a density matrix exchange-correlation functional. 
+
+ Available functionals:                              Sets:
+  o 'HF'  - the Hartree-Fock functional (default)    D, NC
+  o 'CHF' - the corrected Hartree-Fock functional    P
+  o 'MBB' - the Muller-Buijse-Baerends functional    P
+  o 'GU'  - the Goedecker-Urmigar functional         P
+
 """
-        if   name.lower() == 'hf' :   xc_functional = HF_XCFunctional()
+        if   name.lower() == 'hf' :   xc_functional =  HF_XCFunctional()
         elif name.lower() == 'mbb':   xc_functional = MBB_XCFunctional()
         else: raise ValueError("Chosen XC functional is not available! Mistyped?")
         return xc_functional
+
+    @staticmethod
+    @abstractmethod
+    def name(): pass
 
     @staticmethod
     @abstractmethod
@@ -62,38 +78,35 @@ class XCFunctional(ABC, Density):
     @abstractmethod
     def fij_1(n, m): pass
 
-    @staticmethod
-    @abstractmethod
-    def name(): pass
 
-    @abstractmethod
     def energy_D(self, x, mode): 
         "Exchange-correlation energy"
-        pass
+        raise NotImplementedError("%s energy is not implemented for D sets." % self.abbr.upper())
 
-    @abstractmethod
     def energy_P(self, x): 
         "Exchange-correlation energy"
-        pass
+        raise NotImplementedError("%s energy is not implemented for P sets." % self.abbr.upper())
 
-    @abstractmethod
     def gradient_D(self, x): 
         "Gradient with respect to density matrix"
-        pass
+        raise NotImplementedError("Gradient of %s energy is not implemented for D sets." % self.abbr.upper())
 
-    @abstractmethod
     def gradient_P(self, x): 
         "Gradient with respect to P matrix"
-        pass
+        raise NotImplementedError("Gradient of %s energy is not implemented for P sets." % self.abbr.upper())
 
-    @abstractmethod
     def gradient_nc(self, x): 
         "Gradient with respect to N and C"
-        pass
+        raise NotImplementedError("Gradient of %s energy is not implemented for NC sets." % self.abbr.upper())
 
 
     @property
-    def abbr(self): return default.upper()
+    def abbr(self): 
+        "Functional name abbreviation"
+        return default.upper()
+
+
+    # ----> Protected Interface (utilities) <---- #
 
     def _correct_negative_occupancies(self, n):
         "Remove negative values of occupancies."
@@ -105,12 +118,20 @@ class XCFunctional(ABC, Density):
 
 class HF_XCFunctional(XCFunctional):
     """
- Hartree-Fock Exchange-Correlation Functional
+ The Hartree-Fock Exchange-Correlation Functional
 """
     def __init__(self):
         super(HF_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "Hartree-Fock Functional XC for closed-shell systems"
+
+    @property
+    def abbr(self): return "HF"
+
     @staticmethod
     def fij(n): return numpy.outer(n, n)
+
     @staticmethod
     def fij_1(n, m): 
         nn = len(n)                                  
@@ -124,11 +145,6 @@ class HF_XCFunctional(XCFunctional):
                 fij_1[i, j] = v
         return fij_1
 
-    @staticmethod
-    def name(): return "Hartree-Fock Functional XC for closed-shell systems"
-    @property
-    def abbr(self): return "HF"
-
     def energy_D(self, x, mode='scf-mo'): 
         "Exchange-correlation energy"
         n, c = x.unpack()
@@ -141,26 +157,12 @@ class HF_XCFunctional(XCFunctional):
         else: raise ValueError("Only mode=ao or scf-mo is supported as for now. Mistyped?")
         return xc_energy
 
-    def energy_P(self, x): 
-        "Exchange-correlation energy"
-        raise NotImplementedError
-
     def gradient_D(self, x): 
         "Gradient with respect to density matrix: MO-SCF basis"
-        #D = self.generalized_density(n, c, 1.0)
-        #K = self.generalized_JK(D, type='k')
-        #gradient = Guess.create(matrix=-K) # ---> must be in MO basis!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        #c_psi4 = self._wfn.Ca_subset("AO","ALL")
-        #gradient = -oepdev.calculate_JK(self._wfn, c_psi4)[1].to_array(dense=True)
-
         D = Density.generalized_density(*x.unpack())
         gradient_K  = -oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
         gradient = Guess.create(matrix=gradient_K)
         return gradient
-
-    def gradient_P(self, x):
-        "Gradient with respect to P matrix"
-        raise NotImplementedError("Gradient of HF energy are not implemented for P sets.")
 
     def gradient_nc(self, x):
         "Gradient with respect to N and C"
@@ -202,24 +204,44 @@ class HF_XCFunctional(XCFunctional):
 
 class MBB_XCFunctional(XCFunctional):
     """
- Muller-Buijse-Baerends Exchange-Correlation Functional
+ The Muller-Buijse-Baerends Exchange-Correlation Functional.
 """
     def __init__(self):
         super(MBB_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "Muller-Buijse-Baerends XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "MBB"
+
     @staticmethod
     def fij(n): 
         ns = numpy.sqrt(self.correct_negative_occupancies(n))
         return numpy.outer(ns, ns)
+
     @staticmethod
     def fij_1(n, m): 
-        raise NotImplementedError("Derivatives of fij for MBB functional were not implemented.")
-    @staticmethod
-    def name(): return "Muller-Buijse-Baerends XC Functional for closed-shell systems"
-    @property
-    def abbr(self): return "MBB"
+        raise NotImplementedError("Derivatives of fij for MBB functional were not implemented since are unnecessary.")
+
+    def energy_P(self, x): 
+        "Exchange-correlation energy: Practical expression is for P-sets."
+        P = x.matrix()
+        K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
+        xc_energy = -numpy.dot(K, P).trace()
+        return xc_energy
+
+    def gradient_P(self, x):
+        "Gradient with respect to P matrix"
+        P = x.matrix()
+        K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
+        return Guess.create(matrix=-2.0*K)
+
+
+    # ----> Additional Interface (illustrative, not practical) <---- #
 
     def energy_D(self, x, mode='scf-mo'): 
-        "Exchange-correlation energy"
+        "Exchange-correlation energy: Not useful, only for illustrative purpose."
         D = self.generalized_density(*x.unpack(), 0.5)
         if mode.lower() == 'scf-mo':
            K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
@@ -228,24 +250,3 @@ class MBB_XCFunctional(XCFunctional):
            xc_energy = -self.compute_2el_energy(D, D, type='k')
         else: raise ValueError("Only mode=ao or scf-mo is supported as for now. Mistyped?")
         return xc_energy
-
-    def energy_P(self, x): 
-        "Exchange-correlation energy"
-        P = x.matrix()
-        K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
-        xc_energy = -numpy.dot(K, P).trace()
-        return xc_energy
-
-    def gradient_D(self, x): 
-        "Gradient with respect to density matrix"
-        raise NotImplementedError("Gradient of MBB XC energy are not implemented for D sets.")
-
-    def gradient_P(self, x):
-        "Gradient with respect to P matrix"
-        P = x.matrix()
-        gradient  = -2.0*oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
-        return Guess.create(matrix=gradient)
-
-    def gradient_nc(self, x): 
-        "Gradient with respect to N and C"
-        raise NotImplementedError("Gradient of MBB XC energy are not implemented for nc sets.")
