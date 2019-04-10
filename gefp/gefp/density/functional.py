@@ -292,7 +292,12 @@ class GU_XCFunctional(XCFunctional):
         n = p**2
         f = self.fij(n)
         C = numpy.dot(self._Ca, c)
-        K  = oepdev.calculate_JK(self._wfn, psi4.core.Matrix.from_array(C, ""))[1].to_array(dense=True)
+        mo_eri = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", self._ao_eri, C, C, C, C)
+        K = C.copy(); K.fill(0.0); nn=len(p)
+        for i in range(nn):
+            for j in range(nn):
+                K[i,j] = mo_eri[i,j,i,j]
+        #K  = oepdev.calculate_JK(self._wfn, psi4.core.Matrix.from_array(C, ""))[1].to_array(dense=True)
         xc_energy = -numpy.dot(K, f).trace()
         return xc_energy
 
@@ -306,12 +311,12 @@ class GU_XCFunctional(XCFunctional):
             for j in range(nn):
                 A_nj[i,j] = self.fij_1(p, j)[i,j]
 
-        An_bd = numpy.einsum("nj,bj,dj->nbd",A_nj,c,c)
+        An_bd = numpy.einsum("nj,bj,dj->nbd",A_nj.T,c,c)
         An_bd_psi = []
         for i in range(len(An_bd)):
             An_bd_psi.append(psi4.core.Matrix.from_array(An_bd[i].copy(), ""))
         del An_bd
-       
+
         C_psi = psi4.core.Matrix.from_array(c.T, "") # MO(new)-MO(SCF)
-        gradient = oepdev.calculate_der_D(self._wfn, self._ints, C_psi, An_bd_psi)[1].to_array(dense=True)
+        gradient = oepdev.calculate_der_D(self._wfn, self._ints, C_psi, An_bd_psi).to_array(dense=True)
         return Guess.create(matrix=gradient)

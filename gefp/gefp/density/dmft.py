@@ -402,12 +402,16 @@ class DMFT(ABC):
         self._bfs = self._wfn.basisset()
         # Integral calculator
         self._mints = psi4.core.MintsHelper(self._bfs)
+        print("Computing AO ERI")
+        self._ao_eri= self._mints.ao_eri()
+        print("Done!")
         # JK object
         self._jk = psi4.core.JK.build(self._bfs, jk_type="Direct")
         self._jk.set_memory(int(5e8))
         self._jk.initialize()
         self._xc_functional.set_jk(self._jk)
         self._xc_functional.set_wfn(self._wfn)
+        self._xc_functional._ao_eri = self._ao_eri
         # Nuclear repulsion energy
         self._e_nuc = self._mol.nuclear_repulsion_energy()
         # Number of electron pairs
@@ -740,6 +744,7 @@ class DMFT_ProjD(DMFT_MO):
         "Gradient"
         gradient = self._compute_no_exchange_gradient_D(x)
         gradient+= self._xc_functional.gradient_D(x)
+        print(gradient.matrix())
         return gradient
 
     def _step(self, x1, x2):
@@ -805,5 +810,7 @@ class DMFT_ProjP(DMFT_MO):
     def _gradient(self, x):#OK
         "Gradient"
         gradient = self._compute_no_exchange_gradient_P(x)
+        #print(gradient.matrix())
         gradient+= self._xc_functional.gradient_P(x)
+        #print(self._xc_functional.gradient_P(x).matrix())
         return gradient

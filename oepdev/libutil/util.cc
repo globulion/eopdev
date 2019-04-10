@@ -275,8 +275,10 @@ calculate_der_D(std::shared_ptr<psi::Wavefunction> wfn,
 
   // Symmetrize and scale
   std::shared_ptr<psi::Matrix> Deriv = psi::Matrix::doublet(T, C, false, false);
+  //std::shared_ptr<psi::Matrix> Deriv_= psi::Matrix::doublet(C, T, true, true);
+  //Deriv->add(Deriv_);
   Deriv->add(Deriv->clone()->transpose());
-  //Deriv->scale(2.0);
+  Deriv->scale(-1.0);
   return Deriv;
 }
 
