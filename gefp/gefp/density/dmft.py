@@ -138,6 +138,7 @@ class DMFT(ABC):
         self._V_ext                    = None         # AO External Potential Matrix
         self._H_mo                     = None         # MO-SCF Core Hamiltonian + External Potential Matrix
         self._step_mode                = None         # Mode of Steepest-Descents Minimization Steps
+        self._numerical_xc             = None         # Mode of E_XC gradient
 
         # Initialize all variables
         self.__common_init(wfn, xc_functional, v_ext, guess, step_mode)
@@ -187,6 +188,9 @@ class DMFT(ABC):
 
 
     # ---- Public Interface: Properties ----- #
+
+    def set_numerical(self, a):
+        self._numerical_xc = a
 
     @property
     def E(self): 
@@ -395,6 +399,7 @@ class DMFT(ABC):
         self._bfs_name = wfn.basisset().name()
         # XC functional
         self._xc_functional = xc_functional
+        self._numerical_xc = False
 
         # Molecule
         self._mol = self._wfn.molecule()
@@ -744,7 +749,6 @@ class DMFT_ProjD(DMFT_MO):
         "Gradient"
         gradient = self._compute_no_exchange_gradient_D(x)
         gradient+= self._xc_functional.gradient_D(x)
-        print(gradient.matrix())
         return gradient
 
     def _step(self, x1, x2):
@@ -811,6 +815,7 @@ class DMFT_ProjP(DMFT_MO):
         "Gradient"
         gradient = self._compute_no_exchange_gradient_P(x)
         #print(gradient.matrix())
-        gradient+= self._xc_functional.gradient_P(x)
+        if self._numerical_xc: gradient+= self._xc_functional.gradient_P_numerical(x)
+        else:                  gradient+= self._xc_functional.gradient_P(x)
         #print(self._xc_functional.gradient_P(x).matrix())
         return gradient

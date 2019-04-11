@@ -115,6 +115,30 @@ class XCFunctional(ABC, Density):
         ns[ns<0.0] = 0.0
         return ns
 
+    def _compute_deriv_P(self, n, m, P, E0):
+        step = 0.000008; h = 2.0*step
+        P1= P.copy()
+        P1[m,n] += step; P1[n,m] += step
+
+        guess = Guess.create(matrix=P1)
+        guess.update()
+        E1 = self.energy_P(guess)
+        der = (E1 - E0) / h
+        return der
+
+    def gradient_P_numerical(self, x):
+        E0 = self.energy_P(x)
+        P  = x.matrix()
+        N  = P.shape[0]
+        Der = numpy.zeros((N,N), numpy.float64)
+        for i in range(N):
+            for j in range(i+1):
+                d = self._compute_deriv_P(i, j, P, E0)
+                Der[i, j] = d
+                if i!=j: Der[j, i] = d
+        return Guess.create(matrix=Der)
+
+
 
 
 class HF_XCFunctional(XCFunctional):
@@ -218,7 +242,10 @@ class MBB_XCFunctional(XCFunctional):
 
     @staticmethod
     def fij(n): 
-        ns = numpy.sqrt(self.correct_negative_occupancies(n))
+        ns = n.copy()
+        ns[ns<0.0] = 0.0
+        ns = numpy.sqrt(ns)
+        #ns = numpy.sqrt(self.correct_negative_occupancies(n))
         return numpy.outer(ns, ns)
 
     @staticmethod
@@ -230,6 +257,11 @@ class MBB_XCFunctional(XCFunctional):
         P = x.matrix()
         K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
         xc_energy = -numpy.dot(K, P).trace()
+        #p, c = x.unpack()
+        #f = self.fij(p**2)
+        #psi_f = psi4.core.Matrix.from_array(f, "")
+        #psi_c = psi4.core.Matrix.from_array(c, "")
+        #xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
         return xc_energy
 
     def gradient_P(self, x):
@@ -270,7 +302,7 @@ class GU_XCFunctional(XCFunctional):
     def fij(n): 
         ns = n.copy()
         ns[ns<0.0] = 0.0
-        #ns = numpy.sqrt(self._correct_negative_occupancies(n))
+        ns = numpy.sqrt(ns)
         f = numpy.outer(ns, ns) - numpy.diag(n - n*n)
         return f
         
@@ -289,19 +321,21 @@ class GU_XCFunctional(XCFunctional):
     def energy_P(self, x):#TODO! -> do the integrals look OK?
         "Exchange-correlation energy: Practical expression is for P-sets."
         p, c = x.unpack()
-        n = p**2
-        f = self.fij(n)
-        C = numpy.dot(self._Ca, c)
-        mo_eri = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", self._ao_eri, C, C, C, C)
-        K = C.copy(); K.fill(0.0); nn=len(p)
-        for i in range(nn):
-            for j in range(nn):
-                K[i,j] = mo_eri[i,j,i,j]
-        #K  = oepdev.calculate_JK(self._wfn, psi4.core.Matrix.from_array(C, ""))[1].to_array(dense=True)
-        xc_energy = -numpy.dot(K, f).trace()
+        f = self.fij(p*p)
+        #C = numpy.dot(self._Ca, c)
+        #mo_eri = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", self._ao_eri, C, C, C, C)
+        #K = C.copy(); K.fill(0.0); nn=len(p)
+        #for i in range(nn):
+        #    for j in range(nn):
+        #        K[i,j] = mo_eri[i,j,i,j]
+        ##K  = oepdev.calculate_JK(self._wfn, psi4.core.Matrix.from_array(C, ""))[1].to_array(dense=True)
+        #xc_energy = -numpy.dot(K, f).trace()
+        psi_f = psi4.core.Matrix.from_array(f, "")
+        psi_c = psi4.core.Matrix.from_array(c, "")
+        xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
         return xc_energy
 
-    def gradient_P(self, x):#TODO!
+    def gradient_P_old(self, x):#TODO!
         "Gradient with respect to P matrix"
         p, c = x.unpack() # C: MO(SCF)-MO(new)
         nn=len(p)
@@ -319,4 +353,18 @@ class GU_XCFunctional(XCFunctional):
 
         C_psi = psi4.core.Matrix.from_array(c.T, "") # MO(new)-MO(SCF)
         gradient = oepdev.calculate_der_D(self._wfn, self._ints, C_psi, An_bd_psi).to_array(dense=True)
+        return Guess.create(matrix=gradient)
+
+    def gradient_P(self, x):#TODO!
+        "Gradient with respect to P matrix"
+        p, c = x.unpack() # C: MO(SCF)-MO(new)
+        nn=len(p)
+        s = 2.0 * p * (2.0 * p*p - 1.0)
+        g = c.sum(axis=1)
+        C = numpy.dot(self._Ca, c)
+        aaai = numpy.einsum("ijkl,ia,ja,ka,lb->ab", self._ao_eri, C, C, C, C)
+        aaa = aaai.sum(axis=1) * s
+        gradient = -Density.generalized_density(s, c)
+        X = psi4.core.Matrix.from_array(x.matrix(), "")
+        gradient-= 2.0*oepdev.calculate_JK_r(self._wfn, self._ints, X)[1].to_array(dense=True)
         return Guess.create(matrix=gradient)
