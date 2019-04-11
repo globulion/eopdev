@@ -54,16 +54,20 @@ class XCFunctional(ABC, Density):
         """\
  Create a density matrix exchange-correlation functional. 
 
- Available functionals:                              Sets:
-  o 'HF'  - the Hartree-Fock functional (default)    D, NC
-  o 'CHF' - the corrected Hartree-Fock functional    P
-  o 'MBB' - the Muller-Buijse-Baerends functional    P
-  o 'GU'  - the Goedecker-Urmigar functional         P
+ Available functionals:                              Sets:     Analytic Derivatives:
+  o 'HF'  - the Hartree-Fock functional (default)    D, NC     Yes
+  o 'CHF' - the corrected Hartree-Fock functional    P         
+  o 'MBB' - the Muller-Buijse-Baerends functional    P         Yes
+  o 'GU'  - the Goedecker-Urmigar functional         P         Approximate
+  o 'MEDI'- the monotonous exponential decay         P         No
+            of interpolates between MBB and
+            MBB with zero exchange.                  
 
 """
         if   name.lower() == 'hf' :   xc_functional =  HF_XCFunctional()
         elif name.lower() == 'mbb':   xc_functional = MBB_XCFunctional()
         elif name.lower() == 'gu' :   xc_functional =  GU_XCFunctional()
+        elif name.lower() == 'medi':  xc_functional = Pade_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         else: raise ValueError("Chosen XC functional is not available! Mistyped?")
         return xc_functional
 
@@ -318,24 +322,16 @@ class GU_XCFunctional(XCFunctional):
                 if j==m: d[i,j] += n[i]
         return d
 
-    def energy_P(self, x):#TODO! -> do the integrals look OK?
+    def energy_P(self, x):
         "Exchange-correlation energy: Practical expression is for P-sets."
         p, c = x.unpack()
         f = self.fij(p*p)
-        #C = numpy.dot(self._Ca, c)
-        #mo_eri = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", self._ao_eri, C, C, C, C)
-        #K = C.copy(); K.fill(0.0); nn=len(p)
-        #for i in range(nn):
-        #    for j in range(nn):
-        #        K[i,j] = mo_eri[i,j,i,j]
-        ##K  = oepdev.calculate_JK(self._wfn, psi4.core.Matrix.from_array(C, ""))[1].to_array(dense=True)
-        #xc_energy = -numpy.dot(K, f).trace()
         psi_f = psi4.core.Matrix.from_array(f, "")
         psi_c = psi4.core.Matrix.from_array(c, "")
         xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
         return xc_energy
 
-    def gradient_P_old(self, x):#TODO!
+    def gradient_P_old(self, x):#deprecate!
         "Gradient with respect to P matrix"
         p, c = x.unpack() # C: MO(SCF)-MO(new)
         nn=len(p)
@@ -370,3 +366,169 @@ class GU_XCFunctional(XCFunctional):
         s = numpy.einsum("ijkl,ia,ja,ka,la->a", self._ao_eri, C, C, C, C) * s
         gradient -= Density.generalized_density(s, c)
         return Guess.create(matrix=gradient)
+
+class Interpolation_XCFunctional(XCFunctional):
+    """
+ The New Class of Exchange-Correlation Functionals: Interpolation Functionals
+
+ They differ in the model for the interpolation decay.
+"""
+    def __init__(self, coeff, kmax=10):
+        super(Interpolation_XCFunctional, self).__init__()
+        self._coeff  = coeff
+        self._kmax   = kmax
+
+    @abstractmethod
+    def compute_a0(self, n):
+        "First coefficient in the interpolates"
+        pass
+
+    @abstractmethod
+    def fij(self, n):
+        pass
+
+    @staticmethod
+    def _fij_bbbk(n, k, eps=1.0e-20):
+        "The BBB-(k) Functional"
+        W = 1.0/float(k+1)
+        K = float(k*(k+1))
+        U = float(k+1)
+        f = MBB_XCFunctional.fij(n)
+        f = 2.0**W * ( f**U )
+        de= ( n[:,numpy.newaxis]**K + n[numpy.newaxis,:]**K )**W
+        for i in range(len(n)):
+            for j in range(len(n)):
+                de_ij = de[i,j]
+                if de_ij < eps: f[i,j] = 0.0
+                else: f[i,j] = f[i,j] / de_ij
+        return f
+
+        
+    @staticmethod
+    def fij_1(n, m):
+        raise NotImplementedError
+
+    def energy_P(self, x):
+        "Exchange-correlation energy: Practical expression is for P-sets."
+        p, c = x.unpack()
+        f = self.fij(p*p)
+        psi_f = psi4.core.Matrix.from_array(f, "")
+        psi_c = psi4.core.Matrix.from_array(c, "")
+        xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
+        return xc_energy
+
+    def gradient_P(self, x):
+        "Approximate gradient with respect to P matrix"
+        raise NotImplementedError
+
+
+class MEDI_XCFunctional(Interpolation_XCFunctional):
+    """
+ The New Class of Exchange-Correlation Functionals: 
+ Interpolation Functionals with Monotonous Exponential Decay.
+
+ The decay in the interpolates is modelled by the monotonous decay
+
+ a_k = a_0 exp(a_0 log k)
+"""
+    def __init__(self, coeff, kmax):
+        super(MEDI_XCFunctional, self).__init__(coeff, kmax)
+
+    def fij(self, n): 
+        "The MBB-MBB0 Interpolation Functional with Monotonous Exponential Decay (MBB/MEDI)"
+        a0 = self.compute_a0(n)
+        # First term
+        f = a0 * MBB_XCFunctional.fij(n)
+        #a_sum = 0.0
+        # Other terms
+        for k in range(1, self._kmax+1):
+            ak = a0 * math.exp(k*math.log(1.0 - a0))
+            f += ak * Interpolation_XCFunctional._fij_bbbk(n, k, eps=1.0e-20)
+            #a_sum += ak
+        #print( " Sum of a: %13.4f" % a_sum)
+        return f
+
+class OEDI_XCFunctional(Interpolation_XCFunctional):
+    """
+ The New Class of Exchange-Correlation Functionals: 
+ Interpolation Functionals with Oscillatory Exponential Decay.
+
+ The decay in the interpolates is modelled by the monotonous decay
+
+ a_k = a_0 exp(a_0 log k) cos(...k)
+"""
+    def __init__(self, coeff, kmax):
+        super(OEDI_XCFunctional, self).__init__(coeff, kmax)
+        raise NotImplementedError
+
+    def fij(self, n): 
+        "The MBB-MBB0 Interpolation Functional with Oscillatory Exponential Decay (MBB/OEDI)"
+        a0 = self.compute_a0(n)
+        # First term
+        f = a0 * MBB_XCFunctional.fij(n)
+        # Other terms
+        #for k in range(1,kmax+1):#TODO
+        #    ak = a0 * math.exp(k*math.log(1.0 - a0))
+        #    f += ak * self._fij_bbbk(n, k, eps=1.0e-20)
+        return f
+
+class A_MEDI_XCFunctional(MEDI_XCFunctional):
+    """
+ The New Class of Exchange-Correlation Functionals: 
+ Interpolation Functionals with Monotonous Exponential Decay: Pade approximant for universal function.
+"""
+    def __init__(self, coeff, kmax, a0):
+        super(A_MEDI_XCFunctional, self).__init__(coeff, kmax)
+        self._a0 = a0
+
+    @staticmethod
+    def name(): return "Monotonous Exponential Decay of Interpolates XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "MEDI"
+
+    def compute_a0(self, n):
+        "First coefficient in the interpolates from Pade approximant of universal function"
+        return self._a0
+
+class Pade_MEDI_XCFunctional(MEDI_XCFunctional):
+    """
+ The New Class of Exchange-Correlation Functionals: 
+ Interpolation Functionals with Monotonous Exponential Decay: Pade approximant for universal function.
+"""
+    def __init__(self, coeff, kmax):
+        super(Pade_MEDI_XCFunctional, self).__init__(coeff, kmax)
+
+    @staticmethod
+    def name(): return "Monotonous Exponential Decay of Interpolates XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "MEDI"
+
+
+    def compute_a0(self, n):
+        "First coefficient in the interpolates from Pade approximant of universal function"
+        # Pade parameters
+        #A = self._coeff['A']
+        #B = self._coeff['B']
+        #A0, A1, A2, A3, A5, A6 = A
+        #B1, B2, B3, B5, B6     = B
+
+        ## Dynamic and non-dynamic correlation
+        #ns = n.copy(); ns[ns<0.0] = 0.0
+        #I_n = (ns*(1.0 - ns)).sum()
+        #I_d = numpy.sqrt(abs(ns*(1.0 - ns))).sum() / 2.0 - I_n
+        #S   = numpy.sqrt(ns).sum()
+        #N   = ns.sum()
+        #print(ns)
+        #print(N, S, I_n, I_d)
+
+        ## Universal phase space
+        #x = math.log(I_d/S + 1.0)
+        #y =-math.log(abs(2.0 * I_n/S))
+
+        ## Coefficient
+        #a_0 = (A0 + A1*x + A2*y + A3*x*y + A5*y*y + A6*x*y*y)/\
+        #      (1.0+ B1*x + B2*y + B3*x*y + B5*y*y + B6*x*y*y)
+        a_0 = 0.87
+        return a_0
