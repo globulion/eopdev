@@ -226,57 +226,59 @@ class DMFT(ABC):
     def _run_dmft(self, conv, maxit, verbose, g_0, **kwargs):
         "DMFT Iterations"
 
-        # [0] Initialize
-        iteration = 0                                                             
-        success = False
+        if not 'restart' in kwargs.keys():
 
-        # [1] Compute Guess
-        x_0 = self._guess()
-
-        # [2] Starting energy
-        self._current_energy = self._minimizer(x_0)
-        E_old = self._current_energy
-        if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (iteration, E_old))
-
-        # [3] First iteration
-        iteration += 1
-        x_old_2    = x_0
-        x_old_1    = self._step_0(x_old_2, g_0)
-        x_old_1    = self._density(x_old_1)
-
-        self._current_energy = self._minimizer(x_old_1)
-        E_new = self._current_energy
-        if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (iteration, E_new))
+           # [0] Initialize                                                                  
+           self._iteration = 0                                                             
+           success = False
+                                                                                             
+           # [1] Compute Guess
+           x_0 = self._guess()
+                                                                                             
+           # [2] Starting energy
+           self._current_energy = self._minimizer(x_0)
+           self._E_old = self._current_energy
+           if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (self._iteration, self._E_old))
+                                                                                             
+           # [3] First iteration
+           self._iteration += 1
+           self._x_old_2    = x_0
+           self._x_old_1    = self._step_0(self._x_old_2, g_0)
+           self._x_old_1    = self._density(self._x_old_1)
+                                                                                             
+           self._current_energy = self._minimizer(self._x_old_1)
+           self._E_new = self._current_energy
+           if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (self._iteration, self._E_new))
 
         # [4] Further iterations
-        iteration += 1
+        self._iteration += 1
         stop       = False
         while stop is False:
 
             # [4.1] New guess
-            x_new = self._step(x_old_1, x_old_2)
+            x_new = self._step(self._x_old_1, self._x_old_2)
             x_new = self._density(x_new)
 
             # [4.2] Current energy
             self._current_energy = self._minimizer(x_new)
-            E_new = self._current_energy
-            if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (iteration, E_new))
+            self._E_new = self._current_energy
+            if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (self._iteration, self._E_new))
                                                                                   
             # [4.3] Converged?
-            if abs(E_new-E_old) < conv: 
+            if abs(self._E_new-self._E_old) < conv: 
                stop    = True
                success = True
                                                                                   
             # [4.4] Maximum iterations exceeded?
-            if iteration >= maxit: 
+            if self._iteration >= maxit: 
                stop    = True
                success = False
                                                                                   
             # [4.5] Prepare for next iteration
-            iteration += 1
-            E_old      = E_new
-            x_old_2    = x_old_1.copy()
-            x_old_1    = x_new  .copy()
+            self._iteration += 1
+            self._E_old      = self._E_new
+            self._x_old_2    = self._x_old_1.copy()
+            self._x_old_1    = x_new  .copy()
         
         # [5] Finish
         if verbose and success:

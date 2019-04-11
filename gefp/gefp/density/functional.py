@@ -355,16 +355,18 @@ class GU_XCFunctional(XCFunctional):
         gradient = oepdev.calculate_der_D(self._wfn, self._ints, C_psi, An_bd_psi).to_array(dense=True)
         return Guess.create(matrix=gradient)
 
-    def gradient_P(self, x):#TODO!
-        "Gradient with respect to P matrix"
+    def gradient_P(self, x):
+        "Approximate gradient with respect to P matrix"
+        X = psi4.core.Matrix.from_array(x.matrix(), "")
+        gradient = -2.0*oepdev.calculate_JK_r(self._wfn, self._ints, X)[1].to_array(dense=True)
+
         p, c = x.unpack() # C: MO(SCF)-MO(new)
         nn=len(p)
         s = 2.0 * p * (2.0 * p*p - 1.0)
-        g = c.sum(axis=1)
         C = numpy.dot(self._Ca, c)
-        aaai = numpy.einsum("ijkl,ia,ja,ka,lb->ab", self._ao_eri, C, C, C, C)
-        aaa = aaai.sum(axis=1) * s
-        gradient = -Density.generalized_density(s, c)
-        X = psi4.core.Matrix.from_array(x.matrix(), "")
-        gradient-= 2.0*oepdev.calculate_JK_r(self._wfn, self._ints, X)[1].to_array(dense=True)
+        #aaai = numpy.einsum("ijkl,ia,ja,ka,lb->ab", self._ao_eri, C, C, C, C)
+        #aaa = aaai.sum(axis=1) * s
+        #s = aaa
+        s = numpy.einsum("ijkl,ia,ja,ka,la->a", self._ao_eri, C, C, C, C) * s
+        gradient -= Density.generalized_density(s, c)
         return Guess.create(matrix=gradient)
