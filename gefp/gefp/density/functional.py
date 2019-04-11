@@ -68,6 +68,7 @@ class XCFunctional(ABC, Density):
         elif name.lower() == 'mbb':   xc_functional = MBB_XCFunctional()
         elif name.lower() == 'gu' :   xc_functional =  GU_XCFunctional()
         elif name.lower() == 'medi':  xc_functional = Pade_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
+        elif name.lower() == 'amedi': xc_functional =    A_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         else: raise ValueError("Chosen XC functional is not available! Mistyped?")
         return xc_functional
 
@@ -477,9 +478,8 @@ class A_MEDI_XCFunctional(MEDI_XCFunctional):
  The New Class of Exchange-Correlation Functionals: 
  Interpolation Functionals with Monotonous Exponential Decay: Pade approximant for universal function.
 """
-    def __init__(self, coeff, kmax, a0):
+    def __init__(self, coeff, kmax):
         super(A_MEDI_XCFunctional, self).__init__(coeff, kmax)
-        self._a0 = a0
 
     @staticmethod
     def name(): return "Monotonous Exponential Decay of Interpolates XC Functional for closed-shell systems"
@@ -489,7 +489,8 @@ class A_MEDI_XCFunctional(MEDI_XCFunctional):
 
     def compute_a0(self, n):
         "First coefficient in the interpolates from Pade approximant of universal function"
-        return self._a0
+        a0 = self._coeff['a0']
+        return a0
 
 class Pade_MEDI_XCFunctional(MEDI_XCFunctional):
     """
@@ -505,30 +506,69 @@ class Pade_MEDI_XCFunctional(MEDI_XCFunctional):
     @property
     def abbr(self): return "MEDI"
 
+    #f(x,y) = 0.5+0.5*erf( (a0 + a*x + b*y + c*x*y + d*y*y)/(1.0 + e*x + f*y + g*x*y + h*y*y) )
+    #a               = -163.922         +/- 18.85        (11.5%)
+    #b               = -10.348          +/- 1.888        (18.24%)
+    #c               = 160.828          +/- 20.28        (12.61%)
+    #d               = 1.02675          +/- 0.2923       (28.47%)
+    #e               = -240.342         +/- 9.075        (3.776%)
+    #f               = 17.9345          +/- 1.195        (6.664%)
+    #g               = 55.4836          +/- 23.3         (42%)
+    #h               = -3.54743         +/- 0.134        (3.776%)
+    #a0              = 10.5995          +/- 1.064        (10.04%)
 
     def compute_a0(self, n):
         "First coefficient in the interpolates from Pade approximant of universal function"
         # Pade parameters
-        #A = self._coeff['A']
-        #B = self._coeff['B']
-        #A0, A1, A2, A3, A5, A6 = A
-        #B1, B2, B3, B5, B6     = B
+        A = self._coeff['A']
+        B = self._coeff['B']
+        A0, A1, A2, A3, A4 = A
+        B1, B2, B3, B4     = B
 
-        ## Dynamic and non-dynamic correlation
-        #ns = n.copy(); ns[ns<0.0] = 0.0
-        #I_n = (ns*(1.0 - ns)).sum()
-        #I_d = numpy.sqrt(abs(ns*(1.0 - ns))).sum() / 2.0 - I_n
-        #S   = numpy.sqrt(ns).sum()
-        #N   = ns.sum()
+        # Dynamic and non-dynamic correlation
+        ns = n.copy(); ns[ns<0.0] = 0.0
+        I_n = (ns*(1.0 - ns)).sum()
+        I_d = numpy.sqrt(abs(ns*(1.0 - ns))).sum() / 2.0 - I_n
+        S   = numpy.sqrt(ns).sum()
+        N   = ns.sum()
         #print(ns)
         #print(N, S, I_n, I_d)
 
-        ## Universal phase space
-        #x = math.log(I_d/S + 1.0)
-        #y =-math.log(abs(2.0 * I_n/S))
+        # Universal phase space
+        x = math.log(I_d/S + 1.0)
+        y =-math.log(abs(2.0 * I_n/S))
 
-        ## Coefficient
-        #a_0 = (A0 + A1*x + A2*y + A3*x*y + A5*y*y + A6*x*y*y)/\
-        #      (1.0+ B1*x + B2*y + B3*x*y + B5*y*y + B6*x*y*y)
-        a_0 = 0.87
+        # Coefficient
+        a_0 = (A0 + A1*x + A2*y + A3*x*y + A4*y*y)/\
+              (1.0+ B1*x + B2*y + B3*x*y + B4*y*y)
+        a_0 = 0.500*(math.erf(a_0) + 1.0)
+        #print(a_0)
+        return a_0
+
+    def compute_a0_old(self, n):
+        "First coefficient in the interpolates from Pade approximant of universal function"
+        # Pade parameters
+        A = self._coeff['A']
+        B = self._coeff['B']
+        A0, A1, A2, A3, A5, A6 = A
+        B1, B2, B3, B5, B6     = B
+
+        # Dynamic and non-dynamic correlation
+        ns = n.copy(); ns[ns<0.0] = 0.0
+        I_n = (ns*(1.0 - ns)).sum()
+        I_d = numpy.sqrt(abs(ns*(1.0 - ns))).sum() / 2.0 - I_n
+        S   = numpy.sqrt(ns).sum()
+        N   = ns.sum()
+        #print(ns)
+        #print(N, S, I_n, I_d)
+
+        # Universal phase space
+        x = math.log(I_d/S + 1.0)
+        y =-math.log(abs(2.0 * I_n/S))
+
+        # Coefficient
+        a_0 = (A0 + A1*x + A2*y + A3*x*y + A5*y*y + A6*x*y*y)/\
+              (1.0+ B1*x + B2*y + B3*x*y + B5*y*y + B6*x*y*y)
+        a_0 = 0.500*(math.erf(a_0) + 1.0)
+        print(a_0)
         return a_0
