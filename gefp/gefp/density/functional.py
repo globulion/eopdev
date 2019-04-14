@@ -482,9 +482,11 @@ class OEDI_XCFunctional(Interpolation_XCFunctional):
         return f
 
     def compute_b(self, a0, C):
-        r = 1.0 - 2./a0
-        b = r * math.cos(C) - math.sqrt(1.0 + r*r * math.sin(C))
-        b = abs(b/ (1.0 + r))
+        r = 2./a0 - 1.0
+        b  = 2.0*r*math.cos(C) +  math.sqrt(2.0 * (2.0 - r*r + r*r*math.cos(2.0*C)))
+        b /= 2.0*(r-1.0)
+        #b = r * math.cos(C) - math.sqrt(1.0 + r*r * math.sin(C))
+        #b = abs(b/ (1.0 + r))
         b = math.log(b)
         return b
 
