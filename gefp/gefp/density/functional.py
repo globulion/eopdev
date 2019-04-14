@@ -62,13 +62,16 @@ class XCFunctional(ABC, Density):
   o 'MEDI'- the monotonous exponential decay         P         No
             of interpolates between MBB and
             MBB with zero exchange.                  
-
+  o 'OEDI'- the oscillatory exponential decay        P         No
+            of interpolates between MBB and
+            MBB with zero exchange.                  
 """
         if   name.lower() == 'hf' :   xc_functional =  HF_XCFunctional()
         elif name.lower() == 'mbb':   xc_functional = MBB_XCFunctional()
         elif name.lower() == 'gu' :   xc_functional =  GU_XCFunctional()
         elif name.lower() == 'medi':  xc_functional = Pade_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         elif name.lower() == 'amedi': xc_functional =    A_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
+        elif name.lower() == 'oedi': xc_functional =    AB_OEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         else: raise ValueError("Chosen XC functional is not available! Mistyped?")
         return xc_functional
 
@@ -456,27 +459,39 @@ class OEDI_XCFunctional(Interpolation_XCFunctional):
 
  The decay in the interpolates is modelled by the monotonous decay
 
- a_k = a_0 exp(a_0 log k) cos(...k)
+ a_k = a_0 exp(-k B ) cos(k C)
 """
     def __init__(self, coeff, kmax):
         super(OEDI_XCFunctional, self).__init__(coeff, kmax)
-        raise NotImplementedError
+
+    @abstractmethod
+    def compute_c(self, n):
+        pass
 
     def fij(self, n): 
         "The MBB-MBB0 Interpolation Functional with Oscillatory Exponential Decay (MBB/OEDI)"
         a0 = self.compute_a0(n)
+        C  = self.compute_c(n)
+        B  = self.compute_b(a0, C)
         # First term
         f = a0 * MBB_XCFunctional.fij(n)
         # Other terms
-        #for k in range(1,kmax+1):#TODO
-        #    ak = a0 * math.exp(k*math.log(1.0 - a0))
-        #    f += ak * self._fij_bbbk(n, k, eps=1.0e-20)
+        for k in range(1,self._kmax+1):
+            ak = a0 * math.exp(-k*B) * math.cos(k*C)
+            f += ak * self._fij_bbbk(n, k, eps=1.0e-20)
         return f
+
+    def compute_b(self, a0, C):
+        r = 1.0 - 2./a0
+        b = r * math.cos(C) - math.sqrt(1.0 + r*r * math.sin(C))
+        b = abs(b/ (1.0 + r))
+        b = math.log(b)
+        return b
 
 class A_MEDI_XCFunctional(MEDI_XCFunctional):
     """
  The New Class of Exchange-Correlation Functionals: 
- Interpolation Functionals with Monotonous Exponential Decay: Pade approximant for universal function.
+ Interpolation Functionals with Monotonous Exponential Decay.
 """
     def __init__(self, coeff, kmax):
         super(A_MEDI_XCFunctional, self).__init__(coeff, kmax)
@@ -491,6 +506,31 @@ class A_MEDI_XCFunctional(MEDI_XCFunctional):
         "First coefficient in the interpolates from Pade approximant of universal function"
         a0 = self._coeff['a0']
         return a0
+
+class AB_OEDI_XCFunctional(OEDI_XCFunctional):
+    """
+ The New Class of Exchange-Correlation Functionals: 
+ Interpolation Functionals with Oscillatory Exponential Decay.
+"""
+    def __init__(self, coeff, kmax):
+        super(AB_OEDI_XCFunctional, self).__init__(coeff, kmax)
+
+    @staticmethod
+    def name(): return "Oscillatory Exponential Decay of Interpolates XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "OEDI"
+
+    def compute_a0(self, n):
+        "First coefficient in the interpolates from Pade approximant of universal function"
+        a0 = self._coeff['a0']
+        return a0
+
+    def compute_c(self, n):
+        "Decay rate"
+        c = self._coeff['c']
+        return c
+
 
 class Pade_MEDI_XCFunctional(MEDI_XCFunctional):
     """
