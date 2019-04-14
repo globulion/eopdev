@@ -184,6 +184,12 @@ class DMFT(ABC):
 
         # Run!
         success = self._run_dmft(conv, maxit, verbose, g_0, **kwargs)
+
+        # Crash?
+        if not success: 
+            print(" DMFT Iterations failed!")
+            sys.exit(1)
+
         return success
 
 
@@ -409,16 +415,16 @@ class DMFT(ABC):
         self._bfs = self._wfn.basisset()
         # Integral calculator
         self._mints = psi4.core.MintsHelper(self._bfs)
-        print("Computing AO ERI")
-        self._ao_eri= self._mints.ao_eri()
-        print("Done!")
+        #print("Computing AO ERI")
+        #self._ao_eri= self._mints.ao_eri()
+        #print("Done!")
         # JK object
         self._jk = psi4.core.JK.build(self._bfs, jk_type="Direct")
         self._jk.set_memory(int(5e8))
         self._jk.initialize()
         self._xc_functional.set_jk(self._jk)
         self._xc_functional.set_wfn(self._wfn)
-        self._xc_functional._ao_eri = self._ao_eri
+        #self._xc_functional._ao_eri = self._ao_eri
         # Nuclear repulsion energy
         self._e_nuc = self._mol.nuclear_repulsion_energy()
         # Number of electron pairs

@@ -536,13 +536,14 @@ class Pade_MEDI_XCFunctional(MEDI_XCFunctional):
 
         # Universal phase space
         x = math.log(I_d/S + 1.0)
-        y =-math.log(abs(2.0 * I_n/S))
+        c = abs(2.0 * I_n/S)
+        if c < 1.0e-20: y = 1e100
+        else: y =-math.log(c)
 
         # Coefficient
         a_0 = (A0 + A1*x + A2*y + A3*x*y + A4*y*y)/\
               (1.0+ B1*x + B2*y + B3*x*y + B4*y*y)
         a_0 = 0.500*(math.erf(a_0) + 1.0)
-        #print(a_0)
         return a_0
 
     def compute_a0_old(self, n):
