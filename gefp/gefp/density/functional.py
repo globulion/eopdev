@@ -294,10 +294,10 @@ class MBB_XCFunctional(XCFunctional):
         "Gradient with respect to PC matrix"
         P = x.matrix()
         p, c = x.unpack()
-        K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
-        Kmm = numpy.linalg.multi_dot([c.T, K, c]).diagonal()
+        K    = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
+        Kmm  = numpy.linalg.multi_dot([c.T, K, c]).diagonal()
         grad_p =-2.0 * Kmm
-        grad_c =-1.0 * numpy.dot(K, c) * p
+        grad_c =-4.0 * numpy.dot(K, c) * p
         return Guess.create(grad_p, grad_c, None, 'nc')
 
 

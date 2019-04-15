@@ -16,7 +16,7 @@ import oepdev
 from abc import ABC, abstractmethod
 from .functional import XCFunctional
 from .partitioning import Density
-from .parameters import Guess
+from .parameters import Guess, rearrange_eigenpairs
 
 __all__ = ["DMFT"]
 
@@ -55,14 +55,14 @@ def find_mu(n, np):
 
 def find_nu(n, np):
     "Search for mu"
-    options = {'disp': False, 'maxiter':250}
+    options = {'disp': False, 'maxiter':2050, 'ftol':1e-20}
     nu = 0.0
     def obj(nu, x):
         u = bbb(x, nu)
         Z = ((u*u).sum() - np)**2
         #Z = ( u   .sum() - np)**2
         return Z
-    R = scipy.optimize.minimize(obj, nu, args=(n,), tol=1e-20, options=options)
+    R = scipy.optimize.minimize(obj, nu, args=(n,), method='slsqp', tol=1e-20, options=options)
     nu = R.x
     return nu
 
@@ -530,6 +530,7 @@ class DMFT(ABC):
         Ham = numpy.dot(self._H_mo, c)
         Hmm = numpy.dot(c.T, Ham).diagonal()
         grad_p = 4.0 * Hmm * p
+
                                                                      
         # 2-electron contribution: J-type
         P2 = Density.generalized_density(p, c, 2.0)
@@ -538,7 +539,7 @@ class DMFT(ABC):
         Jam = numpy.dot(J, c)
         Jmm = numpy.dot(c.T, Jam).diagonal()
         grad_p += 8.0 * Jmm * p
-                                                                     
+
         # K-type
         # ---> in XC_Functional
 
@@ -805,14 +806,18 @@ class DMFT_PC(DMFT_MO):
 
     def _step(self, x1, x2):#OK
         "Steepest-descents step."
+
+        #x2 = self.__rearrange_eigenpairs(x2, x1)
+        #x1 = self.__rearrange_eigenpairs(x1, x2)
+
         gradient_1 = self._gradient(x1)
         gradient_2 = self._gradient(x2)
 
-        g = 0.5
+        g = 0.01
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
         x_new = x1 - g * gradient_1
-        x_new.update()#TODO - check if update is OK
+        x_new.update()
         return x_new
 
     def _step_0(self, x0, g0):#OK
@@ -821,6 +826,16 @@ class DMFT_PC(DMFT_MO):
         x_new = x0 - g0 * gradient_2
         x_new.update()
         return x_new
+
+    
+    # ---> Private interface <---- #
+
+    def __rearrange_eigenpairs(self, x2, x1):
+        p1, c1 = x1.unpack()
+        p2, c2 = x2.unpack()
+        p2, c2 = rearrange_eigenpairs(p2, c2, c1)
+        x2_new = Guess.create(p2, c2, None, 'nc')
+        return x2_new
 
 
 
