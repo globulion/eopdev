@@ -56,7 +56,6 @@ class XCFunctional(ABC, Density):
 
  Available functionals:                              Sets:     Analytic Derivatives:
   o 'HF'  - the Hartree-Fock functional (default)    D, NC     Yes
-  o 'CHF' - the corrected Hartree-Fock functional    P         
   o 'MBB' - the Muller-Buijse-Baerends functional    P         Yes
   o 'GU'  - the Goedecker-Urmigar functional         P         Approximate
   o 'MEDI'- the monotonous exponential decay         P         No
@@ -66,12 +65,12 @@ class XCFunctional(ABC, Density):
             of interpolates between MBB and
             MBB with zero exchange.                  
 """
-        if   name.lower() == 'hf' :   xc_functional =  HF_XCFunctional()
-        elif name.lower() == 'mbb':   xc_functional = MBB_XCFunctional()
-        elif name.lower() == 'gu' :   xc_functional =  GU_XCFunctional()
-        elif name.lower() == 'medi':  xc_functional = Pade_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
+        if   name.lower() == 'hf'   : xc_functional =        HF_XCFunctional()
+        elif name.lower() == 'mbb'  : xc_functional =       MBB_XCFunctional()
+        elif name.lower() == 'gu'   : xc_functional =        GU_XCFunctional()
+        elif name.lower() == 'pmedi': xc_functional = Pade_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         elif name.lower() == 'amedi': xc_functional =    A_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
-        elif name.lower() == 'oedi': xc_functional =    AB_OEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
+        elif name.lower() ==  'oedi': xc_functional =   AB_OEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         else: raise ValueError("Chosen XC functional is not available! Mistyped?")
         return xc_functional
 
@@ -335,7 +334,7 @@ class GU_XCFunctional(XCFunctional):
         xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
         return xc_energy
 
-    def gradient_P_old(self, x):#deprecate!
+    def __gradient_P_old(self, x):#deprecate!
         "Gradient with respect to P matrix"
         p, c = x.unpack() # C: MO(SCF)-MO(new)
         nn=len(p)
@@ -457,7 +456,7 @@ class OEDI_XCFunctional(Interpolation_XCFunctional):
  The New Class of Exchange-Correlation Functionals: 
  Interpolation Functionals with Oscillatory Exponential Decay.
 
- The decay in the interpolates is modelled by the monotonous decay
+ The decay in the interpolates is modelled by the oscillatory decay
 
  a_k = a_0 exp(-k B ) cos(k C)
 """
@@ -482,13 +481,15 @@ class OEDI_XCFunctional(Interpolation_XCFunctional):
         return f
 
     def compute_b(self, a0, C):
-        r = 2./a0 - 1.0
+        "Decay rate"
+        r  = 2./a0 - 1.0
         b  = 2.0*r*math.cos(C) +  math.sqrt(2.0 * (2.0 - r*r + r*r*math.cos(2.0*C)))
         b /= 2.0*(r-1.0)
         #b = r * math.cos(C) - math.sqrt(1.0 + r*r * math.sin(C))
         #b = abs(b/ (1.0 + r))
-        b = math.log(b)
+        b  = math.log(b)
         return b
+
 
 class A_MEDI_XCFunctional(MEDI_XCFunctional):
     """
@@ -529,7 +530,7 @@ class AB_OEDI_XCFunctional(OEDI_XCFunctional):
         return a0
 
     def compute_c(self, n):
-        "Decay rate"
+        "Oscillation period"
         c = self._coeff['c']
         return c
 
@@ -588,7 +589,7 @@ class Pade_MEDI_XCFunctional(MEDI_XCFunctional):
         a_0 = 0.500*(math.erf(a_0) + 1.0)
         return a_0
 
-    def compute_a0_old(self, n):
+    def __compute_a0_old(self, n):
         "First coefficient in the interpolates from Pade approximant of universal function"
         # Pade parameters
         A = self._coeff['A']
@@ -613,5 +614,5 @@ class Pade_MEDI_XCFunctional(MEDI_XCFunctional):
         a_0 = (A0 + A1*x + A2*y + A3*x*y + A5*y*y + A6*x*y*y)/\
               (1.0+ B1*x + B2*y + B3*x*y + B5*y*y + B6*x*y*y)
         a_0 = 0.500*(math.erf(a_0) + 1.0)
-        print(a_0)
+        #print(a_0)
         return a_0
