@@ -27,7 +27,8 @@ class Guess(ABC):
            if   t.lower() == 'matrix': return Matrix_Guess(n, c)
            elif t.lower() == 'nc'    : return     NC_Guess(n, c)
            else: raise ValueError("Not recognized guess type. Only MATRIX and NC are possible.")
-        else: return Matrix_Guess(matrix=matrix, n=n, c=c)
+        elif t.lower() == 'nc'       : return     NC_Guess(n, c)
+        else                         : return Matrix_Guess(matrix=matrix, n=n, c=c)
 
     def update(self, S=None, C=None):
         if S is not None and C is not None:

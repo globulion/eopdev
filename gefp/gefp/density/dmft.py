@@ -43,24 +43,26 @@ def bbb(b, nu):
 
 def find_mu(n, np):
     "Search for mu"
+    options = {'disp': False, 'maxiter':250}
     mu = 0.0
     def obj(mu, x):
         u = aaa(x, mu)
         Z = (u.sum() - np)**2
         return Z
-    R = scipy.optimize.minimize(obj, mu, args=(n,))
+    R = scipy.optimize.minimize(obj, mu, args=(n,), tol=1e-20, options=options)
     mu = R.x
     return mu
 
 def find_nu(n, np):
     "Search for mu"
+    options = {'disp': False, 'maxiter':250}
     nu = 0.0
     def obj(nu, x):
         u = bbb(x, nu)
         Z = ((u*u).sum() - np)**2
         #Z = ( u   .sum() - np)**2
         return Z
-    R = scipy.optimize.minimize(obj, nu, args=(n,))
+    R = scipy.optimize.minimize(obj, nu, args=(n,), tol=1e-20, options=options)
     nu = R.x
     return nu
 
@@ -80,12 +82,13 @@ def density_matrix_projection(n, c, S, np, type='d'):
     #a, b = scipy.linalg.eig(A, S)
     a, b = numpy.linalg.eigh(A)
     #a = a.real; b = b.real
-    #print(" Init sum = %14.6f" % a.sum()) 
+    #print(" Init sum = %14.6f" % (a**2).sum()) 
 
     muORnu = func_find(a, np)
                                                                                                        
     # compute the projected density matrix
     n_new = func_coef(a, muORnu)
+    #print((n_new**2).sum())
     C_new = b
 
     # sort (descending order)
@@ -169,6 +172,7 @@ class DMFT(ABC):
         if   algorithm.lower() == 'proj-d': solver = DMFT_ProjD(*args, **kwargs)
         elif algorithm.lower() == 'proj-p': solver = DMFT_ProjP(*args, **kwargs)
         elif algorithm.lower() == 'nc'    : solver = DMFT_NC   (*args, **kwargs)
+        elif algorithm.lower() == 'pc'    : solver = DMFT_PC   (*args, **kwargs)
         else: raise ValueError("Chosen algorithm is not available! Mistyped?")
         return solver
 
@@ -196,6 +200,7 @@ class DMFT(ABC):
     # ---- Public Interface: Properties ----- #
 
     def set_numerical(self, a):
+        "Set the numerical derivatives of XC energy wrt P matrix (not D!)"
         self._numerical_xc = a
 
     @property
@@ -329,6 +334,13 @@ class DMFT(ABC):
         grad_c = self.__grad_c_no_exchange(*x.unpack())
         grad = Guess.create(grad_n, grad_c, None, 'nc')
         return grad
+
+    def _compute_no_exchange_gradient_pc(self, x):#OK
+        "Compute Gradient excluding the Exchange-Correlation Part"
+        grad_p, grad_c = self.__grad_pc_no_exchange(*x.unpack())#OK
+        grad = Guess.create(grad_p, grad_c, None, 'nc')
+        return grad
+
 
     def _estimate_step_size(self, dx, dg):
         "Estimate step length of steepest descents"
@@ -487,7 +499,7 @@ class DMFT(ABC):
         return
 
     def __grad_n_no_exchange(self, n, c):
-        "Energy gradient wrt NO occupation numbers"                   
+        "Energy gradient wrt NO occupation numbers"
         nn = len(n)
                                                                      
         # 1-electron contributon
@@ -508,6 +520,39 @@ class DMFT(ABC):
         # K-type
         # ---> moved to XC_Functional
         return grad
+
+    def __grad_pc_no_exchange(self, p, c):#OK
+        "Energy gradient wrt NO occupation numbers"
+             
+        # ===> Gradient wrt p <=== #
+
+        # 1-electron contributon
+        Ham = numpy.dot(self._H_mo, c)
+        Hmm = numpy.dot(c.T, Ham).diagonal()
+        grad_p = 4.0 * Hmm * p
+                                                                     
+        # 2-electron contribution: J-type
+        P2 = Density.generalized_density(p, c, 2.0)
+        P2_psi = psi4.core.Matrix.from_array(P2, "")
+        J = oepdev.calculate_JK_r(self._wfn, self._ints, P2_psi)[0].to_array(dense=True)
+        Jam = numpy.dot(J, c)
+        Jmm = numpy.dot(c.T, Jam).diagonal()
+        grad_p += 8.0 * Jmm * p
+                                                                     
+        # K-type
+        # ---> in XC_Functional
+
+        # ===> Gradient wrt c <=== #
+
+        pp = p**2
+        # 1-electron contribution
+        grad_c = 4.0 * Ham 
+        # 2-electron contribution
+        grad_c+= 8.0 * Jam 
+        grad_c = grad_c * pp
+
+        return grad_p, grad_c
+
 
     def __grad_c_no_exchange(self, n, c):
         "Energy gradient wrt LCAO-NO wavefunction coefficients"
@@ -648,7 +693,7 @@ class DMFT_MO(DMFT):
         gradient_1 = self._gradient(x1)
         gradient_2 = self._gradient(x2)
 
-        g = 0.5
+        g = 0.0000001
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
         x_new = x1 - g * gradient_1
@@ -712,6 +757,72 @@ class DMFT_NC(DMFT_AO):
         dE_c += dE_c_xc
         gradient = Guess.create(n=dE_n, c=dE_c, t='nc')
         return gradient
+
+
+class DMFT_PC(DMFT_MO):
+    def __init__(self, wfn, xc_functional, v_ext, guess, step):
+        super(DMFT_PC, self).__init__(wfn, xc_functional, v_ext, guess, step)
+
+
+    @staticmethod
+    def name(): return "DMFT with Gradient Projection on PC Set: MO-SCF basis"
+
+    @property
+    def abbr(self): return "DMFT-PC"
+
+
+    # --- Implementation (Protected Interface) --- #
+
+    def _minimizer(self, x):#OK
+        "Minimizer function: Total Energy"
+        E_H  = self._compute_no_exchange_energy()
+        E_XC = self._xc_functional.energy_pc(x)
+        E    = E_H + E_XC
+        return E
+
+    def _guess(self):#OK
+        "Initial guess"
+        p = numpy.sqrt(self._correct_negative_occupancies(self._current_occupancies))
+        x = Guess.create(n=p, c=self._current_orbitals, t='nc') 
+        return x
+
+    def _density(self, x):#OK
+        "1-particle density matrix in MO basis: P-projection of PC set"
+        p, c = x.unpack()
+        p, c = density_matrix_projection(p, c, numpy.identity(len(p)), self._np, type='p')
+        self._current_occupancies = p*p
+        self._current_orbitals    = c
+        D = Density.generalized_density(p, c, 2.0)
+        self._current_density.set_D(D)
+        new_guess = Guess.create(n=p, c=self._current_orbitals, t='nc')
+        return new_guess
+
+    def _gradient(self, x):#OK
+        "Gradient"
+        gradient = self._compute_no_exchange_gradient_pc(x) #OK
+        gradient+= self._xc_functional.gradient_pc(x)
+        return gradient
+
+    def _step(self, x1, x2):#OK
+        "Steepest-descents step."
+        gradient_1 = self._gradient(x1)
+        gradient_2 = self._gradient(x2)
+
+        g = 0.5
+        if self._step_mode.lower() != 'constant': 
+           g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
+        x_new = x1 - g * gradient_1
+        x_new.update()#TODO - check if update is OK
+        return x_new
+
+    def _step_0(self, x0, g0):#OK
+        "Steepest-descents step."
+        gradient_2 = self._gradient(x0)
+        x_new = x0 - g0 * gradient_2
+        x_new.update()
+        return x_new
+
+
 
 
 

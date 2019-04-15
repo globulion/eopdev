@@ -95,6 +95,10 @@ class XCFunctional(ABC, Density):
         "Exchange-correlation energy"
         raise NotImplementedError("%s energy is not implemented for P sets." % self.abbr.upper())
 
+    def energy_pc(self, x): 
+        "Exchange-correlation energy"
+        raise NotImplementedError("%s energy is not implemented for PC sets." % self.abbr.upper())
+
     def gradient_D(self, x): 
         "Gradient with respect to density matrix"
         raise NotImplementedError("Gradient of %s energy is not implemented for D sets." % self.abbr.upper())
@@ -106,6 +110,10 @@ class XCFunctional(ABC, Density):
     def gradient_nc(self, x): 
         "Gradient with respect to N and C"
         raise NotImplementedError("Gradient of %s energy is not implemented for NC sets." % self.abbr.upper())
+
+    def gradient_pc(self, x): 
+        "Gradient with respect to P and C"
+        raise NotImplementedError("Gradient of %s energy is not implemented for PC sets." % self.abbr.upper())
 
 
     @property
@@ -271,11 +279,27 @@ class MBB_XCFunctional(XCFunctional):
         #xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
         return xc_energy
 
+    def energy_pc(self, x): 
+        "Exchange-correlation energy: Practical expression is for PC-sets."
+        xc_energy = self.energy_P(x)
+        return xc_energy
+
     def gradient_P(self, x):
         "Gradient with respect to P matrix"
         P = x.matrix()
         K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
         return Guess.create(matrix=-2.0*K)
+
+    def gradient_pc(self, x):
+        "Gradient with respect to PC matrix"
+        P = x.matrix()
+        p, c = x.unpack()
+        K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
+        Kmm = numpy.linalg.multi_dot([c.T, K, c]).diagonal()
+        grad_p =-2.0 * Kmm
+        grad_c =-1.0 * numpy.dot(K, c) * p
+        return Guess.create(grad_p, grad_c, None, 'nc')
+
 
 
     # ----> Additional Interface (illustrative, not practical) <---- #
