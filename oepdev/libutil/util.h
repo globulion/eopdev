@@ -178,7 +178,21 @@ std::shared_ptr<psi::Matrix> calculate_der_D(std::shared_ptr<psi::Wavefunction> 
 		std::shared_ptr<psi::Matrix> C,
 		std::vector<std::shared_ptr<psi::Matrix>> A);
 
-
+/** \brief Compute the exchange-correlation energy from ERI in MO-SCF basis. 
+ *
+ *  Reads the existing MO ERI's.
+ *  @param wfn    - Wavefunction object
+ *  @param tr     - IntegralTransform object
+ *  @param f      - f_ij matrix in MO-NEW basis
+ *  @param C      - Transformation matrix MO-SCF::MO-NEW (columns are MO-A basis)
+ *  @return       - Exchange-correlation energy
+ *
+ */
+extern "C" PSI_API
+double calculate_e_xc(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, 
+		std::shared_ptr<psi::Matrix> f,
+		std::shared_ptr<psi::Matrix> C);
 
 
 /** @}*/

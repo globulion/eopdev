@@ -282,6 +282,57 @@ calculate_der_D(std::shared_ptr<psi::Wavefunction> wfn,
   return Deriv;
 }
 
+extern "C" PSI_API
+double calculate_e_xc(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, 
+		std::shared_ptr<psi::Matrix> f,
+		std::shared_ptr<psi::Matrix> C){
+
+
+  // Initialize derivatives
+  double E = 0.0;
+  int M = C->nrow(); /* MO-SCF */
+  int N = C->ncol(); /* MO-NEW */
+  double** pf   = f->pointer();
+  double** pC   = C->pointer();
+
+  // Read integrals and save
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+
+  dpd_set_default(tr->get_dpd_id());
+  dpdbuf4 buf;
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
+                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+
+  for (int h = 0; h < wfn->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+	for (int ab = 0; ab < buf.params->rowtot[h]; ++ab) {
+	     int a = buf.params->roworb[h][ab][0];
+	     int b = buf.params->roworb[h][ab][1];
+	     for (int cd = 0; cd < buf.params->coltot[h]; ++cd) {
+	          int c = buf.params->colorb[h][cd][0];
+	          int d = buf.params->colorb[h][cd][1];
+	          double abcd = buf.matrix[h][ab][cd];
+                  for (int i = 0; i < N; ++i) {
+		  for (int j = 0; j < N; ++j) {
+		       E += abcd * pC[a][i] * pC[b][j] * pC[c][i] * pC[d][j] * pf[i][j];
+	          }
+		  }
+             }
+        }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  return -E;
+}
+
 
 
 } // EndNameSpace oepdev
