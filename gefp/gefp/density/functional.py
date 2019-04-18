@@ -11,6 +11,7 @@ import math
 import numpy
 import oepdev
 import psi4
+import scipy.special
 from abc import ABC, abstractmethod
 from .partitioning import Density
 from .parameters import Guess
@@ -68,9 +69,10 @@ class XCFunctional(ABC, Density):
         if   name.lower() == 'hf'   : xc_functional =        HF_XCFunctional()
         elif name.lower() == 'mbb'  : xc_functional =       MBB_XCFunctional()
         elif name.lower() == 'gu'   : xc_functional =        GU_XCFunctional()
-        elif name.lower() == 'pmedi': xc_functional = Pade_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
-        elif name.lower() == 'amedi': xc_functional =    A_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
-        elif name.lower() ==  'oedi': xc_functional =   AB_OEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
+        #elif name.lower() == 'pmedi': xc_functional = Pade_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
+        elif name.lower() == 'a1medi': xc_functional =    A_V1_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
+        elif name.lower() == 'a2medi': xc_functional =    A_V2_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
+        #elif name.lower() ==  'oedi': xc_functional =   AB_OEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         else: raise ValueError("Chosen XC functional is not available! Mistyped?")
         return xc_functional
 
@@ -411,11 +413,17 @@ class Interpolation_XCFunctional(XCFunctional):
         pass
 
     @abstractmethod
+    def compute_ak(self, k, t):
+        "Further coefficients in the interpolates"
+        pass
+
+
+    @abstractmethod
     def fij(self, n):
         pass
 
     @staticmethod
-    def _fij_bbbk(n, k, eps=1.0e-20):
+    def _fij_bbbk_1(n, k, eps=1.0e-20):
         "The BBB-(k) Functional"
         W = 1.0/float(k+1)
         K = float(k*(k+1))
@@ -428,6 +436,20 @@ class Interpolation_XCFunctional(XCFunctional):
                 de_ij = de[i,j]
                 if de_ij < eps: f[i,j] = 0.0
                 else: f[i,j] = f[i,j] / de_ij
+        return f
+
+    @staticmethod
+    def _fij_bbbk_2(n, k):
+        "The BBB-(k) Functional - 2-version"
+        K = float(k)
+        #W = k/(k+1.0)**2
+        #X = 0.5 * (1.0 - k/(k+1))
+        #ni= n**W
+        #f = 2.0**(-K-1.0) * numpy.outer(n,n)**X * (ni[:,numpy.newaxis] + ni[numpy.newaxis,:])**(K+1.0)
+        #p = K/(K+1)**1
+        p = 1.0
+        ni = n**(p/(K+1.0))
+        f = 2.0**(-K-1.0) * numpy.outer(n,n)**(0.5*(1.0-p)) * (ni[:,numpy.newaxis] + ni[numpy.newaxis,:])**(K+1.0)
         return f
 
         
@@ -461,19 +483,48 @@ class MEDI_XCFunctional(Interpolation_XCFunctional):
     def __init__(self, coeff, kmax):
         super(MEDI_XCFunctional, self).__init__(coeff, kmax)
 
+    @abstractmethod
+    def _interpolate_function(self, n, k, **kwargs): pass
+
     def fij(self, n): 
         "The MBB-MBB0 Interpolation Functional with Monotonous Exponential Decay (MBB/MEDI)"
         a0 = self.compute_a0(n)
         # First term
         f = a0 * MBB_XCFunctional.fij(n)
-        #a_sum = 0.0
+        #a_sum = a0
         # Other terms
         for k in range(1, self._kmax+1):
-            ak = a0 * math.exp(k*math.log(1.0 - a0))
-            f += ak * Interpolation_XCFunctional._fij_bbbk(n, k, eps=1.0e-20)
+            #ak = a0 * math.exp(k*math.log(1.0 - a0))
+            ak = self.compute_ak(k, self._coeff['a0'])
+            f += ak * self._interpolate_function()(n, k)
+            #print(ak, a0)
+            #Interpolation_XCFunctional._fij_bbbk(n, k, eps=1.0e-20)
             #a_sum += ak
         #print( " Sum of a: %13.4f" % a_sum)
         return f
+
+class V1_MEDI_XCFunctional(MEDI_XCFunctional):
+    def __init__(self, coeff, kmax):
+        super(V1_MEDI_XCFunctional, self).__init__(coeff, kmax)
+
+    def _interpolate_function(self): 
+       return Interpolation_XCFunctional._fij_bbbk_1
+
+    def compute_ak(self, k, t):
+        return t * math.exp(k*math.log(1.0 - t))
+
+class V2_MEDI_XCFunctional(MEDI_XCFunctional):
+    def __init__(self, coeff, kmax):
+        super(V2_MEDI_XCFunctional, self).__init__(coeff, kmax)
+
+    def _interpolate_function(self): 
+       return Interpolation_XCFunctional._fij_bbbk_2
+
+    def compute_ak(self, k, t):
+        return scipy.special.gegenbauer(k, -0.49)(t/2.0) * t**k
+
+
+
 
 class OEDI_XCFunctional(Interpolation_XCFunctional):
     """
@@ -515,13 +566,13 @@ class OEDI_XCFunctional(Interpolation_XCFunctional):
         return b
 
 
-class A_MEDI_XCFunctional(MEDI_XCFunctional):
+class A_V1_MEDI_XCFunctional(V1_MEDI_XCFunctional):
     """
  The New Class of Exchange-Correlation Functionals: 
  Interpolation Functionals with Monotonous Exponential Decay.
 """
     def __init__(self, coeff, kmax):
-        super(A_MEDI_XCFunctional, self).__init__(coeff, kmax)
+        super(A_V1_MEDI_XCFunctional, self).__init__(coeff, kmax)
 
     @staticmethod
     def name(): return "Monotonous Exponential Decay of Interpolates XC Functional for closed-shell systems"
@@ -533,6 +584,25 @@ class A_MEDI_XCFunctional(MEDI_XCFunctional):
         "First coefficient in the interpolates from Pade approximant of universal function"
         a0 = self._coeff['a0']
         return a0
+
+class A_V2_MEDI_XCFunctional(V2_MEDI_XCFunctional):
+    """
+ The New Class of Exchange-Correlation Functionals: 
+ Interpolation Functionals with Monotonous Exponential Decay.
+"""
+    def __init__(self, coeff, kmax):
+        super(A_V2_MEDI_XCFunctional, self).__init__(coeff, kmax)
+
+    @staticmethod
+    def name(): return "Monotonous Exponential Decay of Interpolates XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "MEDI"
+
+    def compute_a0(self, n):
+        "First coefficient in the interpolates from Pade approximant of universal function"
+        return 1.0
+
 
 class AB_OEDI_XCFunctional(OEDI_XCFunctional):
     """

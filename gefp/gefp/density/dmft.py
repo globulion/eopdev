@@ -55,14 +55,14 @@ def find_mu(n, np):
 
 def find_nu(n, np):
     "Search for mu"
-    options = {'disp': False, 'maxiter':2050, 'ftol':1e-20}
+    options = {'disp': False, 'maxiter':2050, 'ftol':1.0e-20}
     nu = 0.0
     def obj(nu, x):
         u = bbb(x, nu)
         Z = ((u*u).sum() - np)**2
         #Z = ( u   .sum() - np)**2
         return Z
-    R = scipy.optimize.minimize(obj, nu, args=(n,), method='slsqp', tol=1e-20, options=options)
+    R = scipy.optimize.minimize(obj, nu, args=(n,), method='slsqp', tol=1.0e-50, options=options)
     nu = R.x
     return nu
 
@@ -545,12 +545,12 @@ class DMFT(ABC):
 
         # ===> Gradient wrt c <=== #
 
-        pp = p**2
+        pp = p*p
         # 1-electron contribution
-        grad_c = 4.0 * Ham 
+        grad_c = 4.0 * Ham * pp
         # 2-electron contribution
-        grad_c+= 8.0 * Jam 
-        grad_c = grad_c * pp
+        grad_c+= 8.0 * Jam * pp
+        #grad_c = grad_c * pp
 
         return grad_p, grad_c
 
@@ -694,7 +694,7 @@ class DMFT_MO(DMFT):
         gradient_1 = self._gradient(x1)
         gradient_2 = self._gradient(x2)
 
-        g = 0.0000001
+        g = 0.0000000001
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
         x_new = x1 - g * gradient_1
@@ -763,6 +763,7 @@ class DMFT_NC(DMFT_AO):
 class DMFT_PC(DMFT_MO):
     def __init__(self, wfn, xc_functional, v_ext, guess, step):
         super(DMFT_PC, self).__init__(wfn, xc_functional, v_ext, guess, step)
+        self.g = 0.1
 
 
     @staticmethod
@@ -813,7 +814,8 @@ class DMFT_PC(DMFT_MO):
         gradient_1 = self._gradient(x1)
         gradient_2 = self._gradient(x2)
 
-        g = 0.01
+        self.g *= 0.99
+        g = self.g
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
         x_new = x1 - g * gradient_1
