@@ -15,6 +15,7 @@ import scipy.special
 from abc import ABC, abstractmethod
 from .partitioning import Density
 from .parameters import Guess
+from ..math.matrix import matrix_power, matrix_power_derivative
 
 __all__ = ["XCFunctional"]
 
@@ -447,9 +448,23 @@ class Interpolation_XCFunctional(XCFunctional):
         #ni= n**W
         #f = 2.0**(-K-1.0) * numpy.outer(n,n)**X * (ni[:,numpy.newaxis] + ni[numpy.newaxis,:])**(K+1.0)
         #p = K/(K+1)**1
-        p = 1.0
-        ni = n**(p/(K+1.0))
-        f = 2.0**(-K-1.0) * numpy.outer(n,n)**(0.5*(1.0-p)) * (ni[:,numpy.newaxis] + ni[numpy.newaxis,:])**(K+1.0)
+
+        #p = 1.0 # K/(K+1.0)
+        #ni = n**(p/(K+1.0))
+        #f = 2.0**(-K-1.0) * numpy.outer(n,n)**(0.5*(1.0-p)) * (ni[:,numpy.newaxis] + ni[numpy.newaxis,:])**(K+1.0)
+
+        #nn = len(n)
+        #f = numpy.zeros((nn,nn))
+        #for t in range(0, k+2):
+        #    c = scipy.special.binom(k+1, t)
+        #    ni = n**(float(k+1-t)/float(k+1))
+        #    nj = n**(float(t)/float(k+1))
+        #    f += c * numpy.outer(ni, nj)
+        #f*= 2.0**(-K-1.0)
+
+        #K = K - 1.0
+        ni = n**(1.0/(K+1.0))
+        f = 2.0**(-K-1.0) * (ni[:,numpy.newaxis] + ni[numpy.newaxis,:])**(K+1.0)
         return f
 
         
@@ -521,7 +536,7 @@ class V2_MEDI_XCFunctional(MEDI_XCFunctional):
        return Interpolation_XCFunctional._fij_bbbk_2
 
     def compute_ak(self, k, t):
-        return scipy.special.gegenbauer(k, -0.49)(t/2.0) * t**k
+        return 100.0 * scipy.special.gegenbauer(k, -0.4)(t/2.0) * t**k
 
 
 
@@ -602,6 +617,58 @@ class A_V2_MEDI_XCFunctional(V2_MEDI_XCFunctional):
     def compute_a0(self, n):
         "First coefficient in the interpolates from Pade approximant of universal function"
         return 1.0
+
+    def energy_P_costly(self, x): 
+        "Exchange-correlation energy: This expression is more costly"
+        # contribution from MBB term
+        P = x.matrix()
+        K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
+        xc_energy = -numpy.dot(K, P).trace()
+        del K
+        # contributions from interpolates
+        for k in range(1, self._kmax+1):
+            K = float(k)
+            a_k = self.compute_ak(k, self._coeff['a0'])
+            a_k/= 2.0**(K+1.0)
+            for n in range(0, k+2):
+                N = float(n)
+                c_nk = a_k * scipy.special.binom(k+1, n)
+                p_nk = 2.0 * N / (K+1.0)
+                A_nk = matrix_power(P,       p_nk)
+                B_nk = matrix_power(P, 2.0 - p_nk)
+                A    = psi4.core.Matrix.from_array(A_nk, "")
+                KA   = oepdev.calculate_JK_r(self._wfn, self._ints, A)[1].to_array(dense=True)
+                xc_energy -= c_nk * numpy.dot(KA, B_nk).trace()
+
+        return xc_energy
+
+    def gradient_P(self, x):
+        "Gradient with respect to P matrix"
+        # contribution from the MBB term
+        P = x.matrix()
+        K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
+        grad = -2.0*K
+        del K
+        # contributions from the interpolates
+        for k in range(1, self._kmax+1):
+            K = float(k)
+            a_k = self.compute_ak(k, self._coeff['a0'])
+            a_k/= 2.0**(K+1.0)
+            for n in range(0, k+2):
+                N = float(n)
+                c_nk = a_k * scipy.special.binom(k+1, n)
+                p_nk = 2.0 * N / (K + 1.0)
+                A_nk = matrix_power(P,       p_nk)
+                B_nk = matrix_power(P, 2.0 - p_nk)
+                dA_nk= matrix_power_derivative(P,       p_nk)
+                dB_nk= matrix_power_derivative(P, 2.0 - p_nk)
+                A    = psi4.core.Matrix.from_array(A_nk, "")
+                B    = psi4.core.Matrix.from_array(B_nk, "")
+                KA   = oepdev.calculate_JK_r(self._wfn, self._ints, A)[1].to_array(dense=True)
+                KB   = oepdev.calculate_JK_r(self._wfn, self._ints, B)[1].to_array(dense=True)
+                grad-= c_nk * (numpy.dot(dA_nk, KB) + numpy.dot(KA, dB_nk))
+        return Guess.create(matrix=grad)
+
 
 
 class AB_OEDI_XCFunctional(OEDI_XCFunctional):
