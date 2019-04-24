@@ -194,6 +194,32 @@ double calculate_e_xc(std::shared_ptr<psi::Wavefunction> wfn,
 		std::shared_ptr<psi::Matrix> f,
 		std::shared_ptr<psi::Matrix> C);
 
+/** \brief Compute the contracted derivative of power of a square and symmetric matrix.
+ *
+ *  The contracted matrix derivative is defined here as
+ *  \f[
+ *    {\bf D} = \frac{d {\bf A}^\gamma}{\bf A} : {\mathbb{I}}
+ *  \f]
+ *  where \f$ {\mathbb{I}} \f$ is the identity matrix.
+ *  The derivative, which is the fourth-rank tensor, is computed by 
+ *  the forward 2-centre finite difference formula,
+ *  \f[
+ *    f' = \left( f(h) - f(0) \right) / h
+ *  \f]
+ *  \notes 
+ *    * if \f$ \gamma \f$ is non-integer, input matrix has to be positive-definite.
+ *
+ *  @param A      - Matrix
+ *  @param g      - Power
+ *  @param step   - Differentiation step \f$ h \f$
+ *  @return       - Contracted derivative (matrix)
+ *
+ */
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix>
+matrix_power_derivative(std::shared_ptr<psi::Matrix> A,
+              		double g, double step);
+
 
 /** @}*/
 

@@ -9,7 +9,9 @@ __all__ = ["Superimposer"     ,
            "rotation_matrix"  ,
            "rotate_ao_matrix" , 
            "make_r2"          ,
-           "move_atom_along_bond"]
+           "move_atom_along_bond",
+           "matrix_power",
+           "matrix_power_derivative"]
 
 import sys
 import math
@@ -322,4 +324,27 @@ def move_atom_along_bond(mol, a1, a2, t, units='bohr'):
     geom = psi4.core.Matrix.from_array(xyz)
     mol.set_geometry(geom)
     return
+
+def matrix_power(P, a):
+    "Matrix power"
+    #print(P)
+    p, U = numpy.linalg.eigh(P)
+    #if (p==numpy.NaN).any(): print(P)
+    p = abs(p)
+    #p[p<0.0] = 0.0
+    #if (p<=0.0).any(): raise ValueError(" Matrix must be positive-definite!")
+    Pa = numpy.linalg.multi_dot([U, numpy.diag(p**a), U.T])
+    return Pa
+
+def matrix_power_derivative(P, a, step=0.0000001):
+    "Computes derivative of matrix power wrt matrix (numerically)"
+    h = 2.0 * step
+    nn= len(P)
+    Pa = matrix_power(P, a)
+    P1 = P.copy()
+    for i in range(nn): P1[i][i] += 2.0*step
+    Pa1 = matrix_power(P1, a)
+    dP = (Pa1 - Pa) / h
+    return dP
+
 

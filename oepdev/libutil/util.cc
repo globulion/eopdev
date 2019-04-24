@@ -333,6 +333,46 @@ double calculate_e_xc(std::shared_ptr<psi::Wavefunction> wfn,
   return -E;
 }
 
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix>
+matrix_power_derivative(std::shared_ptr<psi::Matrix> A,
+              		double g, double step){
+
+  double hi = 1.0/ (step * 2.0);
+  //int n = A->ncol();
+  //std::shared_ptr<psi::Matrix> D = std::make_shared<psi::Matrix>("",n,n);
+  //double** d = D->pointer();
+
+  std::shared_ptr<psi::Matrix> Ag = A->clone();
+  Ag->power(g);
+
+  std::shared_ptr<psi::Matrix> Ag1 = A->clone();
+  std::shared_ptr<psi::Matrix> I = A->clone(); I->identity();
+  I->scale(step * 2.0);
+  Ag1->add(I);
+  Ag1->power(g);
+  Ag1->subtract(Ag);
+  Ag1->scale(hi);
+
+  //for (int i=0; i<n; ++i) {
+  //  for (int j=0; j<=i; ++j) {
+  //       std::shared_ptr<psi::Matrix> Ag1 = A->clone();
+  //       double** a = Ag1->pointer();
+  //       a[i][j] += step;
+  //       a[j][i] += step;
+  //       Ag1->power(g);
+  //       Ag1->subtract(Ag);
+  //       Ag1->scale(hi);
+  //       double v = Ag1->trace();
+  //       d[i][j] = v;
+  //       d[j][i] = v;
+  //  }
+  //}
+  return Ag1;
+}
+
+
+
 
 
 } // EndNameSpace oepdev
