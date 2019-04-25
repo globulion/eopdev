@@ -327,24 +327,37 @@ def move_atom_along_bond(mol, a1, a2, t, units='bohr'):
 
 def matrix_power(P, a):
     "Matrix power"
-    #print(P)
     p, U = numpy.linalg.eigh(P)
-    #if (p==numpy.NaN).any(): print(P)
-    p = abs(p)
-    #p[p<0.0] = 0.0
+    #p = abs(p)
+    p[p<0.0] = 0.0
     #if (p<=0.0).any(): raise ValueError(" Matrix must be positive-definite!")
     Pa = numpy.linalg.multi_dot([U, numpy.diag(p**a), U.T])
     return Pa
 
-def matrix_power_derivative(P, a, step=0.0000001):
+def matrix_power_derivative(P, a, step=0.00000001, approx=False):
     "Computes derivative of matrix power wrt matrix (numerically)"
     h = 2.0 * step
     nn= len(P)
     Pa = matrix_power(P, a)
-    P1 = P.copy()
-    for i in range(nn): P1[i][i] += 2.0*step
-    Pa1 = matrix_power(P1, a)
-    dP = (Pa1 - Pa) / h
+    # cheaper approximate solution (matrix)
+    if approx:
+       P1 = P.copy()                            
+       for i in range(nn): P1[i][i] += 2.0*step
+       Pa1 = matrix_power(P1, a)
+       dP = (Pa1 - Pa) / h
+    # expensive exact solution (4-th rank tensor)
+    else:
+       dP = P.copy(); dP.fill(0.0)
+       T = numpy.zeros((nn,nn,nn,nn))    
+       for i in range(nn):
+           for j in range(i+1):
+               P1 = P.copy()
+               P1[i][j] += step
+               P1[j][i] += step
+               Pa1 = matrix_power(P1, a)
+               T[i,j] = (Pa1 - Pa) / h
+               T[j,i] = T[i,j]
+       dP = T.transpose((2,3,0,1))
     return dP
 
 

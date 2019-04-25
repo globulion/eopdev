@@ -107,8 +107,16 @@ class XCFunctional(ABC, Density):
         raise NotImplementedError("Gradient of %s energy is not implemented for D sets." % self.abbr.upper())
 
     def gradient_P(self, x): 
-        "Gradient with respect to P matrix"
-        raise NotImplementedError("Gradient of %s energy is not implemented for P sets." % self.abbr.upper())
+        "Exact analytical gradient with respect to P matrix"
+        raise NotImplementedError("Exact analytical gradient of %s energy is not implemented for P sets." % self.abbr.upper())
+
+    def gradient_P_approximate(self, x): 
+        "Approximate analytical gradient with respect to P matrix"
+        raise NotImplementedError("Approximate analytical gradient of %s energy is not implemented for P sets." % self.abbr.upper())
+
+    def gradient_P_numerical(self, x): 
+        "Numerical gradient with respect to P matrix"
+        raise NotImplementedError("Numerical gradient of %s energy is not implemented for P sets." % self.abbr.upper())
 
     def gradient_nc(self, x): 
         "Gradient with respect to N and C"
@@ -643,13 +651,13 @@ class A_V2_MEDI_XCFunctional(V2_MEDI_XCFunctional):
         return xc_energy
 
     def gradient_P(self, x):
-        "Gradient with respect to P matrix"
+        "Exacr Analytical Gradient with respect to P matrix"
         # contribution from the MBB term
         P = x.matrix()
         K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
         grad = -2.0*K
         del K
-        # contributions from the interpolates
+        # contributions from the interpolates                                                  
         for k in range(1, self._kmax+1):
             K = float(k)
             a_k = self.compute_ak(k, self._coeff['a0'])
@@ -660,8 +668,38 @@ class A_V2_MEDI_XCFunctional(V2_MEDI_XCFunctional):
                 p_nk = 2.0 * N / (K + 1.0)
                 A_nk = matrix_power(P,       p_nk)
                 B_nk = matrix_power(P, 2.0 - p_nk)
-                dA_nk= matrix_power_derivative(P,       p_nk)
-                dB_nk= matrix_power_derivative(P, 2.0 - p_nk)
+                dA   = matrix_power_derivative(P,       p_nk, step=0.000001, approx=False)
+                dB   = matrix_power_derivative(P, 2.0 - p_nk, step=0.000001, approx=False)
+                A    = psi4.core.Matrix.from_array(A_nk, "")
+                B    = psi4.core.Matrix.from_array(B_nk, "")
+                KA   = oepdev.calculate_JK_r(self._wfn, self._ints, A)[1].to_array(dense=True)
+                KB   = oepdev.calculate_JK_r(self._wfn, self._ints, B)[1].to_array(dense=True)
+                a = numpy.einsum("ijkl,kl->ij", dA, KB)
+                b = numpy.einsum("ijkl,kl->ij", dB, KA)
+                grad-= c_nk * (a+b)
+        return Guess.create(matrix=grad)
+
+
+    def gradient_P_approximate(self, x):
+        "Approximate analytical gradient with respect to P matrix"
+        # contribution from the MBB term
+        P = x.matrix()
+        K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
+        grad = -2.0*K
+        del K
+        # contributions from the interpolates                                                  
+        for k in range(1, self._kmax+1):
+            K = float(k)
+            a_k = self.compute_ak(k, self._coeff['a0'])
+            a_k/= 2.0**(K+1.0)
+            for n in range(0, k+2):
+                N = float(n)
+                c_nk = a_k * scipy.special.binom(k+1, n)
+                p_nk = 2.0 * N / (K + 1.0)
+                A_nk = matrix_power(P,       p_nk)
+                B_nk = matrix_power(P, 2.0 - p_nk)
+                dA_nk= matrix_power_derivative(P,       p_nk, step=0.000001, approx=True)
+                dB_nk= matrix_power_derivative(P, 2.0 - p_nk, step=0.000001, approx=True)
                 A    = psi4.core.Matrix.from_array(A_nk, "")
                 B    = psi4.core.Matrix.from_array(B_nk, "")
                 KA   = oepdev.calculate_JK_r(self._wfn, self._ints, A)[1].to_array(dense=True)

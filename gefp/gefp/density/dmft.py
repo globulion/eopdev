@@ -141,7 +141,7 @@ class DMFT(ABC):
         self._V_ext                    = None         # AO External Potential Matrix
         self._H_mo                     = None         # MO-SCF Core Hamiltonian + External Potential Matrix
         self._step_mode                = None         # Mode of Steepest-Descents Minimization Steps
-        self._numerical_xc             = None         # Mode of E_XC gradient
+        self._mode_xc_gradient         = None         # Mode of E_XC gradient
 
         # Initialize all variables
         self.__common_init(wfn, xc_functional, v_ext, guess, step_mode)
@@ -184,8 +184,6 @@ class DMFT(ABC):
  Run the DMFT calculations.
 """
 
-        if verbose: print(" Running %s:%s/%s" % (self.abbr, self._xc_functional.abbr, self._bfs_name))
-
         # Run!
         success = self._run_dmft(conv, maxit, verbose, g_0, **kwargs)
 
@@ -199,9 +197,16 @@ class DMFT(ABC):
 
     # ---- Public Interface: Properties ----- #
 
-    def set_numerical(self, a):
-        "Set the numerical derivatives of XC energy wrt P matrix (not D!)"
-        self._numerical_xc = a
+    def set_gradient_mode(self, exact=False, approx=False, num=False):
+        "Set the mode of computation of derivatives of XC energy wrt P matrix (not D!)"
+        assert any((exact, approx, num)) is True, "You must set one of the following to True: exact, approx, num"
+        assert all((exact, approx)) is False
+        assert all((exact, num)) is False
+        assert all((num, approx)) is False
+        if exact  is True: self._mode_xc_gradient = 'exact'
+        if approx is True: self._mode_xc_gradient = 'approximate'
+        if num    is True: self._mode_xc_gradient = 'numerical'
+
 
     @property
     def E(self): 
@@ -237,7 +242,14 @@ class DMFT(ABC):
     def _run_dmft(self, conv, maxit, verbose, g_0, **kwargs):
         "DMFT Iterations"
 
-        if not 'restart' in kwargs.keys():
+        restart = True if 'restart' in kwargs.keys() else False
+
+        if verbose and not restart: 
+           print(" Running %s:%s/%s" % (self.abbr, self._xc_functional.abbr, self._bfs_name))
+        if verbose and restart:
+           print(" Restarting %s:%s/%s" % (self.abbr, self._xc_functional.abbr, self._bfs_name))
+
+        if not restart:
 
            # [0] Initialize                                                                  
            self._iteration = 0                                                             
@@ -419,7 +431,7 @@ class DMFT(ABC):
         self._bfs_name = wfn.basisset().name()
         # XC functional
         self._xc_functional = xc_functional
-        self._numerical_xc = False
+        self._mode_xc_gradient = 'exact'
 
         # Molecule
         self._mol = self._wfn.molecule()
@@ -923,20 +935,20 @@ class DMFT_ProjP(DMFT_MO):
 
     # --- Implementation (Protected Interface) --- #
 
-    def _minimizer(self, x):#OK
+    def _minimizer(self, x):
         "Minimizer function: Total Energy"
         E_H  = self._compute_no_exchange_energy()
         E_XC = self._xc_functional.energy_P(x)
         E    = E_H + E_XC
         return E
 
-    def _guess(self):#OK
+    def _guess(self):
         "Initial guess"
         p = numpy.sqrt(self._correct_negative_occupancies(self._current_occupancies))
         x = Guess.create(n=p, c=self._current_orbitals, t='matrix') 
         return x
 
-    def _density(self, x):#OK
+    def _density(self, x):
         "1-particle density matrix in MO basis: P-projection"
         p, c = x.unpack()
         p, c = density_matrix_projection(p, c, numpy.identity(len(p)), self._np, type='p')
@@ -947,11 +959,10 @@ class DMFT_ProjP(DMFT_MO):
         new_guess = Guess.create(n=p, c=self._current_orbitals, t='matrix')
         return new_guess
 
-    def _gradient(self, x):#OK
+    def _gradient(self, x):
         "Gradient"
         gradient = self._compute_no_exchange_gradient_P(x)
-        #print(gradient.matrix())
-        if self._numerical_xc: gradient+= self._xc_functional.gradient_P_numerical(x)
-        else:                  gradient+= self._xc_functional.gradient_P(x)
-        #print(self._xc_functional.gradient_P(x).matrix())
+        if self._mode_xc_gradient == 'numerical'  : gradient+= self._xc_functional.gradient_P_numerical(x)
+        if self._mode_xc_gradient == 'approximate': gradient+= self._xc_functional.gradient_P_approximate(x)
+        else:                                       gradient+= self._xc_functional.gradient_P(x)
         return gradient
