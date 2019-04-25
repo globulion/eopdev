@@ -60,6 +60,8 @@ class XCFunctional(ABC, Density):
   o 'HF'  - the Hartree-Fock functional (default)    D, NC     Yes
   o 'MBB' - the Muller-Buijse-Baerends functional    P         Yes
   o 'GU'  - the Goedecker-Urmigar functional         P         Approximate
+  o 'BBC1'- the BBC1 functional                      P         No
+  o 'BBC2'- the BBC2 functional                      P         No
   o 'MEDI'- the monotonous exponential decay         P         No
             of interpolates between MBB and
             MBB with zero exchange.                  
@@ -70,6 +72,8 @@ class XCFunctional(ABC, Density):
         if   name.lower() == 'hf'   : xc_functional =        HF_XCFunctional()
         elif name.lower() == 'mbb'  : xc_functional =       MBB_XCFunctional()
         elif name.lower() == 'gu'   : xc_functional =        GU_XCFunctional()
+        elif name.lower() == 'bbc1' : xc_functional =      BBC1_XCFunctional()
+        elif name.lower() == 'bbc2' : xc_functional =      BBC2_XCFunctional()
         #elif name.lower() == 'pmedi': xc_functional = Pade_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         elif name.lower() == 'a1medi': xc_functional =    A_V1_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         elif name.lower() == 'a2medi': xc_functional =    A_V2_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
@@ -404,6 +408,81 @@ class GU_XCFunctional(XCFunctional):
         s = numpy.einsum("ijkl,ia,ja,ka,la->a", self._ao_eri, C, C, C, C) * s
         gradient -= Density.generalized_density(s, c)
         return Guess.create(matrix=gradient)
+
+class BBC1_XCFunctional(XCFunctional):
+    """
+ The BBC1 Exchange-Correlation Functional.
+"""
+    def __init__(self):
+        super(BBC1_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "BBC1 XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "BBC1"
+
+    @staticmethod
+    def fij(n): 
+        f = MBB_XCFunctional.fij(n) * BBC1_XCFunctional.__pc(n)
+        return f
+
+    @staticmethod
+    def __pc(n):                                   
+        "Phase correction according to BBC1 functional"
+        m = n.copy(); m.fill(0.0)
+        m[numpy.where(n>=0.5)] =  1.0  # strong
+        m[numpy.where(n< 0.5)] = -1.0  # weak
+        pc = numpy.ones((len(n), len(n)))
+        for i in range(len(n)):
+            for j in range(len(n)):
+                if i!=j:
+                  if m[i] < 0 and m[j] < 0:
+                    pc[i,j] = -1.0
+        return pc
+
+        
+    @staticmethod
+    def fij_1(n, m):
+        "P-version"
+        raise NotImplementedError
+
+    def energy_P(self, x):
+        "Exchange-correlation energy: Practical expression is for P-sets."
+        p, c = x.unpack()
+        f = self.fij(p*p)
+        psi_f = psi4.core.Matrix.from_array(f, "")
+        psi_c = psi4.core.Matrix.from_array(c, "")
+        xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
+        return xc_energy
+
+class BBC2_XCFunctional(BBC1_XCFunctional):
+    """
+ The BBC1 Exchange-Correlation Functional.
+"""
+    def __init__(self):
+        super(BBC2_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "BBC2 XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "BBC2"
+
+    @staticmethod
+    def fij(n): 
+        f = BBC1_XCFunctional.fij(n)
+        f_hf = HF_XCFunctional.fij(n)                  
+        m = n.copy(); m.fill(0.0)
+        m[numpy.where(n>=0.5)] =  1.0  # strong
+        m[numpy.where(n< 0.5)] = -1.0  # weak
+        for i in range(len(n)):
+            for j in range(len(n)):
+                if i!=j:
+                   if m[i] > 0 and m[j] > 0:
+                      f[i,j] = f_hf[i,j]
+        return f
+
 
 class Interpolation_XCFunctional(XCFunctional):
     """

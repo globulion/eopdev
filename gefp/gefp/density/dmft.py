@@ -962,7 +962,7 @@ class DMFT_ProjP(DMFT_MO):
     def _gradient(self, x):
         "Gradient"
         gradient = self._compute_no_exchange_gradient_P(x)
-        if self._mode_xc_gradient == 'numerical'  : gradient+= self._xc_functional.gradient_P_numerical(x)
-        if self._mode_xc_gradient == 'approximate': gradient+= self._xc_functional.gradient_P_approximate(x)
-        else:                                       gradient+= self._xc_functional.gradient_P(x)
+        if   self._mode_xc_gradient == 'numerical'  : gradient+= self._xc_functional.gradient_P_numerical(x)
+        elif self._mode_xc_gradient == 'approximate': gradient+= self._xc_functional.gradient_P_approximate(x)
+        else:                                         gradient+= self._xc_functional.gradient_P(x)
         return gradient
