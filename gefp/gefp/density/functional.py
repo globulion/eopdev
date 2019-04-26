@@ -458,7 +458,7 @@ class BBC1_XCFunctional(XCFunctional):
 
 class BBC2_XCFunctional(BBC1_XCFunctional):
     """
- The BBC1 Exchange-Correlation Functional.
+ The BBC2 Exchange-Correlation Functional.
 """
     def __init__(self):
         super(BBC2_XCFunctional, self).__init__()

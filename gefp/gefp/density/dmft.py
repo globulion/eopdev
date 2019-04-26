@@ -60,7 +60,6 @@ def find_nu(n, np):
     def obj(nu, x):
         u = bbb(x, nu)
         Z = ((u*u).sum() - np)**2
-        #Z = ( u   .sum() - np)**2
         return Z
     R = scipy.optimize.minimize(obj, nu, args=(n,), method='slsqp', tol=1.0e-50, options=options)
     nu = R.x

@@ -5,18 +5,21 @@
  Bartosz Błasiak, Gundelfingen, Jan 2019
 """
 
-__all__ = ["Superimposer"     ,
-           "rotation_matrix"  ,
-           "rotate_ao_matrix" , 
-           "make_r2"          ,
-           "move_atom_along_bond",
-           "matrix_power",
-           "matrix_power_derivative"]
+__all__ = ["Superimposer"               , 
+           "rotation_matrix"            ,
+           "rotate_ao_matrix"           ,
+           "make_r2"                    ,
+           "move_atom_along_bond"       ,
+           "move_atom_symmetric_stretch",
+           "move_atom_rotate_molecule"  ,
+           "matrix_power"               ,
+           "matrix_power_derivative"    ]
 
 import sys
 import math
 import numpy
 import psi4
+import scipy.spatial.transform
 
 class Superimposer:
     """\
@@ -312,18 +315,43 @@ def rotate_ao_matrix(M, rot_3d, bfs, return_rot=False, aomo=False):
     else: return M_rot
 
 
-def move_atom_along_bond(mol, a1, a2, t, units='bohr'):
-    "Translate atom a1 in the molecule along the bond a1-a2 by amount t"
+def move_atom_along_bond(mol, a, a_orig, t, units='bohr'):
+    "Translate atom a in the molecule along the bond a-a_orig by amount t"
     if units.lower().startswith('ang'): t*= 1.889725989 # Angstrom to Bohr
     xyz = mol.geometry().to_array(dense=True)
-    v1  = xyz[a1-1]
-    v2  = xyz[a2-1]
-    u   = v1 - v2
+    v   = xyz[a     -1]
+    vo  = xyz[a_orig-1]
+    u   = v - vo
     u  /= numpy.linalg.norm(u)
-    xyz[a1-1] += u*t
+    xyz[a-1] += u*t
     geom = psi4.core.Matrix.from_array(xyz)
     mol.set_geometry(geom)
     return
+
+def move_atom_symmetric_stretch(mol, a_list, a_orig, t, units='bohr'):
+    "Translate atoms from a_list in the molecule along the bond a_list[i]-a_orig by amount t"
+    if units.lower().startswith('ang'): t*= 1.889725989 # Angstrom to Bohr
+    xyz = mol.geometry().to_array(dense=True)
+    vl = [ xyz[i     -1] for i in a_list ]
+    vo  =  xyz[a_orig-1]
+    for i in range(len(a1_list)):
+        u   = vl[i] - vo
+        u  /= numpy.linalg.norm(u)
+        xyz[a_list[i]-1] += u*t
+    geom = psi4.core.Matrix.from_array(xyz)
+    mol.set_geometry(geom)
+    return
+
+def move_atom_rotate_molecule(mol, angles, t='zxy', units='bohr'):
+    "Rotate atoms in the molecule by applying rotation (3,3) matrix (provide Euler angles in degrees)"
+    R = scipy.spatial.transform.Rotation(t, angles, degrees=True)
+    rot= R.as_dcm()
+    xyz = mol.geometry().to_array(dense=True)
+    xyz = numpy.dot(xyz, rot.T)
+    geom = psi4.core.Matrix.from_array(xyz)
+    mol.set_geometry(geom)
+    return
+
 
 def matrix_power(P, a):
     "Matrix power"
