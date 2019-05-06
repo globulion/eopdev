@@ -99,7 +99,31 @@ def density_matrix_projection(n, c, S, np, type='d'):
 
 
 
-class DMFT(ABC):
+class ElectronCorrelation:
+    """\
+ The Electron Correlation: Dynamic and Non-dynamic Correlation.
+"""
+    @staticmethod
+    def degree_of_correlation(dmft, scalar=True):
+        "Compute scalar or matrix degree of correlation. Return I_d, I_n"
+        n  = dmft.N
+        ns = n.copy(); ns[ns<0.0] = 0.0
+        #S   = numpy.sqrt(ns).sum()
+        #N   = ns.sum()
+        if scalar:
+           I_n = (ns*(1.0 - ns)).sum()                            
+           I_d = numpy.sqrt(abs(ns*(1.0 - ns))).sum() / 2.0 - I_n
+        else:
+           c   = dmft.C
+           I_n = (ns*(1.0 - ns))
+           I_d = numpy.sqrt(abs(ns*(1.0 - ns))) / 2.0 - I_n
+           I_n = numpy.linalg.multi_dot([c, numpy.diag(I_n), c.T])
+           I_d = numpy.linalg.multi_dot([c, numpy.diag(I_d), c.T])
+        return I_d, I_n
+
+
+
+class DMFT(ABC,ElectronCorrelation):
     """\
  The Density Matrix Functional Theory.
 """
@@ -223,6 +247,17 @@ class DMFT(ABC):
     def N(self): 
         "NO Occupations"
         return self._current_occupancies
+
+
+    @property
+    def scalar_correlation(self):
+        "Scalar Degree of Electron Correlation"
+        return self.degree_of_correlation(self, scalar=True)
+    @property
+    def matrix_correlation(self):
+        "Matrix Degree of Electron Correlation"
+        return self.degree_of_correlation(self, scalar=False)
+
 
     @property
     def abbr(self): 
