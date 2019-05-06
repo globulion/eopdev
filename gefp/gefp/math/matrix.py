@@ -344,7 +344,7 @@ def move_atom_symmetric_stretch(mol, a_list, a_orig, t, units='bohr'):
 
 def move_atom_rotate_molecule(mol, angles, t='zxy', units='bohr'):
     "Rotate atoms in the molecule by applying rotation (3,3) matrix (provide Euler angles in degrees)"
-    R = scipy.spatial.transform.Rotation(t, angles, degrees=True)
+    R = scipy.spatial.transform.Rotation.from_euler(t, angles, degrees=True)
     rot= R.as_dcm()
     xyz = mol.geometry().to_array(dense=True)
     xyz = numpy.dot(xyz, rot.T)
