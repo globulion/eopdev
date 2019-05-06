@@ -121,9 +121,30 @@ class ElectronCorrelation:
            I_d = numpy.linalg.multi_dot([c, numpy.diag(I_d), c.T])
         return I_d, I_n
 
+class OEProp:
+    "One electron properties"
+    # TODO: set the density matrices in DMFT objects to store in AO basis
+
+    @staticmethod
+    def dipole_moment(dmft):
+        "Compute dipole moment"
+        # dipole integrals
+        T = [x.to_array(dense=True) for x in dmft._mints.ao_dipole()]
+        # inverse of overlap matrix
+        Si= numpy.linalg.inv(dmft._S)
+        # LCAO-MO SCF matrix
+        Ca= dmft._Ca
+        # density mattix in MO-SCF basis
+        Dmo = dmft.D
+        # density matrix in AO basis
+        Dao = numpy.linalg.multi_dot([Si, Ca, Dmo, Ca.T, Si])
+        # calculate: dipole moment
+        dip = numpy.array([2.0 * numpy.dot(tx, Dao).trace() for tx in T], dtype=numpy.float64)
+        return dip
 
 
-class DMFT(ABC,ElectronCorrelation):
+
+class DMFT(ABC, ElectronCorrelation, OEProp):
     """\
  The Density Matrix Functional Theory.
 """
@@ -237,7 +258,7 @@ class DMFT(ABC,ElectronCorrelation):
         return self._current_energy
     @property
     def D(self): 
-        "1-Particle Density Matrix"
+        "1-Particle Density Matrix in AO basis"
         return self._current_density.matrix()
     @property
     def C(self): 
@@ -257,6 +278,11 @@ class DMFT(ABC,ElectronCorrelation):
     def matrix_correlation(self):
         "Matrix Degree of Electron Correlation"
         return self.degree_of_correlation(self, scalar=False)
+
+    @property
+    def dipole(self):
+        "Dipole Moment"
+        raise NotImplementedError
 
 
     @property
@@ -637,6 +663,14 @@ class DMFT_AO(DMFT):
     def __init__(self, wfn, xc_functional, v_ext, guess, step):
         super(DMFT_AO, self).__init__(wfn, xc_functional, v_ext, guess, step)
 
+    @property
+    def dipole(self):
+        "Dipole Moment"
+        #TODO
+        # move it to base class after all OPDM's will be stored in AO basis, or return by self.D as AO basis matrix
+        raise NotImplementedError
+
+
     # --- Implementation (Protected Interface) --- #
 
     def _compute_hcore_energy(self):
@@ -708,6 +742,11 @@ class DMFT_AO(DMFT):
 class DMFT_MO(DMFT):
     def __init__(self, wfn, xc_functional, v_ext, guess, step):
         super(DMFT_MO, self).__init__(wfn, xc_functional, v_ext, guess, step)
+
+    @property
+    def dipole(self):
+        "Dipole Moment"
+        return self.dipole_moment(self)
 
     # --- Implementation (Protected Interface) --- #
 
