@@ -419,7 +419,8 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         DX = dx.matrix().ravel()
         DG = dg.matrix().ravel()
         norm = numpy.dot(DG, DG)
-        g    = numpy.dot(DX, DG)/ norm
+        if norm < 0.00000001: g = 1.0
+        else:   g    = numpy.dot(DX, DG)/ norm
         g    = abs(g)
         return g
 

@@ -12,6 +12,7 @@ __all__ = ["Superimposer"               ,
            "move_atom_along_bond"       ,
            "move_atom_symmetric_stretch",
            "move_atom_rotate_molecule"  ,
+           "move_atom_scale_coordinates",
            "matrix_power"               ,
            "matrix_power_derivative"    ]
 
@@ -334,13 +335,21 @@ def move_atom_symmetric_stretch(mol, a_list, a_orig, t, units='bohr'):
     xyz = mol.geometry().to_array(dense=True)
     vl = [ xyz[i     -1] for i in a_list ]
     vo  =  xyz[a_orig-1]
-    for i in range(len(a1_list)):
+    for i in range(len(a_list)):
         u   = vl[i] - vo
         u  /= numpy.linalg.norm(u)
         xyz[a_list[i]-1] += u*t
     geom = psi4.core.Matrix.from_array(xyz)
     mol.set_geometry(geom)
     return
+
+def move_atom_scale_coordinates(mol, t):
+    "Scale coordinates in the molecule along the bond a_list[i]-a_orig by amount t"
+    xyz = mol.geometry().to_array(dense=True) * t
+    geom = psi4.core.Matrix.from_array(xyz)
+    mol.set_geometry(geom)
+    return
+
 
 def move_atom_rotate_molecule(mol, angles, t='zxy', units='bohr'):
     "Rotate atoms in the molecule by applying rotation (3,3) matrix (provide Euler angles in degrees)"
