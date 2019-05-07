@@ -8,8 +8,9 @@ Bartosz Błasiak, Gundelfingen, Dec 2018
 
 from . import density
 from . import math
+from . import core
 
 __author__ =  'Bartosz Błasiak'
 __version__=  '1.0.1'
 
-__all__    = ['density', 'math']
+__all__    = ['core', 'density', 'math']
