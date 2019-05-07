@@ -24,6 +24,7 @@ class XCFunctional(ABC, Density):
     """\
  The Exchange-Correlation DMFT functional.
 """
+    # Default Functional
     default = 'hf'
 
     def __init__(self, jk=None, wfn=None, ints=None):
@@ -69,15 +70,30 @@ class XCFunctional(ABC, Density):
             of interpolates between MBB and
             MBB with zero exchange.                  
 """
+        # Stored Parameterizations                                                                                    
+        parameters_p2_medi = [-0.637709, -81.9733, -3.75826, -16.0301, -2.29926, 68.4848, -2.22155, 46.483, 0.918441]
+        # A_V2_MEDI -- FCI/STO-3G
+        # a0              = -0.637709        +/- 0.01133      (1.776%)
+        # a1              = -81.9733         +/- 39.4         (48.06%)
+        # a2              = -3.75826         +/- 1.416        (37.67%)
+        # a3              = -16.0301         +/- 10.78        (67.25%)
+        # a4              = -2.29926         +/- 0.9788       (42.57%)
+        # b1              = 68.4848          +/- 36.61        (53.45%)
+        # b2              = -2.22155         +/- 1.542        (69.39%)
+        # b3              = 46.483           +/- 24.82        (53.4%)
+        # b4              = 0.918441         +/- 0.3866       (42.09%)
+
         if   name.lower() == 'hf'   : xc_functional =        HF_XCFunctional()
         elif name.lower() == 'mbb'  : xc_functional =       MBB_XCFunctional()
         elif name.lower() == 'gu'   : xc_functional =        GU_XCFunctional()
         elif name.lower() == 'bbc1' : xc_functional =      BBC1_XCFunctional()
         elif name.lower() == 'bbc2' : xc_functional =      BBC2_XCFunctional()
-        #elif name.lower() == 'pmedi': xc_functional = Pade_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         elif name.lower() == 'a1medi': xc_functional =    A_V1_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         elif name.lower() == 'a2medi': xc_functional =    A_V2_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
+        elif name.lower() == 'p2medi': xc_functional =    P_V2_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
+        elif name.lower() == 'par_p2medi': xc_functional =P_V2_MEDI_XCFunctional(kwargs['kmax'], coeff={'pade_coefficients':parameters_p2_medi})
         #elif name.lower() ==  'oedi': xc_functional =   AB_OEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
+        #elif name.lower() == 'pmedi': xc_functional = Pade_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         else: raise ValueError("Chosen XC functional is not available! Mistyped?")
         return xc_functional
 
@@ -588,6 +604,11 @@ class MEDI_XCFunctional(Interpolation_XCFunctional):
     @abstractmethod
     def _interpolate_function(self, n, k, **kwargs): pass
 
+    @abstractmethod
+    def compute_t(self, n=None, c=None):
+        "t parameter in Gegenbauer numbers generator"
+        pass
+
     def fij(self, n): 
         "The MBB-MBB0 Interpolation Functional with Monotonous Exponential Decay (MBB/MEDI)"
         a0 = self.compute_a0(n)
@@ -595,9 +616,11 @@ class MEDI_XCFunctional(Interpolation_XCFunctional):
         f = a0 * MBB_XCFunctional.fij(n)
         #a_sum = a0
         # Other terms
+        t = self.compute_t(n)
         for k in range(1, self._kmax+1):
             #ak = a0 * math.exp(k*math.log(1.0 - a0))
-            ak = self.compute_ak(k, self._coeff['a0'])
+            #ak = self.compute_ak(k, self._coeff['a0'])
+            ak = self.compute_ak(k, t)
             f += ak * self._interpolate_function()(n, k)
             #print(ak, a0)
             #Interpolation_XCFunctional._fij_bbbk(n, k, eps=1.0e-20)
@@ -615,6 +638,11 @@ class V1_MEDI_XCFunctional(MEDI_XCFunctional):
     def compute_ak(self, k, t):
         return t * math.exp(k*math.log(1.0 - t))
 
+    def compute_t(self, n=None, c=None):
+        "t parameter in Gegenbauer numbers generator"
+        return self._coeff['a0']
+
+
 class V2_MEDI_XCFunctional(MEDI_XCFunctional):
     def __init__(self, coeff, kmax):
         super(V2_MEDI_XCFunctional, self).__init__(coeff, kmax)
@@ -623,49 +651,63 @@ class V2_MEDI_XCFunctional(MEDI_XCFunctional):
        return Interpolation_XCFunctional._fij_bbbk_2
 
     def compute_ak(self, k, t):
-        return 100.0 * scipy.special.gegenbauer(k, -0.4)(t/2.0) * t**k
+        A = 100.0
+        L =-0.4
+        return A * scipy.special.gegenbauer(k, L)(t/2.0) * t**k
+
+    def compute_t(self, n=None, c=None):
+        "t parameter in Gegenbauer numbers generator"
+        return self._coeff['t']
+
+    def compute_ak_derivative_t(self, k, t):
+        A = 100.0
+        L =-0.4
+        d = k*scipy.special.gegenbauer(k, L)(t/2.0) + L*t*scipy.special.gegenbauer(k-1, L+1.0)(t/2.0)
+        d*= A*t**(k-1)
+        return d
 
 
 
 
-class OEDI_XCFunctional(Interpolation_XCFunctional):
-    """
- The New Class of Exchange-Correlation Functionals: 
- Interpolation Functionals with Oscillatory Exponential Decay.
 
- The decay in the interpolates is modelled by the oscillatory decay
-
- a_k = a_0 exp(-k B ) cos(k C)
-"""
-    def __init__(self, coeff, kmax):
-        super(OEDI_XCFunctional, self).__init__(coeff, kmax)
-
-    @abstractmethod
-    def compute_c(self, n):
-        pass
-
-    def fij(self, n): 
-        "The MBB-MBB0 Interpolation Functional with Oscillatory Exponential Decay (MBB/OEDI)"
-        a0 = self.compute_a0(n)
-        C  = self.compute_c(n)
-        B  = self.compute_b(a0, C)
-        # First term
-        f = a0 * MBB_XCFunctional.fij(n)
-        # Other terms
-        for k in range(1,self._kmax+1):
-            ak = a0 * math.exp(-k*B) * math.cos(k*C)
-            f += ak * self._fij_bbbk(n, k, eps=1.0e-20)
-        return f
-
-    def compute_b(self, a0, C):
-        "Decay rate"
-        r  = 2./a0 - 1.0
-        b  = 2.0*r*math.cos(C) +  math.sqrt(2.0 * (2.0 - r*r + r*r*math.cos(2.0*C)))
-        b /= 2.0*(r-1.0)
-        #b = r * math.cos(C) - math.sqrt(1.0 + r*r * math.sin(C))
-        #b = abs(b/ (1.0 + r))
-        b  = math.log(b)
-        return b
+#class OEDI_XCFunctional(Interpolation_XCFunctional):
+#    """
+# The New Class of Exchange-Correlation Functionals: 
+# Interpolation Functionals with Oscillatory Exponential Decay.
+#
+# The decay in the interpolates is modelled by the oscillatory decay
+#
+# a_k = a_0 exp(-k B ) cos(k C)
+#"""
+#    def __init__(self, coeff, kmax):
+#        super(OEDI_XCFunctional, self).__init__(coeff, kmax)
+#
+#    @abstractmethod
+#    def compute_c(self, n):
+#        pass
+#
+#    def fij(self, n): 
+#        "The MBB-MBB0 Interpolation Functional with Oscillatory Exponential Decay (MBB/OEDI)"
+#        a0 = self.compute_a0(n)
+#        C  = self.compute_c(n)
+#        B  = self.compute_b(a0, C)
+#        # First term
+#        f = a0 * MBB_XCFunctional.fij(n)
+#        # Other terms
+#        for k in range(1,self._kmax+1):
+#            ak = a0 * math.exp(-k*B) * math.cos(k*C)
+#            f += ak * self._fij_bbbk(n, k, eps=1.0e-20)
+#        return f
+#
+#    def compute_b(self, a0, C):
+#        "Decay rate"
+#        r  = 2./a0 - 1.0
+#        b  = 2.0*r*math.cos(C) +  math.sqrt(2.0 * (2.0 - r*r + r*r*math.cos(2.0*C)))
+#        b /= 2.0*(r-1.0)
+#        #b = r * math.cos(C) - math.sqrt(1.0 + r*r * math.sin(C))
+#        #b = abs(b/ (1.0 + r))
+#        b  = math.log(b)
+#        return b
 
 
 class A_V1_MEDI_XCFunctional(V1_MEDI_XCFunctional):
@@ -712,10 +754,12 @@ class A_V2_MEDI_XCFunctional(V2_MEDI_XCFunctional):
         K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
         xc_energy = -numpy.dot(K, P).trace()
         del K
+        p, c = x.unpack()
+        t = self.compute_t(p*p, c)
         # contributions from interpolates
         for k in range(1, self._kmax+1):
             K = float(k)
-            a_k = self.compute_ak(k, self._coeff['a0'])
+            a_k = self.compute_ak(k, t)
             a_k/= 2.0**(K+1.0)
             for n in range(0, k+2):
                 N = float(n)
@@ -736,10 +780,12 @@ class A_V2_MEDI_XCFunctional(V2_MEDI_XCFunctional):
         K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
         grad = -2.0*K
         del K
+        p, c = x.unpack()
+        t = self.compute_t(p*p, c)
         # contributions from the interpolates                                                  
         for k in range(1, self._kmax+1):
             K = float(k)
-            a_k = self.compute_ak(k, self._coeff['a0'])
+            a_k = self.compute_ak(k, t)
             a_k/= 2.0**(K+1.0)
             for n in range(0, k+2):
                 N = float(n)
@@ -766,10 +812,12 @@ class A_V2_MEDI_XCFunctional(V2_MEDI_XCFunctional):
         K  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
         grad = -2.0*K
         del K
+        p, c = x.unpack()
+        t = self.compute_t(p*p, c)
         # contributions from the interpolates                                                  
         for k in range(1, self._kmax+1):
             K = float(k)
-            a_k = self.compute_ak(k, self._coeff['a0'])
+            a_k = self.compute_ak(k, t)
             a_k/= 2.0**(K+1.0)
             for n in range(0, k+2):
                 N = float(n)
@@ -788,38 +836,37 @@ class A_V2_MEDI_XCFunctional(V2_MEDI_XCFunctional):
 
 
 
-class AB_OEDI_XCFunctional(OEDI_XCFunctional):
-    """
- The New Class of Exchange-Correlation Functionals: 
- Interpolation Functionals with Oscillatory Exponential Decay.
-"""
-    def __init__(self, coeff, kmax):
-        super(AB_OEDI_XCFunctional, self).__init__(coeff, kmax)
+#class AB_OEDI_XCFunctional(OEDI_XCFunctional):
+#    """
+# The New Class of Exchange-Correlation Functionals: 
+# Interpolation Functionals with Oscillatory Exponential Decay.
+#"""
+#    def __init__(self, coeff, kmax):
+#        super(AB_OEDI_XCFunctional, self).__init__(coeff, kmax)
+#
+#    @staticmethod
+#    def name(): return "Oscillatory Exponential Decay of Interpolates XC Functional for closed-shell systems"
+#
+#    @property
+#    def abbr(self): return "OEDI"
+#
+#    def compute_a0(self, n):
+#        "First coefficient in the interpolates from Pade approximant of universal function"
+#        a0 = self._coeff['a0']
+#        return a0
+#
+#    def compute_c(self, n):
+#        "Oscillation period"
+#        c = self._coeff['c']
+#        return c
 
-    @staticmethod
-    def name(): return "Oscillatory Exponential Decay of Interpolates XC Functional for closed-shell systems"
-
-    @property
-    def abbr(self): return "OEDI"
-
-    def compute_a0(self, n):
-        "First coefficient in the interpolates from Pade approximant of universal function"
-        a0 = self._coeff['a0']
-        return a0
-
-    def compute_c(self, n):
-        "Oscillation period"
-        c = self._coeff['c']
-        return c
-
-
-class Pade_MEDI_XCFunctional(MEDI_XCFunctional):
+class P_V2_MEDI_XCFunctional(A_V2_MEDI_XCFunctional):
     """
  The New Class of Exchange-Correlation Functionals: 
  Interpolation Functionals with Monotonous Exponential Decay: Pade approximant for universal function.
 """
     def __init__(self, coeff, kmax):
-        super(Pade_MEDI_XCFunctional, self).__init__(coeff, kmax)
+        super(P_V2_MEDI_XCFunctional, self).__init__(coeff, kmax)
 
     @staticmethod
     def name(): return "Monotonous Exponential Decay of Interpolates XC Functional for closed-shell systems"
@@ -827,70 +874,102 @@ class Pade_MEDI_XCFunctional(MEDI_XCFunctional):
     @property
     def abbr(self): return "MEDI"
 
-    #f(x,y) = 0.5+0.5*erf( (a0 + a*x + b*y + c*x*y + d*y*y)/(1.0 + e*x + f*y + g*x*y + h*y*y) )
-    #a               = -163.922         +/- 18.85        (11.5%)
-    #b               = -10.348          +/- 1.888        (18.24%)
-    #c               = 160.828          +/- 20.28        (12.61%)
-    #d               = 1.02675          +/- 0.2923       (28.47%)
-    #e               = -240.342         +/- 9.075        (3.776%)
-    #f               = 17.9345          +/- 1.195        (6.664%)
-    #g               = 55.4836          +/- 23.3         (42%)
-    #h               = -3.54743         +/- 0.134        (3.776%)
-    #a0              = 10.5995          +/- 1.064        (10.04%)
-
-    def compute_a0(self, n):
-        "First coefficient in the interpolates from Pade approximant of universal function"
-        # Pade parameters
-        A = self._coeff['A']
-        B = self._coeff['B']
-        A0, A1, A2, A3, A4 = A
-        B1, B2, B3, B4     = B
-
-        # Dynamic and non-dynamic correlation
+    def compute_t(self, n=None, c=None):
+        "t parameter in Gegenbauer numbers generator"
+        a0, a1, a2, a3, a4, b1, b2, b3, b4 = self._coeff['pade_coefficients']
         ns = n.copy(); ns[ns<0.0] = 0.0
-        I_n = (ns*(1.0 - ns)).sum()
-        I_d = numpy.sqrt(abs(ns*(1.0 - ns))).sum() / 2.0 - I_n
-        S   = numpy.sqrt(ns).sum()
-        N   = ns.sum()
-        #print(ns)
-        #print(N, S, I_n, I_d)
+        i_n = (ns*(1.0 - ns)).sum()
+        i_d = numpy.sqrt(abs(ns*(1.0 - ns))).sum() / 2.0 - i_n
+        i_n = abs(i_n)
+        i_d = abs(i_d)
+        N   = self._wfn.nalpha()
+        x = math.log(i_d/N + 1.0)
+        y = math.log(2.0 * i_n/N) if i_n > 0.0 else 1.e10
+        t = 0.5*math.erf( (a0 + a1*x + a2*y + a3*x*y + a4*y*y)/(1.0+b1*x + b2*y + b3*x*y + b4*y*y) ) + 0.5
+        return t
 
-        # Universal phase space
-        x = math.log(I_d/S + 1.0)
-        c = abs(2.0 * I_n/S)
-        if c < 1.0e-20: y = 1e100
-        else: y =-math.log(c)
 
-        # Coefficient
-        a_0 = (A0 + A1*x + A2*y + A3*x*y + A4*y*y)/\
-              (1.0+ B1*x + B2*y + B3*x*y + B4*y*y)
-        a_0 = 0.500*(math.erf(a_0) + 1.0)
-        return a_0
 
-    def __compute_a0_old(self, n):
-        "First coefficient in the interpolates from Pade approximant of universal function"
-        # Pade parameters
-        A = self._coeff['A']
-        B = self._coeff['B']
-        A0, A1, A2, A3, A5, A6 = A
-        B1, B2, B3, B5, B6     = B
 
-        # Dynamic and non-dynamic correlation
-        ns = n.copy(); ns[ns<0.0] = 0.0
-        I_n = (ns*(1.0 - ns)).sum()
-        I_d = numpy.sqrt(abs(ns*(1.0 - ns))).sum() / 2.0 - I_n
-        S   = numpy.sqrt(ns).sum()
-        N   = ns.sum()
-        #print(ns)
-        #print(N, S, I_n, I_d)
 
-        # Universal phase space
-        x = math.log(I_d/S + 1.0)
-        y =-math.log(abs(2.0 * I_n/S))
-
-        # Coefficient
-        a_0 = (A0 + A1*x + A2*y + A3*x*y + A5*y*y + A6*x*y*y)/\
-              (1.0+ B1*x + B2*y + B3*x*y + B5*y*y + B6*x*y*y)
-        a_0 = 0.500*(math.erf(a_0) + 1.0)
-        #print(a_0)
-        return a_0
+#class Pade_MEDI_XCFunctional(MEDI_XCFunctional):
+#    """
+# The New Class of Exchange-Correlation Functionals: 
+# Interpolation Functionals with Monotonous Exponential Decay: Pade approximant for universal function.
+#"""
+#    def __init__(self, coeff, kmax):
+#        super(Pade_MEDI_XCFunctional, self).__init__(coeff, kmax)
+#
+#    @staticmethod
+#    def name(): return "Monotonous Exponential Decay of Interpolates XC Functional for closed-shell systems"
+#
+#    @property
+#    def abbr(self): return "MEDI"
+#
+#    #f(x,y) = 0.5+0.5*erf( (a0 + a*x + b*y + c*x*y + d*y*y)/(1.0 + e*x + f*y + g*x*y + h*y*y) )
+#    #a               = -163.922         +/- 18.85        (11.5%)
+#    #b               = -10.348          +/- 1.888        (18.24%)
+#    #c               = 160.828          +/- 20.28        (12.61%)
+#    #d               = 1.02675          +/- 0.2923       (28.47%)
+#    #e               = -240.342         +/- 9.075        (3.776%)
+#    #f               = 17.9345          +/- 1.195        (6.664%)
+#    #g               = 55.4836          +/- 23.3         (42%)
+#    #h               = -3.54743         +/- 0.134        (3.776%)
+#    #a0              = 10.5995          +/- 1.064        (10.04%)
+#
+#    def compute_a0(self, n):
+#        "First coefficient in the interpolates from Pade approximant of universal function"
+#        # Pade parameters
+#        A = self._coeff['A']
+#        B = self._coeff['B']
+#        A0, A1, A2, A3, A4 = A
+#        B1, B2, B3, B4     = B
+#
+#        # Dynamic and non-dynamic correlation
+#        ns = n.copy(); ns[ns<0.0] = 0.0
+#        I_n = (ns*(1.0 - ns)).sum()
+#        I_d = numpy.sqrt(abs(ns*(1.0 - ns))).sum() / 2.0 - I_n
+#        S   = numpy.sqrt(ns).sum()
+#        N   = ns.sum()
+#        #print(ns)
+#        #print(N, S, I_n, I_d)
+#
+#        # Universal phase space
+#        x = math.log(I_d/S + 1.0)
+#        c = abs(2.0 * I_n/S)
+#        if c < 1.0e-20: y = 1e100
+#        else: y =-math.log(c)
+#
+#        # Coefficient
+#        a_0 = (A0 + A1*x + A2*y + A3*x*y + A4*y*y)/\
+#              (1.0+ B1*x + B2*y + B3*x*y + B4*y*y)
+#        a_0 = 0.500*(math.erf(a_0) + 1.0)
+#        return a_0
+#
+#    def __compute_a0_old(self, n):
+#        "First coefficient in the interpolates from Pade approximant of universal function"
+#        # Pade parameters
+#        A = self._coeff['A']
+#        B = self._coeff['B']
+#        A0, A1, A2, A3, A5, A6 = A
+#        B1, B2, B3, B5, B6     = B
+#
+#        # Dynamic and non-dynamic correlation
+#        ns = n.copy(); ns[ns<0.0] = 0.0
+#        I_n = (ns*(1.0 - ns)).sum()
+#        I_d = numpy.sqrt(abs(ns*(1.0 - ns))).sum() / 2.0 - I_n
+#        S   = numpy.sqrt(ns).sum()
+#        N   = ns.sum()
+#        #print(ns)
+#        #print(N, S, I_n, I_d)
+#
+#        # Universal phase space
+#        x = math.log(I_d/S + 1.0)
+#        y =-math.log(abs(2.0 * I_n/S))
+#
+#        # Coefficient
+#        a_0 = (A0 + A1*x + A2*y + A3*x*y + A5*y*y + A6*x*y*y)/\
+#              (1.0+ B1*x + B2*y + B3*x*y + B5*y*y + B6*x*y*y)
+#        a_0 = 0.500*(math.erf(a_0) + 1.0)
+#        #print(a_0)
+#        return a_0
