@@ -54,6 +54,7 @@ class Entry:
         self.description_full = description_full
 
 class UniversalSurface:
+    #
     par_descr_fci_sto3g_1 = """\
  Universal Surface at FCI/STO-3G level.
  Systems: 2el (H2), 4el (H4), 10el (H2O)
@@ -99,8 +100,67 @@ class UniversalSurface:
     par_pade_fci_sto3g_1.add_b(1, 2, 30.2229  )   # b5
     par_pade_fci_sto3g_1.add_b(0, 3, -0.269245)   # b6
 
+
+    #
+    par_descr_fci_sto3g_2 = """\
+ Universal Surface at FCI/STO-3G level.
+ Systems: 2el (H2), 4el (H4), 10el (H2O)
+"""
+    par_fulld_fci_sto3g_2 = """\
+
+function used for fitting: g(x,y)
+        g(x,y) = (a0 + a1*x + a2*y + a3*x*y + a4*y*y + a5*y*y*y + a6*y*y*y*y + a7*y**5 + a8*x*x*y)/(1.0 + b1*x + b2*y + b3*x*y + b4*y*y + b5*y*x*x + b6*x*x + b7*x*y*y + b8*x*x*y*y + b9*x*x*x*y)
+
+degrees of freedom    (FIT_NDF)                        : 42
+rms of residuals      (FIT_STDFIT) = sqrt(WSSR/ndf)    : 0.0131158
+variance of residuals (reduced chisquare) = WSSR/ndf   : 0.000172024
+
+
+Final set of parameters            Asymptotic Standard Error
+=======================            ==========================
+a0              = 0.180128         +/- 0.004829     (2.681%)
+a1              = -7.77423         +/- 1.696        (21.81%)
+a2              = 1.87765          +/- 0.647        (34.46%)
+a3              = -6.73461         +/- 2.739        (40.67%)
+a4              = 2.75464          +/- 1.005        (36.47%)
+a5              = 1.60223          +/- 0.5967       (37.24%)
+a6              = 0.372731         +/- 0.1429       (38.33%)
+a7              = 0.0299822        +/- 0.01182      (39.44%)
+b1              = -68.707          +/- 14.46        (21.04%)
+b2              = 1.35046          +/- 0.3228       (23.9%)
+b3              = -112.231         +/- 19.2         (17.1%)
+b4              = 0.342321         +/- 0.2692       (78.64%)
+a8              = 12.9053          +/- 14.26        (110.5%)
+b5              = -890.429         +/- 482.9        (54.23%)
+b6              = -1109.35         +/- 351.1        (31.65%)
+b7              = -45.5445         +/- 8.899        (19.54%)
+b8              = -32.6005         +/- 159.2        (488.4%)
+b9              = 1703.16          +/- 1828         (107.4%)
+"""
+    par_pade_fci_sto3g_2 = PadeApproximant_2D()
+    par_pade_fci_sto3g_2.add_a(0, 0, 0.180128)
+    par_pade_fci_sto3g_2.add_a(1, 0, -7.77423)
+    par_pade_fci_sto3g_2.add_a(0, 1, 1.87765)
+    par_pade_fci_sto3g_2.add_a(1, 1, -6.73461)
+    par_pade_fci_sto3g_2.add_a(0, 2, 2.75464)
+    par_pade_fci_sto3g_2.add_a(0, 3, 1.60223)
+    par_pade_fci_sto3g_2.add_a(0, 4, 0.372731)
+    par_pade_fci_sto3g_2.add_a(0, 5, 0.0299822)
+    par_pade_fci_sto3g_2.add_a(2, 1, 12.9053)
+    #
+    par_pade_fci_sto3g_2.add_b(1, 0, -68.707)
+    par_pade_fci_sto3g_2.add_b(0, 1, 1.35046)
+    par_pade_fci_sto3g_2.add_b(1, 1, -112.231)
+    par_pade_fci_sto3g_2.add_b(0, 2, 0.342321)
+    par_pade_fci_sto3g_2.add_b(2, 1, -890.429)
+    par_pade_fci_sto3g_2.add_b(2, 0, -1109.35)
+    par_pade_fci_sto3g_2.add_b(1, 2, -45.5445)
+    par_pade_fci_sto3g_2.add_b(2, 2, -32.6005)
+    par_pade_fci_sto3g_2.add_b(3, 1, 1703.16)
+   
     # parameterizations
     par_fci_sto3g_1 = Entry(par_pade_fci_sto3g_1, par_descr_fci_sto3g_1, par_fulld_fci_sto3g_1)
+    par_fci_sto3g_2 = Entry(par_pade_fci_sto3g_2, par_descr_fci_sto3g_2, par_fulld_fci_sto3g_2)
 
 
     
@@ -132,6 +192,8 @@ def dmft_solver(wfn, xc_functional=None,
 
     if   parameterization=='fci/sto-3g.1':
          par = surface.par_fci_sto3g_1
+    elif parameterization=='fci/sto-3g.2':
+         par = surface.par_fci_sto3g_2
     else: raise ValueError("Incorret Universal Surface Specification!")
     t = par.pade.value(x, y)
     if verbose: 
