@@ -130,6 +130,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libtest/esp_solver.cc
                        oepdev/libtest/test_custom.cc
 		       oepdev/libtest/points_collection3d.cc
+		       oepdev/libtest/ct_energy_benchmark_ol.cc
 		       # exports
 		       oepdev/export/export_dmtp.cc
 		       oepdev/export/export_cphf.cc

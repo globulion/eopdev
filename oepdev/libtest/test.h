@@ -95,7 +95,9 @@ class Test
 
    /// Test the cube file generation (oepdev::Field3D electrostatic potential and oepdev::Points3DIterator for cube collection)
    double test_points_collection3d(void);
-
+   
+   ///Test the Charge-transfer Energy Solver (benchmark method Otto-Ladik)
+   double test_ct_energy_benchmark_ol(void);
 
    /// Test the custom code (to be deprecated)
    double test_custom(void);
