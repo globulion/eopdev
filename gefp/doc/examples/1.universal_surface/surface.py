@@ -18,14 +18,14 @@ import scipy.optimize
 import sys
 sys.stdout.flush()
 
-__all__ = ['gen_surface', 'gen_surface_mbb', 'Data', 'OUTFILE']
+__all__ = ['gen_surface', 'gen_surface_mbb', 'UniversalSurface']
 
 # defaults
 OUTFILE='surface.dat'
 ERRFILE='error.dat'
 SYSTEM_ID=1
 
-class Data:
+class UniversalSurface:
     """\
 Data structure with the universal surface information.
 
@@ -85,7 +85,7 @@ Contains:
     @staticmethod
     def read(surface_file):
         "Read the data from the file"
-        obj = Data(outfile='none')
+        obj = UniversalSurface(outfile='none')
         data = numpy.mafromtxt(surface_file).data
         for i in data:
             obj.add(\
@@ -306,7 +306,7 @@ def scan_h2h2_pull_2h(x):
 def continue_if_runtime_error(func):
     "Do not stop the calculations when something goes wrong with full QM calculations"
     def wrapper(*args, **kwargs):
-        errfile = open(ERRFILE, 'a')              
+        errfile = open(ERRFILE, 'a')
         try:
             func(*args,**kwargs)
         except RuntimeError:
@@ -452,7 +452,7 @@ def gen_surface(f, kmax, g_0,
         errfile=ERRFILE):
     "Generate the universal surface"
     inp = prepare(do_fci=True)
-    data= Data(outfile)
+    data= UniversalSurface(outfile)
     err = open(errfile, 'a')
 
     if f.lower() == 'v1':
@@ -505,7 +505,7 @@ def gen_surface(f, kmax, g_0,
                    = run_dmft(wfn_i, 'v0', None, None, g_0, verbose)
         N_mbb      = int(dmft_mbb.N.sum())
         if (N_mbb != N): 
-            err.write("WARNING! %d-th system has invalid numbers of electrons!!! " % (i+1))
+            err.write("WARNING! The system no. --> %3d <-- has invalid numbers of electrons!!! " % SYSTEM_ID)
             err.write("N_fun = %d  N_mbb = %d\n" % (N, N_mbb))
         E_mbb      = dmft_mbb.E
         D_mbb      = dmft_mbb.D
@@ -541,7 +541,7 @@ def gen_surface(f, kmax, g_0,
 def gen_surface_mbb(g_0, verbose, outfile=OUTFILE):
     "Generate the data for MBB functional only"
     inp = prepare(do_fci=False)
-    data= Data(outfile)
+    data= UniversalSurface(outfile)
 
     for i in range(len(inp['mol'])):
         wfn_i = inp['wfn'][i]
