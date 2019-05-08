@@ -23,6 +23,7 @@ __all__ = ['gen_surface', 'gen_surface_mbb', 'Data', 'OUTFILE']
 # defaults
 OUTFILE='surface.dat'
 ERRFILE='error.dat'
+SYSTEM_ID=1
 
 class Data:
     """\
@@ -49,6 +50,7 @@ Contains:
         self._data_t1         = []  # Coefficient DMFT
         self._data_e_ref      = []  # Energy: Reference
         self._data_e_fun      = []  # Energy: DMFT
+        self._data_e_mbb      = []  # Energy: MBB
         self._data_i_d_ref    = []  # I_DYN scalar: Reference
         self._data_i_n_ref    = []  # I_NON scalar: Reference
         self._data_i_d_fun    = []  # I_DYN scalar: DMFT
@@ -148,9 +150,9 @@ Contains:
         dipole_ref = data[:,17:19+1]
         dipole_fun = data[:,20:22+1]
         dipole_mbb = data[:,23:25+1]
-        d_ref = numpy.linalg.norm(dipole_ref)
-        d_fun = numpy.linalg.norm(dipole_fun)
-        d_mbb = numpy.linalg.norm(dipole_mbb)
+        d_ref = numpy.linalg.norm(dipole_ref, axis=1)
+        d_fun = numpy.linalg.norm(dipole_fun, axis=1)
+        d_mbb = numpy.linalg.norm(dipole_mbb, axis=1)
         return d_ref, d_fun, d_mbb
 
     def write_last(self):
@@ -198,22 +200,28 @@ Contains:
                       self._data_t1               ,
                       self._data_e_ref            ,       
                       self._data_e_fun            ,
+                      self._data_e_mbb            ,
                       self._data_i_d_ref          ,
                       self._data_i_n_ref          ,
                       self._data_i_d_fun          ,
                       self._data_i_n_fun          ,
+                      self._data_i_d_mbb          ,
+                      self._data_i_n_mbb          ,
                       self._data_I_d_ref          ,
                       self._data_I_n_ref          ,
                       self._data_I_d_fun          ,
                       self._data_I_n_fun          ,
+                      self._data_I_d_mbb          ,
+                      self._data_I_n_mbb          ,
                       self._data_mom_dx_ref       ,
                       self._data_mom_dy_ref       ,
                       self._data_mom_dz_ref       ,
                       self._data_mom_dx_fun       ,
                       self._data_mom_dy_fun       ,
-                      self._data_mom_dz_fun       ,]
-
-
+                      self._data_mom_dz_fun       ,
+                      self._data_mom_dx_mbb       ,
+                      self._data_mom_dy_mbb       ,
+                      self._data_mom_dz_mbb       ,]
 
 # ---> Scan functions <--- #
 
@@ -227,63 +235,69 @@ def get_mol(xyzfile):
     return lmol
 
 def scan_h2_stretch(x):
+    global SYSTEM_ID
     mol = get_mol('xyz/h2.xyz')
     gefp.math.matrix.move_atom_along_bond(mol, 2, 1, x, units='ang')
-    mol.save_xyz_file('xyz/h2.s-sc.%03.3f.xyz' % x, True)
+    mol.save_xyz_file('xyz/ID_%03d_h2.s-sc.%03.3f.xyz' % (SYSTEM_ID, x), True)
     return mol
 
 def scan_xhn_stretch_1h(x, molname):
-    if   molname == 'h2o': moldir = 'xyz/h2o.xyz'
-    elif molname == 'h3o': moldir = 'xyz/h3o.xyz'
-    elif molname == 'nh3': moldir = 'xyz/nh3.xyz'
-    elif molname == 'ch4': moldir = 'xyz/ch4.xyz'
+    global SYSTEM_ID
+    if   molname == 'h2o': fname = 'h2o.xyz'
+    elif molname == 'h3o': fname = 'h3o.xyz'
+    elif molname == 'nh3': fname = 'nh3.xyz'
+    elif molname == 'ch4': fname = 'ch4.xyz'
     else: raise ValueError('This molecule is not included in surface yet!')
     mol = get_mol(moldir)
     gefp.math.matrix.move_atom_rotate_molecule(mol, [-30., -83., 43.1])
     gefp.math.matrix.move_atom_along_bond(mol, 2, 1, x, units='ang')
-    mol.save_xyz_file('%s.s-1h.%03.3f.xyz' % (moldir,x), True)
+    mol.save_xyz_file('xyz/ID_%03d_%s.s-1h.%03.3f.xyz' % (SYSTEM_ID, fname[:-4], x), True)
     return mol
 
 def scan_xhn_stretch_nh(x, molname):
+    global SYSTEM_ID
     if   molname == 'h2o': 
-         moldir = 'xyz/h2o.xyz'
+         fname  = 'h2o.xyz'
          atids  = [2,3]
     elif molname == 'h3o': 
-         moldir = 'xyz/h3o.xyz'
+         fname  = 'h3o.xyz'
          atids  = [2,3,4]
     elif molname == 'nh3': 
-         moldir = 'xyz/nh3.xyz'
+         fname  = 'nh3.xyz'
          atids  = [2,3,4]
     elif molname == 'ch4': 
-         moldir = 'xyz/ch4.xyz'
+         fname = 'ch4.xyz'
          atids  = [2,3,4,5]
     else: raise ValueError('This molecule is not included in surface yet!')
     mol = get_mol(moldir)
     gefp.math.matrix.move_atom_rotate_molecule(mol, [-30., -83., 43.1])
     gefp.math.matrix.move_atom_symmetric_stretch(mol, atids, 1, x, units='ang')
-    mol.save_xyz_file('%s.s-nh.%03.3f.xyz' % (moldir,x), True)
+    mol.save_xyz_file('xyz/ID_%03d_%s.s-nh.%03.3f.xyz' % (SYSTEM_ID, fname[:-4], x), True)
     return mol
 
 def scan_h4_symmetric_stretch(x):
+    global SYSTEM_ID
     mol = get_mol('xyz/h4.xyz')
     gefp.math.matrix.move_atom_scale_coordinates(mol, x)
     gefp.math.matrix.move_atom_rotate_molecule(mol, [-30., -83., 43.1])
-    mol.save_xyz_file('xyz/h4.s-sy.%03.3f.xyz' % (x), True)
+    mol.save_xyz_file('xyz/ID_%03d_h4.s-sy.%03.3f.xyz' % (x), True)
     return mol
 
 def scan_h2h2_pull_1h(x):
+    global SYSTEM_ID
     mol = get_mol('xyz/h2h2.xyz')
     gefp.math.matrix.move_atom_rotate_molecule(mol, [-30., -83., 43.1])
     gefp.math.matrix.move_atom_along_bond(mol, 4, 3, x, units='ang')
-    mol.save_xyz_file('xyz/h2h2.p-1h.%03.3f.xyz' % (x), True)
+    mol.save_xyz_file('xyz/ID_%03d_h2h2.p-1h.%03.3f.xyz' % (SYSTEM_ID, x), True)
     return mol
 
 def scan_h2h2_pull_2h(x):
+    global SYSTEM_ID
     mol = get_mol('xyz/h2h2.xyz')
     gefp.math.matrix.move_atom_rotate_molecule(mol, [-30., -83., 43.1])
     gefp.math.matrix.move_atom_along_bond(mol, 3, 1, x, units='ang')
     gefp.math.matrix.move_atom_along_bond(mol, 4, 1, x, units='ang')
-    mol.save_xyz_file('xyz/h2h2.p-2h.%03.3f.xyz' % (x), True)
+    mol.save_xyz_file('xyz/ID_%03d_h2h2.p-2h.%03.3f.xyz' % (SYSTEM_ID, x), True)
     return mol
 
 
@@ -307,6 +321,7 @@ def continue_if_runtime_error(func):
 @continue_if_runtime_error
 def put_input(do_fci, mols, wfns, refs, dips, cors, scan_func, **kwargs):
     "Run the RHF and reference methods on each molecule"
+    global SYSTEM_ID
     mol = scan_func(**kwargs)
     mols.append(mol)
     # RHF wavefunction
@@ -342,22 +357,9 @@ def put_input(do_fci, mols, wfns, refs, dips, cors, scan_func, **kwargs):
        I_n = 2.0 * numpy.dot(I_n, Da).trace()
        I_d = 2.0 * numpy.dot(I_d, Da).trace()
        cors.append([i_d, i_n, I_d, I_n])
+       #
+    SYSTEM_ID += 1
     return
-
-
-#def put_inputi(*args,**kwargs):
-#    errfile = open(ERRFILE, 'a')
-#    try:
-#        put_input(*args,**kwargs)
-#    except RuntimeError:
-#        print("FCI Iterations not converged")
-#        log = "%s" % str(kwargs)
-#        errfile.write(log + '\n')
-#
-#    errfile.close()
-#    psi4.core.clean()
-#    return
-
 
 def prepare(do_fci=True):
     "Prepare the input data: all the molecules, RHF wavefunctions and reference energies"
@@ -369,7 +371,7 @@ def prepare(do_fci=True):
     inp  = {'mol': mols, 'wfn': wfns, 'ref': refs, 'dip': dips, 'cor': cors}
 
     # 2-electron systems
-    X = numpy.linspace(-0.8, 3.0, 20) 
+    X = numpy.linspace(-0.8, 3.0, 2) 
     #X = numpy.array([-0.8, -0.6, -0.4, -0.2, -0. ,  0.2,  0.4,  0.6,  0.8,  1. ,  1.2,
     #    1.4,  1.6,  1.8,  2. ,  2.2,  2.4,  2.6,  2.8,  3. ])
     #X = [-0.4, -0.2, -0. ,  0.2,  0.4,  0.6, 0.8]
@@ -399,26 +401,26 @@ def prepare(do_fci=True):
         put_input(do_fci, mols, wfns, refs, dips, cors, scan_func=scan_xhn_stretch_nh, x=x, molname='ch4')
     return inp
 
-def run_dmft(wfn, f, kmax, t, g_0, verbose):
+def run_dmft(wfn, f, kmax, t, g_0, verbose, conv=0.000005):
     "Run DMFT calculations for a particular wavefunction"
     if   f.lower() == 'v0': func = gefp.density.functional.XCFunctional.create('MBB'                              )
     elif f.lower() == 'v1': func = gefp.density.functional.XCFunctional.create('A1MEDI', coeff={'a0':t}, kmax=kmax)
-    else:                   func = gefp.density.functional.XCFunctional.create('A2MEDI', coeff={'a0':t}, kmax=kmax)
+    else:                   func = gefp.density.functional.XCFunctional.create('A2MEDI', coeff={'t' :t}, kmax=kmax)
 
     dmft = gefp.density.dmft.DMFT.create(wfn, func, 
                            algorithm='proj-p', 
                            guess='hcore', 
                            step_mode='search')
     if f.lower() == 'v0':
-         dmft.run(maxit=300, conv=0.000005, g_0=g_0, verbose=verbose)
+         dmft.run(maxit=300, conv=conv, g_0=g_0, verbose=verbose)
     elif f.lower() == 'v1':
          dmft.set_gradient_mode(num=True)
-         dmft.run(maxit=300, conv=0.000005, g_0=g_0, verbose=verbose)
+         dmft.run(maxit=300, conv=conv, g_0=g_0, verbose=verbose)
     elif f.lower() == 'v2':
          dmft.set_gradient_mode(approx=True)                   
          dmft.run(maxit=300, conv=0.000010, g_0=g_0, verbose=verbose)
          dmft.set_gradient_mode(exact=True)
-         dmft.run(maxit=300, conv=0.000005, g_0=g_0, verbose=verbose, restart=True)
+         dmft.run(maxit=300, conv=conv, g_0=g_0, verbose=verbose, restart=True)
     else: raise ValueError("Only 'V0' - (MBB), 'V1' - (A1MEDI) and 'V2' - (A2MEDI) are available")
     return func, dmft
 
@@ -445,10 +447,13 @@ def obj(par, inp, f, kmax, g_0):
     return error
 
 def gen_surface(f, kmax, g_0, 
-        tol=0.0000000000001, ftol=0.00000001, maxiter=100, disp=True, iprint=4, verbose=False):
+        tol=0.0000000000001, ftol=0.00000001, maxiter=100, disp=True, iprint=4, verbose=False,
+        outfile=OUTFILE,
+        errfile=ERRFILE):
     "Generate the universal surface"
     inp = prepare(do_fci=True)
-    data= Data()
+    data= Data(outfile)
+    err = open(errfile, 'a')
 
     if f.lower() == 'v1':
        coeffs = [0.50]
@@ -479,12 +484,12 @@ def gen_surface(f, kmax, g_0,
                    bounds=bounds)
 
         t_i = r_i.x[0]
-        print(" Fitted parameter: %14.6f", t_i)
+        print(" Fitted parameter: %14.6f" % t_i)
 
         # Run DMFT for the fitted parameter
         func_fun, dmft_fun \
-                   = run_dmft(wfn_i, f, kmax, t_i, g_0, verbose)
-        N          = int(wfn_i.nalpha())
+                   = run_dmft(wfn_i, f, kmax, t_i, g_0, verbose, conv=1.0e-9)
+        N          = int(dmft_fun.N.sum())
         E_fun      = dmft_fun.E
         D_fun      = dmft_fun.D
         d_fun      = dmft_fun.dipole
@@ -498,6 +503,10 @@ def gen_surface(f, kmax, g_0,
         # Run MBB
         func_mbb, dmft_mbb \
                    = run_dmft(wfn_i, 'v0', None, None, g_0, verbose)
+        N_mbb      = int(dmft_mbb.N.sum())
+        if (N_mbb != N): 
+            err.write("WARNING! %d-th system has invalid numbers of electrons!!! " % (i+1))
+            err.write("N_fun = %d  N_mbb = %d\n" % (N, N_mbb))
         E_mbb      = dmft_mbb.E
         D_mbb      = dmft_mbb.D
         d_mbb      = dmft_mbb.dipole
@@ -513,7 +522,7 @@ def gen_surface(f, kmax, g_0,
         data.add(n_alpha   = N, 
                  e_ref     = ref_i, 
                  e_fun     = E_fun, 
-                 e_mbb     = E_mbb
+                 e_mbb     = E_mbb,
                  t1        = t_i, 
                  i_d_ref   = i_d_ref, i_n_ref = i_n_ref, I_d_ref = I_d_ref, I_n_ref = I_n_ref,
                  i_d_fun   = i_d_fun, i_n_fun = i_n_fun, I_d_fun = I_d_fun, I_n_fun = I_n_fun,
@@ -524,12 +533,15 @@ def gen_surface(f, kmax, g_0,
 
         # Save
         data.write_last()
+
+        # Close all files
+        err.close()
     return
 
-def gen_surface_mbb(g_0, verbose):
+def gen_surface_mbb(g_0, verbose, outfile=OUTFILE):
     "Generate the data for MBB functional only"
     inp = prepare(do_fci=False)
-    data= Data()
+    data= Data(outfile)
 
     for i in range(len(inp['mol'])):
         wfn_i = inp['wfn'][i]

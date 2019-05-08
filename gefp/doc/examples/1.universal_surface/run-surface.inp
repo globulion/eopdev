@@ -22,4 +22,5 @@ set
 
 gen_surface(f   ='v2',
             kmax= 30,
-            g_0 = 0.4)
+            g_0 = 0.01,
+            outfile='test.dat', verbose=True)
