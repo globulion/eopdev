@@ -131,13 +131,16 @@ class OEProp:
         # dipole integrals
         T = [x.to_array(dense=True) for x in dmft._mints.ao_dipole()]
         # inverse of overlap matrix
-        Si= numpy.linalg.inv(dmft._S)
+        #Si= numpy.linalg.inv(dmft._S)
         # LCAO-MO SCF matrix
         Ca= dmft._Ca
         # density mattix in MO-SCF basis
         Dmo = dmft.D
         # density matrix in AO basis
-        Dao = numpy.linalg.multi_dot([Si, Ca, Dmo, Ca.T, Si])
+        L = numpy.dot(Ca.T, dmft._S)
+        R = numpy.dot(L.T, numpy.linalg.inv(numpy.dot(L, L.T)))
+        #Dao = numpy.linalg.multi_dot([Si, Ca, Dmo, Ca.T, Si])
+        Dao = numpy.linalg.multi_dot([R.T, Dmo, R])
         # calculate: dipole moment
         dip = numpy.array([2.0 * numpy.dot(tx, Dao).trace() for tx in T], dtype=numpy.float64)
         return dip
