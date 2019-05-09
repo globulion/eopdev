@@ -14,11 +14,14 @@
 """
 import gefp
 import numpy, math, psi4
+import scipy.stats
 import scipy.optimize
 import sys
 sys.stdout.flush()
 
-__all__ = ['gen_surface', 'gen_surface_mbb', 'UniversalSurface']
+__all__ = ['UniversalSurface', 
+           'gen_surface', 'gen_surface_mbb', 
+           'fit_surface', 'plot_surface']
 
 # defaults
 OUTFILE='surface.dat'
@@ -223,6 +226,162 @@ Contains:
                       self._data_mom_dy_mbb       ,
                       self._data_mom_dz_mbb       ,]
 
+
+# ---> Fitting Functions <--- #
+
+def read_xyz(data, func_t=None):
+    "Read target variables from surface file data"
+    N   = data[:,0 ]
+    i_d = data[:,9 ]
+    i_n = data[:,10]
+    X   = numpy.log(i_d/N + 1.0)
+    Y   = numpy.log(i_n/N * 2.0)
+    Z   = data[:,1 ]
+    if func_t is not None: Z = func_t(Z)
+    return X, Y, Z
+
+def construct_pade(par, a_ord, b_ord):
+    "Construct 2D Pade Approximant from list of parameters and order lists"
+    pade = gefp.core.driver.PadeApproximant_2D()
+    na  = len(a_ord)
+    for i, ia in enumerate(a_ord):   
+        ix = ia[0]
+        iy = ia[1]
+        a  = par[i]
+        pade.add_a(ix, iy, a)
+    for i, ib in enumerate(b_ord):   
+        ix = ib[0]
+        iy = ib[1]
+        b  = par[na+i]
+        pade.add_b(ix, iy, b)
+    return pade
+
+def compute_error_pade(X, Y, Z, pade):
+    "Compute error from Z and Pade-approximated value"
+    assert len(X) == len(Y) == len(Z)
+    error = 0.0
+    for i in range(len(Z)):
+        error += (Z[i] - pade.value(X[i], Y[i]))**2
+    error/= len(Z)
+    error = math.sqrt(error)
+    return error
+
+class PlotData:
+    "Container to handle surface target data"
+    def __init__(self, X, Y, Z, pade, par=None, Z_opt=None):
+        self.par = par
+        self.pade = pade
+        self.X = X
+        self.Y = Y
+        self.Z = Z
+        self.Z_opt = Z_opt
+
+def fit_surface(surface_file, a_ord, b_ord, func_t=None, 
+                ftol=1e-8, tol=1e-8, maxiter=2000, method='slsqp', bounds=None):
+    "Fit the universal surface with 2D Pade approximant"
+    def sobj(par, data, a_ord, b_ord, func_t):
+        X, Y, Z = read_xyz(data, func_t)
+        pade    = construct_pade(par, a_ord, b_ord)
+        error   = compute_error_pade(X, Y, Z, pade)
+        return error
+
+    # read data
+    data = UniversalSurface.read(surface_file).data
+
+    # construct a guess parameter list
+    par_guess = []
+    for ia in a_ord: 
+        if   len(ia) == 2: a = 0.0
+        elif len(ia) == 3: a = ia[-1]
+        else: raise ValueError("Invalid length in a_ord entry")
+        par_guess.append(a)
+    for ib in b_ord: 
+        if   len(ib) == 2: b = 0.0
+        elif len(ib) == 3: b = ib[-1]
+        else: raise ValueError("Invalid length in b_ord entry")
+        par_guess.append(b)
+
+    # fit the Pade coefficients
+    options = {'disp': True, 'iprint': 4, 'ftol': ftol, 'maxiter': maxiter}
+    r = scipy.optimize.minimize(sobj, par_guess, args=(data, a_ord, b_ord, func_t), method=method,
+                                bounds = bounds, tol = tol, options = options)
+    par_opt = r.x
+    pade_opt = construct_pade(par_opt, a_ord, b_ord)
+
+    # compare
+    X, Y, Z = read_xyz(data, func_t)
+    Z_opt = Z.copy()
+    for i in range(len(Z)):
+        Z_opt[i] = pade_opt.value(X[i], Y[i])
+
+    chi2 = scipy.stats.chisquare(Z, Z_opt).statistic
+    pr   = scipy.stats.pearsonr(Z, Z_opt)[0]
+    r2   = pr**2
+    print(" Chi2 = %14.6E" % chi2)
+    print(" R²   = %14.6E" % r2)
+
+    return PlotData(X, Y, Z, pade_opt, par=par_opt, Z_opt=Z_opt)
+
+def plot_surface(plotdata, outfile='fit', ext='svg'):
+    "Plot the universal surface"
+    import matplotlib
+    from mpl_toolkits.mplot3d import Axes3D
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    from matplotlib.ticker import LinearLocator, FormatStrFormatter
+
+    X = plotdata.X
+    Y = plotdata.Y
+    Z = plotdata.Z
+
+    fig = plt.figure(figsize=(14,14))
+    ax = fig.gca(projection='3d')
+    
+    # Make data.
+    p = 100
+    X_= numpy.linspace(X.min(), X.max(), p)
+    Y_= numpy.linspace(Y.min(), Y.max(), p)
+    X_, Y_ = numpy.meshgrid(X_, Y_)
+    Z_ = X_.copy(); Z_.fill(0.0)
+    for i in range(p):
+        for j in range(p):
+            x = X_[i,j]; y = Y_[i,j]
+            v = plotdata.pade.value(x, y)
+            Z_[i,j] = v #if v <= Z.max() else numpy.NaN
+    #Z_[Z_>Z.max()] = numpy.NaN
+    
+    # Plot the surface.
+    surf = ax.plot_surface(X_, Y_, Z_, cmap=cm.coolwarm, alpha=0.5,
+                           rstride=8, cstride=8,
+                           linewidth=0, antialiased=False)
+   
+    # Plot the points
+    pts  = ax.scatter(X, Y, Z, zdir='z', s=20, c=None, depthshade=False)
+    
+    # Customize the z axis.
+    ax.set_zlim(Z.min(), Z.max())
+    ax.zaxis.set_major_locator(LinearLocator(10))
+    ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
+    
+    # Add a color bar which maps values to colors.
+    cv = numpy.linspace(Z.min(), Z.max(), 9, endpoint=True)
+    c=plt.colorbar(surf, shrink=0.4, aspect=9, norm=matplotlib.colors.Normalize(vmin=Z.min(), vmax=Z.max()),
+                 boundaries=cv,
+                 ticks=cv)
+    c.set_clim(Z.min(), Z.max())
+    
+    ax.set_xlabel("Dynamic")
+    ax.set_ylabel("Non-Dynamic")
+    ax.set_zlabel("DMFT Parameter")
+    
+    ax.view_init(elev=17, azim=42)
+    
+    plt.savefig("%s.%s" % (outfile, ext.lower()), format=ext.lower())
+    plt.show()
+    return
+
+
+
 # ---> Scan functions <--- #
 
 def get_mol(xyzfile):
@@ -306,15 +465,14 @@ def scan_h2h2_pull_2h(x):
 def continue_if_runtime_error(func):
     "Do not stop the calculations when something goes wrong with full QM calculations"
     def wrapper(*args, **kwargs):
-        errfile = open(ERRFILE, 'a')
         try:
             func(*args,**kwargs)
         except RuntimeError:
             print("Reference method iterations not converged")
+            errfile = open(ERRFILE, 'a')
             log = "%s" % str(kwargs)
             errfile.write(log + '\n')
-                                                  
-        errfile.close()
+            errfile.close()
         psi4.core.clean()
     return wrapper
 
@@ -371,7 +529,7 @@ def prepare(do_fci=True):
     inp  = {'mol': mols, 'wfn': wfns, 'ref': refs, 'dip': dips, 'cor': cors}
 
     # 2-electron systems
-    X = numpy.linspace(-0.8, 3.0, 2) 
+    X = numpy.linspace(-0.8, 3.0, 20) 
     #X = numpy.array([-0.8, -0.6, -0.4, -0.2, -0. ,  0.2,  0.4,  0.6,  0.8,  1. ,  1.2,
     #    1.4,  1.6,  1.8,  2. ,  2.2,  2.4,  2.6,  2.8,  3. ])
     #X = [-0.4, -0.2, -0. ,  0.2,  0.4,  0.6, 0.8]
@@ -453,7 +611,6 @@ def gen_surface(f, kmax, g_0,
     "Generate the universal surface"
     inp = prepare(do_fci=True)
     data= UniversalSurface(outfile)
-    err = open(errfile, 'a')
 
     if f.lower() == 'v1':
        coeffs = [0.50]
@@ -505,8 +662,10 @@ def gen_surface(f, kmax, g_0,
                    = run_dmft(wfn_i, 'v0', None, None, g_0, verbose)
         N_mbb      = int(dmft_mbb.N.sum())
         if (N_mbb != N): 
-            err.write("WARNING! The system no. --> %3d <-- has invalid numbers of electrons!!! " % SYSTEM_ID)
+            err = open(errfile, 'a')
+            err.write("WARNING! The system no. --> %3d <-- has invalid numbers of electrons!!! " % (i+1))
             err.write("N_fun = %d  N_mbb = %d\n" % (N, N_mbb))
+            err.close()
         E_mbb      = dmft_mbb.E
         D_mbb      = dmft_mbb.D
         d_mbb      = dmft_mbb.dipole
@@ -533,9 +692,6 @@ def gen_surface(f, kmax, g_0,
 
         # Save
         data.write_last()
-
-        # Close all files
-        err.close()
     return
 
 def gen_surface_mbb(g_0, verbose, outfile=OUTFILE):
