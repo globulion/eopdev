@@ -130,17 +130,10 @@ class OEProp:
         "Compute dipole moment"
         # dipole integrals
         T = [x.to_array(dense=True) for x in dmft._mints.ao_dipole()]
-        # inverse of overlap matrix
-        #Si= numpy.linalg.inv(dmft._S)
-        # LCAO-MO SCF matrix
-        Ca= dmft._Ca
         # density mattix in MO-SCF basis
-        Dmo = dmft.D
+        Dmo = dmft.Dmo
         # density matrix in AO basis
-        L = numpy.dot(Ca.T, dmft._S)
-        R = numpy.dot(L.T, numpy.linalg.inv(numpy.dot(L, L.T)))
-        #Dao = numpy.linalg.multi_dot([Si, Ca, Dmo, Ca.T, Si])
-        Dao = numpy.linalg.multi_dot([R.T, Dmo, R])
+        Dao = dmft.Dao
         # calculate: dipole moment
         dip = numpy.array([2.0 * numpy.dot(tx, Dao).trace() for tx in T], dtype=numpy.float64)
         return dip
@@ -149,11 +142,68 @@ class OEProp:
 
 class DMFT(ABC, ElectronCorrelation, OEProp):
     """\
- The Density Matrix Functional Theory.
+ ---------------------------------------------------------------------------------------------
+ The Density Matrix Functional Theory. Abstract Base.
+
+ ---------------------------------------------------------------------------------------------
+
+ Usage:
+
+  # init
+  dmft = DMFT.create(wfn, 
+                         xc_functional = DMFT.default_xc_functional,
+                         v_ext         = DMFT.default_v_ext        ,
+                         guess         = DMFT.default_guess        ,
+                         algorithm     = DMFT.default_algorithm    ,
+                         step_mode     = DMFT.default_step_mode    ,        **kwargs)
+
+  # options
+  dmft.set_gradient_mode(exact=False, approx=False, num=False)
+
+  # run
+  dmft.run(conv    = DMFT.default_convergence,
+           maxit   = DMFT.default_maxiter    ,
+           verbose = DMFT.default_verbose_run,
+           g_0     = DMFT.default_g0         ,
+           g       = DMFT.default_g          ,
+           restart = False                   , **kwargs):
+
+
+
+ Options (init):
+  o wfn           - psi4.core.Wavefunction object. Must contain SCF LCAO-MO coefficients.
+  o xc_functional - XCFunctional object. Default: HF functional object.
+  o v_ext         - External potential in AO basis. Default is no potential.
+  o guess         - Guess for the density: 
+                      o 'hcore'   - diagonalize Hcore Hamiltonian  (default)
+                      o 'current' - use the current density matrix stored in 'wfn'
+  o algorithm     - DMFT algorithm to converge the density matrix.
+                      o 'proj-d'  - Projected gradient algorithm on D-sets. Suitable only for HF functional.
+                      o 'proj-p'  - Projected gradient algorithm on P-sets. Suitable for any DMFT functional (default)
+                      o 'nc'      - Direct optimization within n and C parameter space. Suitable only for HF functional.
+                      o 'pc'      - Direct optimization within p and C parameter space. Not suitable for any functional.
+  o step_mode     - How to search for next guess: estimate step length in steepest descent:
+                      o 'search'  - Compute from two last density guesses (default)
+                      o 'constant'- Apply constant step.
+
+ Options (optional setup): relevant only for 'proj-p' algorithm
+  o exact         - Compute exact derivatives of XC energy wrt P
+  o approx        - Compute approximate derivatives of XC energy wrt P
+  o num           - Compute numerically derivatives of XC energy wrt P
+  If using this, set only one of the above three to True.
+
+ Options (run):
+  o conv          - Energy convergence (default 0.00001)
+  o maxit         - Maximum number of iterations (default 100)
+  o verbose       - Print detailed information or not (default True)
+  o g0            - Initial SD step size (default 0.0001)
+  o g             - Constant SD step size (default 0.01)
+  o restart       - Wheather to restart the calculations or not (default False)
+ ---------------------------------------------------------------------------------------------
 """
     # Defaults
     default_xc_functional = XCFunctional.create('hf') # Exchange-Correlation Functional
-    default_algorithm     = 'proj-d'                  # Projected Gradient Algorithm Abbreviation            
+    default_algorithm     = 'proj-p'                  # Projected Gradient Algorithm Abbreviation            
     default_convergence   =  0.00001                  # Convergence in total energy [A.U.]
     default_maxiter       =  100                      # Maximum number of iterations
     default_verbose_run   =  True                     # Show additional information?
@@ -161,6 +211,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
     default_v_ext         =  None                     # External 1-electron potential
     default_guess         = 'hcore'                   # Guess for ODPM
     default_step_mode     = 'search'                  # Steepest-Descents step (simple line search)
+    default_g             =  0.01                     # Constant Steepest-Descent step (relevant if step_mode is 'constant')
 
     def __init__(self, wfn, xc_functional, v_ext=default_v_ext, guess=default_guess, step_mode=default_step_mode):
         "Initialize"
@@ -189,6 +240,12 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._H_mo                     = None         # MO-SCF Core Hamiltonian + External Potential Matrix
         self._step_mode                = None         # Mode of Steepest-Descents Minimization Steps
         self._mode_xc_gradient         = None         # Mode of E_XC gradient
+
+        self._iteration                = None         # Current Iteration Number
+        self._E_new                    = None         # Current Total Energy
+        self._E_old                    = None         # Total Energy from Previous Iteration
+        self._x_old_1                  = None         # Current Density Guess
+        self._x_old_2                  = None         # Density Guess from Previous Iteration
 
         # Initialize all variables
         self.__common_init(wfn, xc_functional, v_ext, guess, step_mode)
@@ -226,13 +283,14 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
     def run(self, conv    = default_convergence, 
                   maxit   = default_maxiter    , 
                   verbose = default_verbose_run, 
-                  g_0     = default_g0         , **kwargs):
+                  g_0     = default_g0         , 
+                  g       = default_g          ,
+                  restart = False              , **kwargs):
         """\
  Run the DMFT calculations.
 """
-
         # Run!
-        success = self._run_dmft(conv, maxit, verbose, g_0, **kwargs)
+        success = self._run_dmft(conv, maxit, verbose, g_0, g, restart, **kwargs)
 
         # Crash?
         if not success: 
@@ -259,10 +317,24 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
     def E(self): 
         "Total Energy"
         return self._current_energy
+
     @property
-    def D(self): 
-        "1-Particle Density Matrix in AO basis"
+    def D(self): #TODO: make it always return in MO basis
+        "1-Particle Density Matrix in AO or MO basis"
         return self._current_density.matrix()
+    @property
+    def Dmo(self):
+        return self._current_density.matrix()
+    @property
+    def Dao(self):
+        "One-Particle Density Matrix in AO Basis"
+        Dmo = self.Dmo
+        L = numpy.dot(self._Ca.T, self._S)
+        R = numpy.dot(L.T, numpy.linalg.inv(numpy.dot(L, L.T)))
+        #Dao = numpy.linalg.multi_dot([Si, Ca, Dmo, Ca.T, Si])
+        Dao = numpy.linalg.multi_dot([R.T, Dmo, R])
+        return Dao
+
     @property
     def C(self): 
         "NO Orbitals"
@@ -285,7 +357,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
     @property
     def dipole(self):
         "Dipole Moment"
-        raise NotImplementedError
+        return self.dipole_moment(self)
 
 
     @property
@@ -302,10 +374,8 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
 
     # --- Protected Interface --- #
 
-    def _run_dmft(self, conv, maxit, verbose, g_0, **kwargs):
+    def _run_dmft(self, conv, maxit, verbose, g_0, g, restart, **kwargs):
         "DMFT Iterations"
-
-        restart = True if 'restart' in kwargs.keys() else False
 
         if verbose and not restart: 
            print(" Running %s:%s/%s" % (self.abbr, self._xc_functional.abbr, self._bfs_name))
@@ -342,7 +412,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         while stop is False:
 
             # [4.1] New guess
-            x_new = self._step(self._x_old_1, self._x_old_2)
+            x_new = self._step(self._x_old_1, self._x_old_2, g)
             x_new = self._density(x_new)
 
             # [4.2] Current energy
@@ -364,7 +434,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
             self._iteration += 1
             self._E_old      = self._E_new
             self._x_old_2    = self._x_old_1.copy()
-            self._x_old_1    = x_new  .copy()
+            self._x_old_1    = x_new.copy()
         
         # [5] Finish
         if verbose and success:
@@ -476,7 +546,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         pass
 
     @abstractmethod
-    def _step(self, x1, x2):
+    def _step(self, x1, x2, g):
         "Steepest-descents further step"
         pass
 
@@ -503,7 +573,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._bfs = self._wfn.basisset()
         # Integral calculator
         self._mints = psi4.core.MintsHelper(self._bfs)
-        #print("Computing AO ERI")
+        #print("Computing AO ERI") -> don't do this: too expensive and unnecessary
         #self._ao_eri= self._mints.ao_eri()
         #print("Done!")
         # JK object
@@ -674,6 +744,10 @@ class DMFT_AO(DMFT):
         # move it to base class after all OPDM's will be stored in AO basis, or return by self.D as AO basis matrix
         raise NotImplementedError
 
+    @property
+    def Dmo(self):  #TODO: as above
+        raise NotImplementedError
+
 
     # --- Implementation (Protected Interface) --- #
 
@@ -697,7 +771,7 @@ class DMFT_AO(DMFT):
                                        ignore_large_n=False)
         return n, c
 
-    def _step(self, x1, x2):
+    def _step(self, x1, x2, g):
         "Steepest-descents step. Back-transforms to OAO basis for simplicity"
         n1, c1 = x1.unpack() 
         n2, c2 = x2.unpack()
@@ -712,7 +786,6 @@ class DMFT_AO(DMFT):
         gradient_1 = self._gradient(Guess.create(n1, c1, None, 'nc'))
         gradient_2 = self._gradient(Guess.create(n2, c2, None, 'nc'))
                                                                                        
-        g = 0.1
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x_old_1 - x_old_2, gradient_1 - gradient_2)
         x_new = x_old_1 - g * gradient_1
@@ -747,11 +820,6 @@ class DMFT_MO(DMFT):
     def __init__(self, wfn, xc_functional, v_ext, guess, step):
         super(DMFT_MO, self).__init__(wfn, xc_functional, v_ext, guess, step)
 
-    @property
-    def dipole(self):
-        "Dipole Moment"
-        return self.dipole_moment(self)
-
     # --- Implementation (Protected Interface) --- #
 
     def _compute_hcore_energy(self):
@@ -778,12 +846,12 @@ class DMFT_MO(DMFT):
                                        ignore_large_n=True) # change to False!
         return n, c
 
-    def _step(self, x1, x2):
+    def _step(self, x1, x2, g):
         "Steepest-descents step."
         gradient_1 = self._gradient(x1)
         gradient_2 = self._gradient(x2)
 
-        g = 0.0000000001
+        #g = 0.0000000001
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
         x_new = x1 - g * gradient_1
@@ -850,6 +918,7 @@ class DMFT_NC(DMFT_AO):
 
 
 class DMFT_PC(DMFT_MO):
+    "This does not work well at all. -> Do not use it."
     def __init__(self, wfn, xc_functional, v_ext, guess, step):
         super(DMFT_PC, self).__init__(wfn, xc_functional, v_ext, guess, step)
         self.g = 0.1
@@ -864,20 +933,20 @@ class DMFT_PC(DMFT_MO):
 
     # --- Implementation (Protected Interface) --- #
 
-    def _minimizer(self, x):#OK
+    def _minimizer(self, x):
         "Minimizer function: Total Energy"
         E_H  = self._compute_no_exchange_energy()
         E_XC = self._xc_functional.energy_pc(x)
         E    = E_H + E_XC
         return E
 
-    def _guess(self):#OK
+    def _guess(self):
         "Initial guess"
         p = numpy.sqrt(self._correct_negative_occupancies(self._current_occupancies))
         x = Guess.create(n=p, c=self._current_orbitals, t='nc') 
         return x
 
-    def _density(self, x):#OK
+    def _density(self, x):
         "1-particle density matrix in MO basis: P-projection of PC set"
         p, c = x.unpack()
         p, c = density_matrix_projection(p, c, numpy.identity(len(p)), self._np, type='p')
@@ -888,13 +957,13 @@ class DMFT_PC(DMFT_MO):
         new_guess = Guess.create(n=p, c=self._current_orbitals, t='nc')
         return new_guess
 
-    def _gradient(self, x):#OK
+    def _gradient(self, x):
         "Gradient"
         gradient = self._compute_no_exchange_gradient_pc(x) #OK
         gradient+= self._xc_functional.gradient_pc(x)
         return gradient
 
-    def _step(self, x1, x2):#OK
+    def _step(self, x1, x2, g):
         "Steepest-descents step."
 
         #x2 = self.__rearrange_eigenpairs(x2, x1)
@@ -911,7 +980,7 @@ class DMFT_PC(DMFT_MO):
         x_new.update()
         return x_new
 
-    def _step_0(self, x0, g0):#OK
+    def _step_0(self, x0, g0):
         "Steepest-descents step."
         gradient_2 = self._gradient(x0)
         x_new = x0 - g0 * gradient_2
@@ -927,7 +996,6 @@ class DMFT_PC(DMFT_MO):
         p2, c2 = rearrange_eigenpairs(p2, c2, c1)
         x2_new = Guess.create(p2, c2, None, 'nc')
         return x2_new
-
 
 
 
@@ -976,12 +1044,12 @@ class DMFT_ProjD(DMFT_MO):
         gradient+= self._xc_functional.gradient_D(x)
         return gradient
 
-    def _step(self, x1, x2):
+    def _step(self, x1, x2, g):
         "Steepest-descents step."
         gradient_1 = self._gradient(x1)
         gradient_2 = self._gradient(x2)
 
-        g = 0.5
+        #g = 0.5
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
         x_new = x1 - g * gradient_1

@@ -352,8 +352,8 @@ def plot_surface(plotdata, outfile='fit', ext='svg'):
     
     # Plot the surface.
     surf = ax.plot_surface(X_, Y_, Z_, cmap=cm.coolwarm, alpha=0.5,
-                           rstride=8, cstride=8,
-                           linewidth=0, antialiased=False)
+                           rstride=2, cstride=2,
+                           linewidth=1, antialiased=False)
    
     # Plot the points
     pts  = ax.scatter(X, Y, Z, zdir='z', s=20, c=None, depthshade=False)
