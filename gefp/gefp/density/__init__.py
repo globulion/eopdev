@@ -9,8 +9,6 @@ from . import partitioning
 from . import parameters
 from . import functional
 from . import dmft
-from . import scf
-from . import dft
 
-__all__ = ["opdm", "partitioning", "dmft", "functional", "parameters", "scf", "dft"]
+__all__ = ["opdm", "partitioning", "dmft", "functional", "parameters"]
 __author__="Bartosz Błasiak"

@@ -11,7 +11,6 @@ import numpy
 import numpy.linalg
 import psi4
 import oepdev
-from .scf import SCF
 from .opdm import Density
 
 __all__ = ["DensityDecomposition"]
@@ -727,8 +726,6 @@ class DensityDecomposition(Density):
                 rij = math.sqrt((xi-xj)**2 + (yi-yj)**2 + (zi-zj)**2)
                 energy += Zi*Zj/rij
         return energy
-
-
 
 
 
