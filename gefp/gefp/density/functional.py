@@ -13,7 +13,7 @@ import oepdev
 import psi4
 import scipy.special
 from abc import ABC, abstractmethod
-from .partitioning import Density
+from .opdm import Density
 from .parameters import Guess
 from ..math.matrix import matrix_power, matrix_power_derivative
 

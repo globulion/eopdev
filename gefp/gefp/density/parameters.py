@@ -6,12 +6,17 @@
 """
 
 from abc import ABC, abstractmethod
-from .partitioning import Density
+from .opdm import Density
 import numpy
 
-__all__ = ["Guess", "rearrange_eigenvectors"]
+__all__ = ["Guess"]
 
 class Guess(ABC):
+    """\
+ Container for handling density matrix guesses for DMFT calculations.
+ Contains functionalities for working with occupation numbers, 
+ natural orbitals and density matrices.
+"""
     def __init__(self, n=None, c=None, matrix=None):
         super(Guess, self).__init__()
         self._n = None
@@ -132,64 +137,3 @@ class Matrix_Guess(Guess):
         self._type = 'matrix'
 
     def pack(self): return self.matrix()
-
-
-def _reorder(P,sim,axis=0):
-    """Reorders the tensor according to <axis> (default is 0). 
-<sim> is the list of pairs from 'order' function. 
-In normal numbers (starting from 1...).
-Copied from LIBBBG code."""
-    P_new = numpy.zeros(P.shape,dtype=numpy.float64)
-    if   axis==0:
-         for i,j in sim:
-             P_new[i-1] = P[j-1]
-    elif axis==1:
-         for i,j in sim:
-             P_new[:,i-1] = P[:,j-1]
-    elif axis==2:
-         for i,j in sim:
-             P_new[:,:,i-1] = P[:,:,j-1]
-    return P_new
-
-def _order(R,P,start=0,lprint=1):
-    """order list: adapted from LIBBBG code"""
-    new_P = P.copy()
-    sim   = []
-    rad =  []
-    for i in range(len(R)-start):
-        J = 0+start
-        r = 1.0E+100
-        rads = []
-        for j in range(len(P)-start):
-            r_ = numpy.sum(( R[i+start]-P[j+start])**2)
-            r__= numpy.sum((-R[i+start]-P[j+start])**2)
-            if r__<r_: r_=r__
-            rads.append(r_)
-            if r_<r:
-               r=r_
-               J = j
-        sim.append((i+1,J+1))
-        new_P[i+start] = P[J+start]
-        rad.append(rads)
-    for i in range(len(R)-start):
-        s = numpy.sum(numpy.sign(new_P[i])/numpy.sign(R[i]))
-        if lprint: print("%10d %f" %(i+1,s))
-        r_ = sum(( R[i+start]-new_P[i+start])**2)
-        r__= sum((-R[i+start]-new_P[i+start])**2)
-       
-        #if s < -154: 
-        #   print "TUTAJ s < -154"
-        #   #new_P[i]*=-1.
-        if r__<r_:
-          if lprint: print("    HERE r__ < r_ (sign reversal)")
-          new_P[i]*=-1.
-    return new_P, sim#, array(rad,dtype=float)
-
-def rearrange_eigenpairs(n, u, u_ref):
-    r,sim = _order(u_ref.T, u.T, lprint=0)
-    w  = _reorder(u.T, sim)
-    m  = _reorder(n  , sim)
-    w  = w.T
-    return m, w
-
-

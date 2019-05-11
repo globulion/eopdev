@@ -14,89 +14,12 @@ import scipy.optimize
 import psi4
 import oepdev
 from abc import ABC, abstractmethod
+from .opdm import Density, DensityProjection
 from .functional import XCFunctional
-from .partitioning import Density
-from .parameters import Guess, rearrange_eigenpairs
+from .parameters import Guess
+from ..math.matrix import rearrange_eigenpairs
 
 __all__ = ["DMFT"]
-
-
-def aaa(a, mu):
-    "Projected occupation numbers"
-    a_ = a.copy();
-    for i in range(len(a)):
-        u = a[i] + mu
-        if   u <= 0.0: a_[i] = 0.0
-        elif u >= 1.0: a_[i] = 1.0
-        else: a_[i] = u
-    return a_
-
-def bbb(b, nu):
-    "Projected occupation numbers"
-    b_ = b.copy();
-    for i in range(len(b)):
-        u = b[i]/(1.0 + nu)
-        if   u <= 0.0: b_[i] = 0.0
-        elif u >= 1.0: b_[i] = 1.0
-        else: b_[i] = u
-    return b_
-
-def find_mu(n, np):
-    "Search for mu"
-    options = {'disp': False, 'maxiter':250}
-    mu = 0.0
-    def obj(mu, x):
-        u = aaa(x, mu)
-        Z = (u.sum() - np)**2
-        return Z
-    R = scipy.optimize.minimize(obj, mu, args=(n,), tol=1e-20, options=options)
-    mu = R.x
-    return mu
-
-def find_nu(n, np):
-    "Search for mu"
-    options = {'disp': False, 'maxiter':2050, 'ftol':1.0e-20}
-    nu = 0.0
-    def obj(nu, x):
-        u = bbb(x, nu)
-        Z = ((u*u).sum() - np)**2
-        return Z
-    R = scipy.optimize.minimize(obj, nu, args=(n,), method='slsqp', tol=1.0e-50, options=options)
-    nu = R.x
-    return nu
-
-def density_matrix_projection(n, c, S, np, type='d'):
-    "Find n_new and C_new such that new density matrix is N-representable"
-    if type.lower() == 'd':
-       func_find = find_mu
-       func_coef = aaa
-    else:
-       func_find = find_nu
-       func_coef = bbb
- 
-    # compute pre-density matrix                                                                       
-    preD = Density.generalized_density(n, c) # cannot be here self.D because it is pre-density matrix!
-    #A = numpy.linalg.multi_dot([S, preD, S])
-    A = Density.orthogonalize_OPDM(preD, S)
-    #a, b = scipy.linalg.eig(A, S)
-    a, b = numpy.linalg.eigh(A)
-    #a = a.real; b = b.real
-    #print(" Init sum = %14.6f" % (a**2).sum()) 
-
-    muORnu = func_find(a, np)
-                                                                                                       
-    # compute the projected density matrix
-    n_new = func_coef(a, muORnu)
-    #print((n_new**2).sum())
-    C_new = b
-
-    # sort (descending order)
-    idx = numpy.argsort(n_new)[::-1]
-    n_new = n_new [  idx]
-    C_new = C_new [:,idx]
-    C_new = numpy.dot(Density.orthogonalizer(S), C_new)
-    return n_new.real, C_new.real
-
 
 
 class ElectronCorrelation:
@@ -240,6 +163,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._H_mo                     = None         # MO-SCF Core Hamiltonian + External Potential Matrix
         self._step_mode                = None         # Mode of Steepest-Descents Minimization Steps
         self._mode_xc_gradient         = None         # Mode of E_XC gradient
+        self._density_projector        = None         # Projector of 1-Particle Density Matrix
 
         self._iteration                = None         # Current Iteration Number
         self._E_new                    = None         # Current Total Energy
@@ -519,6 +443,11 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         "Initial natural orbital analysis"
         pass
 
+    @abstractmethod
+    def _setup_density_projector(self):
+        "Configure the Density Matrix Projector"
+        pass
+
 
     @abstractmethod
     def _minimizer(self, x):
@@ -640,6 +569,8 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._current_density = Density(D, self._jk)
         # Initial Natural Orbitals
         self._current_occupancies, self._current_orbitals = self._compute_initial_NOs() # it also changes _current_density
+        # Density Matrix Projector
+        self._density_projector = self._setup_density_projector()
         # H_core + V_ext in MO-SCF basis
         self._H_mo = numpy.linalg.multi_dot([self._Ca.T, self._H, self._Ca])
         return
@@ -883,6 +814,10 @@ class DMFT_NC(DMFT_AO):
 
     # --- Implementation (Protected Interface) --- #
 
+    def _setup_density_projector(self):
+        "Density Matrix Projector"
+        return DensityProjection.create(self._np, dtype='d', S=self._S)
+
     def _minimizer(self, x):
         "Minimizer function: Total Energy"
         E_H  = self._compute_no_exchange_energy()
@@ -898,7 +833,7 @@ class DMFT_NC(DMFT_AO):
     def _density(self, x):
         "1-particle density matrix in AO basis"
         n, c = x.unpack()
-        n, c = density_matrix_projection(n, c, self._S, self._np, type='d')
+        n, c = self._density_projector.compute(n, c)
         self._current_occupancies = n
         self._current_orbitals    = c
         D = self._current_density.generalized_density(n, c)
@@ -933,6 +868,10 @@ class DMFT_PC(DMFT_MO):
 
     # --- Implementation (Protected Interface) --- #
 
+    def _setup_density_projector(self):
+        "Density Matrix Projector"
+        return DensityProjection.create(self._np, dtype='p', S=self._S)
+
     def _minimizer(self, x):
         "Minimizer function: Total Energy"
         E_H  = self._compute_no_exchange_energy()
@@ -949,7 +888,7 @@ class DMFT_PC(DMFT_MO):
     def _density(self, x):
         "1-particle density matrix in MO basis: P-projection of PC set"
         p, c = x.unpack()
-        p, c = density_matrix_projection(p, c, numpy.identity(len(p)), self._np, type='p')
+        p, c = self._density_projector.compute(p, c)
         self._current_occupancies = p*p
         self._current_orbitals    = c
         D = Density.generalized_density(p, c, 2.0)
@@ -1015,6 +954,10 @@ class DMFT_ProjD(DMFT_MO):
 
     # --- Implementation (Protected Interface) --- #
 
+    def _setup_density_projector(self):
+        "Density Matrix Projector"
+        return DensityProjection.create(self._np, dtype='d', S=None)
+
     def _minimizer(self, x):
         "Minimizer function: Total Energy"
         E_H  = self._compute_no_exchange_energy()
@@ -1030,7 +973,7 @@ class DMFT_ProjD(DMFT_MO):
     def _density(self, x):
         "1-particle density matrix in MO basis: D-projection"
         n, c = x.unpack()
-        n, c = density_matrix_projection(n, c, numpy.identity(len(n)), self._np, type='d')
+        n, c = self._density_projector.compute(n, c)
         self._current_occupancies = n
         self._current_orbitals    = c
         D = self._current_density.generalized_density(n, c)
@@ -1080,6 +1023,10 @@ class DMFT_ProjP(DMFT_MO):
 
     # --- Implementation (Protected Interface) --- #
 
+    def _setup_density_projector(self):
+        "Density Matrix Projector"
+        return DensityProjection.create(self._np, dtype='p', S=None)
+
     def _minimizer(self, x):
         "Minimizer function: Total Energy"
         E_H  = self._compute_no_exchange_energy()
@@ -1096,7 +1043,7 @@ class DMFT_ProjP(DMFT_MO):
     def _density(self, x):
         "1-particle density matrix in MO basis: P-projection"
         p, c = x.unpack()
-        p, c = density_matrix_projection(p, c, numpy.identity(len(p)), self._np, type='p')
+        p, c = self._density_projector.compute(p, c)
         self._current_occupancies = p**2
         self._current_orbitals    = c
         D = self._current_density.generalized_density(p, c, 2.0)

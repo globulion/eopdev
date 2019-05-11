@@ -135,7 +135,7 @@ std::vector<std::shared_ptr<psi::Matrix>> calculate_JK(std::shared_ptr<psi::Wave
   dpd_set_default(tr.get_dpd_id());
   dpdbuf4 buf;
   psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-  psio->tocprint(PSIF_LIBTRANS_DPD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
 
   global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
                          tr.DPD_ID("[A,A]"  ), tr.DPD_ID("[A,A]"  ),
@@ -191,7 +191,7 @@ std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_r(std::shared_ptr<psi::Wa
   dpd_set_default(tr->get_dpd_id());
   dpdbuf4 buf;
   psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-  psio->tocprint(PSIF_LIBTRANS_DPD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
 
   global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
                          tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
@@ -247,7 +247,7 @@ calculate_der_D(std::shared_ptr<psi::Wavefunction> wfn,
   dpd_set_default(tr->get_dpd_id());
   dpdbuf4 buf;
   psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-  psio->tocprint(PSIF_LIBTRANS_DPD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
 
   global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
                          tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
@@ -302,7 +302,7 @@ double calculate_e_xc(std::shared_ptr<psi::Wavefunction> wfn,
   dpd_set_default(tr->get_dpd_id());
   dpdbuf4 buf;
   psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-  psio->tocprint(PSIF_LIBTRANS_DPD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
 
   global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
                          tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),

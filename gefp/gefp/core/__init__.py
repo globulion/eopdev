@@ -1,6 +1,6 @@
 #*-* coding: utf-8 *-*
 """
-GEFP Package.
+GEFP Package: Core Program.
 
 Bartosz Błasiak, Gundelfingen, May 2019
 """
