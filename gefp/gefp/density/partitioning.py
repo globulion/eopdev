@@ -12,10 +12,12 @@ import numpy.linalg
 import psi4
 import oepdev
 from .scf import SCF
+from .opdm import Density
 
 __all__ = ["DensityDecomposition"]
 
-class DensityDecomposition:
+
+class DensityDecomposition(Density):
     """
  -------------------------------------------------------------------------------------------------------------
 
@@ -104,6 +106,7 @@ class DensityDecomposition:
                        "cpp" : None,    # orthogonalized polarized LCAO-NO coefficients (approximated)
                        "npp" : None,    # orthogonalized polarized NO occupation numbers (approximated)
                        "sqm" : None,    # overlap matrix in AO basis
+                       "chf" : None,    # unperturbed LCAO-MO coefficients: HF level
                        }
         # variables
         self.vars        = {"e_cou_1"     : None,   # coulombic energy, 1el part
@@ -167,6 +170,7 @@ class DensityDecomposition:
         self.global_jk = psi4.core.JK.build(self.bfs, jk_type=jk_type)
         self.global_jk.set_memory(int(5e8))
         self.global_jk.initialize()
+        Density.__init__(self, None, self.global_jk)
 
         # sizing
         self.nmo_t      = None
@@ -262,13 +266,21 @@ class DensityDecomposition:
            psi4.core.set_global_option("WFN", self.method.upper())
            psi4.core.ccdensity(c_wfn)
 
-        D = c_wfn.Da().to_array(dense=True)
-        N, C = self.natural_orbitals(D, orthogonalize_first=c_wfn.S().to_array(dense=True), order='descending', no_cutoff=0.0)
+        D    = c_wfn.Da       (           ).to_array(dense=True)
+        S    = c_wfn.S        (           ).to_array(dense=True)
+        C_hf = c_wfn.Ca_subset("AO", "ALL").to_array(dense=True)
+        N, C = self.natural_orbitals(D, S=S, C=C_hf,
+                                        orthogonalize_mo = True,
+                                        order='descending', no_cutoff=0.0,
+                                        return_ao_orthogonal = False,
+                                        ignore_large_n = False,
+                                        renormalize = False)
         if self.verbose is True: print("Sum of natural orbital occupations for nqm= %13.6f" % N.sum())
         self.matrix["dqm"] = D
         self.matrix["nqm"] = N
         self.matrix["cqm"] = C
-        self.matrix["sqm"] = c_wfn.S().to_array(dense=True)
+        self.matrix["sqm"] = S
+        self.matrix["chf"] = C_hf
 
         e_fqm_t = c_ene
         for i in range(self.aggregate.nfragments()):
@@ -323,13 +335,18 @@ class DensityDecomposition:
         D_ao_t = self.triplet(C_ao_mo_t, numpy.diag(n_mo_t), C_ao_mo_t.T)       # ao::ao
 
         # NO analysis of Antisymmetrized wavefunction
-        noo, coo = self.natural_orbitals(Doo_ao_t.copy(), orthogonalize_first=self.matrix["sqm"], order='descending', no_cutoff=0.0)
+        noo, coo = self.natural_orbitals(Doo_ao_t.copy(), S=self.matrix["sqm"], C=self.matrix["chf"],
+                                         orthogonalize_mo = True,
+                                         order='descending', no_cutoff=0.0,
+                                         return_ao_orthogonal = False,
+                                         ignore_large_n = False,
+                                         renormalize = False)
         if self.verbose is True: print("Sum of natural orbital occupations for noo= %13.6f" % noo.sum())
 
         # save
-        self.matrix["n"] = n_mo_t
-        self.matrix["c"] = C_ao_mo_t
-        self.matrix["d"] = D_ao_t
+        self.matrix["n"  ] = n_mo_t
+        self.matrix["c"  ] = C_ao_mo_t
+        self.matrix["d"  ] = D_ao_t
         self.matrix["noo"] = noo
         self.matrix["coo"] = coo
         self.matrix["doo"] = Doo_ao_t
@@ -509,63 +526,6 @@ class DensityDecomposition:
         self.energy_polar_approx_computed = True
         return
 
-    def natural_orbitals(self, D, orthogonalize_first=None, order='descending', original_ao_mo=True, renormalize=False, no_cutoff=False):
-        "Compute the Natural Orbitals from a given ODPM"
-        if orthogonalize_first is not None:
-           S = orthogonalize_first
-           D_ = self._orthogonalize_OPDM(D, S)
-        else:
-           D_ = D
-        n, U = numpy.linalg.eigh(D_)
-        if n.max() > 1.0 or n.min() < 0.0:
-           if self.verbose is True: print(" Warning! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
-        if ((n.max() - 1.0) > 0.00001 or (n.min() < -0.00001)):
-           raise ValueError("Unphysical NO populations detected! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
-        n[numpy.where(n<0.0)] = 0.0
-        if original_ao_mo:
-           assert orthogonalize_first is not None
-           U = numpy.dot(self._orthogonalizer(orthogonalize_first), U)
-        if no_cutoff is False: no_cutoff = self.no_cutoff
-        if no_cutoff != 0.0:
-           ids = numpy.where(n>=self.no_cutoff)
-           n = n[ids]
-           U =(U.T[ids]).T
-        if order=='ascending': 
-           pass
-        elif order=='descending':
-           n = n[  ::-1]
-           U = U[:,::-1]
-        else: raise ValueError("Incorrect order of NO orbitals. Possible only ascending or descending.")
-        if renormalize is True:
-           if ( abs(n.sum() - numpy.round(n.sum())) > 1.e-7):
-              if self.verbose is True: print(" Warning: nsum=%14.4E delta=%14.4E" % (n.sum(), n.sum() - numpy.round(n.sum())))
-           d = numpy.round(n.sum()) - n.sum()
-           d/= numpy.float64(n.size)
-           n+= d
-           n[numpy.where(n<0.0)] = 0.0
-           n[numpy.where(n>1.0)] = 1.0
-        return n, U
-
-    def compute_1el_energy(self, D, Hcore):
-        "Compute generalized 1-electron energy"
-        energy = numpy.dot(D, Hcore).trace()
-        return energy
-
-    def compute_2el_energy(self, D_left, D_right, type='j'):
-        "Compute generalized 2-electron energy"
-        assert self.global_jk is not None
-        self.global_jk.C_clear()                                           
-        self.global_jk.C_left_add(psi4.core.Matrix.from_array(D_left, ""))
-        I = numpy.identity(D_left.shape[0], numpy.float64)
-        self.global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
-        self.global_jk.compute()
-        if   type.lower() == 'j': JorK = self.global_jk.J()[0].to_array(dense=True)
-        elif type.lower() == 'k': JorK = self.global_jk.K()[0].to_array(dense=True)
-        else: raise ValueError("Incorrect type of JK matrix. Only J or K allowed.")
-        energy = numpy.dot(JorK, D_right).trace()
-        return energy
-
-
 
     # ---- printers ---- #
 
@@ -695,7 +655,12 @@ class DensityDecomposition:
                psi4.core.ccdensity(c_wfn)
 
             D = c_wfn.Da().to_array(dense=True)
-            N, C = self.natural_orbitals(D, orthogonalize_first=c_wfn.S().to_array(dense=True), order='descending')
+            N, C = self.natural_orbitals(D, S=c_wfn.S().to_array(dense=True), C=c_wfn.Ca_subset("AO","ALL").to_array(dense=True),
+                                         orthogonalize_mo = True,
+                                         order='descending', no_cutoff=0.0,
+                                         return_ao_orthogonal = False,
+                                         ignore_large_n = False,
+                                         renormalize = False)
             if self.verbose is True: print("Sum of natural orbital occupations for n(%d)= %13.6f" % (n, N.sum()))
 
             self.data['wfn'].append(c_wfn)
@@ -768,26 +733,6 @@ class DensityDecomposition:
 
 
     # ---- protected utilities ---- # 
-
-
-    def _orthogonalize_OPDM(self, D, S):
-        "Transforms the one-particle density matrix to orthogonal space"
-        Y = self._deorthogonalizer(S)
-        return numpy.dot(Y, numpy.dot(D, Y.T))
-
-    def _deorthogonalizer(self, S):
-        "Compute the deorthogonalizer matrix from the overlap matrix"
-        s, u = numpy.linalg.eig(S)
-        s = numpy.sqrt(s)
-        Y = numpy.dot(u, numpy.dot(numpy.diag(s), u.T))
-        return Y
-
-    def _orthogonalizer(self, S):
-        "Compute the orthogonalizer matrix from the overlap matrix"
-        s, u = numpy.linalg.eig(S)
-        sm = 1.0/numpy.sqrt(s)
-        X = numpy.dot(u, numpy.dot(numpy.diag(sm), u.T))
-        return X
 
     def _generalized_density_matrix(self, n, c):
         "Compute occupation-weighted 1-electron density matrix in AO basis"

@@ -99,12 +99,18 @@ double average_moment(std::shared_ptr<psi::Vector> moment)
 }
 
 extern "C" PSI_API
-std::shared_ptr<psi::Matrix> calculate_Kij(std::shared_ptr<psi::Wavefunction> wfn, std::shared_ptr<psi::Matrix> C){
+std::vector<std::shared_ptr<psi::Matrix>> calculate_JK(std::shared_ptr<psi::Wavefunction> wfn, std::shared_ptr<psi::Matrix> C){
 
-  // Initialize the K_ij matrix
+  // Initialize the J_ij and K_ij matrix
   int n = C->ncol();
+  std::shared_ptr<psi::Matrix> Jij = std::make_shared<psi::Matrix>("Coulomb Integrals in MO basis", n, n);
   std::shared_ptr<psi::Matrix> Kij = std::make_shared<psi::Matrix>("Exchange Integrals in MO basis", n, n);
+  double** pJij = Jij->pointer();
   double** pKij = Kij->pointer();
+
+  std::vector<std::shared_ptr<psi::Matrix>> JK;
+  JK.push_back(Jij);
+  JK.push_back(Kij);
 
   // Compute ERI's
   std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(wfn->basisset());
@@ -129,7 +135,7 @@ std::shared_ptr<psi::Matrix> calculate_Kij(std::shared_ptr<psi::Wavefunction> wf
   dpd_set_default(tr.get_dpd_id());
   dpdbuf4 buf;
   psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-  psio->tocprint(PSIF_LIBTRANS_DPD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
 
   global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
                          tr.DPD_ID("[A,A]"  ), tr.DPD_ID("[A,A]"  ),
@@ -142,11 +148,16 @@ std::shared_ptr<psi::Matrix> calculate_Kij(std::shared_ptr<psi::Wavefunction> wf
             int p = buf.params->roworb[h][pq][0];
             int q = buf.params->roworb[h][pq][1];
             for (int rs = 0; rs < buf.params->coltot[h]; ++rs) {
-      	   int r = buf.params->colorb[h][rs][0];
-      	   int s = buf.params->colorb[h][rs][1];
-      	   if ((p==r) && (q==s)) {
-      	       pKij[p][q] = buf.matrix[h][pq][rs];
-      	     }
+         	   int r = buf.params->colorb[h][rs][0];
+        	   int s = buf.params->colorb[h][rs][1];
+		   /* J */
+		   if ((p==q) && (r==s)) {
+		       pJij[p][r] = buf.matrix[h][pq][rs];
+	           }
+		   /* K */
+        	   if ((p==r) && (q==s)) {
+        	       pKij[p][q] = buf.matrix[h][pq][rs];
+      	           }
             }
        }
        global_dpd_->buf4_mat_irrep_close(&buf, h);
@@ -155,8 +166,213 @@ std::shared_ptr<psi::Matrix> calculate_Kij(std::shared_ptr<psi::Wavefunction> wf
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 
   //Kij->print();
-  return Kij;
+  return JK;
 }
+
+extern "C" PSI_API
+std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_r(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, std::shared_ptr<psi::Matrix> Dij){
+
+  // Initialize the J_ij and K_ij matrix
+  int n = Dij->ncol();
+  std::shared_ptr<psi::Matrix> Jij = std::make_shared<psi::Matrix>("Coulomb Integrals in MO basis", n, n);
+  std::shared_ptr<psi::Matrix> Kij = std::make_shared<psi::Matrix>("Exchange Integrals in MO basis", n, n);
+  double** pJij = Jij->pointer();
+  double** pKij = Kij->pointer();
+  double** pD   = Dij->pointer();
+
+  std::vector<std::shared_ptr<psi::Matrix>> JK;
+  JK.push_back(Jij);
+  JK.push_back(Kij);
+
+  // Read integrals and save
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+
+  dpd_set_default(tr->get_dpd_id());
+  dpdbuf4 buf;
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
+                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+
+  // J and K
+  for (int h = 0; h < wfn->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+       for (int pq = 0; pq < buf.params->rowtot[h]; ++pq) {
+            int p = buf.params->roworb[h][pq][0];
+            int q = buf.params->roworb[h][pq][1];
+	    double vj_pq = 0.0;
+            for (int rs = 0; rs < buf.params->coltot[h]; ++rs) {
+         	   int r = buf.params->colorb[h][rs][0];
+        	   int s = buf.params->colorb[h][rs][1];
+		   vj_pq      += buf.matrix[h][pq][rs] * pD[r][s];
+		   pKij[p][r] += buf.matrix[h][pq][rs] * pD[q][s];
+            }
+	    pJij[p][q] = vj_pq;
+       }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  //Kij->print();
+  return JK;
+}
+
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix>
+calculate_der_D(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, 
+		std::shared_ptr<psi::Matrix> C,
+		std::vector<std::shared_ptr<psi::Matrix>> A) {
+  
+  // Initialize derivatives
+  int N = C->ncol(); /* MO-A */
+  int M = C->nrow(); /* MO-B */
+  //std::shared_ptr<psi::Matrix> Deriv = std::make_shared<psi::Matrix>("Derivative of E_XC", N, N);
+  std::shared_ptr<psi::Matrix> T     = std::make_shared<psi::Matrix>("Temporary"         , N, M);
+  double** pT   = T->pointer();
+  double** pC   = C->pointer();
+  std::vector<double**> vA;
+  for (int m=0; m<M; ++m) {
+       vA.push_back(A[m]->pointer());
+  }
+
+  // Read integrals and save
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+
+  dpd_set_default(tr->get_dpd_id());
+  dpdbuf4 buf;
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
+                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+
+  for (int h = 0; h < wfn->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+	for (int sb = 0; sb < buf.params->rowtot[h]; ++sb) {
+	     int s = buf.params->roworb[h][sb][0];
+	     int b = buf.params->roworb[h][sb][1];
+	     for (int cd = 0; cd < buf.params->coltot[h]; ++cd) {
+	          int c = buf.params->colorb[h][cd][0];
+	          int d = buf.params->colorb[h][cd][1];
+	          double sbcd = buf.matrix[h][sb][cd];
+                  for (int m = 0; m < M; ++m) {
+	              pT[s][m] += sbcd * pC[m][c] * vA[m][b][d];
+	          }
+             }
+        }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  // Symmetrize and scale
+  std::shared_ptr<psi::Matrix> Deriv = psi::Matrix::doublet(T, C, false, false);
+  //std::shared_ptr<psi::Matrix> Deriv_= psi::Matrix::doublet(C, T, true, true);
+  //Deriv->add(Deriv_);
+  Deriv->add(Deriv->clone()->transpose());
+  Deriv->scale(-1.0);
+  return Deriv;
+}
+
+extern "C" PSI_API
+double calculate_e_xc(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, 
+		std::shared_ptr<psi::Matrix> f,
+		std::shared_ptr<psi::Matrix> C){
+
+
+  // Initialize derivatives
+  double E = 0.0;
+  int M = C->nrow(); /* MO-SCF */
+  int N = C->ncol(); /* MO-NEW */
+  double** pf   = f->pointer();
+  double** pC   = C->pointer();
+
+  // Read integrals and save
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+
+  dpd_set_default(tr->get_dpd_id());
+  dpdbuf4 buf;
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
+                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+
+  for (int h = 0; h < wfn->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+	for (int ab = 0; ab < buf.params->rowtot[h]; ++ab) {
+	     int a = buf.params->roworb[h][ab][0];
+	     int b = buf.params->roworb[h][ab][1];
+	     for (int cd = 0; cd < buf.params->coltot[h]; ++cd) {
+	          int c = buf.params->colorb[h][cd][0];
+	          int d = buf.params->colorb[h][cd][1];
+	          double abcd = buf.matrix[h][ab][cd];
+                  for (int i = 0; i < N; ++i) {
+		  for (int j = 0; j < N; ++j) {
+		       E += abcd * pC[a][i] * pC[b][j] * pC[c][i] * pC[d][j] * pf[i][j];
+	          }
+		  }
+             }
+        }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  return -E;
+}
+
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix>
+matrix_power_derivative(std::shared_ptr<psi::Matrix> A,
+              		double g, double step){
+
+  double hi = 1.0/ (step * 2.0);
+  //int n = A->ncol();
+  //std::shared_ptr<psi::Matrix> D = std::make_shared<psi::Matrix>("",n,n);
+  //double** d = D->pointer();
+
+  std::shared_ptr<psi::Matrix> Ag = A->clone();
+  Ag->power(g);
+
+  std::shared_ptr<psi::Matrix> Ag1 = A->clone();
+  std::shared_ptr<psi::Matrix> I = A->clone(); I->identity();
+  I->scale(step * 2.0);
+  Ag1->add(I);
+  Ag1->power(g);
+  Ag1->subtract(Ag);
+  Ag1->scale(hi);
+
+  //for (int i=0; i<n; ++i) {
+  //  for (int j=0; j<=i; ++j) {
+  //       std::shared_ptr<psi::Matrix> Ag1 = A->clone();
+  //       double** a = Ag1->pointer();
+  //       a[i][j] += step;
+  //       a[j][i] += step;
+  //       Ag1->power(g);
+  //       Ag1->subtract(Ag);
+  //       Ag1->scale(hi);
+  //       double v = Ag1->trace();
+  //       d[i][j] = v;
+  //       d[j][i] = v;
+  //  }
+  //}
+  return Ag1;
+}
+
+
+
 
 
 } // EndNameSpace oepdev

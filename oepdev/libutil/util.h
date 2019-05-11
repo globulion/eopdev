@@ -137,15 +137,88 @@ solve_scf(std::shared_ptr<Molecule> molecule,
 extern "C" PSI_API
 double average_moment(std::shared_ptr<psi::Vector> moment);
 
-/** \brief Compute the exchange integral matrix in MO basis.
+/** \brief Compute the Coulomb and exchange integral matrices in MO basis.
  *
+ *  Transforms the AO ERI's based on provided C matrix.
  *  @param wfn    - Wavefunction object
  *  @param C      - molecular orbital coefficients (AO x MO)
- *  @return       - K_ij matrix
+ *  @return       - vector with J_ij and K_ij matrix
  *
  */
 extern "C" PSI_API
-std::shared_ptr<psi::Matrix> calculate_Kij(std::shared_ptr<psi::Wavefunction> wfn, std::shared_ptr<psi::Matrix> C);
+std::vector<std::shared_ptr<psi::Matrix>> calculate_JK(std::shared_ptr<psi::Wavefunction> wfn, std::shared_ptr<psi::Matrix> C);
+
+/** \brief Compute the Coulomb and exchange integral matrices in MO basis. 
+ *
+ *  Reads the existing MO ERI's.
+ *  @param wfn    - Wavefunction object
+ *  @param tr     - IntegralTransform object
+ *  @param D      - density matrix in MO basis
+ *  @return       - vector with J_ij and K_ij matrix
+ *
+ */
+extern "C" PSI_API
+std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_r(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, std::shared_ptr<psi::Matrix> Dij);
+
+
+/** \brief Compute the derivative of exchange-correlation energy wrt the density matrix in MO-A basis. 
+ *
+ *  Reads the existing MO ERI's.
+ *  @param wfn    - Wavefunction object
+ *  @param tr     - IntegralTransform object
+ *  @param C      - Transformation matrix MO-B::MO-A (columns are MO-A basis)
+ *  @param A      - Vector of matrices A^(n)_{bd}
+ *  @return       - derivative matrix in MO-A basis
+ *
+ */
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix> calculate_der_D(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, 
+		std::shared_ptr<psi::Matrix> C,
+		std::vector<std::shared_ptr<psi::Matrix>> A);
+
+/** \brief Compute the exchange-correlation energy from ERI in MO-SCF basis. 
+ *
+ *  Reads the existing MO ERI's.
+ *  @param wfn    - Wavefunction object
+ *  @param tr     - IntegralTransform object
+ *  @param f      - f_ij matrix in MO-NEW basis
+ *  @param C      - Transformation matrix MO-SCF::MO-NEW (columns are MO-A basis)
+ *  @return       - Exchange-correlation energy
+ *
+ */
+extern "C" PSI_API
+double calculate_e_xc(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, 
+		std::shared_ptr<psi::Matrix> f,
+		std::shared_ptr<psi::Matrix> C);
+
+/** \brief Compute the contracted derivative of power of a square and symmetric matrix.
+ *
+ *  The contracted matrix derivative is defined here as
+ *  \f[
+ *    {\bf D} = \frac{d {\bf A}^\gamma}{\bf A} : {\mathbb{I}}
+ *  \f]
+ *  where \f$ {\mathbb{I}} \f$ is the identity matrix.
+ *  The derivative, which is the fourth-rank tensor, is computed by 
+ *  the forward 2-centre finite difference formula,
+ *  \f[
+ *    f' = \left( f(h) - f(0) \right) / h
+ *  \f]
+ *  \notes 
+ *    * if \f$ \gamma \f$ is non-integer, input matrix has to be positive-definite.
+ *
+ *  @param A      - Matrix
+ *  @param g      - Power
+ *  @param step   - Differentiation step \f$ h \f$
+ *  @return       - Contracted derivative (matrix)
+ *
+ */
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix>
+matrix_power_derivative(std::shared_ptr<psi::Matrix> A,
+              		double g, double step);
 
 
 /** @}*/

@@ -5,16 +5,23 @@
  Bartosz Błasiak, Gundelfingen, Jan 2019
 """
 
-__all__ = ["Superimposer"     ,
-           "rotation_matrix"  ,
-           "rotate_ao_matrix" , 
-           "make_r2"          ,
-           "move_atom_along_bond"]
+__all__ = ["Superimposer"               , 
+           "rotation_matrix"            ,
+           "rotate_ao_matrix"           ,
+           "make_r2"                    ,
+           "move_atom_along_bond"       ,
+           "move_atom_symmetric_stretch",
+           "move_atom_rotate_molecule"  ,
+           "move_atom_scale_coordinates",
+           "matrix_power"               ,
+           "matrix_power_derivative"    ,
+           "rearrange_eigenpairs"       ]
 
 import sys
 import math
 import numpy
 import psi4
+import scipy.spatial.transform
 
 class Superimposer:
     """\
@@ -310,16 +317,144 @@ def rotate_ao_matrix(M, rot_3d, bfs, return_rot=False, aomo=False):
     else: return M_rot
 
 
-def move_atom_along_bond(mol, a1, a2, t, units='bohr'):
-    "Translate atom a1 in the molecule along the bond a1-a2 by amount t"
+def move_atom_along_bond(mol, a, a_orig, t, units='bohr'):
+    "Translate atom a in the molecule along the bond a-a_orig by amount t"
     if units.lower().startswith('ang'): t*= 1.889725989 # Angstrom to Bohr
     xyz = mol.geometry().to_array(dense=True)
-    v1  = xyz[a1-1]
-    v2  = xyz[a2-1]
-    u   = v1 - v2
+    v   = xyz[a     -1]
+    vo  = xyz[a_orig-1]
+    u   = v - vo
     u  /= numpy.linalg.norm(u)
-    xyz[a1-1] += u*t
+    xyz[a-1] += u*t
     geom = psi4.core.Matrix.from_array(xyz)
     mol.set_geometry(geom)
     return
 
+def move_atom_symmetric_stretch(mol, a_list, a_orig, t, units='bohr'):
+    "Translate atoms from a_list in the molecule along the bond a_list[i]-a_orig by amount t"
+    if units.lower().startswith('ang'): t*= 1.889725989 # Angstrom to Bohr
+    xyz = mol.geometry().to_array(dense=True)
+    vl = [ xyz[i     -1] for i in a_list ]
+    vo  =  xyz[a_orig-1]
+    for i in range(len(a_list)):
+        u   = vl[i] - vo
+        u  /= numpy.linalg.norm(u)
+        xyz[a_list[i]-1] += u*t
+    geom = psi4.core.Matrix.from_array(xyz)
+    mol.set_geometry(geom)
+    return
+
+def move_atom_scale_coordinates(mol, t):
+    "Scale coordinates in the molecule along the bond a_list[i]-a_orig by amount t"
+    xyz = mol.geometry().to_array(dense=True) * t
+    geom = psi4.core.Matrix.from_array(xyz)
+    mol.set_geometry(geom)
+    return
+
+
+def move_atom_rotate_molecule(mol, angles, t='zxy', units='bohr'):
+    "Rotate atoms in the molecule by applying rotation (3,3) matrix (provide Euler angles in degrees)"
+    R = scipy.spatial.transform.Rotation.from_euler(t, angles, degrees=True)
+    rot= R.as_dcm()
+    xyz = mol.geometry().to_array(dense=True)
+    xyz = numpy.dot(xyz, rot.T)
+    geom = psi4.core.Matrix.from_array(xyz)
+    mol.set_geometry(geom)
+    return
+
+
+def matrix_power(P, a):
+    "Matrix power"
+    p, U = numpy.linalg.eigh(P)
+    #p = abs(p)
+    p[p<0.0] = 0.0
+    #if (p<=0.0).any(): raise ValueError(" Matrix must be positive-definite!")
+    Pa = numpy.linalg.multi_dot([U, numpy.diag(p**a), U.T])
+    return Pa
+
+def matrix_power_derivative(P, a, step=0.00000001, approx=False):
+    "Computes derivative of matrix power wrt matrix (numerically)"
+    h = 2.0 * step
+    nn= len(P)
+    Pa = matrix_power(P, a)
+    # cheaper approximate solution (matrix)
+    if approx:
+       P1 = P.copy()                            
+       for i in range(nn): P1[i][i] += 2.0*step
+       Pa1 = matrix_power(P1, a)
+       dP = (Pa1 - Pa) / h
+    # expensive exact solution (4-th rank tensor)
+    else:
+       dP = P.copy(); dP.fill(0.0)
+       T = numpy.zeros((nn,nn,nn,nn))    
+       for i in range(nn):
+           for j in range(i+1):
+               P1 = P.copy()
+               P1[i][j] += step
+               P1[j][i] += step
+               Pa1 = matrix_power(P1, a)
+               T[i,j] = (Pa1 - Pa) / h
+               T[j,i] = T[i,j]
+       dP = T.transpose((2,3,0,1))
+    return dP
+
+
+# --> Vector reordering utilities <-- #
+
+def _reorder(P,sim,axis=0):
+    """Reorders the tensor according to <axis> (default is 0). 
+<sim> is the list of pairs from 'order' function. 
+In normal numbers (starting from 1...).
+Copied from LIBBBG code."""
+    P_new = numpy.zeros(P.shape,dtype=numpy.float64)
+    if   axis==0:
+         for i,j in sim:
+             P_new[i-1] = P[j-1]
+    elif axis==1:
+         for i,j in sim:
+             P_new[:,i-1] = P[:,j-1]
+    elif axis==2:
+         for i,j in sim:
+             P_new[:,:,i-1] = P[:,:,j-1]
+    return P_new
+
+def _order(R,P,start=0,lprint=1):
+    """order list: adapted from LIBBBG code"""
+    new_P = P.copy()
+    sim   = []
+    rad =  []
+    for i in range(len(R)-start):
+        J = 0+start
+        r = 1.0E+100
+        rads = []
+        for j in range(len(P)-start):
+            r_ = numpy.sum(( R[i+start]-P[j+start])**2)
+            r__= numpy.sum((-R[i+start]-P[j+start])**2)
+            if r__<r_: r_=r__
+            rads.append(r_)
+            if r_<r:
+               r=r_
+               J = j
+        sim.append((i+1,J+1))
+        new_P[i+start] = P[J+start]
+        rad.append(rads)
+    for i in range(len(R)-start):
+        s = numpy.sum(numpy.sign(new_P[i])/numpy.sign(R[i]))
+        if lprint: print("%10d %f" %(i+1,s))
+        r_ = sum(( R[i+start]-new_P[i+start])**2)
+        r__= sum((-R[i+start]-new_P[i+start])**2)
+       
+        #if s < -154: 
+        #   print "TUTAJ s < -154"
+        #   #new_P[i]*=-1.
+        if r__<r_:
+          if lprint: print("    HERE r__ < r_ (sign reversal)")
+          new_P[i]*=-1.
+    return new_P, sim#, array(rad,dtype=float)
+
+def rearrange_eigenpairs(n, u, u_ref):
+    r,sim = _order(u_ref.T, u.T, lprint=0)
+    w  = _reorder(u.T, sim)
+    m  = _reorder(n  , sim)
+    w  = w.T
+    return m, w
