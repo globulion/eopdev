@@ -226,7 +226,6 @@ Contains:
                       self._data_mom_dy_mbb       ,
                       self._data_mom_dz_mbb       ,]
 
-
 # ---> Fitting Functions <--- #
 
 def read_xyz(data, func_t=None):
@@ -348,12 +347,13 @@ def plot_surface(plotdata, outfile='fit', ext='svg'):
             x = X_[i,j]; y = Y_[i,j]
             v = plotdata.pade.value(x, y)
             Z_[i,j] = v #if v <= Z.max() else numpy.NaN
-    #Z_[Z_>Z.max()] = numpy.NaN
+    #Z_[Z_>1.8*Z.max()] = numpy.NaN
+    #Z_[Z_<1.8*Z.min()] = numpy.NaN
     
     # Plot the surface.
     surf = ax.plot_surface(X_, Y_, Z_, cmap=cm.coolwarm, alpha=0.5,
-                           rstride=2, cstride=2,
-                           linewidth=1, antialiased=False)
+                           rstride=8, cstride=8,
+                           linewidth=0, antialiased=False)
    
     # Plot the points
     pts  = ax.scatter(X, Y, Z, zdir='z', s=20, c=None, depthshade=False)
@@ -407,7 +407,7 @@ def scan_xhn_stretch_1h(x, molname):
     elif molname == 'nh3': fname = 'nh3.xyz'
     elif molname == 'ch4': fname = 'ch4.xyz'
     else: raise ValueError('This molecule is not included in surface yet!')
-    mol = get_mol(moldir)
+    mol = get_mol('xyz/%s' % fname)
     gefp.math.matrix.move_atom_rotate_molecule(mol, [-30., -83., 43.1])
     gefp.math.matrix.move_atom_along_bond(mol, 2, 1, x, units='ang')
     mol.save_xyz_file('xyz/ID_%03d_%s.s-1h.%03.3f.xyz' % (SYSTEM_ID, fname[:-4], x), True)
@@ -428,7 +428,7 @@ def scan_xhn_stretch_nh(x, molname):
          fname = 'ch4.xyz'
          atids  = [2,3,4,5]
     else: raise ValueError('This molecule is not included in surface yet!')
-    mol = get_mol(moldir)
+    mol = get_mol('xyz/%s' % fname)
     gefp.math.matrix.move_atom_rotate_molecule(mol, [-30., -83., 43.1])
     gefp.math.matrix.move_atom_symmetric_stretch(mol, atids, 1, x, units='ang')
     mol.save_xyz_file('xyz/ID_%03d_%s.s-nh.%03.3f.xyz' % (SYSTEM_ID, fname[:-4], x), True)
@@ -464,13 +464,15 @@ def scan_h2h2_pull_2h(x):
 
 def continue_if_runtime_error(func):
     "Do not stop the calculations when something goes wrong with full QM calculations"
+    global SYSTEM_ID
     def wrapper(*args, **kwargs):
         try:
             func(*args,**kwargs)
         except RuntimeError:
             print("Reference method iterations not converged")
             errfile = open(ERRFILE, 'a')
-            log = "%s" % str(kwargs)
+            log = "ID: %3d  " % SYSTEM_ID
+            log+= "%s" % str(kwargs)
             errfile.write(log + '\n')
             errfile.close()
         psi4.core.clean()
@@ -545,9 +547,9 @@ def prepare(do_fci=True):
         put_input(do_fci, mols, wfns, refs, dips, cors, scan_func=scan_h2h2_pull_1h, x=x)
         put_input(do_fci, mols, wfns, refs, dips, cors, scan_func=scan_h2h2_pull_2h, x=x)
 
-    # 10-electron systems
+    ## 10-electron systems
     X = numpy.linspace(-0.3, 0.8, 10)
-    #Y = X[::-1]
+    ##Y = X[::-1]
     for x in X:
         put_input(do_fci, mols, wfns, refs, dips, cors, scan_func=scan_xhn_stretch_1h, x=x, molname='h2o')
         put_input(do_fci, mols, wfns, refs, dips, cors, scan_func=scan_xhn_stretch_1h, x=x, molname='h3o')

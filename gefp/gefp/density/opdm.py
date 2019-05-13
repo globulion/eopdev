@@ -201,14 +201,14 @@ class DensityProjection(ABC):
 
     def _density_matrix_projection(self, n, c):
         "Find n_new and C_new such that new density matrix is N-representable"                              
-        if self._S is None: S = numpy.identity(len(n))
+        if self._S is None: pass # S = numpy.identity(len(n))
         else              : S = self._S.copy()
         # compute pre-density matrix                                                                       
-        preD = Density.generalized_density(n, c) # cannot be here self.D because it is pre-density matrix!
-        #A = numpy.linalg.multi_dot([S, preD, S])
-        A = Density.orthogonalize_OPDM(preD, S)
+        A = Density.generalized_density(n, c) # cannot be here self.D because it is pre-density matrix!
+        #A = numpy.linalg.multi_dot([S, preA, S])
+        if self._S is not None: A = Density.orthogonalize_OPDM(A, S)
         #a, b = scipy.linalg.eig(A, S)
-        a, b = numpy.linalg.eigh(A)
+        a, phi = numpy.linalg.eigh(A)
         #a = a.real; b = b.real
         #print(" Init sum = %14.6f" % (a**2).sum()) 
                                                                                                             
@@ -217,13 +217,13 @@ class DensityProjection(ABC):
         # compute the projected density matrix
         n_new = self._eval_coef(a, muORnu)
         #print((n_new**2).sum())
-        C_new = b
+        C_new = phi
                                                                                                             
         # sort (descending order)
         idx = numpy.argsort(n_new)[::-1]
         n_new = n_new [  idx]
         C_new = C_new [:,idx]
-        C_new = numpy.dot(Density.orthogonalizer(S), C_new)
+        if self._S is not None: C_new = numpy.dot(Density.orthogonalizer(S), C_new)
         return n_new.real, C_new.real
 
     @abstractmethod
@@ -284,15 +284,25 @@ class Pset_DensityProjection(DensityProjection):
 
     def _find_coef(self, n):
         "Search for nu"                                                             
-        options = {'disp': False, 'maxiter':2000, 'ftol': 1.0e-20}
+        options = {'disp': False, 'maxiter':2000, 'ftol': 1.0e-10}
         nu = 0.0
         def obj(nu, x):
             u = self._eval_coef(x, nu)
             Z = ((u*u).sum() - self._np)**2
             return Z
-        #R = scipy.optimize.minimize(obj, nu, args=(n,), tol=1e-20, options=options)
-        R = scipy.optimize.minimize(obj, nu, args=(n,), method='slsqp', tol=1.0e-50, options=options)
-        nu = R.x
+
+        min_v = 0.0
+        for i in n:
+            if i>= 0.0:
+               min_v += min(i*i, 1.0)
+
+        if min_v < self._np:
+           nu = 0.0
+        else:
+           #R = scipy.optimize.minimize(obj, nu, args=(n,), tol=1e-20, options=options)
+           bounds = [[0.0, None],]
+           R = scipy.optimize.minimize(obj, nu, args=(n,), method='slsqp', tol=1.0e-50, bounds=bounds, options=options)
+           nu = R.x
         return nu
 
     def _eval_coef(self, b, nu):

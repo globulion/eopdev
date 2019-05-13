@@ -53,12 +53,23 @@ class OEProp:
         "Compute dipole moment"
         # dipole integrals
         T = [x.to_array(dense=True) for x in dmft._mints.ao_dipole()]
+        Tmo = [ numpy.linalg.multi_dot([dmft._Ca.T, t, dmft._Ca]) for t in T]
         # density mattix in MO-SCF basis
         Dmo = dmft.Dmo
+        #print('MO=', Dmo.diagonal().sum())
         # density matrix in AO basis
-        Dao = dmft.Dao
+        #Dao = dmft.Dao
+        #print('AO= ', numpy.dot(Dao, dmft._S).trace())
         # calculate: dipole moment
-        dip = numpy.array([2.0 * numpy.dot(tx, Dao).trace() for tx in T], dtype=numpy.float64)
+        #dip = numpy.array([2.0 * numpy.dot(tx, Dao).trace() for tx in T], dtype=numpy.float64)
+        # calculate: dipole moment
+        dip = numpy.array([2.0 * numpy.dot(tx, Dmo).trace() for tx in Tmo], dtype=numpy.float64)
+
+        # add nuclear contribution
+        dip_nuc = dmft._mol.nuclear_dipole()
+        dip[0] += dip_nuc[0]
+        dip[1] += dip_nuc[1]
+        dip[2] += dip_nuc[2]
         return dip
 
 
@@ -254,7 +265,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         "One-Particle Density Matrix in AO Basis"
         Dmo = self.Dmo
         L = numpy.dot(self._Ca.T, self._S)
-        R = numpy.dot(L.T, numpy.linalg.inv(numpy.dot(L, L.T)))
+        R = numpy.dot(numpy.linalg.inv(numpy.dot(L.T, L)), L.T).T
         #Dao = numpy.linalg.multi_dot([Si, Ca, Dmo, Ca.T, Si])
         Dao = numpy.linalg.multi_dot([R.T, Dmo, R])
         return Dao
@@ -363,7 +374,8 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         # [5] Finish
         if verbose and success:
            print(" DMFT iterations converged.")
-           print(" Final Energy = %14.8f" % self._current_energy)
+           print(" DMFT Total Energy   = %14.8f" % self._current_energy)
+           print(" Number of Electrons = %14.8f" % (2.0*self.N.sum()))
 
         if verbose and not success:
            print(" DMFT iterations did not converge.")

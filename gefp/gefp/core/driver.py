@@ -164,71 +164,106 @@ b9              = 1703.16          +/- 1828         (107.4%)
 
 
     
-def dmft_solver(wfn, xc_functional=None, 
-                kmax=30, g_0=0.1, verbose=True, guess='current', step_mode='search', 
-                parameterization='fci/sto-3g.1', gradient_mode='exact',
+def dmft_solver(wfn, xc_functional='MBB', 
+                g_0=0.001, g=0.0001, verbose=True, guess='current', step_mode='search', algorithm='proj-p',
+                gradient_mode='exact', conv=0.000005, conv_int=0.000010, maxit=300,
+                with_restart=False, parameterization=None, t=None, kmax=30, 
                 return_density=False):
     "Compute the electron density by using the DMFT method."
 
-    # compute t
-    surface  = UniversalSurface()
-    func_mbb = XCFunctional.create('MBB')
-    dmft_mbb = DMFT.create(wfn, func_mbb, 
-                           algorithm='proj-p', 
-                           guess='current', 
-                           step_mode='search')
-    dmft_mbb.run(maxit=300, conv=0.000005, g_0=g_0, verbose=verbose)
+    do_medi = True if xc_functional.lower() == 'medi' else False
 
-    N          = int(wfn.nalpha())
-    E_mbb      = dmft_mbb.E
-    D_mbb      = dmft_mbb.D
-    d_mbb      = dmft_mbb.dipole
-    i_d, i_n   = dmft_mbb.scalar_correlation
-    #I_d, I_n   = dmft_mbb.matrix_correlation
-    #I_d        = numpy.dot(I_d, D_mbb).trace() * 2.0
-    #I_n        = numpy.dot(I_n, D_mbb).trace() * 2.0
-    x          = math.log(i_d/N + 1.0)
-    y          = math.log(i_n/N * 2.0) if i_n > 0.0 else -1.e10
+    # Interpolation XC Functional
+    if do_medi:
+       if algorithm.lower() != 'proj-p':
+          print(" Warning: For MEDI functionals algorithm must be 'PROJ-P'. Ignoring current option 'algorithm'.")
+          algorithm = 'proj-p'
 
-    if   parameterization=='fci/sto-3g.1':
-         par = surface.par_fci_sto3g_1
-    elif parameterization=='fci/sto-3g.2':
-         par = surface.par_fci_sto3g_2
-    else: raise ValueError("Incorret Universal Surface Specification!")
-    t = par.pade.value(x, y)
-    if verbose: 
-       print(par.description_short)
-       print(" MBB Electron Correlation: i_d=%14.4f in=%14.4f t=%14.4f" % (i_d, i_n, t))
-    del func_mbb, dmft_mbb
-    psi4.core.clean()
+       # compute t
+       if t is None:
+          surface  = UniversalSurface()                                                         
+          func_mbb = XCFunctional.create('MBB')
+          dmft_mbb = DMFT.create(wfn, func_mbb, 
+                                 algorithm='proj-p', 
+                                 guess='current', 
+                                 step_mode='search')
+          dmft_mbb.run(maxit=maxit, conv=conv, g_0=g_0, verbose=verbose)
+                                                                                               
+          N          = int(wfn.nalpha())
+          E_mbb      = dmft_mbb.E
+          D_mbb      = dmft_mbb.D
+          d_mbb      = dmft_mbb.dipole
+          i_d, i_n   = dmft_mbb.scalar_correlation
+          #I_d, I_n   = dmft_mbb.matrix_correlation
+          #I_d        = numpy.dot(I_d, D_mbb).trace() * 2.0
+          #I_n        = numpy.dot(I_n, D_mbb).trace() * 2.0
+          x          = math.log(i_d/N + 1.0)
+          y          = math.log(i_n/N * 2.0) if i_n > 0.0 else -1.e10
+                                                                                               
+          if   parameterization=='fci/sto-3g.1':
+               par = surface.par_fci_sto3g_1
+          elif parameterization=='fci/sto-3g.2':
+               par = surface.par_fci_sto3g_2
+          else: raise ValueError("Incorret Universal Surface Specification!")
+          t = par.pade.value(x, y)
+          if verbose: 
+             print(par.description_short)
+             print(" MBB Electron Correlation: i_d=%14.4f in=%14.4f t=%14.4f" % (i_d, i_n, t))
+          del func_mbb, dmft_mbb
+          psi4.core.clean()
 
-    # Run DMFT with interpolation functional
-    func_int = XCFunctional.create('A2MEDI', coeff={'t':t}, kmax=kmax)
+       else: pass
+                                                                                            
+       # Run DMFT with interpolation functional
+       func_int = XCFunctional.create('A2MEDI', coeff={'t':t}, kmax=kmax)
 
+    # Conventional XC Functionals
+    else:
+       func_int = XCFunctional.create(xc_functional)
+
+    # Compute density
     dmft_int = DMFT.create(wfn, func_int, 
-                           algorithm='proj-p', 
+                           algorithm=algorithm, 
                            guess=guess, 
                            step_mode=step_mode)
 
+    # All XC Functionals
     if   gradient_mode.lower() == 'num':
          dmft_int.set_gradient_mode(num=True)
-         dmft_int.run(maxit=300, conv=0.000005, g_0=g_0, verbose=verbose)
-    elif gradient_mode.lower() == 'exact':
+         dmft_int.run(maxit=maxit, conv=conv    , g_0=g_0, g=g, verbose=verbose)
+    # Only MEDI XC Functionals
+    elif gradient_mode.lower() == 'exact' and do_medi: 
          dmft_int.set_gradient_mode(approx=True)                   
-         dmft_int.run(maxit=300, conv=0.000010, g_0=g_0, verbose=verbose)
+         dmft_int.run(maxit=maxit, conv=conv_int, g_0=g_0, g=g, verbose=verbose)
          dmft_int.set_gradient_mode(exact=True)
-         dmft_int.run(maxit=300, conv=0.000005, g_0=g_0, verbose=verbose, restart=True)
-
+         dmft_int.run(maxit=maxit, conv=conv    , g_0=g_0, g=g, verbose=verbose, restart=True)
+    # Only non-MEDI XC Functionals
+    elif gradient_mode.lower() == 'exact' and not do_medi:
+         if with_restart:
+             dmft_int.set_gradient_mode(approx=True)
+             dmft_int.run(maxit=maxit, conv=conv_int, g_0=g_0, g=g, verbose=verbose)
+             dmft_int.set_gradient_mode(exact=True)
+             dmft_int.run(maxit=maxit, conv=conv    , g_0=g_0, g=g, verbose=verbose, restart=True)
+         else:
+             dmft_int.run(maxit=maxit, conv=conv    , g_0=g_0, g=g, verbose=verbose)
+    # Only non-MEDI XC Functionals
+    elif gradient_mode.lower() == 'approx' and not do_medi:
+         dmft_int.set_gradient_mode(approx=True)
+         dmft_int.run(maxit=maxit, conv=conv    , g_0=g_0, g=g, verbose=verbose)
+    #
+    else: pass
+        
+    # 
     E_int = dmft_int.E
     D_int = dmft_int.D
     N_int = dmft_int.N
     C_int = dmft_int.C
 
-    # compute density
-    del func_int, dmft_int
-    psi4.core.clean()
-    #
+    # Return
     if return_density: 
-          return E_int, D_int, N_int, C_int
-    else: return E_int
+        return E_int, func_int, dmft_int
+    else: 
+        del func_int, dmft_int
+        psi4.core.clean()
+        return E_int
 
