@@ -53,8 +53,8 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
   // ===> One electron part <=== //
   // Term 1//
   std::shared_ptr<psi::Matrix> VaoB12    = std::make_shared<psi::Matrix>("VaoB(1,2)" , nbf_1, nbf_2);
-  std::shared_ptr<psi::Matrix> VaoA22    = std::make_shared<psi::Matrix>("VaoA(2,2)" , nbf_2, nbf_2);
   std::shared_ptr<psi::Matrix> VaoB11    = std::make_shared<psi::Matrix>("VaoB(1,1)" , nbf_1, nbf_1);
+  std::shared_ptr<psi::Matrix> VaoA22    = std::make_shared<psi::Matrix>("VaoA(2,2)" , nbf_2, nbf_2);
   std::shared_ptr<psi::Matrix> Sao12     = std::make_shared<psi::Matrix>("Sao(1,2)"  , nbf_1, nbf_2);
 
   psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(0), wfn_union_->l_primary(1));
@@ -116,13 +116,11 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
 
 
 
-
-
   //Term 2//
-  std::shared_ptr<psi::Matrix> VaoB21    = std::make_shared<psi::Matrix>("VaoB(2,1)" , nbf_2, nbf_1);
-  std::shared_ptr<psi::Matrix> VaoA11    = std::make_shared<psi::Matrix>("VaoA(1,1)" , nbf_1, nbf_1);
-  std::shared_ptr<psi::Matrix> VaoB22    = std::make_shared<psi::Matrix>("VaoB(2,2)" , nbf_2, nbf_2);
-  std::shared_ptr<psi::Matrix> Sao21     = std::make_shared<psi::Matrix>("Sao(2,1)"  , nbf_2, nbf_1);
+  std::shared_ptr<psi::Matrix> VaoA21      = std::make_shared<psi::Matrix>("VaoA(2,1)" , nbf_2, nbf_1);
+  std::shared_ptr<psi::Matrix> VaoA22_2    = std::make_shared<psi::Matrix>("VaoA_2(2,2)" , nbf_2, nbf_2);
+  std::shared_ptr<psi::Matrix> VaoB11_2    = std::make_shared<psi::Matrix>("VaoB_2(1,1)" , nbf_1, nbf_1);
+  std::shared_ptr<psi::Matrix> Sao21       = std::make_shared<psi::Matrix>("Sao(2,1)"  , nbf_2, nbf_1);
 
   std::shared_ptr<psi::OneBodyAOInt> oneInt_2, ovlInt_2(fact_21.ao_overlap());
   std::shared_ptr<psi::PotentialInt> potInt_11_2 = std::make_shared<psi::PotentialInt>(fact_11.spherical_transform(),
@@ -132,15 +130,15 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
                                                                                     wfn_union_->l_primary(1),
                                                                                     wfn_union_->l_primary(1));
 
-  potInt_2->set_charge_field(Zxyz_2);
-  potInt_11_2->set_charge_field(Zxyz_1);
-  potInt_22_2->set_charge_field(Zxyz_2);
+  potInt_2->set_charge_field(Zxyz_1);
+  potInt_22_2->set_charge_field(Zxyz_1);
+  potInt_11_2->set_charge_field(Zxyz_2);
   oneInt_2 = potInt_2;
-  oneInt_2->compute(VaoB21);
-  oneInt_2 = potInt_11_2;
-  oneInt_2->compute(VaoA11);
+  oneInt_2->compute(VaoA21);
   oneInt_2 = potInt_22_2;
-  oneInt_2->compute(VaoB22);
+  oneInt_2->compute(VaoA22_2);
+  oneInt_2 = potInt_11_2;
+  oneInt_2->compute(VaoB11_2);
   ovlInt_2->compute(Sao21);
   
 
@@ -148,25 +146,22 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
 
   std::shared_ptr<psi::Matrix> Smo21  = psi::Matrix::triplet(Ca_occ_B, Sao21 , Ca_occ_A, true, false, false);
   std::shared_ptr<psi::Matrix> Smo2X  = psi::Matrix::triplet(Ca_occ_B, Sao21 , Ca_vir_A, true, false, false);
-  std::shared_ptr<psi::Matrix> VmoB2X = psi::Matrix::triplet(Ca_occ_B, VaoB21, Ca_vir_A, true, false, false);
-  std::shared_ptr<psi::Matrix> VmoAX1 = psi::Matrix::triplet(Ca_vir_A, VaoA11, Ca_occ_A, true, false, false);
-  std::shared_ptr<psi::Matrix> VmoB22 = psi::Matrix::triplet(Ca_occ_B, VaoB22, Ca_occ_B, true, false, false);
+  std::shared_ptr<psi::Matrix> VmoA2X = psi::Matrix::triplet(Ca_occ_B, VaoA21, Ca_vir_A, true, false, false);
+  std::shared_ptr<psi::Matrix> VmoA22 = psi::Matrix::triplet(Ca_occ_B, VaoA22_2, Ca_occ_B, true, false, false);
+  std::shared_ptr<psi::Matrix> VmoBX1 = psi::Matrix::triplet(Ca_vir_A, VaoB11_2, Ca_occ_A, true, false, false);
 
   //Potential integral II//
   double** S1_2 = Smo2X->pointer();
-  std::shared_ptr<psi::Matrix> PI4 = psi::Matrix::doublet(VmoB22, Smo2X, false, false);
+  std::shared_ptr<psi::Matrix> PI4 = psi::Matrix::doublet(VmoA22, Smo2X, false, false);
 
   //Potential integral III//
   double** S2_2 = Smo21->pointer();
-  std::shared_ptr<psi::Matrix> PI5 = psi::Matrix::doublet(Smo21, VmoAX1, false, true);
+  std::shared_ptr<psi::Matrix> PI5 = psi::Matrix::doublet(Smo21, VmoBX1, false, true);
 
-  //Sum of one-electron integrals written to VmoB2X
-  VmoB2X->subtract(PI4);
-  VmoB2X->subtract(PI5);
+  //Sum of one-electron integrals written to VmoA2X
+  VmoA2X->subtract(PI4);
+  VmoA2X->subtract(PI5);
   
-
-
-
 
   
 
@@ -296,7 +291,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
 		 }
 		 global_dpd_->buf4_mat_irrep_close(&buf_Y212, h);
             } 
-            ERI4[i][n] = (-1.0) * int_4; 
+            ERI4[i][n] = int_4; 
             int_4 = 0.0;
        }
   }
@@ -418,7 +413,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
                  }
                  global_dpd_->buf4_mat_irrep_close(&buf_X121, h);
             }
-            ERI9[i][n] = (-1.0) * int_9;
+            ERI9[i][n] = int_9;
             int_9 = 0.0;
        }
   }
@@ -471,7 +466,6 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
   }
 
 
-
   //Term 2: Sum of ERIs//
   double ERI_2[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
   for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
@@ -479,8 +473,6 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
             ERI_2[i][n] = ERI6[i][n] - ERI7[i][n] - ERI8[i][n] - ERI9[i][n] + ERI10[i][n];
        }
   }
-
-
 
 
   //Term 1//
@@ -507,7 +499,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
   double E_ct_2 = 0.0;
   for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
        for (int n=0; n<wfn_union_->l_nvir(0); ++n) {
-            double v = ERI_2[i][n] + VmoB2X->get(i,n);
+            double v = ERI_2[i][n] + VmoA2X->get(i,n);
             E_ct_2 += (v*v)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
        }
   }
@@ -528,9 +520,9 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Charge-transfer energy calculations <==\n");
      psi::outfile->Printf("  ==>         Benchmark (Otto-Ladik)           <==\n\n");
-     psi::outfile->Printf("     E_CT (A+B-)   = %13.10f\n", E_ct_1        );
-     psi::outfile->Printf("     E_CT (A-B+)  = %13.10f\n", E_ct_2        );
-     psi::outfile->Printf("     E_CT   = %13.10f\n", E_ct        ); 
+     psi::outfile->Printf("     E_CT (A+B-)   = %13.10f au\n", E_ct_1        );
+     psi::outfile->Printf("     E_CT (A-B+)   = %13.10f au\n", E_ct_2        );
+     psi::outfile->Printf("     E_CT          = %13.10f au\n", E_ct        ); 
      psi::outfile->Printf("\n");
   }
 
