@@ -1,0 +1,251 @@
+\input{header.tex}
+\begin{document}
+\preprint{AIP/123-OEP}
+
+\title{Ab Initio Effective One-Electron Potentials 
+for Repulsive and Charge-Transfer Interaction Energies at Hartree-Fock Level}
+
+\author{Bartosz B{\l}asiak}
+\email[]{blasiak.bartosz@gmail.com}
+\homepage[]{https://www.polonez.pwr.edu.pl}
+
+\author{Marta Cho{\l}uj} 
+\author{Joanna Bednarska}
+\author{Wojciech Bartkowiak}
+
+\affiliation{Department of Physical and Quantum Chemistry, Faculty of Chemistry, 
+Wroc{\l}aw University of Science and Technology, 
+Wybrze{\.z}e Wyspia{\'n}skiego 27, Wroc{\l}aw 50-370, Poland}
+
+\date{\today}
+
+\begin{abstract}
+The concept of the effective one-electron potentials has been useful for many decades
+in efficient description of electronic structure of chemical systems, especially extended
+molecular aggregates such as interacting molecules in condensed phases. 
+In this Work, \emph{ab initio} effective potentials are studied for a number of theories
+of the intemolecular interaction energy.
+\end{abstract}
+
+\pacs{}
+
+\maketitle
+
+\tableofcontents
+
+\section{\label{s:1}Introduction}
+\section{\label{s:2}Theory}
+
+Solution of the Schr{\"o}dinger equation provides the wavefunction
+of the molecular aggregate $AB$,
+%
+\begin{equation}
+ E^{AB} = \tBraKet{\Psi^{AB}}{\mathscr{H}}{\Psi^{AB}} \;,
+\end{equation}
+%
+from which any property $P$, understood as an expectation value of the
+associated operator $\mathscr{P}$, can be computed according to
+%
+\begin{equation}
+ P = \tBraKet{\Psi^{AB}}{\mathscr{P}}{\Psi^{AB}} \;.
+\end{equation}
+%
+
+
+\subsection{\label{ss:2.1}Intermolecular Interaction-Induced Observable}
+
+Within a supermolecular approch, the part of a property that arises due to the
+intermolecular interaction between $A$ and $B$ is given by
+%
+\begin{equation} \label{e:delta-p}
+	\Delta^{AB} P = \tBraKet{\Psi^{AB}}{\mathscr{P}}{\Psi^{AB}} - 
+	    \tBraKet{\Psi^{A}}{\mathscr{P}}{\Psi^{A}} -
+	    \tBraKet{\Psi^{B}}{\mathscr{P}}{\Psi^{B}}\;.
+\end{equation}
+%
+In a certain basis, expectation values of any operator $\mathscr{O}$ evaluated for
+any system $X$ can be formally
+expanded in a following series
+%
+\begin{equation} \label{e:exp-val-series}
+	\tBraKet{\Psi^{X}}{\mathscr{O}}{\Psi^{X}} =
+	\sum_{ij} C^{X}_{ij} \tBraKet{i}{\hat{h}}{j}
+	+ \sum_{ijkl} C^{X}_{ijkl} \BraKet{ij}{kl}
+\end{equation}
+%
+where $\hat{h}$ is the core Hamiltonian one\hyp{}electron operator
+and the tensors
+${\bf C}^{(2)}$ and ${\bf C}^{(4)}$ are characteristic for the property of interest.
+Consider an approximation in which the basis functions $\phi_i$ 
+are localized on either molecule. 
+For this case, application of Eq.~\eqref{e:exp-val-series}
+to Eq.~\eqref{e:delta-p} yields the partitioning of the interaction\hyp{}induced property,
+for which the one\hyp{}electron part reads
+%
+\begin{equation} \label{e:delta-p-part-1el}
+	\sum_{ij} \Big\{ 
+	C^{AA}_{ij}  \BraKet{A}{A} + %\tBraKet{i^A}{\hat{h}}{j^A} + 
+	C^{BB}_{ij}  \BraKet{B}{B} + %\tBraKet{i^B}{\hat{h}}{j^B} + 2 
+2	C^{AB}_{ij}  \BraKet{A}{B}   %\tBraKet{i^A}{\hat{h}}{j^B} 
+	\Big\}
+\end{equation}
+%
+and the two\hyp{}electron part reads
+%
+\begin{multline} \label{e:delta-p-part-2el}
+	\sum_{ijkl} \Big\{  
+	C^{AAAA}_{ijkl} \BraKet{AA}{AA} +    %\BraKet{i^Aj^A}{k^Al^A} +
+	C^{BBBB}_{ijkl} \BraKet{BB}{BB} + \\ %\BraKet{i^Bj^B}{k^Bl^B} +
+	{s} \left[ C^{AABB}_{ijkl} \BraKet{AA}{BB} \right] + 
+	{s} \left[ C^{ABAB}_{ijkl} \BraKet{AB}{AB} \right] + \\
+	{s} \left[ C^{AAAB}_{ijkl} \BraKet{AA}{AB} \right] +
+	{s} \left[ C^{ABBB}_{ijkl} \BraKet{AB}{BB} \right]
+	\Big\}
+\end{multline}
+%
+To simplify the resulting expressions
+in Eqs.~\eqref{e:delta-p-part-1el} and \eqref{e:delta-p-part-2el},
+the shorthand notation $\BraKet{A}{B} \equiv \tBraKet{i^A}{\hat{h}}{j^B}$ and 
+$\BraKet{AB}{CD} \equiv \BraKet{i^Aj^B}{k^Cl^D}$
+was introduced, and
+the real orbitals 
+were assumed to simplify the symmetry of the one\hyp{} and two\hyp{}electron integrals.
+The operator $s$ permutes and sums over all the combinations of the basis function indices
+given their partitioning scheme between molecules $A$ and $B$.
+
+Therefore, the interaction\hyp{}induced property can be recast in a following way
+
+
+\subsection{\label{ss:2.2}Effective One-Electron Potential}
+
+The one\hyp{}electron potential $v^{\rm eff}({\bf r})$
+produced by a certain effective one\hyp{}electron charge density distribution $\rho^{\rm eff}({\bf r})$
+can be defined as
+%
+\begin{equation}
+	v^{\rm eff}({\bf r}) = \int \frac{ \rho^{\rm eff}({\bf r}') }{ \vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+\end{equation}
+%
+where ${\bf r}$ is a spatial coordinate. The density can be expanded in terms of an effective
+one\hyp{}particle density matrix represented in a certain basis of orbitals, $\BM{\phi}({\bf r})$,
+%
+\begin{equation}
+	\rho^{\rm eff}({\bf r}) = \sum_{\alpha\beta} D_{\alpha\beta}^{\rm eff} 
+	\phi_\alpha({\bf r}) \phi_\beta^{*}({\bf r})
+\end{equation}
+%
+Based on that, the operator form of the effective potential 
+can be written by
+%
+\begin{equation}
+	\hat{v}^{\rm eff} = \sum_{\alpha\beta} 
+	\ket{\alpha} 
+	\left[
+	\int
+	\hat{J}^{\rm}_{\alpha\beta}({\bf r}) 
+	\rho^{\rm eff}({\bf r})
+	d{\bf r} 
+	\right]
+	\bra{\beta}
+\end{equation}
+%
+with the Coulomb operator defined by
+%
+\begin{equation}
+	\hat{J}^{\rm}_{\alpha\beta}({\bf r}) f({\bf r}) \equiv
+	f({\bf r}) 
+	\int
+	\frac{ \phi_\alpha^{*}({\bf r}') \phi_\beta({\bf r}') }{ \vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+\end{equation}
+%
+for any one\hyp{}electron function $f({\bf r})$. The matrix element of the effective potential operator
+is therefore given by
+%
+\begin{equation}
+	\tbraket{\alpha}{ \hat{v}^{\rm eff} }{\beta}
+	= \sum_{\gamma\delta} \braket{\alpha\beta}{\gamma\delta} D^{\rm eff}_{\gamma\delta}
+\end{equation}
+%
+In the above equation and throughout the work, the electron repulsion integral (ERI)
+is defined according to
+%
+\begin{equation}
+	\braket{\alpha\beta}{\gamma\delta} \equiv
+	\iint 
+	\frac{ \phi_\alpha^{*}({\bf r}_1) \phi_\beta({\bf r}_1) 
+	       \phi_\gamma^{*}({\bf r}_2) \phi_\delta({\bf r}_2) }{ \vert {\bf r}_1 - {\bf r}_2 \vert}
+	d{\bf r}_1 d{\bf r}_2
+\end{equation}
+%
+
+\subsection{\label{ss:2.3}}
+
+%n brief, the main principle
+%is to rewrite the arbirtary function $f$ as\footnote{
+%I use Coulomb notation for ERIs, i.e.,
+%$\ERIc{\phi_i}{\phi_j}{\phi_k}{\phi_l} \equiv \iint d{\bf r}_1 d{\bf r}_2
+%\phi_i^{*}({\bf r}_1)\phi_j({\bf r}_1) \frac{1}{\lvert {\bf r}_1 - {\bf r}_2 \rvert} \phi_k^{*}({\bf r}_2)\phi_l({\bf r}_2)
+%$
+%}
+%
+\begin{subequations}
+ \begin{align}
+ f\left[ 
+   \ERIc{\phi_i^A}{\phi_j^A}{\phi_k^B}{\phi_l^B}
+ \right] &= \OEIc{\phi_i^A}{v_{kl}^B}{\phi_j^A} \rightarrow \text{ multipole expansion or density fitting}\\
+%
+ f\left[ 
+   \ERIc{\phi_i^A}{\phi_j^B}{\phi_k^B}{\phi_l^B}
+ \right] &= \OEIc{\phi_i^A}{v_{kl}^B}{\phi_j^B} \rightarrow \text{ density fitting}
+ \end{align}
+\end{subequations}
+%
+where $A$ and $B$ denote different molecules and $\phi_i$ is the $i$th molecular orbital
+or basis function.
+$v_{kl}^B$ is the effective one-electron potential derived from the partial
+effective densities $\rho_{kl}^B({\bf r}) = \phi_k^B({\bf r})\phi_l^B({\bf r})$.
+The summations over $k$ and $l$ can be incorporated into the generalized one-electron potential
+$v_{\text{eff}}^B$
+to produce
+%
+\begin{equation}
+ \sum_{ij}\sum_{kl\in B} f\left[ 
+   \ERIc{\phi_i}{\phi_j}{\phi_k^B}{\phi_l^B}
+ \right] = \sum_{ij} \OEIc{\phi_i}{v_{\text{eff}}^B}{\phi_j} 
+\end{equation}
+%
+Thus, the total computational effort is extremely reduced from the fourth-fold
+sum involving evaluation of ERIs to the two-fold sums of cheaper one-electron integrals.
+It is also possible to generalize the above expression even further by
+summing over all possible functions $f_t$
+%
+\begin{equation} \label{e:ft-reduction}
+ \sum_t \sum_{ij}\sum_{kl\in B} f_t\left[ 
+   \ERIc{\phi_i}{\phi_j}{\phi_k^B}{\phi_l^B}
+ \right] = \sum_{ij} \OEIc{\phi_i}{v_{\text{eff}}^B}{\phi_j} 
+\end{equation}
+%
+The above design has the advantage that the effective potentials are fully first-principles
+and no extensive case-dependent fitting procedures are necessary.
+Only the effective potentials of \emph{independent} fragment $B$ need to be determined once and for all
+and stored in a file. Note also, that, in principle, there is no approximation 
+made here at that moment.
+
+\section{\label{s:3}Calculation Details}
+\section{\label{s:4}Results and Discussion}
+\section{\label{s:5}Summary and a few concluding remarks}
+
+
+\begin{acknowledgments}
+This project is carried out under POLONEZ programme which has received funding from the European Union's
+Horizon~2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement 
+No.~665778. This project is funded by National Science Centre, Poland 
+(grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+\end{acknowledgments}
+
+
+% -----------------------
+\bibliography{references}
+% -----------------------
+
+\end{document}
