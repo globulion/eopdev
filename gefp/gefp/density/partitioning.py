@@ -51,7 +51,16 @@ class DensityDecomposition(Density):
 
  Usage example:
 
-   solver = DensityDecomposition(aggr, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, l_dds=True, **kwargs) 
+   solver = DensityDecomposition(aggr, method='hf', 
+                                       acbs=True, 
+                                       jk_type='direct', 
+                                       no_cutoff=0.000, 
+                                       xc_scale=1.0, 
+                                       l_dds=True, 
+                                       n_eps=5.0E-5,
+                                       cc_relax=True,
+                                       verbose=True,
+                                       **kwargs) 
    solver.compute(polar_approx=False)
                                                                                                             
    dD_pauli = solver.deformation_density('pau')
@@ -71,10 +80,11 @@ class DensityDecomposition(Density):
    solver.print_out()
 
  -------------------------------------------------------------------------------------------------------------
-                                                                      Last Revision: Gundelfingen, 11 Jan 2019
+                                                                      Created      : Gundelfingen, 11 Jan 2019
+                                                                      Last Revision: Gundelfingen, 20 May 2019
 """
     def __init__(self, aggregate, method='hf', acbs=True, jk_type='direct', no_cutoff=0.000, xc_scale=1.0, l_dds=True, 
-                       cc_relax=True, verbose=False, **kwargs):
+                       cc_relax=True, verbose=False, n_eps=5.0E-5, **kwargs):
         "Initialize all attributes"
         # molecular aggregate
         self.aggregate   = aggregate    
@@ -140,14 +150,16 @@ class DensityDecomposition(Density):
         self.acbs        = acbs
         # cutoff for NO occupancies
         self.no_cutoff   = no_cutoff
+        # threshold for occupancy deviations
+        self.n_eps       = n_eps
         # relax density matrix for coupled cluster
-        self.cc_relax = cc_relax
+        self.cc_relax    = cc_relax
         # linear DDS
-        self.l_dds = l_dds
+        self.l_dds       = l_dds
         # verbose mode
-        self.verbose = verbose
+        self.verbose     = verbose
         # scaling factor of exchange-correlation occupation weight
-        self.xc_scale = xc_scale
+        self.xc_scale    = xc_scale
 
         # what is already computed
         self.monomers_computed            = False   # unperturbed monomenr wavefunctions at arbitrary level of theory 
@@ -273,7 +285,8 @@ class DensityDecomposition(Density):
                                         order='descending', no_cutoff=0.0,
                                         return_ao_orthogonal = False,
                                         ignore_large_n = False,
-                                        renormalize = False)
+                                        renormalize = False,
+                                        n_eps = self.n_eps)
         if self.verbose is True: print("Sum of natural orbital occupations for nqm= %13.6f" % N.sum())
         self.matrix["dqm"] = D
         self.matrix["nqm"] = N
@@ -339,7 +352,8 @@ class DensityDecomposition(Density):
                                          order='descending', no_cutoff=0.0,
                                          return_ao_orthogonal = False,
                                          ignore_large_n = False,
-                                         renormalize = False)
+                                         renormalize = False,
+                                         n_eps = self.n_eps)
         if self.verbose is True: print("Sum of natural orbital occupations for noo= %13.6f" % noo.sum())
 
         # save
@@ -659,7 +673,8 @@ class DensityDecomposition(Density):
                                          order='descending', no_cutoff=0.0,
                                          return_ao_orthogonal = False,
                                          ignore_large_n = False,
-                                         renormalize = False)
+                                         renormalize = False, 
+                                         n_eps = self.n_eps)
             if self.verbose is True: print("Sum of natural orbital occupations for n(%d)= %13.6f" % (n, N.sum()))
 
             self.data['wfn'].append(c_wfn)
