@@ -606,7 +606,7 @@ class RepulsionEnergySolver : public OEPDevSolver
  *            \left\{
  *               V^A_{nj} + 2\sum_{k\in A}^{\rm Occ_A} (1-\delta_{ik})(nj \vert kk)
  *            \right\}
- *            -(nj \vert ij)
+ *            +(nj \vert ij)
  *            \right]
  *            + \sum_{k\in A}^{\rm Occ_A}\sum_{j\in B}^{\rm Occ_B}
  *            S_{kj}(1-\delta_{ik}) (ik \vert nj)
@@ -623,10 +623,10 @@ class RepulsionEnergySolver : public OEPDevSolver
  * \f]
  * where 
  * \f[
- *   V^2_{in} = \frac{V^B_{in} - \sum_{m\in A}^{\rm All_A} V_{im}S_{mn}^B}
+ *   V^2_{in} = \frac{V^{EF,B}_{in} - \sum_{m\in A}^{\rm All_A} V^{EF,B}_{im}S_{mn}^B}
  *                   {1-\sum_{m\in A}^{\rm All_A} S_{mn}^2}
  *          \left\{
- *             V^B_{in} - \sum_{m\in A}^{\rm All_A} V_{im}^BS_{mn}
+ *             V^{EF,B}_{in} - \sum_{m\in A}^{\rm All_A} V_{im}^{EF,B}S_{mn}
  *            + \sum_{j\in B}^{\rm Occ_B} S_{ij} \left( T_{nj} - \sum_{m\in A}^{\rm All_A} S_{nm} T_{mj} \right)
  *          \right\}
  * \f]

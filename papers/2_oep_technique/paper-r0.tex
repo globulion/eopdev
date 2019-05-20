@@ -34,25 +34,73 @@ of the intemolecular interaction energy.
 \tableofcontents
 
 \section{\label{s:1}Introduction}
-\section{\label{s:2}Theory}
+\section{\label{s:2}Effective One-Electron Potentials: Configuration Interaction}
 
-Solution of the Schr{\"o}dinger equation provides the wavefunction
-of the molecular aggregate $AB$,
+The time\hyp{}independent Schr{\"o}dinger equation provides the stationary solution to the
+electronic state
+of a molecular system in terms of its $N$\hyp{}electron wavefunction, $\Psi$,
 %
-\begin{equation}
- E^{AB} = \tBraKet{\Psi^{AB}}{\mathscr{H}}{\Psi^{AB}} \;,
+\begin{equation} \label{e:schrodinger}
+ E = \tBraKet{\Psi}{\mathscr{H}}{\Psi} \;,
 \end{equation}
 %
-from which any property $P$, understood as an expectation value of the
+for a quantum Hamiltonian, $\mathscr{H} = \hat{h}(1) + \hat{o}(2)$,
+with $\hat{h}(1)$ being the core Hamiltonian one\hyp{}electron operator
+and $\hat{o}(2)$ the two\hyp{}electron repulsion operator.
+From the above solution, any property $P$, understood as an expectation value of the
 associated operator $\mathscr{P}$, can be computed according to
 %
-\begin{equation}
- P = \tBraKet{\Psi^{AB}}{\mathscr{P}}{\Psi^{AB}} \;.
+\begin{equation} \label{e:prop}
+ P = \tBraKet{\Psi}{\mathscr{P}}{\Psi} \;.
 \end{equation}
 %
+The exact solution to Eq.~\eqref{e:schrodinger} is formally given by
+the configuration interaction (CI) expansion around the reference 
+(approximate) wavefunction, $\Psi^{(0)}$,
+typically the solution to the Hartree\hyp{}Fock (HF) problem,
+%
+\begin{equation} \label{e:ci}
+ \Ket{\Psi} = \Ket{\Psi^{(0)}} + \sum_{ra} C_{r}^{a} \Ket{\Psi_{r}^{a}} + 
+	 \sum_{rsab} C_{rs}^{ab} \Ket{\Psi_{rs}^{ab}} + \ldots
+\end{equation}
+%
+In the above equation,
+$\Ket{\Psi_{rs\ldots}^{ab\ldots}}$ are called the CI configurations
+with the associated CI coefficients $C_{rs\ldots}^{ab\ldots}$, created by `exciting'
+one or more electrons from the $a$th ($b$th) occupied molecular orbital to the $a$th ($b$th)
+virtual (unoccupied) molecular orbital, obtained from the HF solution.
+By inserting Eq.~\eqref{e:ci} into Eq.~\eqref{e:prop} 
+and using the Slater\hyp{}Condon rules for evaluating the one\hyp{} and two\hyp{}electron
+operator matrix element between
+the CI configurations, it can be shown that the following holds
+%
+\begin{equation} \label{e:exp-val-series}
+	P =
+	\sum_{ij} P_{ij} \tBraKet{i}{\hat{h}}{j}
+	+ \sum_{ijkl} P_{ijkl} \BraKet{ij}{kl}  \;,
+\end{equation}
+%
+where $\tBraKet{i}{\hat{h}}{j} \equiv \int \phi^*_i({\bf r}) \hat{h} \phi_j({\bf r}) d{\bf r} $,
+$\BraKet{ij}{kl}$ is the electron\hyp{}repulsion integral (ERI) defined by
+%
+\begin{equation}
+	\BraKet{ij}{kl} \equiv
+	\iint 
+	\frac{ \phi_i^{*}({\bf r}_1) \phi_j({\bf r}_1) 
+	       \phi_k^{*}({\bf r}_2) \phi_l({\bf r}_2) }{ \vert {\bf r}_1 - {\bf r}_2 \vert}
+	d{\bf r}_1 d{\bf r}_2
+\end{equation}
+%
+whereas the second\hyp{}rank tensor ${\bf P}^{(2)}$ 
+and the fourth\hyp{}rank tensor ${\bf P}^{(4)}$ 
+are well defined and characteristic for the property of interest.
+%In this work we are interested in cases when
 
+%$\Psi^{AB}$. In this Section we consider theories to calculate the effect of the interaction
+%of molecules $A$ and $B$ on the property $P$ knowing only the unperturbed wavefunctions,
+%$\Psi^{A}$ and $\Psi^{B}$.
 
-\subsection{\label{ss:2.1}Intermolecular Interaction-Induced Observable}
+\subsection{\label{ss:2.1}Intermolecular Interaction-Induced Property: Localized Basis Set Approximation}
 
 Within a supermolecular approch, the part of a property that arises due to the
 intermolecular interaction between $A$ and $B$ is given by
@@ -63,19 +111,9 @@ intermolecular interaction between $A$ and $B$ is given by
 	    \tBraKet{\Psi^{B}}{\mathscr{P}}{\Psi^{B}}\;.
 \end{equation}
 %
-In a certain basis, expectation values of any operator $\mathscr{O}$ evaluated for
-any system $X$ can be formally
-expanded in a following series
-%
-\begin{equation} \label{e:exp-val-series}
-	\tBraKet{\Psi^{X}}{\mathscr{O}}{\Psi^{X}} =
-	\sum_{ij} C^{X}_{ij} \tBraKet{i}{\hat{h}}{j}
-	+ \sum_{ijkl} C^{X}_{ijkl} \BraKet{ij}{kl}
-\end{equation}
-%
-where $\hat{h}$ is the core Hamiltonian one\hyp{}electron operator
-and the tensors
-${\bf C}^{(2)}$ and ${\bf C}^{(4)}$ are characteristic for the property of interest.
+where $\Psi^{AB}$ and $\Psi^{A(B)}$ are the wavefunctions of the interacting molecular aggregate
+and the unperturbed (non\hyp{}interacting) molecules, respectively.
+
 Consider an approximation in which the basis functions $\phi_i$ 
 are localized on either molecule. 
 For this case, application of Eq.~\eqref{e:exp-val-series}
