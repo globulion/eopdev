@@ -13,16 +13,68 @@ from abc import ABC, abstractmethod
 __all__ = ["Density"]
 
 class Density:
-    """\
+    """
+ --------------------------------------------------------------------------------------------------------------------------
+                                                Electron Density
+
  Handles the Electron Density Distribution.
 
- Class methods:
-  Density.natural_orbitals
-  Density.generalized_density
-  Density.orthogonalize_OPDM
-  Density.orthogonalizer
-  Density.deorthogonalizer
+ --------------------------------------------------------------------------------------------------------------------------
 
+ Usage as container class: 
+ 
+  1) Initialize container object:
+     
+     density = Density(D = None, jk = None)
+
+     where:
+       o D  - the density matrix in AO or MO basis
+       o jk - the psi4::JK object for AO basis JK calculations
+
+  2) Grab the density matrix
+
+     D = density.matrix()
+
+  3) Computations in AO basis:
+
+     o compute 1-electron energy (does not require JK object to be set)
+
+       e_1 = density.compute_1el_energy(D, V1)
+
+     The below require jk to be set:
+
+     o compute 2-electron energy (J-type expression)
+
+       e_2j = density.compute_2el_energy(D_left, D_right, type='j')
+
+     o compute 2-electron energy (K-type expression)
+
+       e_2k = density.compute_2el_energy(D_left, D_right, type='k')
+
+     o compute J matrix (or K matrix if type=='k'):
+
+       J = density.generalized_JK(D, type='j')
+
+ --------------------------------------------------------------------------------------------------------------------------
+
+ Usage as method class. 
+
+ Using 'Density' as a class of methods do not require object initialization.
+ The list of class methods is given below:
+
+   o Density.natural_orbitals     - compute natural orbitals
+   o Density.generalized_density  - compute generalized OPDM
+   o Density.orthogonalize_OPDM   - compute orthogonalized OPDM
+   o Density.orthogonalizer       - compute orthogonalizer matrix
+   o Density.deorthogonalizer     - compute deorthogonalizer rmatrix
+
+ Usage: 
+   result = Density.'class method name'
+
+ See respective documentation for each of them for further details.
+
+ --------------------------------------------------------------------------------------------------------------------------
+                                                                                  Last Revision: Gundelfingen, 20 May 2019
 """
     def __init__(self, D=None, jk=None):
         self._D = None
@@ -38,6 +90,35 @@ class Density:
     def set_jk(self, jk):
         self._global_jk = jk
 
+
+    # ---> Container Public Interface <--- #
+
+    def compute_1el_energy(self, D, Hcore):
+        "Compute generalized 1-electron energy"
+        energy = numpy.dot(D, Hcore).trace()
+        return energy
+
+    def compute_2el_energy(self, D_left, D_right, type='j'):
+        "Compute generalized 2-electron energy"
+        JorK = self.generalized_JK(D_left, type)
+        energy = numpy.dot(JorK, D_right).trace()
+        return energy
+
+    def generalized_JK(self, D, type='j'):
+        "Compute J or K matrix in AO basis from OPDM in the same AO basis"
+        self._global_jk.C_clear()                                           
+        self._global_jk.C_left_add(psi4.core.Matrix.from_array(D, ""))
+        I = numpy.identity(D.shape[0], numpy.float64)
+        self._global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+        self._global_jk.compute()
+        if   type.lower() == 'j': JorK = self._global_jk.J()[0].to_array(dense=True)
+        elif type.lower() == 'k': JorK = self._global_jk.K()[0].to_array(dense=True)
+        else: raise ValueError("Incorrect type of JK matrix. Only J or K allowed.")
+        return JorK
+
+
+    # ---> Class Public Interface <--- #
+
     @classmethod
     def natural_orbitals(cls, D, 
                               S                      =  None         , 
@@ -47,8 +128,69 @@ class Density:
                               return_ao_orthogonal   =  False        , 
                               renormalize            =  False        , 
                               no_cutoff              =  False        ,
-                              ignore_large_n         =  False        ):
-        "Compute the Natural Orbitals from a given ODPM"
+                              ignore_large_n         =  False        ,
+                              n_eps                  =  5.0E-5       ):
+        """
+ --------------------------------------------------------------------------------------------------------------------------
+ Compute the Natural Orbitals from a given OPDM
+
+ --------------------------------------------------------------------------------------------------------------------------
+
+ Usage:
+
+ n, c = Density.natural_orbitals(D, S = None, C = None, 
+                                    orthogonalize_mo     = True,
+                                    order                = 'descending',
+                                    return_ao_orthogonal = False,
+                                    renormalize          = False, 
+                                    no_cutoff            = False, 
+                                    ignore_large_n       = False, 
+                                    n_eps                = 5.0E-5)
+
+ where:
+  o D - OPDM in AO or MO basis
+  o S - overlap integrals in AO or MO basis
+  o C - LCAO-MO transformation matrix
+  o orthogonalize_mo     - whether to transform D from AO to certain MO basis and diagonalize
+  o order                - order in which eigenvalues (occupancies) are sorted. Eigenvalues (NO's) are sorted accordingly.
+  o return_ao_orthogonal - whether to return NO's in oAO basis set or not
+  o renormalize          - renormalize to integer number of electrons
+  o no_cutoff            - cut-off threshold for occupancies
+  o ignore_large_n       - raise ValueError if (1.0 + n_eps) < n < (0.0 - n_eps)
+  o n_eps                - tolerance for occupancy deviation
+
+ --------------------------------------------------------------------------------------------------------------------------
+
+ Examples:
+
+  1) NO's in AO (non-orthogonal, original) basis from D in AO basis
+
+     n, c = Density.natural_orbitals(D, S, C, orthogonalize_mo = True, n_eps = 0.001)
+
+     D: ndarray of shape (AO x AO)
+     S: ndarray of shape (AO x AO)
+     C: ndarray of shape (AO x MO)
+
+     --> transformation D (MO x MO) = C.T S D S C and its diagonalization
+     --> transformation of transformation matrix from MO to AO basis
+
+     n: ndarray of shape (NO)
+     c: ndarray of shape (AO x NO)
+
+  2) NO's in certain orthogonal MO basis from D in the same MO basis
+    
+     n, c = Density.natural_orbitals(D, None, None, orthogonalize_mo = False, n_eps = 0.001)
+
+     D: ndarray of shape (MO x MO)
+
+     --> diagonalization of D
+
+     n: ndarray of shape (NO)
+     c: ndarray of shape (MO x NO)
+
+ --------------------------------------------------------------------------------------------------------------------------
+                                                                                  Last Revision: Gundelfingen, 20 May 2019
+ """
         # orthogonalize in MO basis
         if orthogonalize_mo is True:
             if S is not None:
@@ -82,10 +224,12 @@ class Density:
 
         # Warnings and sanity checks
         if not ignore_large_n:
-           if n.max() > 1.0 or n.min() < 0.0:                                                                      
+           if n.max() > 1.0 or n.min() < 0.0:
               print(" Warning! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
-           if ((n.max() - 1.0) > 0.00001 or (n.min() < -0.00001)):
+           if ((n.max() - 1.0) > n_eps or (n.min() < -n_eps)):
               raise ValueError("Unphysical NO populations detected! nmax=%14.4E nmin=%14.4E" % (n.max(), n.min()))
+
+        # Remove negative values
         n[numpy.where(n<0.0)] = 0.0
 
         # NO cutoff
@@ -96,12 +240,12 @@ class Density:
            U =(U.T[ids]).T
 
         # Order according to occupations
-        if order=='ascending': 
+        if order.lower() =='ascending': 
            pass
-        elif order=='descending':
+        elif order.lower() =='descending':
            n = n[  ::-1]
            U = U[:,::-1]
-        else: raise ValueError("Incorrect order of NO orbitals. Possible only ascending or descending.")
+        else: raise ValueError("Incorrect order of NO orbitals. Possible only 'ascending' or 'descending'.")
 
         # Renormalize to match correct number of electrons
         if renormalize is True:
@@ -114,38 +258,12 @@ class Density:
            n[numpy.where(n>1.0)] = 1.0
         return n, U
 
-    #@classmethod
-    def compute_1el_energy(self, D, Hcore):
-        "Compute generalized 1-electron energy"
-        energy = numpy.dot(D, Hcore).trace()
-        return energy
-
-    #@classmethod
-    def compute_2el_energy(self, D_left, D_right, type='j'):
-        "Compute generalized 2-electron energy"
-        JorK = self.generalized_JK(D_left, type)
-        energy = numpy.dot(JorK, D_right).trace()
-        return energy
-
     @classmethod
     def generalized_density(cls, n, c, g=1.0):
         "Generalized matrix G = C n**g C.T"
         ng = n.copy() if g==1.0 else n**g
         G = numpy.linalg.multi_dot([c, numpy.diag(ng), c.T])
         return G
-
-    #@classmethod
-    def generalized_JK(self, D, type='j'):
-        self._global_jk.C_clear()                                           
-        self._global_jk.C_left_add(psi4.core.Matrix.from_array(D, ""))
-        I = numpy.identity(D.shape[0], numpy.float64)
-        self._global_jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
-        self._global_jk.compute()
-        if   type.lower() == 'j': JorK = self._global_jk.J()[0].to_array(dense=True)
-        elif type.lower() == 'k': JorK = self._global_jk.K()[0].to_array(dense=True)
-        else: raise ValueError("Incorrect type of JK matrix. Only J or K allowed.")
-        return JorK
-
 
     @classmethod
     def orthogonalize_OPDM(cls, D, S):
