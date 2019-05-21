@@ -387,16 +387,18 @@ and
 the overlap\hyp{}like and the Coulomb\hyp{}like 
 OEP's are defined as follows
 %
+\begin{subequations}
 \begin{align}
 	\hat{v}^{{\rm eff},BA}_{1(ij)} &\equiv P_{ij}^{AB} \hat{h}
-	+ s \sum_{mk\in A}  P^{AAAB}_{mkij} \hat{v}_{mk}^{AA} \\
+	+ s \sum_{mk\in A}  P^{AAAB}_{mkij} \hat{v}_{mk}^{AA} \;, \\
 	%
 	\hat{v}^{{\rm eff},BA}_{2(ik)} &\equiv P_{ik}^{AA} \hat{h} 
         + s \sum_{mk'\in A} P^{AAAA}_{ikmk'} \hat{v}_{mk'}^{AA}  \nonumber
         \\
 	&+ \frac{1}{2}
-        s \sum_{jl'\in B}  P^{AABB}_{ik'jl} \hat{v}_{jl'}^{BB} 
+        s \sum_{jl'\in B}  P^{AABB}_{ik'jl} \hat{v}_{jl'}^{BB} \;,
 \end{align}
+\end{subequations}
 %
 and accordingly for the twin operators $\hat{v}^{{\rm eff},AB}_{\text{$1$ and $2$}}$.
 
@@ -499,10 +501,12 @@ one finds the coefficients of the $i$th row of ${\bf V}^A$ to be
 %
 where
 %
+\begin{subequations}
 \begin{align}
  a^{(i)}_\eta &= \int \varphi^*_\eta({\bf r}) \hat{v}^A \phi_i({\bf r}) d{\bf r} \;,\\  
  S_{\eta\xi}  &= \int \varphi^*_\eta({\bf r}) \varphi_\xi({\bf r}) d{\bf r} \;.
 \end{align}
+\end{subequations}
 %
 %Since matrix elements of an OEP operator in auxiliary space can be computed 
 %in the same way as the matrix elements with any other basis function, 
@@ -519,7 +523,7 @@ where
 %\end{equation}
 %where $j$ denotes the other (environmental) basis function.
 %
-The working form of $a^{(i)}_\eta$ can be found by applying 
+The working formula for $a^{(i)}_\eta$ can be found by applying 
 potential for from Eq.~\eqref{e:v-eff}
 along with the spectral representation of the effective density from Eq.~\eqref{e:d-spectral} 
 which gives
@@ -563,6 +567,7 @@ one obtains
   V^A_{i\xi} = \sum_\eta [{\bf A}^{-1}]_{\xi\eta} b^{(i)}_\eta \;,
 \end{equation}
 where 
+\begin{subequations}
 \begin{align}
  b^{(i)}_\eta &= \iint 
                        \frac{ \varphi^*_\eta({\bf r}_1) \hat{v} \phi_i({\bf r}_2) } 
@@ -573,6 +578,7 @@ where
                             {\vert {\bf r}_1 - {\bf r}_2\vert}  
                  d{\bf r}_1 d{\bf r}_2 \;.
 \end{align}
+\end{subequations}
 %
 %The symbol $ \vert\vert $ is to denote the operator $ r_{12}^{-1}$ and double integration over $ {\bf r}_1 $
 %and $ {\bf r}_2 $. 
@@ -595,11 +601,26 @@ However, one can introduce the effective potential in order to eliminate one int
 This can be achieved by performing additional density fitting in a nearly complete intermediate basis 
 %
 \begin{equation}
- \hat{v}^{\rm eff} \Ket{i} = \sum_\varepsilon^{\rm Int} H_{i\varepsilon} \Ket{\varepsilon}
+ \hat{v}^{\rm eff} \Ket{i} = \sum_\varepsilon^{\rm Int} H_{i\varepsilon} \Ket{\varepsilon} \;,
 \end{equation}
 %
 where the symbol `Int' denotes the intermediate basis from a chosen resolution of identity.
-
+The working equation is therefore
+%
+\begin{equation}
+ b^{(i)}_\eta = \sum_\varepsilon^{\rm Int} H_{i\varepsilon} R_{\varepsilon\eta} 
+\end{equation}
+%
+with
+%
+\begin{equation}
+ R_{\varepsilon\eta} \equiv \iint 
+                       \frac{ \varphi^*_\varepsilon({\bf r}_1) \varphi_\eta({\bf r}_2) } 
+                            {\vert {\bf r}_1 - {\bf r}_2\vert}  
+                 d{\bf r}_1 d{\bf r}_2 \;,
+\end{equation}
+%
+which can be easily evaluated and the matrix elements of the OEP operator found.
 %Therefore, in order to use this generalized density fitting scheme
 %one must to compute two\hyp{}centre electron repulsion integrals
 %as well as four\hyp{}centre asymmetric electron repulsion integrals of the type $ (\alpha\beta\gamma||\eta) $.
