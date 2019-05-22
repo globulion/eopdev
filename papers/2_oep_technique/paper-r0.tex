@@ -363,7 +363,7 @@ and the associated effective potential reads
 Note that the exchange\hyp{}like terms cannot be represented in terms of OEP's.
 Gathering the above arguments, $\Delta^{AB}P$ adopts the following form
 %
-\begin{multline}
+\begin{multline} \label{e:ci-oep-master}
  \Delta^{AB}P \approx \Delta_{\rm ex}^{AB} P
 	+ \sum_{i\in A} \sum_{j\in B} 
 	  \tBraKet{i}{ \left\{ \hat{v}^{{\rm eff},AB}_{1(ij)} + \hat{v}^{{\rm eff},BA}_{1(ij)}  \right\} }{j}
@@ -388,19 +388,44 @@ the overlap\hyp{}like and the Coulomb\hyp{}like
 OEP's are defined as follows
 %
 \begin{subequations}
-\begin{align}
+\begin{align} \label{e:oep-exch-like}
 	\hat{v}^{{\rm eff},BA}_{1(ij)} &\equiv P_{ij}^{AB} \hat{h}
 	+ s \sum_{mk\in A}  P^{AAAB}_{mkij} \hat{v}_{mk}^{AA} \;, \\
 	%
 	\hat{v}^{{\rm eff},BA}_{2(ik)} &\equiv P_{ik}^{AA} \hat{h} 
         + s \sum_{mk'\in A} P^{AAAA}_{ikmk'} \hat{v}_{mk'}^{AA}  \nonumber
-        \\
-	&+ \frac{1}{2}
+        \\ \label{e:oep-coul-like}
+	& \qquad\qquad+ \frac{1}{2}
         s \sum_{jl'\in B}  P^{AABB}_{ik'jl} \hat{v}_{jl'}^{BB} \;,
 \end{align}
 \end{subequations}
 %
 and accordingly for the twin operators $\hat{v}^{{\rm eff},AB}_{\text{$1$ and $2$}}$.
+
+\subsection{\label{s.242}Separability of P-Coefficients}
+
+Until that point, the effective potentials from Eqs.~\eqref{e:oep-exch-like}
+and \eqref{e:oep-coul-like} are not separable in terms of the interacting molecules
+because the $\bf P$ tensors are derived from the CI wavefunction of
+the entire interacting system $AB$. However, if there exist an approximate
+separation as, for example,
+%
+\begin{align}
+ P^{AAAB}_{mkij} &\approx X^A_{mk} Y^{AB}_{ij} \;, \\
+ P^{AABB}_{ikjl} &\approx Z^A_{ik} Y^{AB}_{} Z^{ B}_{jl} \;,
+\end{align}
+%
+and if the matrices ${\bf X}^{A(B)}$, 
+${\bf Z}^{A(B)}$ and ${\bf P}^{AA(BB)}$ as well as the tensors
+${\bf P}^{AAAA(BBBB)}$ 
+are properties of the unperturbed (isolated) molecules,
+further rearrangements in Eq.~\eqref{e:ci-oep-master} are possible
+leading to computationally more efficient expressions.
+
+Note also that the matrices ${\bf Y}^{AB}$ and ${\bf P}^{AB}$ depend on their instantaneous 
+relative positions.
+
+%then the molecule\hyp{}specific OEP's can be defined.
 
 \section{\label{s.334}Practical OEP-Based Calculations}
 
@@ -408,7 +433,7 @@ There are two general cases of basis function partitioning scheme
 in which it is possible to define an effective one\hyp{}electron
 potential. They are listed in Table~\ref{t:oep-matrix-element-types}.
 The first type is a Coulomb\hyp{}like contribution, for which multipole expansion or density fitting can be used.
-The second type is an overlap\hyp{}like contribution, can be approximated with the density fitting. Mainly,
+The second type is an overlap\hyp{}like contribution, which can be approximated via the density fitting. Mainly,
 %
 {
 \renewcommand{\arraystretch}{1.4}
