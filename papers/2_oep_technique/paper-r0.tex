@@ -849,6 +849,63 @@ because only the overlap integrals between the $i$th MO on molecule $A$
 and $\eta$th auxiliary orbital on molecule $B$ need to be evaluated on the fly.
 
 \paragraph{Group (ii).}
+The term belonging to this group can be considered as a sum of interaction
+energies between the total charge density distribution of molecule $B$
+and the partial density $\rho_{ik}({\bf r})$ of molecule $A$,
+weighted by the overlap integrals $S_{nk}$. Using the distributed multipole 
+expansion this can be written as
+%
+\begin{equation} \label{e:ct.group-2}
+      - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} 
+ \cong - \sum_{k\in A}^{\rm Occ} S_{nk} \rho_{ki}^A \odot \rho^B_{\rm tot} \;.
+\end{equation}
+%
+Consider now a situation in which the localized occupied MO's are used.
+If the multipole series expansions as truncated
+at the distributed charges $q_i$ and dipole moments ${\BM{\upmu}_i}$, that are
+located at the centroids ${\bf r}_i = \tBraKet{i}{\hat{\bf r}}{i}$, 
+then the interaction energy can be written approximately as
+%
+\begin{multline}
+ \rho_{ki}^A \odot \rho^B_{\rm tot} 
+ \approx 
+ q_{ki} 
+ \left[
+  %\sum_{i\in A}^{\rm LC} 
+ \sum_{y\in B}^{\rm AT}
+  \frac{Z_y}{\vert {\bf r}_y - {\bf r}_i \vert } 
+ +
+ \sum_{j\in B}^{\rm LC}
+  \frac{q_j}{\vert {\bf r}_j - {\bf r}_i \vert } 
+ \right] \\
+ + \text{ dipole terms } \;.
+\end{multline}
+%
+Note however that $q_{ik} = -\delta_{ik}$ and $q_j = -1$. Moreover, 
+if the localized orbitals are perfectly spherical distributed dipole moments vanish.
+This means that Eq.~\eqref{e:ct.group-2} can be approximated as follows
+%
+\begin{equation}
+      - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} 
+ \approx S_{ni}  \left[
+  %\sum_{i\in A}^{\rm LC} 
+ \sum_{y\in B}^{\rm AT}
+  \frac{Z_y}{ r_{yi} } 
+ -
+ \sum_{j\in B}^{\rm LC}
+  \frac{1}{r_{ji}} 
+ \right] \;.
+\end{equation}
+%
+Therefore, only overlap integrals are needed and relative distances between
+atomic and LC's which leads to a great reduction of the evaluation cost
+as compared to the original equation or the full multipole expansion.
+We shall refer to this approximation as to
+the spherical overlap approximation (SOA). Note that in order for this approximation to be valid,
+occupied molecular orbitals need to be localized.
+
+%If localized occupied MO's are used and only distributed charges ar, then $\rho_{ki} \approx \delta_{ki}$
+
 \paragraph{Group (iii).}
 \paragraph{Final OEP-based form of the coupling constant.}
 Gathering the results from Eqs. the coupling constant
