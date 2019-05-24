@@ -105,7 +105,7 @@ is defined according to
 %
 
 
-\section{\label{s:2}Effective One-Electron Potentials: Configuration Interaction}
+\section{\label{s:3}Effective One-Electron Potentials: Configuration Interaction}
 
 The time\hyp{}independent Schr{\"o}dinger equation provides the stationary solution to the
 electronic state
@@ -128,7 +128,7 @@ associated operator $\mathscr{P}$, can be computed according to
 The exact solution to Eq.~\eqref{e:schrodinger} is formally given by
 the configuration interaction (CI) expansion around the reference 
 (approximate) wavefunction, $\Psi^{(0)}$,
-typically the solution to the Hartree\hyp{}Fock (HF) problem,
+typically the solution to the Hartree\hyp{}Fock (HF) problem\cite{Roothaan.RevModPhys.1951},
 %
 \begin{equation} \label{e:ci}
  \Ket{\Psi} = \Ket{\Psi^{(0)}} + \sum_{ra} C_{r}^{a} \Ket{\Psi_{r}^{a}} + 
@@ -267,7 +267,7 @@ and $\BraKet{AB}{BB}$ and (iii) exchange\hyp{}like terms with $\BraKet{AB}{AB}$.
 
 %Therefore, the interaction\hyp{}induced property can be recast in a following way
 
-\subsection{\label{ss:2.3}Defining Effective Potentials}
+\subsection{\label{ss:2.3}Incorporating Electron Repulsion Integrals into Effective Potentials}
 
 Consider now an arbirtary functional $\mathcal{F}$ that explicitly depends on the 
 ERI's. In this work, OEP's are defined by the following transformation
@@ -318,7 +318,7 @@ partitioned in between the interacting fragments.
 %Note also, that, in principle, there is no approximation 
 %made here at that moment.
 
-\subsection{\label{ss:2.4}Interaction-Induced Property: Effective Potentials}
+\subsection{\label{ss:2.4}Definition of Interaction-Induced Property Effective Potentials}
 
 The above technique can be now applied to the CI expansion of the interaction\hyp{}induced property
 under the localized basis set approximation 
@@ -468,7 +468,7 @@ DMTP\footnotemark[4] Form
 
 \subsection{\label{s.333}Distributed Multipole Expansion of OEP's}
 
-\subsection{\label{s.334}Density Fitting of OEP's}
+\subsection{\label{s.3344}Density Fitting of OEP's}
 
 To get the \emph{ab initio} representation of a overlap\hyp{}like OEP, 
 one can use a procedure similar to
@@ -480,51 +480,59 @@ to compute electron-repulsion integrals (ERI's) more efficiently.
 An arbitrary one-electron potential of molecule $A$ acting on any state vector 
 associated with molecule $A$ can be expanded in an auxiliary space centered 
 on $A$ as
+%
 \begin{equation}
-   \hat{v}^{A}\Ket{i} = \sum_{\xi\eta} \hat{v}^{A}\Ket{\xi} [{\bf S}^{-1}]_{\xi\eta} \BraKet{\eta}{i}
+   \hat{v}^{A}\Ket{i} = \sum_{\xi\eta}^{\rm RI} \hat{v}^{A}\Ket{\xi} [{\bf S}^{-1}]_{\xi\eta} \BraKet{\eta}{i}
 \end{equation}
+%
 under the necessary assumption that the auxiliary basis set is nearly complete,
 i.e., 
-$\sum_{\xi\eta} \Ket{\xi}[{\bf S}^{-1}]_{\xi\eta} \Bra{\eta} \cong 1$.
+$\sum_{\xi\eta}^{\rm RI} \Ket{\xi}[{\bf S}^{-1}]_{\xi\eta} \Bra{\eta} \cong 1$.
+In the equations above, 
+the `RI' symbol denotes a certain auxiliary basis set that fulfills the resolution of identity. 
 %In a special case when the basis set is orthogonal (e.g., molecular orbitals)
 %the above relation simplifies to
 %\begin{equation}
 %   v\vert i) = \sum_{\xi} v\vert \xi) ( \xi \vert i)
 %\end{equation}
-The above general and exact expansion can be obtained by 
-utilizing the resolution of identity or, equivalently, density fitting
-in the complete space,
+Such a general expansion can be obtained by 
+utilizing the density fitting
+in the nearly\hyp{}complete space,
 %
 \begin{equation}
- \hat{v}^{A}\Ket{i} = \sum_{\xi} V^A_{i\xi} \Ket{\xi} \;.
+ \hat{v}^{A}\Ket{i} = \sum_{\xi}^{\rm RI} V^A_{i\xi} \Ket{\xi} \;.
 \end{equation}
 %
 In the above equation,
 the matrix ${\bf V}^A$
-is the representation of the OEP operator $\hat{v}^{A}$
-in the complete basis $\{ \varphi_\xi \}$.
-By constructing the least\hyp{}squares objective function 
+is the projection of the state vector $\hat{v}^{A} \Ket{i}$
+onto the complete basis $\{ \varphi_\xi \}$.
+Let $Z_i[{\bf V}^A]$ be the least\hyp{}squares objective function 
 %
-\begin{equation}
- Z[{\bf V}^A] = \int 
-                     \left[    v({\bf r}_1) \phi_i({\bf r}_1) - \sum_\xi V^A_{i\xi} \varphi_\xi({\bf r}_1) \right]^2
-d{\bf r}_1
+\begin{equation} \label{e:z-compl}
+ Z_i[{\bf V}^A] = \int \vert \Xi_i({\bf r}) \vert^2 d{\bf r}
 \end{equation}
 %
-and requiring that
+with the error density defined by
 %
 \begin{equation}
- \frac{\partial Z[{\bf V}^A]}{\partial V^A_{i\mu}} = 0 \text{ for all $\mu$}
+ \Xi_i({\bf r}) = v^A({\bf r}) \phi_i({\bf r}) - \sum_\xi^{\rm RI} V^A_{i\xi} \varphi_\xi({\bf r}) \;.
+\end{equation}
+%
+By requiring that
+%
+\begin{equation} \label{e:z-necessary-requirement}
+ \frac{\partial Z_i[{\bf V}^A]}{\partial V^A_{i\mu}} = 0 \text{ for all $\mu$}
 \end{equation}
 %
 one finds the coefficients of the $i$th row of ${\bf V}^A$ to be
 %
 \begin{equation}
 % {\bf v}_i = {\bf a}^{(i)} \cdot {\bf S}^{-1}
-  V^A_{i\xi} = \sum_\eta [{\bf S}^{-1}]_{\xi\eta} a^{(i)}_\eta \;,
+  V^A_{i\xi} = \sum_\eta^{\rm RI} [{\bf S}^{-1}]_{\xi\eta} a^{(i)}_\eta \;,
 \end{equation}
 %
-where
+where the auxiliary matrices are given by
 %
 \begin{subequations}
 \begin{align}
@@ -549,12 +557,12 @@ where
 %where $j$ denotes the other (environmental) basis function.
 %
 The working formula for $a^{(i)}_\eta$ can be found by applying 
-potential for from Eq.~\eqref{e:v-eff}
+potential form from Eq.~\eqref{e:v-eff}
 along with the spectral representation of the effective density from Eq.~\eqref{e:d-spectral} 
-which gives
+which finally gives
 %
 \begin{equation}
- a^{(i)}_\eta = \sum_{x\in A} W_{\eta i}^{(x)} + 
+ a^{(i)}_\eta = \sum_{x} W_{\eta i}^{(x)} + 
  \sum_{\alpha\beta} D^A_{\alpha\beta} 
   \BraKet{\alpha\beta}{\eta i} \;.
 %  \iint \frac{ \phi_\alpha^*({\bf r}_1)  \phi_\beta({\bf r}_1) \varphi^*_\eta({\bf r}_2) \phi_i({\bf r}_2)}
@@ -563,35 +571,38 @@ which gives
 \end{equation}
 %
 
-
-
 \subsubsection{Density Fitting in Incomplete Space}
 
-Density fitting scheme from previous section has practical disadvantage of a nearly-complete basis set
-being usually very large (spanned by large amount of basis set vectors). Any non-complete basis set
-won't work in the previous example. Since most of basis sets used in quantum chemistry do not form a nealy complete
+Density fitting scheme from previous section has practical disadvantage of a nearly\hyp{}complete basis set
+being usually very large (spanned by large amount of basis set vectors). 
+Since most of basis sets used in quantum chemistry do not form a nealy complete
 set, it is beneficial to design a modified scheme in which it is possible to obtain the effective 
 matrix elements of the OEP operator in a incomplete auxiliary space. This can be achieved by minimizing 
 the following objective function
-\begin{multline}
-	Z[{\bf V}^A] = \iint 
-        \Bigg\{
-                     \left[    v^A({\bf r}_1) \phi_i({\bf r}_1) - \sum_\xi V^A_{i\xi} \varphi_\xi({\bf r}_1) \right]
-                  \\ \times \frac{1}{\vert {\bf r}_1 - {\bf r}_2 \vert}  
-                     \left[    v^A({\bf r}_2) \phi_i({\bf r}_2) - \sum_\xi V^A_{i\xi} \varphi_\eta({\bf r}_1) \right]
-		    \Bigg\}
+%
+\begin{equation} \label{e:z-incompl}
+	Z_i[{\bf V}^A] = \iint 
+        \frac{ \Xi_i^*({\bf r}_1) \Xi_i({\bf r}_2) }{\vert {\bf r}_1 - {\bf r}_2 \vert}  
          d{\bf r}_1 d{\bf r}_2  \;.
-\end{multline}
-Requesting that 
-\begin{equation}
- \frac{\partial Z[{\bf V}^A]}{\partial V^A_{i\mu}} = 0 \text{ for all $\mu$}
 \end{equation}
+%
+with the error density defined by
+%
+\begin{equation}
+ \Xi_i({\bf r}) = v^A({\bf r}) \phi_i({\bf r}) - \sum_\xi^{\rm DF} V^A_{i\xi} \varphi_\xi({\bf r}) \;.
+\end{equation}
+%
+where the symbol `DF' denotes the generally incomplete auxiliary basis set.
+From the requirement given in Eq.~\eqref{e:z-necessary-requirement}
 one obtains
-\begin{equation}
+%
+\begin{equation} \label{e:v-noncompl}
 % {\bf G}^{(i)} = {\bf b}^{(i)} \cdot {\bf A}^{-1}
-  V^A_{i\xi} = \sum_\eta [{\bf A}^{-1}]_{\xi\eta} b^{(i)}_\eta \;,
+  V^A_{i\xi} = \sum_\eta^{\rm DF} [{\bf A}^{-1}]_{\xi\eta} b^{(i)}_\eta \;,
 \end{equation}
+%
 where 
+%
 \begin{subequations}
 \begin{align}
  b^{(i)}_\eta &= \iint 
@@ -607,30 +618,32 @@ where
 %
 %The symbol $ \vert\vert $ is to denote the operator $ r_{12}^{-1}$ and double integration over $ {\bf r}_1 $
 %and $ {\bf r}_2 $. 
-Note that, while $A_{\eta\xi}$ is a typical 2\hyp{}center ERI,
-$b^{(i)}_\eta$ matrix elements are not at all trivial to evaluate
+Note that, while $A_{\eta\xi}$ is a typical 2\hyp{}center ERI 
+that can be evaluated by standard means,
+$b^{(i)}_\eta$ matrix elements are not at all trivial to calculate
 because the OEP operator, which contains integration over an electron coordinate,
-is present inside the double integral. Therefore, the following triple integral
-has to be computed
+is present inside the double integral. Therefore, the following triple integral,
 %
-\begin{equation}
+\begin{equation} \label{e:triple-integral}
  b^{(i)}_\eta = \iiint 
            \frac{ \varphi^*_\eta({\bf r}_1) \phi_i({\bf r}_2)  \rho^{\rm eff}({\bf r}_3) }
             {\vert {\bf r}_1 - {\bf r}_2 \vert \vert {\bf r}_3 - {\bf r}_2 \vert}
-           d{\bf r}_1 d{\bf r}_2 d{\bf r}_3
+           d{\bf r}_1 d{\bf r}_2 d{\bf r}_3 \;,
 \end{equation}
 %
-Computation of all the necessery integrals of this kind is very costly 
+has to be computed.
+Obtaining all the necessery integrals of this kind directly 
+by performing integrations in Eq.~\eqref{e:triple-integral} is very costly 
 and impractical even for medium sized molecules. 
 However, one can introduce the effective potential in order to eliminate one integration. 
 This can be achieved by performing additional density fitting in a nearly complete intermediate basis 
 %
 \begin{equation}
- \hat{v}^{\rm eff} \Ket{i} = \sum_\varepsilon^{\rm Int} H_{i\varepsilon} \Ket{\varepsilon} \;,
+ \hat{v}^{\rm eff} \Ket{i} = \sum_\varepsilon^{\rm RI} H_{i\varepsilon} \Ket{\varepsilon} \;,
 \end{equation}
 %
-where the symbol `Int' denotes the intermediate basis from a chosen resolution of identity.
-The working equation is therefore
+%where the symbol `RI' denotes the intermediate basis from a chosen resolution of identity.
+The working equation is therefore given by
 %
 \begin{equation}
  b^{(i)}_\eta = \sum_\varepsilon^{\rm Int} H_{i\varepsilon} R_{\varepsilon\eta} 
@@ -645,19 +658,239 @@ with
                  d{\bf r}_1 d{\bf r}_2 \;,
 \end{equation}
 %
-which can be easily evaluated and the matrix elements of the OEP operator found.
+which can be easily evaluated and the matrix elements of the OEP operator found
+from Eq.~\eqref{e:v-noncompl}.
 %Therefore, in order to use this generalized density fitting scheme
 %one must to compute two\hyp{}centre electron repulsion integrals
 %as well as four\hyp{}centre asymmetric electron repulsion integrals of the type $ (\alpha\beta\gamma||\eta) $.
 %The evaluation of such integrals is discussed in Appendix~\ref{a:mcmurchie-davidson}.
 
+It is emphasized here that, as long as the state vector $\Ket{i}$, OEP operator $\hat{v}^A$ 
+and the auxiliary and intermediate basis sets depend solely on one unperturbed molecule $A$, the matrix elements
+$V^A_{i\xi}$ can be calculated just once and stored in a file as effective fragment parameters.
 
 
-\section{\label{s:3}Calculation Details}
-\section{\label{s:4}Results and Discussion}
-\subsection{\label{ss.4.1}Pauli-Repulsion Interaction Energy}
-\subsection{\label{ss.4.2}Charge-Transfer Interaction Energy}
-\section{\label{s:5}Summary and a few concluding remarks}
+\section{\label{s:4}Calculation Details}
+
+All the models that were used to test the theory presented in this work
+were implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry program.\cite{Psi4.JCTC.2017}
+
+\section{\label{s:5}Results and Discussion}
+\subsection{\label{ss.5.1}Pauli-Repulsion Interaction Energy}
+\subsection{\label{ss.5.2}Charge-Transfer Interaction Energy}
+
+Charge transfer (CT) between molecules occurs when the net electronic populations 
+of interacting molecules change which leads to an additional stabilization 
+of a molecular aggregate. Since the effect of CT on the interaction energy 
+is known to be often non\hyp{}negligible, it is quite important to model 
+CT energies with reasonable accuracy and efficiency when performing energy 
+and molecular dynamics calculations with \emph{ab initio} force fields, 
+especially in donor\hyp{}acceptor systems such as H\hyp{}bonded species. 
+However, estimating the CT stabilization energy is usually much more expensive 
+than estimating the contributions due to other effects such as electrostatics, 
+exchange\hyp{}repulsion and dispersion.\cite{Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012}
+
+As an illustration of application of the OEP technique for efficient calculation 
+of CT energy we consider the second\hyp{}order perturbation theory of Murrell et al.,
+in which the energy associated with the charge transfer from molecule $A$ to $B$ is given by
+%
+\begin{equation} \label{e:ct-murell-etal.e}
+ E^{A\rightarrow B} = 2 \sum_{i\in A}^{\rm Occ} \sum_{n\in B}^{\rm Vir} 
+  \frac{\vert V^{A\rightarrow B}_{in} \vert^2 }{\varepsilon_i - \varepsilon_n}
+\end{equation}
+%
+%coupling constants between occupied and virtual molecular orbitals 
+%are re-expressed by the effective one-electron potentials. The resulting formula provides new possibilities 
+%of optimization and applications in condensed phase simulations. [3]
+%
+where $\varepsilon_i$ and $\varepsilon_n$ are the canonical energies
+of the occupied (denoted by `Occ') and virtual (denoted by `Vir') 
+HF molecular orbitals, respectively,
+whereas the coupling constant is given by
+%
+\begin{multline} \label{e:ct-murell-etal.vin}
+ V^{A\rightarrow B}_{in} = 
+        \tBraKet{i}{\hat{v}^B_{\rm ch} }{n} 
+      - \sum_{j\in B}^{\rm Occ} \BraKet{nj}{ij} 
+      - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} \\
+      - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
+     + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
+        S_{kj} \left( 1 - \delta_{ik} \right) 
+        \BraKet{nj}{ik} \;.
+\end{multline}
+%
+In the above expression, the following effective potentials,
+%
+\begin{subequations} 
+\begin{align} \label{e:ct-murell-etal.vtot-vi}
+ \hat{v}^B_{\rm tot} &= \hat{v}^B_{\rm nuc} + 2\sum_{j\in B}^{\rm Occ} \hat{v}^B_{jj} \quad\text{ and }\\ 
+ \hat{v}^A_{i      } &= \hat{v}^A_{\rm tot} - 2\hat{v}^A_{ii} \;,
+\end{align}
+\end{subequations}
+%
+were introduced without making any approximation to the original equation
+from Ref. One can immediately notice that the five summation terms
+from Eq.~\eqref{e:ct-murell-etal.vin} can be classified into three groups
+regarding the type of ERI's that are required:
+(i) $\BraKet{AB}{BB}$ -- the first two terms;
+(ii) $\BraKet{AA}{BB}$ -- the third term and
+(iii) $\BraKet{BB}{AA}$ -- the two last terms. 
+%Note that groups (ii) and (iii) correspond to the Coulomb interactions between
+%The group (i) corresponds to the overlap\hyp{}like integrals, whereas the groups (ii) and (iii)
+%correspond to the Coulomb\hyp{}like integrals
+
+\paragraph{Group (i).}
+Group (i) can be rewritten by noticing that
+%
+\begin{equation} \label{e:ct-murell-etal.group-i.notice}
+ \sum_{j\in B}^{\rm Occ} 
+ \BraKet{nj}{ij} =
+ \Bra{i} \left[ \hat{v}^B_{nj} \Ket{j} \right]  \;,
+\end{equation}
+%
+which, by combining with the first term from Eq.~\eqref{e:ct-murell-etal.vin}, 
+allows to apply the density fitting in an
+incomplete basis set as follows
+%
+\begin{equation}
+\Bra{i} \left[ \hat{v}^B_{\rm tot} \Ket{n} - \sum_{j\in B}^{\rm Occ} \hat{v}^B_{nj} \Ket{j} \right]
+\cong \Bra{i} \sum_{\eta\in B}^{\rm DF} V^B_{n\eta} \Ket{\eta}
+\end{equation}
+%
+with the error density defined by
+%
+\begin{multline}
+ \Xi_n({\bf r}) = 
+  \left\{
+      v_{nuc}^B({\bf r}) + 2 \sum_{j\in B}^{\rm Occ}
+   \int \frac{ \vert \phi_j({\bf r}') \vert^2 }{\vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+  \right\}
+  \phi_n({{\bf r}})  \\
+ - \sum_{j\in B}^{\rm Occ} \phi_j({{\bf r}})
+   \int \frac{ \phi^*_n({\bf r}') \phi_j({{\bf r}'}) }{\vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+ - \sum_{\eta\in B}^{\rm DF} V^B_{n\eta} \varphi_\eta({\bf r}) \;.
+\end{multline}
+%
+Substituting the above equation into Eq.~\eqref{e:z-incompl}
+%and then
+%using resolution of identity to simplify the 
+leads to
+%
+\begin{equation}
+ V^B_{n\xi} = \sum_{\eta\in B}^{\rm DF} \left[ {\bf A}^{-1} \right]_{\xi\eta} b_\eta^{(n)} \;,
+\end{equation}
+%
+where
+%
+\begin{multline}
+ b^{(n)}_\eta = \iint 
+           d{\bf r}_1 d{\bf r}_2  
+           \frac{ \varphi^*_\eta({\bf r}_1) }
+            {\vert {\bf r}_1 - {\bf r}_2 \vert } \\ \times
+          \left[ 
+           \hat{v}^B_{\rm tot}  \phi_n({\bf r}_2) 
+         - \sum_{j\in B}^{\rm Occ} \hat{v}^B_{nj} \phi_j({{\bf r}_2})
+           \right]  \;.
+\end{multline}
+%
+The above result is given by a sum of triple integrals from Eq.~\eqref{e:triple-integral}.
+However, application of the resolution of identity as follows
+%
+\begin{equation}
+ \hat{v}^B_{\rm tot} \Ket{n} - \sum_{j\in B}^{\rm Occ} \hat{v}^B_{nj} \Ket{j}
+ \cong \sum_{\varepsilon\in B}^{\rm RI} H_{n\varepsilon}^B \Ket{\varepsilon}
+\end{equation}
+%
+leads to a much simpler formula
+that requires only the one- and two\hyp{}electron integrals. 
+Therefore, by combining
+equations %which equations?
+one arrives to
+%
+\begin{equation}
+ V^B_{n\xi} = \sum_{\eta\in B}^{\rm DF} 
+          \sum_{\varepsilon\in B}^{\rm RI}
+         \left[ {\bf A}^{-1} \right]_{\xi\eta}
+         H_{n\varepsilon}^B R_{\varepsilon \eta} \;,
+\end{equation}
+%
+where
+%
+\begin{equation}
+ H_{n\varepsilon}^B = \sum_{\eta\in B}^{\rm RI} \left[ {\bf S}^{-1} \right]_{\varepsilon\eta}
+   a_\eta^{(n)}
+\end{equation}
+%
+and
+%%
+\begin{align}
+ a^{(n)}_\eta &= \tBraKet{\eta}{\hat{v}^B_{\rm tot}}{n}
+      - \sum_{j\in B}^{\rm Occ} \tBraKet{\eta}{\hat{v}^B_{nj}}{j} \nonumber \\
+ &= \sum_{y\in B} W^{(y)}_{\eta n} 
+  + \sum_{j\in B}^{\rm Occ} 
+  \left\{
+   2\BraKet{\eta n}{jj} - \BraKet{\eta j}{nj} 
+  \right\} \;.
+\end{align}
+%
+Note that all the calculations that are required to obtain $V^B_{n\xi}$ are performed
+solely on the densities and basis sets associated with the unperturbed molecule $B$.
+Therefore, $V^B_{n\xi}$ can be considered as effective fragment parameters
+used to compute the first two terms of Eq.~\eqref{e:ct-murell-etal.vin} by
+%
+\begin{equation}
+        \tBraKet{i}{\hat{v}^B_{\rm ch} }{n} 
+      - \sum_{j\in B}^{\rm Occ} \BraKet{nj}{ij} 
+       = \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} \;,
+\end{equation}
+%
+which is a great simplification over the original form of group (i)
+because only the overlap integrals between the $i$th MO on molecule $A$
+and $\eta$th auxiliary orbital on molecule $B$ need to be evaluated on the fly.
+
+\paragraph{Group (ii).}
+\paragraph{Group (iii).}
+\paragraph{Final OEP-based form of the coupling constant.}
+Gathering the results from Eqs. the coupling constant
+can be rewritten as follows
+%
+\begin{equation} \label{e:ct-murell-etal.vin.oep}
+ V_{in}^{A\rightarrow B}
+       = \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} \;.
+\end{equation}
+%
+Note that the only approximations made on it so fare was the application of density fitting
+and resolution of identity. If the associated basis sets are sufficiently large, the errors
+due to this approximation can be minimal and negligible.
+
+%he above formula does not explicitly define an OEP due to the summation over different
+%state vectors. 
+%However, it can be achieved
+%by transforming from MO to AO basis, i.e.,
+%%
+%\begin{equation}
+% \hat{v}^B_{\rm tot} \Ket{n} - \sum_{j\in B}^{\rm Occ} \hat{v}^B_{nj} \Ket{j}
+% = \sum_{\beta\in B}^{\rm AO} 
+% \left\{ 
+%  C_{\beta n} \hat{v}^B_{\rm tot} - \sum_{j\in B}^{\rm Occ} C_{\beta j} \hat{v}^B_{nj} 
+% \right\} \Ket{\beta} \;,
+%\end{equation}
+%%
+%which leads to the OEP in spatial representation
+%%
+%\begin{multline}
+% v_{\beta n}({\bf r}) \equiv C_{\beta n} v_{nuc}^B({\bf r}) \\ + 
+%  \sum_{j\in B}^{\rm Occ} \Bigg\{ 
+%   2 C_{\beta n} \int \frac{ \vert \phi_j({\bf r}') \vert^2 }{\vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+% %\\
+% - C_{\beta j} \int \frac{ \phi^*_n({\bf r}') \phi_j({\bf r}') }{\vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+%  \Bigg\}  
+%%
+%\end{multline}
+%%
+
+
+\section{\label{s:6}Summary and a few concluding remarks}
 
 
 \begin{acknowledgments}
