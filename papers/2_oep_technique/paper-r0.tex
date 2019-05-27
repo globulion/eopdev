@@ -710,7 +710,7 @@ whereas the coupling constant is given by
 %
 \begin{multline} \label{e:ct-murell-etal.vin}
  V^{A\rightarrow B}_{in} = 
-        \tBraKet{i}{\hat{v}^B_{\rm ch} }{n} 
+        \tBraKet{i}{\hat{v}^B_{\rm tot} }{n} 
       - \sum_{j\in B}^{\rm Occ} \BraKet{nj}{ij} 
       - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} \\
       - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
@@ -794,11 +794,11 @@ where
 \end{multline}
 %
 The above result is given by a sum of triple integrals from Eq.~\eqref{e:triple-integral}.
-However, application of the resolution of identity as follows
+However, the following application of the resolution of identity,
 %
 \begin{equation}
  \hat{v}^B_{\rm tot} \Ket{n} - \sum_{j\in B}^{\rm Occ} \hat{v}^B_{nj} \Ket{j}
- \cong \sum_{\varepsilon\in B}^{\rm RI} H_{n\varepsilon}^B \Ket{\varepsilon}
+ \cong \sum_{\varepsilon\in B}^{\rm RI} H_{n\varepsilon}^B \Ket{\varepsilon} \;,
 \end{equation}
 %
 leads to a much simpler formula
@@ -839,7 +839,7 @@ Therefore, $V^B_{n\xi}$ can be considered as effective fragment parameters
 used to compute the first two terms of Eq.~\eqref{e:ct-murell-etal.vin} by
 %
 \begin{equation}
-        \tBraKet{i}{\hat{v}^B_{\rm ch} }{n} 
+        \tBraKet{i}{\hat{v}^B_{\rm tot} }{n} 
       - \sum_{j\in B}^{\rm Occ} \BraKet{nj}{ij} 
        = \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} \;,
 \end{equation}
@@ -847,13 +847,19 @@ used to compute the first two terms of Eq.~\eqref{e:ct-murell-etal.vin} by
 which is a great simplification over the original form of group (i)
 because only the overlap integrals between the $i$th MO on molecule $A$
 and $\eta$th auxiliary orbital on molecule $B$ need to be evaluated on the fly.
+Note that the only approximation made so far was the application of density fitting
+and resolution of identity. If the auxiliary and intermediate
+basis sets are sufficiently large, the errors
+due to this approximation can be minimal and negligible.
+
+
 
 \paragraph{Group (ii).}
 The term belonging to this group can be considered as a sum of interaction
 energies between the total charge density distribution of molecule $B$
 and the partial density $\rho_{ik}({\bf r})$ of molecule $A$,
 weighted by the overlap integrals $S_{nk}$. Using the distributed multipole 
-expansion this can be written as
+expansion this group can be written as
 %
 \begin{equation} \label{e:ct.group-2}
       - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} 
@@ -861,10 +867,10 @@ expansion this can be written as
 \end{equation}
 %
 Consider now a situation in which the localized occupied MO's are used.
-If the multipole series expansions as truncated
-at the distributed charges $q_i$ and dipole moments ${\BM{\upmu}_i}$, that are
+If the multipole series expansions are truncated
+at the distributed charges $q_i$ and dipole moments ${\BM{\upmu}_i}$, 
 located at the centroids ${\bf r}_i = \tBraKet{i}{\hat{\bf r}}{i}$, 
-then the interaction energy can be written approximately as
+then the interaction energy becomes
 %
 \begin{multline}
  \rho_{ki}^A \odot \rho^B_{\rm tot} 
@@ -872,10 +878,10 @@ then the interaction energy can be written approximately as
  q_{ki} 
  \left[
   %\sum_{i\in A}^{\rm LC} 
- \sum_{y\in B}^{\rm AT}
+ \sum_{y\in B}^{\rm At}
   \frac{Z_y}{\vert {\bf r}_y - {\bf r}_i \vert } 
  +
- \sum_{j\in B}^{\rm LC}
+ 2\sum_{j\in B}^{\rm LC}
   \frac{q_j}{\vert {\bf r}_j - {\bf r}_i \vert } 
  \right] \\
  + \text{ dipole terms } \;.
@@ -883,43 +889,173 @@ then the interaction energy can be written approximately as
 %
 Note however that $q_{ik} = -\delta_{ik}$ and $q_j = -1$. Moreover, 
 if the localized orbitals are perfectly spherical distributed dipole moments vanish.
-This means that Eq.~\eqref{e:ct.group-2} can be approximated as follows
+This means that Eq.~\eqref{e:ct.group-2} can be approximated as follows:
 %
 \begin{equation}
       - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} 
  \approx S_{ni}  \left[
   %\sum_{i\in A}^{\rm LC} 
- \sum_{y\in B}^{\rm AT}
+ \sum_{y\in B}^{\rm At}
   \frac{Z_y}{ r_{yi} } 
  -
  \sum_{j\in B}^{\rm LC}
-  \frac{1}{r_{ji}} 
+  \frac{2}{r_{ji}} 
  \right] \;.
 \end{equation}
 %
-Therefore, only overlap integrals are needed and relative distances between
-atomic and LC's which leads to a great reduction of the evaluation cost
-as compared to the original equation or the full multipole expansion.
+Therefore, only overlap integrals and relative distances between
+atomic and LC's are needed, which leads to a great reduction of the
+calculation cost,
+as compared either to the original expression or to the multipole expansion (left\hyp{} and right\hyp{}hand sides
+of Eq.~\eqref{e:ct.group-2}, respectively).
 We shall refer to this approximation as to
 the spherical overlap approximation (SOA). Note that in order for this approximation to be valid,
 occupied molecular orbitals need to be localized.
 
-%If localized occupied MO's are used and only distributed charges ar, then $\rho_{ki} \approx \delta_{ki}$
-
 \paragraph{Group (iii).}
-\paragraph{Final OEP-based form of the coupling constant.}
-Gathering the results from Eqs. the coupling constant
-can be rewritten as follows
+The terms with the overlap integrals involving the occupied MO on $A$
+can be combined into a single summation term, i.e.,
+\begin{multline}
+       - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
+     + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
+        S_{kj} \left( 1 - \delta_{ik} \right) 
+        \BraKet{nj}{ik} \\ = -
+ \sum_{k\in A}^{\rm Occ} 
+ \sum_{j\in B}^{\rm Occ}
+ S_{kj} 
+ \tBraKet{j}{
+ \underbrace{
+ \left\{ 
+  \delta_{ik} \left( \hat{v}^A_{k} + \hat{v}^A_{ik} \right)
+  - \hat{v}^A_{ik}
+ \right\} 
+  }_{\hat{v}^{A,{\rm eff}}_{ik}}
+ }{n}  \\ \cong -
 %
-\begin{equation} \label{e:ct-murell-etal.vin.oep}
- V_{in}^{A\rightarrow B}
-       = \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} \;.
+  \sum_{k\in A}^{\rm Occ} 
+ \sum_{j\in B}^{\rm Occ}
+ S_{kj} 
+ \rho_{nj}^B \odot \rho^{A,{\rm eff}}_{ik} \;,
+\end{multline}
+%
+where the effective potential ${v}^{A,{\rm eff}}_{ik}$ (with the associated 
+effective density $\rho^{A,{\rm eff}}_{ik}$) 
+is defined by
+%
+\begin{equation}
+ {v}^{A,{\rm eff}}_{ik}({\bf r}) \equiv
+ \delta_{ik} 
+ \left[
+  v^A_{\rm tot} ({\bf r}) - 2 v^A_{k} ({\bf r}) + v^A_{ik} ({\bf r})
+ \right] 
+  - v^A_{ik} ({\bf r}) \;.
 \end{equation}
 %
-Note that the only approximations made on it so fare was the application of density fitting
-and resolution of identity. If the associated basis sets are sufficiently large, the errors
-due to this approximation can be minimal and negligible.
+Now, it is first assumed here that $\rho^{B}_{nj} ({\bf r}) \approx 0$ if occupied MO's on $B$ are localized.
+This means that
+%
+\begin{multline}
+        - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
+     + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
+        S_{kj} \left( 1 - \delta_{ik} \right) 
+        \BraKet{nj}{ik}  \\
+ \approx 0 \;.
+\end{multline}
+%
+The above result is a crude approximation, since virtual MO's can overlap with occupied MO's to some extent.
+In order to maintain $\rho^{B}_{nj}$ density, it is approximately represented here by a set of effective 
+cumulative
+atomic charges $\{ q^{B,(nj)}_{y} \}$ associated with the effective one\hyp{}particle density matrix
+%
+\begin{equation}
+ D^{B,(nj)}_{\beta\delta} = C_{\beta n} C_{\delta j} \;.
+\end{equation}
+%
+In this work, the effective charges were computed via the CAMM or ESP methods as
+discussed in Section~XXX. Applying the SOA leads to 
+%
+\begin{multline}
+        - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
+     + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
+        S_{kj} \left( 1 - \delta_{ik} \right) 
+        \BraKet{nj}{ik}  \\
+ \approx  -
+ \sum_{j\in B}^{\rm Occ} S_{ij}
+ \sum_{y\in B}^{\rm At} 
+ q^{B,(nj)}_{y} 
+ \left[ 
+   \sum_{x\in A}^{\rm At}
+   \frac{Z_x}{r_{xy}}
+  + \frac{2}{r_{iy}}
+  - \sum_{k\in A}^{\rm Occ}
+    \frac{2}{r_{ky}} 
+ \right]
+ \;.
+\end{multline}
+%
 
+
+\paragraph{Final OEP-based forms of the coupling constant.}
+Gathering the results from Eqs. the coupling constant
+can be given as follows
+%
+\begin{subequations}
+\begin{align} \label{e:ct-murell-etal.vin.oep}
+\Approx{ V_{in}^{A\rightarrow B} }{1}
+       &= \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} 
+ +
+S_{ni} u_i^{BA} \;, \\
+%
+\Approx{ V_{in}^{A\rightarrow B} }{2} &=
+\Approx{ V_{in}^{A\rightarrow B} }{1} -
+  \sum_{j   \in B}^{\rm Occ} S_{ij}
+  \sum_{y   \in B}^{\rm At} q_y^{B,(nj)} w_{yi}^{BA}
+\;,
+\end{align}
+\end{subequations}
+%
+where the auxiliary variables are
+%
+\begin{subequations}
+\begin{align} \label{e:ct-murell-etal.vin.oep.aux-var}
+ u_i^{BA} &\equiv    
+ \sum_{y\in B}^{\rm At}
+  \frac{Z_y}{ r_{yi} } 
+ -
+ \sum_{j\in B}^{\rm LC}
+  \frac{2}{r_{ji}} 
+                \;, \\
+ w_{yi}^{BA} &\equiv 
+   \sum_{x\in A}^{\rm At}
+   \frac{Z_x}{r_{xy}}
+  + \frac{2}{r_{iy}}
+  - \sum_{k\in A}^{\rm Occ}
+    \frac{2}{r_{ky}} 
+                \;.
+\end{align}
+\end{subequations}
+%
+To compute the interaction energy due to CT from $A$ to $B$ by using the above SOA\hyp{}based
+approximations, coupling elements need to be transformed from localized to canonical MO basis.
+The final working formula reads
+%
+\begin{equation} \label{e:ect-oep.final}
+ E^{A\rightarrow B} \approx
+ 2 
+ \sum_{i\in A}^{\rm CMO}
+ \sum_{n\in B}^{\rm Vir}
+ \frac{
+ \lvert
+   \sum_{i'\in A}^{\rm LMO} L_{ii'}^A
+   \Approx{V_{i'n}^{A\rightarrow B}}{} 
+ \rvert^2 }{\varepsilon_i - \varepsilon_n} \;,
+\end{equation}
+%
+where ${\bf L}^A$ is the CMO\hyp{}LMO transformation matrix for occupied orbitals of $A$. 
+The total CT energy is given by the sum of the above contribution and the twin contribution
+due to CT from $B$ to $A$.
+
+%
 %he above formula does not explicitly define an OEP due to the summation over different
 %state vectors. 
 %However, it can be achieved
@@ -949,6 +1085,7 @@ due to this approximation can be minimal and negligible.
 
 \section{\label{s:6}Summary and a few concluding remarks}
 
+Bla.
 
 \begin{acknowledgments}
 This project is carried out under POLONEZ programme which has received funding from the European Union's
