@@ -598,7 +598,7 @@ one obtains
 %
 \begin{equation} \label{e:v-noncompl}
 % {\bf G}^{(i)} = {\bf b}^{(i)} \cdot {\bf A}^{-1}
-  V^A_{i\xi} = \sum_\eta^{\rm DF} [{\bf A}^{-1}]_{\xi\eta} b^{(i)}_\eta \;,
+  V^A_{i\xi} = \sum_\eta^{\rm DF} [{\bf R}^{-1}]_{\xi\eta} b^{(i)}_\eta \;,
 \end{equation}
 %
 where 
@@ -609,7 +609,7 @@ where
                        \frac{ \varphi^*_\eta({\bf r}_1) \hat{v} \phi_i({\bf r}_2) } 
                             {\vert {\bf r}_1 - {\bf r}_2\vert}  
                  d{\bf r}_1 d{\bf r}_2 \;, \\
- A_{\eta\xi}  &= \iint 
+ R_{\eta\xi}  &= \iint 
                        \frac{ \varphi^*_\eta({\bf r}_1) \varphi_\xi({\bf r}_2) } 
                             {\vert {\bf r}_1 - {\bf r}_2\vert}  
                  d{\bf r}_1 d{\bf r}_2 \;.
@@ -618,7 +618,7 @@ where
 %
 %The symbol $ \vert\vert $ is to denote the operator $ r_{12}^{-1}$ and double integration over $ {\bf r}_1 $
 %and $ {\bf r}_2 $. 
-Note that, while $A_{\eta\xi}$ is a typical 2\hyp{}center ERI 
+Note that, while $R_{\eta\xi}$ is a typical 2\hyp{}center ERI 
 that can be evaluated by standard means,
 $b^{(i)}_\eta$ matrix elements are not at all trivial to calculate
 because the OEP operator, which contains integration over an electron coordinate,
@@ -646,18 +646,18 @@ This can be achieved by performing additional density fitting in a nearly comple
 The working equation is therefore given by
 %
 \begin{equation}
- b^{(i)}_\eta = \sum_\varepsilon^{\rm Int} H_{i\varepsilon} R_{\varepsilon\eta} 
+ b^{(i)}_\eta = \sum_\varepsilon^{\rm Int} H_{i\varepsilon} R_{\varepsilon\eta} \;,
 \end{equation}
 %
-with
-%
-\begin{equation}
- R_{\varepsilon\eta} \equiv \iint 
-                       \frac{ \varphi^*_\varepsilon({\bf r}_1) \varphi_\eta({\bf r}_2) } 
-                            {\vert {\bf r}_1 - {\bf r}_2\vert}  
-                 d{\bf r}_1 d{\bf r}_2 \;,
-\end{equation}
-%
+%with
+%%
+%\begin{equation}
+% R_{\varepsilon\eta} \equiv \iint 
+%                       \frac{ \varphi^*_\varepsilon({\bf r}_1) \varphi_\eta({\bf r}_2) } 
+%                            {\vert {\bf r}_1 - {\bf r}_2\vert}  
+%                 d{\bf r}_1 d{\bf r}_2 \;,
+%\end{equation}
+%%
 which can be easily evaluated and the matrix elements of the OEP operator found
 from Eq.~\eqref{e:v-noncompl}.
 %Therefore, in order to use this generalized density fitting scheme
@@ -777,7 +777,7 @@ Substituting the above equation into Eq.~\eqref{e:z-incompl}
 leads to
 %
 \begin{equation}
- V^B_{n\xi} = \sum_{\eta\in B}^{\rm DF} \left[ {\bf A}^{-1} \right]_{\xi\eta} b_\eta^{(n)} \;,
+ V^B_{n\xi} = \sum_{\eta\in B}^{\rm DF} \left[ {\bf R}^{-1} \right]_{\xi\eta} b_\eta^{(n)} \;,
 \end{equation}
 %
 where
@@ -810,26 +810,27 @@ one arrives to
 \begin{equation}
  V^B_{n\xi} = \sum_{\eta\in B}^{\rm DF} 
           \sum_{\varepsilon\in B}^{\rm RI}
-         \left[ {\bf A}^{-1} \right]_{\xi\eta}
-         H_{n\varepsilon}^B R_{\varepsilon \eta} \;,
+         \left[ {\bf R}^{-1} \right]_{\xi\eta}
+         R_{\eta \varepsilon} 
+         H_{n\varepsilon}^B \;,
 \end{equation}
 %
 where
 %
 \begin{equation}
- H_{n\varepsilon}^B = \sum_{\eta\in B}^{\rm RI} \left[ {\bf S}^{-1} \right]_{\varepsilon\eta}
-   a_\eta^{(n)}
+ H_{n\varepsilon}^B = \sum_{\zeta\in B}^{\rm RI} \left[ {\bf S}^{-1} \right]_{\varepsilon\zeta}
+   a_\zeta^{(n)}
 \end{equation}
 %
 and
 %%
 \begin{align}
- a^{(n)}_\eta &= \tBraKet{\eta}{\hat{v}^B_{\rm tot}}{n}
-      - \sum_{j\in B}^{\rm Occ} \tBraKet{\eta}{\hat{v}^B_{nj}}{j} \nonumber \\
- &= \sum_{y\in B} W^{(y)}_{\eta n} 
+ a^{(n)}_\zeta &= \tBraKet{\zeta}{\hat{v}^B_{\rm tot}}{n}
+      - \sum_{j\in B}^{\rm Occ} \tBraKet{\zeta}{\hat{v}^B_{nj}}{j} \nonumber \\
+ &= \sum_{y\in B} W^{(y)}_{\zeta n} 
   + \sum_{j\in B}^{\rm Occ} 
   \left\{
-   2\BraKet{\eta n}{jj} - \BraKet{\eta j}{nj} 
+   2\BraKet{\zeta n}{jj} - \BraKet{\zeta j}{nj} 
   \right\} \;.
 \end{align}
 %
