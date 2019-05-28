@@ -2,10 +2,13 @@
 //#include "psi4/libdpd/dpd.h"
 
 #include "solver.h"
+#include "psi4/libmints/local.h"
 
 using namespace std;
 using namespace psi;
 using namespace oepdev;
+
+using SharedLocalizer       = std::shared_ptr<psi::Localizer>;
 
 // CT Solver//
 ChargeTransferEnergySolver::ChargeTransferEnergySolver(SharedWavefunctionUnion wfn_union)
@@ -653,11 +656,19 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   int nocc_2 = wfn_union_->l_ndocc(1);
   int nvir_1 = wfn_union_->l_nvir(0);
   int nvir_2 = wfn_union_->l_nvir(1);
+  std::shared_ptr<psi::Molecule> mol_1 = wfn_union_->l_wfn(0)->molecule();
+  std::shared_ptr<psi::Molecule> mol_2 = wfn_union_->l_wfn(1)->molecule();
+  int nat_1 = mol_1->natom();
+  int nat_2 = mol_2->natom();
+
 
   std::shared_ptr<psi::Matrix> Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_p1, nbf_p2);
   std::shared_ptr<psi::Matrix> Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
   std::shared_ptr<psi::Matrix> Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_p1, nbf_a2);
 
+
+  psi::IntegralFactory fact_11(wfn_union_->l_primary  (0));
+  psi::IntegralFactory fact_22(wfn_union_->l_primary  (1));
   psi::IntegralFactory fact_1p2p(wfn_union_->l_primary  (0), wfn_union_->l_primary  (1), wfn_union_->l_primary  (0), wfn_union_->l_primary  (1));
   psi::IntegralFactory fact_1a2p(wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1), wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1));
   psi::IntegralFactory fact_1p2a(wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1), wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1));
@@ -684,24 +695,119 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   std::shared_ptr<psi::Matrix> S2 = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true ); // OCC(B) x AUX(A)
 
   // ---> Localize occupied orbitals <--- //
-  // TODO
+  std::string o_loc = wfn_union_->options().get_str("SOLVER_CT_LOCALIZER"); 
+  SharedLocalizer loc_1 = psi::Localizer::build(o_loc, wfn_union_->l_primary(0), Ca_occ_1, wfn_union_->options());
+  SharedLocalizer loc_2 = psi::Localizer::build(o_loc, wfn_union_->l_primary(1), Ca_occ_2, wfn_union_->options());
+  loc_1->localize();
+  loc_2->localize();
+  std::shared_ptr<psi::Matrix> La_occ_1 = loc_1->L();
+  std::shared_ptr<psi::Matrix> La_occ_2 = loc_2->L();
+  std::shared_ptr<psi::Matrix> S12= psi::Matrix::triplet(La_occ_1, Sao_1p2p, La_occ_2, true, false, false); // LOCC(A) x LOCC(B)
+  std::shared_ptr<psi::Matrix> S1Y= psi::Matrix::triplet(La_occ_1, Sao_1p2p, Ca_vir_2, true, false, false); // LOCC(A) x  VIR(B)
+  std::shared_ptr<psi::Matrix> S2X= psi::Matrix::triplet(La_occ_2, Sao_1p2p, Ca_vir_1, true, true , false); // LOCC(B) x  VIR(A)
+  
+  // ---> Compute LMO centroids <--- //
+  std::vector<std::shared_ptr<psi::Matrix>> R1ao, R2ao;
+  std::vector<std::shared_ptr<psi::Vector>> R1mo, R2mo;
+  for (int z=0; z<3; ++z) R1ao.push_back(std::make_shared<psi::Matrix>("R1ao", nbf_p1, nbf_p1));
+  for (int z=0; z<3; ++z) R2ao.push_back(std::make_shared<psi::Matrix>("R2ao", nbf_p2, nbf_p2));
+  for (int z=0; z<3; ++z) R1mo.push_back(std::make_shared<psi::Vector>("R1mo", wfn_union_->l_ndocc(0)));
+  for (int z=0; z<3; ++z) R2mo.push_back(std::make_shared<psi::Vector>("R2mo", wfn_union_->l_ndocc(1)));
+  std::shared_ptr<psi::OneBodyAOInt> dipInt1(fact_11.ao_dipole());
+  std::shared_ptr<psi::OneBodyAOInt> dipInt2(fact_22.ao_dipole());
+  dipInt1->compute(R1ao);
+  dipInt2->compute(R2ao);
+  for (int z=0; z<3; ++z) {
+       R1ao[z]->scale(-1.0);
+       R2ao[z]->scale(-1.0);
+       std::shared_ptr<psi::Matrix> CR1C = psi::Matrix::triplet(La_occ_1, R1ao[z], La_occ_1, true, false, false);
+       std::shared_ptr<psi::Matrix> CR2C = psi::Matrix::triplet(La_occ_2, R2ao[z], La_occ_2, true, false, false);
+       for (int a=0; a<wfn_union_->l_ndocc(0); ++a) {
+            R1mo[z]->set(a, CR1C->get(a,a));
+       }
+       for (int b=0; b<wfn_union_->l_ndocc(1); ++b) {
+            R2mo[z]->set(b, CR2C->get(b,b));
+       }
+       R1ao[z].reset(); 
+       R2ao[z].reset(); 
+  }
+
+  // ---> Compute auxiliary vectors u_i and u_j <--- //
+  std::shared_ptr<psi::Vector> u_1 = std::make_shared<psi::Vector>("", nocc_1);
+  std::shared_ptr<psi::Vector> u_2 = std::make_shared<psi::Vector>("", nocc_2);
+  for (int i=0; i<nocc_1; ++i) {
+       double v = 0.0;
+       for (int y=0; y<nat_2; ++y) {
+            double ryi = sqrt(pow(mol_2->x(y) - R1mo[0]->get(i), 2.0) +
+                              pow(mol_2->y(y) - R1mo[1]->get(i), 2.0) +
+                              pow(mol_2->z(y) - R1mo[2]->get(i), 2.0) );
+            v += (double)mol_2->Z(y) / ryi;
+       }
+       for (int j=0; j<nocc_2; ++j) {
+            double rji = sqrt(pow(R2mo[0]->get(j) - R1mo[0]->get(i), 2.0) +
+                              pow(R2mo[1]->get(j) - R1mo[1]->get(i), 2.0) +
+                              pow(R2mo[2]->get(j) - R1mo[2]->get(i), 2.0) );
+            v -= 2.0 / rji;
+       }
+       u_1->set(i, v);
+  }
+
+  for (int i=0; i<nocc_2; ++i) {
+       double v = 0.0;
+       for (int y=0; y<nat_1; ++y) {
+            double ryi = sqrt(pow(mol_1->x(y) - R2mo[0]->get(i), 2.0) +
+                              pow(mol_1->y(y) - R2mo[1]->get(i), 2.0) +
+                              pow(mol_1->z(y) - R2mo[2]->get(i), 2.0) );
+            v += (double)mol_1->Z(y) / ryi;
+       }
+       for (int j=0; j<nocc_1; ++j) {
+            double rji = sqrt(pow(R1mo[0]->get(j) - R2mo[0]->get(i), 2.0) +
+                              pow(R1mo[1]->get(j) - R2mo[1]->get(i), 2.0) +
+                              pow(R1mo[2]->get(j) - R2mo[2]->get(i), 2.0) );
+            v -= 2.0 / rji;
+       }
+       u_2->set(i, v);
+  }
 
   // ===> Compute V1 term <=== //
   std::shared_ptr<psi::Matrix> v_ab_v1 = psi::Matrix::doublet(S1, oep_2->matrix("Murrell-etal.V1"), false, false);
   std::shared_ptr<psi::Matrix> v_ba_v1 = psi::Matrix::doublet(S2, oep_1->matrix("Murrell-etal.V1"), false, false);
 
   // ===> Compute V2 term <=== //
-  // TODO
+  std::shared_ptr<psi::Matrix> v_ab_v2 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
+  std::shared_ptr<psi::Matrix> v_ba_v2 = std::make_shared<psi::Matrix>("", nocc_2, nvir_1);
+  for (int i=0; i<nocc_1; ++i) {
+       for (int n=0; n<nvir_2; ++n) {
+            double v = S1Y->get(i,n) * u_1->get(i);
+            v_ab_v2->set(i, n, v); 
+       }
+  }
+  for (int i=0; i<nocc_2; ++i) {
+       for (int n=0; n<nvir_1; ++n) {
+            double v = S2X->get(i,n) * u_2->get(i);
+            v_ba_v2->set(i, n, v); 
+       }
+  }
+  v_ab_v2->gemm(false, false, 1.0, loc_1->U(), v_ab_v2->clone(), 0.0);
+  v_ba_v2->gemm(false, false, 1.0, loc_1->U(), v_ba_v2->clone(), 0.0);
 
   // ===> Compute V3 term <=== //
   // TODO
 
+  // ---> Add coupling constant contributions <--- //
+  std::shared_ptr<psi::Matrix> v_ab_v12 = v_ab_v1->clone(); v_ab_v12->add(v_ab_v2);
+  std::shared_ptr<psi::Matrix> v_ba_v12 = v_ba_v1->clone(); v_ba_v12->add(v_ba_v2);
+
   // ===> Compute CT Energy <=== //
   double e_ab_v1 = compute_ct_component(e_occ_1, e_vir_2, v_ab_v1);
   double e_ba_v1 = compute_ct_component(e_occ_2, e_vir_1, v_ba_v1);
+  double e_ab_v2 = compute_ct_component(e_occ_1, e_vir_2, v_ab_v2);
+  double e_ba_v2 = compute_ct_component(e_occ_2, e_vir_1, v_ba_v2);
+  double e_ab_v12= compute_ct_component(e_occ_1, e_vir_2, v_ab_v12);
+  double e_ba_v12= compute_ct_component(e_occ_2, e_vir_1, v_ba_v12);
 
-  double e_ab = e_ab_v1;
-  double e_ba = e_ba_v1;
+  double e_ab = e_ab_v12;
+  double e_ba = e_ba_v12;
 
   double e_tot = e_ab + e_ba;
 
@@ -709,10 +815,23 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Charge-Transfer Energy Calculations    <==\n"  );
      psi::outfile->Printf("  ==>     OEP-Based (Murrell-etal               )    <==\n\n");
-     psi::outfile->Printf("     E_A-->B   = %13.6f\n", e_ab                             );
-     psi::outfile->Printf("     E_B-->A   = %13.6f\n", e_ba                             );
+     psi::outfile->Printf("     Group I\n"                                              );
+     psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab_v1                        );
+     psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba_v1                        );
      psi::outfile->Printf("     -------------------------------\n"                      );
-     psi::outfile->Printf("     E_TOT     = %13.6f\n", e_tot                            );
+     psi::outfile->Printf("     Group II\n"                                             );
+     psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab_v2                        );
+     psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba_v2                        );
+     psi::outfile->Printf("     ===============================\n"                      );
+     psi::outfile->Printf("     Group I+II\n"                                           );
+     psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab_v12                       );
+     psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba_v12                       );
+     psi::outfile->Printf("     ===============================\n"                      );
+     psi::outfile->Printf("     Total\n"                                                );
+     psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab                           );
+     psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba                           );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     E_TOT       = %13.6f\n", e_tot                          );
      psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("\n");
 
