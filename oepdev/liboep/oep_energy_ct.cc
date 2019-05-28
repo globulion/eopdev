@@ -37,24 +37,25 @@ void ChargeTransferEnergyOEPotential::common_init()
     int n3 = wfn_->molecule()->natom();
 
     SharedMatrix mat_1 = std::make_shared<psi::Matrix>("G ", n2, n1);
-    SharedMatrix mat_2 = std::make_shared<psi::Matrix>("Q1", n3, n1);
+  //SharedMatrix mat_2 = std::make_shared<psi::Matrix>("Q1", n3, n1);
     SharedMatrix mat_3 = std::make_shared<psi::Matrix>("Q2", n3, 1);
 
-    OEPType type_1 = {"Murrell-etal.V1", true , n1, mat_1};
-    OEPType type_2 = {"Murrell-etal.V2", false, n1, mat_2};
-    OEPType type_3 = {"Murrell-etal.V3", false,  1, mat_3};
+    OEPType type_1 = {"Murrell-etal.V1.GDF", true , n1, mat_1};
+  //OEPType type_2 = {"Murrell-etal.V2", false, n1, mat_2};
+    OEPType type_3 = {"Murrell-etal.V3.CAMM-nj", false, n1, std::make_shared<psi::Matrix>()};
 
     oepTypes_[type_1.name] = type_1;
-    oepTypes_[type_2.name] = type_2;
+  //oepTypes_[type_2.name] = type_2;
     oepTypes_[type_3.name] = type_3;
 }
 
 void ChargeTransferEnergyOEPotential::compute(const std::string& oepType) 
 {
-  if (oepType == "Murrell-etal.V1"  ) compute_murrell_etal_v1() ;
+  if      (oepType == "Murrell-etal.V1.GDF"    ) compute_murrell_etal_v1_gdf    ();
+  else if (oepType == "Murrell-etal.V3.CAMM-nj") compute_murrell_etal_v3_camm_nj();
   else throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
 }
-void ChargeTransferEnergyOEPotential::compute_murrell_etal_v1()
+void ChargeTransferEnergyOEPotential::compute_murrell_etal_v1_gdf()
 {
    // ---> Determine the target basis set for generalized density fitting <--- //
    std::shared_ptr<psi::BasisSet> target = intermediate_;
@@ -115,12 +116,24 @@ void ChargeTransferEnergyOEPotential::compute_murrell_etal_v1()
    std::shared_ptr<psi::Matrix> G = gdf->compute();
    
    // ===> Save and Finish <=== //
-   oepTypes_.at("Murrell-etal.V1").matrix->copy(G);
+   oepTypes_.at("Murrell-etal.V1.GDF").matrix->copy(G);
    if (options_.get_int("PRINT") > 1) G->print();
 }
+void ChargeTransferEnergyOEPotential::compute_murrell_etal_v3_camm_nj()
+{ 
+  // ==> Sizing <== //
+  int nocc = cOcc_->ncol();
+  int nvir = cVir_->ncol();
+  int nbf = primary_->nbf();
 
-void ChargeTransferEnergyOEPotential::compute_murrell_etal_v2() {}
-void ChargeTransferEnergyOEPotential::compute_murrell_etal_v3() {}
+  // ==> Initialize CAMM object <== //
+  SharedDMTPole camm = oepdev::DMTPole::build("CAMM", wfn_, nocc*nvir);
+
+  // TODO
+}
+
+
+//void ChargeTransferEnergyOEPotential::compute_murrell_etal_v2() {}
 
 void ChargeTransferEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
 void ChargeTransferEnergyOEPotential::print_header(void) const {}

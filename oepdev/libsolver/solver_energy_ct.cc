@@ -644,8 +644,8 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
                                                        wfn_union_->l_auxiliary(1), 
                                                        wfn_union_->l_intermediate(1), 
                                                        wfn_union_->options());
-  oep_1->compute("Murrell-etal.V1");
-  oep_2->compute("Murrell-etal.V1");
+  oep_1->compute("Murrell-etal.V1.GDF");
+  oep_2->compute("Murrell-etal.V1.GDF");
 
   // ===> Compute Overlap Matrices <=== //
   int nbf_p1 = wfn_union_->l_nbf(0);
@@ -770,8 +770,8 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   }
 
   // ===> Compute V1 term <=== //
-  std::shared_ptr<psi::Matrix> v_ab_v1 = psi::Matrix::doublet(S1, oep_2->matrix("Murrell-etal.V1"), false, false);
-  std::shared_ptr<psi::Matrix> v_ba_v1 = psi::Matrix::doublet(S2, oep_1->matrix("Murrell-etal.V1"), false, false);
+  std::shared_ptr<psi::Matrix> v_ab_v1 = psi::Matrix::doublet(S1, oep_2->matrix("Murrell-etal.V1.GDF"), false, false);
+  std::shared_ptr<psi::Matrix> v_ba_v1 = psi::Matrix::doublet(S2, oep_1->matrix("Murrell-etal.V1.GDF"), false, false);
 
   // ===> Compute V2 term <=== //
   std::shared_ptr<psi::Matrix> v_ab_v2 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);

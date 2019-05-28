@@ -294,9 +294,9 @@ class ChargeTransferEnergyOEPotential : public OEPotential
     void common_init();
 
     /// Auxiliary computers
-    void compute_murrell_etal_v1();
-    void compute_murrell_etal_v2();
-    void compute_murrell_etal_v3();
+    void compute_murrell_etal_v1_gdf();
+  //void compute_murrell_etal_v2();
+    void compute_murrell_etal_v3_camm_nj();
 };
 
 
