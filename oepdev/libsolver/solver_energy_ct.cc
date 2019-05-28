@@ -112,9 +112,10 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
 
 
   //Sum of one-electron integrals written in VmoB1Y
-  std::shared_ptr<psi::Matrix> VmoB1Y_group_1 = VmoB1Y->clone();                     // debug for OEP
-  std::shared_ptr<psi::Matrix> VmoB1Y_group_2 = std::make_shared<psi::Matrix>(PI2);  // debug for OEP 
-  std::shared_ptr<psi::Matrix> VmoB1Y_group_3 = std::make_shared<psi::Matrix>(PI3);  // debug for OEP
+  std::shared_ptr<psi::Matrix> VmoB1Y_group_1 = VmoB1Y->clone();  // debug for OEP
+  std::shared_ptr<psi::Matrix> VmoB1Y_group_2 = PI2   ->clone();  // debug for OEP 
+  std::shared_ptr<psi::Matrix> VmoB1Y_group_3 = PI3   ->clone();  // debug for OEP
+  VmoB1Y_group_2->scale(-1.0); VmoB1Y_group_3->scale(-1.0);
   VmoB1Y->subtract(PI2);
   VmoB1Y->subtract(PI3);
 
@@ -163,9 +164,10 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
   std::shared_ptr<psi::Matrix> PI5 = psi::Matrix::doublet(Smo21, VmoBX1, false, true);
 
   //Sum of one-electron integrals written to VmoA2X
-  std::shared_ptr<psi::Matrix> VmoA2X_group_1 = VmoA2X->clone();                      // debug for OEP
-  std::shared_ptr<psi::Matrix> VmoA2X_group_2 = std::make_shared<psi::Matrix>(PI4);   // debug for OEP 
-  std::shared_ptr<psi::Matrix> VmoA2X_group_3 = std::make_shared<psi::Matrix>(PI5);   // debug for OEP
+  std::shared_ptr<psi::Matrix> VmoA2X_group_1 = VmoA2X->clone();   // debug for OEP
+  std::shared_ptr<psi::Matrix> VmoA2X_group_2 = PI4   ->clone();   // debug for OEP 
+  std::shared_ptr<psi::Matrix> VmoA2X_group_3 = PI5   ->clone();   // debug for OEP
+  VmoA2X_group_2->scale(-1.0); VmoA2X_group_3->scale(-1.0);
   VmoA2X->subtract(PI4);
   VmoA2X->subtract(PI5);
   
@@ -207,7 +209,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
 
 
   //Term 1//
-  //ERI I //
+  //ERI I // Group: I
   double int_1 = 0.0;
   double ERI1[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];
   for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
@@ -231,7 +233,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
        }
   }
 
-  //ERI II //
+  //ERI II // Group II
   double int_2 = 0.0;
   double ERI2[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];
   for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
@@ -255,7 +257,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
        }
   }
 
-  //ERI III //
+  //ERI III // Group III
   double int_3 = 0.0;
   double ERI3[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];
   for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
@@ -279,7 +281,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
        }
   }
 
-  //ERI IV //
+  //ERI IV // Group I
   double int_4 = 0.0;
   double ERI4[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];
   for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
@@ -303,7 +305,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
        }
   }
 
-  //ERI V //
+  //ERI V // Group III
   double int_5 = 0.0;
   double ERI5[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];
   for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
@@ -329,7 +331,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
 
 
   //Term 2//
-  //ERI I //
+  //ERI I // Group I
   double int_6 = 0.0;
   double ERI6[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
   for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
@@ -353,7 +355,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
        }
   }
 
-  //ERI II //
+  //ERI II // Group II
   double int_7 = 0.0;
   double ERI7[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
   for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
@@ -377,7 +379,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
        }
   }
 
-  //ERI III //
+  //ERI III // Group III
   double int_8 = 0.0;
   double ERI8[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
   for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
@@ -401,7 +403,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
        }
   }
 
-  //ERI IV //
+  //ERI IV // Group I
   double int_9 = 0.0;
   double ERI9[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
   for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
@@ -425,7 +427,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
        }
   }
 
-  //ERI V //
+  //ERI V // Group III
   double int_10 = 0.0;
   double ERI10[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
   for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
@@ -473,6 +475,8 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
        for (int n=0; n<wfn_union_->l_nvir(1); ++n) {
             ERI_1[i][n] = ERI1[i][n] - ERI2[i][n] - ERI3[i][n] - ERI4[i][n] + ERI5[i][n];  // All Groups
             ERI_1_group_1[i][n] = ERI1[i][n] - ERI4[i][n]; // Group I: debug for OEP
+            ERI_1_group_2[i][n] =-ERI2[i][n]             ; // Group II: debug for OEP
+            ERI_1_group_3[i][n] =-ERI3[i][n] + ERI5[i][n]; // Group III: debug for OEP
        }
   }
 
@@ -486,6 +490,8 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
        for (int n=0; n<wfn_union_->l_nvir(0); ++n) {
             ERI_2[i][n] = ERI6[i][n] - ERI7[i][n] - ERI8[i][n] - ERI9[i][n] + ERI10[i][n];  // All Groups
             ERI_2_group_1[i][n] = ERI6[i][n] - ERI9[i][n]; // Group I: debug for OEP
+            ERI_2_group_2[i][n] =-ERI7[i][n]             ; // Group II: debug for OEP
+            ERI_2_group_3[i][n] =-ERI8[i][n] + ERI10[i][n];// Group III: debug for OEP
        }
   }
 
@@ -499,27 +505,70 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
   std::shared_ptr<psi::Vector> Eps_vir_A = wfn_union_->l_wfn(0)->epsilon_a_subset("MO","VIR");
 
 
-  //Term 1: CT Energy//
+  //Term 1: CT Energy A ---> B //
   double E_ct_1 = 0.0;
+  double E_ct_1_12 = 0.0, E_ct_1_13 = 0.0, E_ct_1_23 = 0.0;
+  double E_ct_1_1 = 0.0, E_ct_1_2 = 0.0, E_ct_1_3 = 0.0;
   for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
        for (int n=0; n<wfn_union_->l_nvir(1); ++n) {
-	    double v = ERI_1_group_1[i][n] + VmoB1Y_group_1->get(i,n);
+	    double v = ERI_1[i][n] + VmoB1Y->get(i,n);
             E_ct_1 += (v*v)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
+            //
+	    double v1= ERI_1_group_1[i][n] + VmoB1Y_group_1->get(i,n);
+	    double v2= ERI_1_group_2[i][n] + VmoB1Y_group_2->get(i,n);
+	    double v3= ERI_1_group_3[i][n] + VmoB1Y_group_3->get(i,n);
+            double v123 = v1 + v2 + v3;
+            double v12  = v1 + v2;
+            double v13  = v1 + v3;
+            double v23  = v2 + v3;
+            E_ct_1_1 += (v1*v1)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
+            E_ct_1_2 += (v2*v2)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
+            E_ct_1_3 += (v3*v3)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
+            E_ct_1_12 += (v12*v12)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
+            E_ct_1_13 += (v13*v13)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
+            E_ct_1_23 += (v23*v23)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
        }
   }
   E_ct_1 = 2.0 * E_ct_1; 
+  E_ct_1_1 *= 2.0;
+  E_ct_1_2 *= 2.0;
+  E_ct_1_3 *= 2.0;
+  E_ct_1_12 *= 2.0;
+  E_ct_1_13 *= 2.0;
+  E_ct_1_23 *= 2.0;
 
 
-  //Term 2: CT Energy//
+  //Term 2: CT Energy B ---> A //
   double E_ct_2 = 0.0;
+  double E_ct_2_12 = 0.0, E_ct_2_13 = 0.0, E_ct_2_23 = 0.0;
+  double E_ct_2_1 = 0.0, E_ct_2_2 = 0.0, E_ct_2_3 = 0.0;
   for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
        for (int n=0; n<wfn_union_->l_nvir(0); ++n) {
-            double v = ERI_2_group_1[i][n] + VmoA2X_group_1->get(i,n);
+            double v = ERI_2[i][n] + VmoA2X->get(i,n);
             E_ct_2 += (v*v)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
+            //
+            double v1= ERI_2_group_1[i][n] + VmoA2X_group_1->get(i,n);
+            double v2= ERI_2_group_2[i][n] + VmoA2X_group_2->get(i,n);
+            double v3= ERI_2_group_3[i][n] + VmoA2X_group_3->get(i,n);
+            double v123 = v1 + v2 + v3;
+            double v12  = v1 + v2;
+            double v13  = v1 + v3;
+            double v23  = v2 + v3;
+            E_ct_2_1 += (v1*v1)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
+            E_ct_2_2 += (v2*v2)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
+            E_ct_2_3 += (v3*v3)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
+            E_ct_2_12 += (v12*v12)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
+            E_ct_2_13 += (v13*v13)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
+            E_ct_2_23 += (v23*v23)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
        }
   }
   E_ct_2 = 2.0 * E_ct_2;
-
+  E_ct_2_1 *= 2.0;
+  E_ct_2_2 *= 2.0;
+  E_ct_2_3 *= 2.0;
+  E_ct_2_12 *= 2.0;
+  E_ct_2_13 *= 2.0;
+  E_ct_2_23 *= 2.0;
 
 
   //Whole CT Energy E_CT(A+B-) + E_CT(A-B+)//
@@ -535,9 +584,42 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Charge-transfer energy calculations <==\n");
      psi::outfile->Printf("  ==>         Benchmark (Otto-Ladik)           <==\n\n");
-     psi::outfile->Printf("     E_CT (A+B-)   = %13.10f au\n", E_ct_1        );
-     psi::outfile->Printf("     E_CT (A-B+)   = %13.10f au\n", E_ct_2        );
-     psi::outfile->Printf("     E_CT          = %13.10f au\n", E_ct        ); 
+     psi::outfile->Printf("     -------------------------------\n"           );
+     psi::outfile->Printf("     Group I\n"                                   );
+     psi::outfile->Printf("     E_CT (A-->B)   = %13.6f au\n", E_ct_1_1      );
+     psi::outfile->Printf("     E_CT (B-->A)   = %13.6f au\n", E_ct_2_1      );
+   //psi::outfile->Printf("     E_CT           = %13.6f au\n", E_ct          ); 
+     psi::outfile->Printf("     -------------------------------\n"           );
+     psi::outfile->Printf("     Group II\n"                                  );
+     psi::outfile->Printf("     E_CT (A-->B)   = %13.6f au\n", E_ct_1_2      );
+     psi::outfile->Printf("     E_CT (B-->A)   = %13.6f au\n", E_ct_2_2      );
+   //psi::outfile->Printf("     E_CT           = %13.6f au\n", E_ct          ); 
+     psi::outfile->Printf("     -------------------------------\n"           );
+     psi::outfile->Printf("     Group III\n"                                 );
+     psi::outfile->Printf("     E_CT (A-->B)   = %13.6f au\n", E_ct_1_3      );
+     psi::outfile->Printf("     E_CT (B-->A)   = %13.6f au\n", E_ct_2_3      );
+   //psi::outfile->Printf("     E_CT           = %13.6f au\n", E_ct          ); 
+     psi::outfile->Printf("     ===============================\n"           );
+     psi::outfile->Printf("     Group I+II\n"                                );
+     psi::outfile->Printf("     E_CT (A-->B)   = %13.6f au\n", E_ct_1_12     );
+     psi::outfile->Printf("     E_CT (B-->A)   = %13.6f au\n", E_ct_2_12     );
+   //psi::outfile->Printf("     E_CT           = %13.6f au\n", E_ct          ); 
+     psi::outfile->Printf("     -------------------------------\n"           );
+     psi::outfile->Printf("     Group I+III\n"                               );
+     psi::outfile->Printf("     E_CT (A-->B)   = %13.6f au\n", E_ct_1_13     );
+     psi::outfile->Printf("     E_CT (B-->A)   = %13.6f au\n", E_ct_2_13     );
+   //psi::outfile->Printf("     E_CT           = %13.6f au\n", E_ct          ); 
+     psi::outfile->Printf("     -------------------------------\n"           );
+     psi::outfile->Printf("     Group II+III\n"                              );
+     psi::outfile->Printf("     E_CT (A-->B)   = %13.6f au\n", E_ct_1_23     );
+     psi::outfile->Printf("     E_CT (B-->A)   = %13.6f au\n", E_ct_2_23     );
+   //psi::outfile->Printf("     E_CT           = %13.6f au\n", E_ct          ); 
+     psi::outfile->Printf("     ===============================\n"           );
+     psi::outfile->Printf("     Total\n"                                     );
+     psi::outfile->Printf("     E_CT (A-->B)   = %13.6f au\n", E_ct_1        );
+     psi::outfile->Printf("     E_CT (B-->A)   = %13.6f au\n", E_ct_2        );
+     psi::outfile->Printf("     E_CT           = %13.6f au\n", E_ct          ); 
+     psi::outfile->Printf("     -------------------------------\n"           );
      psi::outfile->Printf("\n");
   }
 
