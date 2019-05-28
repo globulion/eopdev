@@ -694,8 +694,11 @@ class ChargeTransferEnergySolver : public OEPDevSolver
     double compute_benchmark_otto_ladik();
     /// EFP2 method (1996)
     double compute_benchmark_efp2();
-    /// OEP-based Otto-Ladik (2018)
-    double compute_oep_based_otto_ladik();
+    /// OEP-based Otto-Ladik (2019)
+    double compute_oep_based_murrell_etal();
+    /// CT energy component
+    double compute_ct_component(int nocc_X, int nvir_Y, 
+               std::shared_ptr<psi::Vector> eps_occ_X, std::shared_ptr<psi::Vector> eps_vir_Y, std::shared_ptr<Matrix> V);
 };
 
 
