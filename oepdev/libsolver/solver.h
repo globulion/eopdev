@@ -697,8 +697,8 @@ class ChargeTransferEnergySolver : public OEPDevSolver
     /// OEP-based Otto-Ladik (2019)
     double compute_oep_based_murrell_etal();
     /// CT energy component
-    double compute_ct_component(int nocc_X, int nvir_Y, 
-               std::shared_ptr<psi::Vector> eps_occ_X, std::shared_ptr<psi::Vector> eps_vir_Y, std::shared_ptr<Matrix> V);
+    double compute_ct_component(std::shared_ptr<psi::Vector> eps_occ_X, 
+                                std::shared_ptr<psi::Vector> eps_vir_Y, std::shared_ptr<Matrix> V);
 };
 
 
