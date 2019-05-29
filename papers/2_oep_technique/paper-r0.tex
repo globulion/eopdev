@@ -35,7 +35,7 @@ molecular aggregates such as interacting molecules in condensed phases.
 
 \section{\label{s:1}Introduction}
 
-\section{\label{s:2}Effective One-Electron Potentials: General Form}
+\section{\label{s:2}Effective One-Electron Potentials: General Theory}
 
 The one\hyp{}electron potential $v^{\rm eff}({\bf r})$
 produced by a certain effective one\hyp{}electron charge density distribution $\rho^{\rm eff}({\bf r})$
@@ -45,11 +45,19 @@ is
 	v^{\rm eff}({\bf r}) = \int \frac{ \rho^{\rm eff}({\bf r}') }{ \vert {\bf r}' - {\bf r} \vert} d{\bf r}' \;,
 \end{equation}
 %
-where ${\bf r}$ is a spatial coordinate. Formally, the effective density can be expanded in terms of an effective
+where ${\bf r}$ is a spatial coordinate. 
+For convenience, the total effective density can be split into nuclear and electronic contributions,
+%
+\begin{equation} \label{e:rho-eff}
+ \rho^{\rm eff}({\bf r}) = \lambda \rho^{\rm eff}_{\rm nuc}({\bf r}) + \rho^{\rm eff}_{\rm el}({\bf r}) \;,
+\end{equation}
+%
+where $\lambda$ is a certain parameter and is assumed either 1 or 0 in this work.
+Formally, the electronic part can be expanded in terms of an effective
 one\hyp{}particle density matrix represented in a certain basis of orbitals, $\BM{\phi}({\bf r})$,
 %
 \begin{equation} \label{e:d-spectral}
-	\rho^{\rm eff}({\bf r}) = \sum_{\alpha\beta} D_{\alpha\beta}^{\rm eff} 
+	\rho^{\rm eff}_{\rm el}({\bf r}) = \sum_{\alpha\beta} D_{\alpha\beta}^{\rm eff} 
 	\phi_\alpha({\bf r}) \phi_\beta^{*}({\bf r})  \;.
 \end{equation}
 %
@@ -57,7 +65,9 @@ Based on that, the operator form of the effective potential
 can be written as
 %
 \begin{equation} \label{e:oep-operator}
-	\hat{v}^{\rm eff} = \sum_{\alpha\beta} 
+	\hat{v}^{\rm eff} = 
+        \lambda \hat{v}_{\rm nuc} +
+        \sum_{\alpha\beta} 
 	\Ket{\alpha} 
 	\left[
 	\int
@@ -68,23 +78,37 @@ can be written as
 	\Bra{\beta}  
 \end{equation}
 %
-with the Coulomb operator defined by
+with the nuclear
+and Coulomb operators defined by
 %
-\begin{equation}
-	\hat{J}^{\rm}_{\alpha\beta}({\bf r}) f({\bf r}) \equiv
+\begin{subequations}
+\begin{align}
+        \hat{v}_{\rm nuc} &\equiv \\
+	\hat{J}^{\rm}_{\alpha\beta}({\bf r}) f({\bf r}) &\equiv
 	f({\bf r}) 
 	\int
 	\frac{ \phi_\alpha^{*}({\bf r}') \phi_\beta({\bf r}') }{ \vert {\bf r}' - {\bf r} \vert} d{\bf r}'
-\end{equation}
+\end{align}
+\end{subequations}
 %
 for any one\hyp{}electron function $f({\bf r})$. The matrix element of the effective potential operator
 is therefore given by
 %
 \begin{equation}
 	\tBraKet{\alpha}{ \hat{v}^{\rm eff} }{\beta}
-	= \sum_{\gamma\delta} \BraKet{\alpha\beta}{\gamma\delta} D^{\rm eff}_{\gamma\delta}  \;.
+	= \lambda \sum_x^{\rm At} W_{\alpha\beta}^{(x)} +
+        \sum_{\gamma\delta} \BraKet{\alpha\beta}{\gamma\delta} D^{\rm eff}_{\gamma\delta}  \;,
 \end{equation}
 %
+where 
+%
+\begin{equation}
+ W_{\alpha\beta}^{(x)} = 
+ Z_x \int \frac{\phi^*_\alpha({\bf r}) \phi_\beta({\bf r})}{\vert {\bf r} - {\bf r}_x \vert} d{\bf r} \;,
+\end{equation}
+%
+$Z_x$ is the atomic number of the $x$th atom,
+and the symbol `At' denotes all atoms that contribute to the effective potential.
 In the above equation and throughout the work, 
 %
 \begin{equation}
@@ -527,7 +551,7 @@ By requiring that
 %
 one finds the coefficients of the $i$th row of ${\bf V}^A$ to be
 %
-\begin{equation}
+\begin{equation} \label{e:gdf-coml.v}
 % {\bf v}_i = {\bf a}^{(i)} \cdot {\bf S}^{-1}
   V^A_{i\xi} = \sum_\eta^{\rm RI} [{\bf S}^{-1}]_{\xi\eta} a^{(i)}_\eta \;,
 \end{equation}
@@ -562,7 +586,7 @@ along with the spectral representation of the effective density from Eq.~\eqref{
 which finally gives
 %
 \begin{equation}
- a^{(i)}_\eta = \sum_{x} W_{\eta i}^{(x)} + 
+ a^{(i)}_\eta = \lambda \sum_{x} W_{\eta i}^{(x)} + 
  \sum_{\alpha\beta} D^A_{\alpha\beta} 
   \BraKet{\alpha\beta}{\eta i} \;.
 %  \iint \frac{ \phi_\alpha^*({\bf r}_1)  \phi_\beta({\bf r}_1) \varphi^*_\eta({\bf r}_2) \phi_i({\bf r}_2)}
@@ -646,7 +670,7 @@ This can be achieved by performing additional density fitting in a nearly comple
 The working equation is therefore given by
 %
 \begin{equation}
- b^{(i)}_\eta = \sum_\varepsilon^{\rm Int} H_{i\varepsilon} R_{\varepsilon\eta} \;,
+ b^{(i)}_\eta = \sum_\varepsilon^{\rm RI} H_{i\varepsilon} R_{\varepsilon\eta} \;,
 \end{equation}
 %
 %with
@@ -658,8 +682,10 @@ The working equation is therefore given by
 %                 d{\bf r}_1 d{\bf r}_2 \;,
 %\end{equation}
 %%
-which can be easily evaluated and the matrix elements of the OEP operator found
-from Eq.~\eqref{e:v-noncompl}.
+which can be easily evaluated by noting that
+$H_{i\varepsilon}$ are given by Eq.~\eqref{e:gdf-coml.v}.
+Thus, the matrix elements of the OEP operator can be found
+by using Eq.~\eqref{e:v-noncompl}.
 %Therefore, in order to use this generalized density fitting scheme
 %one must to compute two\hyp{}centre electron repulsion integrals
 %as well as four\hyp{}centre asymmetric electron repulsion integrals of the type $ (\alpha\beta\gamma||\eta) $.
@@ -735,6 +761,8 @@ regarding the type of ERI's that are required:
 (i) $\BraKet{AB}{BB}$ -- the first two terms;
 (ii) $\BraKet{AA}{BB}$ -- the third term and
 (iii) $\BraKet{BB}{AA}$ -- the two last terms. 
+Note also that there are no exchange\hyp{}like terms needed in this case.
+Therefore, all the contributions can be re\hyp{}cast in terms of the OEP's.
 %Note that groups (ii) and (iii) correspond to the Coulomb interactions between
 %The group (i) corresponds to the overlap\hyp{}like integrals, whereas the groups (ii) and (iii)
 %correspond to the Coulomb\hyp{}like integrals
@@ -839,7 +867,7 @@ solely on the densities and basis sets associated with the unperturbed molecule 
 Therefore, $V^B_{n\xi}$ can be considered as effective fragment parameters
 used to compute the first two terms of Eq.~\eqref{e:ct-murell-etal.vin} by
 %
-\begin{equation}
+\begin{equation} \label{e:ct.group-i.final}
         \tBraKet{i}{\hat{v}^B_{\rm tot} }{n} 
       - \sum_{j\in B}^{\rm Occ} \BraKet{nj}{ij} 
        = \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} \;,
@@ -892,7 +920,7 @@ Note however that $q_{ik} = -\delta_{ik}$ and $q_j = -1$. Moreover,
 if the localized orbitals are perfectly spherical distributed dipole moments vanish.
 This means that Eq.~\eqref{e:ct.group-2} can be approximated as follows:
 %
-\begin{equation}
+\begin{equation} \label{e:ct.group-ii.final}
       - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} 
  \approx S_{ni}  \left[
   %\sum_{i\in A}^{\rm LC} 
@@ -943,7 +971,7 @@ where the effective potential ${v}^{A,{\rm eff}}_{ik}$ (with the associated
 effective density $\rho^{A,{\rm eff}}_{ik}$) 
 is defined by
 %
-\begin{equation}
+\begin{equation} \label{e:ct.group-iii.oep}
  {v}^{A,{\rm eff}}_{ik}({\bf r}) \equiv
  \delta_{ik} 
  \left[
@@ -955,7 +983,7 @@ is defined by
 Now, it is first assumed here that $\rho^{B}_{nj} ({\bf r}) \approx 0$ if occupied MO's on $B$ are localized.
 This means that
 %
-\begin{multline}
+\begin{multline} \label{e:ct.group-iii.final.a}
         - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
      + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
         S_{kj} \left( 1 - \delta_{ik} \right) 
@@ -963,8 +991,10 @@ This means that
  \approx 0 \;.
 \end{multline}
 %
-The above result is a crude approximation, since virtual MO's can overlap with occupied MO's to some extent.
-In order to maintain $\rho^{B}_{nj}$ density, it is approximately represented here by a set of effective 
+The above result is a crude approximation, since the channels $j\rightarrow n$
+are quite important contributions in most of perturbation theory treatments.
+%virtual MO's can penetrate the occupied MO's to some extent.
+In order to include the $\rho^{B}_{nj}$ density, it is approximately represented here by a set of effective 
 cumulative
 atomic charges $\{ q^{B,(nj)}_{y} \}$ associated with the effective one\hyp{}particle density matrix
 %
@@ -973,9 +1003,11 @@ atomic charges $\{ q^{B,(nj)}_{y} \}$ associated with the effective one\hyp{}par
 \end{equation}
 %
 In this work, the effective charges were computed via the CAMM or ESP methods as
-discussed in Section~XXX. Applying the SOA leads to 
+discussed in Section~XXX. Applying the SOA 
+and the effective potential from Eq.~\eqref{e:ct.group-iii.oep} 
+leads to 
 %
-\begin{multline}
+\begin{multline} \label{e:ct.group-iii.final.b}
         - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
      + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
         S_{kj} \left( 1 - \delta_{ik} \right) 
@@ -1037,10 +1069,9 @@ where the auxiliary variables are
 \end{subequations}
 %
 To compute the interaction energy due to CT from $A$ to $B$ by using the above SOA\hyp{}based
-approximations, coupling elements need to be transformed from localized to canonical MO basis.
-The final working formula reads
+approximations, coupling elements need to be transformed from localized to canonical MO basis, i.e.,
 %
-\begin{equation} \label{e:ect-oep.final}
+\begin{equation} \label{e:ect-oep.prefinal}
  E^{A\rightarrow B} \approx
  2 
  \sum_{i\in A}^{\rm CMO}
@@ -1053,8 +1084,35 @@ The final working formula reads
 \end{equation}
 %
 where ${\bf L}^A$ is the CMO\hyp{}LMO transformation matrix for occupied orbitals of $A$. 
+Note however, that the effective potential parameters from the density fitted term of group (i) 
+do not involve any occupied orbitals.
+Therefore, to save computational costs, only groups (ii) and (iii) need to be transformed
+whereas for group (i) the overlap integrals from Eq.~\eqref{e:ct.group-i.final} 
+can be already evaluated in CMO basis.
+Thus, the final working formula for the interaction energy due to CT from $A$ to $B$ reads
+%
+\begin{multline} \label{e:ect-oep.final}
+ E^{A\rightarrow B} \approx
+ 2 
+ \sum_{i\in A}^{\rm CMO}
+ \sum_{n\in B}^{\rm Vir}
+ \frac{1}{\varepsilon_i - \varepsilon_n} \times 
+ \Bigg(
+   \Approx{V_{in}^{A\rightarrow B}}{\rm G1} \\
+  +
+   \sum_{i'\in A}^{\rm LMO} L_{ii'}^A
+   \left\{
+   \Approx{V_{i'n}^{A\rightarrow B}}{\rm G2} 
+  +\Approx{V_{i'n}^{A\rightarrow B}}{\rm G3}
+  \right\}
+ \Bigg)^2 \;,
+\end{multline}
+%
+where the subscripts G$n$ ($n$ = 1, 2, 3) denote a particular group of 
+terms from Eqs.~\eqref{e:ct.group-i.final}, \eqref{e:ct.group-ii.final} and \eqref{e:ct.group-iii.final.a}
+or \eqref{e:ct.group-iii.final.b}. 
 The total CT energy is given by the sum of the above contribution and the twin contribution
-due to CT from $B$ to $A$.
+due to CT from molecule $B$ to $A$.
 
 %
 %he above formula does not explicitly define an OEP due to the summation over different
