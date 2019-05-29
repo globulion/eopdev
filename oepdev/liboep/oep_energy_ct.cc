@@ -121,15 +121,43 @@ void ChargeTransferEnergyOEPotential::compute_murrell_etal_v1_gdf()
 }
 void ChargeTransferEnergyOEPotential::compute_murrell_etal_v3_camm_nj()
 { 
+  if (!localizer_) throw psi::PSIEXCEPTION("Occupied molecular orbitals have not been localized! Run `localize' method first!"); 
+
   // ==> Sizing <== //
-  int nocc = cOcc_->ncol();
+  int nocc = lOcc_->ncol();
   int nvir = cVir_->ncol();
   int nbf = primary_->nbf();
 
   // ==> Initialize CAMM object <== //
   SharedDMTPole camm = oepdev::DMTPole::build("CAMM", wfn_, nocc*nvir);
+  std::vector<psi::SharedMatrix> oeds;
+  std::vector<bool> trans;
 
-  // TODO
+  for (int j=0; j<nocc; ++j) {
+       for (int n=0; n<nvir; ++n) {
+            int idx = nocc*j + n;
+
+            /* Exclude nuclear part */
+            trans.push_back(true);
+
+            /* Set up OED_jn */
+            psi::SharedMatrix oed = std::make_shared<psi::Matrix>("", nbf, nbf);
+
+            double** oed_p = oed->pointer();
+            for (int a=0; a<nbf; ++a) {
+            for (int b=0; b<nbf; ++b) {
+                 oed_p[a][b] = lOcc_->get(a,j) * cVir_->get(b,n);
+            }}
+            oeds.push_back(oed);
+       }
+  }
+
+  /* Compute set of CAMM's */
+  camm->compute(oeds, trans);
+
+  /* Save */
+  oepTypes_["Murrell-etal.V3.CAMM-nj"].dmtp = camm;
+  if (options_.get_int("PRINT") > 1) camm->print();
 }
 
 
