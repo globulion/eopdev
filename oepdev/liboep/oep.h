@@ -92,10 +92,12 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     std::shared_ptr<oepdev::PotentialInt> potInt_;
     /// Occupied orbitals: Canonical (CMO)
     std::shared_ptr<psi::Matrix> cOcc_;
-    /// Occupied orbitals: Localized (LMO)
-    std::shared_ptr<psi::Matrix> lOcc_;
     /// Virtual orbitals
     std::shared_ptr<psi::Matrix> cVir_;
+    /// Occupied orbitals: Localized (LMO)
+    std::shared_ptr<psi::Matrix> lOcc_;
+    /// LMO Centroids
+    std::vector<std::shared_ptr<psi::Vector>> lmoc_;
 
   public:
 
@@ -197,6 +199,9 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     /// Retrieve MO Localizer
     SharedLocalizer localizer() const {return localizer_;}
+
+    /// Retrieve LMO Centroids
+    std::vector<std::shared_ptr<psi::Vector>> lmoc() const {return lmoc_;}
 
 
     // <--- Mutators ---> //

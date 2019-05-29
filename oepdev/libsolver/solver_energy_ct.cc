@@ -648,6 +648,10 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   oep_1->compute("Murrell-etal.V3.CAMM-nj");
   oep_2->compute("Murrell-etal.V3.CAMM-nj");
 
+  // ===> Molecules <=== //
+  std::shared_ptr<psi::Molecule> mol_1 = wfn_union_->l_wfn(0)->molecule();
+  std::shared_ptr<psi::Molecule> mol_2 = wfn_union_->l_wfn(1)->molecule();
+
   // ===> Compute Overlap Matrices <=== //
   int nbf_p1 = wfn_union_->l_nbf(0);
   int nbf_p2 = wfn_union_->l_nbf(1);
@@ -657,10 +661,6 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   int nocc_2 = wfn_union_->l_ndocc(1);
   int nvir_1 = wfn_union_->l_nvir(0);
   int nvir_2 = wfn_union_->l_nvir(1);
-  std::shared_ptr<psi::Molecule> mol_1 = wfn_union_->l_wfn(0)->molecule();
-  std::shared_ptr<psi::Molecule> mol_2 = wfn_union_->l_wfn(1)->molecule();
-  int nat_1 = mol_1->natom();
-  int nat_2 = mol_2->natom();
 
 
   std::shared_ptr<psi::Matrix> Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_p1, nbf_p2);
@@ -695,75 +695,22 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   std::shared_ptr<psi::Matrix> S1 = psi::Matrix::doublet(Ca_occ_1, Sao_1p2a, true, false); // OCC(A) x AUX(B)
   std::shared_ptr<psi::Matrix> S2 = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true ); // OCC(B) x AUX(A)
 
-  // ---> Localize occupied orbitals <--- //
+  // ---> Localized occupied orbitals <--- //
   std::shared_ptr<psi::Matrix> La_occ_1 = oep_1->localizer()->L();
   std::shared_ptr<psi::Matrix> La_occ_2 = oep_2->localizer()->L();
   std::shared_ptr<psi::Matrix> S12= psi::Matrix::triplet(La_occ_1, Sao_1p2p, La_occ_2, true, false, false); // LOCC(A) x LOCC(B)
   std::shared_ptr<psi::Matrix> S1Y= psi::Matrix::triplet(La_occ_1, Sao_1p2p, Ca_vir_2, true, false, false); // LOCC(A) x  VIR(B)
   std::shared_ptr<psi::Matrix> S2X= psi::Matrix::triplet(La_occ_2, Sao_1p2p, Ca_vir_1, true, true , false); // LOCC(B) x  VIR(A)
   
-  // ---> Compute LMO centroids <--- //
-  std::vector<std::shared_ptr<psi::Matrix>> R1ao, R2ao;
-  std::vector<std::shared_ptr<psi::Vector>> R1mo, R2mo;
-  for (int z=0; z<3; ++z) R1ao.push_back(std::make_shared<psi::Matrix>("R1ao", nbf_p1, nbf_p1));
-  for (int z=0; z<3; ++z) R2ao.push_back(std::make_shared<psi::Matrix>("R2ao", nbf_p2, nbf_p2));
-  for (int z=0; z<3; ++z) R1mo.push_back(std::make_shared<psi::Vector>("R1mo", wfn_union_->l_ndocc(0)));
-  for (int z=0; z<3; ++z) R2mo.push_back(std::make_shared<psi::Vector>("R2mo", wfn_union_->l_ndocc(1)));
-  std::shared_ptr<psi::OneBodyAOInt> dipInt1(fact_11.ao_dipole());
-  std::shared_ptr<psi::OneBodyAOInt> dipInt2(fact_22.ao_dipole());
-  dipInt1->compute(R1ao);
-  dipInt2->compute(R2ao);
-  for (int z=0; z<3; ++z) {
-       R1ao[z]->scale(-1.0);
-       R2ao[z]->scale(-1.0);
-       std::shared_ptr<psi::Matrix> CR1C = psi::Matrix::triplet(La_occ_1, R1ao[z], La_occ_1, true, false, false);
-       std::shared_ptr<psi::Matrix> CR2C = psi::Matrix::triplet(La_occ_2, R2ao[z], La_occ_2, true, false, false);
-       for (int a=0; a<wfn_union_->l_ndocc(0); ++a) {
-            R1mo[z]->set(a, CR1C->get(a,a));
-       }
-       for (int b=0; b<wfn_union_->l_ndocc(1); ++b) {
-            R2mo[z]->set(b, CR2C->get(b,b));
-       }
-       R1ao[z].reset(); 
-       R2ao[z].reset(); 
-  }
+  // ---> Get LMO centroids <--- //
+  std::vector<std::shared_ptr<psi::Vector>> rmo_1 = oep_1->lmoc();
+  std::vector<std::shared_ptr<psi::Vector>> rmo_2 = oep_2->lmoc();
 
-  // ---> Compute auxiliary vectors u_i and u_j <--- //
-  std::shared_ptr<psi::Vector> u_1 = std::make_shared<psi::Vector>("", nocc_1);
-  std::shared_ptr<psi::Vector> u_2 = std::make_shared<psi::Vector>("", nocc_2);
-  for (int i=0; i<nocc_1; ++i) {
-       double v = 0.0;
-       for (int y=0; y<nat_2; ++y) {
-            double ryi = sqrt(pow(mol_2->x(y) - R1mo[0]->get(i), 2.0) +
-                              pow(mol_2->y(y) - R1mo[1]->get(i), 2.0) +
-                              pow(mol_2->z(y) - R1mo[2]->get(i), 2.0) );
-            v += (double)mol_2->Z(y) / ryi;
-       }
-       for (int j=0; j<nocc_2; ++j) {
-            double rji = sqrt(pow(R2mo[0]->get(j) - R1mo[0]->get(i), 2.0) +
-                              pow(R2mo[1]->get(j) - R1mo[1]->get(i), 2.0) +
-                              pow(R2mo[2]->get(j) - R1mo[2]->get(i), 2.0) );
-            v -= 2.0 / rji;
-       }
-       u_1->set(i, v);
-  }
-
-  for (int i=0; i<nocc_2; ++i) {
-       double v = 0.0;
-       for (int y=0; y<nat_1; ++y) {
-            double ryi = sqrt(pow(mol_1->x(y) - R2mo[0]->get(i), 2.0) +
-                              pow(mol_1->y(y) - R2mo[1]->get(i), 2.0) +
-                              pow(mol_1->z(y) - R2mo[2]->get(i), 2.0) );
-            v += (double)mol_1->Z(y) / ryi;
-       }
-       for (int j=0; j<nocc_1; ++j) {
-            double rji = sqrt(pow(R1mo[0]->get(j) - R2mo[0]->get(i), 2.0) +
-                              pow(R1mo[1]->get(j) - R2mo[1]->get(i), 2.0) +
-                              pow(R1mo[2]->get(j) - R2mo[2]->get(i), 2.0) );
-            v -= 2.0 / rji;
-       }
-       u_2->set(i, v);
-  }
+  // ---> Compute auxiliary tensors u and w <--- //
+  std::shared_ptr<psi::Vector> u_1 = this->compute_u_vector(rmo_1, rmo_2, mol_2);
+  std::shared_ptr<psi::Vector> u_2 = this->compute_u_vector(rmo_2, rmo_1, mol_1);
+  std::shared_ptr<psi::Matrix> w_1 = this->compute_w_matrix(mol_1, mol_2, rmo_1);
+  std::shared_ptr<psi::Matrix> w_2 = this->compute_w_matrix(mol_2, mol_1, rmo_2);
 
   // ===> Compute V1 term <=== //
   std::shared_ptr<psi::Matrix> v_ab_v1 = psi::Matrix::doublet(S1, oep_2->matrix("Murrell-etal.V1.GDF"), false, false);
@@ -795,12 +742,12 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   std::shared_ptr<psi::Matrix> v_ba_v12 = v_ba_v1->clone(); v_ba_v12->add(v_ba_v2);
 
   // ===> Compute CT Energy <=== //
-  double e_ab_v1 = compute_ct_component(e_occ_1, e_vir_2, v_ab_v1);
-  double e_ba_v1 = compute_ct_component(e_occ_2, e_vir_1, v_ba_v1);
-  double e_ab_v2 = compute_ct_component(e_occ_1, e_vir_2, v_ab_v2);
-  double e_ba_v2 = compute_ct_component(e_occ_2, e_vir_1, v_ba_v2);
-  double e_ab_v12= compute_ct_component(e_occ_1, e_vir_2, v_ab_v12);
-  double e_ba_v12= compute_ct_component(e_occ_2, e_vir_1, v_ba_v12);
+  double e_ab_v1 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v1);
+  double e_ba_v1 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v1);
+  double e_ab_v2 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v2);
+  double e_ba_v2 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v2);
+  double e_ab_v12= this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v12);
+  double e_ba_v12= this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v12);
 
   double e_ab = e_ab_v12;
   double e_ba = e_ba_v12;
@@ -830,7 +777,6 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
      psi::outfile->Printf("     E_TOT       = %13.6f\n", e_tot                          );
      psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("\n");
-
 }
 
   // Return the Total CT Energy
@@ -855,4 +801,78 @@ double ChargeTransferEnergySolver::compute_ct_component(
   }
   e_XY *= 2.0;
   return e_XY;
+}
+std::shared_ptr<psi::Vector> ChargeTransferEnergySolver::compute_u_vector(
+  std::vector<std::shared_ptr<psi::Vector>> rmo_1, 
+  std::vector<std::shared_ptr<psi::Vector>> rmo_2, 
+  std::shared_ptr<psi::Molecule> mol_2
+)
+{
+  const int nocc_1 = rmo_1[0]->dim();
+  const int nocc_2 = rmo_2[0]->dim();
+  const int nat_2  = mol_2->natom();
+
+  std::shared_ptr<psi::Vector> u = std::make_shared<psi::Vector>("", nocc_1);
+
+  for (int i=0; i<nocc_1; ++i) {
+       double v = 0.0;
+       //
+       for (int y=0; y<nat_2; ++y) {
+            double ryi = sqrt(pow(mol_2->x(y) - rmo_1[0]->get(i), 2.0) +
+                              pow(mol_2->y(y) - rmo_1[1]->get(i), 2.0) +
+                              pow(mol_2->z(y) - rmo_1[2]->get(i), 2.0) );
+            v += (double)mol_2->Z(y) / ryi;
+       }
+       //
+       for (int j=0; j<nocc_2; ++j) {
+            double rji = sqrt(pow(rmo_2[0]->get(j) - rmo_1[0]->get(i), 2.0) +
+                              pow(rmo_2[1]->get(j) - rmo_1[1]->get(i), 2.0) +
+                              pow(rmo_2[2]->get(j) - rmo_1[2]->get(i), 2.0) );
+            v -= 2.0 / rji;
+       }
+       u->set(i, v);
+  }
+  return u;
+}
+std::shared_ptr<psi::Matrix> ChargeTransferEnergySolver::compute_w_matrix(
+  std::shared_ptr<psi::Molecule> mol_1,
+  std::shared_ptr<psi::Molecule> mol_2,
+  std::vector<std::shared_ptr<psi::Vector>> rmo_1
+)
+{
+  const int nat_1 = mol_1->natom();
+  const int nat_2 = mol_2->natom();
+  const int nocc_1= rmo_1[0]->dim();
+
+  std::shared_ptr<psi::Matrix> w = std::make_shared<psi::Matrix>("", nocc_1, nat_2);
+
+  for (int y=0; y<nat_2; ++y) {
+       double vy = 0.0;
+       //
+       for (int x=0; x<nat_1; ++x) { 
+            double rxy = sqrt(pow(mol_1->x(x) - mol_2->x(y), 2.0) +
+                              pow(mol_1->y(x) - mol_2->y(y), 2.0) +
+                              pow(mol_1->z(x) - mol_2->z(y), 2.0) );
+            vy += (double)mol_1->Z(x) / rxy;
+       }
+       //
+       for (int k=0; k<nocc_1; ++k) {
+            double rky = sqrt(pow(rmo_1[0]->get(k) - mol_2->x(y), 2.0) +
+                              pow(rmo_1[1]->get(k) - mol_2->y(y), 2.0) +
+                              pow(rmo_1[2]->get(k) - mol_2->z(y), 2.0) );
+            vy-= 2.0 / rky;
+       }
+       //
+       for (int i=0; i<nocc_1; ++i) {
+            double v = vy;
+            //
+            double riy = sqrt(pow(rmo_1[0]->get(i) - mol_2->x(y), 2.0) +
+                              pow(rmo_1[1]->get(i) - mol_2->y(y), 2.0) +
+                              pow(rmo_1[2]->get(i) - mol_2->z(y), 2.0) );
+            v += 2.0 / riy;
+            w->set(i, y, v);
+       }
+  }
+  w->scale(-1.0);
+  return w;
 }
