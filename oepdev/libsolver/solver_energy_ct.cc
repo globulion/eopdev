@@ -529,7 +529,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
             E_ct_1_23 += (v23*v23)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
        }
   }
-  E_ct_1 = 2.0 * E_ct_1; 
+  E_ct_1 *= 2.0; 
   E_ct_1_1 *= 2.0;
   E_ct_1_2 *= 2.0;
   E_ct_1_3 *= 2.0;
@@ -562,7 +562,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
             E_ct_2_23 += (v23*v23)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
        }
   }
-  E_ct_2 = 2.0 * E_ct_2;
+  E_ct_2 *= 2.0;
   E_ct_2_1 *= 2.0;
   E_ct_2_2 *= 2.0;
   E_ct_2_3 *= 2.0;
@@ -712,6 +712,10 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   std::shared_ptr<psi::Matrix> w_1 = this->compute_w_matrix(mol_1, mol_2, rmo_1);
   std::shared_ptr<psi::Matrix> w_2 = this->compute_w_matrix(mol_2, mol_1, rmo_2);
 
+  // ---> Get distributed effective charges <--- //
+  std::vector<std::shared_ptr<psi::Matrix>> q_1 = oep_1->oep("Murrell-etal.V3.CAMM-nj").dmtp->charges();
+  std::vector<std::shared_ptr<psi::Matrix>> q_2 = oep_2->oep("Murrell-etal.V3.CAMM-nj").dmtp->charges();
+
   // ===> Compute V1 term <=== //
   std::shared_ptr<psi::Matrix> v_ab_v1 = psi::Matrix::doublet(S1, oep_2->matrix("Murrell-etal.V1.GDF"), false, false);
   std::shared_ptr<psi::Matrix> v_ba_v1 = psi::Matrix::doublet(S2, oep_1->matrix("Murrell-etal.V1.GDF"), false, false);
@@ -735,22 +739,63 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   v_ba_v2->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v2->clone(), 0.0);
 
   // ===> Compute V3 term <=== //
-  // TODO
+  std::shared_ptr<psi::Matrix> v_ab_v3 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
+  std::shared_ptr<psi::Matrix> v_ba_v3 = std::make_shared<psi::Matrix>("", nocc_2, nvir_1);
+  for (int i=0; i<nocc_1; ++i) {
+       for (int n=0; n<nvir_2; ++n) {
+            double v = 0;
+            for (int j=0; j<nocc_2; ++j) {              
+                 for (int y=0; y<mol_2->natom(); ++y) {
+                      v += S12->get(i,j) * w_1->get(i, y) * q_2[nocc_2*j+n]->get(y, 0);
+                 }
+            }
+            v_ab_v3->set(i, n, v);
+       }
+  }
+  //
+  for (int i=0; i<nocc_2; ++i) {
+       for (int n=0; n<nvir_1; ++n) {
+            double v = 0;
+            for (int j=0; j<nocc_1; ++j) {              
+                 for (int y=0; y<mol_1->natom(); ++y) {
+                      v += S12->get(j,i) * w_2->get(i, y) * q_1[nocc_1*j+n]->get(y, 0);
+                 }
+            }
+            v_ba_v3->set(i, n, v);
+       }
+  }
+  v_ab_v3->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v3->clone(), 0.0);
+  v_ba_v3->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v3->clone(), 0.0);
+
 
   // ---> Add coupling constant contributions <--- //
   std::shared_ptr<psi::Matrix> v_ab_v12 = v_ab_v1->clone(); v_ab_v12->add(v_ab_v2);
   std::shared_ptr<psi::Matrix> v_ba_v12 = v_ba_v1->clone(); v_ba_v12->add(v_ba_v2);
+  std::shared_ptr<psi::Matrix> v_ab_v13 = v_ab_v1->clone(); v_ab_v13->add(v_ab_v3);
+  std::shared_ptr<psi::Matrix> v_ba_v13 = v_ba_v1->clone(); v_ba_v13->add(v_ba_v3);
+  std::shared_ptr<psi::Matrix> v_ab_v23 = v_ab_v2->clone(); v_ab_v23->add(v_ab_v3);
+  std::shared_ptr<psi::Matrix> v_ba_v23 = v_ba_v2->clone(); v_ba_v23->add(v_ba_v3);
+  std::shared_ptr<psi::Matrix> v_ab_v123= v_ab_v12->clone(); v_ab_v123->add(v_ab_v3);
+  std::shared_ptr<psi::Matrix> v_ba_v123= v_ba_v12->clone(); v_ba_v123->add(v_ba_v3);
 
   // ===> Compute CT Energy <=== //
-  double e_ab_v1 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v1);
-  double e_ba_v1 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v1);
-  double e_ab_v2 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v2);
-  double e_ba_v2 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v2);
-  double e_ab_v12= this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v12);
-  double e_ba_v12= this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v12);
+  double e_ab_v1  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v1);
+  double e_ba_v1  = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v1);
+  double e_ab_v2  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v2);
+  double e_ba_v2  = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v2);
+  double e_ab_v3  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v3);
+  double e_ba_v3  = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v3);
+  double e_ab_v12 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v12);
+  double e_ba_v12 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v12);
+  double e_ab_v13 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v13);
+  double e_ba_v13 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v13);
+  double e_ab_v23 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v23);
+  double e_ba_v23 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v23);
+  double e_ab_v123= this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v123);
+  double e_ba_v123= this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v123);
 
-  double e_ab = e_ab_v12;
-  double e_ba = e_ba_v12;
+  double e_ab = e_ab_v123;
+  double e_ba = e_ba_v123;
 
   double e_tot = e_ab + e_ba;
 
@@ -758,6 +803,7 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Charge-Transfer Energy Calculations    <==\n"  );
      psi::outfile->Printf("  ==>     OEP-Based (Murrell-etal               )    <==\n\n");
+     psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("     Group I\n"                                              );
      psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab_v1                        );
      psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba_v1                        );
@@ -765,15 +811,27 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
      psi::outfile->Printf("     Group II\n"                                             );
      psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab_v2                        );
      psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba_v2                        );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     Group III\n"                                            );
+     psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab_v3                        );
+     psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba_v3                        );
      psi::outfile->Printf("     ===============================\n"                      );
      psi::outfile->Printf("     Group I+II\n"                                           );
      psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab_v12                       );
      psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba_v12                       );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     Group I+III\n"                                          );
+     psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab_v13                       );
+     psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba_v13                       );
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     Group II+III\n"                                         );
+     psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab_v23                       );
+     psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba_v23                       );
      psi::outfile->Printf("     ===============================\n"                      );
      psi::outfile->Printf("     Total\n"                                                );
      psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab                           );
      psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba                           );
-     psi::outfile->Printf("     -------------------------------\n"                      );
+   //psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("     E_TOT       = %13.6f\n", e_tot                          );
      psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("\n");
