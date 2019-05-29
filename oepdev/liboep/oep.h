@@ -13,6 +13,7 @@
 #include "psi4/libmints/basisset.h"
 #include "psi4/libmints/matrix.h"
 #include "psi4/libmints/vector.h"
+#include "psi4/libmints/local.h"
 #include "../libpsi/integral.h"
 #include "../libpsi/potential.h"
 #include "../lib3d/space3d.h"
@@ -27,6 +28,7 @@ using SharedBasisSet     = std::shared_ptr<BasisSet>;
 using SharedMatrix       = std::shared_ptr<Matrix>;
 using SharedVector       = std::shared_ptr<Vector>;
 using SharedDMTPole      = std::shared_ptr<DMTPole>;
+using SharedLocalizer    = std::shared_ptr<Localizer>;
 /** \addtogroup OEPDEV_OEPS
  * @{
  */
@@ -72,6 +74,8 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     SharedBasisSet auxiliary_;
     /// Intermediate Basis set
     SharedBasisSet intermediate_;
+    /// Molecular Orbital Localizer
+    SharedLocalizer localizer_;
 
     /// Name of this OEP;
     std::string name_;
@@ -86,8 +90,10 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     std::shared_ptr<psi::OneBodyAOInt> OEInt_;
     /// One-electron potential shared pointer
     std::shared_ptr<oepdev::PotentialInt> potInt_;
-    /// Occupied orbitals
+    /// Occupied orbitals: Canonical (CMO)
     std::shared_ptr<psi::Matrix> cOcc_;
+    /// Occupied orbitals: Localized (LMO)
+    std::shared_ptr<psi::Matrix> lOcc_;
     /// Virtual orbitals
     std::shared_ptr<psi::Matrix> cVir_;
 
@@ -159,6 +165,9 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     /// Write potential to a cube file
     virtual void write_cube(const std::string& oepType, const std::string& fileName);
 
+    /// Localize Occupied MO's
+    virtual void localize(void);
+
     /// Rotate 
     virtual void rotate(const Matrix& rotmat);
     /// Translate
@@ -185,6 +194,9 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     /// Retrieve wavefunction object
     SharedWavefunction wfn() const {return wfn_;}
+
+    /// Retrieve MO Localizer
+    SharedLocalizer localizer() const {return localizer_;}
 
 
     // <--- Mutators ---> //

@@ -2,13 +2,10 @@
 //#include "psi4/libdpd/dpd.h"
 
 #include "solver.h"
-#include "psi4/libmints/local.h"
 
 using namespace std;
 using namespace psi;
 using namespace oepdev;
-
-using SharedLocalizer       = std::shared_ptr<psi::Localizer>;
 
 // CT Solver//
 ChargeTransferEnergySolver::ChargeTransferEnergySolver(SharedWavefunctionUnion wfn_union)
@@ -633,7 +630,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
 double ChargeTransferEnergySolver::compute_benchmark_efp2(){}
 double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
 {
-  // ===> Compute OEP Objects <=== //
+  // ===> Set-up OEP Objects <=== //
   SharedOEPotential oep_1 = oepdev::OEPotential::build("CHARGE TRANSFER ENERGY",
                                                        wfn_union_->l_wfn(0), 
                                                        wfn_union_->l_auxiliary(0), 
@@ -646,6 +643,10 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
                                                        wfn_union_->options());
   oep_1->compute("Murrell-etal.V1.GDF");
   oep_2->compute("Murrell-etal.V1.GDF");
+  oep_1->localize();
+  oep_2->localize();
+  oep_1->compute("Murrell-etal.V3.CAMM-nj");
+  oep_2->compute("Murrell-etal.V3.CAMM-nj");
 
   // ===> Compute Overlap Matrices <=== //
   int nbf_p1 = wfn_union_->l_nbf(0);
@@ -695,13 +696,8 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   std::shared_ptr<psi::Matrix> S2 = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true ); // OCC(B) x AUX(A)
 
   // ---> Localize occupied orbitals <--- //
-  std::string o_loc = wfn_union_->options().get_str("SOLVER_CT_LOCALIZER"); 
-  SharedLocalizer loc_1 = psi::Localizer::build(o_loc, wfn_union_->l_primary(0), Ca_occ_1, wfn_union_->options());
-  SharedLocalizer loc_2 = psi::Localizer::build(o_loc, wfn_union_->l_primary(1), Ca_occ_2, wfn_union_->options());
-  loc_1->localize();
-  loc_2->localize();
-  std::shared_ptr<psi::Matrix> La_occ_1 = loc_1->L();
-  std::shared_ptr<psi::Matrix> La_occ_2 = loc_2->L();
+  std::shared_ptr<psi::Matrix> La_occ_1 = oep_1->localizer()->L();
+  std::shared_ptr<psi::Matrix> La_occ_2 = oep_2->localizer()->L();
   std::shared_ptr<psi::Matrix> S12= psi::Matrix::triplet(La_occ_1, Sao_1p2p, La_occ_2, true, false, false); // LOCC(A) x LOCC(B)
   std::shared_ptr<psi::Matrix> S1Y= psi::Matrix::triplet(La_occ_1, Sao_1p2p, Ca_vir_2, true, false, false); // LOCC(A) x  VIR(B)
   std::shared_ptr<psi::Matrix> S2X= psi::Matrix::triplet(La_occ_2, Sao_1p2p, Ca_vir_1, true, true , false); // LOCC(B) x  VIR(A)
@@ -788,8 +784,8 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
             v_ba_v2->set(i, n, v); 
        }
   }
-  v_ab_v2->gemm(false, false, 1.0, loc_1->U(), v_ab_v2->clone(), 0.0);
-  v_ba_v2->gemm(false, false, 1.0, loc_1->U(), v_ba_v2->clone(), 0.0);
+  v_ab_v2->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v2->clone(), 0.0);
+  v_ba_v2->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v2->clone(), 0.0);
 
   // ===> Compute V3 term <=== //
   // TODO

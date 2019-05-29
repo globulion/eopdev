@@ -28,6 +28,15 @@ void OEPotential::common_init(void)
    potInt_      = std::make_shared<oepdev::PotentialInt>(intsFactory_->spherical_transform(), primary_, primary_, 0);
    cOcc_        = wfn_->Ca_subset("AO","OCC");
    cVir_        = wfn_->Ca_subset("AO","VIR");
+   lOcc_        = nullptr; //std::make_shared<psi::Matrix>();
+   localizer_   = nullptr; //psi::Localizer::build(options_.get_str("SOLVER_CT_LOCALIZER"), primary_, cOcc_, options_);
+}
+void OEPotential::localize(void) 
+{
+   std::string o_loc = options_.get_str("SOLVER_CT_LOCALIZER");
+   localizer_ = psi::Localizer::build(o_loc, primary_, cOcc_, options_);
+   localizer_->localize();
+   lOcc_ = localizer_->L();
 }
 std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, SharedWavefunction wfn, Options& options)
 {
