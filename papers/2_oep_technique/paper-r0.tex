@@ -975,7 +975,7 @@ is defined by
  {v}^{A,{\rm eff}}_{ik}({\bf r}) \equiv
  \delta_{ik} 
  \left[
-  v^A_{\rm tot} ({\bf r}) - 2 v^A_{k} ({\bf r}) + v^A_{ik} ({\bf r})
+  v^A_{\rm tot} ({\bf r}) - 2 v^A_{kk} ({\bf r}) + v^A_{ik} ({\bf r})
  \right] 
   - v^A_{ik} ({\bf r}) \;.
 \end{equation}
@@ -1140,6 +1140,40 @@ due to CT from molecule $B$ to $A$.
 %%
 %\end{multline}
 %%
+
+\subsection{\label{s:413s6}Reduction of computational costs}
+
+Until this moment in this work, two models have been tested with application of the OEP technique.
+In this section, computational cost is estimated from the formulas.
+In
+Table~\ref{t:oep-costs} 
+%
+{
+\renewcommand{\arraystretch}{1.4}
+\begin{table}[b]
+\caption[Computational cost of the benchmark and OEP-based methods: calculation of coupling constant]
+{{\bf Computational cost of the benchmark and OEP-based methods\footnotemark[1]}
+}
+\label{t:oep-costs}
+\begin{ruledtabular}
+\begin{tabular}{lcccccc}
+Method             && Murrell et al. &&    EFP2        &&      OEP     \\ 
+	\cline{1-7}
+Group (i)         &&  &&        &&   $obQ$     \\
+Group (ii)        &&  &&        &&   $ob$      \\
+Group (iii)       &&  &&        &&   $ob(n+o)$     \\
+Total Cost        &&  && $10ob^2 + 2b^3 + o^2b^2$       &&   $ob(Q+n+o)$     \\
+\end{tabular}
+\end{ruledtabular}
+%
+\footnotetext[1]{Numbers of: $o$ - occupied molecular orbitals; $b$ - atomic basis functions; $n$ - atoms; 
+$Q$ - auxiliary basis functions. It was assumed that the number of virtual orbitals is equal to $b$.}
+%
+\end{table}
+}
+%
+It is clear that the cost of the OEP\hyp{}based equations is much lesser than the cost of EFP2 method,
+and many orders of magnitude lesser than the original theory of Murrell et al.
 
 
 \section{\label{s:6}Summary and a few concluding remarks}
