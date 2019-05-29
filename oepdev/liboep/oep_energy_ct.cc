@@ -135,7 +135,7 @@ void ChargeTransferEnergyOEPotential::compute_murrell_etal_v3_camm_nj()
 
   for (int j=0; j<nocc; ++j) {
        for (int n=0; n<nvir; ++n) {
-            int idx = nocc*j + n;
+          //int idx = nvir*j + n;
 
             /* Exclude nuclear part */
             trans.push_back(true);
@@ -146,6 +146,7 @@ void ChargeTransferEnergyOEPotential::compute_murrell_etal_v3_camm_nj()
             double** oed_p = oed->pointer();
             for (int a=0; a<nbf; ++a) {
             for (int b=0; b<nbf; ++b) {
+               //oed_p[a][b] =(lOcc_->get(a,j) * cVir_->get(b,n) + lOcc_->get(b,j) * cVir_->get(a,n)) / 2.0;
                  oed_p[a][b] = lOcc_->get(a,j) * cVir_->get(b,n);
             }}
             oeds.push_back(oed);

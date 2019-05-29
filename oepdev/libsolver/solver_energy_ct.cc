@@ -746,7 +746,7 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
             double v = 0;
             for (int j=0; j<nocc_2; ++j) {              
                  for (int y=0; y<mol_2->natom(); ++y) {
-                      v += S12->get(i,j) * w_1->get(i, y) * q_2[nocc_2*j+n]->get(y, 0);
+                      v += S12->get(i,j) * w_1->get(i, y) * q_2[nvir_2*j+n]->get(y, 0);
                  }
             }
             v_ab_v3->set(i, n, v);
@@ -758,7 +758,7 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
             double v = 0;
             for (int j=0; j<nocc_1; ++j) {              
                  for (int y=0; y<mol_1->natom(); ++y) {
-                      v += S12->get(j,i) * w_2->get(i, y) * q_1[nocc_1*j+n]->get(y, 0);
+                      v += S12->get(j,i) * w_2->get(i, y) * q_1[nvir_1*j+n]->get(y, 0);
                  }
             }
             v_ba_v3->set(i, n, v);
@@ -922,13 +922,11 @@ std::shared_ptr<psi::Matrix> ChargeTransferEnergySolver::compute_w_matrix(
        }
        //
        for (int i=0; i<nocc_1; ++i) {
-            double v = vy;
             //
             double riy = sqrt(pow(rmo_1[0]->get(i) - mol_2->x(y), 2.0) +
                               pow(rmo_1[1]->get(i) - mol_2->y(y), 2.0) +
                               pow(rmo_1[2]->get(i) - mol_2->z(y), 2.0) );
-            v += 2.0 / riy;
-            w->set(i, y, v);
+            w->set(i, y, vy + 2.0/riy );
        }
   }
   w->scale(-1.0);
