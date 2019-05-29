@@ -29,6 +29,7 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="ESP_SOLVER") result = test_esp_solver();  
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CUSTOM") result = test_custom();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="POINTS_COLLECTION3D") result = test_points_collection3d();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="CT_ENERGY_BENCHMARK_OL") result = test_ct_energy_benchmark_ol();
   else throw psi::PSIEXCEPTION("Incorrect test name specified!");
   return result;
 }

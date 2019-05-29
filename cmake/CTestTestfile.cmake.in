@@ -14,6 +14,7 @@ add_test (NAME CAMM                  COMMAND "psi4" "tests/oepdev/camm.inp"     
 add_test (NAME DMTP_ENERGY           COMMAND "psi4" "tests/oepdev/dmtp_energy.inp"          "tests/oepdev/dmtp_energy.out")
 add_test (NAME ESP_SOLVER            COMMAND "psi4" "tests/oepdev/esp_solver.inp"           "tests/oepdev/esp_solver.out" )
 add_test (NAME POINTS_COLLECTION3D   COMMAND "psi4" "tests/oepdev/points_collection3d.inp"  "tests/oepdev/points_collection3d.out" )
+add_test (NAME CT_ENERGY_BENCHMARK_OL   COMMAND "psi4" "tests/oepdev/ct_energy_benchmark_ol.inp"  "tests/oepdev/ct_energy_benchmark_ol.out" )
 
 
 # [2] Test result
@@ -30,3 +31,4 @@ set_tests_properties (CAMM                  PROPERTIES PASS_REGULAR_EXPRESSION "
 set_tests_properties (DMTP_ENERGY           PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000006")
 set_tests_properties (ESP_SOLVER            PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.13442905")
 set_tests_properties (POINTS_COLLECTION3D   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.03804657")
+set_tests_properties (CT_ENERGY_BENCHMARK_OL   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.03804657")
