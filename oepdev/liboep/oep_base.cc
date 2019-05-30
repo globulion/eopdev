@@ -28,6 +28,33 @@ void OEPotential::common_init(void)
    potInt_      = std::make_shared<oepdev::PotentialInt>(intsFactory_->spherical_transform(), primary_, primary_, 0);
    cOcc_        = wfn_->Ca_subset("AO","OCC");
    cVir_        = wfn_->Ca_subset("AO","VIR");
+   lOcc_        = nullptr; //std::make_shared<psi::Matrix>();
+   localizer_   = nullptr; //psi::Localizer::build(options_.get_str("SOLVER_CT_LOCALIZER"), primary_, cOcc_, options_);
+   lmoc_        = {nullptr, nullptr, nullptr};
+}
+void OEPotential::localize(void) 
+{
+   std::string o_loc = options_.get_str("SOLVER_CT_LOCALIZER");
+   localizer_ = psi::Localizer::build(o_loc, primary_, cOcc_, options_);
+   localizer_->localize();
+   lOcc_ = localizer_->L();
+   // LMO centroids
+   std::vector<std::shared_ptr<psi::Matrix>> Rao;                                                                  
+   std::vector<std::shared_ptr<psi::Vector>> Rmo;
+   for (int z=0; z<3; ++z) Rao.push_back(std::make_shared<psi::Matrix>("Rao", primary_->nbf(), primary_->nbf()));
+   for (int z=0; z<3; ++z) Rmo.push_back(std::make_shared<psi::Vector>("Rmo", cOcc_->ncol()));
+   psi::IntegralFactory fact(primary_);
+   std::shared_ptr<psi::OneBodyAOInt> dipInt(fact.ao_dipole());
+   dipInt->compute(Rao);
+   for (int z=0; z<3; ++z) {
+        Rao[z]->scale(-1.0);
+        std::shared_ptr<psi::Matrix> CRC = psi::Matrix::triplet(lOcc_, Rao[z], lOcc_, true, false, false);
+        for (int a=0; a<cOcc_->ncol(); ++a) {
+             Rmo[z]->set(a, CRC->get(a,a));
+        }
+        Rao[z].reset(); 
+   }
+   lmoc_ = Rmo;
 }
 std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, SharedWavefunction wfn, Options& options)
 {

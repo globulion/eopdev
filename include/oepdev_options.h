@@ -53,6 +53,12 @@ int read_options(std::string name, Options& options)
         options.add_str    ("OEPDEV_TEST_MODE"      , "MONOMER"                  );
 
 
+        // ---> OEPDevSolver Options  <--- //
+
+        /*- MO Localizer for OEP-Based CT Solver -*/
+        options.add_str    ("SOLVER_CT_LOCALIZER"   , "BOYS"                     );
+
+
         // ---> CPHF Global Options  <--- //
 
         /*- CPHF maximum iterations -*/                                             
