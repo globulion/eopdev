@@ -1,0 +1,42 @@
+#!/usr/bin/python
+sys.path.insert(0, './..')
+import oepdev
+
+
+
+# test molecule
+molecule hf {
+0 1
+H          0.92000       0.00000       0.00000
+F          0.00000       0.00000       0.00000
+--
+0 1
+H          0.48000       -3.20000        0.00000
+F          1.40000       -3.20000        0.00000
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+set {
+    # ==> OEPDEV Routine Specification <== #
+    oepdev_target                 test
+    oepdev_test_name              ct_energy_benchmark_ol
+    oepdev_test_mode              dimer
+    oepdev_localize               False
+    oepdev_enable_trial           False
+    # ==> General Psi4 Options <== #
+    basis                         6-31G
+    scf_type                      direct 
+    guess                         core
+    e_convergence                 1e-11
+    d_convergence                 1e-10
+    print                         1
+    puream                        False
+}
+
+
+# run oepdev
+energy('oepdev', molecule=hf)
