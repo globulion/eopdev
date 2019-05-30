@@ -72,6 +72,37 @@ class OEProp:
         dip[2] += dip_nuc[2]
         return dip
 
+    @staticmethod
+    def quadrupole_moment(dmft):
+        "Compute dipole moment"
+        # quadrupole integrals
+        T = [x.to_array(dense=True) for x in dmft._mints.ao_quadrupole()]
+        Tmo = [ numpy.linalg.multi_dot([dmft._Ca.T, t, dmft._Ca]) for t in T]
+        # density mattix in MO-SCF basis
+        Dmo = dmft.Dmo
+        # calculate: quadrupole moment
+        qad = numpy.array([2.0 * numpy.dot(tx, Dmo).trace() for tx in Tmo], dtype=numpy.float64)
+
+        # add nuclear contribution
+        xx = 0.0; yy = 0.0; zz = 0.0; xy = 0.0; xz = 0.0; yz = 0.0
+        for i in range(dmft._mol.natom()):
+            x   = dmft._mol.x(i)
+            y   = dmft._mol.y(i)
+            z   = dmft._mol.z(i)
+            Z   = dmft._mol.Z(i)
+            qad[0] += Z * x * x  # xx
+            qad[3] += Z * y * y  # yy 
+            qad[5] += Z * z * z  # zz
+            qad[1] += Z * x * y  # xy 
+            qad[2] += Z * x * z  # xz
+            qad[4] += Z * y * z  # yz
+        #dip_nuc = dmft._mol.nuclear_dipole()
+        #dip[0] += dip_nuc[0]
+        #dip[1] += dip_nuc[1]
+        #dip[2] += dip_nuc[2]
+        return qad
+
+
 
 
 class DMFT(ABC, ElectronCorrelation, OEProp):
@@ -293,6 +324,10 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
     def dipole(self):
         "Dipole Moment"
         return self.dipole_moment(self)
+    @property
+    def quadrupole(self):
+        "Quadrupole Moment"
+        return self.quadrupole_moment(self)
 
 
     @property

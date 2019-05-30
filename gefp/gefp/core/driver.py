@@ -167,11 +167,11 @@ b9              = 1703.16          +/- 1828         (107.4%)
 def dmft_solver(wfn, xc_functional='MBB', 
                 g_0=0.001, g=0.0001, verbose=True, guess='current', step_mode='search', algorithm='proj-p',
                 gradient_mode='exact', conv=0.000005, conv_int=0.000010, maxit=300,
-                with_restart=False, parameterization=None, t=None, kmax=30, 
+                with_restart=False, parameterization=None, t=None, kmax=30,
                 return_density=False):
     "Compute the electron density by using the DMFT method."
 
-    do_medi = True if xc_functional.lower() == 'medi' else False
+    do_medi = True if 'medi' in xc_functional.lower() else False
 
     # Interpolation XC Functional
     if do_medi:
@@ -215,7 +215,9 @@ def dmft_solver(wfn, xc_functional='MBB',
        else: pass
                                                                                             
        # Run DMFT with interpolation functional
-       func_int = XCFunctional.create('A2MEDI', coeff={'t':t}, kmax=kmax)
+       if '1' in xc_functional.lower(): coeff = {'a0': t}
+       else:                            coeff = {'t' : t}
+       func_int = XCFunctional.create(xc_functional, coeff=coeff, kmax=kmax)
 
     # Conventional XC Functionals
     else:
