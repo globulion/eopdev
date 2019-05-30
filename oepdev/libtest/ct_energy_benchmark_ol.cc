@@ -16,7 +16,7 @@ double oepdev::test::Test::test_ct_energy_benchmark_ol(void)
   std::shared_ptr<oepdev::WavefunctionUnion> wfn_union_ = std::make_shared<oepdev::WavefunctionUnion>(wfn_, options_);
   std::shared_ptr<oepdev::ChargeTransferEnergySolver> ct_ene_OL = std::make_shared<oepdev::ChargeTransferEnergySolver>(wfn_union_);
 //  std::shared_ptr<OEPDevSolver> build(const std::string& target, wfn_union_)
-  double e = ct_ene_OL->compute_benchmark("OTTO_LADIK"); 
+  double e = ct_ene_OL->compute_benchmark("MURRELL_ETAL"); 
   psi::timer_off("Test: CT Energy Calculation - Otto-Ladik             ");
 
 

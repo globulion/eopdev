@@ -9,7 +9,7 @@ ChargeTransferEnergySolver::ChargeTransferEnergySolver(SharedWavefunctionUnion w
  : OEPDevSolver(wfn_union)
 {
   // Benchmarks
-  methods_benchmark_.push_back("OTTO_LADIK"      );
+  methods_benchmark_.push_back("MURRELL_ETAL"    );
   methods_benchmark_.push_back("EFP2"            );
   // OEP-based
   methods_oepBased_ .push_back("MURRELL_ETAL"    );
@@ -30,7 +30,7 @@ double ChargeTransferEnergySolver::compute_benchmark(const std::string& method)
 {
   double e = 0.0;
   if      (method == "DEFAULT" ||
-           method == "MURRELL_ETAL" ) e = compute_benchmark_otto_ladik(); // TODO: change to murrell_etal or revise naming!
+           method == "MURRELL_ETAL" ) e = compute_benchmark_murrell_etal();
   else if (method == "EFP2"         ) e = compute_benchmark_efp2();
   else 
   {
@@ -39,10 +39,10 @@ double ChargeTransferEnergySolver::compute_benchmark(const std::string& method)
   return e;
 }
 // Copied from MC_OTTO_LADIK for testing
-double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
+double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //psi::timer_on("SOLVER: Charge-transfer Energy Calculations (Otto-Ladik)");
-  psi::timer_on("Solver E(CT) Otto-Ladik       ");
+  //psi::timer_on("Solver E(CT) Otto-Ladik       ");
   
 
   int nbf_1 = wfn_union_->l_nbf(0);
@@ -574,7 +574,7 @@ double ChargeTransferEnergySolver::compute_benchmark_otto_ladik(){
 
 
   //psi::timer_off("SOLVER: Charge-transfer Energy Calculations (Otto-Ladik)");
-  psi::timer_off("Solver E(CT) Otto-Ladik       ");
+  //psi::timer_off("Solver E(CT) Otto-Ladik       ");
 
 
   // ---> Print <--- //

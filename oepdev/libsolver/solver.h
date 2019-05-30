@@ -690,8 +690,8 @@ class ChargeTransferEnergySolver : public OEPDevSolver
     virtual double compute_benchmark(const std::string& method = "DEFAULT");
 
   private:
-    /// Otto-Ladik method (1975)
-    double compute_benchmark_otto_ladik();
+    /// Murrell-etal method (1975)
+    double compute_benchmark_murrell_etal();
     /// EFP2 method (1996)
     double compute_benchmark_efp2();
     /// OEP-based Otto-Ladik (2019)
@@ -715,4 +715,3 @@ class ChargeTransferEnergySolver : public OEPDevSolver
 /** @}*/
 }      // EndNameSpace oepdev
 #endif //_oepdev_libutil_solver_h
-
