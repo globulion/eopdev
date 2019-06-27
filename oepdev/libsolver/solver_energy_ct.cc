@@ -1,4 +1,6 @@
 #include "solver.h"
+#include "psi4/libpsi4util/process.h"
+#include <ctime>
 
 using namespace std;
 using namespace psi;
@@ -569,8 +571,7 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //Whole CT Energy E_CT(A+B-) + E_CT(A-B+)//
   double E_ct = E_ct_1 + E_ct_2;
-  
-
+  psi::Process::environment.globals["ECT OL KCAL"] = E_ct*627.509;
 
   //psi::timer_off("SOLVER: Charge-transfer Energy Calculations (Otto-Ladik)");
   //psi::timer_off("Solver E(CT) Otto-Ladik       ");
@@ -623,7 +624,6 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
 
 }
-//double ChargeTransferEnergySolver::compute_benchmark_efp2(){}
 double ChargeTransferEnergySolver::compute_benchmark_efp2()
   {
   double e_ct  = 0.0;
@@ -673,6 +673,7 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
 
 
   // PotentialInt //
+  clock_t t_time = -clock(); // Clock BEGIN
   std::shared_ptr<psi::PotentialInt> potInt_12 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(),
                                                                                     wfn_union_->l_primary(0),
                                                                                     wfn_union_->l_primary(1));
@@ -706,6 +707,7 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   oneInt->compute(VaoA21);
   oneInt = potInt_22;
   oneInt->compute(VaoA22);
+  t_time += clock(); // Clock END
 
   // Overlap integrals //
   std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact_12.ao_overlap());
@@ -715,17 +717,21 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   std::shared_ptr<psi::OneBodyAOInt> kinInt12(fact_12.ao_kinetic());
   kinInt12->compute(Tao12); 
 
+  t_time -= clock(); // Clock BEGIN
   std::shared_ptr<psi::OneBodyAOInt> kinInt11(fact_11.ao_kinetic());
   kinInt11->compute(Tao11);
 
   std::shared_ptr<psi::OneBodyAOInt> kinInt22(fact_22.ao_kinetic());
   kinInt22->compute(Tao22);
+  t_time += clock(); // Clock END
+
 
 
   // ---> Transform one electron contributions to MO basis <--- //
    
 
   // Transform S matrices //
+  t_time -= clock(); // Clock BEGIN
   std::shared_ptr<psi::Matrix> Smoij    = psi::Matrix::triplet(Ca_occ_A, Sao12,  Ca_occ_B, true, false, false);
   std::shared_ptr<psi::Matrix> Smoxn    = psi::Matrix::triplet(Ca_occ_A, Sao12,  Ca_vir_B, true, false, false); // x \in OCC_A
   std::shared_ptr<psi::Matrix> Smoyn    = psi::Matrix::triplet(Ca_vir_A, Sao12,  Ca_vir_B, true, false, false); // y \in VIR_A
@@ -763,10 +769,13 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   // ==> TWO-ELECTRON PART (electronic contibutions to potentials) <== //
   // --> add electron contributions to VmoA** and VmoB** (6 matrix elements) <-- //
 
+  if (true) { /* Switch off 2-electron part for debug purposes */
+
   std::shared_ptr<psi::IntegralTransform> integrals = wfn_union_->integrals();
   dpd_set_default(integrals->get_dpd_id());
   dpdbuf4 buf_Y122, buf_X122, buf_1122; // components of electronic contribution to V^B
   dpdbuf4 buf_X211, buf_Y211; 		// components of electronic contribution to V^A
+  //dpdbuf4 buf_2211; // BBB-T
   std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
 
   // -- Open DPD library to calculate ERI <--
@@ -785,6 +794,10 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0,
 		         integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
 			 integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
+  //// 2211 = (O_2 O_2 | O_1 O_1) = (22|11)
+  //global_dpd_->buf4_init(&buf_2211, PSIF_LIBTRANS_DPD, 0,
+  //      	         integrals->DPD_ID("[2,2]"  ), integrals->DPD_ID("[1,1]"  ),
+  //      		 integrals->DPD_ID("[2>=2]+"), integrals->DPD_ID("[1>=1]+"), 0, "MO Ints (22|11)");
   // Y211 = (V_2 O_2 | O_1 O_1) = (nj|kk)
   global_dpd_->buf4_init(&buf_Y211, PSIF_LIBTRANS_DPD, 0,
                          integrals->DPD_ID("[Y,2]"  ), integrals->DPD_ID("[1,1]"  ),
@@ -877,6 +890,30 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
        }
   global_dpd_->buf4_close(&buf_1122);
 
+  /// BBB-T
+  //for (int h = 0; h < wfn_union_->nirrep(); ++h) 
+  //     {
+  //     global_dpd_->buf4_mat_irrep_init(&buf_2211, h);
+  //     global_dpd_->buf4_mat_irrep_rd(&buf_2211, h);
+  //     for (int pq = 0; pq < buf_2211.params->rowtot[h]; ++pq) 
+  //          {
+  //          int p = buf_2211.params->roworb[h][pq][0]; // ndocc_2
+  //          int q = buf_2211.params->roworb[h][pq][1]; // ndocc_2
+  //          for (int rs = 0; rs < buf_2211.params->coltot[h]; ++rs) 
+  //      	 {
+  //      	 int r = buf_2211.params->colorb[h][rs][0]; // ndocc_2
+  //      	 int s = buf_2211.params->colorb[h][rs][1]; // ndocc_2
+  //               if (r == s)
+  //      		  {
+  //      		  vmoAjx[p][q] += 2.0 * buf_2211.matrix[h][pq][rs];
+  //      		  } 
+  //               }
+  //          }
+  //     global_dpd_->buf4_mat_irrep_close(&buf_2211, h);
+  //     }
+  //global_dpd_->buf4_close(&buf_2211); /// BBB-T
+
+
   // vmoBiy (elec.) = 2(im|jj) = 2(1X|22) = 2(X1|22) = 2(mi|jj)
   for (int h = 0; h < wfn_union_->nirrep(); ++h) 
        {
@@ -955,6 +992,9 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
 
   // Close DPD library
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  } /* Switch off 2-electron part for debug purposes */
+
 
  
   // ==> Vin_I and Wjm_I <== // 
@@ -1049,8 +1089,12 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   e_ct_BA *= 2.0;
   e_ct = e_ct_AB + e_ct_BA;
 
+  psi::Process::environment.globals["ECT EFP KCAL"] = e_ct * 627.509;
+
   // ---> Timer-off <--- //
   psi::timer_off("Solver E(CT) EFP2 MO-Expanded");
+  t_time += clock(); // Clock END
+  cout << " o TIME EFP2: " << t_time << endl;
     
   // ---> Print results <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) 
@@ -1085,6 +1129,7 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   oep_1->compute("Murrell-etal.V3.CAMM-nj");
   oep_2->compute("Murrell-etal.V3.CAMM-nj");
 
+
   // ===> Molecules <=== //
   std::shared_ptr<psi::Molecule> mol_1 = wfn_union_->l_wfn(0)->molecule();
   std::shared_ptr<psi::Molecule> mol_2 = wfn_union_->l_wfn(1)->molecule();
@@ -1099,25 +1144,25 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   int nvir_1 = wfn_union_->l_nvir(0);
   int nvir_2 = wfn_union_->l_nvir(1);
 
-
   std::shared_ptr<psi::Matrix> Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_p1, nbf_p2);
   std::shared_ptr<psi::Matrix> Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
   std::shared_ptr<psi::Matrix> Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_p1, nbf_a2);
 
 
-  psi::IntegralFactory fact_11(wfn_union_->l_primary  (0));
-  psi::IntegralFactory fact_22(wfn_union_->l_primary  (1));
   psi::IntegralFactory fact_1p2p(wfn_union_->l_primary  (0), wfn_union_->l_primary  (1), wfn_union_->l_primary  (0), wfn_union_->l_primary  (1));
   psi::IntegralFactory fact_1a2p(wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1), wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1));
   psi::IntegralFactory fact_1p2a(wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1), wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1));
 
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
+  ovlInt_1p2p->compute(Sao_1p2p);
+
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2a(fact_1p2a.ao_overlap());
 
-  ovlInt_1p2p->compute(Sao_1p2p);
+  clock_t t_time = -clock(); // Clock BEGIN
   ovlInt_1a2p->compute(Sao_1a2p);
   ovlInt_1p2a->compute(Sao_1p2a);
+
 
   // ---> Canonical MO's: LCAO and energies <--- //
   std::shared_ptr<psi::Matrix> Ca_occ_1 = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
@@ -1131,6 +1176,8 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
 
   std::shared_ptr<psi::Matrix> S1 = psi::Matrix::doublet(Ca_occ_1, Sao_1p2a, true, false); // OCC(A) x AUX(B)
   std::shared_ptr<psi::Matrix> S2 = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true ); // OCC(B) x AUX(A)
+
+
 
   // ---> Localized occupied orbitals <--- //
   std::shared_ptr<psi::Matrix> La_occ_1 = oep_1->localizer()->L();
@@ -1156,6 +1203,9 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   // ===> Compute V1 term <=== //
   std::shared_ptr<psi::Matrix> v_ab_v1 = psi::Matrix::doublet(S1, oep_2->matrix("Murrell-etal.V1.GDF"), false, false);
   std::shared_ptr<psi::Matrix> v_ba_v1 = psi::Matrix::doublet(S2, oep_1->matrix("Murrell-etal.V1.GDF"), false, false);
+  //const double sc = 0.25;
+  //v_ab_v1->scale(sc);
+  //v_ba_v1->scale(sc);
 
   // ===> Compute V2 term <=== //
   std::shared_ptr<psi::Matrix> v_ab_v2 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
@@ -1207,6 +1257,7 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
 
   // ---> Add coupling constant contributions <--- //
   std::shared_ptr<psi::Matrix> v_ab_v12 = v_ab_v1->clone(); v_ab_v12->add(v_ab_v2);
+  t_time += clock(); // Clock END
   std::shared_ptr<psi::Matrix> v_ba_v12 = v_ba_v1->clone(); v_ba_v12->add(v_ba_v2);
   std::shared_ptr<psi::Matrix> v_ab_v13 = v_ab_v1->clone(); v_ab_v13->add(v_ab_v3);
   std::shared_ptr<psi::Matrix> v_ba_v13 = v_ba_v1->clone(); v_ba_v13->add(v_ba_v3);
@@ -1216,7 +1267,9 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   std::shared_ptr<psi::Matrix> v_ba_v123= v_ba_v12->clone(); v_ba_v123->add(v_ba_v3);
 
   // ===> Compute CT Energy <=== //
+  t_time -= clock(); // Clock BEGIN
   double e_ab_v1  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v1);
+  t_time += clock(); // Clock END
   double e_ba_v1  = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v1);
   double e_ab_v2  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v2);
   double e_ba_v2  = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v2);
@@ -1235,6 +1288,10 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   double e_ba = e_ba_v123;
 
   double e_tot = e_ab + e_ba;
+  psi::Process::environment.globals["ECT OEP KCAL"] = e_tot*627.509;
+
+  cout << " o TIME OEP : " << t_time << endl;
+  //cout << " Time OEP : " << t_end - t_begin - (t2 - t1) << endl;
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {

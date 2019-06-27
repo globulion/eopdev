@@ -183,7 +183,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
             std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("CHARGE TRANSFER ENERGY", wfn_union);
                                                                                                                             
             double e_murr  = solver->compute_benchmark("MURRELL_ETAL" );
-          //double e_oep1  = solver->compute_oep_based("MURRELL_ETAL" );
+            double e_oep1  = solver->compute_oep_based("MURRELL_ETAL" );
             double e_efp2  = solver->compute_benchmark("EFP2"         );        
         } 
         else 

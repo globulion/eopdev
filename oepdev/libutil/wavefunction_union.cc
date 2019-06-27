@@ -392,6 +392,11 @@ void WavefunctionUnion::transform_integrals()
     integrals_->transform_tei(space_1o, space_1o, space_2o, space_2o, IntegralTransform::HalfTrans::ReadAndNuke);
     timer_off("Trans (11|22)");
 
+    //// Trans (22|11) BBB-T
+    //timer_on("Trans (22|11)");
+    //integrals_->transform_tei(space_2o, space_2o, space_1o, space_1o, IntegralTransform::HalfTrans::MakeAndNuke);
+    //timer_off("Trans (22|11)");
+
     // Trans (12|12)
     timer_on("Trans (12|12)");
     integrals_->transform_tei(space_1o, space_2o, space_1o, space_2o, IntegralTransform::HalfTrans::MakeAndKeep);
