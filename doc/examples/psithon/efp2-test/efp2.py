@@ -26,7 +26,7 @@ def get_V(mol, bfs):
     return V
 
 
-def ct_energy(wfn_1, wfn_2):
+def ct_energy(wfn_1, wfn_2, do_exchange_ints=False):
     "CT energy from EFP2 method. Takes two RHF wavefunctions with canonical orbitals."
     # LCAO matrices
     C_occ_A = wfn_1.Ca_subset("AO","OCC").to_array(dense=True)
@@ -134,6 +134,58 @@ def ct_energy(wfn_1, wfn_2):
             v = VA_mo_22v[j, n]
             for k in range(n_occ_1): v += 2.0 * eri_O2_V2_O1_O1[j, n, k, k]
             VA_mo_22v[j, n] = v
+
+    del eri_O1_V2_O2_O2, eri_O1_O1_O2_O2, eri_O1_V1_O2_O2, eri_O2_V1_O1_O1, eri_O2_O2_O1_O1, eri_O2_V2_O1_O1
+
+    if do_exchange_ints:
+       eri_1212 = mints.ao_eri(wfn_1.basisset(), wfn_2.basisset(), wfn_1.basisset(), wfn_2.basisset());
+       eri_2121 = mints.ao_eri(wfn_2.basisset(), wfn_1.basisset(), wfn_2.basisset(), wfn_1.basisset());
+       eri_O1_O2_V2_O2 = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", eri_1222, C_occ_A, C_occ_B, C_vir_B, C_occ_B)
+       eri_O1_O2_O1_O2 = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", eri_1212, C_occ_A, C_occ_B, C_occ_A, C_occ_B)
+       eri_O1_O2_V1_O2 = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", eri_1212, C_occ_A, C_occ_B, C_vir_A, C_occ_B)
+       #
+       eri_O2_O1_V1_O1 = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", eri_2111, C_occ_B, C_occ_A, C_vir_A, C_occ_A)
+       eri_O2_O1_O2_O1 = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", eri_2121, C_occ_B, C_occ_A, C_occ_B, C_occ_A)
+       eri_O2_O1_V2_O1 = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", eri_2121, C_occ_B, C_occ_A, C_vir_B, C_occ_A)
+
+
+       # VB_mo_12                                                              
+       for i in range(n_occ_1):
+           for n in range(n_vir_2):
+               v = VB_mo_12[i, n]
+               for j in range(n_occ_2): v -= eri_O1_O2_V2_O2[i,j,n,j]
+               VB_mo_12[i, n] = v
+       # VB_mo_11o
+       for i in range(n_occ_1):
+           for k in range(n_occ_1):
+               v = VB_mo_11o[i, k]
+               for j in range(n_occ_2): v -= eri_O1_O2_O1_O2[i,j,k,j]
+               VB_mo_11o[i, k] = v
+       # VB_mo_11v
+       for i in range(n_occ_1):
+           for m in range(n_vir_1):
+               v = VB_mo_11v[i, m]
+               for j in range(n_occ_2): v -= eri_O1_O2_V1_O2[i,j,m,j]
+               VB_mo_11v[i, m] = v
+                                                                               
+       # VA_mo_12
+       for m in range(n_vir_1):
+           for j in range(n_occ_2):
+               v = VA_mo_12[m, j]
+               for k in range(n_occ_1): v -= eri_O2_O1_V1_O1[j,k,m,k]
+               VA_mo_12[m, j] = v
+       # VA_mo_22o
+       for j in range(n_occ_2):
+           for l in range(n_occ_2):
+               v = VA_mo_22o[j, l]
+               for k in range(n_occ_1): v -= eri_O2_O1_O2_O1[j, k, l, k]
+               VA_mo_22o[j, l] = v
+       # VA_mo_22v
+       for j in range(n_occ_2):
+           for n in range(n_vir_2):
+               v = VA_mo_22v[j, n]
+               for k in range(n_occ_1): v -= eri_O2_O1_V2_O1[j, k, n, k]
+               VA_mo_22v[j, n] = v
 
 
     # Term A--->B

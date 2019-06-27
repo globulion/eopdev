@@ -75,8 +75,10 @@ print(" ! Running python test")
 e_A, w_A = energy('hf', molecule=molA, return_wfn=True)
 e_B, w_B = energy('hf', molecule=molB, return_wfn=True)
 
-efp2.ct_energy(w_A, w_B)
+print(" ! Exchange integrals: Neglected.")
+efp2.ct_energy(w_A, w_B, do_exchange_ints=False)
+print(" ! Exchange integrals: Included.")
+efp2.ct_energy(w_A, w_B, do_exchange_ints=True)
+print(" ! Results from C++ code:")
 os.system('grep "E_CT_A->B" ct-test-efp2.out')
 os.system('grep "E_CT_B->A" ct-test-efp2.out')
-
-
