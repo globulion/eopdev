@@ -1,0 +1,82 @@
+#!/usr/bin/python
+sys.path.insert(0, './..')
+import oepdev
+import efp2
+
+set memory 10gb
+
+molecule mol {
+0 1
+O    0.00000    0.00000    0.00000 
+H    0.55268   -0.64111   -0.41769 
+H    0.15452    0.82612   -0.42960 
+-- 
+0 1
+O    0.04812    0.00720    2.98724 
+H    0.00000    0.00000    2.04088 
+H   -0.80935   -0.21557    3.30850 
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+molecule molA {
+0 1
+O    0.00000    0.00000    0.00000 
+H    0.55268   -0.64111   -0.41769 
+H    0.15452    0.82612   -0.42960 
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+molecule molB {
+0 1
+O    0.04812    0.00720    2.98724 
+H    0.00000    0.00000    2.04088 
+H   -0.80935   -0.21557    3.30850 
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+
+
+set {
+    oepdev_target                 solver
+    oepdev_solver_type            charge_transfer_energy
+    oepdev_localize               False
+    oepdev_df_type                double
+    basis                         6-31+G
+    df_basis_oep                  aug-cc-pVDZ-jkfit
+    df_basis_int                  aug-cc-pVDZ-jkfit
+    dmtp_conver                   R1
+    guess                         core
+    print                         1
+    esp_npoints_per_atom          4000
+    esp_pad_sphere                5.0
+    esp_vdw_radius_h              3.0
+    esp_vdw_radius_o              4.6
+    puream                        False
+}
+
+
+# run oepdev
+energy('oepdev', molecule=mol)
+
+# run python test
+print(" ! Running python test")
+e_A, w_A = energy('hf', molecule=molA, return_wfn=True)
+e_B, w_B = energy('hf', molecule=molB, return_wfn=True)
+
+efp2.ct_energy(w_A, w_B)
+os.system('grep "E_CT_A->B" ct-test-efp2.out')
+os.system('grep "E_CT_B->A" ct-test-efp2.out')
+
+
