@@ -2,14 +2,14 @@
 gnuplot fig-1.gpl
 gnuplot fig-2.gpl
 
-#for graph in fig-1; do
-#    epstopdf $graph-inc.eps
-#    sed -f $graph.sed $graph.tex > $graph-s.tex
-#    pdflatex $graph-s.tex
-#    evince   $graph-s.pdf
-#    pdftops -eps $graph-s.pdf
-#    cp -v $graph-s.eps ../figures
-#done
+for graph in fig-1; do
+    epstopdf $graph-inc.eps
+    sed -f $graph.sed $graph.tex > $graph-s.tex
+    pdflatex $graph-s.tex
+    evince   $graph-s.pdf
+    pdftops -eps $graph-s.pdf
+    cp -v $graph-s.eps ../figures
+done
 
 for graph in fig-2; do
     epstopdf $graph-inc.eps
