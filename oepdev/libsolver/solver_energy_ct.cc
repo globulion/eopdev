@@ -1094,7 +1094,7 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   // ---> Timer-off <--- //
   psi::timer_off("Solver E(CT) EFP2 MO-Expanded");
   t_time += clock(); // Clock END
-  cout << " o TIME EFP2: " << t_time << endl;
+  cout << " o TIME EFP2: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
     
   // ---> Print results <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) 
@@ -1290,7 +1290,7 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   double e_tot = e_ab + e_ba;
   psi::Process::environment.globals["ECT OEP KCAL"] = e_tot*627.509;
 
-  cout << " o TIME OEP : " << t_time << endl;
+  cout << " o TIME OEP : " << ((double)t_time/CLOCKS_PER_SEC) << endl;
   //cout << " Time OEP : " << t_end - t_begin - (t2 - t1) << endl;
 
   // ---> Print <--- //

@@ -5,13 +5,20 @@ set output 'fig-2.tex'
 
 set border back ls 20 lw 3 lc rgb '#393939'
 
-set yrange [0:20]
+#set yrange [0:20]
+set xrange[-0.5:1.5]
 set style data histogram
 set style histogram cluster gap 1
 set style fill solid
 set boxwidth 0.9
 set xtics format ""
 set grid ytics
+
+set ylabel "Time [ms]"
+set size ratio 1.2
+set key at 0.55,43 box lw 2 lc rgb '#393939' spacing 1.2 width 1.1 height 1.1
+
+set label "6-31++G(d,p)" at -0.33,32.0 front
 
 #set title "A Sample Bar Chart"
 plot "fig-2.dat" using 2:xtic(1) title "EFP2" lc rgb '#a83655', \
