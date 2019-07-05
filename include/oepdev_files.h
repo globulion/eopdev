@@ -17,6 +17,8 @@
 #define OEPDEV_SIZE_BUFFER_R              250563 
 /// Size of D2 buffer (3*(OEPDEV_MAX_AM+1)*(OEPDEV_MAX_AM+1)*OEPDEV_N_MAX_AM)
 #define OEPDEV_SIZE_BUFFER_D2             3264
+/// Energy converters
+#define OEPDEV_AU_KcalPerMole             627.509
 
 /** @}*/
 #endif // oepdev_include_oepdev_files_h

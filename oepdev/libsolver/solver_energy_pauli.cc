@@ -1,7 +1,5 @@
-//#include "psi4/libtrans/integraltransform.h"
-//#include "psi4/libdpd/dpd.h"
-
 #include "solver.h"
+#include "psi4/libpsi4util/process.h"
 
 using namespace std;
 using namespace psi;
@@ -138,6 +136,11 @@ double RepulsionEnergySolver::compute_benchmark_density_based() {
   psi::timer_off("Solver E(Paul) Density-Based    ");
   e = e_Pauli_nuc + e_Pauli_kin + e_Pauli_el + e_Pauli_Pauli;
 
+  // ---> Save <--- //
+  psi::Process::environment.globals["EINT REP DDS KCAL"] = e        *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT EXC DDS KCAL"] = e_exch   *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT EXR DDS KCAL"] =(e+e_exch)*OEPDEV_AU_KcalPerMole;
+
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
@@ -258,6 +261,11 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
   // ===> Compute Exchange Energy <=== //
   e_ex = compute_pure_exchange_energy();
 
+  // ---> Save <--- //
+  psi::Process::environment.globals["EINT REP HAYES-STONE KCAL"] =(e_1+e_2)     *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT EXC HAYES-STONE KCAL"] = e_ex         *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT EXR HAYES-STONE KCAL"] =(e_1+e_2+e_ex)*OEPDEV_AU_KcalPerMole;
+
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
@@ -311,6 +319,9 @@ double RepulsionEnergySolver::compute_pure_exchange_energy() {
 
   //psi::timer_off("SOLVER: HF Exchange Energy Calculations");
   psi::timer_off("Solver E(Exch) Hayes-Stone      ");
+
+  // ---> Save <--- //
+  psi::Process::environment.globals["EINT EXC HAYES-STONE KCAL"] =e_ex*OEPDEV_AU_KcalPerMole;
 
   // ---> Close the DPD file <--- //
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
@@ -481,6 +492,11 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
 
   // ===> Finish <=== //
   e = e_s1 + e_s2;
+
+  // ---> Save <--- //
+  psi::Process::environment.globals["EINT REP MURRELL-ETAL KCAL"] = e        *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT EXC MURRELL-ETAL KCAL"] = e_exch   *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT EXR MURRELL-ETAL KCAL"] =(e+e_exch)*OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {
@@ -690,6 +706,11 @@ double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   // ===> Finish <=== //
   e = e_s1 + e_s2;
 
+  // ---> Save <--- //
+  psi::Process::environment.globals["EINT REP OTTO-LADIK KCAL"] = e        *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT EXC OTTO-LADIK KCAL"] = e_exch   *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT EXR OTTO-LADIK KCAL"] =(e+e_exch)*OEPDEV_AU_KcalPerMole;
+
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
@@ -875,6 +896,11 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
   // ===> Finish <=== //
   e = e_s1 + e_s2;
 
+  // ---> Save <--- //
+  psi::Process::environment.globals["EINT REP EFP2 KCAL"] = e             *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT EXC EFP2 KCAL"] = e_exch_efp2   *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT EXR EFP2 KCAL"] =(e+e_exch_efp2)*OEPDEV_AU_KcalPerMole;
+
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
@@ -914,6 +940,7 @@ double RepulsionEnergySolver::compute_efp2_exchange_energy(psi::SharedMatrix S,
  }
  e *= -4.0;
  //psi::timer_off("SOLVER: Exchange Energy Calculations (SGO)");
+ psi::Process::environment.globals["EINT EXC EFP2 KCAL"] = e*OEPDEV_AU_KcalPerMole;
  psi::timer_off("Solver E(Exch) EFP2(SGO)        ");
 
  return e;
@@ -1000,6 +1027,9 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
 
   // ===> Finish <=== //
   e = e_s1 + e_s2;
+
+  // ---> Save <--- //
+  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM KCAL"] = e             *OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {
@@ -1145,6 +1175,9 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
 
   // ===> Finish <=== //
   e = e_s1 + e_s2;
+
+  // ---> Save <--- //
+  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP KCAL"] = e*OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {

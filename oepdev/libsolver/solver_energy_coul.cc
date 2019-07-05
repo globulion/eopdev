@@ -172,7 +172,8 @@ double ElectrostaticEnergySolver::compute_oep_based_esp_symmetrized(){
   //psi::timer_off("SOLVER: Electrostatic Energy Calculations (ESP-ESP)");
   psi::timer_off("Solver E(Coul) ESP              ");
 
-
+  // Save
+  psi::Process::environment.globals["EINT COUL ESP"] = e;
 
   // Print
   if (wfn_union_->options().get_int("PRINT") > 0) {

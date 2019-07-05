@@ -19,6 +19,8 @@
 #include "../libpsi/integral.h"
 #include "../liboep/oep.h"
 
+#include "../../include/oepdev_files.h"
+
 namespace oepdev{
 
 using namespace std;
@@ -34,16 +36,56 @@ using SharedOEPotential        = std::shared_ptr<OEPotential>;
 /**\brief Solver of properties of molecular aggregates. Abstract base.
  *
  * Uses only a wavefunction union object to initialize.
- * Available solvers:
+ *
+ * # Available solvers
  *  - `ELECTROSTATIC ENERGY`
  *  - `REPULSION ENERGY`
  *  - `CHARGE TRANSFER ENERGY`
  *
- * Options controlling the generalized density fitting (GDF):
+ * # Options
+ * ## Generalized density fitting (GDF) options:
  *  - `OEPDEV_DF_TYPE` - type of the GDF. Default: `DOUBLE`.
  *  - `DF_BASIS_OEP` - auxiliary basis set. Default: `sto-3g`.
  *  - `DF_BASIS_INT` - intermediate basis set. Relevant only if double GDF is used. Default: `aug-cc-pVDZ-jkfit`. 
  *     Note that intermediate basis set should be nearly complete.
+ * ## EFP2 Charge transfer energy options:
+ *  - `EFP2_CT_`
+ *  - `EFP2_CT_NO_OCTUPOLES` - Ignore octupole moments from potential integrals? Default: `True`
+ *
+ * # Environmental variables
+ * ## Coulombic energy
+ *  - `EINT COUL CAMM R-1`
+ *  - `EINT COUL CAMM R-2`
+ *  - `EINT COUL CAMM R-3`
+ *  - `EINT COUL CAMM R-4`
+ *  - `EINT COUL CAMM R-5`
+ *  - `EINT COUL ESP`
+ *  - `EINT COUL EXACT`
+ *  - `EINT COUL EXACT`
+ * ## Repulsion energy
+ *  - `EINT REP DDS KCAL`
+ *  - `EINT EXC DDS KCAL`
+ *  - `EINT EXR DDS KCAL`
+ *  - `EINT REP HAYES-STONE KCAL`
+ *  - `EINT EXC HAYES-STONE KCAL`
+ *  - `EINT EXR HAYES-STONE KCAL`
+ *  - `EINT EXC HAYES-STONE KCAL`
+ *  - `EINT REP MURRELL-ETAL KCAL`
+ *  - `EINT EXC MURRELL-ETAL KCAL`
+ *  - `EINT EXR MURRELL-ETAL KCAL`
+ *  - `EINT REP OTTO-LADIK KCAL`
+ *  - `EINT EXC OTTO-LADIK KCAL`
+ *  - `EINT EXR OTTO-LADIK KCAL`
+ *  - `EINT REP EFP2 KCAL`
+ *  - `EINT EXC EFP2 KCAL`
+ *  - `EINT EXR EFP2 KCAL`
+ *  - `EINT EXC EFP2 KCAL`
+ *  - `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM KCAL`
+ *  - `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP KCAL`
+ * ## Charge-Transfer energy
+ *  - `EINT CT OTTO-LADIK KCAL`
+ *  - `EINT CT EFP2 KCAL`
+ *  - `EINT CT OEP-OTTO-LADIK KCAL`
  */
 class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
 {

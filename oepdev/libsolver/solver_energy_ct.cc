@@ -571,7 +571,7 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //Whole CT Energy E_CT(A+B-) + E_CT(A-B+)//
   double E_ct = E_ct_1 + E_ct_2;
-  psi::Process::environment.globals["ECT OL KCAL"] = E_ct*627.509;
+  psi::Process::environment.globals["EINT CT OTTO-LADIK KCAL"] = E_ct*OEPDEV_AU_KcalPerMole;
 
   //psi::timer_off("SOLVER: Charge-transfer Energy Calculations (Otto-Ladik)");
   //psi::timer_off("Solver E(CT) Otto-Ladik       ");
@@ -781,10 +781,6 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
            mats_21.push_back(std::make_shared<psi::Matrix>("", nbf_2, nbf_1));
            mats_22.push_back(std::make_shared<psi::Matrix>("", nbf_2, nbf_2));
       }
-      //auto VaoB12 = std::make_shared<psi::Matrix>("EFP permanent moment matrix", nbf_1, nbf_2);
-      //auto VaoB11 = std::make_shared<psi::Matrix>("EFP permanent moment matrix", nbf_1, nbf_1);
-      //auto VaoA21 = std::make_shared<psi::Matrix>("EFP permanent moment matrix", nbf_2, nbf_1);
-      //auto VaoA22 = std::make_shared<psi::Matrix>("EFP permanent moment matrix", nbf_2, nbf_2);
       //
       double *xyz_1_p = xyz_1->pointer();
       double *xyz_2_p = xyz_2->pointer();
@@ -904,10 +900,6 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
       global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0,
             	         integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
             		 integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
-      //// 2211 = (O_2 O_2 | O_1 O_1) = (22|11)
-      //global_dpd_->buf4_init(&buf_2211, PSIF_LIBTRANS_DPD, 0,
-      //      	         integrals->DPD_ID("[2,2]"  ), integrals->DPD_ID("[1,1]"  ),
-      //      		 integrals->DPD_ID("[2>=2]+"), integrals->DPD_ID("[1>=1]+"), 0, "MO Ints (22|11)");
       // Y211 = (V_2 O_2 | O_1 O_1) = (nj|kk)
       global_dpd_->buf4_init(&buf_Y211, PSIF_LIBTRANS_DPD, 0,
                              integrals->DPD_ID("[Y,2]"  ), integrals->DPD_ID("[1,1]"  ),
@@ -916,20 +908,19 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
       global_dpd_->buf4_init(&buf_X211, PSIF_LIBTRANS_DPD, 0,
             	         integrals->DPD_ID("[X,2]"  ), integrals->DPD_ID("[1,1]"  ),
             		 integrals->DPD_ID("[X,2]"  ), integrals->DPD_ID("[1>=1]+"), 0, "MO Ints (X2|11)");
-                                                                                                                                                                                        
-                                                                                                                                                                                        
+
       // Potentials (nuc. + elec.) included in expression of E_CT(A->B)
       double** vmoBin = VmoBin->pointer();
       double** vmoBix = VmoBix->pointer();
       double** vmoBiy = VmoBiy->pointer();
-                                                                                                                                                                                        
+
       // Potentials (nuc. + elec.)included in expression of E_CT(B->A)
       double** vmoAjm = VmoAjm->pointer();
       double** vmoAjx = VmoAjx->pointer();
       double** vmoAjy = VmoAjy->pointer();
-                                                                                                                                                                                        
+
       psi::outfile->Printf("ndocc_1: %2d, ndocc_2: %2d, nvir_1: %2d, nvir_2:  %2d \n", ndocc_1, ndocc_2, nvir_1, nvir_2);
-                                                                                                                                                                                        
+
       // vmoBin (elec.) = (in|jj) = (1Y|22) = (Y1|22)
       for (int h = 0; h < wfn_union_->nirrep(); ++h) 
            {
@@ -999,31 +990,7 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
            global_dpd_->buf4_mat_irrep_close(&buf_1122, h);
            }
       global_dpd_->buf4_close(&buf_1122);
-                                                                                                                                                                                        
-      /// BBB-T
-      //for (int h = 0; h < wfn_union_->nirrep(); ++h) 
-      //     {
-      //     global_dpd_->buf4_mat_irrep_init(&buf_2211, h);
-      //     global_dpd_->buf4_mat_irrep_rd(&buf_2211, h);
-      //     for (int pq = 0; pq < buf_2211.params->rowtot[h]; ++pq) 
-      //          {
-      //          int p = buf_2211.params->roworb[h][pq][0]; // ndocc_2
-      //          int q = buf_2211.params->roworb[h][pq][1]; // ndocc_2
-      //          for (int rs = 0; rs < buf_2211.params->coltot[h]; ++rs) 
-      //      	 {
-      //      	 int r = buf_2211.params->colorb[h][rs][0]; // ndocc_2
-      //      	 int s = buf_2211.params->colorb[h][rs][1]; // ndocc_2
-      //               if (r == s)
-      //      		  {
-      //      		  vmoAjx[p][q] += 2.0 * buf_2211.matrix[h][pq][rs];
-      //      		  } 
-      //               }
-      //          }
-      //     global_dpd_->buf4_mat_irrep_close(&buf_2211, h);
-      //     }
-      //global_dpd_->buf4_close(&buf_2211); /// BBB-T
-                                                                                                                                                                                        
-                                                                                                                                                                                        
+
       // vmoBiy (elec.) = 2(im|jj) = 2(1X|22) = 2(X1|22) = 2(mi|jj)
       for (int h = 0; h < wfn_union_->nirrep(); ++h) 
            {
@@ -1049,7 +1016,7 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
            global_dpd_->buf4_mat_irrep_close(&buf_X122, h);
            }
       global_dpd_->buf4_close(&buf_X122);
-                                                                                                                                                                                        
+
       // vmoAjm (elec.) = 2(jm|kk) = 2(2X|11) = 2(X2|11) = 2(mj|kk)
       for (int h = 0; h < wfn_union_->nirrep(); ++h) 
            {
@@ -1073,7 +1040,7 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
            global_dpd_->buf4_mat_irrep_close(&buf_X211, h);
            }
       global_dpd_->buf4_close(&buf_X211);
-                                                                                                                                                                                        
+
       // vmoAjy (elec.) = 2(jn|kk) =  2(2Y|11) = 2(Y2|11) = 2(nj|kk)
       for (int h = 0; h < wfn_union_->nirrep(); ++h) 
            {
@@ -1097,7 +1064,7 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
            global_dpd_->buf4_mat_irrep_close(&buf_Y211, h);
            }
       global_dpd_->buf4_close(&buf_Y211);
-                                                                                                                                                                                        
+
       // Close DPD library
       psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 
@@ -1197,7 +1164,7 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   e_ct_BA *= 2.0;
   e_ct = e_ct_AB + e_ct_BA;
 
-  psi::Process::environment.globals["ECT EFP KCAL"] = e_ct * 627.509;
+  psi::Process::environment.globals["EINT CT EFP2 KCAL"] = e_ct * OEPDEV_AU_KcalPerMole;
 
   // ---> Timer-off <--- //
   psi::timer_off("Solver E(CT) EFP2 MO-Expanded");
@@ -1209,9 +1176,9 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
      {
      psi::outfile->Printf("  ==> SOLVER: Charge transfer energy calculations <==\n");
      psi::outfile->Printf("  ==> EFP2 Model (MO-based) <==\n\n");
-     psi::outfile->Printf("     E_CT_A->B  = %13.10f au\n", e_ct_AB);
-     psi::outfile->Printf("     E_CT_B->A  = %13.10f au\n", e_ct_BA);
-     psi::outfile->Printf("     E_CT       = %13.10f au\n", e_ct   );
+     psi::outfile->Printf("     E_CT_A->B  = %13.6f au\n", e_ct_AB);
+     psi::outfile->Printf("     E_CT_B->A  = %13.6f au\n", e_ct_BA);
+     psi::outfile->Printf("     E_CT       = %13.6f au\n", e_ct   );
      psi::outfile->Printf("\n");
      }
   return e_ct;
@@ -1396,7 +1363,7 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   double e_ba = e_ba_v123;
 
   double e_tot = e_ab + e_ba;
-  psi::Process::environment.globals["ECT OEP KCAL"] = e_tot*627.509;
+  psi::Process::environment.globals["EINT CT OEP-OTTO-LADIK KCAL"] = e_tot*OEPDEV_AU_KcalPerMole;
 
   cout << " o TIME OEP : " << ((double)t_time/CLOCKS_PER_SEC) << endl;
   //cout << " Time OEP : " << t_end - t_begin - (t2 - t1) << endl;
