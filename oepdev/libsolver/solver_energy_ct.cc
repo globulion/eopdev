@@ -741,11 +741,16 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
       camm_1->compute();
       camm_2->compute();
       //
+      const double p1 = 1.0 / 3.0;
+      const double p2 = 2.0 / 3.0;
+      const double p3 = 1.0 /15.0;
+      const double p4 = 3.0 /15.0;
+      const double p5 = 6.0 /15.0;
       const double prefacs[20] = {
-        1.0, 1.0, 1.0, 1.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0,
-        //   XXX       YYY       ZZZ       XXY       XXZ       XYY       YYZ       XZZ       YZZ       XYZ
-        1.0 / 15.0, 1.0 / 15.0, 1.0 / 15.0, 3.0 / 15.0, 3.0 / 15.0, 3.0 / 15.0, 3.0 / 15.0, 3.0 / 15.0, 3.0 / 15.0,
-        6.0 / 15.0};
+     /* 0    X    Y    Z    XX  YY  ZZ  XY  XZ  YZ */
+        1.0, 1.0, 1.0, 1.0, p1, p1, p1, p2, p2, p2, 
+     /*    XXX YYY ZZZ XXY XXZ XYY YYZ XZZ YZZ XYZ */
+           p3, p3, p3, p4, p4, p4, p4, p4, p4, p5};
       //
       t_time -= clock(); // Clock BEGIN
 
@@ -1549,6 +1554,9 @@ std::shared_ptr<psi::Vector> ChargeTransferEnergySolver::extract_dmtp(std::share
   psi::SharedMatrix m_1 = camm->dipoles(0);
   psi::SharedMatrix m_2 = camm->quadrupoles(0);
   psi::SharedMatrix m_3 = camm->octupoles(0);
+  //m_1->zero();
+  //m_2->zero(); 
+  if (options_.get_bool("EFP2_CT_NO_OCTUPOLES")) m_3->zero();
 
   double* mult_p = mult->pointer();
   double** p_0 = m_0->pointer();
@@ -1563,23 +1571,27 @@ std::shared_ptr<psi::Vector> ChargeTransferEnergySolver::extract_dmtp(std::share
        *mult_p++ = p_1[i][1];   // Y
        *mult_p++ = p_1[i][2];   // Z
 
-       *mult_p++ = p_2[i][0];   // XX
-       *mult_p++ = p_2[i][3];   // YY
-       *mult_p++ = p_2[i][5];   // ZZ
-       *mult_p++ = p_2[i][1];   // XY
-       *mult_p++ = p_2[i][2];   // XZ
-       *mult_p++ = p_2[i][4];   // YZ
+        double t = 0.5 * (p_2[i][0] + p_2[i][3] + p_2[i][5]);
+       *mult_p++ = p_2[i][0] * 1.5 - t;   // XX
+       *mult_p++ = p_2[i][3] * 1.5 - t;   // YY
+       *mult_p++ = p_2[i][5] * 1.5 - t;   // ZZ
+       *mult_p++ = p_2[i][1] * 1.5;   // XY
+       *mult_p++ = p_2[i][2] * 1.5;   // XZ
+       *mult_p++ = p_2[i][4] * 1.5;   // YZ
 
-       *mult_p++ = p_3[i][0];   // XXX
-       *mult_p++ = p_3[i][6];   // YYY
-       *mult_p++ = p_3[i][9];   // ZZZ
-       *mult_p++ = p_3[i][1];   // XXY
-       *mult_p++ = p_3[i][2];   // XXZ
-       *mult_p++ = p_3[i][3];   // XYY
-       *mult_p++ = p_3[i][7];   // YYZ
-       *mult_p++ = p_3[i][5];   // XZZ
-       *mult_p++ = p_3[i][8];   // YZZ
-       *mult_p++ = p_3[i][4];   // XYZ
+        double tx = 0.5 * (p_3[i][0] + p_3[i][3] + p_3[i][5]);
+        double ty = 0.5 * (p_3[i][6] + p_3[i][1] + p_3[i][8]);
+        double tz = 0.5 * (p_3[i][9] + p_3[i][2] + p_3[i][7]);
+       *mult_p++ = p_3[i][0] * 2.5 - 3.0 * tx;   // XXX
+       *mult_p++ = p_3[i][6] * 2.5 - 3.0 * ty;   // YYY
+       *mult_p++ = p_3[i][9] * 2.5 - 3.0 * tz;   // ZZZ
+       *mult_p++ = p_3[i][1] * 2.5 -       ty;   // XXY
+       *mult_p++ = p_3[i][2] * 2.5 -       tz;   // XXZ
+       *mult_p++ = p_3[i][3] * 2.5 -       tx;   // XYY
+       *mult_p++ = p_3[i][7] * 2.5 -       tz;   // YYZ
+       *mult_p++ = p_3[i][5] * 2.5 -       tx;   // XZZ
+       *mult_p++ = p_3[i][8] * 2.5 -       ty;   // YZZ
+       *mult_p++ = p_3[i][4] * 2.5           ;   // XYZ
   }
   return mult;
 }

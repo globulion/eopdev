@@ -61,6 +61,9 @@ int read_options(std::string name, Options& options)
         /*- Type of EFP potential integrals used in CT energy calculations -*/
         options.add_str    ("EFP2_CT_POTENTIAL_INTS", "DMTP"                     );
 
+        /*- Exclude octupoles in CT energy calculations? (relevant if above is "DMTP") -*/
+        options.add_bool   ("EFP2_CT_NO_OCTUPOLES"  , true                       );
+
 
         // ---> CPHF Global Options  <--- //
 
