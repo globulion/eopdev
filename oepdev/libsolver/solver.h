@@ -44,47 +44,69 @@ using SharedOEPotential        = std::shared_ptr<OEPotential>;
  *
  * # Options
  * ## Generalized density fitting (GDF) options:
- *  - `OEPDEV_DF_TYPE` - type of the GDF. Default: `DOUBLE`.
+ *  - `OEPDEV_DF_TYPE` - type of the GDF. Default: `DOUBLE`. Other: `SINGLE`.
  *  - `DF_BASIS_OEP` - auxiliary basis set. Default: `sto-3g`.
  *  - `DF_BASIS_INT` - intermediate basis set. Relevant only if double GDF is used. Default: `aug-cc-pVDZ-jkfit`. 
  *     Note that intermediate basis set should be nearly complete.
+ *
  * ## EFP2 Charge transfer energy options:
- *  - `EFP2_CT_`
- *  - `EFP2_CT_NO_OCTUPOLES` - Ignore octupole moments from potential integrals? Default: `True`
+ *  - `EFP2_CT_POTENTIAL_INTS` - Type of potential one-electron operator. Default: 'DMTP'. Other: 'ERI'.
+ *  - `EFP2_CT_NO_OCTUPOLES` - Ignore octupole moments from potential integrals? Default: `True`.
  *
  * # Environmental variables
  * ## Coulombic energy
+ * 
+ *  ### DMTP series
  *  - `EINT COUL CAMM R-1`
  *  - `EINT COUL CAMM R-2`
  *  - `EINT COUL CAMM R-3`
  *  - `EINT COUL CAMM R-4`
  *  - `EINT COUL CAMM R-5`
  *  - `EINT COUL ESP`
- *  - `EINT COUL EXACT`
- *  - `EINT COUL EXACT`
- * ## Repulsion energy
- *  - `EINT REP DDS KCAL`
- *  - `EINT EXC DDS KCAL`
- *  - `EINT EXR DDS KCAL`
+ *
+ *  ### Exact estimate
+ *  - `EINT COUL EXACT` - MO or AO expanded Coulombic energy (both give same results)
+ *
+ * ## Exchange-Repulsion energy
+ *
+ * ### Density Decomposition Scheme
+ *  - `EINT REP DDS KCAL` - Pauli repulsion
+ *  - `EINT EXC DDS KCAL` - exchange
+ *  - `EINT EXR DDS KCAL` - sum of exchange and Pauli repulsion
+ *
+ *  ### Hayes-Stone model
  *  - `EINT REP HAYES-STONE KCAL`
  *  - `EINT EXC HAYES-STONE KCAL`
  *  - `EINT EXR HAYES-STONE KCAL`
- *  - `EINT EXC HAYES-STONE KCAL`
+ *
+ *  ### Murrell et al. model
  *  - `EINT REP MURRELL-ETAL KCAL`
  *  - `EINT EXC MURRELL-ETAL KCAL`
  *  - `EINT EXR MURRELL-ETAL KCAL`
+ * 
+ *  ### Otto-Ladik model
  *  - `EINT REP OTTO-LADIK KCAL`
  *  - `EINT EXC OTTO-LADIK KCAL`
  *  - `EINT EXR OTTO-LADIK KCAL`
+ * 
+ *  ### EFP2 model
  *  - `EINT REP EFP2 KCAL`
  *  - `EINT EXC EFP2 KCAL`
  *  - `EINT EXR EFP2 KCAL`
- *  - `EINT EXC EFP2 KCAL`
- *  - `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM KCAL`
- *  - `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP KCAL`
+ *
+ *  ### OEP-based models
+ *  - `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM KCAL` - S1 term using GDF, S2 term using CAMM
+ *  - `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP KCAL` - S1 term using GDF, S2 term using ESP
+ *
  * ## Charge-Transfer energy
+ * 
+ *  ### Otto-Ladik model
  *  - `EINT CT OTTO-LADIK KCAL`
+ *
+ *  ### EFP2 model
  *  - `EINT CT EFP2 KCAL`
+ *
+ *  ### OEP-based model
  *  - `EINT CT OEP-OTTO-LADIK KCAL`
  */
 class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
