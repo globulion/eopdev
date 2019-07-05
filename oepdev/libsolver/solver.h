@@ -709,6 +709,10 @@ class ChargeTransferEnergySolver : public OEPDevSolver
          std::shared_ptr<psi::Molecule> mol_1,
          std::shared_ptr<psi::Molecule> mol_2,
          std::vector<std::shared_ptr<psi::Vector>> rmo_1);
+    /// Extract XYZ
+    std::shared_ptr<psi::Vector> extract_xyz(std::shared_ptr<psi::Molecule>);
+    /// Extract DMTP
+    std::shared_ptr<psi::Vector> extract_dmtp(std::shared_ptr<oepdev::DMTPole>);
 };
 
 

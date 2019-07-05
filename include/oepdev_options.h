@@ -58,6 +58,9 @@ int read_options(std::string name, Options& options)
         /*- MO Localizer for OEP-Based CT Solver -*/
         options.add_str    ("SOLVER_CT_LOCALIZER"   , "BOYS"                     );
 
+        /*- Type of EFP potential integrals used in CT energy calculations -*/
+        options.add_str    ("EFP2_CT_POTENTIAL_INTS", "DMTP"                     );
+
 
         // ---> CPHF Global Options  <--- //
 

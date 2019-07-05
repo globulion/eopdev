@@ -671,42 +671,51 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   psi::IntegralFactory fact_11(wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0));
   psi::IntegralFactory fact_22(wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1));
 
+  // ---> Type of effective potential matrix elements <--- //
+  enum t_potential_type {ERI_Potential_Type, DMTP_Potential_Type};
+  t_potential_type potential_type;
+  if (options_.get_str("EFP2_CT_POTENTIAL_INTS") == "DMTP") 
+       potential_type = DMTP_Potential_Type;
+  else potential_type =  ERI_Potential_Type;
 
-  // PotentialInt //
   clock_t t_time = -clock(); // Clock BEGIN
-  std::shared_ptr<psi::PotentialInt> potInt_12 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(),
-                                                                                    wfn_union_->l_primary(0),
-                                                                                    wfn_union_->l_primary(1));
-  std::shared_ptr<psi::PotentialInt> potInt_21 = std::make_shared<psi::PotentialInt>(fact_21.spherical_transform(),
-                                                                                    wfn_union_->l_primary(1),
-                                                                                    wfn_union_->l_primary(0));
-  std::shared_ptr<psi::PotentialInt> potInt_11 = std::make_shared<psi::PotentialInt>(fact_11.spherical_transform(),
-                                                                                    wfn_union_->l_primary(0),
-                                                                                    wfn_union_->l_primary(0));
-  std::shared_ptr<psi::PotentialInt> potInt_22 = std::make_shared<psi::PotentialInt>(fact_22.spherical_transform(),
-                                                                                    wfn_union_->l_primary(1),
-                                                                                    wfn_union_->l_primary(1));
- 
 
-  // Set charge field //
-  std::shared_ptr<psi::Matrix> Zxyz_1 = std::make_shared<psi::Matrix>(potInt_11->charge_field());
-  std::shared_ptr<psi::Matrix> Zxyz_2 = std::make_shared<psi::Matrix>(potInt_22->charge_field());
-
-  potInt_12->set_charge_field(Zxyz_2);
-  potInt_11->set_charge_field(Zxyz_2);
-  potInt_21->set_charge_field(Zxyz_1);
-  potInt_22->set_charge_field(Zxyz_1);
-
-  // Potential integrals (nuclear contribution) //
-  std::shared_ptr<psi::OneBodyAOInt> oneInt;
-  oneInt = potInt_12;
-  oneInt->compute(VaoB12);
-  oneInt = potInt_11;
-  oneInt->compute(VaoB11);
-  oneInt = potInt_21;
-  oneInt->compute(VaoA21);
-  oneInt = potInt_22;
-  oneInt->compute(VaoA22);
+  if (potential_type == ERI_Potential_Type) {
+     // PotentialInt - nuclear part //
+     std::shared_ptr<psi::PotentialInt> potInt_12 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(), 
+                                                                                       wfn_union_->l_primary(0),
+                                                                                       wfn_union_->l_primary(1));
+     std::shared_ptr<psi::PotentialInt> potInt_21 = std::make_shared<psi::PotentialInt>(fact_21.spherical_transform(),
+                                                                                       wfn_union_->l_primary(1),
+                                                                                       wfn_union_->l_primary(0));
+     std::shared_ptr<psi::PotentialInt> potInt_11 = std::make_shared<psi::PotentialInt>(fact_11.spherical_transform(),
+                                                                                       wfn_union_->l_primary(0),
+                                                                                       wfn_union_->l_primary(0));
+     std::shared_ptr<psi::PotentialInt> potInt_22 = std::make_shared<psi::PotentialInt>(fact_22.spherical_transform(),
+                                                                                       wfn_union_->l_primary(1),
+                                                                                       wfn_union_->l_primary(1));
+                                                                                                                       
+                                                                                                                       
+     // Set charge field //
+     std::shared_ptr<psi::Matrix> Zxyz_1 = std::make_shared<psi::Matrix>(potInt_11->charge_field());
+     std::shared_ptr<psi::Matrix> Zxyz_2 = std::make_shared<psi::Matrix>(potInt_22->charge_field());
+                                                                                                                       
+     potInt_12->set_charge_field(Zxyz_2);
+     potInt_11->set_charge_field(Zxyz_2);
+     potInt_21->set_charge_field(Zxyz_1);
+     potInt_22->set_charge_field(Zxyz_1);
+                                                                                                                       
+     // Potential integrals (nuclear contribution) //
+     std::shared_ptr<psi::OneBodyAOInt> oneInt;
+     oneInt = potInt_12;
+     oneInt->compute(VaoB12);
+     oneInt = potInt_11;
+     oneInt->compute(VaoB11);
+     oneInt = potInt_21;
+     oneInt->compute(VaoA21);
+     oneInt = potInt_22;
+     oneInt->compute(VaoA22);
+  }
   t_time += clock(); // Clock END
 
   // Overlap integrals //
@@ -725,6 +734,102 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   kinInt22->compute(Tao22);
   t_time += clock(); // Clock END
 
+  if (potential_type == DMTP_Potential_Type) {
+      // Compute CAMM on monomers 1 and 2
+      std::shared_ptr<oepdev::DMTPole> camm_1 = oepdev::DMTPole::build("CAMM", wfn_union_->l_wfn(0));
+      std::shared_ptr<oepdev::DMTPole> camm_2 = oepdev::DMTPole::build("CAMM", wfn_union_->l_wfn(1));
+      camm_1->compute();
+      camm_2->compute();
+      //
+      const double prefacs[20] = {
+        1.0, 1.0, 1.0, 1.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0,
+        //   XXX       YYY       ZZZ       XXY       XXZ       XYY       YYZ       XZZ       YZZ       XYZ
+        1.0 / 15.0, 1.0 / 15.0, 1.0 / 15.0, 3.0 / 15.0, 3.0 / 15.0, 3.0 / 15.0, 3.0 / 15.0, 3.0 / 15.0, 3.0 / 15.0,
+        6.0 / 15.0};
+      //
+      t_time -= clock(); // Clock BEGIN
+
+      /* __12  ->   V from molecule 2 
+         __11  ->   V from molecule 2
+         __21  ->   V from molecule 1
+         __22  ->   V from molecule 1 */
+
+      // 
+      size_t n_multipole_1 = wfn_union_->l_molecule(0)->natom();
+      size_t n_multipole_2 = wfn_union_->l_molecule(1)->natom();
+      assert (n_multipole_1 == camm_1->n_sites());
+      assert (n_multipole_2 == camm_2->n_sites());
+      auto xyz_1 = this->extract_xyz(wfn_union_->l_molecule(0));
+      auto xyz_2 = this->extract_xyz(wfn_union_->l_molecule(1));
+      auto mult_1= this->extract_dmtp(camm_1);
+      auto mult_2= this->extract_dmtp(camm_2);
+      //
+      std::shared_ptr<psi::OneBodyAOInt> efp_ints_12(fact_12.ao_efp_multipole_potential());
+      std::shared_ptr<psi::OneBodyAOInt> efp_ints_11(fact_11.ao_efp_multipole_potential());
+      std::shared_ptr<psi::OneBodyAOInt> efp_ints_21(fact_21.ao_efp_multipole_potential());
+      std::shared_ptr<psi::OneBodyAOInt> efp_ints_22(fact_22.ao_efp_multipole_potential());
+      //
+      std::vector<psi::SharedMatrix> mats_12, mats_11, mats_21, mats_22;
+      for (int i = 0; i < 20; ++i) {
+           mats_12.push_back(std::make_shared<psi::Matrix>("", nbf_1, nbf_2));
+           mats_11.push_back(std::make_shared<psi::Matrix>("", nbf_1, nbf_1));
+           mats_21.push_back(std::make_shared<psi::Matrix>("", nbf_2, nbf_1));
+           mats_22.push_back(std::make_shared<psi::Matrix>("", nbf_2, nbf_2));
+      }
+      //auto VaoB12 = std::make_shared<psi::Matrix>("EFP permanent moment matrix", nbf_1, nbf_2);
+      //auto VaoB11 = std::make_shared<psi::Matrix>("EFP permanent moment matrix", nbf_1, nbf_1);
+      //auto VaoA21 = std::make_shared<psi::Matrix>("EFP permanent moment matrix", nbf_2, nbf_1);
+      //auto VaoA22 = std::make_shared<psi::Matrix>("EFP permanent moment matrix", nbf_2, nbf_2);
+      //
+      double *xyz_1_p = xyz_1->pointer();
+      double *xyz_2_p = xyz_2->pointer();
+      double *mult_1_p = mult_1->pointer();
+      double *mult_2_p = mult_2->pointer();
+
+      // Molecule B CAMM
+      for (size_t n2 = 0; n2 < n_multipole_2; n2++) {
+
+           for (int i = 0; i < 20; ++i) {
+                mats_12[i]->zero();
+                mats_11[i]->zero();
+           }
+           psi::Vector3 coords_2(xyz_2_p[n2 * 3], xyz_2_p[n2 * 3 + 1], xyz_2_p[n2 * 3 + 2]);
+           efp_ints_12->set_origin(coords_2);
+           efp_ints_11->set_origin(coords_2);
+           efp_ints_12->compute(mats_12);
+           efp_ints_11->compute(mats_11);
+
+           for (int i = 0; i < 20; ++i) {                            
+                mats_12[i]->scale(-prefacs[i] * mult_2_p[20 * n2 + i]);
+                mats_11[i]->scale(-prefacs[i] * mult_2_p[20 * n2 + i]);
+                VaoB12->add(mats_12[i]);
+                VaoB11->add(mats_11[i]);
+           }
+      }
+
+      // Molecule A CAMM
+      for (size_t n1 = 0; n1 < n_multipole_1; n1++) {
+
+           for (int i = 0; i < 20; ++i) {
+                mats_21[i]->zero();
+                mats_22[i]->zero();
+           }
+           psi::Vector3 coords_1(xyz_1_p[n1 * 3], xyz_1_p[n1 * 3 + 1], xyz_1_p[n1 * 3 + 2]);
+           efp_ints_21->set_origin(coords_1);
+           efp_ints_22->set_origin(coords_1);
+           efp_ints_21->compute(mats_21);
+           efp_ints_22->compute(mats_22);
+
+           for (int i = 0; i < 20; ++i) {                            
+                mats_21[i]->scale(-prefacs[i] * mult_1_p[20 * n1 + i]);
+                mats_22[i]->scale(-prefacs[i] * mult_1_p[20 * n1 + i]);
+                VaoA21->add(mats_21[i]);
+                VaoA22->add(mats_22[i]);
+           }
+      }
+      //
+      t_time += clock(); // Clock END
+  }
 
 
   // ---> Transform one electron contributions to MO basis <--- //
@@ -769,231 +874,229 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   // ==> TWO-ELECTRON PART (electronic contibutions to potentials) <== //
   // --> add electron contributions to VmoA** and VmoB** (6 matrix elements) <-- //
 
-  if (true) { /* Switch off 2-electron part for debug purposes */
+  if (potential_type == ERI_Potential_Type) { /* Switch off 2-electron part for debug purposes */
 
-  std::shared_ptr<psi::IntegralTransform> integrals = wfn_union_->integrals();
-  dpd_set_default(integrals->get_dpd_id());
-  dpdbuf4 buf_Y122, buf_X122, buf_1122; // components of electronic contribution to V^B
-  dpdbuf4 buf_X211, buf_Y211; 		// components of electronic contribution to V^A
-  //dpdbuf4 buf_2211; // BBB-T
-  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
-
-  // -- Open DPD library to calculate ERI <--
-  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-
-  // --> Generate integral buffers <-- 
-  // Y122 = (V_2 O_1 | O_2 O_2) = (ni|jj)
-  global_dpd_->buf4_init(&buf_Y122, PSIF_LIBTRANS_DPD, 0,
-                         integrals->DPD_ID("[Y,1]"  ), integrals->DPD_ID("[2,2]"  ),
-                         integrals->DPD_ID("[Y,1]"  ), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (Y1|22)");
-  // X122 = (V_1 O_1 | O_2 O_2) = (mi|jj)
-  global_dpd_->buf4_init(&buf_X122, PSIF_LIBTRANS_DPD, 0,
-		         integrals->DPD_ID("[X,1]"  ), integrals->DPD_ID("[2,2]"  ),
-			 integrals->DPD_ID("[X,1]"  ), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (X1|22)");
-  // 1122 = (O_1 O_1 | O_2 O_2) = (11|22)
-  global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0,
-		         integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
-			 integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
-  //// 2211 = (O_2 O_2 | O_1 O_1) = (22|11)
-  //global_dpd_->buf4_init(&buf_2211, PSIF_LIBTRANS_DPD, 0,
-  //      	         integrals->DPD_ID("[2,2]"  ), integrals->DPD_ID("[1,1]"  ),
-  //      		 integrals->DPD_ID("[2>=2]+"), integrals->DPD_ID("[1>=1]+"), 0, "MO Ints (22|11)");
-  // Y211 = (V_2 O_2 | O_1 O_1) = (nj|kk)
-  global_dpd_->buf4_init(&buf_Y211, PSIF_LIBTRANS_DPD, 0,
-                         integrals->DPD_ID("[Y,2]"  ), integrals->DPD_ID("[1,1]"  ),
-                         integrals->DPD_ID("[Y,2]"  ), integrals->DPD_ID("[1>=1]+"), 0, "MO Ints (Y2|11)");
-  // X211 = (V_1 O_2 | O_1 O_1) = (mj|kk)
-  global_dpd_->buf4_init(&buf_X211, PSIF_LIBTRANS_DPD, 0,
-		         integrals->DPD_ID("[X,2]"  ), integrals->DPD_ID("[1,1]"  ),
-			 integrals->DPD_ID("[X,2]"  ), integrals->DPD_ID("[1>=1]+"), 0, "MO Ints (X2|11)");
-
-
-  // Potentials (nuc. + elec.) included in expression of E_CT(A->B)
-  double** vmoBin = VmoBin->pointer();
-  double** vmoBix = VmoBix->pointer();
-  double** vmoBiy = VmoBiy->pointer();
-
-  // Potentials (nuc. + elec.)included in expression of E_CT(B->A)
-  double** vmoAjm = VmoAjm->pointer();
-  double** vmoAjx = VmoAjx->pointer();
-  double** vmoAjy = VmoAjy->pointer();
-
-  psi::outfile->Printf("ndocc_1: %2d, ndocc_2: %2d, nvir_1: %2d, nvir_2:  %2d \n", ndocc_1, ndocc_2, nvir_1, nvir_2);
-
-  // vmoBin (elec.) = (in|jj) = (1Y|22) = (Y1|22)
-  for (int h = 0; h < wfn_union_->nirrep(); ++h) 
-       {
-       global_dpd_->buf4_mat_irrep_init(&buf_Y122, h);
-       global_dpd_->buf4_mat_irrep_rd(&buf_Y122, h);
-       for (int pq = 0; pq < buf_Y122.params->rowtot[h]; ++pq) 
-	    {
-	    // pq = max p x max q 
-	    int p = buf_Y122.params->roworb[h][pq][0]; // indx (0;nvir_2-1) Y
-	    int q = buf_Y122.params->roworb[h][pq][1]; // indx (0;nocc_1-1) 1
-//	    psi::outfile->Printf("pq: %d, p: %2d, q: %2d \n", pq, p, q);
-	    for (int rs = 0; rs < buf_Y122.params->coltot[h]; ++rs) 
-            	 {
-		 int r = buf_Y122.params->colorb[h][rs][0]; // indx (0;nocc_2-1) 2
-		 int s = buf_Y122.params->colorb[h][rs][1]; // indx (0;nocc_2-1) 2
-              //   psi::outfile->Printf("rs: %d, r: %2d, s: %2d \n", rs r, s); 
-	         if (r == s) 
-	         	{
-			vmoBin[q][p] += 2.0*buf_Y122.matrix[h][pq][rs]; 
-	         	//psi::outfile->Printf("To V^B_in[%d][%d] added: 2x(%2d %2d | %2d %2d) = %16.10f\n", q, p, p, q, r, s, buf_Y122.matrix[h][pq][rs]);
-		 	}
-		 }
-	    }
-       global_dpd_->buf4_mat_irrep_close(&buf_Y122, h);
-       }
-  global_dpd_->buf4_close(&buf_Y122);
-
-  // vmoBix (elec.) = 2(ix|jj) = 2(11|22)  BB
-  // vmoAjx (elec.) = 2(jx|kk) = 2(22|11)  BB
-  for (int h = 0; h < wfn_union_->nirrep(); ++h) 
-       {
-       global_dpd_->buf4_mat_irrep_init(&buf_1122, h);
-       global_dpd_->buf4_mat_irrep_rd(&buf_1122, h);
-       for (int pq = 0; pq < buf_1122.params->rowtot[h]; ++pq) 
-	    {
-	    int p = buf_1122.params->roworb[h][pq][0]; // ndocc_1
-	    int q = buf_1122.params->roworb[h][pq][1]; // ndocc_1
-
-            //if (p == q) {
-            //    for (int rs = 0; rs < buf_1122.params->coltot[h]; ++rs) {
-            //         int r = buf_1122.params->colorb[h][rs][0]; // ndocc_2
-            //         int s = buf_1122.params->colorb[h][rs][1]; // ndocc_2
-            //         vmoAjx[r][s] += 2.0 * buf_1122.matrix[h][pq][rs];
-            //    }
-            //}
-//	    psi::outfile->Printf("pq: %d, p: %2d, q: %2d \n", pq, p, q);
-	    for (int rs = 0; rs < buf_1122.params->coltot[h]; ++rs) 
-		 {
-		 int r = buf_1122.params->colorb[h][rs][0]; // ndocc_2
-		 int s = buf_1122.params->colorb[h][rs][1]; // ndocc_2
-		 // psi::outfile->Printf("rs: %d, r: %2d, s: %2d \n", rs, r, s); 
-//		 if (p==q)
-		 //if ((p == q) && (r == s))  BB
-                 if (r == s)
-			  {
-			  vmoBix[p][q] += 2.0 * buf_1122.matrix[h][pq][rs];
-			  //psi::outfile->Printf("To V^B_ix[%d][%d] added: 2x(%2d %2d | %2d %2d) = %16.10f\n", p, q, p, q, r, s, buf_1122.matrix[h][pq][rs]);
-			  } 
-		 //if ((p == q) && (r == s)) BB
-  	         if (p == q)
-		          {
-		          vmoAjx[r][s] += 2.0 * buf_1122.matrix[h][pq][rs];
-		          //psi::outfile->Printf("To V^A_jx[%d][%d] added: 2x(%2d %2d | %2d %2d) = %16.10f\n", r, s, p, q, r, s, buf_1122.matrix[h][pq][rs]);			   
-		          }
-	         }
-            }
-       global_dpd_->buf4_mat_irrep_close(&buf_1122, h);
-       }
-  global_dpd_->buf4_close(&buf_1122);
-
-  /// BBB-T
-  //for (int h = 0; h < wfn_union_->nirrep(); ++h) 
-  //     {
-  //     global_dpd_->buf4_mat_irrep_init(&buf_2211, h);
-  //     global_dpd_->buf4_mat_irrep_rd(&buf_2211, h);
-  //     for (int pq = 0; pq < buf_2211.params->rowtot[h]; ++pq) 
-  //          {
-  //          int p = buf_2211.params->roworb[h][pq][0]; // ndocc_2
-  //          int q = buf_2211.params->roworb[h][pq][1]; // ndocc_2
-  //          for (int rs = 0; rs < buf_2211.params->coltot[h]; ++rs) 
-  //      	 {
-  //      	 int r = buf_2211.params->colorb[h][rs][0]; // ndocc_2
-  //      	 int s = buf_2211.params->colorb[h][rs][1]; // ndocc_2
-  //               if (r == s)
-  //      		  {
-  //      		  vmoAjx[p][q] += 2.0 * buf_2211.matrix[h][pq][rs];
-  //      		  } 
-  //               }
-  //          }
-  //     global_dpd_->buf4_mat_irrep_close(&buf_2211, h);
-  //     }
-  //global_dpd_->buf4_close(&buf_2211); /// BBB-T
-
-
-  // vmoBiy (elec.) = 2(im|jj) = 2(1X|22) = 2(X1|22) = 2(mi|jj)
-  for (int h = 0; h < wfn_union_->nirrep(); ++h) 
-       {
-       global_dpd_->buf4_mat_irrep_init(&buf_X122, h);
-       global_dpd_->buf4_mat_irrep_rd(&buf_X122, h);
-       for (int pq = 0; pq < buf_X122.params->rowtot[h]; ++pq) 
-            {
-	    int p = buf_X122.params->roworb[h][pq][0]; // nvir_1 X
-	    int q = buf_X122.params->roworb[h][pq][1]; // nocc_1 1
-//	    psi::outfile->Printf("pq: %d, p: %2d, q: %2d \n", pq, p, q);
-	    for (int rs = 0; rs < buf_X122.params->coltot[h]; ++rs) 
-                 {
-		 int r = buf_X122.params->colorb[h][rs][0]; // nocc_2 2
-		 int s = buf_X122.params->colorb[h][rs][1]; // nocc_2 2
-//		 psi::outfile->Printf("rs: %d, r: %2d, s: %2d \n", rs, r, s); 
-		 if (r == s) 
-			{
-			vmoBiy[q][p] += 2.0 * buf_X122.matrix[h][pq][rs];
-			//psi::outfile->Printf("To V^B_iy[%d][%d] added: (%2d %2d | %2d %2d) = %16.10f\n", q, p, p, q, r, s, buf_X122.matrix[h][pq][rs]);
-			}
-                 }
-            }
-       global_dpd_->buf4_mat_irrep_close(&buf_X122, h);
-       }
-  global_dpd_->buf4_close(&buf_X122);
-
-
-  // vmoAjm (elec.) = 2(jm|kk) = 2(2X|11) = 2(X2|11) = 2(mj|kk)
-  for (int h = 0; h < wfn_union_->nirrep(); ++h) 
-       {
-       global_dpd_->buf4_mat_irrep_init(&buf_X211, h);
-       global_dpd_->buf4_mat_irrep_rd(&buf_X211, h);
-       for (int pq = 0; pq < buf_X211.params->rowtot[h]; ++pq) 
-            {
-	    int p = buf_X211.params->roworb[h][pq][0]; // nvir_1 X
-	    int q = buf_X211.params->roworb[h][pq][1]; // nocc_2 2
-	    for (int rs = 0; rs < buf_X211.params->coltot[h]; ++rs) 
-                 {
-		 int r = buf_X211.params->colorb[h][rs][0]; // nocc_1 1
-		 int s = buf_X211.params->colorb[h][rs][1]; // nocc_1 1
-		 if (r == s) 
-		 	{
-		 	vmoAjm[q][p] += 2.0 * buf_X211.matrix[h][pq][rs];
-		 	//psi::outfile->Printf("To V^A_jm[%d][%d] added: (%2d %2d | %2d %2d) = %16.10f\n", q, p, p, q, r, s, buf_X211.matrix[h][pq][rs]);
-		 	}
+      std::shared_ptr<psi::IntegralTransform> integrals = wfn_union_->integrals();                                                                                                      
+      dpd_set_default(integrals->get_dpd_id());
+      dpdbuf4 buf_Y122, buf_X122, buf_1122; // components of electronic contribution to V^B
+      dpdbuf4 buf_X211, buf_Y211; 		// components of electronic contribution to V^A
+      //dpdbuf4 buf_2211; // BBB-T
+      std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+                                                                                                                                                                                        
+      // -- Open DPD library to calculate ERI <--
+      psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+                                                                                                                                                                                        
+      // --> Generate integral buffers <-- 
+      // Y122 = (V_2 O_1 | O_2 O_2) = (ni|jj)
+      global_dpd_->buf4_init(&buf_Y122, PSIF_LIBTRANS_DPD, 0,
+                             integrals->DPD_ID("[Y,1]"  ), integrals->DPD_ID("[2,2]"  ),
+                             integrals->DPD_ID("[Y,1]"  ), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (Y1|22)");
+      // X122 = (V_1 O_1 | O_2 O_2) = (mi|jj)
+      global_dpd_->buf4_init(&buf_X122, PSIF_LIBTRANS_DPD, 0,
+            	         integrals->DPD_ID("[X,1]"  ), integrals->DPD_ID("[2,2]"  ),
+            		 integrals->DPD_ID("[X,1]"  ), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (X1|22)");
+      // 1122 = (O_1 O_1 | O_2 O_2) = (11|22)
+      global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0,
+            	         integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
+            		 integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
+      //// 2211 = (O_2 O_2 | O_1 O_1) = (22|11)
+      //global_dpd_->buf4_init(&buf_2211, PSIF_LIBTRANS_DPD, 0,
+      //      	         integrals->DPD_ID("[2,2]"  ), integrals->DPD_ID("[1,1]"  ),
+      //      		 integrals->DPD_ID("[2>=2]+"), integrals->DPD_ID("[1>=1]+"), 0, "MO Ints (22|11)");
+      // Y211 = (V_2 O_2 | O_1 O_1) = (nj|kk)
+      global_dpd_->buf4_init(&buf_Y211, PSIF_LIBTRANS_DPD, 0,
+                             integrals->DPD_ID("[Y,2]"  ), integrals->DPD_ID("[1,1]"  ),
+                             integrals->DPD_ID("[Y,2]"  ), integrals->DPD_ID("[1>=1]+"), 0, "MO Ints (Y2|11)");
+      // X211 = (V_1 O_2 | O_1 O_1) = (mj|kk)
+      global_dpd_->buf4_init(&buf_X211, PSIF_LIBTRANS_DPD, 0,
+            	         integrals->DPD_ID("[X,2]"  ), integrals->DPD_ID("[1,1]"  ),
+            		 integrals->DPD_ID("[X,2]"  ), integrals->DPD_ID("[1>=1]+"), 0, "MO Ints (X2|11)");
+                                                                                                                                                                                        
+                                                                                                                                                                                        
+      // Potentials (nuc. + elec.) included in expression of E_CT(A->B)
+      double** vmoBin = VmoBin->pointer();
+      double** vmoBix = VmoBix->pointer();
+      double** vmoBiy = VmoBiy->pointer();
+                                                                                                                                                                                        
+      // Potentials (nuc. + elec.)included in expression of E_CT(B->A)
+      double** vmoAjm = VmoAjm->pointer();
+      double** vmoAjx = VmoAjx->pointer();
+      double** vmoAjy = VmoAjy->pointer();
+                                                                                                                                                                                        
+      psi::outfile->Printf("ndocc_1: %2d, ndocc_2: %2d, nvir_1: %2d, nvir_2:  %2d \n", ndocc_1, ndocc_2, nvir_1, nvir_2);
+                                                                                                                                                                                        
+      // vmoBin (elec.) = (in|jj) = (1Y|22) = (Y1|22)
+      for (int h = 0; h < wfn_union_->nirrep(); ++h) 
+           {
+           global_dpd_->buf4_mat_irrep_init(&buf_Y122, h);
+           global_dpd_->buf4_mat_irrep_rd(&buf_Y122, h);
+           for (int pq = 0; pq < buf_Y122.params->rowtot[h]; ++pq) 
+                {
+                // pq = max p x max q 
+                int p = buf_Y122.params->roworb[h][pq][0]; // indx (0;nvir_2-1) Y
+                int q = buf_Y122.params->roworb[h][pq][1]; // indx (0;nocc_1-1) 1
+//    	    psi::outfile->Printf("pq: %d, p: %2d, q: %2d \n", pq, p, q);
+                for (int rs = 0; rs < buf_Y122.params->coltot[h]; ++rs) 
+                	 {
+            	 int r = buf_Y122.params->colorb[h][rs][0]; // indx (0;nocc_2-1) 2
+            	 int s = buf_Y122.params->colorb[h][rs][1]; // indx (0;nocc_2-1) 2
+                  //   psi::outfile->Printf("rs: %d, r: %2d, s: %2d \n", rs r, s); 
+                     if (r == s) 
+                     	{
+            		vmoBin[q][p] += 2.0*buf_Y122.matrix[h][pq][rs]; 
+                     	//psi::outfile->Printf("To V^B_in[%d][%d] added: 2x(%2d %2d | %2d %2d) = %16.10f\n", q, p, p, q, r, s, buf_Y122.matrix[h][pq][rs]);
+            	 	}
             	 }
-	    }
-       global_dpd_->buf4_mat_irrep_close(&buf_X211, h);
-       }
-  global_dpd_->buf4_close(&buf_X211);
+                }
+           global_dpd_->buf4_mat_irrep_close(&buf_Y122, h);
+           }
+      global_dpd_->buf4_close(&buf_Y122);
+                                                                                                                                                                                        
+      // vmoBix (elec.) = 2(ix|jj) = 2(11|22)  BB
+      // vmoAjx (elec.) = 2(jx|kk) = 2(22|11)  BB
+      for (int h = 0; h < wfn_union_->nirrep(); ++h) 
+           {
+           global_dpd_->buf4_mat_irrep_init(&buf_1122, h);
+           global_dpd_->buf4_mat_irrep_rd(&buf_1122, h);
+           for (int pq = 0; pq < buf_1122.params->rowtot[h]; ++pq) 
+                {
+                int p = buf_1122.params->roworb[h][pq][0]; // ndocc_1
+                int q = buf_1122.params->roworb[h][pq][1]; // ndocc_1
+                                                                                                                                                                                        
+                //if (p == q) {
+                //    for (int rs = 0; rs < buf_1122.params->coltot[h]; ++rs) {
+                //         int r = buf_1122.params->colorb[h][rs][0]; // ndocc_2
+                //         int s = buf_1122.params->colorb[h][rs][1]; // ndocc_2
+                //         vmoAjx[r][s] += 2.0 * buf_1122.matrix[h][pq][rs];
+                //    }
+                //}
+//    	    psi::outfile->Printf("pq: %d, p: %2d, q: %2d \n", pq, p, q);
+                for (int rs = 0; rs < buf_1122.params->coltot[h]; ++rs) 
+            	 {
+            	 int r = buf_1122.params->colorb[h][rs][0]; // ndocc_2
+            	 int s = buf_1122.params->colorb[h][rs][1]; // ndocc_2
+            	 // psi::outfile->Printf("rs: %d, r: %2d, s: %2d \n", rs, r, s); 
+//    		 if (p==q)
+            	 //if ((p == q) && (r == s))  BB
+                     if (r == s)
+            		  {
+            		  vmoBix[p][q] += 2.0 * buf_1122.matrix[h][pq][rs];
+            		  //psi::outfile->Printf("To V^B_ix[%d][%d] added: 2x(%2d %2d | %2d %2d) = %16.10f\n", p, q, p, q, r, s, buf_1122.matrix[h][pq][rs]);
+            		  } 
+            	 //if ((p == q) && (r == s)) BB
+      	         if (p == q)
+            	          {
+            	          vmoAjx[r][s] += 2.0 * buf_1122.matrix[h][pq][rs];
+            	          //psi::outfile->Printf("To V^A_jx[%d][%d] added: 2x(%2d %2d | %2d %2d) = %16.10f\n", r, s, p, q, r, s, buf_1122.matrix[h][pq][rs]);			   
+            	          }
+                     }
+                }
+           global_dpd_->buf4_mat_irrep_close(&buf_1122, h);
+           }
+      global_dpd_->buf4_close(&buf_1122);
+                                                                                                                                                                                        
+      /// BBB-T
+      //for (int h = 0; h < wfn_union_->nirrep(); ++h) 
+      //     {
+      //     global_dpd_->buf4_mat_irrep_init(&buf_2211, h);
+      //     global_dpd_->buf4_mat_irrep_rd(&buf_2211, h);
+      //     for (int pq = 0; pq < buf_2211.params->rowtot[h]; ++pq) 
+      //          {
+      //          int p = buf_2211.params->roworb[h][pq][0]; // ndocc_2
+      //          int q = buf_2211.params->roworb[h][pq][1]; // ndocc_2
+      //          for (int rs = 0; rs < buf_2211.params->coltot[h]; ++rs) 
+      //      	 {
+      //      	 int r = buf_2211.params->colorb[h][rs][0]; // ndocc_2
+      //      	 int s = buf_2211.params->colorb[h][rs][1]; // ndocc_2
+      //               if (r == s)
+      //      		  {
+      //      		  vmoAjx[p][q] += 2.0 * buf_2211.matrix[h][pq][rs];
+      //      		  } 
+      //               }
+      //          }
+      //     global_dpd_->buf4_mat_irrep_close(&buf_2211, h);
+      //     }
+      //global_dpd_->buf4_close(&buf_2211); /// BBB-T
+                                                                                                                                                                                        
+                                                                                                                                                                                        
+      // vmoBiy (elec.) = 2(im|jj) = 2(1X|22) = 2(X1|22) = 2(mi|jj)
+      for (int h = 0; h < wfn_union_->nirrep(); ++h) 
+           {
+           global_dpd_->buf4_mat_irrep_init(&buf_X122, h);
+           global_dpd_->buf4_mat_irrep_rd(&buf_X122, h);
+           for (int pq = 0; pq < buf_X122.params->rowtot[h]; ++pq) 
+                {
+                int p = buf_X122.params->roworb[h][pq][0]; // nvir_1 X
+                int q = buf_X122.params->roworb[h][pq][1]; // nocc_1 1
+//    	    psi::outfile->Printf("pq: %d, p: %2d, q: %2d \n", pq, p, q);
+                for (int rs = 0; rs < buf_X122.params->coltot[h]; ++rs) 
+                     {
+            	 int r = buf_X122.params->colorb[h][rs][0]; // nocc_2 2
+            	 int s = buf_X122.params->colorb[h][rs][1]; // nocc_2 2
+//    		 psi::outfile->Printf("rs: %d, r: %2d, s: %2d \n", rs, r, s); 
+            	 if (r == s) 
+            		{
+            		vmoBiy[q][p] += 2.0 * buf_X122.matrix[h][pq][rs];
+            		//psi::outfile->Printf("To V^B_iy[%d][%d] added: (%2d %2d | %2d %2d) = %16.10f\n", q, p, p, q, r, s, buf_X122.matrix[h][pq][rs]);
+            		}
+                     }
+                }
+           global_dpd_->buf4_mat_irrep_close(&buf_X122, h);
+           }
+      global_dpd_->buf4_close(&buf_X122);
+                                                                                                                                                                                        
+      // vmoAjm (elec.) = 2(jm|kk) = 2(2X|11) = 2(X2|11) = 2(mj|kk)
+      for (int h = 0; h < wfn_union_->nirrep(); ++h) 
+           {
+           global_dpd_->buf4_mat_irrep_init(&buf_X211, h);
+           global_dpd_->buf4_mat_irrep_rd(&buf_X211, h);
+           for (int pq = 0; pq < buf_X211.params->rowtot[h]; ++pq) 
+                {
+                int p = buf_X211.params->roworb[h][pq][0]; // nvir_1 X
+                int q = buf_X211.params->roworb[h][pq][1]; // nocc_2 2
+                for (int rs = 0; rs < buf_X211.params->coltot[h]; ++rs) 
+                     {
+            	 int r = buf_X211.params->colorb[h][rs][0]; // nocc_1 1
+            	 int s = buf_X211.params->colorb[h][rs][1]; // nocc_1 1
+            	 if (r == s) 
+            	 	{
+            	 	vmoAjm[q][p] += 2.0 * buf_X211.matrix[h][pq][rs];
+            	 	//psi::outfile->Printf("To V^A_jm[%d][%d] added: (%2d %2d | %2d %2d) = %16.10f\n", q, p, p, q, r, s, buf_X211.matrix[h][pq][rs]);
+            	 	}
+                	 }
+                }
+           global_dpd_->buf4_mat_irrep_close(&buf_X211, h);
+           }
+      global_dpd_->buf4_close(&buf_X211);
+                                                                                                                                                                                        
+      // vmoAjy (elec.) = 2(jn|kk) =  2(2Y|11) = 2(Y2|11) = 2(nj|kk)
+      for (int h = 0; h < wfn_union_->nirrep(); ++h) 
+           {
+           global_dpd_->buf4_mat_irrep_init(&buf_Y211, h);
+           global_dpd_->buf4_mat_irrep_rd(&buf_Y211, h);
+           for (int pq = 0; pq < buf_Y211.params->rowtot[h]; ++pq) 
+                {
+                int p = buf_Y211.params->roworb[h][pq][0]; // nvir_2 Y
+                int q = buf_Y211.params->roworb[h][pq][1]; // nocc_2 2
+                for (int rs = 0; rs < buf_Y211.params->coltot[h]; ++rs) 
+                     {
+            	 int r = buf_Y211.params->colorb[h][rs][0]; // nocc_1
+            	 int s = buf_Y211.params->colorb[h][rs][1]; // nocc_1
+            	 if (r == s)
+            		{ 
+            		vmoAjy[q][p] += 2.0 * buf_Y211.matrix[h][pq][rs]; 
+            		//psi::outfile->Printf("To V^A_jy[%d][%d] added: 2x(%2d %2d | %2d %2d) = %16.10f\n", q, p, p, q, r, s, buf_Y211.matrix[h][pq][rs]);			   
+            		}
+                     }
+                }
+           global_dpd_->buf4_mat_irrep_close(&buf_Y211, h);
+           }
+      global_dpd_->buf4_close(&buf_Y211);
+                                                                                                                                                                                        
+      // Close DPD library
+      psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 
-
-  // vmoAjy (elec.) = 2(jn|kk) =  2(2Y|11) = 2(Y2|11) = 2(nj|kk)
-  for (int h = 0; h < wfn_union_->nirrep(); ++h) 
-       {
-       global_dpd_->buf4_mat_irrep_init(&buf_Y211, h);
-       global_dpd_->buf4_mat_irrep_rd(&buf_Y211, h);
-       for (int pq = 0; pq < buf_Y211.params->rowtot[h]; ++pq) 
-            {
-	    int p = buf_Y211.params->roworb[h][pq][0]; // nvir_2 Y
-	    int q = buf_Y211.params->roworb[h][pq][1]; // nocc_2 2
-	    for (int rs = 0; rs < buf_Y211.params->coltot[h]; ++rs) 
-                 {
-		 int r = buf_Y211.params->colorb[h][rs][0]; // nocc_1
-		 int s = buf_Y211.params->colorb[h][rs][1]; // nocc_1
-		 if (r == s)
-			{ 
-			vmoAjy[q][p] += 2.0 * buf_Y211.matrix[h][pq][rs]; 
-			//psi::outfile->Printf("To V^A_jy[%d][%d] added: 2x(%2d %2d | %2d %2d) = %16.10f\n", q, p, p, q, r, s, buf_Y211.matrix[h][pq][rs]);			   
-			}
-                 }
-            }
-       global_dpd_->buf4_mat_irrep_close(&buf_Y211, h);
-       }
-  global_dpd_->buf4_close(&buf_Y211);
-
-  // Close DPD library
-  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-
-  } /* Switch off 2-electron part for debug purposes */
+  } /* End of 2-electron part */
 
 
  
@@ -1425,4 +1528,58 @@ std::shared_ptr<psi::Matrix> ChargeTransferEnergySolver::compute_w_matrix(
   }
   w->scale(-1.0);
   return w;
+}
+//
+std::shared_ptr<psi::Vector> ChargeTransferEnergySolver::extract_xyz(std::shared_ptr<psi::Molecule> mol)
+{
+  auto xyz = std::make_shared<psi::Vector>(3 * mol->natom());
+  double* xyz_p = xyz->pointer();
+  for (int i = 0; i < mol->natom(); ++i) {
+       *xyz_p++ = mol->x(i);
+       *xyz_p++ = mol->y(i);
+       *xyz_p++ = mol->z(i); 
+  }
+  return xyz;
+}
+//
+std::shared_ptr<psi::Vector> ChargeTransferEnergySolver::extract_dmtp(std::shared_ptr<oepdev::DMTPole> camm)
+{
+  auto mult= std::make_shared<psi::Vector>((1 + 3 + 6 + 10) * camm->n_sites());
+  psi::SharedMatrix m_0 = camm->charges(0);
+  psi::SharedMatrix m_1 = camm->dipoles(0);
+  psi::SharedMatrix m_2 = camm->quadrupoles(0);
+  psi::SharedMatrix m_3 = camm->octupoles(0);
+
+  double* mult_p = mult->pointer();
+  double** p_0 = m_0->pointer();
+  double** p_1 = m_1->pointer();
+  double** p_2 = m_2->pointer();
+  double** p_3 = m_3->pointer();
+
+  for (int i = 0; i < camm->n_sites(); ++i) {
+       *mult_p++ = p_0[i][0];   // 0
+
+       *mult_p++ = p_1[i][0];   // X
+       *mult_p++ = p_1[i][1];   // Y
+       *mult_p++ = p_1[i][2];   // Z
+
+       *mult_p++ = p_2[i][0];   // XX
+       *mult_p++ = p_2[i][3];   // YY
+       *mult_p++ = p_2[i][5];   // ZZ
+       *mult_p++ = p_2[i][1];   // XY
+       *mult_p++ = p_2[i][2];   // XZ
+       *mult_p++ = p_2[i][4];   // YZ
+
+       *mult_p++ = p_3[i][0];   // XXX
+       *mult_p++ = p_3[i][6];   // YYY
+       *mult_p++ = p_3[i][9];   // ZZZ
+       *mult_p++ = p_3[i][1];   // XXY
+       *mult_p++ = p_3[i][2];   // XXZ
+       *mult_p++ = p_3[i][3];   // XYY
+       *mult_p++ = p_3[i][7];   // YYZ
+       *mult_p++ = p_3[i][5];   // XZZ
+       *mult_p++ = p_3[i][8];   // YZZ
+       *mult_p++ = p_3[i][4];   // XYZ
+  }
+  return mult;
 }
