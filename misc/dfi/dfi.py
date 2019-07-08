@@ -214,7 +214,7 @@ class DFI:
       self._Cs    = []  # LCAO-MO coefficients                               Updated
       self._Hs    = []  # Hcore matrix in original basis                     Const
       self._Fs    = []  # Fock matrix in original basis                      Updated
-      self._Ds    = []  # One-particle density matrix in original basis      Const
+      self._Ds    = []  # One-particle density matrix in original basis      Updated
       return
 
   def run(self, maxit=100, conv=1.0e-5, verbose_scf=False, conv_scf=1.0e-5, maxit_scf=100, damp_scf=0.14, ndamp_scf=0):
