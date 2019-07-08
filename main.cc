@@ -70,6 +70,7 @@ void export_dmtp(py::module&);
 void export_cphf(py::module&);
 void export_solver(py::module&);
 void export_util(py::module&);
+void export_oep(py::module&);
 
 /** \brief Main routine of the OEPDev plugin.
  *
@@ -246,8 +247,8 @@ PYBIND11_MODULE(oepdev, m) {
 
   // Export OEPDev-Psi4 Interface
   m.doc() = "OEPDev: Quantum Chemistry for Extended Molecular Aggregates. Python Interface.";
-  m.def("oepdev", &oepdev, "Run OEPDev plugin");
-  m.def("read_options", &read_options, "Read options for OEPDev plugin");
+  m.def("oepdev", &oepdev, "Run OEPDev plugin: Python interface.");
+  m.def("read_options", &read_options, "Read options for OEPDev plugin. Python interface");
 
   // Export OEPDev Functionalities
   export_dmtp(m);
@@ -257,6 +258,8 @@ PYBIND11_MODULE(oepdev, m) {
   export_solver(m);
   // Export Utilities
   export_util(m);
+  // Export OEP's
+  export_oep(m);
 }
 
 } // EndNameSpace psi
