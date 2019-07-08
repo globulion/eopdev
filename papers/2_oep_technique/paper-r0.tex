@@ -457,7 +457,7 @@ There are two general cases of basis function partitioning scheme
 in which it is possible to define an effective one\hyp{}electron
 potential. They are listed in Table~\ref{t:oep-matrix-element-types}.
 The first type is a Coulomb\hyp{}like contribution, for which multipole expansion or density fitting can be used.
-The second type is an overlap\hyp{}like contribution, which can be approximated via the density fitting. Mainly,
+The second type is an overlap\hyp{}like contribution, which can be approximated via the density fitting. 
 %
 {
 \renewcommand{\arraystretch}{1.4}
@@ -469,7 +469,7 @@ The second type is an overlap\hyp{}like contribution, which can be approximated 
 \begin{ruledtabular}
 \begin{tabular}{lcccc}
 Matrix element      &&            `Overlap-like'                &&            `Coulomb-like'               \\ 
-                    && $\tBraKet{i}{\hat{v}^{{\rm eff},A}}{j} $ && $\tBraKet{j}{\hat{v}^{{\rm eff},A}}{l}$ \\ 
+                    && $\tBraKet{i}{\hat{v}^{A}_{\rm eff}}{j} $ && $\tBraKet{j}{\hat{v}^{A}_{\rm eff}}{l}$ \\ 
 	\cline{1-5}
 Partitioning scheme &&            $i\in A, j\in B$              &&               $j,l\in B$                \\
 Associated ERI's    &&            $\BraKet{AA}{AB}$             &&               $\BraKet{AA}{BB}$         \\
@@ -477,7 +477,7 @@ DF\footnotemark[2]/RI\footnotemark[3] Form
 && $\sum_{\xi\in A}^{\rm Aux} v^A_{i\xi} S^{AB}_{\xi j} $  
 && $\sum_{\xi\zeta\in A}^{\rm Aux} S^{BA}_{j\xi} v^A_{\xi\zeta} S^{AB}_{\zeta l} $ \\
 DMTP\footnotemark[4] Form                     
-&& --  &  &   \\
+&& --  &  &  $\rho_{jl}^B \odot \rho_{\rm eff}^A$ \\
 \end{tabular}
 \end{ruledtabular}
 %
@@ -492,16 +492,69 @@ DMTP\footnotemark[4] Form
 
 \subsection{\label{s.333}Distributed Multipole Expansion of OEP's}
 
+This scheme is most applicable in the case of matrix elements of the type
+$
+ \tBraKet{j^B}{\hat{v}_{\rm eff}^A}{l^B}
+$
+because it can be considered as a Coulombic interaction between $\rho^B_{jl}$
+and $\rho^A_{\rm eff}$. 
+In general, given certain two effective one\hyp{}electron density distributions,
+the associated effective Coulombic interaction energy can be estimated from the classical formula
+according to
+%
+\begin{equation}
+ \Delta^{(XY)}_{\rm eff} E_{\rm Coul} = \iint \frac{\rho_{\rm eff}^X({\bf r}_1) \rho_{\rm eff}^Y({\bf r}_2)}
+ {\vert {\bf r}_1 - {\bf r}_2 \vert} 
+d{\bf r}_1 d{\bf r}_2 \;.
+\end{equation}
+%
+The above double integral can be approximated by the
+distributed multipole (DMTP)
+expansions of the respective densities as follows
+%
+\begin{multline}
+  \Delta^{(XY)}_{\rm eff} E_{\rm Coul} \approx
+ \rho_{\rm eff}^X \odot \rho_{\rm eff}^Y \equiv
+ \sum_{u\in A} \sum_{w\in B} \Big\{ 
+ T^{(0)}_{uw}
+ q_{\rm eff}^{(u)}  q_{\rm eff}^{(w)} \\
+ - {\bf T}^{(1)}_{uw} \cdot 
+   \left[ q_{\rm eff}^{(u)} {\BM\upmu}_{\rm eff}^{(w)} - q_{\rm eff}^{(w)} {\BM\upmu}_{\rm eff}^{(u)} \right]
+ - {\bf T}^{(2)}_{uw} : 
+  {\BM\upmu}_{\rm eff}^{(u)}  \otimes {\BM\upmu}_{\rm eff}^{(w)} 
+ \ldots
+ \Big\}
+\end{multline}
+%
+In the above equations, $q_{\rm eff}^{(u)}$ and ${\BM\upmu}^{(u)}_{\rm eff}$ 
+are the effective distributed monopole (charge)
+and dipole moment, respectively, centered on the $u$th site, 
+whereas ${{\bf T}^{(r)}_{uw}}$ are the so called interaction tensors or rank $r$ 
+that can be found elsewhere.
+The symbol `$\odot$' denotes the sum of all the tensor contractions
+performed over the DMTP's of molecule $X$ and $Y$ to yield the associated interaction energy.
+The choice of the distribution centres as well as the truncation order of the multipole expansion
+is crucial in compromising the accuracy and computational cost of the resulting expressions.
+There is many ways in which this can be achieved, e.g., through the distributed multipole analysis (DMA)
+of Stone and Anderton, %cite
+the cumulative atomic multipole moments of Sokalski and Poirier, %cite
+the localised distributed multipole expansion (LMTP) of Etchtebest et al. %cite
+or schemes based on fitting to electrostatic potential.
+
 \subsection{\label{s.3344}Density Fitting of OEP's}
 
-To get the \emph{ab initio} representation of a overlap\hyp{}like OEP, 
+This scheme is most useful in the case of matrix elements of the type
+$
+ \tBraKet{i^A}{\hat{v}_{\rm eff}^A}{j^B}
+$.
+To get the \emph{ab initio} representation of such an overlap\hyp{}like matrix element,
 one can use a procedure similar to
 the typical density fitting or resolution of identity, both of which are nowadays widely used 
-to compute electron-repulsion integrals (ERI's) more efficiently. 
+to compute electron\hyp{}repulsion integrals (ERI's) more efficiently. 
 
 \subsubsection{Density Fitting in Nearly-Complete Space}
 
-An arbitrary one-electron potential of molecule $A$ acting on any state vector 
+An arbitrary one\hyp{}electron potential of molecule $A$ acting on any state vector 
 associated with molecule $A$ can be expanded in an auxiliary space centered 
 on $A$ as
 %
@@ -703,6 +756,74 @@ were implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry pro
 
 \section{\label{s:5}Results and Discussion}
 \subsection{\label{ss.5.1}Pauli-Repulsion Interaction Energy}
+
+At short intermolecular interactions, wavefunction overlap increases
+which causes the electrons from either molecules to move apart to minimize the repulsive interactions.
+The resulting interaction energy can be estimated based on perturbation theory approaches.
+In this section, we demonstrate the use of OEP operators to significanlty reduce the computational
+cost of such calculations, that can be used in fragment\hyp{}based modelling of extended molecular
+aggregates in terms of force field methods.
+
+As a starting point we consider perturbation theory model of Murrell et al.,
+in which repulsive energy is originally given by
+%
+\begin{equation}
+ \Delta^{AB} E^{\rm Rep} = 
+ \Delta^{AB} E^{\rm Rep}(\mathcal{O}(S)) + 
+ \Delta^{AB} E^{\rm Rep}(\mathcal{O}(S^2))
+\end{equation}
+%
+where the first\hyp{}order term with respect to the intermolecular overlap is
+%
+\begin{multline}
+  \Delta^{AB}  E^{\rm Rep}(\mathcal{O}(S)) = -2\sum_{a\in A} \sum_{b\in B}
+               S_{ab} \Big\{
+           V^A_{ab} 
+         + V^B_{ab} \\
+ + \sum_{c\in A} \left[ 2(ab \vert cc) - (ac \vert bc) \right] 
+ + \sum_{d\in B} \left[ 2(ab \vert dd) - (ad \vert bd) \right]
+                \Big\}
+\end{multline}
+%
+and the second\hyp{}order term is given in Eq.(XXX) in Ref. %cite
+In this work, we focus to simplify only the former term because this is usually
+the bottleneck of evaluating the Pauli repulsive contributions to
+forces in molecular dynamics when using the effective potential method, whereas
+very inexpensive approximation to the latter term has already been worked out previously. %cite
+
+As another benchmark model for accuracy, we compare our results with 
+the exchange and repulsion energy term 
+from the density\hyp{}based scheme of partitioning the interaction energy
+(here abbreviated as DDS),
+that was developed by Mandado and Hermida-Ramon. 
+%In the above equations, the Pauli deformation density 
+%%
+%\begin{equation}
+%   \Delta {\bf D}^{\rm Pauli} \equiv {\bf D}^{oo} - {\bf D}
+%\end{equation}
+%%
+%where \f$ {\bf D}^{oo}\f$ and \f$ {\bf D}\f$ are the density matrix formed from
+%mutually orthogonal sets of molecular orbitals within the entire aggregate (formed
+%by symmetric orthogonalization of MO's) and the density matrix of the unperturbed
+%system (that can be understood as a Hadamard sum \f$ {\bf D} \equiv {\bf D}^A \oplus {\bf D}^B\f$).
+% 
+%At HF level, the Pauli deformation density matrix is given by
+%\f[
+%  \Delta {\bf D}^{\rm Pauli} = {\bf C} \left[ {\bf S}^{-1} - {\bf 1} \right] {\bf C}^\dagger
+%\f]
+%whereas the density matrix constructed from mutually orthogonal orbitals is
+%\f[
+%   {\bf D}^{oo} = {\bf C} {\bf S}^{-1} {\bf C}^\dagger
+%\f]
+%In the above equations, \f$ {\bf S} \f$ is the overlap matrix between doubly occupied molecular orbitals
+% of the entire aggregate.
+It is also mentioned here that the DDS model of exchange-repulsion at HF level of theory
+is equivalent to the perturbative method of Hayes and Stone and the two methods
+yield the same results, although the exchange and repulsive interaction energies
+are slightly different.
+
+\subsubsection{\label{ssdff.sd}Defining OEP's for Repulsive Potential}
+
 \subsection{\label{ss.5.2}Charge-Transfer Interaction Energy}
 
 Charge transfer (CT) between molecules occurs when the net electronic populations 
