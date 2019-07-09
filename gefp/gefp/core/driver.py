@@ -272,8 +272,55 @@ def dmft_solver(wfn, xc_functional='MBB',
 
 
 def gdf_basisset_fitter(mol, oep_type, basis="6-31G",
-                        basis_xpl="6-311++G**", basis_int="AUG-CC-PVDZ-JKFIT"):
-    "Fit the auxiliary basis set for GDF-OEP purposes"
+                        basis_int="AUG-CC-PVDZ-JKFIT", basis_xpl="6-311++G**",
+                        templ_file='templ.dat', param_file='param.dat'):
+    """
+ Fit the auxiliary basis set for GDF-OEP purposes.
+
+ Usage:
+  
+   basis_aux = gdf_basisset_fitter(molecule, oep_type, 
+                                   basis     = "6-31G",
+                                   basis_xpl = "6-311++G**", 
+                                   basis_int = "AUG-CC-PVDZ-JKFIT",
+                                   templ_file= "templ.dat",
+                                   param_file= "param.dat")
+
+   where
+    o basis_aux  - the optimalized auxiliary basis set
+    o molecule   - psi4.core.Molecule object
+    o basis      - primary basis set of calculation
+    o basis_int  - intermediate basis set for double GDF calculations (should be RI or JKFIT)
+    o basis_xpl  - exemplary basis set to compare (any basis set)
+    o templ_file - template for auxiliary basis set structure
+    o param_file - list of parameters to optimize
+
+   notes:
+    o two input files are necessary:
+      - 'templ.dat' - template of basis set
+      - 'param.dat' - file with parameters to optimize
+    o example of template file and parameter file contents:
+ 
+      Example for basis for H atom: 2 uncontracted basis functions, one s and one p.
+      Parameters are only the exponents (two values).
+>>>
+cartesian
+****
+H     0
+S   1   1.00
+%20.10f             1.0000000
+P   1   1.00
+%20.10f             1.0000000
+<<<
+      Parameter file then has to have two entries, e.g.,
+>>>
+20.0    # H s-orbital exponent (starting value)
+10.3    # H p-orbital exponent (starting value)
+<<< 
+      Note that you can provide comments after '#' sign. Remember to place
+      the parameters in one column, in exact same order as present in template
+      from left to right, up to down direction.
+"""
 
     # extract the intermediate basis set
     basis_gdf_int = psi4.core.BasisSet.build(mol, "BASIS", basis_int, fitrole='ORBITAL', puream=-1)
@@ -284,7 +331,7 @@ def gdf_basisset_fitter(mol, oep_type, basis="6-31G",
     w_hf.set_basisset("BASIS_DF_INT", basis_gdf_int)
     
     # fit the auxiliary basis
-    dfbasis = DFBasis(w_hf.molecule())
+    dfbasis = DFBasis(w_hf.molecule(), templ_file=templ_file, param_file=param_file)
     oep     = OEP.create(oep_type, w_hf, dfbasis)
     opt     = DFBasisOptimizer(oep)
     
@@ -300,4 +347,4 @@ def gdf_basisset_fitter(mol, oep_type, basis="6-31G",
     print(" Error for auxiliary    basis = %14.6f  Size: %6d" % (Z_aux, basis_gdf_aux.nbf()))
     print(" Error for example      basis = %14.6f  Size: %6d" % (Z_xpl, basis_gdf_xpl.nbf()))
     print(" Error for intermediate basis = %14.6f  Size: %6d" % (Z_int, basis_gdf_int.nbf()))
-    return
+    return basis_gdf_aux

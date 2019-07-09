@@ -26,7 +26,7 @@ class DFBasis:
   """
  Basis set object to be optimized
 """
-  def __init__(self, mol, templ_file='templ.dat', param_file='param.dat'):#OK
+  def __init__(self, mol, templ_file='templ.dat', param_file='param.dat'):
       # bound molecule to this basis set
       self.mol= mol
       # initial parameters
