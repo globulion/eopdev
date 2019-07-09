@@ -12,8 +12,9 @@ import numpy
 import psi4
 from ..density.dmft import DMFT
 from ..density.functional import XCFunctional
+from ..basis.optimize import *
 
-__all__ = ["dmft_solver"]
+__all__ = ["dmft_solver", "gdf_basisset_fitter"]
 
 class PadeApproximant_2D:
     """\
@@ -269,3 +270,34 @@ def dmft_solver(wfn, xc_functional='MBB',
         psi4.core.clean()
         return E_int
 
+
+def gdf_basisset_fitter(mol, oep_type, basis="6-31G",
+                        basis_xpl="6-311++G**", basis_int="AUG-CC-PVDZ-JKFIT"):
+    "Fit the auxiliary basis set for GDF-OEP purposes"
+
+    # extract the intermediate basis set
+    basis_gdf_int = psi4.core.BasisSet.build(mol, "BASIS", basis_int, fitrole='ORBITAL', puream=-1)
+    basis_gdf_xpl = psi4.core.BasisSet.build(mol, "BASIS", basis_xpl, fitrole='ORBITAL', puream=-1)
+    
+    # prepare the system
+    e_hf, w_hf = psi4.energy('hf/%s' % basis, molecule=mol, return_wfn=True)
+    w_hf.set_basisset("BASIS_DF_INT", basis_gdf_int)
+    
+    # fit the auxiliary basis
+    dfbasis = DFBasis(w_hf.molecule())
+    oep     = OEP.create(oep_type, w_hf, dfbasis)
+    opt     = DFBasisOptimizer(oep)
+    
+    success = opt.fit()
+    
+    # fetch the optimal basis
+    basis_gdf_aux = opt.oep.dfbasis.basis
+    
+    # compute error for intermediate basis
+    Z_aux = opt.compute_error(basis_gdf_aux)
+    Z_xpl = opt.compute_error(basis_gdf_xpl)
+    Z_int = opt.compute_error(basis_gdf_int)
+    print(" Error for auxiliary    basis = %14.6f  Size: %6d" % (Z_aux, basis_gdf_aux.nbf()))
+    print(" Error for example      basis = %14.6f  Size: %6d" % (Z_xpl, basis_gdf_xpl.nbf()))
+    print(" Error for intermediate basis = %14.6f  Size: %6d" % (Z_int, basis_gdf_int.nbf()))
+    return
