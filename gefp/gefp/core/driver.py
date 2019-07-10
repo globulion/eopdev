@@ -289,7 +289,7 @@ def gdf_basisset_optimizer(mol, oep_type, basis=None,
    where
     o basis_aux  - the optimalized auxiliary basis set
     o molecule   - psi4.core.Molecule object
-    o basis      - primary basis set of calculation. If not given, the global basis is used.
+    o basis      - primary basis set of calculation. If not given, the global basis is used (keyword BASIS).
     o basis_int  - intermediate basis set for double GDF calculations (should be RI or JKFIT)
     o basis_xpl  - exemplary basis set to compare (any basis set)
     o templ_file - template for auxiliary basis set structure
