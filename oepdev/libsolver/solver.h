@@ -54,60 +54,67 @@ using SharedOEPotential        = std::shared_ptr<OEPotential>;
  *  - `EFP2_CT_NO_OCTUPOLES` - Ignore octupole moments from potential integrals? Default: `True`.
  *
  * # Environmental variables
- * ## Coulombic energy
- * 
- *  ### DMTP series
- *  - `EINT COUL CAMM R-1`
- *  - `EINT COUL CAMM R-2`
- *  - `EINT COUL CAMM R-3`
- *  - `EINT COUL CAMM R-4`
- *  - `EINT COUL CAMM R-5`
- *  - `EINT COUL ESP`
  *
- *  ### Exact estimate
- *  - `EINT COUL EXACT` - MO or AO expanded Coulombic energy (both give same results)
+ * One can easily access those variables from Python level by
+ * calling 
+ * > `psi4.get_variable("name of variable")`
+ * in your Python script.
  *
- * ## Exchange-Repulsion energy
- *
- * ### Density Decomposition Scheme
- *  - `EINT REP DDS KCAL` - Pauli repulsion
- *  - `EINT EXC DDS KCAL` - exchange
- *  - `EINT EXR DDS KCAL` - sum of exchange and Pauli repulsion
- *
- *  ### Hayes-Stone model
- *  - `EINT REP HAYES-STONE KCAL`
- *  - `EINT EXC HAYES-STONE KCAL`
- *  - `EINT EXR HAYES-STONE KCAL`
- *
- *  ### Murrell et al. model
- *  - `EINT REP MURRELL-ETAL KCAL`
- *  - `EINT EXC MURRELL-ETAL KCAL`
- *  - `EINT EXR MURRELL-ETAL KCAL`
- * 
- *  ### Otto-Ladik model
- *  - `EINT REP OTTO-LADIK KCAL`
- *  - `EINT EXC OTTO-LADIK KCAL`
- *  - `EINT EXR OTTO-LADIK KCAL`
- * 
- *  ### EFP2 model
- *  - `EINT REP EFP2 KCAL`
- *  - `EINT EXC EFP2 KCAL`
- *  - `EINT EXR EFP2 KCAL`
- *
- *  ### OEP-based models
- *  - `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM KCAL` - S1 term using GDF, S2 term using CAMM
- *  - `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP KCAL` - S1 term using GDF, S2 term using ESP
- *
- * ## Charge-Transfer energy
- * 
- *  ### Otto-Ladik model
- *  - `EINT CT OTTO-LADIK KCAL`
- *
- *  ### EFP2 model
- *  - `EINT CT EFP2 KCAL`
- *
- *  ### OEP-based model
- *  - `EINT CT OEP-OTTO-LADIK KCAL`
+ * <table>
+ * <caption id="Tab.x">Environmental variables in the OEPDev solver.</caption>
+ * <tr><th> Keyword <th>Description
+ * <tr><td colspan=2> <center><strong>Coulombic Interaction Energy</strong></center>
+ * <tr><td colspan=2> <center><strong><i>Distributed Multipole Series</i></strong></center>
+ *  <tr><td> `EINT COUL CAMM R-1` <td> CAMM charge-charge terms
+ *  <tr><td> `EINT COUL CAMM R-2` <td> CAMM charge-dipole terms + all above
+ *  <tr><td> `EINT COUL CAMM R-3` <td> CAMM charge-quadrupole, dipole-dipole + all above
+ *  <tr><td> `EINT COUL CAMM R-4` <td> CAMM charge-octupole, dipole-quadrupole + all above
+ *  <tr><td> `EINT COUL CAMM R-5` <td> CAMM charge-hexadecapole, dipole-octupole, quadrupole-quadrupole + all above
+ *  <tr><td> `EINT COUL ESP`      <td> ESP charge-charge terms
+ * <tr><td colspan=2> <center><strong><i>Exact First-Order Perturbation Theory</i></strong></center>
+ *  <tr><td> `EINT COUL EXACT` <td> MO or AO expanded Coulombic energy. Both give same results but MO is much faster.
+ * <tr><td colspan=2> <center><strong>Exchange-Repulsion Interaction Energy</strong></center>
+ * <tr><td colspan=2> <center><strong><i>Density Decomposition Scheme</i></strong></center>
+ *  <tr><td> `EINT REP DDS KCAL` <td> Pauli repulsion
+ *  <tr><td> `EINT EXC DDS KCAL` <td> DDS exchange
+ *  <tr><td> `EINT EXR DDS KCAL` <td> Sum of the above
+ * <tr><td colspan=2> <center><strong><i> Hayes-Stone model</i></strong></center>
+ *  <tr><td> `EINT REP HAYES-STONE KCAL` <td> Pauli repulsion
+ *  <tr><td> `EINT EXC HAYES-STONE KCAL` <td> Pure exchange
+ *  <tr><td> `EINT EXR HAYES-STONE KCAL` <td> Sum of the above
+ * <tr><td colspan=2> <center><strong><i>Murrell et al. model</i></strong></center>
+ *  <tr><td> `EINT REP MURRELL-ETAL KCAL`    <td> Pauli repulsion                     
+ *  <tr><td> `EINT EXC MURRELL-ETAL KCAL`    <td> Pure exchange (same as Hayes-Stone)
+ *  <tr><td> `EINT EXR MURRELL-ETAL KCAL`    <td> Sum of the above
+ *  <tr><td> `EINT REP MURRELL-ETAL:S1 KCAL` <td> Pauli repulsion: S^{-1} term
+ *  <tr><td> `EINT REP MURRELL-ETAL:S2 KCAL` <td> Pauli repulsion: S^{-2} term
+ * <tr><td colspan=2> <center><strong><i>Otto-Ladik model</i></strong></center>
+ *  <tr><td> `EINT REP OTTO-LADIK KCAL`    <td> Pauli repulsion                     
+ *  <tr><td> `EINT EXC OTTO-LADIK KCAL`    <td> Pure exchange (same as Hayes-Stone)
+ *  <tr><td> `EINT EXR OTTO-LADIK KCAL`    <td> Sum of the above
+ *  <tr><td> `EINT REP OTTO-LADIK:S1 KCAL` <td> Pauli repulsion: S^{-1} term
+ *  <tr><td> `EINT REP OTTO-LADIK:S2 KCAL` <td> Pauli repulsion: S^{-2} term
+ * <tr><td colspan=2> <center><strong><i>EFP2 model</i></strong></center>
+ *  <tr><td> `EINT REP EFP2 KCAL`    <td> Pauli repulsion
+ *  <tr><td> `EINT EXC EFP2 KCAL`    <td> Exchange: SGO approximation of Jensen
+ *  <tr><td> `EINT EXR EFP2 KCAL`    <td> Sum of the above
+ *  <tr><td> `EINT REP EFP2:S1 KCAL` <td> Pauli repulsion: S^{-1} term
+ *  <tr><td> `EINT REP EFP2:S2 KCAL` <td> Pauli repulsion: S^{-2} term
+ * <tr><td colspan=2> <center><strong><i>OEP-based models</i></strong></center>
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM KCAL`    <td> Pauli repulsion: S1 term using GDF, S2 term using CAMM
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM:S1 KCAL` <td> S^{-1} term of the above total term
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM:S2 KCAL` <td> S^{-2} term of the above total term
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP KCAL`     <td> Pauli repulsion: S1 term using GDF, S2 term using ESP
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP:S1 KCAL`  <td> S^{-1} term of the above total term
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP:S1 KCAL`  <td> S^{-2} term of the above total term
+ * <tr><td colspan=2> <center><strong>Charge-Transfer Interaction Energy</strong></center>
+ * <tr><td colspan=2> <center><strong><i>EFP2 Model</i></strong></center>
+ *  <tr><td> `EINT CT EFP2 KCAL` <td> Total charge-transfer energy (kcal/mole)
+ * <tr><td colspan=2> <center><strong><i>Otto-Ladik Model</i></strong></center>
+ *  <tr><td> `EINT CT OTTO-LADIK KCAL` <td> Total charge-transfer energy (kcal/mole)
+ * <tr><td colspan=2> <center><strong><i>OEP-Based Otto-Ladik Model</i></strong></center>
+ *  <tr><td> `EINT CT OEP-OTTO-LADIK KCAL` <td> Total charge-transfer energy (kcal/mole)
+ * </table>
  */
 class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
 {
@@ -181,10 +188,10 @@ class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
  * <caption id="Tab.1">Methods available in the Solver</caption>
  * <tr><th> Keyword  <th>Method Description  
  * <tr><td colspan=2> <center><strong>Benchmark Methods</strong></center>
- * <tr><td> `AO_EXPANDED`  <td>*Default*. Exact Coulombic energy from atomic orbital expansions.
+ * <tr><td> `AO_EXPANDED`  <td><i>Default</i>. Exact Coulombic energy from atomic orbital expansions.
  * <tr><td> `MO_EXPANDED`  <td>Exact Coulombic energy from molecular orbital expansions
  * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
- * <tr><td> `ESP_SYMMETRIZED` <td>*Default*. Coulombic energy from ESP charges interacting with nuclei and electronic density.
+ * <tr><td> `ESP_SYMMETRIZED` <td><i>Default</i>. Coulombic energy from ESP charges interacting with nuclei and electronic density.
  *                                Symmetrized with respect to monomers.
  * <tr><td> `CAMM` <td>Coulombic energy from CAMM distributions.
  * </table>
@@ -295,13 +302,13 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * <caption id="Tab.1">Methods available in the Solver</caption>
  * <tr><th> Keyword  <th>Method Description  
  * <tr><td colspan=2> <center><strong>Benchmark Methods</strong></center>
- * <tr><td> `HAYES_STONE`       <td>*Default*. Pauli Repulsion energy at HF level from Hayes and Stone (1984). 
+ * <tr><td> `HAYES_STONE`       <td><i>Default</i>. Pauli Repulsion energy at HF level from Hayes and Stone (1984). 
  * <tr><td> `DENSITY_BASED`     <td>Pauli Repulsion energy at HF level from Mandado and Hermida-Ramon (2012).
  * <tr><td> `MURRELL_ETAL`      <td>Approximate Pauli Repulsion energy at HF level from Murrell et al (1967).
  * <tr><td> `OTTO_LADIK`        <td>Approximate Pauli Repulsion energy at HF level from Otto and Ladik (1975).
  * <tr><td> `EFP2`              <td>Approximate Pauli Repulsion energy at HF level from EFP2 model.
  * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
- * <tr><td> `MURRELL_ETAL_GDF_ESP`  <td>*Default*. OEP-Murrell et al's: S1 term via DF-OEP, S2 term via ESP-OEP.
+ * <tr><td> `MURRELL_ETAL_GDF_ESP`  <td><i>Default</i>. OEP-Murrell et al's: S1 term via DF-OEP, S2 term via ESP-OEP.
  * <tr><td> `MURRELL_ETAL_GDF_CAMM` <td>OEP-Murrell et al's: S1 term via DF-OEP, S2 term via CAMM-OEP.
  * <tr><td> `MURRELL_ETAL_ESP`  <td>OEP-Murrell et al's: S1 and S2 via ESP-OEP (not implemented)
  * </table>
@@ -624,10 +631,10 @@ class RepulsionEnergySolver : public OEPDevSolver
  * <caption id="Tab.1">Methods available in the Solver</caption>
  * <tr><th> Keyword  <th>Method Description  
  * <tr><td colspan=2> <center><strong>Benchmark Methods</strong></center>
- * <tr><td> `OTTO_LADIK`        <td>*Default*. CT energy at HF level from Otto and Ladik (1975). 
+ * <tr><td> `OTTO_LADIK`        <td><i>Default</i>. CT energy at HF level from Otto and Ladik (1975). 
  * <tr><td> `EFP2`              <td>CT energy at HF level from EFP2 model.
  * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
- * <tr><td> `OTTO_LADIK`       <td>*Default*. OEP-based Otto-Ladik expressions.
+ * <tr><td> `OTTO_LADIK`       <td><i>Default</i>. OEP-based Otto-Ladik expressions.
  * </table>
  *
  *   > In order to construct this solver, **always** use the `OEPDevSolver::build` static factory method.
