@@ -11,17 +11,17 @@ ChargeTransferEnergySolver::ChargeTransferEnergySolver(SharedWavefunctionUnion w
  : OEPDevSolver(wfn_union)
 {
   // Benchmarks
-  methods_benchmark_.push_back("MURRELL_ETAL"    );
-  methods_benchmark_.push_back("EFP2"            );
+  methods_benchmark_.push_back("OTTO_LADIK");
+  methods_benchmark_.push_back("EFP2"      );
   // OEP-based
-  methods_oepBased_ .push_back("MURRELL_ETAL"    );
+  methods_oepBased_ .push_back("OTTO_LADIK");
 }
 ChargeTransferEnergySolver::~ChargeTransferEnergySolver() {}
 double ChargeTransferEnergySolver::compute_oep_based(const std::string& method) 
 {
   double e = 0.0;
   if      (method == "DEFAULT" || 
-           method == "MURRELL_ETAL"      )  e = compute_oep_based_murrell_etal();
+           method == "OTTO_LADIK"      )  e = compute_oep_based_murrell_etal();
   else 
   {
      throw psi::PSIEXCEPTION("Error. Incorrect OEP-based method specified for repulsion energy calculations!\n");
@@ -32,7 +32,7 @@ double ChargeTransferEnergySolver::compute_benchmark(const std::string& method)
 {
   double e = 0.0;
   if      (method == "DEFAULT" ||
-           method == "MURRELL_ETAL" ) e = compute_benchmark_murrell_etal();
+           method == "OTTO_LADIK" ) e = compute_benchmark_murrell_etal();
   else if (method == "EFP2"         ) e = compute_benchmark_efp2();
   else 
   {
@@ -1197,12 +1197,12 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
                                                        wfn_union_->l_auxiliary(1), 
                                                        wfn_union_->l_intermediate(1), 
                                                        wfn_union_->options());
-  oep_1->compute("Murrell-etal.V1.GDF");
-  oep_2->compute("Murrell-etal.V1.GDF");
+  oep_1->compute("Otto-Ladik.V1.GDF");
+  oep_2->compute("Otto-Ladik.V1.GDF");
   oep_1->localize();
   oep_2->localize();
-  oep_1->compute("Murrell-etal.V3.CAMM-nj");
-  oep_2->compute("Murrell-etal.V3.CAMM-nj");
+  oep_1->compute("Otto-Ladik.V3.CAMM-nj");
+  oep_2->compute("Otto-Ladik.V3.CAMM-nj");
 
 
   // ===> Molecules <=== //
@@ -1272,12 +1272,12 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   std::shared_ptr<psi::Matrix> w_2 = this->compute_w_matrix(mol_2, mol_1, rmo_2);
 
   // ---> Get distributed effective charges <--- //
-  std::vector<std::shared_ptr<psi::Matrix>> q_1 = oep_1->oep("Murrell-etal.V3.CAMM-nj").dmtp->charges();
-  std::vector<std::shared_ptr<psi::Matrix>> q_2 = oep_2->oep("Murrell-etal.V3.CAMM-nj").dmtp->charges();
+  std::vector<std::shared_ptr<psi::Matrix>> q_1 = oep_1->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
+  std::vector<std::shared_ptr<psi::Matrix>> q_2 = oep_2->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
 
   // ===> Compute V1 term <=== //
-  std::shared_ptr<psi::Matrix> v_ab_v1 = psi::Matrix::doublet(S1, oep_2->matrix("Murrell-etal.V1.GDF"), false, false);
-  std::shared_ptr<psi::Matrix> v_ba_v1 = psi::Matrix::doublet(S2, oep_1->matrix("Murrell-etal.V1.GDF"), false, false);
+  std::shared_ptr<psi::Matrix> v_ab_v1 = psi::Matrix::doublet(S1, oep_2->matrix("Otto-Ladik.V1.GDF"), false, false);
+  std::shared_ptr<psi::Matrix> v_ba_v1 = psi::Matrix::doublet(S2, oep_1->matrix("Otto-Ladik.V1.GDF"), false, false);
   //const double sc = 0.25;
   //v_ab_v1->scale(sc);
   //v_ba_v1->scale(sc);
@@ -1371,7 +1371,7 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > 0) {
      psi::outfile->Printf("  ==> SOLVER: Charge-Transfer Energy Calculations    <==\n"  );
-     psi::outfile->Printf("  ==>     OEP-Based (Murrell-etal               )    <==\n\n");
+     psi::outfile->Printf("  ==>     OEP-Based (Otto-Ladik                 )    <==\n\n");
      psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("     Group I\n"                                              );
      psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab_v1                        );

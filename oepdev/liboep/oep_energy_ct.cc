@@ -40,9 +40,9 @@ void ChargeTransferEnergyOEPotential::common_init()
   //SharedMatrix mat_2 = std::make_shared<psi::Matrix>("Q1", n3, n1);
     SharedMatrix mat_3 = std::make_shared<psi::Matrix>("Q2", n3, 1);
 
-    OEPType type_1 = {"Murrell-etal.V1.GDF", true , n1, mat_1};
-  //OEPType type_2 = {"Murrell-etal.V2", false, n1, mat_2};
-    OEPType type_3 = {"Murrell-etal.V3.CAMM-nj", false, n1, std::make_shared<psi::Matrix>()};
+    OEPType type_1 = {"Otto-Ladik.V1.GDF", true , n1, mat_1};
+  //OEPType type_2 = {"Otto-Ladik.V2", false, n1, mat_2};
+    OEPType type_3 = {"Otto-Ladik.V3.CAMM-nj", false, n1, std::make_shared<psi::Matrix>()};
 
     oepTypes_[type_1.name] = type_1;
   //oepTypes_[type_2.name] = type_2;
@@ -51,11 +51,11 @@ void ChargeTransferEnergyOEPotential::common_init()
 
 void ChargeTransferEnergyOEPotential::compute(const std::string& oepType) 
 {
-  if      (oepType == "Murrell-etal.V1.GDF"    ) compute_murrell_etal_v1_gdf    ();
-  else if (oepType == "Murrell-etal.V3.CAMM-nj") compute_murrell_etal_v3_camm_nj();
+  if      (oepType == "Otto-Ladik.V1.GDF"    ) compute_otto_ladik_v1_gdf    ();
+  else if (oepType == "Otto-Ladik.V3.CAMM-nj") compute_otto_ladik_v3_camm_nj();
   else throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
 }
-void ChargeTransferEnergyOEPotential::compute_murrell_etal_v1_gdf()
+void ChargeTransferEnergyOEPotential::compute_otto_ladik_v1_gdf()
 {
    // ---> Determine the target basis set for generalized density fitting <--- //
    std::shared_ptr<psi::BasisSet> target = intermediate_;
@@ -116,10 +116,10 @@ void ChargeTransferEnergyOEPotential::compute_murrell_etal_v1_gdf()
    std::shared_ptr<psi::Matrix> G = gdf->compute();
    
    // ===> Save and Finish <=== //
-   oepTypes_.at("Murrell-etal.V1.GDF").matrix->copy(G);
+   oepTypes_.at("Otto-Ladik.V1.GDF").matrix->copy(G);
    if (options_.get_int("PRINT") > 1) G->print();
 }
-void ChargeTransferEnergyOEPotential::compute_murrell_etal_v3_camm_nj()
+void ChargeTransferEnergyOEPotential::compute_otto_ladik_v3_camm_nj()
 { 
   if (!localizer_) throw psi::PSIEXCEPTION("Occupied molecular orbitals have not been localized! Run `localize' method first!"); 
 
@@ -157,12 +157,10 @@ void ChargeTransferEnergyOEPotential::compute_murrell_etal_v3_camm_nj()
   camm->compute(oeds, trans);
 
   /* Save */
-  oepTypes_["Murrell-etal.V3.CAMM-nj"].dmtp = camm;
+  oepTypes_["Otto-Ladik.V3.CAMM-nj"].dmtp = camm;
   if (options_.get_int("PRINT") > 1) camm->print();
 }
 
-
-//void ChargeTransferEnergyOEPotential::compute_murrell_etal_v2() {}
 
 void ChargeTransferEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
 void ChargeTransferEnergyOEPotential::print_header(void) const {}

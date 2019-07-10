@@ -289,9 +289,11 @@ class RepulsionEnergyOEPotential : public OEPotential
 /**\brief Generalized One-Electron Potential for Charge-Transfer Interaction Energy.
  * 
  *  Contains the following OEP types:
- *   - `Otto-Ladik.V1` - DF-based term
- *   - `Otto-Ladik.V2` - ESP-based term
- *   - `Otto-Ladik.V3` - ESP-based term
+ *   - `Otto-Ladik.V1.GDF`     - DF-based term (group I)
+ *   - `Otto-Ladik.V3.CAMM-nj` - CAMM-based term (group III; truncated on distributed charges)
+ *  
+ * Group II terms do not require any particular OEP's due to great siplification of this term.
+ * Atomic numbers and LMO centroids are sufficient.
  */
 class ChargeTransferEnergyOEPotential : public OEPotential 
 {
@@ -311,9 +313,9 @@ class ChargeTransferEnergyOEPotential : public OEPotential
     void common_init();
 
     /// Auxiliary computers
-    void compute_murrell_etal_v1_gdf();
-  //void compute_murrell_etal_v2();
-    void compute_murrell_etal_v3_camm_nj();
+    void compute_otto_ladik_v1_gdf();
+  //void compute_otto_ladik_v2();
+    void compute_otto_ladik_v3_camm_nj();
 };
 
 
