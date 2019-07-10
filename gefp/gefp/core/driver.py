@@ -14,7 +14,7 @@ from ..density.dmft import DMFT
 from ..density.functional import XCFunctional
 from ..basis.optimize import *
 
-__all__ = ["dmft_solver", "gdf_basisset_fitter"]
+__all__ = ["dmft_solver", "gdf_basisset_optimizer"]
 
 class PadeApproximant_2D:
     """\
@@ -271,25 +271,25 @@ def dmft_solver(wfn, xc_functional='MBB',
         return E_int
 
 
-def gdf_basisset_fitter(mol, oep_type, basis="6-31G",
-                        basis_int="AUG-CC-PVDZ-JKFIT", basis_xpl="6-311++G**",
-                        templ_file='templ.dat', param_file='param.dat'):
+def gdf_basisset_optimizer(mol, oep_type, basis=None,
+                           basis_int="AUG-CC-PVDZ-JKFIT", basis_xpl="6-311++G**",
+                           templ_file='templ.dat', param_file='param.dat'):
     """
  Fit the auxiliary basis set for GDF-OEP purposes.
 
  Usage:
   
-   basis_aux = gdf_basisset_fitter(molecule, oep_type, 
-                                   basis     = "6-31G",
-                                   basis_xpl = "6-311++G**", 
-                                   basis_int = "AUG-CC-PVDZ-JKFIT",
-                                   templ_file= "templ.dat",
-                                   param_file= "param.dat")
+   basis_aux = gdf_basisset_optimizer(molecule, oep_type, 
+                                      basis     =  None,
+                                      basis_xpl = "6-311++G**", 
+                                      basis_int = "AUG-CC-PVDZ-JKFIT",
+                                      templ_file= "templ.dat",
+                                      param_file= "param.dat")
 
    where
     o basis_aux  - the optimalized auxiliary basis set
     o molecule   - psi4.core.Molecule object
-    o basis      - primary basis set of calculation
+    o basis      - primary basis set of calculation. If not given, the global basis is used.
     o basis_int  - intermediate basis set for double GDF calculations (should be RI or JKFIT)
     o basis_xpl  - exemplary basis set to compare (any basis set)
     o templ_file - template for auxiliary basis set structure
@@ -323,10 +323,12 @@ P   1   1.00
 """
 
     # extract the intermediate basis set
-    basis_gdf_int = psi4.core.BasisSet.build(mol, "BASIS", basis_int, fitrole='ORBITAL', puream=-1)
-    basis_gdf_xpl = psi4.core.BasisSet.build(mol, "BASIS", basis_xpl, fitrole='ORBITAL', puream=-1)
+    puream = psi4.core.get_global_option("PUREAM")
+    basis_gdf_int = psi4.core.BasisSet.build(mol, "BASIS", basis_int, fitrole='ORBITAL', puream=puream)
+    basis_gdf_xpl = psi4.core.BasisSet.build(mol, "BASIS", basis_xpl, fitrole='ORBITAL', puream=puream)
     
     # prepare the system
+    if basis is None: basis = psi4.core.get_global_option("BASIS")
     e_hf, w_hf = psi4.energy('hf/%s' % basis, molecule=mol, return_wfn=True)
     w_hf.set_basisset("BASIS_DF_INT", basis_gdf_int)
     

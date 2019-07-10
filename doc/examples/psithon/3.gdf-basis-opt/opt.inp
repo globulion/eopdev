@@ -1,0 +1,35 @@
+#!/usr/bin/python3
+"""
+ Fit auxiliary basis set for water molecule, that is well suited for
+ OEP of type GDF:S1 from Murrell et al. theory of Pauli repulsion energy.
+"""
+import gefp
+
+molecule h2o {
+0 1
+O    0.00000    0.00000    0.00000 
+H    0.55268   -0.64111   -0.41769 
+H    0.15452    0.82612   -0.42960 
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+set {
+    basis                         6-31++G**
+    scf_type                      pk
+    maxiter                       300
+    guess                         core
+    print                         1
+    puream                        False
+    e_convergence                 1e7
+}
+
+# fit auxiliary basis set. Primary basis set is taken from global options.
+basis = gefp.core.gdf_basisset_optimizer(h2o, 'pauli', 
+                                         templ_file = 'templ.dat',         
+                                         param_file = 'param.dat', 
+                                         basis_int  = "AUG-CC-PVDZ-JKFIT", 
+                                         basis_xpl  = "6-311++G**")
