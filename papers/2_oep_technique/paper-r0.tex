@@ -10,7 +10,7 @@ General Theory and Example Applications for Charge-Transfer Energy Calculations}
 \homepage[]{https://www.polonez.pwr.edu.pl}
 
 \author{Marta Cho{\l}uj} 
-\author{Joanna Bednarska}
+\author{Joanna D. Bednarska}
 \author{Wojciech Bartkowiak}
 
 \affiliation{Department of Physical and Quantum Chemistry, Faculty of Chemistry, 
@@ -67,15 +67,17 @@ can be written as
 \begin{equation} \label{e:oep-operator}
 	\hat{v}^{\rm eff} = 
         \lambda \hat{v}_{\rm nuc} +
-        \sum_{\alpha\beta} 
-	\Ket{\alpha} 
+        %\sum_{\alpha\beta} 
+	%\Ket{\alpha} 
+        \int d{\bf r} \Ket{{\bf r}} 
 	\left[
 	\int
-	\hat{J}^{\rm}_{\alpha\beta}({\bf r}) 
-	\rho^{\rm eff}({\bf r})
-	d{\bf r} 
+	\hat{J}^{\rm}_{\alpha\beta}({\bf r}') 
+	\rho^{\rm eff}({\bf r}')
+	d{\bf r}' 
 	\right]
-	\Bra{\beta}  
+	%\Bra{\beta}  
+        \Bra{{\bf r}}
 \end{equation}
 %
 with the nuclear
@@ -769,19 +771,19 @@ in which repulsive energy is originally given by
 %
 \begin{equation}
  \Delta^{AB} E^{\rm Rep} = 
- \Delta^{AB} E^{\rm Rep}(\mathcal{O}(S)) + 
- \Delta^{AB} E^{\rm Rep}(\mathcal{O}(S^2))
+ \Delta^{AB} E^{\rm Rep}(S^{-1}) + 
+ \Delta^{AB} E^{\rm Rep}(S^{-2}) \;,
 \end{equation}
 %
 where the first\hyp{}order term with respect to the intermolecular overlap is
 %
-\begin{multline}
-  \Delta^{AB}  E^{\rm Rep}(\mathcal{O}(S)) = -2\sum_{a\in A} \sum_{b\in B}
-               S_{ab} \Big\{
-           V^A_{ab} 
-         + V^B_{ab} \\
- + \sum_{c\in A} \left[ 2(ab \vert cc) - (ac \vert bc) \right] 
- + \sum_{d\in B} \left[ 2(ab \vert dd) - (ad \vert bd) \right]
+\begin{multline} \label{e:rep.murrell-etal.S1}
+  \Delta^{AB}  E^{\rm Rep}(S^{-1}) = -2\sum_{i\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}
+               S_{ij} \Big\{
+           V^A_{ij} 
+         + V^B_{ji} \\
+ + \sum_{k\in A}^{\rm Occ} \left[ 2\BraKet{ij}{kk} - \BraKet{ik}{jk} \right] 
+ + \sum_{l\in B}^{\rm Occ} \left[ 2\BraKet{ij}{ll} - \BraKet{il}{jl} \right]
                 \Big\}
 \end{multline}
 %
@@ -790,6 +792,95 @@ In this work, we focus to simplify only the former term because this is usually
 the bottleneck of evaluating the Pauli repulsive contributions to
 forces in molecular dynamics when using the effective potential method, whereas
 very inexpensive approximation to the latter term has already been worked out previously. %cite
+Note that the Coulomb and exchange integrals can be re\hyp{}cast as follows:
+%
+\begin{subequations}
+ \begin{align}
+ \BraKet{ij}{kk} &\equiv \sum_{\mu\in A} 
+     C_{\mu i}^A \tBraKet{\mu}{\hat{v}_{kk}}{j} \;, \\
+ \BraKet{ik}{jk} &\equiv \sum_{\mu\in A} 
+     C_{\mu k}^A \tBraKet{\mu}{\hat{v}_{ik}}{j} \;.
+ \end{align}
+\end{subequations}
+%
+%Similarly, the exchange integrals reduce to
+%
+%\begin{equation}
+% \BraKet{ik}{jk} \equiv \sum_{\mu\in A} 
+%     C_{\mu k}^A \tBraKet{\mu}{\hat{v}_{ik}}{j} \;.
+%\end{equation}
+%
+In the above equations, the auxiliary potential operators are given by
+%
+\begin{equation}
+  \hat{v}_{ik} \equiv \int d{\bf r} \Ket{{\bf r}} 
+        \left[
+        \int d{\bf r}' \frac{\phi_i^{*}({\bf r}') \phi_k({\bf r}')}{\vert {\bf r}' - {\bf r}\vert}
+        \right] \Bra{{\bf r}} \;.
+\end{equation}
+%
+Now, using the prescription in Eq.~\eqref{e:ft-reduction} one can define a joint OEP
+operator from nuclear, Coulomb and exchange parts as
+%
+\begin{equation}
+ V^A_{ij} + 
+ \sum_{k\in A}^{\rm Occ} 
+  \left\{ 2\BraKet{ij}{kk} - \BraKet{ik}{jk} \right\}
+\equiv \sum_{\mu\in A} \tBraKet{\mu}{ 
+\hat{v}^{A[\mu i]}_{\rm eff}
+ }{j}
+\end{equation}
+%
+with
+%
+\begin{equation}
+ \hat{v}^{A[\mu i]}_{\rm eff} \equiv C_{\mu i} \hat{v}^A_{\rm nuc} + 
+ \sum_{k\in A}^{\rm Occ} \left[
+ 2C_{\mu i}^A \hat{v}^A_{kk} - C_{\mu k}^A \hat{v}^A_{ik}
+ \right] \;.
+\end{equation}
+%
+%The nuclear part can also be incorporated within the effective potential
+%resulting in the following reduction
+%
+%
+On the other hand, it immediately follows that
+%
+\begin{equation}
+ \hat{v}^{A[\mu i]}_{\rm eff} \Ket{\mu} = 
+  \sum_{k\in A}^{\rm Occ} \left\{
+     2\hat{v}^A_{kk} \Ket{i} - \hat{v}^A_{ik} \Ket{k}
+  \right\} \;.
+\end{equation}
+%
+For practical calculations, the right hand side of the above equation can be expanded 
+in the auxiliary basis,
+%
+\begin{equation}
+  \sum_{k\in A}^{\rm Occ} \left\{
+     2\hat{v}^A_{kk} \Ket{i} - \hat{v}^A_{ik} \Ket{k}
+  \right\} \cong
+  \sum_{\xi\in A}^{\rm DF} 
+  V_{\xi i}^A \Ket{\xi} \;,
+\end{equation}
+%
+where the matrix ${\bf V}^A$ can be considered as effective fragment parameters.
+Doing the same operations on the twin operators associated with the molecule $B$
+original theory of Murrell et. al from Eq.~\eqref{e:rep.murrell-etal.S1}
+reduces to
+%
+\begin{equation}
+  \Delta^{AB}  E^{\rm Rep}(S^{-1}) \cong 
+ -2\sum_{i\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}
+               S_{ij} \Big\{
+           \sum_{\xi \in A}^{\rm DF} V_{\xi i}^A S_{\xi j}
+         + \sum_{\eta\in B}^{\rm DF} V_{\eta j}^B S_{\eta i}
+                \Big\}
+\end{equation}
+%
+which is a fully OEP\hyp{}based result. Note, that now only 
+overlap integrals, which are relatively computationally very inexpensive,
+need to be evaluated.
 
 As another benchmark model for accuracy, we compare our results with 
 the exchange and repulsion energy term 

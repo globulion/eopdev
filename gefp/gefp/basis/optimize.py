@@ -15,18 +15,21 @@ __all__ = ["DFBasis", "DFBasisOptimizer", "OEP"]
 
 def make_bastempl(templ, param): return templ % tuple(param)
 
-def bas(mol, role='ORBITAL'):
-    "Requires setting 'bas.templ' and 'bas.param' inside bas prior to executing bas"
+def oepfitbasis(mol, role='ORBITAL'):
+    "Requires setting 'oepfitbasis.templ' and 'oepfitbasis.param' inside bas prior to executing bas"
     basstrings = {}
     mol.set_basis_all_atoms("oepfit", role=role)
-    basstrings['oepfit'] = make_bastempl(bas.templ, bas.param)
+    basstrings['oepfit'] = make_bastempl(oepfitbasis.templ, oepfitbasis.param)
     return basstrings
+
+# -------------------------------------------------------------------------------------------------- #
 
 class DFBasis:
   """
  Basis set object to be optimized
 """
   def __init__(self, mol, templ_file='templ.dat', param_file='param.dat'):
+      "Initialize"
       # bound molecule to this basis set
       self.mol= mol
       # initial parameters
@@ -39,9 +42,9 @@ class DFBasis:
   def basisset(self, param=None):
       "Construct basis set from optimization parameters"
       if param is None: param = self.param_0
-      bas.param = param
-      bas.templ = self.templ
-      basis = psi4.core.BasisSet.build(self.mol, 'BASIS', bas)
+      oepfitbasis.param = param
+      oepfitbasis.templ = self.templ
+      basis = psi4.core.BasisSet.build(self.mol, 'BASIS', oepfitbasis)
       self.basis = basis
       return basis
 
@@ -52,6 +55,7 @@ class OEP(ABC):
  OEP object that defines the V matrix necessary for GDF
 """
   def __init__(self, wfn, dfbasis):
+      "Initialize"
       # wavefunction
       self.wfn = wfn
       # DF basis to optimize
@@ -90,10 +94,12 @@ class OEP_Pauli(OEP):
  OEP for S1 term in Murrell et al.'s theory of Pauli repulsion
  """
   def __init__(self, wfn, dfbasis):
+      "Initialize"
       super(OEP_Pauli, self).__init__(wfn, dfbasis)
 
   # - implementation - #
   def _compute_V(self):
+      "Compute OEP V for Pauli S1 term in Murrell et al.'s theory"
       Ca= self.wfn.Ca_subset("AO", "OCC").to_array(dense=True)
       Da= self.wfn.Da().to_array(dense=True)
       Vao= self.mints.ao_potential(self.basis_test, self.basis_prim).to_array(dense=True)
@@ -103,13 +109,14 @@ class OEP_Pauli(OEP):
       V -=       numpy.einsum("ni,mb,mnba->ai", Ca, Da, self.eri_pppt)
       return V
 
-# ------------------------------------------------------------------------ #
+# -------------------------------------------------------------------------------------------- #
 
 class DFBasisOptimizer:
   """
  Method that optimizes DF basis set.
 """
   def __init__(self, oep):
+      "Initialize"
       self.oep = oep
       self.basis_0 = oep.dfbasis
       self.basis_fit = None
@@ -120,6 +127,19 @@ class DFBasisOptimizer:
       "Perform fitting of basis set exponents"
       success = self._fit()
       return success
+
+  def compute_error(self, basis):
+      "Compute error for a given basis"
+      S = self.oep.mints.ao_overlap(self.oep.basis_test, basis).to_array(dense=True)
+      V = psi4.core.Matrix.from_array(self.oep.V)
+      gdf = oepdev.GeneralizedDensityFit.build_double(basis, self.oep.basis_test, V)
+      gdf.compute()
+      G = gdf.G().to_array(dense=True)
+      er= V - numpy.dot(S, G)
+      Z = (er*er).sum()
+      #Z = numpy.sqrt(Z/er.size)
+      return Z
+
 
   # ---> protected interface <--- #
   def _fit(self):
@@ -136,18 +156,6 @@ class DFBasisOptimizer:
       for i in range(self.n_param):
           print("%15.3f %15.3f" % (param_0[i], param[i]))
       return res.success
-
-  def compute_error(self, basis):
-      "Compute error for a given basis"
-      S = self.oep.mints.ao_overlap(self.oep.basis_test, basis).to_array(dense=True)
-      V = psi4.core.Matrix.from_array(self.oep.V)
-      gdf = oepdev.GeneralizedDensityFit.build_double(basis, self.oep.basis_test, V)
-      gdf.compute()
-      G = gdf.G().to_array(dense=True)
-      er= V - numpy.dot(S, G)
-      Z = (er*er).sum()
-      #Z = numpy.sqrt(Z/er.size)
-      return Z
      
   def _objective_function(self, param):
       "Objective function for auxiliary basis refinement"
