@@ -22,6 +22,10 @@ int read_options(std::string name, Options& options)
 
         /*- Auxiliary basis set for OEP density fitting -*/                                   
         options.add_str    ("DF_BASIS_OEP"          , "sto-3g"                   );
+        /*- Auxiliary basis set for OEP density fitting: Molecule A -*/                                   
+        options.add_str    ("DF_BASIS_OEP_A"        , ""                         );
+        /*- Auxiliary basis set for OEP density fitting: Molecule B -*/                                   
+        options.add_str    ("DF_BASIS_OEP_B"        , ""                         );
 
         /*- Intermediate basis set for OEP density fitting -*/                                   
         options.add_str    ("DF_BASIS_INT"          , "aug-cc-pVDZ-jkfit"        );

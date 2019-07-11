@@ -287,7 +287,7 @@ def gdf_basisset_optimizer(mol, oep_type, basis=None,
                                       param_file= "param.dat")
 
    where
-    o basis_aux  - the optimalized auxiliary basis set
+    o basis_aux  - the optimalized auxiliary basis set object of type DFBasis
     o molecule   - psi4.core.Molecule object
     o basis      - primary basis set of calculation. If not given, the global basis is used (keyword BASIS).
     o basis_int  - intermediate basis set for double GDF calculations (should be RI or JKFIT)
@@ -336,7 +336,7 @@ P   1   1.00
     dfbasis = DFBasis(w_hf.molecule(), templ_file=templ_file, param_file=param_file)
     oep     = OEP.create(oep_type, w_hf, dfbasis)
     opt     = DFBasisOptimizer(oep)
-    
+
     success = opt.fit()
     
     # fetch the optimal basis
@@ -346,7 +346,10 @@ P   1   1.00
     Z_aux = opt.compute_error(basis_gdf_aux)
     Z_xpl = opt.compute_error(basis_gdf_xpl)
     Z_int = opt.compute_error(basis_gdf_int)
+
+    # print the test results
     print(" Error for auxiliary    basis = %14.6f  Size: %6d" % (Z_aux, basis_gdf_aux.nbf()))
     print(" Error for example      basis = %14.6f  Size: %6d" % (Z_xpl, basis_gdf_xpl.nbf()))
     print(" Error for intermediate basis = %14.6f  Size: %6d" % (Z_int, basis_gdf_int.nbf()))
-    return basis_gdf_aux
+
+    return opt.oep.dfbasis

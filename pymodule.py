@@ -105,9 +105,14 @@ def run_oepdev(name, **kwargs):
        basis_df_scf_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"),
                                                  puream=ref_wfn.basisset().has_puream())
        # --- auxiliary (OEP)
-       basis_df_oep_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
+       opt_basis_df_oep_A = psi4.core.get_global_option("DF_BASIS_OEP_A") 
+       opt_basis_df_oep_B = psi4.core.get_global_option("DF_BASIS_OEP_B") 
+       opt_basis_df_oep   = psi4.core.get_global_option("DF_BASIS_OEP") 
+       if not opt_basis_df_oep_A: opt_basis_df_oep_A = opt_basis_df_oep
+       if not opt_basis_df_oep_B: opt_basis_df_oep_B = opt_basis_df_oep
+       basis_df_oep_A = psi4.core.BasisSet.build(molecule_A, "BASIS", opt_basis_df_oep_A,
                                                  puream=ref_wfn.basisset().has_puream())
-       basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
+       basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", opt_basis_df_oep_B,
                                                  puream=ref_wfn.basisset().has_puream())
        # --- intermediate (OEP)
        basis_int_oep_A= psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"),

@@ -6,6 +6,7 @@
  are here optimized.
 """
 from abc import ABC, abstractmethod
+import re
 import psi4
 import numpy
 import scipy.optimize
@@ -22,6 +23,12 @@ def oepfitbasis(mol, role='ORBITAL'):
     basstrings['oepfit'] = make_bastempl(oepfitbasis.templ, oepfitbasis.param)
     return basstrings
 
+def stripComments(code):
+    "Remove comments from the string. Delimiter: #"
+    code = str(code)
+    return re.sub(r'(?m)^ *#.*\n?', '', code)
+
+
 # -------------------------------------------------------------------------------------------------- #
 
 class DFBasis:
@@ -33,7 +40,8 @@ class DFBasis:
       # bound molecule to this basis set
       self.mol= mol
       # initial parameters
-      self.param_0 = numpy.mafromtxt(param_file).data
+      #self.param_0 = self._read_param(param_file)
+      self.param = numpy.mafromtxt(param_file).data
       # template for Psi4 input
       self.templ = open(templ_file).read()
       # current basis set
@@ -41,12 +49,33 @@ class DFBasis:
 
   def basisset(self, param=None):
       "Construct basis set from optimization parameters"
-      if param is None: param = self.param_0
+      if param is None: param = self.param
       oepfitbasis.param = param
       oepfitbasis.templ = self.templ
       basis = psi4.core.BasisSet.build(self.mol, 'BASIS', oepfitbasis)
       self.basis = basis
       return basis
+
+  def print(self, param=None):
+      "Print basis set in Psi4 format"
+      if param is None: param = self.param
+      basis_str = make_bastempl(self.templ, param)
+      return basis_str
+
+  
+  # - protected 
+
+  def _read_param(self, param_file):
+      "Read parameters to optimize from the input file. Comments are allowed."
+      t = open(param_file, 'r')
+      line = stripComments(t.readline())
+      print(line)
+      data = []
+      while line:
+          data += line.split() 
+          line = stripComments(t.readline())
+      t.close()
+      return numpy.array(data, dtype=numpy.float64)     
 
 # ------------------------------------------------------------------------ #
      
@@ -106,7 +135,9 @@ class OEP_Pauli(OEP):
       V  = numpy.dot(Vao, Ca)
       #
       V += 2.0 * numpy.einsum("bi,mn,mnba->ai", Ca, Da, self.eri_pppt)
-      V -=       numpy.einsum("ni,mb,mnba->ai", Ca, Da, self.eri_pppt)
+      V -=       numpy.einsum("mi,nb,mnba->ai", Ca, Da, self.eri_pppt)
+      #print((V**2).sum())
+      #print(V[0])
       return V
 
 # -------------------------------------------------------------------------------------------- #
@@ -118,11 +149,12 @@ class DFBasisOptimizer:
   def __init__(self, oep):
       "Initialize"
       self.oep = oep
-      self.basis_0 = oep.dfbasis
-      self.basis_fit = None
-      self.n_param = len(oep.dfbasis.param_0)
+      self.basis_fit = oep.dfbasis
+      self.param = oep.dfbasis.param
+      self.n_param = len(oep.dfbasis.param)
   
   # ---> public interface <--- #
+
   def fit(self):
       "Perform fitting of basis set exponents"
       success = self._fit()
@@ -142,9 +174,10 @@ class DFBasisOptimizer:
 
 
   # ---> protected interface <--- #
+
   def _fit(self):
       "The actual fitting procedure"
-      param_0 = self.basis_0.param_0
+      param_0 = self.basis_fit.param
       bounds = [(0.01, 10000.0) for x in range(self.n_param)]
       options = {"disp": True, "maxiter": 300, "ftol": 1.0e-9, "iprint": 4}
       res = scipy.optimize.minimize(self._objective_function, param_0, args=(), tol=1.0e-9, method='slsqp',
@@ -155,6 +188,7 @@ class DFBasisOptimizer:
       print("          Initial           Fitted")
       for i in range(self.n_param):
           print("%15.3f %15.3f" % (param_0[i], param[i]))
+      self.oep.dfbasis.param = param
       return res.success
      
   def _objective_function(self, param):
