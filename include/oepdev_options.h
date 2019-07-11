@@ -68,6 +68,22 @@ int read_options(std::string name, Options& options)
         /*- Exclude octupoles in CT energy calculations? (relevant if above is "DMTP") -*/
         options.add_bool   ("EFP2_CT_NO_OCTUPOLES"  , true                       );
 
+        /*- Which methods of interaction energy are to be used? -*/
+        options.add_bool   ("OEPDEV_SOLVER_EINT_COUL_AO"  , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_COUL_MO"  , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_COUL_ESP" , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_COUL_CAMM", true                 ); 
+        options.add_bool   ("OEPDEV_SOLVER_EINT_REP_HS"   , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_REP_DDS"  , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_REP_MRW"  , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_REP_OL"   , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_REP_OEP1" , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_REP_OEP2" , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_REP_EFP2" , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_CT_OL"    , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_CT_OEP"   , true                 );
+        options.add_bool   ("OEPDEV_SOLVER_EINT_CT_EFP2"  , true                 );
+
 
         // ---> CPHF Global Options  <--- //
 

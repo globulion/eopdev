@@ -162,30 +162,30 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         {
             std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("ELECTROSTATIC ENERGY", wfn_union); 
                                                                                                                             
-            double el1 = solver->compute_benchmark("AO_EXPANDED"    );
-            double el2 = solver->compute_benchmark("MO_EXPANDED"    );
-            double el3 = solver->compute_oep_based("ESP_SYMMETRIZED");
-	    double el4 = solver->compute_oep_based("CAMM"           );
+            if (options.get_bool("OEPDEV_SOLVER_EINT_COUL_AO"  )) solver->compute_benchmark("AO_EXPANDED"    );
+            if (options.get_bool("OEPDEV_SOLVER_EINT_COUL_MO"  )) solver->compute_benchmark("MO_EXPANDED"    );
+            if (options.get_bool("OEPDEV_SOLVER_EINT_COUL_ESP" )) solver->compute_oep_based("ESP_SYMMETRIZED");
+	    if (options.get_bool("OEPDEV_SOLVER_EINT_COUL_CAMM")) solver->compute_oep_based("CAMM"           );
         }
         else if (o_solver_type == "REPULSION_ENERGY") 
         {
             std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("REPULSION ENERGY", wfn_union);
                                                                                                                             
-            double e_stone = solver->compute_benchmark("HAYES_STONE"  );
-            double e_dens  = solver->compute_benchmark("DENSITY_BASED");
-            double e_murr  = solver->compute_benchmark("MURRELL_ETAL" );
-            double e_otla  = solver->compute_benchmark("OTTO_LADIK"   );
-            double e_oep1  = solver->compute_oep_based("MURRELL_ETAL_GDF_ESP");
-	    double e_oep2  = solver->compute_oep_based("MURRELL_ETAL_GDF_CAMM");
-            double e_efp2  = solver->compute_benchmark("EFP2"         );        
+            if (options.get_bool("OEPDEV_SOLVER_EINT_REP_HS"  )) solver->compute_benchmark("HAYES_STONE"          );
+            if (options.get_bool("OEPDEV_SOLVER_EINT_REP_DDS" )) solver->compute_benchmark("DDS"                  );
+            if (options.get_bool("OEPDEV_SOLVER_EINT_REP_MRW" )) solver->compute_benchmark("MURRELL_ETAL"         );
+            if (options.get_bool("OEPDEV_SOLVER_EINT_REP_OL"  )) solver->compute_benchmark("OTTO_LADIK"           );
+            if (options.get_bool("OEPDEV_SOLVER_EINT_REP_OEP1")) solver->compute_oep_based("MURRELL_ETAL_GDF_ESP" );
+	    if (options.get_bool("OEPDEV_SOLVER_EINT_REP_OEP2")) solver->compute_oep_based("MURRELL_ETAL_GDF_CAMM");
+            if (options.get_bool("OEPDEV_SOLVER_EINT_REP_EFP2")) solver->compute_benchmark("EFP2"                 );        
         } 
         else if (o_solver_type == "CHARGE_TRANSFER_ENERGY") 
         {
             std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("CHARGE TRANSFER ENERGY", wfn_union);
                                                                                                                             
-            double e_otla  = solver->compute_benchmark("OTTO_LADIK" );
-            double e_oep1  = solver->compute_oep_based("OTTO_LADIK" );
-            double e_efp2  = solver->compute_benchmark("EFP2"       );        
+            if (options.get_bool("OEPDEV_SOLVER_EINT_CT_OL"  )) solver->compute_benchmark("OTTO_LADIK" );
+            if (options.get_bool("OEPDEV_SOLVER_EINT_CT_OEP" )) solver->compute_oep_based("OTTO_LADIK" );
+            if (options.get_bool("OEPDEV_SOLVER_EINT_CT_EFP2")) solver->compute_benchmark("EFP2"       );        
         } 
         else 
            throw PSIEXCEPTION("Incorrect solver type chosen!\n");

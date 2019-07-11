@@ -43,6 +43,23 @@ using SharedOEPotential        = std::shared_ptr<OEPotential>;
  *  - `CHARGE TRANSFER ENERGY`
  *
  * # Options
+ * 
+ * ## Interaction Property Method      
+ * - `OEPDEV_SOLVER_EINT_COUL_AO`    - Coulombic energy: AO expanded
+ * - `OEPDEV_SOLVER_EINT_COUL_MO`    - Coulombic energy: MO expanded
+ * - `OEPDEV_SOLVER_EINT_COUL_ESP`   - Coulombic energy: ESP
+ * - `OEPDEV_SOLVER_EINT_COUL_CAMM`  - Coulombic energy: CAMM
+ * - `OEPDEV_SOLVER_EINT_REP_HS`     - Exchange-repulsion energy: Hayes-Stone
+ * - `OEPDEV_SOLVER_EINT_REP_DDS`    - Exchange-repulsion energy: DDS        
+ * - `OEPDEV_SOLVER_EINT_REP_MRW`    - Exchange-repulsion energy: Murrell et al.
+ * - `OEPDEV_SOLVER_EINT_REP_OL`     - Exchange-repulsion energy: Otto-Ladik 
+ * - `OEPDEV_SOLVER_EINT_REP_OEP1`   - Exchange-repulsion energy: OEP (S1: GDF, S2: ESP)
+ * - `OEPDEV_SOLVER_EINT_REP_OEP2`   - Exchange-repulsion energy: OEP (S1: GDF, S2: CAMM)
+ * - `OEPDEV_SOLVER_EINT_REP_EFP2`   - Exchange-repulsion energy: EFP2       
+ * - `OEPDEV_SOLVER_EINT_CT_OL`      - Charge-transfer energy: Otto-Ladik 
+ * - `OEPDEV_SOLVER_EINT_CT_OEP`     - Charge-transfer energy: OEP
+ * - `OEPDEV_SOLVER_EINT_CT_EFP2`    - Charge-transfer energy: EFP2        
+ *
  * ## Generalized density fitting (GDF) options:
  *  - `OEPDEV_DF_TYPE` - type of the GDF. Default: `DOUBLE`. Other: `SINGLE`.
  *  - `DF_BASIS_OEP` - auxiliary basis set. Default: `sto-3g`.
@@ -303,7 +320,7 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * <tr><th> Keyword  <th>Method Description  
  * <tr><td colspan=2> <center><strong>Benchmark Methods</strong></center>
  * <tr><td> `HAYES_STONE`       <td><i>Default</i>. Pauli Repulsion energy at HF level from Hayes and Stone (1984). 
- * <tr><td> `DENSITY_BASED`     <td>Pauli Repulsion energy at HF level from Mandado and Hermida-Ramon (2012).
+ * <tr><td> `DDS`               <td>Pauli Repulsion energy at HF level from Mandado and Hermida-Ramon (2012).
  * <tr><td> `MURRELL_ETAL`      <td>Approximate Pauli Repulsion energy at HF level from Murrell et al (1967).
  * <tr><td> `OTTO_LADIK`        <td>Approximate Pauli Repulsion energy at HF level from Otto and Ladik (1975).
  * <tr><td> `EFP2`              <td>Approximate Pauli Repulsion energy at HF level from EFP2 model.
@@ -603,7 +620,7 @@ class RepulsionEnergySolver : public OEPDevSolver
     /// Hayes-Stone (1984) method
     double compute_benchmark_hayes_stone();
     /// Mandado and Hermida-Ramon (2012)
-    double compute_benchmark_density_based();
+    double compute_benchmark_dds();
     /// Murrell et al's method (1967)
     double compute_benchmark_murrell_etal();
     /// Otto-Ladik method (1975)

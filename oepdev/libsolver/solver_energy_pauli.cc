@@ -41,7 +41,8 @@ double RepulsionEnergySolver::compute_benchmark(const std::string& method)
   double e = 0.0;
   if      (method == "DEFAULT" ||
            method == "HAYES_STONE"  ) e = compute_benchmark_hayes_stone();
-  else if (method == "DENSITY_BASED") e = compute_benchmark_density_based();
+  else if (method == "DDS"          ) e = compute_benchmark_dds();
+  else if (method == "DENSITY_BASED") e = compute_benchmark_dds();
   else if (method == "MURRELL_ETAL" ) e = compute_benchmark_murrell_etal();
   else if (method == "OTTO_LADIK"   ) e = compute_benchmark_otto_ladik();
   else if (method == "EFP2"         ) e = compute_benchmark_efp2();
@@ -51,7 +52,7 @@ double RepulsionEnergySolver::compute_benchmark(const std::string& method)
   }
   return e;
 }
-double RepulsionEnergySolver::compute_benchmark_density_based() {
+double RepulsionEnergySolver::compute_benchmark_dds() {
   double e             = 0.0;
   double e_Pauli_nuc   = 0.0;
   double e_Pauli_Pauli = 0.0;
