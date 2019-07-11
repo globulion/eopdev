@@ -109,7 +109,8 @@ class OEP(ABC):
   @classmethod
   def create(cls, name, wfn, dfbasis):
       "Create OEP instance"
-      if name.lower() == 'pauli': oep = OEP_Pauli(wfn, dfbasis)
+      if   name.lower() == 'pauli': oep = OEP_Pauli(wfn, dfbasis)
+      elif name.lower() == 'ct'   : oep = OEP_CT   (wfn, dfbasis)
       else: raise ValueError("Not existent OEP chosen")
       return oep
   
@@ -118,7 +119,31 @@ class OEP(ABC):
       "Compute matrix representation of OEP"
       pass
 
-class OEP_Pauli(OEP):
+class OEP_FockLike(OEP):
+  """
+ OEP for S1 term in Murrell et al.'s theory of Pauli repulsion
+ """
+  def __init__(self, wfn, dfbasis):
+      "Initialize"
+      super(OEP_FockLike, self).__init__(wfn, dfbasis)
+
+  @abstractmethod
+  def _compute_Ca(self): pass
+
+  # - implementation - #
+  def _compute_V(self):
+      "Compute Fock-Like OEP Matrix"
+      Ca= self._compute_Ca()
+      Da= self.wfn.Da().to_array(dense=True)
+      Vao= self.mints.ao_potential(self.basis_test, self.basis_prim).to_array(dense=True)
+      V  = numpy.dot(Vao, Ca)
+      #
+      V += 2.0 * numpy.einsum("bi,mn,mnba->ai", Ca, Da, self.eri_pppt)
+      V -=       numpy.einsum("mi,nb,mnba->ai", Ca, Da, self.eri_pppt)
+      return V
+
+
+class OEP_Pauli(OEP_FockLike):
   """
  OEP for S1 term in Murrell et al.'s theory of Pauli repulsion
  """
@@ -127,18 +152,20 @@ class OEP_Pauli(OEP):
       super(OEP_Pauli, self).__init__(wfn, dfbasis)
 
   # - implementation - #
-  def _compute_V(self):
-      "Compute OEP V for Pauli S1 term in Murrell et al.'s theory"
-      Ca= self.wfn.Ca_subset("AO", "OCC").to_array(dense=True)
-      Da= self.wfn.Da().to_array(dense=True)
-      Vao= self.mints.ao_potential(self.basis_test, self.basis_prim).to_array(dense=True)
-      V  = numpy.dot(Vao, Ca)
-      #
-      V += 2.0 * numpy.einsum("bi,mn,mnba->ai", Ca, Da, self.eri_pppt)
-      V -=       numpy.einsum("mi,nb,mnba->ai", Ca, Da, self.eri_pppt)
-      #print((V**2).sum())
-      #print(V[0])
-      return V
+  def _compute_Ca(self): return self.wfn.Ca_subset("AO", "OCC").to_array(dense=True)
+
+
+class OEP_CT(OEP_FockLike):
+  """
+ OEP for Group-(i) term of Otto-Ladik's theory of Charge-Transfer Energy
+ """
+  def __init__(self, wfn, dfbasis):
+      "Initialize"
+      super(OEP_CT, self).__init__(wfn, dfbasis)
+
+  # - implementation - #
+  def _compute_Ca(self): return self.wfn.Ca_subset("AO", "VIR").to_array(dense=True)
+
 
 # -------------------------------------------------------------------------------------------- #
 
