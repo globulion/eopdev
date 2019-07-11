@@ -37,7 +37,7 @@ molecular aggregates such as interacting molecules in condensed phases.
 
 \section{\label{s:2}Effective One-Electron Potentials: General Theory}
 
-The one\hyp{}electron potential $v^{\rm eff}({\bf r})$
+The one\hyp{}electron Coulomb static effective potential $v^{\rm eff}({\bf r})$
 produced by a certain effective one\hyp{}electron charge density distribution $\rho^{\rm eff}({\bf r})$
 is 
 %
@@ -70,30 +70,40 @@ can be written as
         %\sum_{\alpha\beta} 
 	%\Ket{\alpha} 
         \int d{\bf r} \Ket{{\bf r}} 
-	\left[
-	\int
-	\hat{J}^{\rm}_{\alpha\beta}({\bf r}') 
-	\rho^{\rm eff}({\bf r}')
-	d{\bf r}' 
-	\right]
+        v^{\rm eff}({\bf r})
+	%\left[
+	%\int
+	%\hat{J}^{\rm}_{\alpha\beta}({\bf r}') 
+	%\rho^{\rm eff}({\bf r}')
+	%d{\bf r}' 
+	%\right]
 	%\Bra{\beta}  
         \Bra{{\bf r}}
 \end{equation}
 %
 with the nuclear
-and Coulomb operators defined by
+%and Coulomb operators 
+operator
+defined by
 %
-\begin{subequations}
-\begin{align}
-        \hat{v}_{\rm nuc} &\equiv \\
-	\hat{J}^{\rm}_{\alpha\beta}({\bf r}) f({\bf r}) &\equiv
-	f({\bf r}) 
-	\int
-	\frac{ \phi_\alpha^{*}({\bf r}') \phi_\beta({\bf r}') }{ \vert {\bf r}' - {\bf r} \vert} d{\bf r}'
-\end{align}
-\end{subequations}
+%\begin{subequations}
+%\begin{align}
+\begin{equation}
+        \hat{v}_{\rm nuc} \equiv \sum_x^{\rm At}  
+                     \int d{\bf r} \Ket{{\bf r}} 
+                     \frac{Z_x}{\vert {\bf r} - {\bf r}_x \vert}
+                     \Bra{{\bf r}} \;.
+	%\hat{J}^{\rm}_{\alpha\beta}({\bf r}) f({\bf r}) &\equiv
+	%f({\bf r}) 
+	%\int
+	%\frac{ \phi_\alpha^{*}({\bf r}') \phi_\beta({\bf r}') }{ \vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+\end{equation}
+%\end{align}
+%\end{subequations}
 %
-for any one\hyp{}electron function $f({\bf r})$. The matrix element of the effective potential operator
+%for any one\hyp{}electron function $f({\bf r})$. 
+and $\BraKet{\bf r}{\alpha} = \varphi_\alpha({\bf r})$.
+The matrix element of the effective potential operator
 is therefore given by
 %
 \begin{equation}
@@ -114,10 +124,10 @@ and the symbol `At' denotes all atoms that contribute to the effective potential
 In the above equation and throughout the work, 
 %
 \begin{equation}
-\tBraKet{\alpha}{\mathcal{O}(1)}{\beta} \equiv \int \phi^*_\alpha({\bf r}) \mathcal{O}(1) \phi_\beta({\bf r}) d{\bf r} 
+\tBraKet{\alpha}{\mathscr{O}(1)}{\beta} \equiv \int \phi^*_\alpha({\bf r}) \mathscr{O}(1) \phi_\beta({\bf r}) d{\bf r} 
 \end{equation}
 %
-for any one\hyp{}electron operator $\mathcal{O}(1)$ 
+for any one\hyp{}electron operator $\mathscr{O}(1)$ 
 and the electron repulsion integral (ERI)
 is defined according to
 %
@@ -142,7 +152,8 @@ of a molecular system in terms of its $N$\hyp{}electron wavefunction, $\Psi$,
 \end{equation}
 %
 for a quantum Hamiltonian, $\mathscr{H} = \hat{h}(1) + \hat{o}(2)$,
-with $\hat{h}(1)$ being the core Hamiltonian one\hyp{}electron operator
+with $\hat{h}(1)$ being the core Hamiltonian one\hyp{}electron operator,
+$\hat{h}(1) = \hat{v}_{\rm nuc} -\frac{1}{2}\sum_e^{\rm el} \nabla_e^2$,
 and $\hat{o}(2)$ the two\hyp{}electron repulsion operator.
 From the above solution, any property $P$, understood as an expectation value of the
 associated operator $\mathscr{P}$, can be computed according to
@@ -856,7 +867,7 @@ On the other hand, it immediately follows that
 For practical calculations, the right hand side of the above equation can be expanded 
 in the auxiliary basis,
 %
-\begin{equation}
+\begin{equation} \label{e:v-oep.rep}
   \sum_{k\in A}^{\rm Occ} \left\{
      2\hat{v}^A_{kk} \Ket{i} - \hat{v}^A_{ik} \Ket{k}
   \right\} \cong
@@ -992,7 +1003,7 @@ which, by combining with the first term from Eq.~\eqref{e:ct-murell-etal.vin},
 allows to apply the density fitting in an
 incomplete basis set as follows
 %
-\begin{equation}
+\begin{equation} \label{e:v-oep.ct}
 \Bra{i} \left[ \hat{v}^B_{\rm tot} \Ket{n} - \sum_{j\in B}^{\rm Occ} \hat{v}^B_{nj} \Ket{j} \right]
 \cong \Bra{i} \sum_{\eta\in B}^{\rm DF} V^B_{n\eta} \Ket{\eta}
 \end{equation}
@@ -1400,7 +1411,45 @@ No.~665778. This project is funded by National Science Centre, Poland
 \end{acknowledgments}
 
 %%
-%\appendix
+\appendix
+
+\section{Optimized Auxiliary Basis Sets for OEP Applications\label{a:auxiliary-basis}}
+
+To fit the auxiliary DF basis for the treatment of the overlap\hyp{}like
+OEP matrix elements with the operator $\hat{v}_{\rm eff}$, 
+the following objective function is minimized
+%
+\begin{equation} \label{e:a1-obj}
+ Z[\{\xi\}] = \sum_{\alpha i} \left[ 
+     \tBraKet{\alpha}{\hat{v}_{\rm eff}}{i} - 
+     \sum_{\xi}^{\rm DF} V_{\xi i} S_{\alpha \xi} 
+    \right]^2 \;,
+\end{equation}
+%
+where $\{\xi\}$ is the auxiliary basis set to optimize, whereas $\{\alpha\}$
+is the `test' basis set used to probe the accuracy of the density fitting.
+The forms of the Pauli and charge\hyp{}transfer DF matrices $\tBraKet{\alpha}{\hat{v}_{\rm eff}}{i}$
+can be directly derived from Eqs.~\eqref{e:v-oep.rep} and \eqref{e:v-oep.ct}, respectively, 
+by expanding the MO's in terms of atomic basis functions. The working formulae
+are given below:
+%
+\begin{subequations} \label{e:a1-v.oep}
+ \begin{align}
+   \tBraKet{\alpha}{\hat{v}_{\rm eff}^{\rm Rep}}{i}
+     &= \sum_{x}^{\rm At} W_{\alpha i}^{(x)} \nonumber   \\ 
+        + \sum_{\beta\gamma\delta} &
+           \left\{ 
+             2 C_{\beta i} D_{\gamma\delta} - C_{\gamma i} D_{\beta \delta}
+           \right\}
+           \BraKet{\alpha\beta}{\gamma\delta} \;,\\
+   \tBraKet{\alpha}{\hat{v}_{\rm eff}^{\rm CT}}{i} \;.
+     &=
+ \end{align}
+\end{subequations}
+%
+In the above equations, ${\bf C}$ is the LCAO\hyp{}MO matrix whereas ${\bf D}$
+is the one\hyp{}particle density matrix in AO basis.
+
 %
 %\section{\label{a:mcmurchie-davidson} McMurchie-Davidson Method for Asymmetric Electron Repulsion Integrals}
 %
