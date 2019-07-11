@@ -271,7 +271,7 @@ def dmft_solver(wfn, xc_functional='MBB',
         return E_int
 
 
-def gdf_basisset_optimizer(mol, oep_type, basis=None,
+def gdf_basisset_optimizer(mol, oep_type, basis=None, out='oepfit.gbs',
                            basis_int="AUG-CC-PVDZ-JKFIT", basis_xpl="6-311++G**",
                            templ_file='templ.dat', param_file='param.dat'):
     """
@@ -279,7 +279,7 @@ def gdf_basisset_optimizer(mol, oep_type, basis=None,
 
  Usage:
   
-   basis_aux = gdf_basisset_optimizer(molecule, oep_type, 
+   basis_aux = gdf_basisset_optimizer(molecule, oep_type, out = 'oepfit.gbs',
                                       basis     =  None,
                                       basis_xpl = "6-311++G**", 
                                       basis_int = "AUG-CC-PVDZ-JKFIT",
@@ -289,6 +289,7 @@ def gdf_basisset_optimizer(mol, oep_type, basis=None,
    where
     o basis_aux  - the optimalized auxiliary basis set object of type DFBasis
     o molecule   - psi4.core.Molecule object
+    o out        - output file to save the optimized basis set in Psi4 format. No output if out=None.
     o basis      - primary basis set of calculation. If not given, the global basis is used (keyword BASIS).
     o basis_int  - intermediate basis set for double GDF calculations (should be RI or JKFIT)
     o basis_xpl  - exemplary basis set to compare (any basis set)
@@ -351,5 +352,9 @@ P   1   1.00
     print(" Error for auxiliary    basis = %14.6f  Size: %6d" % (Z_aux, basis_gdf_aux.nbf()))
     print(" Error for example      basis = %14.6f  Size: %6d" % (Z_xpl, basis_gdf_xpl.nbf()))
     print(" Error for intermediate basis = %14.6f  Size: %6d" % (Z_int, basis_gdf_int.nbf()))
+    print(opt.oep.dfbasis.print())
+
+    # save
+    if out is not None: opt.oep.dfbasis.save(out)
 
     return opt.oep.dfbasis

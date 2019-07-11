@@ -62,6 +62,14 @@ class DFBasis:
       basis_str = make_bastempl(self.templ, param)
       return basis_str
 
+  def save(self, out='oepfit.gbs', param=None):
+      "Save basis set in Psi4 format to a file"
+      nm = out[:-4]
+      o  = open(out, 'w')
+      o.write("[ %s ]\n" % nm)
+      o.write(self.print(param))
+      o.close()
+      return
   
   # - protected 
 

@@ -28,8 +28,10 @@ set {
 }
 
 # fit auxiliary basis set. Primary basis set is taken from global options.
+# save output basis in Psi4 format to 'oepfit.gbs' file
 basis = gefp.core.gdf_basisset_optimizer(h2o, 'pauli', 
-                                         templ_file = 'templ.dat',         
-                                         param_file = 'param.dat', 
+                                         out        = 'oepfit.gbs',
+                                         templ_file = 'templ.dat',
+                                         param_file = 'param.dat',
                                          basis_int  = "AUG-CC-PVDZ-JKFIT", 
                                          basis_xpl  = "6-311++G**")
