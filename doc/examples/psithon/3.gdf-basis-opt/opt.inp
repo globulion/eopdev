@@ -2,6 +2,8 @@
 """
  Fit auxiliary basis set for water molecule, that is well suited for
  OEP of type GDF:S1 from Murrell et al. theory of Pauli repulsion energy.
+
+ Example: minimal basis sets (decontracted and contracted)
 """
 import gefp
 
@@ -27,11 +29,20 @@ set {
     e_convergence                 1e7
 }
 
-# fit auxiliary basis set. Primary basis set is taken from global options.
-# save output basis in Psi4 format to 'oepfit.gbs' file
-basis = gefp.core.gdf_basisset_optimizer(h2o, 'pauli', 
-                                         out        = 'oepfit.gbs',
-                                         templ_file = 'templ.dat',
-                                         param_file = 'param.dat',
-                                         basis_int  = "AUG-CC-PVDZ-JKFIT", 
-                                         basis_xpl  = "6-311++G**")
+# fit auxiliary basis sets. Primary basis set is taken from global options.
+# save output basis in Psi4 formats
+basis1= gefp.core.gdf_basisset_optimizer(h2o, 'pauli', 
+                                         out        = 'oepfit-mini.gbs',
+                                         templ_file = 'input/templ.mini.dat',
+                                         param_file = 'input/param.mini.dat',
+                                         bounds_file= 'input/bounds.mini.dat',
+                                         basis_int  = "aug-cc-pvdz-jkfit", 
+                                         basis_xpl  = "6-311++g**")
+
+basis2= gefp.core.gdf_basisset_optimizer(h2o, 'pauli', 
+                                         out        = 'oepfit-mini-decontr.gbs',
+                                         templ_file = 'input/templ.mini-decontr.dat',
+                                         param_file = 'input/param.mini-decontr.dat',
+                                         bounds_file= None,
+                                         basis_int  = "aug-cc-pvdz-jkfit", 
+                                         basis_xpl  = "6-311++g**")

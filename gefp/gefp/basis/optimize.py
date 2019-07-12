@@ -23,27 +23,60 @@ def oepfitbasis(mol, role='ORBITAL'):
     basstrings['oepfit'] = make_bastempl(oepfitbasis.templ, oepfitbasis.param)
     return basstrings
 
-def stripComments(code):
+def removeComments(string):
     "Remove comments from the string. Delimiter: #"
-    code = str(code)
-    return re.sub(r'(?m)^ *#.*\n?', '', code)
+    string = re.sub(re.compile("#.*?\n" ) ,"" ,string)
+    return string
 
 
 # -------------------------------------------------------------------------------------------------- #
 
 class DFBasis:
   """
- Basis set object to be optimized
+ Basis set object to be optimized.
+
+ Notes:
+
+ o Default bounds can be modified by resetting static variables
+     DFBasis.exp_lower_bound   
+     DFBasis.exp_upper_bound
+     DFBasis.ctr_lower_bound
+     DFBasis.ctr_upper_bound
+   prior to calling DFBasis if not using the driver.gdf_basis_optimizer.
 """
-  def __init__(self, mol, templ_file='templ.dat', param_file='param.dat'):
+
+  # defaults
+  exp_lower_bound = 0.01
+  exp_upper_bound = 10000.0
+  ctr_lower_bound =-2.0
+  ctr_upper_bound = 2.0
+
+  def __init__(self, mol, 
+                     templ_file='templ.dat', param_file='param.dat', bounds_file=None, 
+                     constraints=()):
       "Initialize"
+      # ensure physical values are set
+      assert(self.exp_lower_bound > 0.0), "Orbital exponents cannot be negative or zero!"
+
       # bound molecule to this basis set
       self.mol= mol
-      # initial parameters
-      #self.param_0 = self._read_param(param_file)
-      self.param = numpy.mafromtxt(param_file).data
+
       # template for Psi4 input
       self.templ = open(templ_file).read()
+
+      # initial parameters input
+      self.param = self._read_input(param_file, dtype=numpy.float64)
+      self.n_param = len(self.param)
+
+      # parameter bounds: if not provided assume only exponents
+      if bounds_file is None: 
+         self.bounds = [(self.exp_lower_bound, self.exp_upper_bound) for x in range(self.n_param)]
+      else: 
+         self.bounds= self._make_bounds(self._read_input(bounds_file, dtype=str))
+
+      # parameter constraints
+      self.constraints = constraints
+
       # current basis set
       self.basis = self.basisset()
 
@@ -73,23 +106,36 @@ class DFBasis:
   
   # - protected 
 
-  def _read_param(self, param_file):
+  def _read_input(self, input_file, dtype):
       "Read parameters to optimize from the input file. Comments are allowed."
-      t = open(param_file, 'r')
-      line = stripComments(t.readline())
-      print(line)
-      data = []
-      while line:
-          data += line.split() 
-          line = stripComments(t.readline())
+      t = open(input_file, 'r')
+      data = removeComments(t.read()).split()
       t.close()
-      return numpy.array(data, dtype=numpy.float64)     
+      return numpy.array(data, dtype=dtype)
+
+  def _make_bounds(self, bounds_codes):
+      "Make list of bounds appropriate for optimization"
+      bounds = []
+      for item in bounds_codes:
+          item = item.lower()
+          if item.startswith('e'):
+               bound = (self.exp_lower_bound, self.exp_upper_bound) if len(item) == 1 \
+                 else tuple( float(x) for x in item[2:].split(',') )
+          elif item.startswith('c'):
+               bound = (self.ctr_lower_bound, self.ctr_upper_bound) if len(item) == 1 \
+                 else tuple( float(x) for x in item[2:].split(',') )
+          else: raise(ValueError, 
+                "Wrong input in bounds `%s`. Use either one syntax: `X` or `X:min,max` where X = E or C." % item)
+          bounds.append(bound)
+      return bounds
+  
+
 
 # ------------------------------------------------------------------------ #
      
 class OEP(ABC):
   """
- OEP object that defines the V matrix necessary for GDF
+ OEP object that defines the V matrix necessary for GDF.
 """
   def __init__(self, wfn, dfbasis):
       "Initialize"
@@ -186,16 +232,15 @@ class DFBasisOptimizer:
       self.oep = oep
       self.basis_fit = oep.dfbasis
       self.param = oep.dfbasis.param
-      self.n_param = len(oep.dfbasis.param)
   
   # ---> public interface <--- #
 
-  def fit(self):
+  def fit(self, maxiter=1000):
       "Perform fitting of basis set exponents"
-      success = self._fit()
+      success = self._fit(maxiter)
       return success
 
-  def compute_error(self, basis):
+  def compute_error(self, basis, rms=False):
       "Compute error for a given basis"
       S = self.oep.mints.ao_overlap(self.oep.basis_test, basis).to_array(dense=True)
       V = psi4.core.Matrix.from_array(self.oep.V)
@@ -204,30 +249,30 @@ class DFBasisOptimizer:
       G = gdf.G().to_array(dense=True)
       er= V - numpy.dot(S, G)
       Z = (er*er).sum()
-      #Z = numpy.sqrt(Z/er.size)
+      if rms: Z = numpy.sqrt(Z/er.size)
       return Z
 
 
   # ---> protected interface <--- #
 
-  def _fit(self):
+  def _fit(self, maxiter):
       "The actual fitting procedure"
       param_0 = self.basis_fit.param
-      bounds = [(0.01, 10000.0) for x in range(self.n_param)]
-      options = {"disp": True, "maxiter": 300, "ftol": 1.0e-9, "iprint": 4}
+      options = {"disp": True, "maxiter": maxiter, "ftol": 1.0e-9, "iprint": 4}
       res = scipy.optimize.minimize(self._objective_function, param_0, args=(), tol=1.0e-9, method='slsqp',
-                                    options=options, bounds=bounds)
+                  options=options, bounds=self.basis_fit.bounds, constraints=self.basis_fit.constraints)
       param = res.x
-      self.basis_fit = self.oep.dfbasis.basisset(param)
+      self.oep.dfbasis.basisset(param)
+      self.oep.dfbasis.param = param
       #
       print("          Initial           Fitted")
-      for i in range(self.n_param):
+      for i in range(self.basis_fit.n_param):
           print("%15.3f %15.3f" % (param_0[i], param[i]))
-      self.oep.dfbasis.param = param
       return res.success
      
   def _objective_function(self, param):
       "Objective function for auxiliary basis refinement"
       basis_aux = self.oep.dfbasis.basisset(param) 
-      Z = self.compute_error(basis_aux)
+      Z = self.compute_error(basis_aux, rms=False)
+      # setting rms=False results in more sensitive optimization and better final Z
       return Z
