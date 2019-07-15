@@ -14,7 +14,7 @@ import numpy
 
 sys.path.append('..')
 
-from dfi import SCF, DFI
+from gefp.density.dfi import SCF, DFI
 
 psi4.set_memory('2 GB')
 

@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
  Demonstrates the use of Psi4 from Python level.
  Useful notes:

@@ -14,8 +14,8 @@ import numpy
 
 sys.path.append('..')
 
-from dfi import SCF
-from dfi import DFI as DFI_JK
+from gefp.density.dfi import SCF
+from gefp.density.dfi import DFI as DFI_JK
 
 class DFI(DFI_JK):
 
