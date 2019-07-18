@@ -452,9 +452,19 @@ def _order(R,P,start=0,lprint=1):
           new_P[i]*=-1.
     return new_P, sim#, array(rad,dtype=float)
 
-def rearrange_eigenpairs(n, u, u_ref):
-    r,sim = _order(u_ref.T, u.T, lprint=0)
-    w  = _reorder(u.T, sim)
-    m  = _reorder(n  , sim)
-    w  = w.T
-    return m, w
+def rearrange_eigenpairs(u, u_ref, n=None):
+    """
+ Rearrange eigenpairs. Also rephase eigenvectors if sign difference is detected.
+ Inputs     : n: eigenvalues, u: eivenvectors (by column), u_ref: reference eigenvectors (by column)
+ Requirement: u and u_ref need to be composed of same eigenvectors (sign arbitrary) that are in different order
+              n and u need to have the same order of eigenelements.
+ Returns    : n_new, u_new - when n is provided 
+              u_new        - when n is not provided
+"""
+    u_new, sim = _order(u_ref.T, u.T, lprint=0)
+    u_new  = u_new.T
+    if n is not None:
+       n_new  = _reorder(n, sim)
+       return n_new, u_new
+    else:
+       return u_new
