@@ -145,13 +145,14 @@ class SCF:
         # form density matrix
         idx = numpy.argsort(E) 
         C = C[:,idx]
-        C = C[:,:self._ndocc]
-        D = numpy.dot(C,C.T)
+        Co= C[:,:self._ndocc]
+        D = numpy.dot(Co,Co.T)
         # save
         self.D = D.copy()
         self.E = e_new
         self.F = F_old.copy()
-        self.C = C.copy()
+        self.C = Co.copy()
+        self.Call = C.copy()
         if niter > maxit: break
       return
 
@@ -212,7 +213,8 @@ class DFI:
       self._mints = []  # Integral calculator                                Running calculator
       self._jks   = []  # JK calculator                                      Running calculator
       self._Xs    = []  # AO orthogonalizer (S^-1/2)                         Const
-      self._Cs    = []  # LCAO-MO coefficients                               Updated
+      self._Cs    = []  # LCAO-MO coefficients (occupied)                    Updated
+      self._Csall = []  # LCAO-MO coefficients (occ+vir)                     Updated
       self._Hs    = []  # Hcore matrix in original basis                     Const
       self._Fs    = []  # Fock matrix in original basis                      Updated
       self._Ds    = []  # One-particle density matrix in original basis      Updated
@@ -241,6 +243,7 @@ class DFI:
           jk.initialize()
           X       = self._orthogonalizer(numpy.asarray(wfn.S()))
           C       = numpy.asarray(wfn.Ca())
+          Co      = numpy.asarray(wfn.Ca_subset("AO","OCC"))
           H       = numpy.asarray(wfn.H())
           F       = numpy.asarray(wfn.Fa())
           D       = numpy.asarray(wfn.Da())
@@ -252,7 +255,8 @@ class DFI:
           self._mints.append(mints)          # Integral calculator
           self._jks  .append(jk)             # JK calculator
           self._Xs   .append(X)              # AO orthogonalizer (S^-1/2)
-          self._Cs   .append(C)              # LCAO-MO coefficients
+          self._Cs   .append(Co)             # LCAO-MO coefficients (occ)
+          self._Csall.append(C)              # LCAO-MO coefficients (occ+vir)
           self._Hs   .append(H)              # Hcore matrix in original basis
           self._Fs   .append(F)              # Fock matrix in original basis
           self._Ds   .append(D)              # One-particle density matrix in original basis
@@ -307,6 +311,7 @@ class DFI:
       self._ens[i] = scf.E
       self._Fs [i] = scf.F.copy()
       self._Cs [i] = scf.C.copy()
+      self._Csall[i]= scf.Call.copy()
       self._Ds [i] = scf.D.copy()
       return
 

@@ -12,7 +12,7 @@ __all__+= ["UnitaryOptimizer", "UnitaryOptimizer_4_2"]
 
 
 def psi_molecule_from_file(f, frm=None, no_com=True, no_reorient=True):
-    "Construct psi4.core.Molecule object from structure file"""
+    "Construct psi4.core.Molecule object from structure file"
     if frm is None: frm = f.split('.')[-1].lower()
     #
     if   frm == 'xyz':
