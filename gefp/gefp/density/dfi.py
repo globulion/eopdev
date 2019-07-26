@@ -31,6 +31,7 @@ __all__ = ['SCF', 'DFI']
 
 import psi4
 import numpy
+import abc
 
 MAX_NBF = 128
 
@@ -77,10 +78,14 @@ class SCF:
       self.E = None
       # Density Matrix
       self.D = None
-      # LCAO-MO coeffs
+      # LCAO-MO coeffs (occ)
+      self.Co= None
+      # LCAO-MO coeffs (occ+vir)
       self.C = None
       # Fock matrix 
       self.F = None
+      # Orbital energies
+      self.eps = None
       # Hcore matrix
       self.H = None
       # Overlap integrals and orthogonalizer
@@ -111,9 +116,10 @@ class SCF:
       E, C = numpy.linalg.eigh(F)
       C    = numpy.dot(self.X, C)
       idx = numpy.argsort(E)
+      E = E[  idx]
       C = C[:,idx]
-      C = C[:,:self._ndocc]
-      D = numpy.dot(C,C.T)
+      Co= C[:,:self._ndocc].copy()
+      D = numpy.dot(Co,Co.T)
       
       niter = 0
       e_old = 1e8
@@ -123,7 +129,7 @@ class SCF:
         niter += 1
         # form Fock matrix
         self._jk.C_clear()
-        self._jk.C_left_add(psi4.core.Matrix.from_array(C, "C matrix"))
+        self._jk.C_left_add(psi4.core.Matrix.from_array(Co, "C matrix"))
         self._jk.compute()
         F_new = H + 2.0 * numpy.asarray(self._jk.J()[0]) - numpy.asarray(self._jk.K()[0])
         if niter < ndamp: 
@@ -144,15 +150,17 @@ class SCF:
         C = numpy.dot(self.X, C)
         # form density matrix
         idx = numpy.argsort(E) 
+        E = E[  idx]
         C = C[:,idx]
-        Co= C[:,:self._ndocc]
+        Co= C[:,:self._ndocc].copy()
         D = numpy.dot(Co,Co.T)
         # save
         self.D = D.copy()
         self.E = e_new
         self.F = F_old.copy()
-        self.C = Co.copy()
-        self.Call = C.copy()
+        self.C = C.copy()
+        self.Co= Co.copy()
+        self.eps = E.copy()
         if niter > maxit: break
       return
 
@@ -164,7 +172,7 @@ class SCF:
       return X
 
 
-class DFI:
+class DFI(abc.ABC):
   """
  ---------------------------------------------------------------------------------------------------------------
                                   Density Fragment Interaction (DFI) Method
@@ -186,6 +194,8 @@ class DFI:
 """
   def __init__(self, *frags):
       "Initialize BasisSet and fragment lists"
+      abc.ABC.__init__(self)
+      self._j_only = False
       # --- Fragments as psi4.core.Molecule objects
       # Handle Psi4 Fragments within one Psi4 Molecule
       if len(frags) == 1: 
@@ -205,6 +215,7 @@ class DFI:
       else:
          self._nfrag = len(frags)
          self._frags = frags
+      #
       # --- Fragment lists                                                   Status every DFI iteration
       self._ens   = []  # Total energy of a fragment                         Updated
       self._ndocc = []  # number of doubly-occupied MO's                     Const
@@ -213,12 +224,19 @@ class DFI:
       self._mints = []  # Integral calculator                                Running calculator
       self._jks   = []  # JK calculator                                      Running calculator
       self._Xs    = []  # AO orthogonalizer (S^-1/2)                         Const
+      self._eps   = []  # Fock matrix eigenvalues                            Updated
       self._Cs    = []  # LCAO-MO coefficients (occupied)                    Updated
       self._Csall = []  # LCAO-MO coefficients (occ+vir)                     Updated
-      self._Hs    = []  # Hcore matrix in original basis                     Const
+      self._H     = []  # Hcore matrix in original basis                     Const
+      self._Hs    = []  # Hcore matrix in original basis (effective)         Updated
       self._Fs    = []  # Fock matrix in original basis                      Updated
       self._Ds    = []  # One-particle density matrix in original basis      Updated
       return
+
+  @staticmethod
+  def create(*frags, j_only=False):
+      if j_only: return DFI_J (*frags)
+      else:      return DFI_JK(*frags)
 
   def run(self, maxit=100, conv=1.0e-5, verbose_scf=False, conv_scf=1.0e-5, maxit_scf=100, damp_scf=0.14, ndamp_scf=0):
       """Runs DFI iterations"""
@@ -242,6 +260,7 @@ class DFI:
           jk.set_memory(int(5e8)) # 4GB 
           jk.initialize()
           X       = self._orthogonalizer(numpy.asarray(wfn.S()))
+          eps     = numpy.asarray(wfn.epsilon_a())
           C       = numpy.asarray(wfn.Ca())
           Co      = numpy.asarray(wfn.Ca_subset("AO","OCC"))
           H       = numpy.asarray(wfn.H())
@@ -255,9 +274,11 @@ class DFI:
           self._mints.append(mints)          # Integral calculator
           self._jks  .append(jk)             # JK calculator
           self._Xs   .append(X)              # AO orthogonalizer (S^-1/2)
+          self._eps  .append(eps)            # Eigenvalues of Fock matrix
           self._Cs   .append(Co)             # LCAO-MO coefficients (occ)
           self._Csall.append(C)              # LCAO-MO coefficients (occ+vir)
-          self._Hs   .append(H)              # Hcore matrix in original basis
+          self._H    .append(H)              # Hcore matrix in original basis
+          self._Hs   .append(H)              # Effective Hcore matrix in original basis
           self._Fs   .append(F)              # Fock matrix in original basis
           self._Ds   .append(D)              # One-particle density matrix in original basis
       # compute interfragment nuclear repulsion energy
@@ -299,7 +320,7 @@ class DFI:
   def _update_frag(self, i, conv_scf, maxit_scf, damp_scf, ndamp_scf, verbose_scf):
       "Update the i-th fragment"
       # compute Hcore of i-th fragment in the presence of other fragments 
-      H = self._Hs[i].copy()
+      H = self._H[i].copy()
       for j in range(self._nfrag):
           if j!=i:
              H += self._eval_vnuc(i, j)
@@ -308,11 +329,13 @@ class DFI:
       scf = SCF(self._frags[i])
       scf.run(guess=H.copy(), conv=conv_scf, maxit=maxit_scf, damp=damp_scf, ndamp=ndamp_scf, verbose=verbose_scf)
       # save
+      self._Hs[i]  = H.copy()
       self._ens[i] = scf.E
       self._Fs [i] = scf.F.copy()
-      self._Cs [i] = scf.C.copy()
-      self._Csall[i]= scf.Call.copy()
+      self._Cs [i] = scf.Co.copy()
+      self._Csall[i]= scf.C.copy()
       self._Ds [i] = scf.D.copy()
+      self._eps[i] = scf.eps.copy()
       return
 
   def _eval_vnuc(self, i, j):
@@ -333,14 +356,17 @@ class DFI:
       eri_J_ij = numpy.asarray(\
                     self._mints[i].ao_eri(self._bfs[j], self._bfs[j],
                                           self._bfs[i], self._bfs[i]))
-      eri_K_ij = numpy.asarray(\
-                    self._mints[i].ao_eri(self._bfs[j], self._bfs[i],
-                                          self._bfs[j], self._bfs[i]))
       ni = self._nbfs[i]
       nj = self._nbfs[j]
       J = numpy.dot(self._Ds[j].ravel(), eri_J_ij.reshape(nj*nj,ni*ni))
-      K = numpy.dot(self._Ds[j].ravel(), eri_K_ij.transpose(0,2,1,3).reshape(nj*nj,ni*ni))
-      V = 2.0*J - K
+      V = 2.0*J
+      if not self._j_only:
+         eri_K_ij = numpy.asarray(\
+                       self._mints[i].ao_eri(self._bfs[j], self._bfs[i],
+                                             self._bfs[j], self._bfs[i]))
+                                                                                              
+         K = numpy.dot(self._Ds[j].ravel(), eri_K_ij.transpose(0,2,1,3).reshape(nj*nj,ni*ni))
+         V-= K
       return V.reshape(ni, ni)
 
   def _orthogonalizer(self, S):
@@ -369,3 +395,13 @@ class DFI:
                          r2_ij = (x_i - x_j)**2 + (y_i - y_j)**2 + (z_i - z_j)**2
                          E += Z_i * Z_j / numpy.sqrt(r2_ij)
       return E
+
+class DFI_J(DFI):
+  def __init__(self, *frags):
+      DFI.__init__(self, *frags)
+      self._j_only = True
+
+class DFI_JK(DFI):
+  def __init__(self, *frags):
+      DFI.__init__(self, *frags)
+      self._j_only = False
