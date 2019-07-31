@@ -3,22 +3,87 @@ sys.path.insert(0, './..')
 import oepdev
 
 
+basis {
 
-# test molecule
-molecule hf {
+# assign basset to all atoms
+assign basis
+
+[ basis ]
+cartesian
+****
+H     0
+S   3   1.00
+      0.1873113696D+02       0.3349460434D-01
+      0.2825394365D+01       0.2347269535D+00
+      0.6401216923D+00       0.8137573261D+00
+S   1   1.00
+      0.1612777588D+00       1.0000000
+****
+O     0
+S   3   1.00
+   2714.89       0.004324
+    415.725      0.032265
+     91.9805     0.156410
+S   2   1.00
+     24.4515     0.447813
+      7.22296    0.481602
+S   1   1.00 
+      1.06314    1.000000
+S   1   1.00
+      0.322679   1.000000
+P   2   1.00
+      7.75579    0.129373
+      1.62336    0.481269
+P   1   1.00 
+      0.365030   1.000000
+****
+}
+      
+
+# test molecule from Otto-Ladik 1980
+molecule dimer {
 0 1
-H          0.92000       0.00000       0.00000
-F          0.00000       0.00000       0.00000
+O     0.000000     0.000000     0.000000
+H    -0.000000     0.757500     0.587100
+H    -0.000000    -0.757500     0.587100
 --
 0 1
-H          0.48000       -3.20000        0.00000
-F          1.40000       -3.20000        0.00000
+O    -2.580756     0.000000    -1.490000
+H    -1.750757     0.000000    -1.010800
+H    -2.323829     0.000000    -2.413320
 
 units angstrom
 symmetry c1
 noreorient
 nocom
 }
+
+
+molecule mon1 {
+0 1
+O     0.000000     0.000000     0.000000
+H     0.000000     0.000000     0.957800
+H     0.919833     0.000000    -0.237501
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+molecule mon2 {
+0 1
+H    -0.799345     1.751277    -0.619169
+O    -1.174866     2.574001    -0.910046
+H    -1.898514     2.319766    -1.470580
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+
 
 set {
     # ==> OEPDEV Routine Specification <== #
@@ -28,7 +93,6 @@ set {
     oepdev_localize               False
     oepdev_enable_trial           False
     # ==> General Psi4 Options <== #
-    basis                         6-31G
     scf_type                      direct 
     guess                         core
     e_convergence                 1e-11
@@ -38,5 +102,8 @@ set {
 }
 
 
+
+
+
 # run oepdev
-energy('oepdev', molecule=hf)
+energy('oepdev', molecule=dimer)
