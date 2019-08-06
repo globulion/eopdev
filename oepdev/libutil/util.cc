@@ -77,6 +77,35 @@ solve_scf(std::shared_ptr<Molecule> molecule,
 }
 
 extern "C" PSI_API
+std::shared_ptr<Wavefunction>
+solve_scf_sad(std::shared_ptr<Molecule> molecule, 
+              std::shared_ptr<BasisSet> primary,              
+	      std::shared_ptr<BasisSet> auxiliary,
+              std::vector<std::shared_ptr<BasisSet>> sad,
+              std::vector<std::shared_ptr<BasisSet>> sad_fit,
+              std::shared_ptr<SuperFunctional> functional,
+              Options& options,
+              std::shared_ptr<PSIO> psio,
+	      bool compute_mints) 
+{
+    SharedWavefunction scf_base(new Wavefunction(molecule, primary, options));
+    scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
+
+    // Compute integrals (write IWL entry to PSIO)
+    if (compute_mints) {
+      std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
+      mints->integrals();
+    }
+    std::shared_ptr<psi::scf::RHF> hf = std::make_shared<psi::scf::RHF>(scf_base, functional, options, psio);
+    if (!sad    .empty()) hf->set_sad_basissets(sad);
+    if (!sad_fit.empty()) hf->set_sad_fitting_basissets(sad_fit);
+    hf->compute_energy();
+    SharedWavefunction scf = hf;
+    return scf;
+}
+
+
+extern "C" PSI_API
 double average_moment(std::shared_ptr<psi::Vector> moment)
 {
   const int l = moment->dim();

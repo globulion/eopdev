@@ -82,6 +82,16 @@ def run_oepdev(name, **kwargs):
                                                puream=ref_wfn.basisset().has_puream())
        basis_df_int = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("DF_BASIS_INT"),
                                                puream=ref_wfn.basisset().has_puream())
+
+       #if (psi4.core.get_option("SCF", "GUESS") == "SAD"):
+       #    sad_basis_sets = psi4.core.BasisSet.build(molecule, "ORBITAL", psi4.core.get_global_option("BASIS"),                    
+       #                                            puream=ref_wfn.basisset().has_puream(), return_atomlist=True)
+       #    ref_wfn.set_sad_basissets(sad_basis_sets)
+       #    if ("DF" in psi4.core.get_option("SCF", "SAD_SCF_TYPE")):
+       #        sad_fitting_list = psi4.core.BasisSet.build(molecule, "DF_BASIS_SAD", psi4.core.get_option("SCF", "DF_BASIS_SAD"), 
+       #                                            puream=True, return_atomlist=True)
+       #        ref_wfn.set_sad_fitting_basissets(sad_fitting_list)
+
        ref_wfn.set_basisset("BASIS_DF_OEP", basis_df_oep)
        ref_wfn.set_basisset("BASIS_DF_SCF", basis_df_scf)
        ref_wfn.set_basisset("BASIS_DF_INT", basis_df_int)
@@ -119,6 +129,21 @@ def run_oepdev(name, **kwargs):
                                                  puream=ref_wfn.basisset().has_puream())
        basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"),
                                                  puream=ref_wfn.basisset().has_puream())
+
+       # --- SAD Guess (Psi4)
+       #if (psi4.core.get_option("SCF", "GUESS") == "SAD"):
+       #    sad_basis_sets_A = psi4.core.BasisSet.build(molecule_A, "ORBITAL", psi4.core.get_global_option("BASIS"),                    
+       #                                            puream=ref_wfn.basisset().has_puream(), return_atomlist=True)
+       #    sad_basis_sets_B = psi4.core.BasisSet.build(molecule_B, "ORBITAL", psi4.core.get_global_option("BASIS"),                    
+       #                                            puream=ref_wfn.basisset().has_puream(), return_atomlist=True)
+
+       #    ref_wfn.set_sad_basissets(sad_basis_sets_A+sad_basis_sets_B)
+       #    if ("DF" in psi4.core.get_option("SCF", "SAD_SCF_TYPE")):
+       #        sad_fit_list_A = psi4.core.BasisSet.build(molecule_A, "DF_BASIS_SAD", psi4.core.get_option("SCF", "DF_BASIS_SAD"), 
+       #                                            puream=True, return_atomlist=True)
+       #        sad_fit_list_B = psi4.core.BasisSet.build(molecule_B, "DF_BASIS_SAD", psi4.core.get_option("SCF", "DF_BASIS_SAD"), 
+       #                                            puream=True, return_atomlist=True)
+       #        ref_wfn.set_sad_fitting_basissets(sad_fit_list_A+sad_fit_list_B)
 
                                                                                                                  
        ref_wfn.set_basisset("BASIS_1"        , basis_A        )

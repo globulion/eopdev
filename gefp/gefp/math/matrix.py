@@ -452,7 +452,7 @@ def _order(R,P,start=0,lprint=1):
           new_P[i]*=-1.
     return new_P, sim#, array(rad,dtype=float)
 
-def rearrange_eigenpairs(u, u_ref, n=None):
+def rearrange_eigenpairs(u, u_ref, n=None, return_sim=False):
     """
  Rearrange eigenpairs. Also rephase eigenvectors if sign difference is detected.
  Inputs     : n: eigenvalues, u: eivenvectors (by column), u_ref: reference eigenvectors (by column)
@@ -460,11 +460,15 @@ def rearrange_eigenpairs(u, u_ref, n=None):
               n and u need to have the same order of eigenelements.
  Returns    : n_new, u_new - when n is provided 
               u_new        - when n is not provided
+ (optional) :
+              sim          - similarity assignment list if return_sim=True. Returned as the last element.
 """
     u_new, sim = _order(u_ref.T, u.T, lprint=0)
     u_new  = u_new.T
     if n is not None:
        n_new  = _reorder(n, sim)
-       return n_new, u_new
+       if return_sim: return n_new, u_new, sim
+       else: return n_new, u_new
     else:
-       return u_new
+       if return_sim: return u_new, sim
+       else: return u_new

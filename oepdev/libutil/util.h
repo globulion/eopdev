@@ -117,6 +117,32 @@ solve_scf(std::shared_ptr<Molecule> molecule,
           std::shared_ptr<PSIO> psio,
 	  bool compute_mints = false);
 
+/** \brief Solve RHF-SCF equations for a given molecule in a given basis set.
+ *
+ *  @param molecule psi::SharedMolecule object with molecule
+ *  @param primary shared primary basis set 
+ *  @param auxiliary shared auxiliary basis set 
+ *  @param sad SAD basis set list
+ *  @param sad_fit SAD DF fitting basis set list
+ *  @param functional DFT functional
+ *  @param options psi::Options object
+ *  @param psio psi::PSIO object
+ *  @param compute_mints Compute integrals (write IWL TOC entry - necessary when transforming integrals)
+ *  @return psi::SharedWavefunction SCF wavefunction of the molecule
+ */
+extern "C" PSI_API
+std::shared_ptr<Wavefunction>
+solve_scf_sad(std::shared_ptr<Molecule> molecule, 
+              std::shared_ptr<BasisSet> primary,               
+	      std::shared_ptr<BasisSet> auxiliary,
+              std::vector<std::shared_ptr<BasisSet>> sad,
+              std::vector<std::shared_ptr<BasisSet>> sad_fit,
+              std::shared_ptr<SuperFunctional> functional,
+              Options& options,
+              std::shared_ptr<PSIO> psio,
+	      bool compute_mints = false);
+
+
 /** \brief Compute the scalar magnitude of multipole moment.
  *
  *  @param moment - multipole moment vector with unique matrix elements. Now supported only for dipole and quadrupole.
