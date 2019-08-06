@@ -1214,13 +1214,3 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_esp() {
   //psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");
   throw psi::PSIEXCEPTION("ERROR: MURRELL_ETAL_ESP is not yet implemented!\n");
 }
-// Build: factory static method 
-std::shared_ptr<OEPDevSolver> OEPDevSolver::build(const std::string& target, SharedWavefunctionUnion wfn_union)
-{
-   std::shared_ptr<OEPDevSolver> solver;
-   if      (target == "ELECTROSTATIC ENERGY"  ) solver = std::make_shared< ElectrostaticEnergySolver>(wfn_union);
-   else if (target == "REPULSION ENERGY"      ) solver = std::make_shared<     RepulsionEnergySolver>(wfn_union);
-   else if (target == "CHARGE TRANSFER ENERGY") solver = std::make_shared<ChargeTransferEnergySolver>(wfn_union);
-   else throw psi::PSIEXCEPTION("OEPDEV: Error. OEPDevSolver: Incorrect targer property chosen!\n");
-   return solver;
-}

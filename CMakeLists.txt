@@ -113,6 +113,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libsolver/solver_energy_coul.cc
                        oepdev/libsolver/solver_energy_pauli.cc
                        oepdev/libsolver/solver_energy_ct.cc
+                       oepdev/libsolver/solver_coupling_eet.cc
 		       # libtest
                        oepdev/libtest/test.cc
 		       oepdev/libtest/basic.cc

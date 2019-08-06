@@ -41,6 +41,7 @@ using SharedOEPotential        = std::shared_ptr<OEPotential>;
  *  - `ELECTROSTATIC ENERGY`
  *  - `REPULSION ENERGY`
  *  - `CHARGE TRANSFER ENERGY`
+ *  - `EET COUPLING CONSTANT`
  *
  * # Options
  * 
@@ -802,6 +803,65 @@ class ChargeTransferEnergySolver : public OEPDevSolver
     /// Extract DMTP
     std::shared_ptr<psi::Vector> extract_dmtp(std::shared_ptr<oepdev::DMTPole>);
 };
+
+/**\brief Compute the EET coupling energy between unperturbed wavefunctions.
+ *
+ * The implemented methods are shown below
+ * <table>
+ * <caption id="Tab.1">Methods available in the Solver</caption>
+ * <tr><th> Keyword  <th>Method Description  
+ * <tr><td colspan=2> <center><strong>Benchmark Methods</strong></center>
+ * <tr><td> `FUJIMOTO_TI_CIS` <td><i>Default</i>. EET Coupling by Fujimoto JPC 2012. 
+ * <tr><td colspan=2> <center><strong>OEP-Based Methods</strong></center>
+ * <tr><td> `FUJIMOTO_TI_CIS` <td><i>Default</i>. OEP-based TI/CIS expressions.
+ * </table>
+ *
+ *   > In order to construct this solver, **always** use the `OEPDevSolver::build` static factory method.
+ *
+ * Below the detailed description of the implemented equations is given 
+ * for each of the above provided methods.
+ * In the formulae across, it is assumed that the orbitals are real.
+ * The Coulomb notation for 
+ * electron repulsion integrals (ERI's) is adopted; i.e,
+ * \f[
+ *  (ac \vert bd) = \iint d{\bf r}_1 d{\bf r}_2 
+ *   \phi_a({\bf r}_1) \phi_c({\bf r}_1) \frac{1}{r_{12}} \phi_b({\bf r}_2) \phi_d({\bf r}_2)
+ * \f]
+ * Greek subscripts denote basis set orbitals whereas Italic subscripts denote the occupied
+ * molecular orbitals.
+ *
+ * # Benchmark Methods
+ * ## TI/CIS Method (Fujimoto JPC 2012).
+ *    
+ * For a closed-shell system, ... TODO
+ *
+ * 
+ * # OEP-Based Methods
+ * TODO
+ * ## OEP-Based TI/CIS theory
+ *
+ * After introducing OEP's, the original TI/CIS theory by Fujimoto is reformulated *without*
+ * approximation as
+ * TODO
+ */
+
+class EETCouplingSolver : public OEPDevSolver
+{
+  public:
+    EETCouplingSolver(SharedWavefunctionUnion wfn_union);
+    virtual ~EETCouplingSolver();
+
+    virtual double compute_oep_based(const std::string& method = "DEFAULT");
+    virtual double compute_benchmark(const std::string& method = "DEFAULT");
+
+  private:
+    /// TI/CIS method (Fujimoto JPC 2012)
+    double compute_benchmark_fujimoto_ti_cis();
+
+    /// TI/CIS method - OEP-based (Fujimoto JPC 2012, Blasiak et al XXX 2019)
+    double compute_oep_based_fujimoto_ti_cis();
+};
+
 
 
 /** @}*/
