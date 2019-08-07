@@ -3,7 +3,7 @@
 namespace oepdev{
 
 R_CISComputer::R_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt):
- CISComputer(wfn, opt)
+ CISComputer(wfn, opt, psi::IntegralTransform::TransformationType::Restricted)
 {
 }
 

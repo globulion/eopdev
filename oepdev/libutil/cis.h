@@ -4,7 +4,15 @@
 
 #include <string>
 
+
+//#include "psi4/psi4-dec.h"
 #include "psi4/liboptions/liboptions.h"
+#include "psi4/libpsio/psio.h"
+
+//#include "psi4/libciomr/libciomr.h"
+#include "psi4/libpsio/psio.hpp"
+//#include "psi4/libqt/qt.h"
+
 #include "psi4/libmints/matrix.h"
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/basisset.h"
@@ -12,7 +20,8 @@
 #include "psi4/libmints/wavefunction.h"
 //#include "psi4/libmints/integral.h"
 #include "psi4/libtrans/integraltransform.h"
-//#include "psi4/libdpd/dpd.h"
+#include "psi4/libtrans/mospace.h"
+#include "psi4/libdpd/dpd.h"
 
 
 namespace oepdev{
@@ -20,6 +29,8 @@ namespace oepdev{
 using SharedMolecule           = std::shared_ptr<psi::Molecule>;
 using SharedMatrix             = std::shared_ptr<psi::Matrix>;
 using SharedVector             = std::shared_ptr<psi::Vector>;
+using SharedMOSpace            = std::shared_ptr<psi::MOSpace>;
+using SharedMOSpaceVector      = std::vector<std::shared_ptr<psi::MOSpace>>;
 using SharedIntegralTransform  = std::shared_ptr<psi::IntegralTransform>;
 
 /** \addtogroup OEPDEV_UTILITIES 
@@ -89,16 +100,20 @@ class CISComputer {
    /// Fock matrices: OO, oo, VV and vv blocks
    SharedMatrix Fa_oo_, Fb_oo_, Fa_vv_, Fb_vv_;
 
+   /// MO Integral Transformation Type
+   const psi::IntegralTransform::TransformationType transformation_type_;
+
   // --> protected interface <-- //
   protected:
 
-   CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt, psi::IntegralTransform::TransformationType trans_type);
 
    virtual void prepare_for_cis_(void);
    virtual void build_hamiltonian_(void);
    virtual void diagonalize_hamiltonian_(void);
 
    virtual void set_beta_(void) = 0;
+   virtual void transform_integrals_(void);
 
   // --> private interface <-- //
   private:
