@@ -2,6 +2,8 @@
 #
 # [1] Test name and test input/output files
 add_test (NAME BASIC                 COMMAND "psi4" "tests/oepdev/basic.inp"                "tests/oepdev/basic.out"  )
+add_test (NAME CIS_RHF               COMMAND "psi4" "tests/oepdev/cis-rhf.inp"              "tests/oepdev/cis-rhf.out")
+add_test (NAME CIS_UHF               COMMAND "psi4" "tests/oepdev/cis-uhf.inp"              "tests/oepdev/cis-uhf.out")
 add_test (NAME CPHF                  COMMAND "psi4" "tests/oepdev/cphf.inp"                 "tests/oepdev/cphf.out"   )
 add_test (NAME DMATPOL               COMMAND "psi4" "tests/oepdev/dmatpol.inp"              "tests/oepdev/dmatpol.out")
 add_test (NAME ERI_1_1               COMMAND "psi4" "tests/oepdev/eri_1_1.inp"              "tests/oepdev/eri_1_1.out")
@@ -19,6 +21,8 @@ add_test (NAME CT_ENERGY_BENCHMARK_OL   COMMAND "psi4" "tests/oepdev/ct_energy_b
 
 # [2] Test result
 set_tests_properties (BASIC                 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.0000"    )  
+set_tests_properties (CIS_RHF               PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
+set_tests_properties (CIS_UHF               PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
 set_tests_properties (CPHF                  PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00"      )
 set_tests_properties (DMATPOL               PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00"      )
 set_tests_properties (ERI_1_1               PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
@@ -32,3 +36,4 @@ set_tests_properties (DMTP_ENERGY           PROPERTIES PASS_REGULAR_EXPRESSION "
 set_tests_properties (ESP_SOLVER            PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.13442905")
 set_tests_properties (POINTS_COLLECTION3D   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.03804657")
 set_tests_properties (CT_ENERGY_BENCHMARK_OL   PROPERTIES PASS_REGULAR_EXPRESSION " CT Energy Otto-Ladik= -0.00050753") # Revise
+
