@@ -102,6 +102,7 @@ class CISComputer {
 
    /// MO Integral Transformation Type
    const psi::IntegralTransform::TransformationType transformation_type_;
+   std::shared_ptr<psi::IntegralTransform> inttrans_;
 
   // --> protected interface <-- //
   protected:
@@ -109,7 +110,7 @@ class CISComputer {
    CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt, psi::IntegralTransform::TransformationType trans_type);
 
    virtual void prepare_for_cis_(void);
-   virtual void build_hamiltonian_(void);
+   virtual void build_hamiltonian_(void) = 0;
    virtual void diagonalize_hamiltonian_(void);
 
    virtual void set_beta_(void) = 0;
@@ -125,7 +126,8 @@ class R_CISComputer: public CISComputer {
    R_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~R_CISComputer(); 
   protected:
-   void set_beta_(void);
+   virtual void set_beta_(void);
+   virtual void build_hamiltonian_(void);
 };
 
 class U_CISComputer: public CISComputer {
@@ -133,7 +135,9 @@ class U_CISComputer: public CISComputer {
    U_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~U_CISComputer(); 
   protected:
-   void set_beta_(void);
+   virtual void set_beta_(void);
+   virtual void build_hamiltonian_(void);
+
 };
 
 

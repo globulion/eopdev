@@ -14,5 +14,7 @@ void U_CISComputer::set_beta_(void) {//TODO
  Fb_vv_ = psi::Matrix::triplet(ref_wfn_->Cb_subset("AO","VIR"), ref_wfn_->Fb(), ref_wfn_->Cb_subset("AO","VIR"), true, false, false);
 }
 
+void U_CISComputer::build_hamiltonian_(void) {//TODO
+}
 
 } // EndNameSpace oepdev

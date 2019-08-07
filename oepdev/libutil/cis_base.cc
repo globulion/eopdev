@@ -23,7 +23,8 @@ CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& o
           nbocc_(ref_wfn_->nbeta()),
           navir_(nmo_ - naocc_),
           nbvir_(nmo_ - nbocc_),
-          transformation_type_(trans_type)
+          transformation_type_(trans_type),
+          inttrans_(nullptr)
 {
   this->common_init(); 
 }
@@ -34,6 +35,7 @@ void CISComputer::compute(void) {
  this->prepare_for_cis_();
  this->build_hamiltonian_();
  this->diagonalize_hamiltonian_(); 
+ E_->print_out();
 }
 
 void CISComputer::prepare_for_cis_(void) {//TODO
@@ -47,27 +49,20 @@ void CISComputer::transform_integrals_(void) {
  SharedMOSpaceVector spaces;
  spaces.push_back(psi::MOSpace::occ);
  spaces.push_back(psi::MOSpace::vir);
- psi::IntegralTransform inttrans(ref_wfn_, spaces, this->transformation_type_, 
+ inttrans_ = std::make_shared<psi::IntegralTransform>(ref_wfn_, spaces, this->transformation_type_, 
                                                    psi::IntegralTransform::OutputType::DPDOnly,
                                                    psi::IntegralTransform::MOOrdering::QTOrder,
                                                    psi::IntegralTransform::FrozenOrbitals::None); 
- inttrans.set_keep_dpd_so_ints(true);
- inttrans.transform_tei(psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::occ);
- inttrans.transform_tei(psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::vir, psi::MOSpace::vir);
- inttrans.transform_tei(psi::MOSpace::occ, psi::MOSpace::vir, psi::MOSpace::occ, psi::MOSpace::vir);
+ inttrans_->set_keep_dpd_so_ints(true);
+ inttrans_->transform_tei(psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::occ);
+ inttrans_->transform_tei(psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::vir, psi::MOSpace::vir);
+ inttrans_->transform_tei(psi::MOSpace::occ, psi::MOSpace::vir, psi::MOSpace::occ, psi::MOSpace::vir);
 
- std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
- psi::dpd_set_default(inttrans.get_dpd_id());
- //dpdbuf4 buf_;
- psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
- psio->tocprint(PSIF_LIBTRANS_DPD);
- psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+ //inttrans_ = std::shared_ptr<psi::IntegralTransform>(&inttrans);
 }
 
-void CISComputer::build_hamiltonian_(void) {//TODO
-}
-
-void CISComputer::diagonalize_hamiltonian_(void) {//TODO
+void CISComputer::diagonalize_hamiltonian_(void) {
+ H_->diagonalize(U_, E_);
 }
 
 std::shared_ptr<CISComputer> CISComputer::build(const std::string& type, 
@@ -77,8 +72,8 @@ std::shared_ptr<CISComputer> CISComputer::build(const std::string& type,
   // Determine reference if not specified
   std::string ref = reference;
   if (ref.empty()) {
-      ref += "RHF";
-      if (!ref_wfn->same_a_b_orbs() && !ref_wfn->same_a_b_dens()) ref += "UHF";
+      if (!ref_wfn->same_a_b_orbs() && !ref_wfn->same_a_b_dens()) {ref += "UHF";}
+      else { ref += "RHF";}
   }
 
   // Sanity checks
@@ -107,6 +102,8 @@ void CISComputer::set_beta_(void) {}
 void CISComputer::common_init(void) {//TODO
  ndets_ = naocc_ * navir_ + nbocc_ * nbvir_;
  H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
+ U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, ndets_);
+ E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", ndets_);
 }
 
 
