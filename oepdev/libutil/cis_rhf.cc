@@ -10,13 +10,13 @@ R_CISComputer::R_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Option
 
 R_CISComputer::~R_CISComputer() {}
 
-void R_CISComputer::set_beta_(void) {//TODO
+void R_CISComputer::set_beta_(void) {
  Fb_oo_ = Fa_oo_;
  Fb_vv_ = Fa_vv_;
  // They are not used anyway
 }
 
-void R_CISComputer::build_hamiltonian_(void) {//TODO
+void R_CISComputer::build_hamiltonian_(void) {
 
  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
  psi::dpd_set_default(inttrans_->get_dpd_id());
@@ -56,7 +56,6 @@ void R_CISComputer::build_hamiltonian_(void) {//TODO
                 if (a==b) v-= Fa_oo[i][j];
                 H[ia_][jb_    ] += v    ; // block AA 
                 H[ia_][jb_+off] += ia_jb; // block AB 
-                std::cout << ia_jb << "\n";
            }
       }
       psi::global_dpd_->buf4_mat_irrep_close(&buf_OVOV, h);
@@ -103,7 +102,7 @@ void R_CISComputer::build_hamiltonian_(void) {//TODO
  }
  }
 
- H_->print_out();
+ if (options_.get_bool("PRINT")>3) H_->print_out();
 }
 
 

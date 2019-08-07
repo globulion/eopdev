@@ -1,5 +1,7 @@
 #include "cis.h"
 #include<iostream>
+#include "util.h"
+#include "psi4/libmints/mintshelper.h"
 
 //#include "psi4/libpsi4util/PsiOutStream.h"
 
@@ -104,6 +106,194 @@ void CISComputer::common_init(void) {//TODO
  H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
  U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, ndets_);
  E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", ndets_);
+}
+
+psi::SharedMatrix CISComputer::Da_ao(int I) const {
+  psi::SharedMatrix da_mo = this->Da_mo(I);
+  psi::SharedMatrix C = ref_wfn_->Ca_subset("AO","ALL");
+  psi::SharedMatrix d = psi::Matrix::triplet(C, da_mo, C, false, false, true);
+  return d;
+}
+
+psi::SharedMatrix CISComputer::Db_ao(int I) const {
+  psi::SharedMatrix db_mo = this->Db_mo(I);
+  psi::SharedMatrix C = ref_wfn_->Cb_subset("AO","ALL");
+  psi::SharedMatrix d = psi::Matrix::triplet(C, db_mo, C, false, false, true);
+  return d;
+}
+
+psi::SharedMatrix CISComputer::Ta_ao(int J) const {
+  psi::SharedMatrix Co = ref_wfn_->Ca_subset("AO","OCC");
+  psi::SharedMatrix Cv = ref_wfn_->Ca_subset("AO","VIR");
+  psi::SharedMatrix D = std::make_shared<psi::Matrix>(naocc_, navir_); 
+  for (int i=0; naocc_; ++i) {
+  for (int a=0; navir_; ++a) {
+       int ia = navir_*i + a;
+       D->set(i, a, U_->get(ia, J));
+  }
+  }
+  psi::SharedMatrix d = psi::Matrix::triplet(Co, D, Cv, false, false, true);
+  return d;
+}
+
+psi::SharedMatrix CISComputer::Tb_ao(int J) const {
+  psi::SharedMatrix Co = ref_wfn_->Cb_subset("AO","OCC");
+  psi::SharedMatrix Cv = ref_wfn_->Cb_subset("AO","VIR");
+  psi::SharedMatrix D = std::make_shared<psi::Matrix>(nbocc_, nbvir_); 
+  const int off = naocc_*navir_;
+  for (int i=0; nbocc_; ++i) {
+  for (int a=0; nbvir_; ++a) {
+       int ia = navir_*i + a + off;
+       D->set(i, a, U_->get(ia, J));
+  }
+  }
+  psi::SharedMatrix d = psi::Matrix::triplet(Co, D, Cv, false, false, true);
+  return d;
+}
+
+psi::SharedMatrix CISComputer::Ta_ao(int I, int J) const {
+  psi::SharedMatrix T_0I = this->Ta_ao(I);
+  psi::SharedMatrix T_0J = this->Ta_ao(J);
+  T_0J->subtract(T_0I);
+  return T_0J;
+}
+
+psi::SharedMatrix CISComputer::Tb_ao(int I, int J) const {
+  psi::SharedMatrix T_0I = this->Tb_ao(I);
+  psi::SharedMatrix T_0J = this->Tb_ao(J);
+  T_0J->subtract(T_0I);
+  return T_0J;
+}
+
+psi::SharedMatrix CISComputer::Da_mo(int I) const {
+ psi::SharedMatrix D = std::make_shared<psi::Matrix>(string_sprintf("Alpha Density Matrix (MO) I=%3d", I), nmo_, nmo_);
+ for (int i=0; i<naocc_; ++i) {
+   D->set(i, i, 1.0);
+ }
+ // Excited states
+ if (I>0) {
+   double** U = U_->pointer();    
+   double** d = D->pointer();    
+
+   // OO block
+   for (int p=0; p<naocc_; ++p) {
+   for (int q=0; q<naocc_; ++q) {
+        double v = 0.0;
+        for (int a=0; a<navir_; ++a) {
+             int pa = navir_*p + a;
+             int qa = navir_*q + a;
+             v += U[pa][I] * U[qa][I];
+        }
+        d[p][q] -= v;
+   }
+   } 
+
+   // VV block
+   for (int p=0; p<navir_; ++p) {
+   for (int q=0; q<navir_; ++q) {
+        double v = 0.0;
+        for (int i=0; i<naocc_; ++i) {
+             int pi = navir_*i + p;
+             int qi = navir_*i + q;
+             v += U[pi][I] * U[qi][I];
+        }
+        d[naocc_ + p][naocc_ + q] += v;
+   }
+   } 
+
+   // VO and OV blocks: zero (for unrelaxed density which is the case)
+ }
+ return D;
+}
+
+psi::SharedMatrix CISComputer::Db_mo(int I) const {
+ psi::SharedMatrix D = std::make_shared<psi::Matrix>(string_sprintf("Beta Density Matrix (MO) I=%3d", I), nmo_, nmo_);
+ for (int i=0; i<nbocc_; ++i) {
+   D->set(i, i, 1.0);
+ }
+ // Excited states
+ if (I>0) {
+   const int off = navir_ * naocc_;
+   double** U = U_->pointer();    
+   double** d = D->pointer();    
+
+   // OO block
+   for (int p=0; p<nbocc_; ++p) {
+   for (int q=0; q<nbocc_; ++q) {
+        double v = 0.0;
+        for (int a=0; a<nbvir_; ++a) {
+             int pa = nbvir_*p + a;
+             int qa = nbvir_*q + a;
+             v += U[pa+off][I] * U[qa+off][I];
+        }
+        d[p][q] -= v;
+   }
+   } 
+
+   // VV block
+   for (int p=0; p<nbvir_; ++p) {
+   for (int q=0; q<nbvir_; ++q) {
+        double v = 0.0;
+        for (int i=0; i<nbocc_; ++i) {
+             int pi = nbvir_*i + p;
+             int qi = nbvir_*i + q;
+             v += U[pi+off][I] * U[qi+off][I];
+        }
+        d[naocc_ + p][naocc_ + q] += v;
+   }
+   } 
+
+   // VO and OV blocks: zero (for unrelaxed density which is the case)
+ }
+ return D;
+}
+
+SharedDMTPole CISComputer::trcamm(int j) const {
+ psi::SharedMatrix T = this->Ta_ao(j);
+ T->add(this->Tb_ao(j));
+ std::vector<psi::SharedMatrix> Tvec; Tvec.push_back(T);
+ std::vector<bool> Bvec; Bvec.push_back(true);
+ 
+ SharedDMTPole camm = oepdev::DMTPole::build("CAMM", ref_wfn_, 1);
+ camm->compute(Tvec, Bvec);
+ return camm;
+}
+
+SharedDMTPole CISComputer::trcamm(int i, int j) const {
+ psi::SharedMatrix T = this->Ta_ao(i, j);
+ T->add(this->Tb_ao(i, j));
+ std::vector<psi::SharedMatrix> Tvec; Tvec.push_back(T);
+ std::vector<bool> Bvec; Bvec.push_back(true);
+ 
+ SharedDMTPole camm = oepdev::DMTPole::build("CAMM", ref_wfn_, 1);
+ camm->compute(Tvec, Bvec);
+ return camm;
+}
+
+SharedVector CISComputer::transition_dipole(int j) const {
+ psi::SharedMatrix T = this->Ta_ao(j);
+ T->add(this->Tb_ao(j));
+
+ std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(ref_wfn_->basisset());
+ std::vector<psi::SharedMatrix> Dint = mints->ao_dipole();
+ SharedVector tr = std::make_shared<psi::Vector>("Transition dipole", 3);
+ for (int z=0; z<3; ++z) {
+  tr->set(z, psi::Matrix::doublet(Dint[z], T)->trace());
+ }
+ return tr;
+}
+
+SharedVector CISComputer::transition_dipole(int i, int j) const {
+ psi::SharedMatrix T = this->Ta_ao(i, j);
+ T->add(this->Tb_ao(i, j));
+
+ std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(ref_wfn_->basisset());
+ std::vector<psi::SharedMatrix> Dint = mints->ao_dipole();
+ SharedVector tr = std::make_shared<psi::Vector>("Transition dipole", 3);
+ for (int z=0; z<3; ++z) {
+  tr->set(z, psi::Matrix::doublet(Dint[z], T)->trace());
+ }
+ return tr;
 }
 
 

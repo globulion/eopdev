@@ -4,14 +4,9 @@
 
 #include <string>
 
-
-//#include "psi4/psi4-dec.h"
 #include "psi4/liboptions/liboptions.h"
 #include "psi4/libpsio/psio.h"
-
-//#include "psi4/libciomr/libciomr.h"
 #include "psi4/libpsio/psio.hpp"
-//#include "psi4/libqt/qt.h"
 
 #include "psi4/libmints/matrix.h"
 #include "psi4/libmints/vector.h"
@@ -23,10 +18,13 @@
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libdpd/dpd.h"
 
+#include "../lib3d/dmtp.h"
+
 
 namespace oepdev{
 
 using SharedMolecule           = std::shared_ptr<psi::Molecule>;
+using SharedDMTPole            = std::shared_ptr<oepdev::DMTPole>;
 using SharedMatrix             = std::shared_ptr<psi::Matrix>;
 using SharedVector             = std::shared_ptr<psi::Vector>;
 using SharedMOSpace            = std::shared_ptr<psi::MOSpace>;
@@ -69,6 +67,50 @@ class CISComputer {
    /// Solve the CIS problem
    virtual void compute(void);
 
+   /// Get the CIS eigenvalues
+   SharedVector eigenvalues() const {return E_;}
+
+   /// Get the CIS eigenvectors
+   SharedMatrix eigenvectors() const {return U_;}
+
+   /// Compute MO one-particle alpha density matrix for state *i*
+   SharedMatrix Da_mo(int i) const;
+
+   /// Compute MO one-particle beta density matrix for state *i*
+   SharedMatrix Db_mo(int i) const;
+
+   /// Compute AO one-particle alpha density matrix for state *i*
+   SharedMatrix Da_ao(int i) const;
+
+   /// Compute AO one-particle beta density matrix for state *i*
+   SharedMatrix Db_ao(int i) const;
+
+   /// Compute MO one-particle alpha 0->*j* transition density matrix
+   SharedMatrix Ta_ao(int j) const;
+
+   /// Compute MO one-particle beta 0->*j* transition density matrix
+   SharedMatrix Tb_ao(int j) const;
+
+   /// Compute MO one-particle alpha *i*->*j* transition density matrix
+   SharedMatrix Ta_ao(int i, int j) const;
+
+   /// Compute MO one-particle beta *i*->*j* transition density matrix
+   SharedMatrix Tb_ao(int i, int j) const;
+
+   /// Compute TrCAMM for 0->*j* transition
+   SharedDMTPole trcamm(int j) const;
+
+   /// Compute TrCAMM for *i*->*j* transition
+   SharedDMTPole trcamm(int i, int j) const;
+
+   /// Compute transition dipole moment for 0->*j* transition
+   SharedVector transition_dipole(int j) const;
+
+   /// Compute transition dipole moment for *i*->*j* transition
+   SharedVector transition_dipole(int i, int j) const;
+
+
+   /// Slater determinant possible references, that are implemented
    static const std::vector<std::string> reference_types;
  
   protected:
