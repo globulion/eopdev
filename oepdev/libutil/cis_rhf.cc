@@ -107,7 +107,6 @@ void R_CISComputer::build_hamiltonian_(void) {
  }
  }
 
- if (options_.get_bool("PRINT")>3) H_->print_out();
 }
 
 

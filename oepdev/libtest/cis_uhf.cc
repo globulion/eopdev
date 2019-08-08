@@ -15,6 +15,13 @@ double oepdev::test::Test::test_cis_uhf(void) {
   cis->compute();
   psi::timer_off("CIS UHF Calculation             ");
 
+  // Extract excitation energies
+  psi::SharedVector E = cis->eigenvalues();
+
+  // Compute all transition dipole moments for 0->j transition
+  for (int i=0; i<E->dim(); ++i) cis->transition_dipole(i)->print_out();
+
+
   // Print result
   std::cout << std::fixed;
   std::cout.precision(8);

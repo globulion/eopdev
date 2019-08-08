@@ -41,8 +41,6 @@ void CISComputer::compute(void) {
  this->prepare_for_cis_();
  this->build_hamiltonian_();
  this->diagonalize_hamiltonian_(); 
- E_->scale(27.21138);
- E_->print_out();
 }
 
 void CISComputer::prepare_for_cis_(void) {
@@ -70,6 +68,9 @@ void CISComputer::transform_integrals_(void) {
 
 void CISComputer::diagonalize_hamiltonian_(void) {
  H_->diagonalize(U_, E_);
+ E_->scale(27.21138);
+ E_->print_out();
+ if (options_.get_bool("PRINT")>3) H_->print_out();
 }
 
 std::shared_ptr<CISComputer> CISComputer::build(const std::string& type, 
@@ -106,8 +107,9 @@ std::shared_ptr<CISComputer> CISComputer::build(const std::string& type,
 
 void CISComputer::set_beta_(void) {}
 
-void CISComputer::common_init(void) {//TODO
+void CISComputer::common_init(void) {
  ndets_ = naocc_ * navir_ + nbocc_ * nbvir_;
+ std::cout << ndets_ << "\n";
  H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
  U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, ndets_);
  E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", ndets_);
