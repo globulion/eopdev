@@ -150,7 +150,7 @@ psi::SharedMatrix CISComputer::Tb_ao(int J) const {
   const int off = naocc_*navir_;
   for (int i=0; i<nbocc_; ++i) {
   for (int a=0; a<nbvir_; ++a) {
-       int ia = navir_*i + a + off;
+       int ia = nbvir_*i + a + off;
        D->set(i, a, U_->get(ia, J));
   }
   }
@@ -177,39 +177,36 @@ psi::SharedMatrix CISComputer::Da_mo(int I) const {
  for (int i=0; i<naocc_; ++i) {
    D->set(i, i, 1.0);
  }
- // Excited states
- if (I>0) {
-   double** U = U_->pointer();    
-   double** d = D->pointer();    
+ double** U = U_->pointer();    
+ double** d = D->pointer();    
 
-   // OO block
-   for (int p=0; p<naocc_; ++p) {
-   for (int q=0; q<naocc_; ++q) {
-        double v = 0.0;
-        for (int a=0; a<navir_; ++a) {
-             int pa = navir_*p + a;
-             int qa = navir_*q + a;
-             v += U[pa][I] * U[qa][I];
-        }
-        d[p][q] -= v;
-   }
-   } 
-
-   // VV block
-   for (int p=0; p<navir_; ++p) {
-   for (int q=0; q<navir_; ++q) {
-        double v = 0.0;
-        for (int i=0; i<naocc_; ++i) {
-             int pi = navir_*i + p;
-             int qi = navir_*i + q;
-             v += U[pi][I] * U[qi][I];
-        }
-        d[naocc_ + p][naocc_ + q] += v;
-   }
-   } 
-
-   // VO and OV blocks: zero (for unrelaxed density which is the case)
+ // OO block
+ for (int p=0; p<naocc_; ++p) {
+ for (int q=0; q<naocc_; ++q) {
+      double v = 0.0;
+      for (int a=0; a<navir_; ++a) {
+           int pa = navir_*p + a;
+           int qa = navir_*q + a;
+           v += U[pa][I] * U[qa][I];
+      }
+      d[p][q] -= v;
  }
+ } 
+
+ // VV block
+ for (int p=0; p<navir_; ++p) {
+ for (int q=0; q<navir_; ++q) {
+      double v = 0.0;
+      for (int i=0; i<naocc_; ++i) {
+           int pi = navir_*i + p;
+           int qi = navir_*i + q;
+           v += U[pi][I] * U[qi][I];
+      }
+      d[naocc_ + p][naocc_ + q] += v;
+ }
+ } 
+
+ // VO and OV blocks: zero (for unrelaxed density which is the case)
  return D;
 }
 
@@ -218,40 +215,37 @@ psi::SharedMatrix CISComputer::Db_mo(int I) const {
  for (int i=0; i<nbocc_; ++i) {
    D->set(i, i, 1.0);
  }
- // Excited states
- if (I>0) {
-   const int off = navir_ * naocc_;
-   double** U = U_->pointer();    
-   double** d = D->pointer();    
+ const int off = navir_ * naocc_;
+ double** U = U_->pointer();    
+ double** d = D->pointer();    
 
-   // OO block
-   for (int p=0; p<nbocc_; ++p) {
-   for (int q=0; q<nbocc_; ++q) {
-        double v = 0.0;
-        for (int a=0; a<nbvir_; ++a) {
-             int pa = nbvir_*p + a;
-             int qa = nbvir_*q + a;
-             v += U[pa+off][I] * U[qa+off][I];
-        }
-        d[p][q] -= v;
-   }
-   } 
-
-   // VV block
-   for (int p=0; p<nbvir_; ++p) {
-   for (int q=0; q<nbvir_; ++q) {
-        double v = 0.0;
-        for (int i=0; i<nbocc_; ++i) {
-             int pi = nbvir_*i + p;
-             int qi = nbvir_*i + q;
-             v += U[pi+off][I] * U[qi+off][I];
-        }
-        d[naocc_ + p][naocc_ + q] += v;
-   }
-   } 
-
-   // VO and OV blocks: zero (for unrelaxed density which is the case)
+ // OO block
+ for (int p=0; p<nbocc_; ++p) {
+ for (int q=0; q<nbocc_; ++q) {
+      double v = 0.0;
+      for (int a=0; a<nbvir_; ++a) {
+           int pa = nbvir_*p + a;
+           int qa = nbvir_*q + a;
+           v += U[pa+off][I] * U[qa+off][I];
+      }
+      d[p][q] -= v;
  }
+ } 
+
+ // VV block
+ for (int p=0; p<nbvir_; ++p) {
+ for (int q=0; q<nbvir_; ++q) {
+      double v = 0.0;
+      for (int i=0; i<nbocc_; ++i) {
+           int pi = nbvir_*i + p;
+           int qi = nbvir_*i + q;
+           v += U[pi+off][I] * U[qi+off][I];
+      }
+      d[naocc_ + p][naocc_ + q] += v;
+ }
+ } 
+
+ // VO and OV blocks: zero (for unrelaxed density which is the case)
  return D;
 }
 

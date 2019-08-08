@@ -7,7 +7,7 @@ using namespace std;
 
 double oepdev::test::Test::test_cis_rhf(void) {
   // This test is for H2O at HF/6-31G* 6D molecule multiplicity singlet
-  // The Gaussian 2016 input is given in refs
+  // The Gaussian 2016 input and output are given in refs
   double result = 0.0;
 
   // Reference energies
@@ -39,7 +39,7 @@ double oepdev::test::Test::test_cis_rhf(void) {
   psi::SharedVector E = cis->eigenvalues();
 
   // Compute all transition dipole moments for 0->j transition
-  //for (int i=0; i<E->dim(); ++i) cis->transition_dipole(i)->print_out();
+  // for (int i=0; i<E->dim(); ++i) cis->transition_dipole(i)->print_out();
 
   // Build-up error
   for (int i=0; i<11; ++i) {
