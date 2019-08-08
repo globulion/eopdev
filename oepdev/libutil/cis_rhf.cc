@@ -11,8 +11,10 @@ R_CISComputer::R_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Option
 R_CISComputer::~R_CISComputer() {}
 
 void R_CISComputer::set_beta_(void) {
- Fb_oo_ = Fa_oo_;
- Fb_vv_ = Fa_vv_;
+ //Fb_oo_ = Fa_oo_;
+ //Fb_vv_ = Fa_vv_;
+ eps_b_o_ = eps_a_o_;
+ eps_b_v_ = eps_a_v_;
  // They are not used anyway
 }
 
@@ -34,8 +36,10 @@ void R_CISComputer::build_hamiltonian_(void) {
 
 
  double** H = this->H_->pointer();
- double** Fa_oo = this->Fa_oo_->pointer();
- double** Fa_vv = this->Fa_vv_->pointer();
+ //double** Fa_oo = this->Fa_oo_->pointer();
+ //double** Fa_vv = this->Fa_vv_->pointer();
+ double* eps_a_o = this->eps_a_o_->pointer();
+ double* eps_a_v = this->eps_a_v_->pointer();
  const int off = this->naocc_ * this->navir_;
 
  // (OV|OV) integral contributions and Fock matrix contributions
@@ -52,8 +56,9 @@ void R_CISComputer::build_hamiltonian_(void) {
                 int jb_= this->navir_ * j + b;
                 double ia_jb = buf_OVOV.matrix[h][ia][jb];
                 double v = ia_jb;
-                if (i==j) v+= Fa_vv[a][b];
-                if (a==b) v-= Fa_oo[i][j];
+                if ((i==j) && (a==b)) v+= eps_a_v[a] - eps_a_o[i];
+                //if (i==j) v+= Fa_vv[a][b];
+                //if (a==b) v-= Fa_oo[i][j];
                 H[ia_][jb_    ] += v    ; // block AA 
                 H[ia_][jb_+off] += ia_jb; // block AB 
            }

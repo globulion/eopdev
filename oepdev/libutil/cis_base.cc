@@ -13,10 +13,14 @@ CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& o
                          psi::IntegralTransform::TransformationType trans_type):
           ref_wfn_(wfn),
           options_(opt),
-          Fa_oo_(nullptr),
-          Fa_vv_(nullptr),
-          Fb_oo_(nullptr),
-          Fb_vv_(nullptr),
+          //Fa_oo_(nullptr),
+          //Fa_vv_(nullptr),
+          //Fb_oo_(nullptr),
+          //Fb_vv_(nullptr),
+          eps_a_o_(nullptr),
+          eps_a_v_(nullptr),
+          eps_b_o_(nullptr),
+          eps_b_v_(nullptr),
           E_(nullptr),
           U_(nullptr),
           H_(nullptr),
@@ -37,12 +41,15 @@ void CISComputer::compute(void) {
  this->prepare_for_cis_();
  this->build_hamiltonian_();
  this->diagonalize_hamiltonian_(); 
+ E_->scale(27.21138);
  E_->print_out();
 }
 
-void CISComputer::prepare_for_cis_(void) {//TODO
- Fa_oo_ = psi::Matrix::triplet(ref_wfn_->Ca_subset("AO","OCC"), ref_wfn_->Fa(), ref_wfn_->Ca_subset("AO","OCC"), true, false, false);
- Fa_vv_ = psi::Matrix::triplet(ref_wfn_->Ca_subset("AO","VIR"), ref_wfn_->Fa(), ref_wfn_->Ca_subset("AO","VIR"), true, false, false);
+void CISComputer::prepare_for_cis_(void) {
+// Fa_oo_ = psi::Matrix::triplet(ref_wfn_->Ca_subset("AO","OCC"), ref_wfn_->Fa(), ref_wfn_->Ca_subset("AO","OCC"), true, false, false);
+// Fa_vv_ = psi::Matrix::triplet(ref_wfn_->Ca_subset("AO","VIR"), ref_wfn_->Fa(), ref_wfn_->Ca_subset("AO","VIR"), true, false, false);
+ eps_a_o_ = ref_wfn_->epsilon_a_subset("MO", "OCC");
+ eps_a_v_ = ref_wfn_->epsilon_a_subset("MO", "VIR");
  this->set_beta_();
  this->transform_integrals_();
 }
@@ -59,8 +66,6 @@ void CISComputer::transform_integrals_(void) {
  inttrans_->transform_tei(psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::occ);
  inttrans_->transform_tei(psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::vir, psi::MOSpace::vir);
  inttrans_->transform_tei(psi::MOSpace::occ, psi::MOSpace::vir, psi::MOSpace::occ, psi::MOSpace::vir);
-
- //inttrans_ = std::shared_ptr<psi::IntegralTransform>(&inttrans);
 }
 
 void CISComputer::diagonalize_hamiltonian_(void) {
@@ -126,8 +131,8 @@ psi::SharedMatrix CISComputer::Ta_ao(int J) const {
   psi::SharedMatrix Co = ref_wfn_->Ca_subset("AO","OCC");
   psi::SharedMatrix Cv = ref_wfn_->Ca_subset("AO","VIR");
   psi::SharedMatrix D = std::make_shared<psi::Matrix>(naocc_, navir_); 
-  for (int i=0; naocc_; ++i) {
-  for (int a=0; navir_; ++a) {
+  for (int i=0; i<naocc_; ++i) {
+  for (int a=0; a<navir_; ++a) {
        int ia = navir_*i + a;
        D->set(i, a, U_->get(ia, J));
   }
@@ -141,8 +146,8 @@ psi::SharedMatrix CISComputer::Tb_ao(int J) const {
   psi::SharedMatrix Cv = ref_wfn_->Cb_subset("AO","VIR");
   psi::SharedMatrix D = std::make_shared<psi::Matrix>(nbocc_, nbvir_); 
   const int off = naocc_*navir_;
-  for (int i=0; nbocc_; ++i) {
-  for (int a=0; nbvir_; ++a) {
+  for (int i=0; i<nbocc_; ++i) {
+  for (int a=0; a<nbvir_; ++a) {
        int ia = navir_*i + a + off;
        D->set(i, a, U_->get(ia, J));
   }

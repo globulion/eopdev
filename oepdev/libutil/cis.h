@@ -139,8 +139,11 @@ class CISComputer {
    /// Electronic excitation energies \f$ E_{I} \f$ wrt ground state
    SharedVector E_;
 
-   /// Fock matrices: OO, oo, VV and vv blocks
-   SharedMatrix Fa_oo_, Fb_oo_, Fa_vv_, Fb_vv_;
+   // Fock matrices: OO, oo, VV and vv blocks
+   //SharedMatrix Fa_oo_, Fb_oo_, Fa_vv_, Fb_vv_;
+
+   // Canonical orbital energies
+   SharedVector eps_a_o_, eps_a_v_, eps_b_o_, eps_b_v_;
 
    /// MO Integral Transformation Type
    const psi::IntegralTransform::TransformationType transformation_type_;
