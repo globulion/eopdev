@@ -19,6 +19,7 @@
 #define OEPDEV_SIZE_BUFFER_D2             3264
 /// Energy converters
 #define OEPDEV_AU_KcalPerMole             627.509
+#define OEPDEV_AU_CMRec                   219474.63
 
 /** @}*/
 #endif // oepdev_include_oepdev_files_h

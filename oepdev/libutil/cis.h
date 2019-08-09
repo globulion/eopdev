@@ -3,6 +3,7 @@
 /** @file cis.h */
 
 #include <string>
+#include <utility>
 
 #include "psi4/liboptions/liboptions.h"
 #include "psi4/libpsio/psio.h"
@@ -67,11 +68,19 @@ class CISComputer {
    /// Solve the CIS problem
    virtual void compute(void);
 
+   /// Get the total number of excited states
+   int nstates(void) const {return ndets_;}
+
    /// Get the CIS eigenvalues
    SharedVector eigenvalues() const {return E_;}
+   SharedVector E() const {return E_;}
 
    /// Get the CIS eigenvectors
    SharedMatrix eigenvectors() const {return U_;}
+   SharedMatrix U() const {return U_;}
+
+   /// Get the HOMO+*h*->LUMO+*l* CIS coefficient for a given excited state *I* for spin alpha and beta
+   std::pair<double,double> U_homo_lumo(int I, int h=0, int l=0) const;
 
    /// Compute MO one-particle alpha density matrix for state *i*
    SharedMatrix Da_mo(int i) const;
@@ -109,6 +118,11 @@ class CISComputer {
    /// Compute transition dipole moment for *i*->*j* transition
    SharedVector transition_dipole(int i, int j) const;
 
+   /// Compute oscillator strength for 0->*j* transition
+   double oscillator_strength(int j) const;
+
+   /// Compute oscillator strength for *i*->*j* transition
+   double oscillator_strength(int i, int j) const;
 
    /// Slater determinant possible references, that are implemented
    static const std::vector<std::string> reference_types;

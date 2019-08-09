@@ -84,6 +84,12 @@ int read_options(std::string name, Options& options)
         options.add_bool   ("OEPDEV_SOLVER_EINT_CT_OEP"   , true                 );
         options.add_bool   ("OEPDEV_SOLVER_EINT_CT_EFP2"  , true                 );
 
+        /*- Electronic excited states */
+        options.add_int    ("EXCITED_STATE"               ,-1                    );
+        options.add_int    ("EXCITED_STATE_A"             ,-1                    );
+        options.add_int    ("EXCITED_STATE_B"             ,-1                    );                  
+        options.add_double ("OSCILLATOR_STRENGTH_THRESHOLD", 0.01                );
+
 
         // ---> CPHF Global Options  <--- //
 

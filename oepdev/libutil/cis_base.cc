@@ -115,6 +115,19 @@ void CISComputer::common_init(void) {
  E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", ndets_);
 }
 
+std::pair<double,double> CISComputer::U_homo_lumo(int I, int h, int l) const {
+  int i  = naocc_-1-h;
+  int a  = naocc_+l;
+  int ia = navir_*i + a;
+  //
+  int j  = nbocc_-1-h;
+  int b  = nbocc_+l;
+  int jb = nbvir_*j + b + naocc_*navir_;
+  //
+  std::pair<double,double> t(U_->get(ia,I), U_->get(jb,I));
+  return t;
+}
+
 psi::SharedMatrix CISComputer::Da_ao(int I) const {
   psi::SharedMatrix da_mo = this->Da_mo(I);
   psi::SharedMatrix C = ref_wfn_->Ca_subset("AO","ALL");
@@ -296,6 +309,18 @@ SharedVector CISComputer::transition_dipole(int i, int j) const {
  }
  return tr;
 }
+
+double CISComputer::oscillator_strength(int j) const {
+ double d = this->transition_dipole(j)->sum_of_squares();
+ return (2.0/3.0) * d * E_->get(j);
+}
+
+double CISComputer::oscillator_strength(int i, int j) const {
+ double d = this->transition_dipole(i, j)->sum_of_squares();
+ return (2.0/3.0) * d * (E_->get(j) - E_->get(i));
+}
+
+
 
 
 } // EndNameSpace oepdev
