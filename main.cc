@@ -187,6 +187,11 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
             if (options.get_bool("OEPDEV_SOLVER_EINT_CT_OEP" )) solver->compute_oep_based("OTTO_LADIK" );
             if (options.get_bool("OEPDEV_SOLVER_EINT_CT_EFP2")) solver->compute_benchmark("EFP2"       );        
         } 
+        else if (o_solver_type == "EET_COUPLING")
+        {
+            std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("EET COUPLING CONSTANT", wfn_union);
+            if (options.get_bool("OEPDEV_SOLVER_EET_V_TDFI_TI")) solver->compute_benchmark("FUJIMOTO_TI_CIS");
+        }
         else 
            throw PSIEXCEPTION("Incorrect solver type chosen!\n");
 
