@@ -162,7 +162,7 @@ double RepulsionEnergySolver::compute_benchmark_dds() {
   }
 
   // ---> Return Total Pauli Repulsion Energy <--- //
-  return e;
+  return e+e_exch;
 }
 double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
 
@@ -516,7 +516,7 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   }
  
   // Return the Total Repulsion Energy
-  return e; 
+  return e+e_exch; 
 }
 double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   double e_s1 = 0.0, e_s2 = 0.0, e = 0;
@@ -731,7 +731,7 @@ double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   }
  
   // Return the Total Repulsion Energy
-  return e; 
+  return e+e_exch; 
 }
 double RepulsionEnergySolver::compute_benchmark_efp2() {
   double e_s1 = 0.0, e_s2 = 0.0, e = 0;
@@ -925,7 +925,7 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
   }
  
   // Return the Total Repulsion Energy
-  return e; 
+  return e+e_exch_efp2; 
 }
 double RepulsionEnergySolver::compute_efp2_exchange_energy(psi::SharedMatrix S, 
           std::vector<psi::SharedVector> R1, std::vector<psi::SharedVector> R2) {
@@ -1057,7 +1057,7 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
   }
  
   // Return the Total Repulsion Energy
-  return e; 
+  return e+e_exch_pure; 
 
 }
 double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
@@ -1207,7 +1207,7 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
   }
  
   // Return the Total Repulsion Energy
-  return e; 
+  return e+e_exch_pure; 
 }
 double RepulsionEnergySolver::compute_oep_based_murrell_etal_esp() {
   //psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");

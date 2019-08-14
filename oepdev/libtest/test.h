@@ -99,6 +99,24 @@ class Test
    ///Test the Charge-transfer Energy Solver (benchmark method Otto-Ladik)
    double test_ct_energy_benchmark_ol(void);
 
+   ///Test the Repulsion Energy Solver: (benchmark method Hayes-Stone)
+   double test_rep_energy_benchmark_hs(void);
+
+   ///Test the Repulsion Energy Solver: (benchmark method Density-Based - DDS/HF)
+   double test_rep_energy_benchmark_dds(void);
+
+   ///Test the Repulsion Energy Solver: (benchmark method Murrell-etal)
+   double test_rep_energy_benchmark_murrell_etal(void);
+
+   ///Test the Repulsion Energy Solver: (OEP-based method Murrell-etal)
+   double test_rep_energy_oep_based_murrell_etal(void);
+
+   ///Test the Repulsion Energy Solver: (benchmark method Otto-Ladik)
+   double test_rep_energy_benchmark_ol(void);
+
+   ///Test the Repulsion Energy Solver: (benchmark method EFP2)
+   double test_rep_energy_benchmark_efp2(void);
+
    /// Test the custom code (to be deprecated)
    double test_custom(void);
 

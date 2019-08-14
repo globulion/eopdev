@@ -30,6 +30,12 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CUSTOM") result = test_custom();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="POINTS_COLLECTION3D") result = test_points_collection3d();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CT_ENERGY_BENCHMARK_OL") result = test_ct_energy_benchmark_ol();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="REP_ENERGY_BENCHMARK_HS") result = test_rep_energy_benchmark_hs();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="REP_ENERGY_BENCHMARK_DDS") result = test_rep_energy_benchmark_dds();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="REP_ENERGY_BENCHMARK_MURRELL_ETAL") result = test_rep_energy_benchmark_murrell_etal();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="REP_ENERGY_OEP_BASED_MURRELL_ETAL") result = test_rep_energy_oep_based_murrell_etal();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="REP_ENERGY_BENCHMARK_OL") result = test_rep_energy_benchmark_ol();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="REP_ENERGY_BENCHMARK_EFP2") result = test_rep_energy_benchmark_efp2();
   else throw psi::PSIEXCEPTION("Incorrect test name specified!");
   return result;
 }
