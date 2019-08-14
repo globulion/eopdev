@@ -23,7 +23,7 @@ void U_CISComputer::build_hamiltonian_(void) {
  psi::dpd_set_default(inttrans_->get_dpd_id());
  psi::dpdbuf4 buf_OOVV, buf_OVOV, buf_OVov, buf_oovv, buf_ovov;
  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
- psio->tocprint(PSIF_LIBTRANS_DPD);
+ //psio->tocprint(PSIF_LIBTRANS_DPD);
 
  psi::global_dpd_->buf4_init(&buf_OOVV, PSIF_LIBTRANS_DPD, 0,
                         inttrans_->DPD_ID("[O,O]"  ), inttrans_->DPD_ID("[V,V]"  ),

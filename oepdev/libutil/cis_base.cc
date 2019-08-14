@@ -68,9 +68,11 @@ void CISComputer::transform_integrals_(void) {
 
 void CISComputer::diagonalize_hamiltonian_(void) {
  H_->diagonalize(U_, E_);
- E_->scale(27.21138);
- E_->print_out();
- if (options_.get_bool("PRINT")>3) H_->print_out();
+ //E_->scale(27.21138);
+ if (options_.get_bool("PRINT")>3) {
+    E_->print_out();
+    H_->print_out();
+ }
 }
 
 std::shared_ptr<CISComputer> CISComputer::build(const std::string& type, 
@@ -109,19 +111,22 @@ void CISComputer::set_beta_(void) {}
 
 void CISComputer::common_init(void) {
  ndets_ = naocc_ * navir_ + nbocc_ * nbvir_;
- std::cout << ndets_ << "\n";
  H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
  U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, ndets_);
  E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", ndets_);
+ if (true) {
+     std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(ref_wfn_->basisset());
+     mints->integrals();
+ }
 }
 
 std::pair<double,double> CISComputer::U_homo_lumo(int I, int h, int l) const {
   int i  = naocc_-1-h;
-  int a  = naocc_+l;
+  int a  = 0+l;
   int ia = navir_*i + a;
   //
   int j  = nbocc_-1-h;
-  int b  = nbocc_+l;
+  int b  = 0+l;
   int jb = nbvir_*j + b + naocc_*navir_;
   //
   std::pair<double,double> t(U_->get(ia,I), U_->get(jb,I));

@@ -43,8 +43,9 @@ double oepdev::test::Test::test_cis_rhf(void) {
 
   // Build-up error
   for (int i=0; i<11; ++i) {
-       result += pow(E_ref[i] - E->get(i), 2.0);
-       psi::outfile->Printf(" Transition 0-%2d energy: %14.5f [EV]\n", i+1, E->get(i));
+       double ei = E->get(i) * 27.21138; // [EV]
+       result += pow(E_ref[i] - ei, 2.0);
+       psi::outfile->Printf(" Transition 0-%2d energy: %14.5f [EV]\n", i+1, ei      );
        psi::outfile->Printf( "        (g16 reference): %14.5f [EV]\n", i+1, E_ref[i]);
   }
   for (int i=0; i<12; ++i) {
