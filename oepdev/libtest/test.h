@@ -18,6 +18,8 @@
 #include "../libpsi/integral.h"
 #include "../libutil/integrals_iter.h"
 
+#include "../../include/oepdev_files.h"
+
 namespace oepdev{
 namespace test{
 

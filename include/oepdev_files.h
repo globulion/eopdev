@@ -20,6 +20,7 @@
 /// Energy converters
 #define OEPDEV_AU_KcalPerMole             627.509
 #define OEPDEV_AU_CMRec                   219474.63
+#define OEPDEV_AU_EV                      27.21138
 
 /** @}*/
 #endif // oepdev_include_oepdev_files_h

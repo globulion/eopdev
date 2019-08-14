@@ -172,7 +172,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
       Pe_A  = cis_A->Da_ao(I); Pe_A ->add(cis_A->Db_ao(I));
       Peg_A = cis_A->Ta_ao(I); Peg_A->add(cis_A->Tb_ao(I));
       psi::outfile->Printf("     State I= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
-                                 I+1, cis_A->oscillator_strength(I), E_ex_A*27.21138, t_A);
+                                 I+1, cis_A->oscillator_strength(I), E_ex_A*OEPDEV_AU_EV, t_A);
   }{
       std::shared_ptr<CISComputer> cis_B = CISComputer::build("RESTRICTED", wfn_union_->l_wfn(1), options_); 
       cis_B->compute();
@@ -183,7 +183,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
       Pe_B  = cis_B->Da_ao(J); Pe_B ->add(cis_B->Db_ao(J));
       Peg_B = cis_B->Ta_ao(J); Peg_B->add(cis_B->Tb_ao(J));
       psi::outfile->Printf("     State J= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
-                                 J+1, cis_B->oscillator_strength(J), E_ex_B*27.21138, t_B);
+                                 J+1, cis_B->oscillator_strength(J), E_ex_B*OEPDEV_AU_EV, t_B);
   }
   psi::outfile->Printf("\n");
 
@@ -221,7 +221,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
   if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf(" ===> Overlap matrix between basis states <===\n\n");
-     psi::outfile->Printf("    1.       2.       3.       4.\n");
+     psi::outfile->Printf("         1.       2.       3.       4.\n");
      psi::outfile->Printf("  1. %9.4f  %9.4f  %9.4f  %9.4f\n", 1.0, S12, S13, S14);
      psi::outfile->Printf("  2. %9.4f  %9.4f  %9.4f  %9.4f\n", S12, 1.0, S32, S42);
      psi::outfile->Printf("  3. %9.4f  %9.4f  %9.4f  %9.4f\n", S13, S32, 1.0, S34);
@@ -263,8 +263,6 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   std::shared_ptr<psi::TwoBodyAOInt> t_abab(fact_ABAB.eri()); const double* b_abab = t_abab->buffer();
   std::shared_ptr<psi::TwoBodyAOInt> t_aabb(fact_AABB.eri()); const double* b_aabb = t_aabb->buffer();
 
-
-  // ----> (AA|AB) : ET1, HT1, Fock <---- // 
   double** dA = Da_A->pointer();
   double** dB = Da_B->pointer();
   double** pA = Pe_A->pointer();
@@ -277,6 +275,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double** cvA= Ca_vir_A->pointer();
   double** cvB= Ca_vir_B->pointer();
 
+  // ----> (AA|AB) : ET1, HT1, Fock <---- // 
   for (s_aaab->first(); s_aaab->is_done() == false; s_aaab->next()) 
   {
     s_aaab->compute_shell(t_aaab);
@@ -291,7 +290,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
          // Fock matrix
          f[k][l] += 2.0 * dA[i][j] * eri;
-         f[i][l] -=       dA[k][j];
+         f[i][l] -=       dA[k][j] * eri;
 
          // V0_ET1
          V0_ET1 += 2.0 * eri * coA[i][homo_A] * cvA[j][0] * cvA[k][homo_A] * cvB[l][0];
@@ -318,7 +317,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
          // Fock matrix
          f[i][j] += 2.0 * dA[k][l] * eri;
-         f[i][l] -=       dA[k][j];
+         f[i][l] -=       dA[k][j] * eri;
 
          // V0_ET2
          V0_ET2 += 2.0 * eri * cvA[i][0] * coB[j][homo_B] * cvB[l][0] * coB[k][homo_B];
@@ -412,6 +411,16 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   V0_HT1 *= t_A;
   V0_HT2 *= t_B;
 
+  if (wfn_union_->options().get_int("PRINT") > -1) {
+    psi::outfile->Printf(" ===> Basis Energies [EV] <===\n\n");
+    psi::outfile->Printf("   E01 = %9.3f  E1 = %9.3f\n", E01*OEPDEV_AU_EV, E1*OEPDEV_AU_EV);
+    psi::outfile->Printf("   E02 = %9.3f  E2 = %9.3f\n", E02*OEPDEV_AU_EV, E2*OEPDEV_AU_EV);
+    psi::outfile->Printf("   E03 = %9.3f  E3 = %9.3f\n", E03*OEPDEV_AU_EV, E3*OEPDEV_AU_EV);
+    psi::outfile->Printf("   E04 = %9.3f  E4 = %9.3f\n", E04*OEPDEV_AU_EV, E4*OEPDEV_AU_EV);
+    psi::outfile->Printf("\n");
+  }
+
+
   // Compute overlap-corrected indirect coupling matrix elements
   double V_ET1 = (V0_ET1 - 0.5*(S13*(E1+E2)))/(1.0 - S13*S13);
   double V_ET2 = (V0_ET2 - 0.5*(S42*(E1+E2)))/(1.0 - S42*S42);
@@ -495,24 +504,33 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: EET coupling constant <==\n"  );
      psi::outfile->Printf("  ==>         Benchmark (TDFI-TI)   <==\n\n");
-     psi::outfile->Printf("     V0 Coul   = %13.6f\n", V0_Coul *OEPDEV_AU_CMRec         );
-     psi::outfile->Printf("     V0 Exch   = %13.6f\n", V0_Exch *OEPDEV_AU_CMRec         );
+     psi::outfile->Printf("     V0 Coul   = %13.2f\n", V0_Coul *OEPDEV_AU_CMRec         );
+     psi::outfile->Printf("     V0 Exch   = %13.2f\n", V0_Exch *OEPDEV_AU_CMRec         );
      psi::outfile->Printf("     -------------------------------\n"                      );
-     psi::outfile->Printf("     V Coul    = %13.6f\n", V_Coul *OEPDEV_AU_CMRec          );
-     psi::outfile->Printf("     V Exch    = %13.6f\n", V_Exch *OEPDEV_AU_CMRec          );
-     psi::outfile->Printf("     V Ovrl    = %13.6f\n", V_Ovrl *OEPDEV_AU_CMRec          );
+     psi::outfile->Printf("     V Coul    = %13.2f\n", V_Coul *OEPDEV_AU_CMRec          );
+     psi::outfile->Printf("     V Exch    = %13.2f\n", V_Exch *OEPDEV_AU_CMRec          );
+     psi::outfile->Printf("     V Ovrl    = %13.2f\n", V_Ovrl *OEPDEV_AU_CMRec          );
      psi::outfile->Printf("     -------------------------------\n"                      );
-     psi::outfile->Printf("     TrCAMM-R1 = %13.6f\n", V0_TrCAMM_R1 *OEPDEV_AU_CMRec    );
-     psi::outfile->Printf("     TrCAMM-R2 = %13.6f\n", V0_TrCAMM_R2 *OEPDEV_AU_CMRec    );
-     psi::outfile->Printf("     TrCAMM-R3 = %13.6f\n", V0_TrCAMM_R3 *OEPDEV_AU_CMRec    );
-     psi::outfile->Printf("     TrCAMM-R4 = %13.6f\n", V0_TrCAMM_R4 *OEPDEV_AU_CMRec    );
-     psi::outfile->Printf("     TrCAMM-R5 = %13.6f\n", V0_TrCAMM_R5 *OEPDEV_AU_CMRec    );
+     psi::outfile->Printf("     TrCAMM-R1 = %13.2f\n", V0_TrCAMM_R1 *OEPDEV_AU_CMRec    );
+     psi::outfile->Printf("     TrCAMM-R2 = %13.2f\n", V0_TrCAMM_R2 *OEPDEV_AU_CMRec    );
+     psi::outfile->Printf("     TrCAMM-R3 = %13.2f\n", V0_TrCAMM_R3 *OEPDEV_AU_CMRec    );
+     psi::outfile->Printf("     TrCAMM-R4 = %13.2f\n", V0_TrCAMM_R4 *OEPDEV_AU_CMRec    );
+     psi::outfile->Printf("     TrCAMM-R5 = %13.2f\n", V0_TrCAMM_R5 *OEPDEV_AU_CMRec    );
      psi::outfile->Printf("     -------------------------------\n"                      );
-     psi::outfile->Printf("     V0 Direct = %13.6f\n", V0_direct*OEPDEV_AU_CMRec        );
-     psi::outfile->Printf("     V  Direct = %13.6f\n", V_direct *OEPDEV_AU_CMRec        );
+     psi::outfile->Printf("     V0 Direct = %13.2f\n", V0_direct*OEPDEV_AU_CMRec        );
+     psi::outfile->Printf("     V  Direct = %13.2f\n", V_direct *OEPDEV_AU_CMRec        );
+     psi::outfile->Printf("     ===============================\n"                      );
+     psi::outfile->Printf("     V0_ET1 = %13.2f V_ET1 = %13.2f\n", V0_ET1*OEPDEV_AU_CMRec, V_ET1*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("     V0_ET2 = %13.2f V_ET2 = %13.2f\n", V0_ET2*OEPDEV_AU_CMRec, V_ET2*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("     V0_HT1 = %13.2f V_HT1 = %13.2f\n", V0_HT1*OEPDEV_AU_CMRec, V_HT1*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("     V0_HT2 = %13.2f V_HT2 = %13.2f\n", V0_HT2*OEPDEV_AU_CMRec, V_HT2*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("     V0_CT  = %13.2f V_CT  = %13.2f\n", V0_CT *OEPDEV_AU_CMRec, V_CT *OEPDEV_AU_CMRec);
      psi::outfile->Printf("     -------------------------------\n"                      );
-     psi::outfile->Printf("     V0 Indir = %13.6f\n", V0_indirect*OEPDEV_AU_CMRec       );
-     psi::outfile->Printf("     V  Indir = %13.6f\n", V_indirect *OEPDEV_AU_CMRec       );
+     psi::outfile->Printf("     V0 TI_2= %13.2f V TI_2= %13.2f\n", V0_TI_2*OEPDEV_AU_CMRec, V_TI_2*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("     V0 TI_3= %13.2f V TI_3= %13.2f\n", V0_TI_3*OEPDEV_AU_CMRec, V_TI_3*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     V0 Indir = %13.2f\n", V0_indirect*OEPDEV_AU_CMRec       );
+     psi::outfile->Printf("     V  Indir = %13.2f\n", V_indirect *OEPDEV_AU_CMRec       );
      psi::outfile->Printf("\n");
   }
 
