@@ -172,6 +172,8 @@ psi::SharedMatrix CISComputer::Tb_ao(int J) const {
 }
 
 psi::SharedMatrix CISComputer::Ta_ao(int I, int J) const {
+  throw psi::PSIEXCEPTION("Transition densities between excited states are not implemented yet!");
+  // the below code is not correct
   psi::SharedMatrix T_0I = this->Ta_ao(I);
   psi::SharedMatrix T_0J = this->Ta_ao(J);
   T_0J->subtract(T_0I);
@@ -179,6 +181,8 @@ psi::SharedMatrix CISComputer::Ta_ao(int I, int J) const {
 }
 
 psi::SharedMatrix CISComputer::Tb_ao(int I, int J) const {
+  throw psi::PSIEXCEPTION("Transition densities between excited states are not implemented yet!");
+  // the below code is not correct
   psi::SharedMatrix T_0I = this->Tb_ao(I);
   psi::SharedMatrix T_0J = this->Tb_ao(J);
   T_0J->subtract(T_0I);
@@ -261,6 +265,18 @@ psi::SharedMatrix CISComputer::Db_mo(int I) const {
  // VO and OV blocks: zero (for unrelaxed density which is the case)
  return D;
 }
+
+SharedDMTPole CISComputer::camm(int j) const {
+ psi::SharedMatrix T = this->Da_ao(j);
+ T->add(this->Db_ao(j));
+ std::vector<psi::SharedMatrix> Tvec; Tvec.push_back(T);
+ std::vector<bool> Bvec; Bvec.push_back(false);
+ 
+ SharedDMTPole camm = oepdev::DMTPole::build("CAMM", ref_wfn_, 1);
+ camm->compute(Tvec, Bvec);
+ return camm;
+}
+
 
 SharedDMTPole CISComputer::trcamm(int j) const {
  psi::SharedMatrix T = this->Ta_ao(j);
