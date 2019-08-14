@@ -296,8 +296,8 @@ double RepulsionEnergySolver::compute_pure_exchange_energy() {
   dpdbuf4 buf_1212;
 
   global_dpd_->buf4_init(&buf_1212, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[1,2]"  ),
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[1,2]"  ), 0, "MO Ints (12|12)");
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[I,J]"  ),
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[I,J]"  ), 0, "MO Ints (IJ|IJ)");
 
   double e_ex = 0.0;
   for (int h = 0; h < wfn_union_->nirrep(); ++h) {
@@ -407,14 +407,14 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   double** S = Smo12->pointer();
 
   global_dpd_->buf4_init(&buf_1112, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[1,2]"  ),
-                          integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[1,2]"  ), 0, "MO Ints (11|12)");
+                          integrals->DPD_ID("[I,I]"  ), integrals->DPD_ID("[I,J]"  ),
+                          integrals->DPD_ID("[I>=I]+"), integrals->DPD_ID("[I,J]"  ), 0, "MO Ints (II|IJ)");
   global_dpd_->buf4_init(&buf_1222, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[2,2]"  ),
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (12|22)");
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[J,J]"  ),
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (IJ|JJ)");
   global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
-                          integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
+                          integrals->DPD_ID("[I,I]"  ), integrals->DPD_ID("[J,J]"  ),
+                          integrals->DPD_ID("[I>=I]+"), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (II|JJ)");
 
   int i, j, k, l;
   for (int h = 0; h < wfn_union_->nirrep(); ++h) {
@@ -600,14 +600,14 @@ double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   double integral;
 
   global_dpd_->buf4_init(&buf_1112, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[1,2]"  ),
-                          integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[1,2]"  ), 0, "MO Ints (11|12)");
+                          integrals->DPD_ID("[I,I]"  ), integrals->DPD_ID("[I,J]"  ),
+                          integrals->DPD_ID("[I>=I]+"), integrals->DPD_ID("[I,J]"  ), 0, "MO Ints (II|IJ)");
   global_dpd_->buf4_init(&buf_1222, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[2,2]"  ),
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (12|22)");
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[J,J]"  ),
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (IJ|JJ)");
   global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
-                          integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
+                          integrals->DPD_ID("[I,I]"  ), integrals->DPD_ID("[J,J]"  ),
+                          integrals->DPD_ID("[I>=I]+"), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (II|JJ)");
 
   int i, j, k, l;
   for (int h = 0; h < wfn_union_->nirrep(); ++h) {
