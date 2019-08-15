@@ -4,7 +4,7 @@
  054102 (2008). In fact, Fujimoto used B3LYP/6-31G(d) with Coulomb
  potential.
 
- Plot dfi_jk.pdf shows the artifacts at short distances if exchange
+ Plot dfi_jk_new.pdf shows the artifacts at short distances if exchange
  integrals are introduced in DFI-HF/6-31(d). If it does not work at
  HF level it probably won't work at DFT level.
 """
@@ -144,5 +144,5 @@ plt.plot(R_scf_i, E_scf_i(R_scf_i), 'r-', linewidth=2, label="SCF")
 plt.legend(loc=1)
 plt.show()
 #fig.savefig( 'sys.argv[0].replace('.py','.pdf') )
-fig.savefig('dfi_jk.pdf')
+fig.savefig('dfi_jk_new.pdf')
 
