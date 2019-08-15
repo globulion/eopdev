@@ -28,6 +28,8 @@ double oepdev::test::Test::test_cis_uhf(void) {
                               0.3950,      0.3167,     -0.1022,    // 38
                               0.5229,     -0.6093,      0.1389,    // 43
                              -0.1141,     -0.0910,      0.0294};   // 102
+   const double f_ref[12] = {0.1470, 0.0010, 0.0353, 0.0021, 0.0206, 0.2328, 
+                             0.2487, 0.2289, 0.3044, 0.2475, 0.6576, 0.0527};
 
 
   // Compute CAMM
@@ -52,14 +54,18 @@ double oepdev::test::Test::test_cis_uhf(void) {
   for (int i=0; i<12; ++i) {
        int j = tr_J[i]-1;
        psi::SharedVector tj = cis->transition_dipole(j);
+       double f = cis->oscillator_strength(j);
        double tjx = tj->get(0); double tjx_r = tr_ref[3*i+0];
        double tjy = tj->get(1); double tjy_r = tr_ref[3*i+1];
        double tjz = tj->get(2); double tjz_r = tr_ref[3*i+2];
        result += pow(abs(tjx_r) - abs(tjx), 2.0);
        result += pow(abs(tjy_r) - abs(tjy), 2.0);
        result += pow(abs(tjz_r) - abs(tjz), 2.0);
-       psi::outfile->Printf(" Transition 0-%2d  dipole moment: %14.4f %14.4f %14.4f [a.u.]\n", j+1, tjx, tjy, tjz);
-       psi::outfile->Printf( "                (g16 reference): %14.4f %14.4f %14.4f [a.u.]\n",      tjx_r, tjy_r, tjz_r);
+       result += pow(abs(f)     - abs(f_ref[i]), 2.0);
+       psi::outfile->Printf(" Transition 0-%2d  dipole moment: %14.4f %14.4f %14.4f [a.u.] Osc=%14.4f\n", j+1, 
+                                                                 tjx, tjy, tjz, f);
+       psi::outfile->Printf( "                (g16 reference): %14.4f %14.4f %14.4f [a.u.] Osc=%14.4f\n",      
+                                                                 tjx_r, tjy_r, tjz_r, f_ref[i]);
   }
 
   // Print result

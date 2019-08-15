@@ -28,6 +28,8 @@ double oepdev::test::Test::test_cis_rhf(void) {
                              0.0089,      0.0530,      0.1986,    // 27
                             -0.2243,     -0.1794,      0.0579,    // 49
                             -0.8885,     -0.7081,      0.2287};   // 80
+  const double f_ref[12] = {0.0139, 0.0000, 0.1187, 0.0960, 0.4848, 0.2883, 
+                            0.1309, 0.0170, 0.0405, 0.0335, 0.0886, 2.0180};
 
   // Compute CIS(RHF)
   psi::timer_on("CIS RHF Calculation             ");
@@ -51,14 +53,18 @@ double oepdev::test::Test::test_cis_rhf(void) {
   for (int i=0; i<12; ++i) {
        int j = tr_J[i]-1;
        psi::SharedVector tj = cis->transition_dipole(j);
+       double f = cis->oscillator_strength(j);
        double tjx = tj->get(0); double tjx_r = tr_ref[3*i+0];
        double tjy = tj->get(1); double tjy_r = tr_ref[3*i+1];
        double tjz = tj->get(2); double tjz_r = tr_ref[3*i+2];
        result += pow(abs(tjx_r) - abs(tjx), 2.0);
        result += pow(abs(tjy_r) - abs(tjy), 2.0);
        result += pow(abs(tjz_r) - abs(tjz), 2.0);
-       psi::outfile->Printf(" Transition 0-%2d  dipole moment: %14.4f %14.4f %14.4f [a.u.]\n", j+1, tjx, tjy, tjz);
-       psi::outfile->Printf( "                (g16 reference): %14.4f %14.4f %14.4f [a.u.]\n",      tjx_r, tjy_r, tjz_r);
+       result += pow(abs(f)     - abs(f_ref[i]), 2.0);
+       psi::outfile->Printf(" Transition 0-%2d  dipole moment: %14.4f %14.4f %14.4f [a.u.] Osc=%14.4f\n", j+1, 
+                                                                 tjx, tjy, tjz, f);
+       psi::outfile->Printf( "                (g16 reference): %14.4f %14.4f %14.4f [a.u.] Osc=%14.4f\n",      
+                                                                 tjx_r, tjy_r, tjz_r, f_ref[i]);
   }
 
   // Print result
