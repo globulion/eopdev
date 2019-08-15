@@ -433,11 +433,11 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double V_Exch = V0_Exch / (1.0 - S12*S12);
   double V_Ovrl =-(E1 + E2)*S12/(2.0 * (1.0 - S12*S12));
 
-  double V_TI_2 = -(V_ET1*V_HT2)/(E3-E1) - (V_HT1*V_ET2)/(E4-E1);
+  double V_TI_2 =-(V_ET1*V_HT2)/(E3-E1) - (V_HT1*V_ET2)/(E4-E1);
   double V_TI_3 = (V_ET1*V_CT*V_ET2 + V_HT1*V_CT*V_HT2) / ((E3-E1)*(E4-E1));
 
-  double V0_TI_2 = -(V0_ET1*V0_HT2)/(E3-E1) - (V0_HT1*V0_ET2)/(E4-E1);
-  double V0_TI_3 = (V0_ET1*V0_CT*V0_ET2 + V0_HT1*V0_CT*V0_HT2) / ((E3-E1)*(E4-E1));
+  double V0_TI_2 =-(V0_ET1*V0_HT2)/(E03-E01) - (V0_HT1*V0_ET2)/(E04-E01);
+  double V0_TI_3 = (V0_ET1*V0_CT*V0_ET2 + V0_HT1*V0_CT*V0_HT2) / ((E03-E01)*(E04-E01));
  
   double V_direct = V_Coul + V_Exch + V_Ovrl;
   double V_indirect = V_TI_2 + V_TI_3;

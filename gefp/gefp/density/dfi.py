@@ -33,6 +33,7 @@ import psi4
 import numpy
 import abc
 import oepdev
+from ..core.utilities import substitute_matrices_in_psi4_wavefunction
 
 MAX_NBF = 128
 
@@ -206,6 +207,7 @@ class DFI(abc.ABC):
       # --- Fragments as psi4.core.Molecule objects
       # Handle Psi4 Fragments within one Psi4 Molecule
       if len(frags) == 1: 
+         self._aggregate = frags[0]
          nfrag = frags[0].nfragments() 
          assert nfrag > 1, " You must provide at least two fragments ('--' separator)!"
          self._nfrag = nfrag
@@ -222,6 +224,8 @@ class DFI(abc.ABC):
       else:
          self._nfrag = len(frags)
          self._frags = frags
+         self._aggregate = None
+         raise NotImplementedError("self._aggregate needs to be implemented in this case!")
       #
       # --- Fragment lists                                                   Status every DFI iteration
       self._ens   = []  # Total energy of a fragment                         Updated
@@ -238,6 +242,7 @@ class DFI(abc.ABC):
       self._Hs    = []  # Hcore matrix in original basis (effective)         Updated
       self._Fs    = []  # Fock matrix in original basis                      Updated
       self._Ds    = []  # One-particle density matrix in original basis      Updated
+      self._wfn   = []  # SCF wavefunction                                   Updated
       return
 
   @staticmethod
@@ -250,6 +255,16 @@ class DFI(abc.ABC):
       self._run_init()
       self._run_iter(maxit, conv, conv_scf, maxit_scf, damp_scf, ndamp_scf, verbose_scf)
       return sum(self._ens) - self.en_0 
+
+  def aggregate(self): return self._aggregate
+  def wfn(self, i): return self._wfn[i]
+  def epsilon(self, i): return self._eps[i]
+  def Cocc(self, i): return self._Cs[i]
+  def C(self, i): return self._Csall[i]
+  def D(self, i): return self._Ds[i]
+  def F(self, i): return self._Fs[i]
+  def V(self, i): return self._Hs[i] - self._H[i]
+  def E(self, i): return self._ens[i]
 
   # --- protected --- #
   def _run_init(self):
@@ -288,6 +303,7 @@ class DFI(abc.ABC):
           self._Hs   .append(H)              # Effective Hcore matrix in original basis
           self._Fs   .append(F)              # Fock matrix in original basis
           self._Ds   .append(D)              # One-particle density matrix in original basis
+          self._wfn  .append(wfn)            # SCF wavefunction object
       # compute interfragment nuclear repulsion energy
       self.enuc = self._interfragmentNuclearRepulsionEnergy()
       # 
@@ -343,6 +359,9 @@ class DFI(abc.ABC):
       self._Csall[i]= scf.C.copy()
       self._Ds [i] = scf.D.copy()
       self._eps[i] = scf.eps.copy()
+      #
+      substitute_matrices_in_psi4_wavefunction(self._wfn[i], 
+                                               Da=self._Ds[i], Ca=self._Csall[i], Fa=self._Fs[i], ea=self._eps[i])
       return
 
   def _eval_vnuc(self, i, j):

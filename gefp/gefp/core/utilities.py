@@ -6,8 +6,13 @@
 """
 import numpy
 import psi4
+import oepdev
 
-__all__ = ["psi_molecule_from_file"]
+__all__ = ["psi_molecule_from_file", 
+           "wavefunction_union_from_dimer",
+           "wavefunction_union_from_dfi_solver",
+           "substitute_matrices_in_psi4_wavefunction"]
+
 __all__+= ["UnitaryOptimizer", "UnitaryOptimizer_4_2"]
 
 
@@ -22,6 +27,118 @@ def psi_molecule_from_file(f, frm=None, no_com=True, no_reorient=True):
     #
     mol.update_geometry()
     return mol
+
+def _get_wavefunction_union_basis_sets(dimer):
+    "Construct basis set objects necessary to build the oepdev.WavefunctionUnion object"
+    dimer.update_geometry()
+    pam = psi4.core.get_global_option("PUREAM")
+
+    #
+    molecule_A     = dimer.extract_subsets(1)                                                               
+    molecule_B     = dimer.extract_subsets(2)
+
+    # --- primary                                                                                                                 
+    basis_A        = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("BASIS"), puream=pam)
+    basis_B        = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS"), puream=pam)
+
+    # --- auxiliary (DF-SCF)
+    basis_df_scf_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"), puream=pam)
+    basis_df_scf_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"), puream=pam)
+
+    # --- auxiliary (OEP)
+    opt_basis_df_oep_A = psi4.core.get_global_option("DF_BASIS_OEP_A")
+    opt_basis_df_oep_B = psi4.core.get_global_option("DF_BASIS_OEP_B")
+    opt_basis_df_oep   = psi4.core.get_global_option("DF_BASIS_OEP")
+    if not opt_basis_df_oep_A: opt_basis_df_oep_A = opt_basis_df_oep
+    if not opt_basis_df_oep_B: opt_basis_df_oep_B = opt_basis_df_oep
+    basis_df_oep_A = psi4.core.BasisSet.build(molecule_A, "BASIS", opt_basis_df_oep_A, puream=pam)
+    basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", opt_basis_df_oep_B, puream=pam)
+
+    # --- intermediate (OEP)
+    basis_int_oep_A= psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"), puream=pam)
+    basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"), puream=pam)
+
+    basis        = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("BASIS"       ), puream=pam)
+    basis_df_scf = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"), puream=pam)
+    #
+    return molecule_A, molecule_B, \
+           basis, basis_df_scf, basis_A, basis_B, basis_df_oep_A, basis_df_oep_B, \
+           basis_df_scf_A, basis_df_scf_B, basis_int_oep_A, basis_int_oep_B
+
+
+def wavefunction_union_from_dimer(dimer, wfn_1=None, wfn_2=None,
+                                         localize_orbitals=False, transform_integrals=False):
+    "Create oepdev.WavefunctionUnion from the molecular dimer"
+
+    molecule_A, molecule_B, \
+    basis, basis_df_scf, \
+    basis_A, basis_B,\
+    basis_df_oep_A, basis_df_oep_B,\
+    basis_df_scf_A, basis_df_scf_B,\
+    basis_int_oep_A, basis_int_oep_B = _get_wavefunction_union_basis_sets(dimer)
+
+    if wfn_1 is None:
+       en_1, wfn_1 = psi4.energy('hf', molecule=molecule_A, return_wfn=True); del en_1
+    if wfn_2 is None:
+       en_2, wfn_2 = psi4.energy('hf', molecule=molecule_B, return_wfn=True); del en_2
+
+    #psi4_io.set_default_path('/home/globulion/scr-d')
+    psi4.core.clean()
+
+    un = oepdev.WavefunctionUnion(dimer, basis, basis_df_scf,
+                                  basis_A, basis_B,
+                                  basis_df_oep_A, basis_df_oep_B,
+                                  basis_df_scf_A, basis_df_scf_B,
+                                  basis_int_oep_A, basis_int_oep_B,
+                                  wfn_1, wfn_2,
+                                  psi4.core.get_options())
+
+    if localize_orbitals: 
+       un.localize_orbitals()
+
+    if transform_integrals: 
+       un.transform_integrals()
+
+    return un
+
+def wavefunction_union_from_dfi_solver(dfi, **kwargs): 
+    "Create oepdev.WavefunctionUnion from the oepdev.DFI solver"
+    un = wavefunction_union_from_dimer(dfi.aggregate(), wfn_1=dfi.wfn(0), wfn_2=dfi.wfn(1), **kwargs)
+    return un
+
+
+def substitute_matrices_in_psi4_wavefunction(wfn, 
+                                             Da, Ca, Fa, ea, 
+                                             Db=None, Cb=None, Fb=None, eb=None):
+    "Substitutes LCAO matrix, orbital energies and AO matrices in a given psi4.core.Wavefunction object"
+    nbf = wfn.basisset().nbf()
+    nmo = wfn.nmo()
+
+    if Db is None: Db = Da
+    if Cb is None: Cb = Ca
+    if Fb is None: Fb = Fa
+    if eb is None: eb = ea
+
+    Ca_ = wfn.Ca(); Cb_ = wfn.Cb()
+    Da_ = wfn.Da(); Db_ = wfn.Db()
+    Fa_ = wfn.Fa(); Fb_ = wfn.Fb()
+    ea_ = wfn.epsilon_a(); eb_ = wfn.epsilon_b()
+
+    for a in range(nbf):
+        for i in range(nmo):
+            Ca_.set(a, i, Ca[a,i])
+            Cb_.set(a, i, Cb[a,i])
+        for b in range(nbf):
+            Da_.set(a, b, Da[a,b])
+            Db_.set(a, b, Db[a,b])
+        for b in range(nbf):
+            Fa_.set(a, b, Fa[a,b])
+            Fb_.set(a, b, Fb[a,b])
+    for i in range(nmo):
+            ea_.set(i, ea[i])
+            eb_.set(i, eb[i])
+    return
+
 
 class UnitaryOptimizer_4_2(object):
   """
