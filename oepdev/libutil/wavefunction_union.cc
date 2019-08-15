@@ -376,6 +376,7 @@ void WavefunctionUnion::transform_integrals()
                                                      IntegralTransform::FrozenOrbitals::None);
 
     integrals_->set_keep_dpd_so_ints(true);
+    integrals_->set_print(0);
 
     // Trans (II|II)
     timer_on("Trans (II|II)");
@@ -461,7 +462,7 @@ void WavefunctionUnion::print_mo_integrals(void) {
     dpd_set_default(integrals_->get_dpd_id());
     dpdbuf4 buf_IIJJ, buf_IJJJ, buf_IIIJ, buf_IJIJ;
     psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
-    psio->tocprint(PSIF_LIBTRANS_DPD);
+    if (options_.get_int("PRINT") > 2) psio->tocprint(PSIF_LIBTRANS_DPD);
 
     global_dpd_->buf4_init(&buf_IIIJ, PSIF_LIBTRANS_DPD, 0, 
                            integrals_->DPD_ID("[1,1]"  ), integrals_->DPD_ID("[1,2]"  ),

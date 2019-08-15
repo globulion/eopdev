@@ -143,7 +143,7 @@ double RepulsionEnergySolver::compute_benchmark_dds() {
   psi::Process::environment.globals["EINT EXR DDS KCAL"] =(e+e_exch)*OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) {
+  if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
      psi::outfile->Printf("  ==>         Benchmark (Density-Based)              <==\n\n");
      psi::outfile->Printf("     PAU NUC   = %13.6f\n", e_Pauli_nuc                      );
@@ -268,7 +268,7 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
   psi::Process::environment.globals["EINT EXR HAYES-STONE KCAL"] =(e_1+e_2+e_ex)*OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) {
+  if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
      psi::outfile->Printf("  ==>         Benchmark (Hayes-Stone)                <==\n\n");
      psi::outfile->Printf("     E REP 1   = %13.6f\n", e_1                              );
@@ -502,7 +502,7 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   psi::Process::environment.globals["EINT REP MURRELL-ETAL:S2 KCAL"] = e_s2  *OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) {
+  if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
      psi::outfile->Printf("  ==>         Benchmark (Murrell et al.)             <==\n\n");
      psi::outfile->Printf("     E S^-1    = %13.6f\n", e_s1                             );
@@ -717,7 +717,7 @@ double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   psi::Process::environment.globals["EINT REP OTTO-LADIK:S2 KCAL"] = e_s2  *OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) {
+  if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
      psi::outfile->Printf("  ==>         Benchmark (Otto-Ladik)                 <==\n\n");
      psi::outfile->Printf("     E S^-1    = %13.6f\n", e_s1                             );
@@ -909,7 +909,7 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
   psi::Process::environment.globals["EINT REP EFP2:S2 KCAL"] = e_s2       *OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) {
+  if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
      psi::outfile->Printf("  ==>         Benchmark (EFP2)                       <==\n\n");
      psi::outfile->Printf("     E S^-1    = %13.6f\n", e_s1                             );
@@ -1041,7 +1041,7 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
   psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM:S2 KCAL"] = e_s2*OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) {
+  if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
      psi::outfile->Printf("  ==>    OEP-Based (Murrell-etal; S1-GDF/S2-CAMM)    <==\n\n");
      psi::outfile->Printf("     E S^-1    = %13.6f\n", e_s1                             );
@@ -1191,7 +1191,7 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
   psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP:S2 KCAL"] = e_s2*OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) {
+  if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: Exchange-Repulsion energy calculations <==\n"  );
      psi::outfile->Printf("  ==>     OEP-Based (Murrell-etal; S1-GDF/S2-ESP)    <==\n\n");
      psi::outfile->Printf("     E S^-1    = %13.6f\n", e_s1                             );
@@ -1213,14 +1213,4 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_esp() {
   //psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");
   //psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");
   throw psi::PSIEXCEPTION("ERROR: MURRELL_ETAL_ESP is not yet implemented!\n");
-}
-// Build: factory static method 
-std::shared_ptr<OEPDevSolver> OEPDevSolver::build(const std::string& target, SharedWavefunctionUnion wfn_union)
-{
-   std::shared_ptr<OEPDevSolver> solver;
-   if      (target == "ELECTROSTATIC ENERGY"  ) solver = std::make_shared< ElectrostaticEnergySolver>(wfn_union);
-   else if (target == "REPULSION ENERGY"      ) solver = std::make_shared<     RepulsionEnergySolver>(wfn_union);
-   else if (target == "CHARGE TRANSFER ENERGY") solver = std::make_shared<ChargeTransferEnergySolver>(wfn_union);
-   else throw psi::PSIEXCEPTION("OEPDEV: Error. OEPDevSolver: Incorrect targer property chosen!\n");
-   return solver;
 }

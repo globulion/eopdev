@@ -77,6 +77,9 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/integrals_iter.cc
                        oepdev/libutil/unitary_optimizer.cc
                        oepdev/libutil/scf_perturb.cc
+                       oepdev/libutil/cis_base.cc
+                       oepdev/libutil/cis_rhf.cc
+                       oepdev/libutil/cis_uhf.cc
 		       # lib3d
                        oepdev/lib3d/space3d.cc
                        oepdev/lib3d/esp.cc
@@ -113,9 +116,12 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libsolver/solver_energy_coul.cc
                        oepdev/libsolver/solver_energy_pauli.cc
                        oepdev/libsolver/solver_energy_ct.cc
+                       oepdev/libsolver/solver_coupling_eet.cc
 		       # libtest
                        oepdev/libtest/test.cc
 		       oepdev/libtest/basic.cc
+                       oepdev/libtest/cis_rhf.cc
+                       oepdev/libtest/cis_uhf.cc
 		       oepdev/libtest/cphf.cc
 		       oepdev/libtest/camm.cc
 		       oepdev/libtest/dmtp_energy.cc

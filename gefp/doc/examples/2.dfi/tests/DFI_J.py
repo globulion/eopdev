@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
  Attempts to recover plot in Fig.4 from Fujimoto and Yang JCP 129,
  054102 (2008). In fact, Fujimoto used B3LYP/6-31G(d) with Coulomb
@@ -15,9 +16,9 @@ import numpy
 sys.path.append('..')
 
 from gefp.density.dfi import SCF
-from gefp.density.dfi import DFI as DFI_JK
+from gefp.density.dfi import DFI_J as DFI
 
-class DFI(DFI_JK):
+class DFI_old_reference(DFI):
 
   def _eval_vel(self, i, j):
       "Electronic contribution from j-th fragment to i-th fragment"

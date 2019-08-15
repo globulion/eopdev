@@ -578,7 +578,7 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
 
   // ---> Print <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) {
+  if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: Charge-transfer energy calculations <==\n");
      psi::outfile->Printf("  ==>         Benchmark (Otto-Ladik)           <==\n\n");
      psi::outfile->Printf("     -------------------------------\n"           );
@@ -1172,7 +1172,7 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   cout << " o TIME EFP2: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
     
   // ---> Print results <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) 
+  if (wfn_union_->options().get_int("PRINT") > -1) 
      {
      psi::outfile->Printf("  ==> SOLVER: Charge transfer energy calculations <==\n");
      psi::outfile->Printf("  ==> EFP2 Model (MO-based) <==\n\n");
@@ -1369,7 +1369,7 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   //cout << " Time OEP : " << t_end - t_begin - (t2 - t1) << endl;
 
   // ---> Print <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) {
+  if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: Charge-Transfer Energy Calculations    <==\n"  );
      psi::outfile->Printf("  ==>     OEP-Based (Otto-Ladik                 )    <==\n\n");
      psi::outfile->Printf("     -------------------------------\n"                      );

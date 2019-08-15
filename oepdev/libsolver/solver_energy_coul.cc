@@ -316,7 +316,7 @@ double ElectrostaticEnergySolver::compute_benchmark_mo_expanded(){
   psi::Process::environment.globals["EINT COUL EXACT"] = e;
 
   // ---> Print <--- //
-  if (wfn_union_->options().get_int("PRINT") > 0) {
+  if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: Electrostatic energy calculations <==\n");
      psi::outfile->Printf("  ==>         Benchmark (MO-Expanded)           <==\n\n");
      psi::outfile->Printf("     NUC NUC   = %13.6f\n", e_nuc_nuc);

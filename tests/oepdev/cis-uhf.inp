@@ -1,0 +1,73 @@
+#!/usr/bin/python
+sys.path.insert(0, './..')
+import oepdev
+
+basis {
+
+# assign basset to all atoms
+assign g09-6-31Gd
+
+# this basis set is to match pyquante-modified
+[ g09-6-31Gd ]
+cartesian
+****
+H     0
+S   3   1.00
+     18.73113696             0.0349460434
+      2.825394365            0.2347269535
+      0.6401216923           0.8137573261
+S   1   1.00
+      0.1612777588           1.0000000000
+****
+O     0
+S   6   1.00
+   5484.6716600              0.00183107443
+    825.2349460              0.01395017220
+    188.0469580              0.06844507810
+     52.9645000              0.23271433600
+     16.8975704              0.47019289800
+      5.79963534             0.35852085300
+SP   3   1.00
+     15.53961625            -0.1107775495           0.07087426823
+      3.599933586           -0.1480262627           0.3397528391
+      1.013761750            1.1307670150           0.7271585773
+SP   1   1.00
+      0.2700058226           1.0000000000           1.0000000000
+D    1   1.00
+      0.8000000000           1.0000000000
+****
+}
+
+# test molecule
+molecule h2o {
+0 3
+O         -3.08471        1.12313        0.00396
+H         -2.11791        0.90877        0.01763
+H         -3.12325        2.07922       -0.24921
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+set {
+    # ==> OEPDEV Routine Specification <== #
+    oepdev_target                 test
+    oepdev_test_name              cis_uhf
+    oepdev_test_mode              monomer
+    oepdev_localize               False
+    oepdev_enable_trial           False
+    # ==> General Psi4 Options <== #
+    scf_type                      direct 
+    guess                         core
+    e_convergence                 1e-11
+    d_convergence                 1e-10
+    print                         1
+    puream                        False
+    reference                     uhf
+}
+
+
+# run oepdev
+energy('oepdev', molecule=h2o)

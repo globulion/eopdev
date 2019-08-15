@@ -166,6 +166,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
             if (options.get_bool("OEPDEV_SOLVER_EINT_COUL_MO"  )) solver->compute_benchmark("MO_EXPANDED"    );
             if (options.get_bool("OEPDEV_SOLVER_EINT_COUL_ESP" )) solver->compute_oep_based("ESP_SYMMETRIZED");
 	    if (options.get_bool("OEPDEV_SOLVER_EINT_COUL_CAMM")) solver->compute_oep_based("CAMM"           );
+            wfn_union->clear_dpd();
         }
         else if (o_solver_type == "REPULSION_ENERGY") 
         {
@@ -178,6 +179,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
             if (options.get_bool("OEPDEV_SOLVER_EINT_REP_OEP1")) solver->compute_oep_based("MURRELL_ETAL_GDF_ESP" );
 	    if (options.get_bool("OEPDEV_SOLVER_EINT_REP_OEP2")) solver->compute_oep_based("MURRELL_ETAL_GDF_CAMM");
             if (options.get_bool("OEPDEV_SOLVER_EINT_REP_EFP2")) solver->compute_benchmark("EFP2"                 );        
+            wfn_union->clear_dpd();
         } 
         else if (o_solver_type == "CHARGE_TRANSFER_ENERGY") 
         {
@@ -186,12 +188,18 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
             if (options.get_bool("OEPDEV_SOLVER_EINT_CT_OL"  )) solver->compute_benchmark("OTTO_LADIK" );
             if (options.get_bool("OEPDEV_SOLVER_EINT_CT_OEP" )) solver->compute_oep_based("OTTO_LADIK" );
             if (options.get_bool("OEPDEV_SOLVER_EINT_CT_EFP2")) solver->compute_benchmark("EFP2"       );        
+            wfn_union->clear_dpd();
         } 
+        else if (o_solver_type == "EET_COUPLING")
+        {
+            std::shared_ptr<oepdev::OEPDevSolver> solver = oepdev::OEPDevSolver::build("EET COUPLING CONSTANT", wfn_union);
+            if (options.get_bool("OEPDEV_SOLVER_EET_V_TDFI_TI")) solver->compute_benchmark("FUJIMOTO_TI_CIS");
+        }
         else 
            throw PSIEXCEPTION("Incorrect solver type chosen!\n");
 
 	// ==> Clear the DPD file for integral transformations <== //
-	wfn_union->clear_dpd();
+	//wfn_union->clear_dpd();
 
     } else if (o_task == "TEST") {
 

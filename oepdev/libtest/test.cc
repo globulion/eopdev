@@ -15,6 +15,8 @@ double oepdev::test::Test::run(void)
 {
   double result;
   if      (options_.get_str("OEPDEV_TEST_NAME")=="BASIC"  ) result = test_basic  ();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="CIS_RHF") result = test_cis_rhf();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="CIS_UHF") result = test_cis_uhf();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CPHF"   ) result = test_cphf   ();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="DMATPOL") result = test_dmatPol();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="DMATPOL_X") result = test_dmatPolX();

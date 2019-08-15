@@ -18,6 +18,8 @@
 #include "../libpsi/integral.h"
 #include "../libutil/integrals_iter.h"
 
+#include "../../include/oepdev_files.h"
+
 namespace oepdev{
 namespace test{
 
@@ -56,6 +58,12 @@ class Test
 
    /// Test the basic functionalities of OEPDev
    double test_basic(void);
+
+   /// Test the CIS(RHF) method
+   double test_cis_rhf(void);
+
+   /// Test the CIS(UHF) method
+   double test_cis_uhf(void);
 
    /// Test the CPHF method
    double test_cphf(void);
