@@ -282,8 +282,8 @@ double ElectrostaticEnergySolver::compute_benchmark_mo_expanded(){
   psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 
   global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
-                          integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
+                          integrals->DPD_ID("[I,I]"  ), integrals->DPD_ID("[J,J]"  ),
+                          integrals->DPD_ID("[I>=I]+"), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (II|JJ)");
 
   for (int h = 0; h < wfn_union_->nirrep(); ++h) {
        global_dpd_->buf4_mat_irrep_init(&buf, h);

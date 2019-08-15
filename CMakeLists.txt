@@ -137,6 +137,12 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libtest/test_custom.cc
 		       oepdev/libtest/points_collection3d.cc
 		       oepdev/libtest/ct_energy_benchmark_ol.cc
+		       oepdev/libtest/rep_energy_benchmark_hs.cc
+		       oepdev/libtest/rep_energy_benchmark_dds.cc
+		       oepdev/libtest/rep_energy_benchmark_efp2.cc
+		       oepdev/libtest/rep_energy_benchmark_ol.cc
+		       oepdev/libtest/rep_energy_benchmark_murrell_etal.cc
+		       oepdev/libtest/rep_energy_oep_based_murrell_etal.cc
 		       # exports
 		       oepdev/export/export_dmtp.cc
 		       oepdev/export/export_cphf.cc

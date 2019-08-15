@@ -181,28 +181,28 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //Term 1//
   global_dpd_->buf4_init(&buf_Y122, PSIF_LIBTRANS_DPD, 0,
-                         integrals_->DPD_ID("[Y,1]"  ), integrals_->DPD_ID("[2,2]"  ),
-                         integrals_->DPD_ID("[Y,1]"  ), integrals_->DPD_ID("[2>=2]+"), 0, "MO Ints (Y1|22)");
+                         integrals_->DPD_ID("[Y,I]"  ), integrals_->DPD_ID("[J,J]"  ),
+                         integrals_->DPD_ID("[Y,I]"  ), integrals_->DPD_ID("[J>=J]+"), 0, "MO Ints (YI|JJ)");
   global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0,
-                          integrals_->DPD_ID("[1,1]"  ), integrals_->DPD_ID("[2,2]"  ),
-                          integrals_->DPD_ID("[1>=1]+"), integrals_->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
+                          integrals_->DPD_ID("[I,I]"  ), integrals_->DPD_ID("[J,J]"  ),
+                          integrals_->DPD_ID("[I>=I]+"), integrals_->DPD_ID("[J>=J]+"), 0, "MO Ints (II|JJ)");
   global_dpd_->buf4_init(&buf_Y211, PSIF_LIBTRANS_DPD, 0,
-                         integrals_->DPD_ID("[Y,2]"  ), integrals_->DPD_ID("[1,1]"  ),
-                         integrals_->DPD_ID("[Y,2]"  ), integrals_->DPD_ID("[1>=1]+"), 0, "MO Ints (Y2|11)");
+                         integrals_->DPD_ID("[Y,J]"  ), integrals_->DPD_ID("[I,I]"  ),
+                         integrals_->DPD_ID("[Y,J]"  ), integrals_->DPD_ID("[I>=I]+"), 0, "MO Ints (YJ|II)");
   global_dpd_->buf4_init(&buf_Y212, PSIF_LIBTRANS_DPD, 0,
-                         integrals_->DPD_ID("[Y,2]"  ), integrals_->DPD_ID("[1,2]"  ),
-                         integrals_->DPD_ID("[Y,2]"  ), integrals_->DPD_ID("[1,2]"  ), 0, "MO Ints (Y2|12)");
+                         integrals_->DPD_ID("[Y,J]"  ), integrals_->DPD_ID("[I,J]"  ),
+                         integrals_->DPD_ID("[Y,J]"  ), integrals_->DPD_ID("[I,J]"  ), 0, "MO Ints (YJ|IJ)");
 
   //Term 2//
   global_dpd_->buf4_init(&buf_X211, PSIF_LIBTRANS_DPD, 0,
-                         integrals_->DPD_ID("[X,2]"  ), integrals_->DPD_ID("[1,1]"  ),
-                         integrals_->DPD_ID("[X,2]"  ), integrals_->DPD_ID("[1>=1]+"), 0, "MO Ints (X2|11)");
+                         integrals_->DPD_ID("[X,J]"  ), integrals_->DPD_ID("[I,I]"  ),
+                         integrals_->DPD_ID("[X,J]"  ), integrals_->DPD_ID("[I>=I]+"), 0, "MO Ints (XJ|II)");
   global_dpd_->buf4_init(&buf_X122, PSIF_LIBTRANS_DPD, 0,
-                         integrals_->DPD_ID("[X,1]"  ), integrals_->DPD_ID("[2,2]"  ),
-                         integrals_->DPD_ID("[X,1]"  ), integrals_->DPD_ID("[2>=2]+"), 0, "MO Ints (X1|22)");
+                         integrals_->DPD_ID("[X,I]"  ), integrals_->DPD_ID("[J,J]"  ),
+                         integrals_->DPD_ID("[X,I]"  ), integrals_->DPD_ID("[J>=J]+"), 0, "MO Ints (XI|JJ)");
   global_dpd_->buf4_init(&buf_X121, PSIF_LIBTRANS_DPD, 0,
-                         integrals_->DPD_ID("[X,1]"  ), integrals_->DPD_ID("[2,1]"  ),
-                         integrals_->DPD_ID("[X,1]"  ), integrals_->DPD_ID("[2,1]"  ), 0, "MO Ints (X1|21)");
+                         integrals_->DPD_ID("[X,I]"  ), integrals_->DPD_ID("[J,I]"  ),
+                         integrals_->DPD_ID("[X,I]"  ), integrals_->DPD_ID("[J,I]"  ), 0, "MO Ints (XI|JI)");
   
 
 
@@ -890,24 +890,24 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
       // --> Generate integral buffers <-- 
       // Y122 = (V_2 O_1 | O_2 O_2) = (ni|jj)
       global_dpd_->buf4_init(&buf_Y122, PSIF_LIBTRANS_DPD, 0,
-                             integrals->DPD_ID("[Y,1]"  ), integrals->DPD_ID("[2,2]"  ),
-                             integrals->DPD_ID("[Y,1]"  ), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (Y1|22)");
+                             integrals->DPD_ID("[Y,I]"  ), integrals->DPD_ID("[J,J]"  ),
+                             integrals->DPD_ID("[Y,I]"  ), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (YI|JJ)");
       // X122 = (V_1 O_1 | O_2 O_2) = (mi|jj)
       global_dpd_->buf4_init(&buf_X122, PSIF_LIBTRANS_DPD, 0,
-            	         integrals->DPD_ID("[X,1]"  ), integrals->DPD_ID("[2,2]"  ),
-            		 integrals->DPD_ID("[X,1]"  ), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (X1|22)");
+            	         integrals->DPD_ID("[X,I]"  ), integrals->DPD_ID("[J,J]"  ),
+            		 integrals->DPD_ID("[X,I]"  ), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (XI|JJ)");
       // 1122 = (O_1 O_1 | O_2 O_2) = (11|22)
       global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0,
-            	         integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
-            		 integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
+            	         integrals->DPD_ID("[I,I]"  ), integrals->DPD_ID("[J,J]"  ),
+            		 integrals->DPD_ID("[I>=I]+"), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (II|JJ)");
       // Y211 = (V_2 O_2 | O_1 O_1) = (nj|kk)
       global_dpd_->buf4_init(&buf_Y211, PSIF_LIBTRANS_DPD, 0,
-                             integrals->DPD_ID("[Y,2]"  ), integrals->DPD_ID("[1,1]"  ),
-                             integrals->DPD_ID("[Y,2]"  ), integrals->DPD_ID("[1>=1]+"), 0, "MO Ints (Y2|11)");
+                             integrals->DPD_ID("[Y,J]"  ), integrals->DPD_ID("[I,I]"  ),
+                             integrals->DPD_ID("[Y,J]"  ), integrals->DPD_ID("[I>=I]+"), 0, "MO Ints (YJ|II)");
       // X211 = (V_1 O_2 | O_1 O_1) = (mj|kk)
       global_dpd_->buf4_init(&buf_X211, PSIF_LIBTRANS_DPD, 0,
-            	         integrals->DPD_ID("[X,2]"  ), integrals->DPD_ID("[1,1]"  ),
-            		 integrals->DPD_ID("[X,2]"  ), integrals->DPD_ID("[1>=1]+"), 0, "MO Ints (X2|11)");
+            	         integrals->DPD_ID("[X,J]"  ), integrals->DPD_ID("[I,I]"  ),
+            		 integrals->DPD_ID("[X,J]"  ), integrals->DPD_ID("[I>=I]+"), 0, "MO Ints (XJ|II)");
 
       // Potentials (nuc. + elec.) included in expression of E_CT(A->B)
       double** vmoBin = VmoBin->pointer();

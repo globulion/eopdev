@@ -162,7 +162,7 @@ double RepulsionEnergySolver::compute_benchmark_dds() {
   }
 
   // ---> Return Total Pauli Repulsion Energy <--- //
-  return e;
+  return e+e_exch;
 }
 double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
 
@@ -296,8 +296,8 @@ double RepulsionEnergySolver::compute_pure_exchange_energy() {
   dpdbuf4 buf_1212;
 
   global_dpd_->buf4_init(&buf_1212, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[1,2]"  ),
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[1,2]"  ), 0, "MO Ints (12|12)");
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[I,J]"  ),
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[I,J]"  ), 0, "MO Ints (IJ|IJ)");
 
   double e_ex = 0.0;
   for (int h = 0; h < wfn_union_->nirrep(); ++h) {
@@ -407,14 +407,14 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   double** S = Smo12->pointer();
 
   global_dpd_->buf4_init(&buf_1112, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[1,2]"  ),
-                          integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[1,2]"  ), 0, "MO Ints (11|12)");
+                          integrals->DPD_ID("[I,I]"  ), integrals->DPD_ID("[I,J]"  ),
+                          integrals->DPD_ID("[I>=I]+"), integrals->DPD_ID("[I,J]"  ), 0, "MO Ints (II|IJ)");
   global_dpd_->buf4_init(&buf_1222, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[2,2]"  ),
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (12|22)");
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[J,J]"  ),
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (IJ|JJ)");
   global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
-                          integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
+                          integrals->DPD_ID("[I,I]"  ), integrals->DPD_ID("[J,J]"  ),
+                          integrals->DPD_ID("[I>=I]+"), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (II|JJ)");
 
   int i, j, k, l;
   for (int h = 0; h < wfn_union_->nirrep(); ++h) {
@@ -516,7 +516,7 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   }
  
   // Return the Total Repulsion Energy
-  return e; 
+  return e+e_exch; 
 }
 double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   double e_s1 = 0.0, e_s2 = 0.0, e = 0;
@@ -600,14 +600,14 @@ double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   double integral;
 
   global_dpd_->buf4_init(&buf_1112, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[1,2]"  ),
-                          integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[1,2]"  ), 0, "MO Ints (11|12)");
+                          integrals->DPD_ID("[I,I]"  ), integrals->DPD_ID("[I,J]"  ),
+                          integrals->DPD_ID("[I>=I]+"), integrals->DPD_ID("[I,J]"  ), 0, "MO Ints (II|IJ)");
   global_dpd_->buf4_init(&buf_1222, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[2,2]"  ),
-                          integrals->DPD_ID("[1,2]"  ), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (12|22)");
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[J,J]"  ),
+                          integrals->DPD_ID("[I,J]"  ), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (IJ|JJ)");
   global_dpd_->buf4_init(&buf_1122, PSIF_LIBTRANS_DPD, 0, 
-                          integrals->DPD_ID("[1,1]"  ), integrals->DPD_ID("[2,2]"  ),
-                          integrals->DPD_ID("[1>=1]+"), integrals->DPD_ID("[2>=2]+"), 0, "MO Ints (11|22)");
+                          integrals->DPD_ID("[I,I]"  ), integrals->DPD_ID("[J,J]"  ),
+                          integrals->DPD_ID("[I>=I]+"), integrals->DPD_ID("[J>=J]+"), 0, "MO Ints (II|JJ)");
 
   int i, j, k, l;
   for (int h = 0; h < wfn_union_->nirrep(); ++h) {
@@ -731,7 +731,7 @@ double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   }
  
   // Return the Total Repulsion Energy
-  return e; 
+  return e+e_exch; 
 }
 double RepulsionEnergySolver::compute_benchmark_efp2() {
   double e_s1 = 0.0, e_s2 = 0.0, e = 0;
@@ -925,7 +925,7 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
   }
  
   // Return the Total Repulsion Energy
-  return e; 
+  return e+e_exch_efp2; 
 }
 double RepulsionEnergySolver::compute_efp2_exchange_energy(psi::SharedMatrix S, 
           std::vector<psi::SharedVector> R1, std::vector<psi::SharedVector> R2) {
@@ -1057,7 +1057,7 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
   }
  
   // Return the Total Repulsion Energy
-  return e; 
+  return e+e_exch_pure; 
 
 }
 double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
@@ -1207,7 +1207,7 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
   }
  
   // Return the Total Repulsion Energy
-  return e; 
+  return e+e_exch_pure; 
 }
 double RepulsionEnergySolver::compute_oep_based_murrell_etal_esp() {
   //psi::timer_on ("SOLVER: Repulsion Energy Calculations (Murrell-OEP:ESP)");

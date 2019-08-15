@@ -17,6 +17,12 @@ add_test (NAME DMTP_ENERGY           COMMAND "psi4" "tests/oepdev/dmtp_energy.in
 add_test (NAME ESP_SOLVER            COMMAND "psi4" "tests/oepdev/esp_solver.inp"           "tests/oepdev/esp_solver.out" )
 add_test (NAME POINTS_COLLECTION3D   COMMAND "psi4" "tests/oepdev/points_collection3d.inp"  "tests/oepdev/points_collection3d.out" )
 add_test (NAME CT_ENERGY_BENCHMARK_OL   COMMAND "psi4" "tests/oepdev/ct_energy_benchmark_ol.inp"  "tests/oepdev/ct_energy_benchmark_ol.out" )
+add_test (NAME REP_ENERGY_BENCHMARK_HS   COMMAND "psi4" "tests/oepdev/rep_energy_benchmark_hs.inp"  "tests/oepdev/rep_energy_benchmark_hs.out" )
+add_test (NAME REP_ENERGY_BENCHMARK_DDS  COMMAND "psi4" "tests/oepdev/rep_energy_benchmark_dds.inp"  "tests/oepdev/rep_energy_benchmark_dds.out" )
+add_test (NAME REP_ENERGY_BENCHMARK_EFP2 COMMAND "psi4" "tests/oepdev/rep_energy_benchmark_efp2.inp"  "tests/oepdev/rep_energy_benchmark_efp2.out" )
+add_test (NAME REP_ENERGY_BENCHMARK_MURRELL_ETAL COMMAND "psi4" "tests/oepdev/rep_energy_benchmark_murrell_etal.inp"  "tests/oepdev/rep_energy_benchmark_murrell_etal.out" )
+add_test (NAME REP_ENERGY_OEP_BASED_MURRELL_ETAL COMMAND "psi4" "tests/oepdev/rep_energy_oep_based_murrell_etal.inp"  "tests/oepdev/rep_energy_oep_based_murrell_etal.out" )
+add_test (NAME REP_ENERGY_BENCHMARK_OL   COMMAND "psi4" "tests/oepdev/rep_energy_benchmark_ol.inp"  "tests/oepdev/rep_energy_benchmark_ol.out" )
 
 
 # [2] Test result
@@ -36,4 +42,9 @@ set_tests_properties (DMTP_ENERGY           PROPERTIES PASS_REGULAR_EXPRESSION "
 set_tests_properties (ESP_SOLVER            PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.13442905")
 set_tests_properties (POINTS_COLLECTION3D   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.03804657")
 set_tests_properties (CT_ENERGY_BENCHMARK_OL   PROPERTIES PASS_REGULAR_EXPRESSION " CT Energy Otto-Ladik= -0.00050753") # Revise
-
+set_tests_properties (REP_ENERGY_BENCHMARK_HS   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000000") # Revise
+set_tests_properties (REP_ENERGY_BENCHMARK_DDS  PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000000") # Revise
+set_tests_properties (REP_ENERGY_BENCHMARK_EFP2 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000000") # Revise
+set_tests_properties (REP_ENERGY_BENCHMARK_MURRELL_ETAL PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000000") # Revise
+set_tests_properties (REP_ENERGY_OEP_BASED_MURRELL_ETAL PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000000") # Revise
+set_tests_properties (REP_ENERGY_BENCHMARK_OL   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000000") # Revise
