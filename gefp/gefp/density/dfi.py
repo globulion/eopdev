@@ -32,6 +32,7 @@ __all__ = ['SCF', 'DFI']
 import psi4
 import numpy
 import abc
+import oepdev
 
 MAX_NBF = 128
 
@@ -93,26 +94,32 @@ class SCF:
       self.X = self._orthogonalizer(self.S)
       return
 
-  def run(self, maxit=30, conv=1.0e-7, guess=None, damp=0.01, ndamp=10, verbose=True):
+  def run(self, maxit=30, conv=1.0e-7, guess=None, damp=0.01, ndamp=10, verbose=True, v_ext=None):
       "Solve SCF (public interface)"
-      if guess is None:
-         # Form Hcore                    
-         T = self._mints.ao_kinetic()
-         V = self._mints.ao_potential()
-         H = T.clone()
-         H.add(V)
-         H = numpy.asarray(H)
-      else: H = numpy.asarray(guess)
+      # Form Hcore                    
+      T = self._mints.ao_kinetic()
+      V = self._mints.ao_potential()
+      H = T.clone()
+      H.add(V)
+      H = numpy.asarray(H)
+      if v_ext is not None:
+         H += numpy.asarray(v_ext)
       self.H = H.copy()
-      self._run(H, maxit, conv, damp, ndamp, verbose)
+      # Getermine guess
+      if guess is None:
+         guess = H
+      else:
+         guess = numpy.asarray(guess)
+      # Run SCF
+      self._run(guess, maxit, conv, damp, ndamp, verbose)
       return
 
   # --- protected --- #
 
-  def _run(self, H, maxit, conv, damp, ndamp, verbose):
+  def _run(self, guess, maxit, conv, damp, ndamp, verbose):
       "Solve SCF (protected interface)"
       # First step: Guess density matrix
-      F    = numpy.dot(self.X, numpy.dot(H, self.X)) 
+      F    = numpy.dot(self.X, numpy.dot(guess, self.X)) 
       E, C = numpy.linalg.eigh(F)
       C    = numpy.dot(self.X, C)
       idx = numpy.argsort(E)
@@ -124,14 +131,14 @@ class SCF:
       niter = 0
       e_old = 1e8
       e_new = 1e7
-      F_old = H.copy()
+      F_old = guess.copy()
       while (abs(e_old - e_new) > conv):
         niter += 1
         # form Fock matrix
         self._jk.C_clear()
         self._jk.C_left_add(psi4.core.Matrix.from_array(Co, "C matrix"))
         self._jk.compute()
-        F_new = H + 2.0 * numpy.asarray(self._jk.J()[0]) - numpy.asarray(self._jk.K()[0])
+        F_new = self.H + 2.0 * numpy.asarray(self._jk.J()[0]) - numpy.asarray(self._jk.K()[0])
         if niter < ndamp: 
            F = damp * F_old + (1.0 - damp) * F_new
         else:             
@@ -139,7 +146,7 @@ class SCF:
         F_old = F.copy()
         # compute total energy
         e_old = e_new
-        e_new = numpy.trace( numpy.dot(D, H + F) ) + self.e_nuc
+        e_new = numpy.trace( numpy.dot(D, self.H + F) ) + self.e_nuc
         if verbose:
             print (" @SCF Iter {:02} E = {:14.8f}".format(niter, e_new))
         # transform Fock matrix to orthogonal AO basis           
@@ -319,17 +326,17 @@ class DFI(abc.ABC):
 
   def _update_frag(self, i, conv_scf, maxit_scf, damp_scf, ndamp_scf, verbose_scf):
       "Update the i-th fragment"
-      # compute Hcore of i-th fragment in the presence of other fragments 
-      H = self._H[i].copy()
+      # compute effective potential matrix of i-th fragment in the presence of other fragments 
+      V = numpy.zeros(self._H[i].shape)
       for j in range(self._nfrag):
           if j!=i:
-             H += self._eval_vnuc(i, j)
-             H += self._eval_vel (i, j)
+             V += self._eval_vnuc(i, j)
+             V += self._eval_vel (i, j)
       # solve SCF for i-th fragment
       scf = SCF(self._frags[i])
-      scf.run(guess=H.copy(), conv=conv_scf, maxit=maxit_scf, damp=damp_scf, ndamp=ndamp_scf, verbose=verbose_scf)
+      scf.run(guess=self._Fs[i].copy(), v_ext=V, conv=conv_scf, maxit=maxit_scf, damp=damp_scf, ndamp=ndamp_scf, verbose=verbose_scf)
       # save
-      self._Hs[i]  = H.copy()
+      self._Hs[i]  = self._H[i] + V
       self._ens[i] = scf.E
       self._Fs [i] = scf.F.copy()
       self._Cs [i] = scf.Co.copy()
@@ -353,21 +360,30 @@ class DFI(abc.ABC):
 
   def _eval_vel(self, i, j):
       "Electronic contribution from j-th fragment to i-th fragment"
-      eri_J_ij = numpy.asarray(\
-                    self._mints[i].ao_eri(self._bfs[j], self._bfs[j],
-                                          self._bfs[i], self._bfs[i]))
-      ni = self._nbfs[i]
-      nj = self._nbfs[j]
-      J = numpy.dot(self._Ds[j].ravel(), eri_J_ij.reshape(nj*nj,ni*ni))
-      V = 2.0*J
+      ## OLD code: memory consuming
+      #eri_J_ij = numpy.asarray(\
+      #              self._mints[i].ao_eri(self._bfs[j], self._bfs[j],
+      #                                    self._bfs[i], self._bfs[i]))
+      #ni = self._nbfs[i]
+      #nj = self._nbfs[j]
+      #J = numpy.dot(self._Ds[j].ravel(), eri_J_ij.reshape(nj*nj,ni*ni))
+      #V = 2.0*J
+      #if not self._j_only:
+      #   eri_K_ij = numpy.asarray(\
+      #                 self._mints[i].ao_eri(self._bfs[j], self._bfs[i],
+      #                                       self._bfs[j], self._bfs[i]))
+      #                                                                                        
+      #   K = numpy.dot(self._Ds[j].ravel(), eri_K_ij.transpose(0,2,1,3).reshape(nj*nj,ni*ni))
+      #   V-= K
+      #return V.reshape(ni, ni)
+      f_aabb = psi4.core.IntegralFactory(self._bfs[i], self._bfs[i], self._bfs[j], self._bfs[j])
+      D      = psi4.core.Matrix.from_array(self._Ds[j])
       if not self._j_only:
-         eri_K_ij = numpy.asarray(\
-                       self._mints[i].ao_eri(self._bfs[j], self._bfs[i],
-                                             self._bfs[j], self._bfs[i]))
-                                                                                              
-         K = numpy.dot(self._Ds[j].ravel(), eri_K_ij.transpose(0,2,1,3).reshape(nj*nj,ni*ni))
-         V-= K
-      return V.reshape(ni, ni)
+         f_abab = psi4.core.IntegralFactory(self._bfs[i], self._bfs[j], self._bfs[i], self._bfs[j])
+         V      = oepdev.calculate_DFI_Vel_JK(f_aabb, f_abab, D)
+      else:
+         V      = oepdev.calculate_DFI_Vel_J(f_aabb, D)
+      return V.to_array(dense=True)
 
   def _orthogonalizer(self, S):
       "Compute the orthogonalizer matrix X"

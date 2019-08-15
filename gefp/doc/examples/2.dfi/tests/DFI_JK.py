@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
  Attempts to recover plot in Fig.4 from Fujimoto and Yang JCP 129,
  054102 (2008). In fact, Fujimoto used B3LYP/6-31G(d) with Coulomb
@@ -14,7 +15,7 @@ import numpy
 
 sys.path.append('..')
 
-from gefp.density.dfi import SCF, DFI
+from gefp.density.dfi import SCF, DFI_JK as DFI
 
 psi4.set_memory('2 GB')
 

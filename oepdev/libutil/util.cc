@@ -1,7 +1,7 @@
 #include "util.h"
 #include "psi4/libpsi4util/PsiOutStream.h"
 #include "psi4/libmints/mintshelper.h"
-//#include "psi4/libdpd/dpd.h"
+#include "../libutil/integrals_iter.h"
 
 namespace oepdev{
 
@@ -400,8 +400,72 @@ matrix_power_derivative(std::shared_ptr<psi::Matrix> A,
   return Ag1;
 }
 
+extern "C"
+std::shared_ptr<psi::Matrix> _calculate_DFI_Vel(
+                std::shared_ptr<psi::IntegralFactory> f_aabb,
+                std::shared_ptr<psi::IntegralFactory> f_abab,
+                std::shared_ptr<psi::Matrix> db)
+{
+  std::shared_ptr<psi::Matrix> V = std::make_shared<psi::Matrix>("", db->nrow(), db->ncol());
+  double** d = db->pointer();
+  double** v = V ->pointer();
 
+  // J contribution
+  std::shared_ptr<oepdev::ShellCombinationsIterator> s_aabb = oepdev::ShellCombinationsIterator::build(f_aabb, "ALL");
+  std::shared_ptr<psi::TwoBodyAOInt> t_aabb(f_aabb->eri()); const double* b_aabb = t_aabb->buffer();
 
+  for (s_aabb->first(); s_aabb->is_done() == false; s_aabb->next()) {
+    s_aabb->compute_shell(t_aabb);
+    std::shared_ptr<oepdev::AOIntegralsIterator> ii = s_aabb->ao_iterator("ALL");
+    for (ii->first(); ii->is_done() == false; ii->next()) {
+         int i = ii->i(); // A
+         int j = ii->j(); // A
+         int k = ii->k(); // B
+         int l = ii->l(); // B
+         double eri = b_aabb[ii->index()];
 
+         v[i][j] += 2.0 * d[k][l] * eri;
+    }
+  }
+
+  // K contribution
+  if (f_abab) {
+     std::shared_ptr<oepdev::ShellCombinationsIterator> s_abab = oepdev::ShellCombinationsIterator::build(f_abab, "ALL");
+     std::shared_ptr<psi::TwoBodyAOInt> t_abab(f_abab->eri()); const double* b_abab = t_abab->buffer();
+
+     for (s_abab->first(); s_abab->is_done() == false; s_abab->next()) {             
+       s_abab->compute_shell(t_abab);
+       std::shared_ptr<oepdev::AOIntegralsIterator> ii = s_abab->ao_iterator("ALL");
+       for (ii->first(); ii->is_done() == false; ii->next()) {
+            int i = ii->i(); // A
+            int j = ii->j(); // B
+            int k = ii->k(); // A
+            int l = ii->l(); // B
+            double eri = b_abab[ii->index()];
+                                                                                     
+            v[i][k] -= d[j][l] * eri;
+       }
+     }
+
+  }
+  return V;
+}
+
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix> calculate_DFI_Vel_JK(
+                std::shared_ptr<psi::IntegralFactory> f_aabb,
+                std::shared_ptr<psi::IntegralFactory> f_abab,
+                std::shared_ptr<psi::Matrix> db)
+{
+ return _calculate_DFI_Vel(f_aabb, f_abab, db);
+}
+
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix> calculate_DFI_Vel_J(
+                std::shared_ptr<psi::IntegralFactory> f_aabb,
+                std::shared_ptr<psi::Matrix> db)
+{
+ return _calculate_DFI_Vel(f_aabb, nullptr, db);
+}
 
 } // EndNameSpace oepdev

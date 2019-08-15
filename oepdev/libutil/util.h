@@ -247,6 +247,54 @@ matrix_power_derivative(std::shared_ptr<psi::Matrix> A,
               		double g, double step);
 
 
+/** \brief Compute the Effective DFI Potential Matrix Due To Electrons. 
+ *
+ *  Potential is felt by molecule A and induced by electrons in molecule B.
+ *  @param f_aabb - IntegralFactory of type (AA|BB)
+ *  @param f_abab - IntegralFactory of type (AB|AB)
+ *  @param d_b    - one-particle density matrix in AO basis of B
+ *  @return       - V_el(B) matrix in AO basis set of A
+ *
+ *  If f_abab is nullptr, then only Coulomb matrix is computed.
+ *  Otherwise, also exchange contribution is computed.
+ */
+extern "C"
+std::shared_ptr<psi::Matrix> _calculate_DFI_Vel(
+                std::shared_ptr<psi::IntegralFactory> f_aabb,
+                std::shared_ptr<psi::IntegralFactory> f_abab,
+                std::shared_ptr<psi::Matrix> d_b);
+
+
+/** \brief Compute the Effective DFI Coulomb+Exchange Potential Matrix Due To Electrons. 
+ *
+ *  Potential is felt by molecule A and induced by electrons in molecule B.
+ *  @param f_aabb - IntegralFactory of type (AA|BB)
+ *  @param f_abab - IntegralFactory of type (AB|AB)
+ *  @param d_b    - one-particle density matrix in AO basis of B
+ *  @return       - V_el(B) matrix in AO basis set of A
+ *
+ */
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix> calculate_DFI_Vel_JK(
+                std::shared_ptr<psi::IntegralFactory> f_aabb,
+                std::shared_ptr<psi::IntegralFactory> f_abab,
+                std::shared_ptr<psi::Matrix> d_b);
+
+/** \brief Compute the Effective DFI Coulomb Potential Matrix Due To Electrons. 
+ *
+ *  Potential is felt by molecule A and induced by electrons in molecule B.
+ *  @param f_aabb - IntegralFactory of type (AA|BB)
+ *  @param d_b    - one-particle density matrix in AO basis of B
+ *  @return       - V_el(B) matrix in AO basis set of A
+ *
+ */
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix> calculate_DFI_Vel_J(
+                std::shared_ptr<psi::IntegralFactory> f_aabb,
+                std::shared_ptr<psi::Matrix> d_b);
+
+
+
 /** @}*/
 
 } // EndNameSpace oepdev_libutil
