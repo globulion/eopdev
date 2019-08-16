@@ -271,9 +271,14 @@ psi::SharedMatrix CISComputer::Db_mo(int I) const {
  return D;
 }
 
-SharedDMTPole CISComputer::camm(int j) const {
+SharedDMTPole CISComputer::camm(int j, bool symmetrize) const {
  psi::SharedMatrix T = this->Da_ao(j);
  T->add(this->Db_ao(j));
+ if (symmetrize) {
+   psi::SharedMatrix Tt = T->transpose();
+   T->add(Tt);
+   T->scale(0.5000000);
+ }
  std::vector<psi::SharedMatrix> Tvec; Tvec.push_back(T);
  std::vector<bool> Bvec; Bvec.push_back(false);
  
@@ -283,9 +288,14 @@ SharedDMTPole CISComputer::camm(int j) const {
 }
 
 
-SharedDMTPole CISComputer::trcamm(int j) const {
+SharedDMTPole CISComputer::trcamm(int j, bool symmetrize) const {
  psi::SharedMatrix T = this->Ta_ao(j);
  T->add(this->Tb_ao(j));
+ if (symmetrize) {
+   psi::SharedMatrix Tt = T->transpose();
+   T->add(Tt);
+   T->scale(0.5000000);
+ }
  std::vector<psi::SharedMatrix> Tvec; Tvec.push_back(T);
  std::vector<bool> Bvec; Bvec.push_back(true);
  
@@ -294,9 +304,14 @@ SharedDMTPole CISComputer::trcamm(int j) const {
  return camm;
 }
 
-SharedDMTPole CISComputer::trcamm(int i, int j) const {
+SharedDMTPole CISComputer::trcamm(int i, int j, bool symmetrize) const {
  psi::SharedMatrix T = this->Ta_ao(i, j);
  T->add(this->Tb_ao(i, j));
+ if (symmetrize) {
+   psi::SharedMatrix Tt = T->transpose();
+   T->add(Tt);
+   T->scale(0.5000000);
+ }
  std::vector<psi::SharedMatrix> Tvec; Tvec.push_back(T);
  std::vector<bool> Bvec; Bvec.push_back(true);
  

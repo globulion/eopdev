@@ -90,6 +90,7 @@ int read_options(std::string name, Options& options)
         options.add_int    ("EXCITED_STATE_A"             ,-1                    );
         options.add_int    ("EXCITED_STATE_B"             ,-1                    );                  
         options.add_double ("OSCILLATOR_STRENGTH_THRESHOLD", 0.01                );
+        options.add_bool   ("TrCAMM_SYMMETRIZE"           , true                 );
 
 
         // ---> CPHF Global Options  <--- //

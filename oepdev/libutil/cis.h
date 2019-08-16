@@ -197,7 +197,7 @@ class CISComputer {
    SharedMatrix Db_ao(int i) const;
 
    /// Compute CAMM for *j* excited state
-   SharedDMTPole camm(int j) const;
+   SharedDMTPole camm(int j, bool symmetrize=false) const;
 
    /// Compute MO one-particle alpha 0->*j* transition density matrix
    SharedMatrix Ta_ao(int j) const;
@@ -212,10 +212,10 @@ class CISComputer {
    SharedMatrix Tb_ao(int i, int j) const;
 
    /// Compute TrCAMM for 0->*j* transition
-   SharedDMTPole trcamm(int j) const;
+   SharedDMTPole trcamm(int j, bool symmetrize=true) const;
 
    /// Compute TrCAMM for *i*->*j* transition
-   SharedDMTPole trcamm(int i, int j) const;
+   SharedDMTPole trcamm(int i, int j, bool symmetrize=true) const;
 
    /// Compute transition dipole moment for 0->*j* transition
    SharedVector transition_dipole(int j) const;

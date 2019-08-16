@@ -123,7 +123,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   kinInt->compute(Tao_AB);
 
   // Fock matrix of entire system in AB space: 1-electron contribution
-  VaoA_BA->transpose();
+  VaoA_BA->transpose_this();
   SharedMatrix Fao_AB = Tao_AB->clone();
   Fao_AB->add(VaoB_AB);
   Fao_AB->add(VaoA_BA);
@@ -162,13 +162,14 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   // Obtain CIS HOMO-LUMO amplitudes and unperturbed excitation energies
   psi::outfile->Printf(" --> Running CIS calculations on the monomers <--\n");
   double t_A, t_B, E_ex_A, E_ex_B;
+  const bool symm = options_.get_bool("TrCAMM_SYMMETRIZE");
   {
       std::shared_ptr<CISComputer> cis_A = CISComputer::build("RESTRICTED", wfn_union_->l_wfn(0), options_); 
       cis_A->compute();
       this->determine_electronic_state(cis_A, I);
       E_ex_A = cis_A->eigenvalues()->get(I);
       t_A = cis_A->U_homo_lumo(I).first;
-      trcamm_A = cis_A->trcamm(I);
+      trcamm_A = cis_A->trcamm(I, symm);
       Pe_A  = cis_A->Da_ao(I); Pe_A ->add(cis_A->Db_ao(I));
       Peg_A = cis_A->Ta_ao(I); Peg_A->add(cis_A->Tb_ao(I));
       psi::outfile->Printf("     State I= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
@@ -179,7 +180,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
       this->determine_electronic_state(cis_B, J);
       E_ex_B = cis_B->eigenvalues()->get(J);
       t_B = cis_B->U_homo_lumo(J).first;
-      trcamm_B = cis_B->trcamm(J);
+      trcamm_B = cis_B->trcamm(J, symm);
       Pe_B  = cis_B->Da_ao(J); Pe_B ->add(cis_B->Db_ao(J));
       Peg_B = cis_B->Ta_ao(J); Peg_B->add(cis_B->Tb_ao(J));
       psi::outfile->Printf("     State J= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
@@ -233,8 +234,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   // Compute Hamiltonian eigenvalues TODO
   double E01= E_ex_A;
   double E02= E_ex_B;
-  double E03=-eps_a_occ_A->get(homo_A) + eps_a_vir_B->get(0     );
-  double E04= eps_a_vir_A->get(0     ) - eps_a_occ_B->get(homo_B);
+  double E03=-eps_a_occ_A->get(homo_A) + eps_a_vir_B->get(lumo_B);
+  double E04= eps_a_vir_A->get(lumo_A) - eps_a_occ_B->get(homo_B);
 
   double E1 = E01;
   double E2 = E02;
@@ -293,12 +294,12 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
          f[i][l] -=       dA[k][j] * eri;
 
          // V0_ET1
-         V0_ET1 += 2.0 * eri * coA[i][homo_A] * cvA[j][0] * cvA[k][homo_A] * cvB[l][0];
-         V0_ET1 -=       eri * coA[k][homo_A] * cvA[j][0] * cvA[i][homo_A] * cvB[l][0];
+         V0_ET1 += 2.0 * eri * coA[j][homo_A] * cvA[i][lumo_A] * coA[k][homo_A] * cvB[l][lumo_B];
+         V0_ET1 -=       eri * coA[j][homo_A] * cvA[k][lumo_A] * coA[i][homo_A] * cvB[l][lumo_B];
 
          // V0_HT1
-         V0_HT1 += 2.0 * eri * cvA[j][0] * coA[i][homo_A] * cvA[k][0] * coB[l][homo_B];
-         V0_HT1 -=       eri * cvA[j][0] * coA[k][homo_A] * cvA[i][0] * coB[l][homo_B];
+         V0_HT1 += 2.0 * eri * cvA[j][lumo_A] * coA[i][homo_A] * cvA[k][lumo_A] * coB[l][homo_B];
+         V0_HT1 -=       eri * cvA[j][lumo_A] * coA[k][homo_A] * cvA[i][lumo_A] * coB[l][homo_B];
     }
   }
  
@@ -316,16 +317,16 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
          double eri = b_abbb[ii->index()];
 
          // Fock matrix
-         f[i][j] += 2.0 * dA[k][l] * eri;
-         f[i][l] -=       dA[k][j] * eri;
+         f[i][j] += 2.0 * dB[k][l] * eri;
+         f[i][l] -=       dB[k][j] * eri;
 
          // V0_ET2
-         V0_ET2 += 2.0 * eri * cvA[i][0] * coB[j][homo_B] * cvB[l][0] * coB[k][homo_B];
-         V0_ET2 -=       eri * cvA[i][0] * coB[l][homo_B] * cvB[j][0] * coB[k][homo_B];
+         V0_ET2 += 2.0 * eri * cvA[i][lumo_A] * coB[j][homo_B] * cvB[l][lumo_B] * coB[k][homo_B];
+         V0_ET2 -=       eri * cvA[i][lumo_A] * coB[l][homo_B] * cvB[j][lumo_B] * coB[k][homo_B];
 
          // V0_HT2
-         V0_HT2 += 2.0 * eri * coA[i][homo_A] * cvB[j][0] * cvB[l][homo_B] * cvB[k][0];
-         V0_HT2 -=       eri * coA[i][homo_A] * cvB[l][0] * cvB[j][homo_B] * cvB[k][0];
+         V0_HT2 += 2.0 * eri * coA[i][homo_A] * cvB[j][lumo_B] * coB[l][homo_B] * cvB[k][lumo_B];
+         V0_HT2 -=       eri * coA[i][homo_A] * cvB[l][lumo_B] * coB[j][homo_B] * cvB[k][lumo_B];
 
     }
   }
@@ -347,8 +348,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
          V0_Exch -= 0.5 * pAt[k][i] * pBt[j][l] * eri;
 
          // V0_CT
-         V0_CT  += 2.0 * eri * cvB[j][0] * coA[i][homo_A] * coB[l][homo_B] * cvA[k][0];
-         V0_CT  -=       eri * cvB[l][0] * coA[i][homo_A] * coB[j][homo_B] * cvA[k][0];
+         V0_CT  += 2.0 * eri * coA[i][homo_A] * cvB[j][lumo_B] * cvA[k][lumo_A] * coB[l][homo_B];
+         V0_CT  -=       eri * coA[i][homo_A] * cvB[l][lumo_B] * cvA[k][lumo_A] * coB[j][homo_B];
 
          // E1
          E1 -= eri * (pA[k][i] - 2.0 * dA[k][i]) * dB[j][l];
@@ -400,8 +401,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   for (int i=0; i<nbf_A; ++i) {
   for (int j=0; j<nbf_B; ++j) {
        double v = f[i][j];
-       V0_ET1 += cvA[i][0] * cvB[j][0] * v;
-       V0_ET2 += cvA[i][0] * cvB[j][0] * v;
+       V0_ET1 += cvA[i][lumo_A] * cvB[j][lumo_B] * v;
+       V0_ET2 += cvA[i][lumo_A] * cvB[j][lumo_B] * v;
        V0_HT1 -= coA[i][homo_A] * coB[j][homo_B] * v;
        V0_HT2 -= coA[i][homo_A] * coB[j][homo_B] * v;
   }}
