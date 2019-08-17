@@ -59,10 +59,13 @@ class SCF:
  ---------------------------------------------------------------------------------------------------------------
                                                                        Last Revision: Gundelfingen, May 4th 2018
 """
-  def __init__(self, mol):
+  def __init__(self, mol, bfs=None):
       "Initialize BasisSet, Wavefunction and JK objects"
       # Basis set
-      self._bfs = psi4.core.BasisSet.build(mol, "BASIS", psi4.core.get_global_option("BASIS"), puream=-1)
+      self._bfs = bfs
+      if bfs is None:
+         self._bfs = psi4.core.BasisSet.build(mol, "BASIS", psi4.core.get_global_option("BASIS"), 
+                                                   puream=psi4.core.get_global_option("PUREAM"))
       # Wavefunction
       self._wfn = psi4.core.Wavefunction(mol, self._bfs)
       # Number of alpha electrons
@@ -349,7 +352,7 @@ class DFI(abc.ABC):
              V += self._eval_vnuc(i, j)
              V += self._eval_vel (i, j)
       # solve SCF for i-th fragment
-      scf = SCF(self._frags[i])
+      scf = SCF(self._frags[i], bfs=self._bfs[i])
       scf.run(guess=self._Fs[i].copy(), v_ext=V, conv=conv_scf, maxit=maxit_scf, damp=damp_scf, ndamp=ndamp_scf, verbose=verbose_scf)
       # save
       self._Hs[i]  = self._H[i] + V

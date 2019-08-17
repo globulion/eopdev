@@ -168,6 +168,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
       cis_A->compute();
       this->determine_electronic_state(cis_A, I);
       E_ex_A = cis_A->eigenvalues()->get(I);
+    //t_A = std::abs(cis_A->U_homo_lumo(I).first);
       t_A = cis_A->U_homo_lumo(I).first;
       trcamm_A = cis_A->trcamm(I, symm);
       Pe_A  = cis_A->Da_ao(I); Pe_A ->add(cis_A->Db_ao(I));
@@ -179,6 +180,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
       cis_B->compute();
       this->determine_electronic_state(cis_B, J);
       E_ex_B = cis_B->eigenvalues()->get(J);
+    //t_B = std::abs(cis_B->U_homo_lumo(J).first);
       t_B = cis_B->U_homo_lumo(J).first;
       trcamm_B = cis_B->trcamm(J, symm);
       Pe_B  = cis_B->Da_ao(J); Pe_B ->add(cis_B->Db_ao(J));
