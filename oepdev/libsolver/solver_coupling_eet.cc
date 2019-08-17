@@ -382,9 +382,9 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
          // E2
          E2 += 2.0 * eri * (pB[l][k] - 2.0 * dB[l][k]) * dA[j][i];
          // E3
-         E3 -= coA[j][homo_A] * coA[i][homo_A] * cvB[l][0] * cvB[k][0];
+         E3 -= coA[j][homo_A] * coA[i][homo_A] * cvB[l][lumo_B] * cvB[k][lumo_B] * eri;
          // E4
-         E4 -= cvA[j][0] * cvA[i][0] * coB[l][homo_B] * coB[k][homo_B];
+         E4 -= cvA[j][lumo_A] * cvA[i][lumo_A] * coB[l][homo_B] * coB[k][homo_B] * eri;
 
     }
   }
@@ -448,8 +448,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double V0_direct = V0_Coul + V0_Exch;
   double V0_indirect = V0_TI_2 + V0_TI_3;
 
-  double V_TDFI_TI = V_direct + V_indirect;
-  double V0_TDFI_TI = V0_direct + V0_indirect;
+  double V_TI_CIS = V_direct + V_indirect;
+  double V0_TI_CIS = V0_direct + V0_indirect;
 
   psi::timer_off("Solver EET TI/CIS               ");
 
@@ -500,13 +500,13 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   psi::Process::environment.globals["EET V Direct CM-1"     ] = V_direct     *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V Indirect CM-1"   ] = V_indirect   *OEPDEV_AU_CMRec;
   //
-  psi::Process::environment.globals["EET V0 TDFI_TI  CM-1"  ] = V0_TDFI_TI   *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TDFI_TI  CM-1"   ] = V_TDFI_TI    *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TI_CIS  CM-1"   ] = V0_TI_CIS   *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TI_CIS  CM-1"    ] = V_TI_CIS    *OEPDEV_AU_CMRec;
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf("  ==> SOLVER: EET coupling constant <==\n"  );
-     psi::outfile->Printf("  ==>         Benchmark (TDFI-TI)   <==\n\n");
+     psi::outfile->Printf("  ==>         Benchmark (TI-CIS)    <==\n\n");
      psi::outfile->Printf("     V0 Coul   = %13.2f\n", V0_Coul *OEPDEV_AU_CMRec         );
      psi::outfile->Printf("     V0 Exch   = %13.2f\n", V0_Exch *OEPDEV_AU_CMRec         );
      psi::outfile->Printf("     -------------------------------\n"                      );
