@@ -39,11 +39,14 @@ dimer = psi4.geometry(inp)
 run_dfi = True
 
 # set Psi4 options
-psi4.set_options({"scf_type"      : "pk"      ,
-                  "basis"         : "6-31G*"  ,
-                  "e_convergence" : "1e-9"    ,
-                  "puream"        : "False"   ,
-                  "print"         : "1"       })
+psi4.set_options({"scf_type"       : "df"    ,
+                  "basis"          : "6-31G*",
+                  "e_convergence"  : 1e-9    ,
+                  "puream"         : False   ,
+                  "print"          : 0       ,
+                  "excited_state_a":-1       ,
+                  "excited_state_b":-1       ,
+                  "trcamm_symmetrize": False})
 
 # set Psi4 output
 psi4.core.set_output_file(sys.argv[0].replace('.py','.log'), True)
@@ -56,7 +59,8 @@ if run_dfi:
 else:
    un = wavefunction_union_from_dimer(dimer)
 
-# perform 4-indext transformations in dimer spaces
+
+# perform 4-index transformations in dimer spaces
 un.transform_integrals()
 
 # run TrCAMM and TDFI-TI
