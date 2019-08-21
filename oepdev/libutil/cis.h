@@ -170,6 +170,9 @@ class CISComputer {
    /// Solve the CIS problem
    virtual void compute(void);
 
+   /// Clear DPD instance
+   virtual void clear_dpd(void);
+
    /// Get the total number of excited states
    int nstates(void) const {return ndets_;}
 

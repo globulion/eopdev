@@ -91,6 +91,7 @@ WavefunctionUnion::WavefunctionUnion(
    SharedWavefunction ref_wfn = oepdev::solve_scf(dimer, primary, auxiliary_df, 
    		                create_superfunctional("HF", options_), options_, psi::PSIO::shared_object(), true);
    shallow_copy(ref_wfn);
+   set_basisset("BASIS_DF_SCF", auxiliary_df);
 
    // Extract monomers
    SharedMolecule molecule_1 = extract_monomer(molecule_, 1);

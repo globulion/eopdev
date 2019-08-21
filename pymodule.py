@@ -100,6 +100,9 @@ def run_oepdev(name, **kwargs):
     elif(psi4.core.get_global_option("OEPDEV_TARGET") == "SOLVER") \
     or  (psi4.core.get_global_option("OEPDEV_TARGET") == "TEST" and
          psi4.core.get_global_option("OEPDEV_TEST_MODE") == "DIMER"):
+
+       basis_df_scf = psi4.core.BasisSet.build(molecule, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"),
+                                                 puream=ref_wfn.basisset().has_puream())
       
        molecule_A     = molecule.extract_subsets(1)                                                               
        molecule_B     = molecule.extract_subsets(2)
@@ -154,6 +157,7 @@ def run_oepdev(name, **kwargs):
        ref_wfn.set_basisset("BASIS_DF_OEP_2" , basis_df_oep_B )
        ref_wfn.set_basisset("BASIS_INT_OEP_1", basis_int_oep_A)
        ref_wfn.set_basisset("BASIS_INT_OEP_2", basis_int_oep_B)
+       ref_wfn.set_basisset("BASIS_DF_SCF"   , basis_df_scf   )
 
 
     # Ensure IWL files have been written when not using DF/CD

@@ -52,6 +52,11 @@ void CISComputer::prepare_for_cis_(void) {
  this->transform_integrals_();
 }
 
+void CISComputer::clear_dpd(void) {
+  // Destruct the IntegralTransform object
+  this->inttrans_.reset();
+}
+
 void CISComputer::transform_integrals_(void) {
  SharedMOSpaceVector spaces;
  spaces.push_back(psi::MOSpace::occ);

@@ -2,6 +2,7 @@
 #include "psi4/libpsi4util/process.h"
 #include <utility>
 #include "../libutil/integrals_iter.h"
+#include "../libutil/util.h"
 
 
 using namespace std;
@@ -79,13 +80,20 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   SharedMatrix VaoB_AA = std::make_shared<psi::Matrix>("VaoB(A,A)" , nbf_A, nbf_A);
   SharedMatrix VaoA_BB = std::make_shared<psi::Matrix>("VaoA(B,B)" , nbf_B, nbf_B);
 
-  psi::IntegralFactory fact_AAAA(wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0));
-  psi::IntegralFactory fact_BBBB(wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1));
-  psi::IntegralFactory fact_ABAB(wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(0), wfn_union_->l_primary(1));
-  psi::IntegralFactory fact_BABA(wfn_union_->l_primary(1), wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(0));
-  psi::IntegralFactory fact_ABBB(wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1));
-  psi::IntegralFactory fact_AAAB(wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(1));
-  psi::IntegralFactory fact_AABB(wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_AAAA(wfn_union_->l_primary(0), wfn_union_->l_primary(0), 
+                                 wfn_union_->l_primary(0), wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_BBBB(wfn_union_->l_primary(1), wfn_union_->l_primary(1), 
+                                 wfn_union_->l_primary(1), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_ABAB(wfn_union_->l_primary(0), wfn_union_->l_primary(1), 
+                                 wfn_union_->l_primary(0), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_BABA(wfn_union_->l_primary(1), wfn_union_->l_primary(0), 
+                                 wfn_union_->l_primary(1), wfn_union_->l_primary(0));
+  psi::IntegralFactory fact_ABBB(wfn_union_->l_primary(0), wfn_union_->l_primary(1), 
+                                 wfn_union_->l_primary(1), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_AAAB(wfn_union_->l_primary(0), wfn_union_->l_primary(0), 
+                                 wfn_union_->l_primary(0), wfn_union_->l_primary(1));
+  psi::IntegralFactory fact_AABB(wfn_union_->l_primary(0), wfn_union_->l_primary(0), 
+                                 wfn_union_->l_primary(1), wfn_union_->l_primary(1));
 
 
   // Compute one-electron integrals
@@ -169,7 +177,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
       this->determine_electronic_state(cis_A, I);
       E_ex_A = cis_A->eigenvalues()->get(I);
     //t_A = std::abs(cis_A->U_homo_lumo(I).first);
-      t_A = cis_A->U_homo_lumo(I).first;
+    //t_A = cis_A->U_homo_lumo(I).first * cis_A->U_homo_lumo(I).second;
+      t_A = cis_A->U_homo_lumo(I).first / sqrt(2.0);
       trcamm_A = cis_A->trcamm(I, symm);
       Pe_A  = cis_A->Da_ao(I); Pe_A ->add(cis_A->Db_ao(I));
       Peg_A = cis_A->Ta_ao(I); Peg_A->add(cis_A->Tb_ao(I));
@@ -181,7 +190,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
       this->determine_electronic_state(cis_B, J);
       E_ex_B = cis_B->eigenvalues()->get(J);
     //t_B = std::abs(cis_B->U_homo_lumo(J).first);
-      t_B = cis_B->U_homo_lumo(J).first;
+    //t_B = cis_B->U_homo_lumo(J).first * cis_B->U_homo_lumo(J).second;
+      t_B = cis_B->U_homo_lumo(J).first / sqrt(2.0);
       trcamm_B = cis_B->trcamm(J, symm);
       Pe_B  = cis_B->Da_ao(J); Pe_B ->add(cis_B->Db_ao(J));
       Peg_B = cis_B->Ta_ao(J); Peg_B->add(cis_B->Tb_ao(J));
@@ -189,6 +199,31 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
                                  J+1, cis_B->oscillator_strength(J), E_ex_B*OEPDEV_AU_EV, t_B);
   }
   psi::outfile->Printf("\n");
+
+  // Check the populations of states
+  if (wfn_union_->options().get_int("PRINT") > -1) {
+     psi::SharedMatrix Sao_AA = std::make_shared<psi::Matrix>("", nbf_A, nbf_A);
+     psi::SharedMatrix Sao_BB = std::make_shared<psi::Matrix>("", nbf_B, nbf_B);
+     std::shared_ptr<psi::OneBodyAOInt> sAA(fact_AAAA.ao_overlap()); sAA->compute(Sao_AA);
+     std::shared_ptr<psi::OneBodyAOInt> sBB(fact_BBBB.ao_overlap()); sBB->compute(Sao_BB);
+     const double na_g1 = psi::Matrix::doublet(Da_A, Sao_AA)->trace();
+     const double na_g2 = psi::Matrix::doublet(Da_B, Sao_BB)->trace();
+     const double n_e1 = psi::Matrix::doublet(Pe_A, Sao_AA)->trace();
+     const double n_e2 = psi::Matrix::doublet(Pe_B, Sao_BB)->trace();
+     const double n_eg1 = psi::Matrix::doublet(Peg_A, Sao_AA)->trace();
+     const double n_eg2 = psi::Matrix::doublet(Peg_B, Sao_BB)->trace();
+     //
+     psi::outfile->Printf(" ===> Populations of Electronic states <===\n\n");
+     psi::outfile->Printf("         Total electron number\n");
+     psi::outfile->Printf("    g(1) %13.5f\n", na_g1*2.0);
+     psi::outfile->Printf("    g(2) %13.5f\n", na_g2*2.0);
+     psi::outfile->Printf("    e(1) %13.5f\n", n_e1);
+     psi::outfile->Printf("    e(2) %13.5f\n", n_e2);
+     psi::outfile->Printf("    eg(1)%13.5f\n", n_eg1);
+     psi::outfile->Printf("    eg(2)%13.5f\n", n_eg2);
+     psi::outfile->Printf("\n");
+  }
+
 
 
   // [1.1] Compute Overlap integrals between basis functions
@@ -256,10 +291,10 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double V0_CT  = 0.0;
 
   // ===> Accumulate (ab|cd) contributions from AO ERI's <=== //
-  std::shared_ptr<oepdev::ShellCombinationsIterator> s_aaab = oepdev::ShellCombinationsIterator::build(fact_AAAB, "ALL");
-  std::shared_ptr<oepdev::ShellCombinationsIterator> s_abbb = oepdev::ShellCombinationsIterator::build(fact_ABBB, "ALL");
-  std::shared_ptr<oepdev::ShellCombinationsIterator> s_abab = oepdev::ShellCombinationsIterator::build(fact_ABAB, "ALL");
-  std::shared_ptr<oepdev::ShellCombinationsIterator> s_aabb = oepdev::ShellCombinationsIterator::build(fact_AABB, "ALL");
+  std::shared_ptr<oepdev::ShellCombinationsIterator> s_aaab = oepdev::ShellCombinationsIterator::build(fact_AAAB, "ALL", 4);
+  std::shared_ptr<oepdev::ShellCombinationsIterator> s_abbb = oepdev::ShellCombinationsIterator::build(fact_ABBB, "ALL", 4);
+  std::shared_ptr<oepdev::ShellCombinationsIterator> s_abab = oepdev::ShellCombinationsIterator::build(fact_ABAB, "ALL", 4);
+  std::shared_ptr<oepdev::ShellCombinationsIterator> s_aabb = oepdev::ShellCombinationsIterator::build(fact_AABB, "ALL", 4);
 
   std::shared_ptr<psi::TwoBodyAOInt> t_aaab(fact_AAAB.eri()); const double* b_aaab = t_aaab->buffer();
   std::shared_ptr<psi::TwoBodyAOInt> t_abbb(fact_ABBB.eri()); const double* b_abbb = t_abbb->buffer();
@@ -317,6 +352,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
          int k = ii->k(); // B
          int l = ii->l(); // B
          double eri = b_abbb[ii->index()];
+       //psi::outfile->Printf("(A%2d B%2d | B%2d B%2d) = %14.6f\n", i, j, k, l, eri);
 
          // Fock matrix
          f[i][j] += 2.0 * dB[k][l] * eri;
@@ -399,6 +435,29 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
        E2 += (pB[j][i] - 2.0 * dB[j][i])*VaoA_BB->get(i,j);
   }}
 
+
+  if (options_.get_bool("TI_CIS_PRINT_FOCK_MATRIX")) {
+      Fao_AB->set_name("Fock matrix (A,B): unperturbed - density matrix as Hadamard sum of monomer");
+      Fao_AB->print();
+  }
+ 
+  // Compute the full Fock matrix from SCF wavefunction of entire dimer
+  if (options_.get_bool("TI_CIS_SCF_FOCK_MATRIX")) {
+     const int nbf = wfn_union_->basisset()->nbf();
+     psi::SharedWavefunction wfn_dimer = oepdev::solve_scf(wfn_union_->molecule(), wfn_union_->basisset(), 
+                                wfn_union_->get_basisset("BASIS_DF_SCF"),
+                                oepdev::create_superfunctional("HF", options_), options_, psi::PSIO::shared_object(), false);
+     for (int i=0; i<nbf_A; ++i) {
+          for (int j=0; j<nbf_B; ++j) {
+               f[i][j] = wfn_dimer->Fa()->get(i, nbf_A+j);
+          }
+     }
+     if (options_.get_int("PRINT") > -1) {                                                               
+         Fao_AB->set_name("Fock matrix (A,B): perturbed - SCF");
+         Fao_AB->print();
+     }
+  }
+
   // ----> Add Fock matrix contributions to all V0 <---- //
   for (int i=0; i<nbf_A; ++i) {
   for (int j=0; j<nbf_B; ++j) {
@@ -436,11 +495,12 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double V_Exch = V0_Exch / (1.0 - S12*S12);
   double V_Ovrl =-(E1 + E2)*S12/(2.0 * (1.0 - S12*S12));
 
-  double V_TI_2 =-(V_ET1*V_HT2)/(E3-E1) - (V_HT1*V_ET2)/(E4-E1);
-  double V_TI_3 = (V_ET1*V_CT*V_ET2 + V_HT1*V_CT*V_HT2) / ((E3-E1)*(E4-E1));
+  //E3 = E03; E4 = E04;
+  double V_TI_2 =-(V_ET1*V_HT2)/(E3-E1) -(V_HT1*V_ET2)/(E4-E1);
+  double V_TI_3 = (V_ET1*V_ET2 + V_HT1*V_HT2) * V_CT / ((E3-E1)*(E4-E1));
 
-  double V0_TI_2 =-(V0_ET1*V0_HT2)/(E03-E01) - (V0_HT1*V0_ET2)/(E04-E01);
-  double V0_TI_3 = (V0_ET1*V0_CT*V0_ET2 + V0_HT1*V0_CT*V0_HT2) / ((E03-E01)*(E04-E01));
+  double V0_TI_2 =-(V0_ET1*V0_HT2)/(E3-E01) -(V0_HT1*V0_ET2)/(E4-E01);
+  double V0_TI_3 = (V0_ET1*V0_ET2 + V0_HT1*V0_HT2) * V0_CT / ((E3-E01)*(E4-E01));
  
   double V_direct = V_Coul + V_Exch + V_Ovrl;
   double V_indirect = V_TI_2 + V_TI_3;
@@ -534,6 +594,9 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
      psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("     V0 Indir = %13.2f\n", V0_indirect*OEPDEV_AU_CMRec       );
      psi::outfile->Printf("     V  Indir = %13.2f\n", V_indirect *OEPDEV_AU_CMRec       );
+     psi::outfile->Printf("     ===============================\n"                      );
+     psi::outfile->Printf("     V0 TI/CIS= %13.2f\n", V0_TI_CIS  *OEPDEV_AU_CMRec       );
+     psi::outfile->Printf("     V  TI/CIS= %13.2f\n", V_TI_CIS   *OEPDEV_AU_CMRec       );
      psi::outfile->Printf("\n");
   }
 
