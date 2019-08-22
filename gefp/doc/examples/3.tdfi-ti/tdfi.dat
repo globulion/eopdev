@@ -1,0 +1,16 @@
+# T1 scan ethylene dimer generated from opt MP2/6-31G* (g09)
+# -------
+#
+# Notes:
+# - densities altered by DFI_J
+# - Fock matrix of the dimer constructed from full SCF Fock matrix of dimer (ti_cis_scf_fock_matrix=True)
+# - TrCAMM: R-5 results are taken. Both original and 'symmetrized transition densities' were used.
+# - V_Exact were computed from results produced by the 'cis.py' script
+# - All couplings in [cm-1]
+#
+# R_CC [Angstroms]  V_Exact  V_Coul  V_TrCAMM V_TrCAMM(SYM)    V_TI_2  V_TI_3    V_TDFI_TI_CIS 
+3.0                 9804.4   4884.5  4794.9   5119.1           5972.5  -506.6    9834.6 
+# equilibrium                                                                           
+4.16896             1973.6   1649.1  1591.2   1633.4            141.1    -0.1    1781.9
+#                                                                                       
+6.0                  495.0    494.9   489.2    493.2              0.0     0.0     494.9

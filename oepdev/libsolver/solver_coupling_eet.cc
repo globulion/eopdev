@@ -146,6 +146,9 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   const int homo_B = wfn_union_->l_wfn(1)->nalpha() - 1;
   const int lumo_A = 0; //wfn_union_->l_wfn(0)->nalpha();
   const int lumo_B = 0; //wfn_union_->l_wfn(1)->nalpha();
+  const double na_A = (double)wfn_union_->l_wfn(0)->nalpha();
+  const double na_B = (double)wfn_union_->l_wfn(1)->nalpha();
+  const double na_AB= na_A + na_B;
 
   // 
   SharedMatrix Ca_occ_A = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
@@ -174,14 +177,12 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   {
       std::shared_ptr<CISComputer> cis_A = CISComputer::build("RESTRICTED", wfn_union_->l_wfn(0), options_); 
       cis_A->compute();
-      this->determine_electronic_state(cis_A, I);
-      E_ex_A = cis_A->eigenvalues()->get(I);
-    //t_A = std::abs(cis_A->U_homo_lumo(I).first);
-    //t_A = cis_A->U_homo_lumo(I).first * cis_A->U_homo_lumo(I).second;
-      t_A = cis_A->U_homo_lumo(I).first / sqrt(2.0);
-      trcamm_A = cis_A->trcamm(I, symm);
-      Pe_A  = cis_A->Da_ao(I); Pe_A ->add(cis_A->Db_ao(I));
-      Peg_A = cis_A->Ta_ao(I); Peg_A->add(cis_A->Tb_ao(I));
+      this->determine_electronic_state(cis_A, I);            // Excited state ID in C++ convention
+      E_ex_A = cis_A->eigenvalues()->get(I);                 // Excitation energy wrn ground state
+      t_A = cis_A->U_homo_lumo(I).first * sqrt(na_A/na_AB);  // CIS amplitude scaled to the dimer
+      trcamm_A = cis_A->trcamm(I, symm);                     // TrCAMM moments
+      Pe_A  = cis_A->Da_ao(I); Pe_A ->add(cis_A->Db_ao(I));  // Excited state bond order matrices of monomers
+      Peg_A = cis_A->Ta_ao(I); Peg_A->add(cis_A->Tb_ao(I));  // Transition density matrices of monomers
       psi::outfile->Printf("     State I= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
                                  I+1, cis_A->oscillator_strength(I), E_ex_A*OEPDEV_AU_EV, t_A);
   }{
@@ -189,9 +190,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
       cis_B->compute();
       this->determine_electronic_state(cis_B, J);
       E_ex_B = cis_B->eigenvalues()->get(J);
-    //t_B = std::abs(cis_B->U_homo_lumo(J).first);
-    //t_B = cis_B->U_homo_lumo(J).first * cis_B->U_homo_lumo(J).second;
-      t_B = cis_B->U_homo_lumo(J).first / sqrt(2.0);
+      t_B = cis_B->U_homo_lumo(J).first * sqrt(na_B/na_AB);
       trcamm_B = cis_B->trcamm(J, symm);
       Pe_B  = cis_B->Da_ao(J); Pe_B ->add(cis_B->Db_ao(J));
       Peg_B = cis_B->Ta_ao(J); Peg_B->add(cis_B->Tb_ao(J));
@@ -268,7 +267,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   }
 
 
-  // Compute Hamiltonian eigenvalues TODO
+  // Compute Hamiltonian diagonal elements
   double E01= E_ex_A;
   double E02= E_ex_B;
   double E03=-eps_a_occ_A->get(homo_A) + eps_a_vir_B->get(lumo_B);
@@ -279,11 +278,11 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double E3 = E03;
   double E4 = E04;
 
-  // Compute direct coupling constants TODO
+  // Compute direct coupling constants
   double V0_Coul = 0.0; 
   double V0_Exch = 0.0;
 
-  // Compute indirect coupling constants TODO
+  // Compute indirect coupling constant
   double V0_ET1 = 0.0;
   double V0_ET2 = 0.0;
   double V0_HT1 = 0.0;
