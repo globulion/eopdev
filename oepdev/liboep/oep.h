@@ -197,6 +197,10 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     /// Retrieve wavefunction object
     SharedWavefunction wfn() const {return wfn_;}
 
+    SharedMatrix cOcc() const {return cOcc_;}
+    SharedMatrix cVir() const {return cVir_;}
+    SharedMatrix lOcc() const {return lOcc_;}
+
     /// Retrieve MO Localizer
     SharedLocalizer localizer() const {return localizer_;}
 

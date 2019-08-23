@@ -8,8 +8,8 @@ using namespace std;
 double oepdev::test::Test::test_rep_energy_oep_based_murrell_etal(void)
 {
   // Reference data for H2O dimer 6-311++G** 6D
-  const double ref_e_esp = +0.01269788; // Total Exchange-Repulsion Energy [A.U.]
-  const double ref_e_camm= +0.00977740; // Total Exchange-Repulsion Energy [A.U.]
+  const double ref_e_esp = +0.01123609; // Total Exchange-Repulsion Energy [A.U.]
+  const double ref_e_camm= +0.00910510; // Total Exchange-Repulsion Energy [A.U.]
 
   std::shared_ptr<oepdev::WavefunctionUnion> wfn_union = std::make_shared<oepdev::WavefunctionUnion>(wfn_, options_);
   wfn_union->localize_orbitals();

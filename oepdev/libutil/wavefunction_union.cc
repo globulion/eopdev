@@ -331,7 +331,8 @@ void WavefunctionUnion::localize_orbitals() {
   int nbf, nmo_occ;
   int nOffsetAO = 0, nOffsetMOOcc = 0;
   for (int nf = 0; nf < nIsolatedMolecules_; ++nf) {
-       l_localizer_.push_back(Localizer::build("BOYS", l_primary_[nf], l_wfn_[nf]->Ca_subset("AO", "OCC"), options_));
+       l_localizer_.push_back(Localizer::build(options_.get_str("WFN_UNION_LOCALIZER"), 
+                           l_primary_[nf], l_wfn_[nf]->Ca_subset("AO", "OCC"), options_));
        l_localizer_[nf]->localize();
        //
        nbf      = l_wfn_[nf]->basisset()->nbf();
