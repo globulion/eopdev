@@ -93,6 +93,10 @@ int read_options(std::string name, Options& options)
         options.add_bool   ("TrCAMM_SYMMETRIZE"           , true                 );
         options.add_bool   ("TI_CIS_SCF_FOCK_MATRIX"      , false                );
         options.add_bool   ("TI_CIS_PRINT_FOCK_MATRIX"    , false                );
+        options.add_int    ("PHASE_HOMO_A"                , 1                    );
+        options.add_int    ("PHASE_HOMO_B"                , 1                    );
+        options.add_int    ("PHASE_LUMO_A"                , 1                    );
+        options.add_int    ("PHASE_LUMO_B"                , 1                    );
 
 
         // ---> CPHF Global Options  <--- //

@@ -223,7 +223,11 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
      psi::outfile->Printf("\n");
   }
 
-
+  // Change the phases of the SCF HOMO and LUMO orbitals of monomers
+  //if (options_.get_int("PHASE_HOMO_A") == -1) Ca_occ_A->scale_column(0, homo_A, -1.0);
+  //if (options_.get_int("PHASE_HOMO_B") == -1) Ca_occ_B->scale_column(0, homo_B, -1.0);
+  //if (options_.get_int("PHASE_LUMO_A") == -1) Ca_vir_A->scale_column(0, lumo_A, -1.0);
+  //if (options_.get_int("PHASE_LUMO_B") == -1) Ca_vir_B->scale_column(0, lumo_B, -1.0);
 
   // [1.1] Compute Overlap integrals between basis functions
 
