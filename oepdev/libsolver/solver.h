@@ -834,7 +834,181 @@ class ChargeTransferEnergySolver : public OEPDevSolver
  * # Benchmark Methods
  * ## TI/CIS Method (Fujimoto JPC 2012).
  *    
- * For a closed-shell system, ... TODO
+ * In the simplest version of TI/CIS approach, the Hamiltonian of the 
+ * molecular aggregate (dimer) is constructed from the CIS approximation
+ * and 4 basis functions constructed as follows:
+ * \f{align*}{
+ *  \Big| \Phi_1 \Big> &= \Big| \Psi_A^{(e)} \otimes \Psi_B^{(g)} \Big> \\
+ *  \Big| \Phi_2 \Big> &= \Big| \Psi_A^{(g)} \otimes \Psi_B^{(e)} \Big> \\
+ *  \Big| \Phi_3 \Big> &= \Big| \Psi_A^{(+)} \otimes \Psi_B^{(-)} \Big> \\
+ *  \Big| \Phi_4 \Big> &= \Big| \Psi_A^{(-)} \otimes \Psi_B^{(+)} \Big> 
+ * \f}
+ * where *g* and *e* superscripts denote the ground and excited state of a molecule,
+ * `+` and `-` label the cationic and anionic state, respectively, 
+ * whereas \f$ \Big| \Psi_X \otimes \Psi_Y \Big> \f$ denotes the antisymmetrized Hartree product
+ * of the monomer wavefunctions.
+ * The associated diagonal Hamiltonian matrix elements can be defined as
+ * \f{align*}{
+ *  \Big< \Phi_1 \Big| \mathscr{H} -E_{0} \Big| \Phi_1 \Big> &\equiv E_1 = E^A_{e\rightarrow g} 
+ *      + \sum_{\mu\nu\in A} \left( P_{\nu\mu}^{A(e)} - P_{\nu\mu}^{A(g)}\right) \times
+ *      \left\{ V_{\mu\nu}^{B({\rm nuc})} + \sum_{\lambda\sigma\in B} P_{\lambda\sigma}^{B(g)} 
+ *      \left[ (\mu\nu | \sigma\lambda) - \frac{1}{2} (\mu\lambda | \sigma\nu) \right] \right\} \\
+ *  \Big< \Phi_2 \Big| \mathscr{H} -E_{0} \Big| \Phi_2 \Big> &\equiv E_2 = E^B_{e\rightarrow g} 
+ *      + \sum_{\mu\nu\in B} \left( P_{\nu\mu}^{B(e)} - P_{\nu\mu}^{B(g)}\right) \times
+ *      \left\{ V_{\mu\nu}^{A({\rm nuc})} + \sum_{\lambda\sigma\in A} P_{\lambda\sigma}^{A(g)} 
+ *      \left[ (\mu\nu | \sigma\lambda) - \frac{1}{2} (\mu\lambda | \sigma\nu) \right] \right\} \\
+ *  \Big< \Phi_3 \Big| \mathscr{H} -E_{0} \Big| \Phi_3 \Big> &\equiv E_3 = 
+ *  -\varepsilon_H^A + \varepsilon_L^B - \big( H^A H^A \big| L^B L^B \big)  \\
+ *  \Big< \Phi_4 \Big| \mathscr{H} -E_{0} \Big| \Phi_4 \Big> &\equiv E_4 = 
+ *   \varepsilon_L^A - \varepsilon_H^B - \big( L^A L^A \big| H^B H^B \big)  
+ * \f}
+ * The associated off-diagonal Hamiltonian matrix elements can be defined as
+ * \f{align*}{
+ *  \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_2 \Big> &\equiv V^{\rm Coul} + V^{\rm Exch} + V^{\rm Ovrl}\\
+ *  \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_3 \Big> &\equiv V^{\rm ET1} \\
+ *  \Big< \Phi_2 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm ET2} \\
+ *  \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm HT1} \\
+ *  \Big< \Phi_2 \Big| \mathscr{H} \Big| \Phi_3 \Big> &\equiv V^{\rm HT2} \\
+ *  \Big< \Phi_3 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm CT } 
+ * \f}
+ * where the Forster-type Coulombic (Coul), Dexter-type exchange (Exch), remaining overlap correction (Ovrl),
+ * as well
+ * as the electron, hole and charge (ET, HT, CT) transfer contributions are defined.
+ * The exchange-Coulomb coupling takes the form
+ * \f{align*}{
+ *  V^{\rm Coul} &= \frac{V^{{\rm Coul},(0)}}{1 - S_{12}^2} \\
+ *  V^{\rm Exch} &= \frac{V^{{\rm Exch},(0)}}{1 - S_{12}^2} \\
+ *  V^{\rm Ovrl} &=-\frac{(E_1+E_2)S_{12}}{2(1-S_{12}^2)}
+ * \f}
+ * The overlap-corrected ET, HT and CT matrix elements read
+ * \f{align*}{
+ *  V^{\rm ET1} &= \left[ 1 - S_{13}^2 \right]^{-1} \left\{ V^{{\rm ET1},(0)} - \frac{1}{2} (E_1+E_2) S_{13} \right\} \\
+ *  V^{\rm ET2} &= \left[ 1 - S_{24}^2 \right]^{-1} \left\{ V^{{\rm ET2},(0)} - \frac{1}{2} (E_1+E_2) S_{24} \right\} \\
+ *  V^{\rm HT1} &= \left[ 1 - S_{14}^2 \right]^{-1} \left\{ V^{{\rm HT1},(0)} - \frac{1}{2} (E_1+E_2) S_{14} \right\} \\
+ *  V^{\rm HT2} &= \left[ 1 - S_{23}^2 \right]^{-1} \left\{ V^{{\rm HT2},(0)} - \frac{1}{2} (E_1+E_2) S_{23} \right\} \\
+ *  V^{\rm CT } &= \left[ 1 - S_{34}^2 \right]^{-1} \left\{ V^{{\rm CT },(0)} - \frac{1}{2} (E_1+E_2) S_{34} \right\} 
+ * \f}
+ * In the above equatons, the superscript (0) denotes that the matrix elements are not affected by the
+ * overlap between molecular wavefunctions, and are given by
+ * \f{align*}{
+ *  V^{{\rm Coul},(0)} &= \sum_{\mu\nu\in A} \sum_{\lambda\sigma\in B} 
+ *   P_{\nu\mu}^{g\rightarrow e(A)} P_{\lambda\sigma}^{g\rightarrow e(B)} 
+ *   (\mu\nu | \sigma\lambda) \\
+ *  V^{{\rm Exch},(0)} &=-\frac{1}{2} \sum_{\mu\nu\in A} \sum_{\lambda\sigma\in B} 
+ *   P_{\nu\mu}^{g\rightarrow e(A)} P_{\lambda\sigma}^{g\rightarrow e(B)} 
+ *   (\mu\lambda | \sigma\nu) \\
+ *  V^{{\rm ET1},(0)} &= t_{H\rightarrow L}^A \left\{ \big( L^A \big| \mathscr{F} \big| L^B \big) 
+ *    + 2 \big( L^A H^A \big| H^A L^B \big) - \big( L^A L^B \big| H^A H^A \big)  \right\} \\
+ *  V^{{\rm ET2},(0)} &= t_{H\rightarrow L}^B \left\{ \big( L^A \big| \mathscr{F} \big| L^B \big) 
+ *    + 2 \big( L^A H^B \big| H^B L^B \big) - \big( L^A L^B \big| H^B H^B \big)  \right\} \\
+ *  V^{{\rm HT1},(0)} &= t_{H\rightarrow L}^A \left\{-\big( H^A \big| \mathscr{F} \big| H^B \big) 
+ *    + 2 \big( H^A L^A \big| L^A H^B \big) - \big( H^A H^B \big| L^A L^A \big)  \right\} \\
+ *  V^{{\rm HT2},(0)} &= t_{H\rightarrow L}^B \left\{-\big( H^A \big| \mathscr{F} \big| H^B \big) 
+ *    + 2 \big( H^A L^B \big| L^B H^B \big) - \big( H^A H^B \big| L^B L^B \big)  \right\} \\
+ *  V^{{\rm CT },(0)} &= 
+ *      2 \big( H^A L^B \big| L^A H^B \big) - \big( H^A H^B \big| L^A L^B \Big) 
+ * \f}
+ * In the above, \f$ \mathscr{F} \f$ is the Fock operator whereas *H* and *L* denote the 
+ * HOMO and LUMO orbitals, respectively.
+ * The overlap integrals between the basis states are approximated by
+ * \f{align*}{
+ *  S_{12} &\equiv \Big( \Phi_1 \Big| \Phi_2 \Big) 
+            \cong -\frac{1}{N_{el}^{AB}} {\rm Tr}\left[ {\bf P}^{g\rightarrow e(A)} {\bf s}^{AB} {\bf P}^{g\rightarrow e(B)} 
+                                                                          {\bf s}^{BA} \right] \\
+ *  S_{13} &\equiv \Big( \Phi_1 \Big| \Phi_3 \Big) \cong -\frac{t_{H\rightarrow L}^A}{N_{el}^{AB}} 
+           S_{LL}^{AB} \\
+ *  S_{14} &\equiv \Big( \Phi_1 \Big| \Phi_4 \Big) \cong +\frac{t_{H\rightarrow L}^A}{N_{el}^{AB}} 
+           S_{HH}^{AB} \\
+ *  S_{24} &\equiv \Big( \Phi_2 \Big| \Phi_4 \Big) \cong -\frac{t_{H\rightarrow L}^B}{N_{el}^{AB}} 
+           S_{LL}^{AB} \\
+ *  S_{23} &\equiv \Big( \Phi_2 \Big| \Phi_3 \Big) \cong +\frac{t_{H\rightarrow L}^B}{N_{el}^{AB}} 
+           S_{HH}^{AB} \\
+ *  S_{34} &\equiv \Big( \Phi_3 \Big| \Phi_4 \Big) \cong -\frac{1}{N_{el}^{AB}} 
+ *         S_{HH}^{AB} S_{LL}^{AB}
+ * \f}
+ * where the overlap between molecular orbitals *U* and *W* is given by
+ * \f[
+ *  S_{UW}^{AB} \equiv {\bf s}^{AB} : {\bf c}_U^A \otimes {\bf c}_W^B
+ * \f]
+ * and \f$ {\bf s}^{AB} \f$ is the AO overlap matrix between molecule A and B atomic basis functions.
+ *
+ * For a closed-shell system, the EET coupling constant for two electronic transitions
+ * can be given approximately by
+ * \f[
+ *   V \approx V^{\rm Direct} + V^{\rm Inirect}
+ * \f]
+ * where the overlap-corrected direct and indirect coupling constants are 
+ * \f{align*}{
+ *   V^{\rm Direct  } &= V^{\rm Coul} + V^{\rm Exch} + V^{\rm Ovrl} \\
+ *   V^{\rm Indirect} &= V^{\rm TI-2} + V^{\rm TI-3}
+ * \f}
+ * with
+ * \f{align*}{
+ *  V^{\rm TI-2} &= - \frac{V^{\rm ET1} V^{\rm HT2}}{E_3-E_1} - \frac{V^{\rm ET2} V^{\rm HT1}}{E_4-E_1} \\
+ *  V^{\rm TI-3} &= \frac{V^{\rm CT} \left( V^{\rm ET1} V^{\rm ET2} + V^{\rm HT1} V^{\rm HT2}\right) }{(E_3-E_1)(E_4-E_1)}
+ * \f}
+ *
+ * ## Fock matrix in AB space
+ *
+ * In the current implementation, Fock matrix in the AB space, that
+ * is necessary to evaluate ET and HT matrix elements, can be defined
+ * as 
+ *  1. the AB block of full Hartree-Fock SCF Fock matrix for entire system;
+ *  2. the zeroth-order Fock matrix that is composed of monomer's unperturbed ground-state 1-particle density matrices.
+ * 
+ * In the latter case, the Fock matrix in AO representation is given by:
+ * \f[
+ *  F_{\alpha\in A, \beta\in B}^{AB} \approx T_{\alpha\beta} + V_{\alpha\beta}^{A({\rm nuc})} + V_{\alpha\beta}^{B({\rm nuc})}
+ *  + \sum_{\mu\nu\in A} P^{A(g)}_{\nu\mu} G_{\alpha\beta,\mu\nu}
+ *  + \sum_{\sigma\lambda\in B} P^{B(g)}_{\lambda\sigma} G_{\alpha\beta,\sigma\lambda}
+ * \f]
+ * where
+ * \f[
+ *  G_{\alpha\beta,\gamma\delta} \equiv (\alpha\beta | \gamma\delta) - \frac{1}{2} (\alpha\delta | \gamma\beta)
+ * \f]
+ *
+ * ## Mulliken approximated exchange-like contributions.
+ * 
+ * Exchange and CT contributions require ERI's of type (AB,AB). It is instructive to 
+ * approximate these contributions in terms of the Coulomb-like ERI's for the sake of testing of OEP-based approximations
+ * which are given in the next Section.
+ * 
+ * Application of the Mullipen approximation
+ * \f[
+ *  ( ij | kl ) \approx \frac{1}{4} S_{ij}S_{kl} \left[ 
+ *      ( ii | kk ) + ( jj | kk ) + ( ii | ll ) + ( jj | ll )\right]
+ * \f]
+ * results in the following approximations to the exchange-like terms
+ * \f{align*}{
+ *  V^{{\rm Exch},(0)} &\approx -\frac{1}{8} \sum_{\mu\nu\in A} \sum_{\lambda\sigma\in B} 
+ *   P_{\nu\mu}^{g\rightarrow e(A)} P_{\lambda\sigma}^{g\rightarrow e(B)} 
+ *   S_{\mu\lambda}  S_{\sigma\nu} 
+ *   \left[ ( \mu\mu | \sigma\sigma ) + ( \lambda\lambda | \nu\nu ) 
+ *        + ( \mu\mu | \nu\nu ) + ( \lambda\lambda | \sigma\sigma )\right] \\
+ *  V^{{\rm CT},(0)} &\approx \frac{1}{2} S_{HL}^{AB} S_{LH}^{AB}
+ *   \left[ r^A_{HL} + r^B_{HL} + \rho^A_H \odot \rho^B_H + \rho^A_L \odot \rho^B_L\right] \\
+ *  &\quad\qquad 
+ *       -\frac{1}{4} S_{HH}^{AB} S_{LL}^{AB}
+ *   \left[ r^A_{HL} + r^B_{HL} + \rho^A_H \odot \rho^B_L + \rho^A_L \odot \rho^B_H\right]
+ * \f}
+ * The former can be rewritten in a more convenient to implement formula:
+ * \f[
+ *  V^{{\rm Exch},(0)} \approx -\frac{1}{4} \sum_{\mu\in A} \sum_{\nu\in B}
+ *   ( \mu\mu | \sigma\sigma ) 
+ *   [{\bf P}^A {\bf s}^{AB}]_{\mu\sigma} [{\bf P}^B {\bf s}^{BA}]_{\sigma\mu} 
+ * -\frac{1}{8} \sum_{\mu\nu\in A} P_{\nu\mu}^A ( \mu\mu | \nu\nu ) [{\bf s}^{AB} {\bf P}^B {\bf s}^{BA} ]_{\mu\nu}
+ * -\frac{1}{8} \sum_{\sigma\lambda\in B} P_{\lambda\sigma}^B ( \lambda\lambda | \sigma\sigma ) [{\bf s}^{BA} {\bf P}^A {\bf s}^{AB} ]_{\sigma\lambda}
+ * \f]
+ * In the CT term, 
+ * \f{align*}{
+ *  r^A_{HL} &\equiv \rho^A_H \odot \rho^A_L \\
+ *  r^B_{HL} &\equiv \rho^B_H \odot \rho^B_L \\
+ * \f}
+ * where the effective Coulombic interaction energies are defined by
+ * \f[
+ *  \rho^A_U \odot \rho^B_W \equiv \big( U^A U^A \big| W^A W^A \big)
+ * \f]
+ * 
  *
  * 
  * # OEP-Based Methods

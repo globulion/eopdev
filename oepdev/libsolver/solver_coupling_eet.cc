@@ -248,20 +248,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double S12 = psi::Matrix::doublet(PSP, Sao_AB, false, true)->trace();
   S12*= -(1.0)/(double)Ne;
   PSP.reset();
-
   // S13
-  //double shh = 0;
-  //for (int i=0; i<nbf_A; ++i) {
-  //     for (int j=0; j<nbf_B; ++j) {
-  //          shh += Sao_AB->get(i,j) * Ca_occ_A->get(i,homo_A) * Ca_occ_B->get(j,homo_B);
-  //     }
-  //}
-  //double sll = 0;
-  //for (int i=0; i<nbf_A; ++i) {
-  //     for (int j=0; j<nbf_B; ++j) {
-  //          sll += Sao_AB->get(i,j) * Ca_vir_A->get(i,0) * Ca_vir_B->get(j,0);
-  //     }
-  //}
   double S13 = -t_A * s_LL_AB/(double)Ne;
   // S42
   double S42 = -t_B * s_LL_AB/(double)Ne;
