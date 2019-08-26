@@ -207,8 +207,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
      std::shared_ptr<psi::OneBodyAOInt> sBB(fact_BBBB.ao_overlap()); sBB->compute(Sao_BB);
      const double na_g1 = psi::Matrix::doublet(Da_A, Sao_AA)->trace();
      const double na_g2 = psi::Matrix::doublet(Da_B, Sao_BB)->trace();
-     const double n_e1 = psi::Matrix::doublet(Pe_A, Sao_AA)->trace();
-     const double n_e2 = psi::Matrix::doublet(Pe_B, Sao_BB)->trace();
+     const double n_e1  = psi::Matrix::doublet(Pe_A, Sao_AA)->trace();
+     const double n_e2  = psi::Matrix::doublet(Pe_B, Sao_BB)->trace();
      const double n_eg1 = psi::Matrix::doublet(Peg_A, Sao_AA)->trace();
      const double n_eg2 = psi::Matrix::doublet(Peg_B, Sao_BB)->trace();
      //
@@ -224,12 +224,24 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   }
 
   // Change the phases of the SCF HOMO and LUMO orbitals of monomers
-  //if (options_.get_int("PHASE_HOMO_A") == -1) Ca_occ_A->scale_column(0, homo_A, -1.0);
-  //if (options_.get_int("PHASE_HOMO_B") == -1) Ca_occ_B->scale_column(0, homo_B, -1.0);
-  //if (options_.get_int("PHASE_LUMO_A") == -1) Ca_vir_A->scale_column(0, lumo_A, -1.0);
-  //if (options_.get_int("PHASE_LUMO_B") == -1) Ca_vir_B->scale_column(0, lumo_B, -1.0);
+  if (options_.get_int("PHASE_HOMO_A") == -1) Ca_occ_A->scale_column(0, homo_A, -1.0);
+  if (options_.get_int("PHASE_HOMO_B") == -1) Ca_occ_B->scale_column(0, homo_B, -1.0);
+  if (options_.get_int("PHASE_LUMO_A") == -1) Ca_vir_A->scale_column(0, lumo_A, -1.0);
+  if (options_.get_int("PHASE_LUMO_B") == -1) Ca_vir_B->scale_column(0, lumo_B, -1.0);
 
   // [1.1] Compute Overlap integrals between basis functions
+
+  psi::SharedMatrix Smo_oAoB = psi::Matrix::triplet(Ca_occ_A, Sao_AB, Ca_occ_B, true, false, false);
+  psi::SharedMatrix Smo_vAvB = psi::Matrix::triplet(Ca_vir_A, Sao_AB, Ca_vir_B, true, false, false);
+  psi::SharedMatrix Smo_oAvB = psi::Matrix::triplet(Ca_occ_A, Sao_AB, Ca_vir_B, true, false, false);
+  psi::SharedMatrix Smo_vAoB = psi::Matrix::triplet(Ca_vir_A, Sao_AB, Ca_occ_B, true, false, false);
+  double s_HL_AB = Smo_oAvB->get(homo_A, lumo_B); Smo_oAvB.reset();
+  double s_LH_AB = Smo_vAoB->get(lumo_A, homo_B); Smo_vAoB.reset();
+  double s_HH_AB = Smo_oAoB->get(homo_A, homo_B); Smo_oAoB.reset();
+  double s_LL_AB = Smo_vAvB->get(lumo_A, lumo_B); Smo_vAvB.reset();
+  double Q1 = s_HL_AB * s_LH_AB / 2.000;
+  double Q2 =-s_HH_AB * s_LL_AB / 4.000;
+  double Q3 = Q1 + Q2;
 
   // S12
   SharedMatrix PSP = psi::Matrix::triplet(Peg_A, Sao_AB, Peg_B, false, false, false);
@@ -238,27 +250,27 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   PSP.reset();
 
   // S13
-  double shh = 0;
-  for (int i=0; i<nbf_A; ++i) {
-       for (int j=0; j<nbf_B; ++j) {
-            shh += Sao_AB->get(i,j) * Ca_occ_A->get(i,homo_A) * Ca_occ_B->get(j,homo_B);
-       }
-  }
-  double sll = 0;
-  for (int i=0; i<nbf_A; ++i) {
-       for (int j=0; j<nbf_B; ++j) {
-            sll += Sao_AB->get(i,j) * Ca_vir_A->get(i,0) * Ca_vir_B->get(j,0);
-       }
-  }
-  double S13 = -t_A * sll/(double)Ne;
+  //double shh = 0;
+  //for (int i=0; i<nbf_A; ++i) {
+  //     for (int j=0; j<nbf_B; ++j) {
+  //          shh += Sao_AB->get(i,j) * Ca_occ_A->get(i,homo_A) * Ca_occ_B->get(j,homo_B);
+  //     }
+  //}
+  //double sll = 0;
+  //for (int i=0; i<nbf_A; ++i) {
+  //     for (int j=0; j<nbf_B; ++j) {
+  //          sll += Sao_AB->get(i,j) * Ca_vir_A->get(i,0) * Ca_vir_B->get(j,0);
+  //     }
+  //}
+  double S13 = -t_A * s_LL_AB/(double)Ne;
   // S42
-  double S42 = -t_B * sll/(double)Ne;
+  double S42 = -t_B * s_LL_AB/(double)Ne;
   // S14
-  double S14 = +t_A * shh/(double)Ne;
+  double S14 = +t_A * s_HH_AB/(double)Ne;
   // S32
-  double S32 = +t_B * shh/(double)Ne;
+  double S32 = +t_B * s_HH_AB/(double)Ne;
   // S34
-  double S34 = -sll * shh/(double)Ne;
+  double S34 = -s_LL_AB * s_HH_AB/(double)Ne;
 
   if (wfn_union_->options().get_int("PRINT") > -1) {
      psi::outfile->Printf(" ===> Overlap matrix between basis states <===\n\n");
@@ -283,8 +295,9 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double E4 = E04;
 
   // Compute direct coupling constants
-  double V0_Coul = 0.0; 
-  double V0_Exch = 0.0;
+  double V0_Coul  = 0.0; 
+  double V0_Exch  = 0.0;
+  double V0_Exch_M= 0.0; // Mulliken-approximated V0_Exch
 
   // Compute indirect coupling constant
   double V0_ET1 = 0.0;
@@ -309,6 +322,11 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   std::shared_ptr<psi::TwoBodyAOInt> t_abab(fact_ABAB.eri()); const double* b_abab = t_abab->buffer();
   std::shared_ptr<psi::TwoBodyAOInt> t_aabb(fact_AABB.eri()); const double* b_aabb = t_aabb->buffer();
 
+  psi::SharedMatrix PS_AB = psi::Matrix::doublet(Peg_A, Sao_AB, false, false);
+  psi::SharedMatrix PS_BA = psi::Matrix::doublet(Peg_B, Sao_AB, false, true );
+  psi::SharedMatrix SPS_A = psi::Matrix::doublet(Sao_AB, PS_AB, true , false);
+  psi::SharedMatrix SPS_B = psi::Matrix::doublet(Sao_AB, PS_BA, false, false);
+
   double** dA = Da_A->pointer();
   double** dB = Da_B->pointer();
   double** pA = Pe_A->pointer();
@@ -320,18 +338,10 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double** coB= Ca_occ_B->pointer();
   double** cvA= Ca_vir_A->pointer();
   double** cvB= Ca_vir_B->pointer();
-
-  psi::SharedMatrix Smo_oAoB = psi::Matrix::triplet(Ca_occ_A, Sao_AB, Ca_occ_B, true, false, false);
-  psi::SharedMatrix Smo_vAvB = psi::Matrix::triplet(Ca_vir_A, Sao_AB, Ca_vir_B, true, false, false);
-  psi::SharedMatrix Smo_oAvB = psi::Matrix::triplet(Ca_occ_A, Sao_AB, Ca_vir_B, true, false, false);
-  psi::SharedMatrix Smo_vAoB = psi::Matrix::triplet(Ca_vir_A, Sao_AB, Ca_occ_B, true, false, false);
-  double s_HL_AB = Smo_oAvB->get(homo_A, lumo_B);
-  double s_LH_AB = Smo_vAoB->get(lumo_A, homo_B);
-  double s_HH_AB = Smo_oAoB->get(homo_A, homo_B);
-  double s_LL_AB = Smo_vAvB->get(lumo_A, lumo_B);
-  double Q1 = s_HL_AB * s_LH_AB / 2.000;
-  double Q2 =-s_HH_AB * s_LL_AB / 4.000;
-  double Q3 = Q1 + Q2;
+  double** psab= PS_AB->pointer();
+  double** psba= PS_BA->pointer();
+  double** spsa= SPS_A->pointer();
+  double** spsb= SPS_B->pointer();
 
   // ----> (AA|AB) : ET1, HT1, Fock <---- // 
   for (s_aaab->first(); s_aaab->is_done() == false; s_aaab->next()) 
@@ -417,7 +427,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
     }
   }
 
-  // ----> (AA|BB) : V0_Coul, V0_CT_M, E1, E2, E3, E4 <---- //
+  // ----> (AA|BB) : V0_Coul, V0_CT_M, V0_Exch_M, E1, E2, E3, E4 <---- //
   for (s_aabb->first(); s_aabb->is_done() == false; s_aabb->next()) 
   {
     s_aabb->compute_shell(t_aabb);
@@ -432,6 +442,10 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
          // V0_Coul
          V0_Coul += pAt[j][i] * pBt[l][k] * eri;
+
+         // V0_Exch_M
+         if ((i==j) && (k==l)) 
+             V0_Exch_M-= 0.25 * eri * psab[i][k] * psba[k][i];
 
          // V0_CT_M
          V0_CT_M += Q1 * eri * coA[i][homo_A] * coA[j][homo_A] * coB[k][homo_B] * coB[l][homo_B];
@@ -451,7 +465,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
     }
   }
 
-  // ----> (AA|AA) : V0_CT_M <---- // 
+  // ----> (AA|AA) : V0_CT_M, V0_Exch_M <---- // 
   for (s_aaaa->first(); s_aaaa->is_done() == false; s_aaaa->next()) 
   {
     s_aaaa->compute_shell(t_aaaa);
@@ -466,10 +480,15 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
          // V0_CT_M
          V0_CT_M += Q3 * eri * coA[i][homo_A] * coA[j][homo_A] * cvA[k][lumo_A] * cvA[l][lumo_A];
+
+         // V0_Exch_M
+         if ((i==j) && (k==l)) 
+             V0_Exch_M-= 0.125 * eri * spsb[k][i] * pAt[i][k];
+
     }
   }
 
-  // ----> (BB|BB) : V0_CT_M <---- // 
+  // ----> (BB|BB) : V0_CT_M, V0_Exch_M <---- // 
   for (s_bbbb->first(); s_bbbb->is_done() == false; s_bbbb->next()) 
   {
     s_bbbb->compute_shell(t_bbbb);
@@ -484,9 +503,12 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
          // V0_CT_M
          V0_CT_M += Q3 * eri * coB[i][homo_B] * coB[j][homo_B] * cvB[k][lumo_B] * cvB[l][lumo_B];
+
+         // V0_Exch_M
+         if ((i==j) && (k==l)) 
+             V0_Exch_M-= 0.125 * eri * spsa[k][i] * pBt[i][k];
     }
   }
-
 
 
   // Finish E1 and E2
@@ -560,6 +582,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double V_Exch = V0_Exch / (1.0 - S12*S12);
   double V_Ovrl =-(E1 + E2)*S12/(2.0 * (1.0 - S12*S12));
 
+  double V_Exch_M= V0_Exch_M/ (1.0 - S12*S12);
+
   //E3 = E03; E4 = E04;
   double V_TI_2 =-(V_ET1*V_HT2)/(E3-E1) -(V_HT1*V_ET2)/(E4-E1);
   double V_TI_3 = (V_ET1*V_ET2 + V_HT1*V_HT2) * V_CT / ((E3-E1)*(E4-E1));
@@ -601,6 +625,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   psi::Process::environment.globals["EET V0 TrCAMM R4 CM-1" ] = V0_TrCAMM_R4 *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 TrCAMM R5 CM-1" ] = V0_TrCAMM_R5 *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 EXCH CM-1"      ] = V0_Exch      *OEPDEV_AU_CMRec;  
+  psi::Process::environment.globals["EET V0 EXCH(MULLIKEN) CM-1"] = V0_Exch_M*OEPDEV_AU_CMRec;  
   psi::Process::environment.globals["EET V COUL CM-1"       ] = V_Coul       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V EXCH CM-1"       ] = V_Exch       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V OVRL CM-1"       ] = V_Ovrl       *OEPDEV_AU_CMRec;
@@ -610,14 +635,14 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   psi::Process::environment.globals["EET V0 HT1 CM-1"       ] = V0_HT1       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 HT2 CM-1"       ] = V0_HT2       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 CT CM-1"        ] = V0_CT        *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 CT(MULLIKEN) CM-1"] = V0_CT_M     *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 CT(MULLIKEN) CM-1"] = V0_CT_M    *OEPDEV_AU_CMRec;
   //
   psi::Process::environment.globals["EET V ET1 CM-1"        ] = V_ET1        *OEPDEV_AU_CMRec;  
   psi::Process::environment.globals["EET V ET2 CM-1"        ] = V_ET2        *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V HT1 CM-1"        ] = V_HT1        *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V HT2 CM-1"        ] = V_HT2        *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V CT CM-1"         ] = V_CT         *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V CT(MULLIKEN) CM-1"      ] = V_CT_M      *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V CT(MULLIKEN) CM-1"] = V_CT_M      *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 TI(2) CM-1"     ] = V0_TI_2      *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 TI(3) CM-1"     ] = V0_TI_3      *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V TI(2) CM-1"      ] = V_TI_2       *OEPDEV_AU_CMRec;
@@ -642,6 +667,9 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
      psi::outfile->Printf("     V Exch    = %13.2f\n", V_Exch *OEPDEV_AU_CMRec          );
      psi::outfile->Printf("     V Ovrl    = %13.2f\n", V_Ovrl *OEPDEV_AU_CMRec          );
      psi::outfile->Printf("     -------------------------------\n"                      );
+     psi::outfile->Printf("     V0 Exch(M)= %13.2f\n", V0_Exch_M*OEPDEV_AU_CMRec        );
+     psi::outfile->Printf("     V Exch(M) = %13.2f\n", V_Exch_M *OEPDEV_AU_CMRec        );
+     psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("     TrCAMM-R1 = %13.2f\n", V0_TrCAMM_R1 *OEPDEV_AU_CMRec    );
      psi::outfile->Printf("     TrCAMM-R2 = %13.2f\n", V0_TrCAMM_R2 *OEPDEV_AU_CMRec    );
      psi::outfile->Printf("     TrCAMM-R3 = %13.2f\n", V0_TrCAMM_R3 *OEPDEV_AU_CMRec    );
@@ -656,11 +684,11 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
      psi::outfile->Printf("     V0_HT1 = %13.2f V_HT1 = %13.2f\n", V0_HT1*OEPDEV_AU_CMRec, V_HT1*OEPDEV_AU_CMRec);
      psi::outfile->Printf("     V0_HT2 = %13.2f V_HT2 = %13.2f\n", V0_HT2*OEPDEV_AU_CMRec, V_HT2*OEPDEV_AU_CMRec);
      psi::outfile->Printf("     V0_CT  = %13.2f V_CT  = %13.2f\n", V0_CT *OEPDEV_AU_CMRec, V_CT *OEPDEV_AU_CMRec);
-     psi::outfile->Printf("     V0_CT_M= %13.2f V_CT_M= %13.2f\n", V0_CT_M*OEPDEV_AU_CMRec, V_CT_M*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("     V0_CT(M)= %13.2f V_CT(M)= %13.2f\n", V0_CT_M*OEPDEV_AU_CMRec, V_CT_M*OEPDEV_AU_CMRec);
      psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("     V0 TI_2= %13.2f V TI_2= %13.2f\n", V0_TI_2*OEPDEV_AU_CMRec, V_TI_2*OEPDEV_AU_CMRec);
      psi::outfile->Printf("     V0 TI_3= %13.2f V TI_3= %13.2f\n", V0_TI_3*OEPDEV_AU_CMRec, V_TI_3*OEPDEV_AU_CMRec);
-     psi::outfile->Printf("     V0 TI_3_M= %13.2f V TI_3_M= %13.2f\n", V0_TI_3_M*OEPDEV_AU_CMRec, V_TI_3_M*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("     V0 TI_3(M)= %13.2f V TI_3(M)= %13.2f\n", V0_TI_3_M*OEPDEV_AU_CMRec, V_TI_3_M*OEPDEV_AU_CMRec);
      psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("     V0 Indir = %13.2f\n", V0_indirect*OEPDEV_AU_CMRec       );
      psi::outfile->Printf("     V  Indir = %13.2f\n", V_indirect *OEPDEV_AU_CMRec       );
