@@ -72,6 +72,15 @@ using SharedOEPotential        = std::shared_ptr<OEPotential>;
  *  - `EFP2_CT_POTENTIAL_INTS` - Type of potential one-electron operator. Default: 'DMTP'. Other: 'ERI'.
  *  - `EFP2_CT_NO_OCTUPOLES` - Ignore octupole moments from potential integrals? Default: `True`.
  *
+ * ## Excited States
+ *  - `EXCITED_STATE` - ID of state for all monomers to consider. If `-n`, then the *n*th bright state is taken. Default: `-1`.
+ *  - `EXCITED_STATE_A` - ID of state for monomer A to consider. If `-n`, then the *n*th bright state is taken. Default: `-1`.
+ *  - `EXCITED_STATE_B` - ID of state for monomer B to consider. If `-n`, then the *n*th bright state is taken. Default: `-1`.
+ *  - `OSCILLATOR_STRENGTH_THRESHOLD` - Threshold for oscillator strength for bright states selection. Default: `0.01`.
+ *  - `TrCAMM_SYMMETRIZE` - Whether to use the 'symmetrized transition density' or not. Default: `true`.
+ *  - `TI_CIS_SCF_FOCK_MATRIX` - Whether to compute the full SCF Fock matrix for the dimer or approximate it from monomer OPDM's. Default: `false`.
+ *  - `TI_CIS_PRINT_FOCK_MATRIX` - Whether to print the Fock matrix (AB block in AO basis) or not. Default: `false`.
+ *
  * # Environmental variables
  *
  * One can easily access those variables from Python level by
@@ -133,6 +142,49 @@ using SharedOEPotential        = std::shared_ptr<OEPotential>;
  *  <tr><td> `EINT CT OTTO-LADIK KCAL` <td> Total charge-transfer energy (kcal/mole)
  * <tr><td colspan=2> <center><strong><i>OEP-Based Otto-Ladik Model</i></strong></center>
  *  <tr><td> `EINT CT OEP-OTTO-LADIK KCAL` <td> Total charge-transfer energy (kcal/mole)
+ * <tr><td colspan=2> <center><strong>EET Coupling Constant</strong></center>
+ * <tr><td colspan=2> <center><strong><i>TrCAMM Model</i></strong></center>
+ *  <tr><td> `EET V0 TrCAMM R1 CM-1` <td> Overlap-uncorrected, converged to R1 (cm-1)
+ *  <tr><td> `EET V TrCAMM R1 CM-1` <td> Overlap-corrected, converged to R1 (cm-1)
+ *  <tr><td> `EET V0 TrCAMM R2 CM-1` <td> Overlap-uncorrected, converged to R2 (cm-1)
+ *  <tr><td> `EET V TrCAMM R2 CM-1` <td> Overlap-corrected, converged to R2 (cm-1)
+ *  <tr><td> `EET V0 TrCAMM R3 CM-1` <td> Overlap-uncorrected, converged to R3 (cm-1)
+ *  <tr><td> `EET V TrCAMM R3 CM-1` <td> Overlap-corrected, converged to R3 (cm-1)
+ *  <tr><td> `EET V0 TrCAMM R4 CM-1` <td> Overlap-uncorrected, converged to R4 (cm-1)
+ *  <tr><td> `EET V TrCAMM R4 CM-1` <td> Overlap-corrected, converged to R4 (cm-1)
+ *  <tr><td> `EET V0 TrCAMM R5 CM-1` <td> Overlap-uncorrected, converged to R5 (cm-1)
+ *  <tr><td> `EET V TrCAMM R5 CM-1` <td> Overlap-corrected, converged to R5 (cm-1)
+ * <tr><td colspan=2> <center><strong><i>TI/CIS Model</i></strong></center>
+ *  <tr><td> `EET V0 COUL CM-1` <td> Overlap-uncorrected Coulomb (Forster) coupling (cm-1)
+ *  <tr><td> `EET V0 EXCH CM-1` <td> Overlap-uncorrected exchange (Dexter) coupling (cm-1)
+ *  <tr><td> `EET V COUL CM-1` <td> Overlap-corrected Coulomb (Forster) coupling (cm-1)
+ *  <tr><td> `EET V EXCH CM-1` <td> Overlap-corrected exchange (Dexter) coupling (cm-1)
+ *  <tr><td> `EET V OVRL CM-1` <td> Remaining overlap correction to direct coupling(cm-1)
+ *  <tr><td> `EET V0 ET1 CM-1` <td> Overlap-uncorrected H_13 matrix element (cm-1)
+ *  <tr><td> `EET V0 ET2 CM-1` <td> Overlap-uncorrected H_24 matrix element (cm-1)
+ *  <tr><td> `EET V0 HT1 CM-1` <td> Overlap-uncorrected H_14 matrix element (cm-1)
+ *  <tr><td> `EET V0 HT2 CM-1` <td> Overlap-uncorrected H_23 matrix element (cm-1)
+ *  <tr><td> `EET V0 CT CM-1`  <td> Overlap-uncorrected H_34 matrix element (cm-1)
+ *  <tr><td> `EET V ET1 CM-1` <td> Overlap-corrected H_13 matrix element (cm-1)
+ *  <tr><td> `EET V ET2 CM-1` <td> Overlap-corrected H_24 matrix element (cm-1)
+ *  <tr><td> `EET V HT1 CM-1` <td> Overlap-corrected H_14 matrix element (cm-1)
+ *  <tr><td> `EET V HT2 CM-1` <td> Overlap-corrected H_23 matrix element (cm-1)
+ *  <tr><td> `EET V CT CM-1`  <td> Overlap-corrected H_34 matrix element (cm-1)
+ *  <tr><td> `EET V0 TI(2) CM-1`  <td> Approximate 2nd-order indirect coupling (cm-1)
+ *  <tr><td> `EET V0 TI(3) CM-1`  <td> Approximate 3rd-order indirect coupling (cm-1)
+ *  <tr><td> `EET V TI(2) CM-1`  <td> 2nd-order indirect coupling (cm-1)
+ *  <tr><td> `EET V TI(3) CM-1`  <td> 3rd-order indirect coupling (cm-1)
+ *  <tr><td> `EET V0 Direct CM-1`  <td> Approximate direct coupling (cm-1)
+ *  <tr><td> `EET V0 Indirect CM-1`  <td> Approximate indirect coupling (cm-1)
+ *  <tr><td> `EET V Direct CM-1`  <td> Direct coupling (cm-1)
+ *  <tr><td> `EET V Indirect CM-1`  <td> Indirect coupling (cm-1)
+ *  <tr><td> `EET V0 TI_CIS CM-1`  <td> Approximate total coupling (cm-1)
+ *  <tr><td> `EET V TI_CIS CM-1`  <td> Total coupling (cm-1)
+ *  <tr><td> `EET V0 EXCH(MULLIKEN) CM-1` <td> Overlap-uncorrected exchange (Dexter) coupling in Mulliken approximation (cm-1)
+ *  <tr><td> `EET V EXCH(MULLIKEN) CM-1` <td> Overlap-corrected exchange (Dexter) coupling in Mulliken approximation (cm-1)
+ *  <tr><td> `EET V0 CT(MULLIKEN) CM-1`  <td> Overlap-uncorrected H_34 matrix element in Mulliken approximation (cm-1)
+ *  <tr><td> `EET V CT(MULLIKEN) CM-1`  <td> Overlap-corrected H_34 matrix element in Mulliken approximation (cm-1)
+ * <tr><td colspan=2> <center><strong><i>OEP-Based TI/CIS Model</i></strong></center>
  * </table>
  */
 class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
