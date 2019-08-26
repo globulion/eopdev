@@ -1,0 +1,179 @@
+\input{header.tex}
+\begin{document}
+\preprint{AIP/123-OEP}
+
+\title{Excitonic Energy Transfer Couplings at Short Distances: Efficient Transfer-Integral Fragmentation Approach
+Based on Effective One-Electron Operators}
+
+\author{Bartosz B{\l}asiak}
+\email[]{blasiak.bartosz@gmail.com}
+\homepage[]{https://www.polonez.pwr.edu.pl}
+\author{Robert W. G{\'o}ra}
+\author{Marta Cho{\l}uj} 
+\author{Joanna D. Bednarska}
+\author{Wojciech Bartkowiak}
+
+\affiliation{Department of Physical and Quantum Chemistry, Faculty of Chemistry, 
+Wroc{\l}aw University of Science and Technology, 
+Wybrze{\.z}e Wyspia{\'n}skiego 27, Wroc{\l}aw 50-370, Poland}
+
+\date{\today}
+
+\begin{abstract}
+Bla.
+\end{abstract}
+
+\pacs{}
+
+\maketitle
+
+\tableofcontents
+
+\section{\label{s:1}Introduction}
+
+\section{\label{s:2}Theory}
+
+In the simplest version of the TI/CIS approach, the Hamiltonian of the 
+complex of molecule $A$ and $B$ is constructed assuming the configuration interaction
+singles (CIS) approximation involving the following four configurations
+%
+\begin{align}
+ \Big| \Phi_1 \Big> &= \Big| \Psi_A^{(e)} \otimes \Psi_B^{(g)} \Big> \\
+ \Big| \Phi_2 \Big> &= \Big| \Psi_A^{(g)} \otimes \Psi_B^{(e)} \Big> \\
+ \Big| \Phi_3 \Big> &= \Big| \Psi_A^{(+)} \otimes \Psi_B^{(-)} \Big> \\
+ \Big| \Phi_4 \Big> &= \Big| \Psi_A^{(-)} \otimes \Psi_B^{(+)} \Big> 
+\end{align}
+%
+where $g$ and $e$ superscripts denote the ground and excited state of a molecule,
+`+' and `-' label the cationic and anionic state, respectively, 
+whereas $ \Big| \Psi_X \otimes \Psi_Y \Big> $ denotes the antisymmetrized Hartree product
+of the monomer wavefunctions.
+The associated diagonal Hamiltonian matrix elements can be defined as
+%
+\begin{align}
+ \Big< \Phi_1 \Big| \mathscr{H} -E_{0} \Big| \Phi_1 \Big> &\equiv E_1 = E^A_{e\rightarrow g} 
+     + \sum_{\mu\nu\in A} \left( P_{\nu\mu}^{A(e)} - P_{\nu\mu}^{A(g)}\right) \times
+     \left\{ V_{\mu\nu}^{B({\rm nuc})} + \sum_{\lambda\sigma\in B} P_{\lambda\sigma}^{B(g)} 
+     \left[ (\mu\nu | \sigma\lambda) - \frac{1}{2} (\mu\lambda | \sigma\nu) \right] \right\} \\
+ \Big< \Phi_2 \Big| \mathscr{H} -E_{0} \Big| \Phi_2 \Big> &\equiv E_2 = E^B_{e\rightarrow g} 
+     + \sum_{\mu\nu\in B} \left( P_{\nu\mu}^{B(e)} - P_{\nu\mu}^{B(g)}\right) \times
+     \left\{ V_{\mu\nu}^{A({\rm nuc})} + \sum_{\lambda\sigma\in A} P_{\lambda\sigma}^{A(g)} 
+     \left[ (\mu\nu | \sigma\lambda) - \frac{1}{2} (\mu\lambda | \sigma\nu) \right] \right\} \\
+ \Big< \Phi_3 \Big| \mathscr{H} -E_{0} \Big| \Phi_3 \Big> &\equiv E_3 = 
+ -\varepsilon_H^A + \varepsilon_L^B - \big( H^A H^A \big| L^B L^B \big)  \\
+ \Big< \Phi_4 \Big| \mathscr{H} -E_{0} \Big| \Phi_4 \Big> &\equiv E_4 = 
+  \varepsilon_L^A - \varepsilon_H^B - \big( L^A L^A \big| H^B H^B \big)  
+\end{align}
+%
+The associated off\hyp{}diagonal Hamiltonian matrix elements are
+%
+\begin{align}
+ \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_2 \Big> &\equiv V^{\rm Coul} + V^{\rm Exch} + V^{\rm Ovrl}\\
+ \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_3 \Big> &\equiv V^{\rm ET1} \\
+ \Big< \Phi_2 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm ET2} \\
+ \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm HT1} \\
+ \Big< \Phi_2 \Big| \mathscr{H} \Big| \Phi_3 \Big> &\equiv V^{\rm HT2} \\
+ \Big< \Phi_3 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm CT } 
+\end{align}
+%
+where the Forster-type Coulombic (Coul), Dexter-type exchange (Exch), remaining overlap correction (Ovrl),
+as well
+as the electron, hole and charge (ET, HT, CT) transfer contributions are defined.
+
+For a closed-shell system, the EET coupling constant for two electronic transitions
+can then be given approximately by
+%
+\begin{equation}
+  V \approx V^{\rm Direct} + V^{\rm Inirect}
+\end{equation}
+%
+where the overlap\hyp{}corrected direct and indirect coupling constants are 
+%
+\begin{align}
+  V^{\rm Direct  } &= V^{\rm Coul} + V^{\rm Exch} + V^{\rm Ovrl} \\
+  V^{\rm Indirect} &= V^{\rm TI-2} + V^{\rm TI-3}
+\end{align}
+%
+with
+%
+\begin{align}
+ V^{\rm TI-2} &=-\frac{V^{\rm ET1} V^{\rm HT2}}{E_3-E_1} -\frac{V^{\rm ET2} V^{\rm HT1}}{E_4-E_1} \\
+ V^{\rm TI-3} &= \frac{V^{\rm CT} \left( V^{\rm ET1} V^{\rm ET2} + V^{\rm HT1} V^{\rm HT2}\right) }{(E_3-E_1)(E_4-E_1)}
+\end{align}
+%
+The exchange-Coulomb coupling takes the form
+%
+\begin{align}
+ V^{\rm Coul} &= \frac{V^{{\rm Coul},(0)}}{1 - S_{12}^2} \\
+ V^{\rm Exch} &= \frac{V^{{\rm Exch},(0)}}{1 - S_{12}^2} \\
+ V^{\rm Ovrl} &=-\frac{(E_1+E_2)S_{12}}{2(1-S_{12}^2)}
+\end{align}
+%
+The overlap-corrected ET, HT and CT matrix elements read
+%
+\begin{align}
+ V^{\rm ET1} &= \left[ 1 - S_{13}^2 \right]^{-1} \left\{ V^{{\rm ET1},(0)} - \frac{1}{2} (E_1+E_2) S_{13} \right\} \\
+ V^{\rm ET2} &= \left[ 1 - S_{24}^2 \right]^{-1} \left\{ V^{{\rm ET2},(0)} - \frac{1}{2} (E_1+E_2) S_{24} \right\} \\
+ V^{\rm HT1} &= \left[ 1 - S_{14}^2 \right]^{-1} \left\{ V^{{\rm HT1},(0)} - \frac{1}{2} (E_1+E_2) S_{14} \right\} \\
+ V^{\rm HT2} &= \left[ 1 - S_{23}^2 \right]^{-1} \left\{ V^{{\rm HT2},(0)} - \frac{1}{2} (E_1+E_2) S_{23} \right\} \\
+ V^{\rm CT } &= \left[ 1 - S_{34}^2 \right]^{-1} \left\{ V^{{\rm CT },(0)} - \frac{1}{2} (E_1+E_2) S_{34} \right\} 
+\end{align}
+%
+In the above equatons, the superscript (0) denotes that the matrix elements are not affected by the
+overlap between molecular wavefunctions, and are given by
+%
+\begin{align}
+ V^{{\rm Coul},(0)} &= \sum_{\mu\nu\in A} \sum_{\lambda\sigma\in B} 
+  P_{\nu\mu}^{g\rightarrow e(A)} P_{\lambda\sigma}^{g\rightarrow e(B)} 
+  (\mu\nu | \sigma\lambda) \\
+ V^{{\rm Exch},(0)} &=-\frac{1}{2} \sum_{\mu\nu\in A} \sum_{\lambda\sigma\in B} 
+  P_{\nu\mu}^{g\rightarrow e(A)} P_{\lambda\sigma}^{g\rightarrow e(B)} 
+  (\mu\lambda | \sigma\nu) \\
+ V^{{\rm ET1},(0)} &= t_{H\rightarrow L}^A \left\{ \big( L^A \big| \mathscr{F} \big| L^B \big) 
+   + 2 \big( L^A H^A \big| H^A L^B \big) - \big( L^A L^B \big| H^A H^A \big)  \right\} \\
+ V^{{\rm ET2},(0)} &= t_{H\rightarrow L}^B \left\{ \big( L^A \big| \mathscr{F} \big| L^B \big) 
+   + 2 \big( L^A H^B \big| H^B L^B \big) - \big( L^A L^B \big| H^B H^B \big)  \right\} \\
+ V^{{\rm HT1},(0)} &= t_{H\rightarrow L}^A \left\{-\big( H^A \big| \mathscr{F} \big| H^B \big) 
+   + 2 \big( H^A L^A \big| L^A H^B \big) - \big( H^A H^B \big| L^A L^A \big)  \right\} \\
+ V^{{\rm HT2},(0)} &= t_{H\rightarrow L}^B \left\{-\big( H^A \big| \mathscr{F} \big| H^B \big) 
+   + 2 \big( H^A L^B \big| L^B H^B \big) - \big( H^A H^B \big| L^B L^B \big)  \right\} \\
+ V^{{\rm CT },(0)} &= 
+     2 \big( H^A L^B \big| L^A H^B \big) - \big( H^A H^B \big| L^A L^B \Big) 
+\end{align}
+%
+In the above, $\mathscr{F}$ is the Fock operator whereas $H$ and $L$ denote the 
+HOMO and LUMO orbitals, respectively. It was found that the overlap corrections
+are quite negligible.
+
+
+\subsection{\label{s:2.1}Indirect coupling via electron and hole-transfer}
+
+\subsection{\label{s:2.2}Indirect coupling via charge transfer}
+
+\subsection{\label{s:2.3}Approximate pure exchange coupling}
+
+\subsection{\label{s:2.4}Complete model of EET coupling}
+
+\section{\label{s:3}Calculation Details}
+
+All the models that were used to test the theory presented in this work
+were implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry program.\cite{Psi4.JCTC.2017}
+
+\section{\label{s:4}Results and Discussion}
+
+\section{\label{s:5}Summary and a few concluding remarks}
+
+Bla.
+
+\begin{acknowledgments}
+This project is carried out under POLONEZ programme which has received funding from the European Union's
+Horizon~2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement 
+No.~665778. This project is funded by National Science Centre, Poland 
+(grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+\end{acknowledgments}
+
+% -----------------------
+\bibliography{references}
+% -----------------------
+
+\end{document}
