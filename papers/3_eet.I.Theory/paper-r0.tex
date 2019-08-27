@@ -20,7 +20,9 @@ Wybrze{\.z}e Wyspia{\'n}skiego 27, Wroc{\l}aw 50-370, Poland}
 \date{\today}
 
 \begin{abstract}
-Bla.
+What is EET? Short distances. Write about cost of current models. In this work, we developed a new model 
+that is
+based in the original TI/CIS model by Fujimoto. Write about cost reduction by introducing OEP's.
 \end{abstract}
 
 \pacs{}
@@ -31,122 +33,327 @@ Bla.
 
 \section{\label{s:1}Introduction}
 
-\section{\label{s:2}Theory}
+Here why we want to care about EET at short distances. Why we want to devlop new model?
+Provide literature review
+of methods, then mention particularly the TDFI and TI/CIS model of Fujimoto, which
+is the starting point. 
+
+\subsection{\label{s:2.0}Fujimoto's model of EET Coupling: Review}
 
 In the simplest version of the TI/CIS approach, the Hamiltonian of the 
 complex of molecule $A$ and $B$ is constructed assuming the configuration interaction
-singles (CIS) approximation involving the following four configurations
+approximation involving the following four configurations
 %
+\begin{subequations}
 \begin{align}
- \Big| \Phi_1 \Big> &= \Big| \Psi_A^{(e)} \otimes \Psi_B^{(g)} \Big> \\
- \Big| \Phi_2 \Big> &= \Big| \Psi_A^{(g)} \otimes \Psi_B^{(e)} \Big> \\
- \Big| \Phi_3 \Big> &= \Big| \Psi_A^{(+)} \otimes \Psi_B^{(-)} \Big> \\
- \Big| \Phi_4 \Big> &= \Big| \Psi_A^{(-)} \otimes \Psi_B^{(+)} \Big> 
+ \big| \Phi_1 \big> &= \big| \Psi_A^{(e)} \otimes \Psi_B^{(g)} \big> \;, \\
+ \big| \Phi_2 \big> &= \big| \Psi_A^{(g)} \otimes \Psi_B^{(e)} \big> \;, \\
+ \big| \Phi_3 \big> &= \big| \Psi_A^{(+)} \otimes \Psi_B^{(-)} \big> \;, \\
+ \big| \Phi_4 \big> &= \big| \Psi_A^{(-)} \otimes \Psi_B^{(+)} \big> \;,
 \end{align}
+\end{subequations}
 %
 where $g$ and $e$ superscripts denote the ground and excited state of a molecule,
 `+' and `-' label the cationic and anionic state, respectively, 
-whereas $ \Big| \Psi_X \otimes \Psi_Y \Big> $ denotes the antisymmetrized Hartree product
-of the monomer wavefunctions.
-The associated diagonal Hamiltonian matrix elements can be defined as
-%
-\begin{align}
- \Big< \Phi_1 \Big| \mathscr{H} -E_{0} \Big| \Phi_1 \Big> &\equiv E_1 = E^A_{e\rightarrow g} 
-     + \sum_{\mu\nu\in A} \left( P_{\nu\mu}^{A(e)} - P_{\nu\mu}^{A(g)}\right) \times
-     \left\{ V_{\mu\nu}^{B({\rm nuc})} + \sum_{\lambda\sigma\in B} P_{\lambda\sigma}^{B(g)} 
-     \left[ (\mu\nu | \sigma\lambda) - \frac{1}{2} (\mu\lambda | \sigma\nu) \right] \right\} \\
- \Big< \Phi_2 \Big| \mathscr{H} -E_{0} \Big| \Phi_2 \Big> &\equiv E_2 = E^B_{e\rightarrow g} 
-     + \sum_{\mu\nu\in B} \left( P_{\nu\mu}^{B(e)} - P_{\nu\mu}^{B(g)}\right) \times
-     \left\{ V_{\mu\nu}^{A({\rm nuc})} + \sum_{\lambda\sigma\in A} P_{\lambda\sigma}^{A(g)} 
-     \left[ (\mu\nu | \sigma\lambda) - \frac{1}{2} (\mu\lambda | \sigma\nu) \right] \right\} \\
- \Big< \Phi_3 \Big| \mathscr{H} -E_{0} \Big| \Phi_3 \Big> &\equiv E_3 = 
- -\varepsilon_H^A + \varepsilon_L^B - \big( H^A H^A \big| L^B L^B \big)  \\
- \Big< \Phi_4 \Big| \mathscr{H} -E_{0} \Big| \Phi_4 \Big> &\equiv E_4 = 
-  \varepsilon_L^A - \varepsilon_H^B - \big( L^A L^A \big| H^B H^B \big)  
-\end{align}
-%
-The associated off\hyp{}diagonal Hamiltonian matrix elements are
-%
-\begin{align}
- \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_2 \Big> &\equiv V^{\rm Coul} + V^{\rm Exch} + V^{\rm Ovrl}\\
- \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_3 \Big> &\equiv V^{\rm ET1} \\
- \Big< \Phi_2 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm ET2} \\
- \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm HT1} \\
- \Big< \Phi_2 \Big| \mathscr{H} \Big| \Phi_3 \Big> &\equiv V^{\rm HT2} \\
- \Big< \Phi_3 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm CT } 
-\end{align}
-%
-where the Forster-type Coulombic (Coul), Dexter-type exchange (Exch), remaining overlap correction (Ovrl),
-as well
-as the electron, hole and charge (ET, HT, CT) transfer contributions are defined.
-
-For a closed-shell system, the EET coupling constant for two electronic transitions
-can then be given approximately by
+whereas
 %
 \begin{equation}
-  V \approx V^{\rm Direct} + V^{\rm Inirect}
+\big| \Psi_X \otimes \Psi_Y \big> \equiv \mathscr{A} \Big\{ \big| \Psi_X \big> \otimes \big| \Psi_Y \big> \Big\}
 \end{equation}
 %
-where the overlap\hyp{}corrected direct and indirect coupling constants are 
+denotes the antisymmetrized Hartree product
+of the monomer wavefunctions with $\mathscr{A}$ being the standard antisymmetrizer operator. 
+Instead of diagonalizing the Hamiltonian in such basis,
+Fujimoto used the perturbation theory to obtain the approximate expression for the EET coupling
+constant,
 %
+\begin{multline}
+  V \approx \left< \Phi_1 \vert \mathscr{H} \vert \Phi_2 \right> 
+   - \sum_{n=3,4} \frac{\left< \Phi_1 \vert \mathscr{H} \vert \Phi_n \right> 
+                        \left< \Phi_n \vert \mathscr{H} \vert \Phi_2 \right>}{E_n - E_1} \\
+   + \sum_{m,n=3,4}^{m\ne n}
+     \frac{\left< \Phi_1 \vert \mathscr{H} \vert \Phi_m \right>
+           \left< \Phi_m \vert \mathscr{H} \vert \Phi_n \right>
+           \left< \Phi_n \vert \mathscr{H} \vert \Phi_2 \right>}{(E_m-E_1)(E_n-E_1)} \;,
+\end{multline}
+%
+where $E_n \equiv \left< \Phi_n \vert \mathscr{H} -E_{0} \vert \Phi_n \right>$
+and $E_0$ is the ground state energy of the aggregate.
+The first two site energies are given by
+%
+\begin{subequations}
 \begin{align}
-  V^{\rm Direct  } &= V^{\rm Coul} + V^{\rm Exch} + V^{\rm Ovrl} \\
-  V^{\rm Indirect} &= V^{\rm TI-2} + V^{\rm TI-3}
+ E_1 \equiv \big< \Phi_1 \big| \mathscr{H} -E_{0} \big| \Phi_1 \big> &= E^A_{e\rightarrow g} 
+  + \Delta E^A_{e\rightarrow g}(B) \;, \\
+ E_2 \equiv \big< \Phi_2 \big| \mathscr{H} -E_{0} \big| \Phi_2 \big> &= E^B_{e\rightarrow g} 
+  + \Delta E^B_{e\rightarrow g}(A) \;,
 \end{align}
+\end{subequations}
 %
-with
+where $E^X_{e\rightarrow g}$ is the excitation energy of isolated molecule $X$ whereas 
+$\Delta E^X_{e\rightarrow g}(Y)$ accounts for the environmental effect due to other molecule,
 %
+\begin{equation}
+ \Delta E^X_{e\rightarrow g}(Y) \cong \int \left[ \rho^{X}_{{\rm el},(e)}({\bf r}) - \rho^{X}_{{\rm el},(g)}({\bf r}) \right]
+         v^{{\rm eff},Y}({\bf r}) \; d{\bf r}
+\end{equation}
+%
+with the effective one\hyp{}electron potential given by
+%
+\begin{multline}
+ v^{{\rm eff},Y}({\bf r}_1) \equiv v^{Y}_{\rm nuc}({\bf r})
+  + \sum_{ij}^{\rm Occ} \int d{\bf r}_2 \times \\
+ \Big\{
+ \frac{\phi_i^*({\bf r}_1) \phi_i({\bf r}_1)
+                    \phi_j^*({\bf r}_2) \phi_j({\bf r}_2)}{\vert {\bf r}_1 - {\bf r}_2 \vert}
+  - \frac{1}{2}
+   \frac{\phi_i^*({\bf r}_1 \phi_j({\bf r}_1 
+                 \phi_j^*({\bf r}_2 \phi_i({\bf r}_2)}{\vert {\bf r}_1 - {\bf r}_2 \vert}
+  \Big\} \;.
+\end{multline}
+%
+If the basis functions 3 and 4 are approximated as HOMO and LUMO orbitals of monomers,
+the remaining two site energies are given by
+%
+\begin{subequations}
 \begin{align}
- V^{\rm TI-2} &=-\frac{V^{\rm ET1} V^{\rm HT2}}{E_3-E_1} -\frac{V^{\rm ET2} V^{\rm HT1}}{E_4-E_1} \\
- V^{\rm TI-3} &= \frac{V^{\rm CT} \left( V^{\rm ET1} V^{\rm ET2} + V^{\rm HT1} V^{\rm HT2}\right) }{(E_3-E_1)(E_4-E_1)}
+ E_3 &\equiv \big< \Phi_3 \big| \mathscr{H} -E_{0} \big| \Phi_3 \big> \approx \nonumber \\ 
+ &\qquad\qquad -\varepsilon_H^A + \varepsilon_L^B - \big( \phi_H^A \phi_H^A \big| \phi_L^B \phi_L^B \big)  \;, \\
+ E_4 &\equiv \big< \Phi_4 \big| \mathscr{H} -E_{0} \big| \Phi_4 \big> \approx \nonumber \\
+ &\qquad\qquad \varepsilon_L^A - \varepsilon_H^B - \big( \phi_L^A \phi_L^A \big| \phi_H^B \phi_H^B \big)  \;.
 \end{align}
+\end{subequations}
 %
-The exchange-Coulomb coupling takes the form
+In the above, $\varepsilon_j^X$ is the energy of the $j$th Hartree-Fock orbital $\phi_j^X$ associated with molecule $X$,
+and the two\hyp{}electron integral is defined by
 %
-\begin{align}
- V^{\rm Coul} &= \frac{V^{{\rm Coul},(0)}}{1 - S_{12}^2} \\
- V^{\rm Exch} &= \frac{V^{{\rm Exch},(0)}}{1 - S_{12}^2} \\
- V^{\rm Ovrl} &=-\frac{(E_1+E_2)S_{12}}{2(1-S_{12}^2)}
-\end{align}
+\begin{equation}
+	\braket{\alpha\beta}{\gamma\delta} \equiv
+	\iint 
+	\frac{ \phi_\alpha^{*}({\bf r}_1) \phi_\beta({\bf r}_1) 
+	       \phi_\gamma^{*}({\bf r}_2) \phi_\delta({\bf r}_2) }{ \vert {\bf r}_1 - {\bf r}_2 \vert}
+	d{\bf r}_1 d{\bf r}_2  \;.
+\end{equation}
 %
-The overlap-corrected ET, HT and CT matrix elements read
-%
-\begin{align}
- V^{\rm ET1} &= \left[ 1 - S_{13}^2 \right]^{-1} \left\{ V^{{\rm ET1},(0)} - \frac{1}{2} (E_1+E_2) S_{13} \right\} \\
- V^{\rm ET2} &= \left[ 1 - S_{24}^2 \right]^{-1} \left\{ V^{{\rm ET2},(0)} - \frac{1}{2} (E_1+E_2) S_{24} \right\} \\
- V^{\rm HT1} &= \left[ 1 - S_{14}^2 \right]^{-1} \left\{ V^{{\rm HT1},(0)} - \frac{1}{2} (E_1+E_2) S_{14} \right\} \\
- V^{\rm HT2} &= \left[ 1 - S_{23}^2 \right]^{-1} \left\{ V^{{\rm HT2},(0)} - \frac{1}{2} (E_1+E_2) S_{23} \right\} \\
- V^{\rm CT } &= \left[ 1 - S_{34}^2 \right]^{-1} \left\{ V^{{\rm CT },(0)} - \frac{1}{2} (E_1+E_2) S_{34} \right\} 
-\end{align}
-%
-In the above equatons, the superscript (0) denotes that the matrix elements are not affected by the
-overlap between molecular wavefunctions, and are given by
-%
-\begin{align}
- V^{{\rm Coul},(0)} &= \sum_{\mu\nu\in A} \sum_{\lambda\sigma\in B} 
-  P_{\nu\mu}^{g\rightarrow e(A)} P_{\lambda\sigma}^{g\rightarrow e(B)} 
-  (\mu\nu | \sigma\lambda) \\
- V^{{\rm Exch},(0)} &=-\frac{1}{2} \sum_{\mu\nu\in A} \sum_{\lambda\sigma\in B} 
-  P_{\nu\mu}^{g\rightarrow e(A)} P_{\lambda\sigma}^{g\rightarrow e(B)} 
-  (\mu\lambda | \sigma\nu) \\
- V^{{\rm ET1},(0)} &= t_{H\rightarrow L}^A \left\{ \big( L^A \big| \mathscr{F} \big| L^B \big) 
-   + 2 \big( L^A H^A \big| H^A L^B \big) - \big( L^A L^B \big| H^A H^A \big)  \right\} \\
- V^{{\rm ET2},(0)} &= t_{H\rightarrow L}^B \left\{ \big( L^A \big| \mathscr{F} \big| L^B \big) 
-   + 2 \big( L^A H^B \big| H^B L^B \big) - \big( L^A L^B \big| H^B H^B \big)  \right\} \\
- V^{{\rm HT1},(0)} &= t_{H\rightarrow L}^A \left\{-\big( H^A \big| \mathscr{F} \big| H^B \big) 
-   + 2 \big( H^A L^A \big| L^A H^B \big) - \big( H^A H^B \big| L^A L^A \big)  \right\} \\
- V^{{\rm HT2},(0)} &= t_{H\rightarrow L}^B \left\{-\big( H^A \big| \mathscr{F} \big| H^B \big) 
-   + 2 \big( H^A L^B \big| L^B H^B \big) - \big( H^A H^B \big| L^B L^B \big)  \right\} \\
- V^{{\rm CT },(0)} &= 
-     2 \big( H^A L^B \big| L^A H^B \big) - \big( H^A H^B \big| L^A L^B \Big) 
-\end{align}
-%
-In the above, $\mathscr{F}$ is the Fock operator whereas $H$ and $L$ denote the 
-HOMO and LUMO orbitals, respectively. It was found that the overlap corrections
-are quite negligible.
 
+%First, in Section II we briefly review the Fujimoto's TI/CIS model of EET coupling
+%which is treated in this work as a reference.
+%Then, further in this Section, we derive the OEP model based on the TI/CIS model (here referred to as the
+%which is validated in Section III against the TI/CIS method for a few model complexes. 
+First, in Section II we derive the OEP model based on the TI/CIS model (here referred to as the
+OEP-TI/CIS model). Next, we validate it against the TI/CIS method for a few model complexes
+in Section III. 
+Finally, we conclude our work in Section IV.
+
+\section{\label{s:2}OEP-Based Model}
+
+
+%The associated off\hyp{}diagonal Hamiltonian matrix elements are
+%%
+%\begin{align}
+% \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_2 \Big> &\equiv V^{\rm Coul} + V^{\rm Exch} + V^{\rm Ovrl}\\
+% \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_3 \Big> &\equiv V^{\rm ET1} \\
+% \Big< \Phi_2 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm ET2} \\
+% \Big< \Phi_1 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm HT1} \\
+% \Big< \Phi_2 \Big| \mathscr{H} \Big| \Phi_3 \Big> &\equiv V^{\rm HT2} \\
+% \Big< \Phi_3 \Big| \mathscr{H} \Big| \Phi_4 \Big> &\equiv V^{\rm CT } 
+%\end{align}
+%%
+%where the Forster-type Coulombic (Coul), Dexter-type exchange (Exch), remaining overlap correction (Ovrl),
+%as well
+%as the electron, hole and charge (ET, HT, CT) transfer contributions are defined.
+
+
+%In the above equatons, the superscript (0) denotes that the matrix elements are not affected by the
+%overlap between molecular wavefunctions, and are given by
+%%
+%\begin{align}
+% V^{{\rm Coul},(0)} &= \sum_{\mu\nu\in A} \sum_{\lambda\sigma\in B} 
+%  P_{\nu\mu}^{g\rightarrow e(A)} P_{\lambda\sigma}^{g\rightarrow e(B)} 
+%  (\mu\nu | \sigma\lambda) \\
+% V^{{\rm Exch},(0)} &=-\frac{1}{2} \sum_{\mu\nu\in A} \sum_{\lambda\sigma\in B} 
+%  P_{\nu\mu}^{g\rightarrow e(A)} P_{\lambda\sigma}^{g\rightarrow e(B)} 
+%  (\mu\lambda | \sigma\nu) \\
+% V^{{\rm HT1},(0)} &= t_{H\rightarrow L}^A \left\{-\big( H^A \big| \mathscr{F} \big| H^B \big) 
+%   + 2 \big( H^A L^A \big| L^A H^B \big) - \big( H^A H^B \big| L^A L^A \big)  \right\} \\
+% V^{{\rm HT2},(0)} &= t_{H\rightarrow L}^B \left\{-\big( H^A \big| \mathscr{F} \big| H^B \big) 
+%   + 2 \big( H^A L^B \big| L^B H^B \big) - \big( H^A H^B \big| L^B L^B \big)  \right\} \\
+% V^{{\rm CT },(0)} &= 
+%     2 \big( H^A L^B \big| L^A H^B \big) - \big( H^A H^B \big| L^A L^B \Big) 
+%\end{align}
+%%
+%In the above, $\mathscr{F}$ is the Fock operator whereas $H$ and $L$ denote the 
+%HOMO and LUMO orbitals, respectively. It was found that the overlap corrections
+%are quite negligible.
+
+To account for the EET coupling via charge transfer states 
 
 \subsection{\label{s:2.1}Indirect coupling via electron and hole-transfer}
+
+The matrix elements that are needed for the electron transfer (ET) phenomena
+is
+%
+\begin{multline}\label{e:v0-et1}
+ V^{{\rm ET1},(0)} \equiv \left< \Phi_1 \vert \mathscr{H} \vert \Phi_3 \right> \approx 
+ t_{H\rightarrow L}^A \times \Big\{ 
+ \big( \phi_L^A \big| \mathscr{F} \big| \phi_L^B \big) \\
+   + 2 \big( \phi_L^A \phi_H^A \big| \phi_H^A \phi_L^B \big) - \big( \phi_L^A \phi_L^B \big| \phi_H^A \phi_H^A \big) 
+ \Big\} \;,
+\end{multline}
+%
+along with its twin term, $V^{{\rm ET2},(0)} \equiv \left< \Phi_2 \vert \mathscr{H} \vert \Phi_4 \right>$,
+which can be found in the original work of Fujimoto.
+In the above, $\mathscr{F}$ is the Fock operator of the entire molecular aggregate.
+Here, we approximate the Fock operator by constructing it from the unperturbed
+Fock operators of isolated monomers,
+%
+\begin{equation}
+ \mathscr{F} \approx \mathscr{F}^{A}_0 + \mathscr{F}^{B}_0 \;,
+\end{equation}
+%
+where
+%
+\begin{equation}
+ \mathscr{F}^{X}_0 = \hat{T}^{X} + \hat{V}^{X}_{\rm nuc} + \hat{J}({\bf P}^{X}_g) - \frac{1}{2} \hat{K}({\bf P}^{X}_g) \;.
+\end{equation}
+%
+Note that, without loss of generality, one can rewrite Eq.~\eqref{e:v0-et1}
+as
+%
+\begin{multline}
+ V^{{\rm ET1},(0)} = t_{H\rightarrow L}^A \times \Big\{ 
+ \tbraket{\phi_L^A}{\mathscr{F}}{\phi_L^B} \\
+  + 2 \tbraket{\phi_H^A}{\hat{v}_{LH}^A}{\phi_L^B}
+  -   \tbraket{\phi_L^A}{\hat{v}_{HH}^A}{\phi_L^B}
+ \Big\} \;,
+\end{multline}
+%
+in which the effective potential operator\cite{Blasiak.Bednarska.Choluj.Bartkowiak.XXXX} is defined by
+%
+\begin{equation}
+ \hat{v}_{ij}^X = \int d{\bf r} \Ket{{\bf r}} v_{ij}^X({\bf r})
+ \Bra{{\bf r}}
+\end{equation}
+%
+with its spatial form given as
+%
+\begin{equation}
+ v_{ij}^X({\bf r}) \equiv \int d{\bf r}' \frac{\phi_i^*({\bf r}') \phi_j({\bf r}') }{\vert {\bf r} - {\bf r}'\vert} \;.
+\end{equation}
+%
+Note here that $\phi_j({\bf r}) \equiv \BraKet{{\bf r}}{\phi_j}$.
+Now, 
+by using the OEP technique\cite{Blasiak.Bednarska.Choluj.Bartkowiak.XXXX}
+for overlap\hyp{}like effective potential operator matrix elements of the type AB
+one can gather operators associated to a particular molecule and group them
+into one effective one\hyp{}electron operator
+as
+%
+\begin{equation}
+ \bra{\phi_L^A} \left\{ \mathscr{F}_0^A - \hat{v}^A_{HH} \right\}
+ + \bra{\phi_H^A} 2 \hat{v}^A_{LH} 
+ \cong \sum_{\xi\in A}^{\rm DF} \bra{\xi} V^{A,{\rm ET1}}_{\xi,HL}
+\end{equation}
+%
+and
+%
+\begin{equation}
+ \mathscr{F}_0^B \ket{\phi_L^B} \cong \sum_{\eta\in B}^{\rm DF} V^{B,{\rm ET1}}_{\eta,L} \ket{\eta} 
+\end{equation}
+%
+In the above transformations, that involve the generalized density fitting
+in an auxiliary basis set space,
+$V^{A,{\rm ET1}}_{\xi,HL}$ and $V^{B,{\rm ET1}}_{\eta,L}$
+are the OEP matrix elements associated with the above
+effective potentials, separately defined for molecule $A$ and $B$. This allows one to
+further recast $V^{{\rm ET1},(0)}$ into
+%
+\begin{multline}\label{e:v0-et1-oep}
+ V^{{\rm ET1},(0)} \cong t_{H\rightarrow L}^A \Big\{ 
+ \sum_{\xi\in A}^{\rm DF} S_{\xi L}^{AB} V^{A,{\rm ET1}}_{\xi,HL} +
+ \sum_{\eta\in B}^{\rm DF} S_{\eta L}^{BA} V^{B,{\rm ET1}}_{\eta,L}
+ \Big\} \;,
+\end{multline}
+%
+which has a particularly simple form as compared to the original expression
+in Eq.~\eqref{e:v0-et1} that involves four\hyp{}center electron repulsion integrals.
+Note that if 
+the OEP matrices are considered
+as effective fragment parameters, %pre\hyp{}computed only once.
+only overlap integrals between auxiliary basis functions and LUMO orbitals of molecule
+$A$ and $B$ are necessary to compute, i.e.,
+%
+\begin{equation}
+ S^{XY}_{\xi U} = \sum_{\beta\in Y} S_{\xi\beta}^{XY} C_{\beta U}^Y \text{ for $\xi\in X$} \;,
+\end{equation}
+%
+in which 
+%
+\begin{equation}
+ S_{\xi\beta}^{XY} = \int d{\bf r} \varphi_\xi^*({\bf r}) \varphi_\beta({\bf r})
+\end{equation}
+%
+and $C_{\beta U}^Y$ is the SCF LCAO-MO matrix for isolated molecule $Y$.
+It is straightforward to show that the twin term ET2 is
+%
+\begin{multline}\label{e:v0-et2-oep}
+ V^{{\rm ET2},(0)} \cong t_{H\rightarrow L}^B \Big\{ 
+ \sum_{\eta\in B}^{\rm DF} S_{\eta L}^{BA} V^{B,{\rm ET1}}_{\eta,HL} +
+ \sum_{\xi\in A}^{\rm DF} S_{\xi L}^{AB} V^{A,{\rm ET1}}_{\xi,L}
+ \Big\} \;.
+\end{multline}
+%
+
+Similar considerations apply to the hole transfer (HT) matrix elements.
+The expression
+%
+\begin{multline}\label{e:v0-ht1}
+ V^{{\rm HT1},(0)} \equiv \left< \Phi_1 \vert \mathscr{H} \vert \Phi_4 \right> \approx 
+ t_{H\rightarrow L}^A \times \Big\{ 
+-\big(\phi_H^A \big| \mathscr{F} \big| \phi_H^B \big) \\
+   + 2 \big( \phi_H^A \phi_L^A \big| \phi_L^A \phi_H^B \big) - \big( \phi_H^A \phi_H^B \big| \phi_L^A \phi_L^A \big) 
+ \Big\} 
+\end{multline}
+%
+can be recast as
+%
+\begin{multline}\label{e:v0-ht1-oep}
+ V^{{\rm HT1},(0)} \cong t_{H\rightarrow L}^A \Big\{ 
+ \sum_{\xi\in A}^{\rm DF} S_{\xi H}^{AB} V^{A,{\rm HT1}}_{\xi,HL} +
+ \sum_{\eta\in B}^{\rm DF} S_{\eta H}^{BA} V^{B,{\rm HT1}}_{\eta,H}
+ \Big\} \;,
+\end{multline}
+%
+with the effective potential matrices given by
+%
+%
+\begin{subequations}
+\begin{align}
+ \bra{\phi_H^A} \left\{ -\mathscr{F}_0^A - \hat{v}^A_{LL} \right\}
+ + \bra{\phi_L^A} 2 \hat{v}^A_{HL} 
+ &\cong \sum_{\xi\in A}^{\rm DF} \bra{\xi} V^{A,{\rm HT1}}_{\xi,HL} \\
+ -\mathscr{F}_0^B \ket{\phi_H^B} &\cong \sum_{\eta\in B}^{\rm DF} V^{B,{\rm ET1}}_{\eta,H} \ket{\eta} 
+\end{align}
+\end{subequations}
+%
+The twin term HT2 is accordingly
+%
+\begin{multline}\label{e:v0-ht2-oep}
+ V^{{\rm HT2},(0)} \cong t_{H\rightarrow L}^B \Big\{ 
+ \sum_{\eta\in B}^{\rm DF} S_{\eta H}^{BA} V^{B,{\rm HT2}}_{\eta,HL} +
+ \sum_{\xi\in A}^{\rm DF} S_{\xi H}^{AB} V^{A,{\rm HT2}}_{\xi,H}
+ \Big\} \;.
+\end{multline}
+%
+As can be seen, to compute Hamiltonian matrix elements
+associated with the electron and hole transfer, eight in total
+different OEP matrices need to be pre\hyp{}computed and stored in a file.
+Note that each of these matrices is actually just a vector of length
+equal to the size of the auxiliary basis set chosen. Therefore,
+it can be predicted that the computational cost of evaluation of the OEP\hyp{}based Hamiltonian
+matrix elements is negligible as compared to the original TI/CIS method.
+In Appendix~\ref{a:gdf-formulae}, explicit working formulae
+for the OEP matrix elements are given in terms of the AO's.
 
 \subsection{\label{s:2.2}Indirect coupling via charge transfer}
 
@@ -154,12 +361,87 @@ are quite negligible.
 
 \subsection{\label{s:2.4}Complete model of EET coupling}
 
-\section{\label{s:3}Calculation Details}
+To summarize, the overall form of the OEP-TI/CIS model is still given as in the original TI/CIS model
+by
+%
+\begin{equation}
+  V \approx V^{\rm Direct} + V^{\rm Inirect} \;,
+\end{equation}
+%
+where the so called `direct' and `indirect' coupling constants are respectively
+%
+\begin{subequations}
+\begin{align}
+  V^{\rm Direct  } &\equiv V^{\rm Coul} + V^{\rm Exch} + V^{\rm Ovrl} \;,\\
+  V^{\rm Indirect} &\equiv V^{\rm TI-2} + V^{\rm TI-3} \;,
+\end{align}
+\end{subequations}
+%
+with
+%
+\begin{subequations}
+\begin{align}
+ V^{\rm TI-2} &\equiv-\frac{V^{\rm ET1} V^{\rm HT2}}{E_3-E_1} -\frac{V^{\rm ET2} V^{\rm HT1}}{E_4-E_1}  \;,\\
+ V^{\rm TI-3} &\equiv \frac{V^{\rm CT} \left( V^{\rm ET1} V^{\rm ET2} + V^{\rm HT1} V^{\rm HT2}\right) }{(E_3-E_1)(E_4-E_1)} \;.
+\end{align}
+\end{subequations}
+%
+However, 
+the differences between the original Fujimoto's model and the newly derived OEP\hyp{}based model 
+are: 
+%
+\begin{enumerate}
+ \item The Hamiltonian matrix elements are evaluated from the fragment effective 
+parameters, for which only the one\hyp{}electron integrals are needed. Therefore, the computational
+cost is significantly reduced as compared to the parent TI/CIS model. In particular, 
+$V^{\rm Coul}$ is evaluated by using the TrCAMM method developed previously,
+$V^{\rm Exch}$ and $V^{\rm CT}$ are computed from the Mulliken approximated
+formulae in Eqs. XXX, and XXX, as well as $V^{\rm ET1}$, $V^{\rm ET2}$,
+$V^{\rm HT1}$ and $V^{\rm HT2}$ are treated by the generalized density fitting
+with OEP effective matrices as effective parameters spanned in auxiliary AO basis set 
+(Eqs.XXX); 
+ \item The relaxation effects due to the intermolecular interactions are not included
+in the current OEP\hyp{}based model.
+Note that in the original TI/CIS model the basis states and all the one\hyp{}particle density matrices are built from the
+self\hyp{}consistently adjusted fragment densities according to the DFI method.
+\end{enumerate}
+%
+\paragraph*{Overlap corrections to the Hamiltonian.}
+Since in the TI/CIS method the basis states are constructed from the monomer wavefunctions,
+the overlap effects should be properly taken into account. It was reported previously
+that overlap correction to the $\left< \Phi_1 \vert \mathscr{H} \vert \Phi_2 \right>$ 
+matrix element brings negligible contributions to the 
+total EET coupling (c.f. the `overlap' contribution in Ref.). On the other hand,
+the importance of the overlap effects on the other off\hyp{}diagonal Hamiltonian matrix elements were not directly studied. 
+After the overlap correction, the constituents of the direct coupling take the form
+%
+\begin{subequations}\label{e:ovrl-direct}
+\begin{align}
+ V^{\rm Coul} &= \frac{V^{{\rm Coul},(0)}}{1 - S_{12}^2} \;, \\
+ V^{\rm Exch} &= \frac{V^{{\rm Exch},(0)}}{1 - S_{12}^2} \;, \\
+ V^{\rm Ovrl} &=-\frac{(E_1+E_2)S_{12}}{2(1-S_{12}^2)}   \;.
+\end{align}
+\end{subequations}
+%
+The overlap\hyp{}corrected ET, HT and CT matrix elements read
+%
+\begin{equation}\label{e:ovrl-indirect}
+ V^{\rm t} = \left[ 1 - S_{\rm t}^2 \right]^{-1} \left\{ V^{{\rm t},(0)} - \frac{1}{2} (E_1+E_2) S_{\rm t} \right\} \;,
+\end{equation}
+%
+where `t' denotes one of the matrix element types (ET1, ET2, HT1, HT2, CT) 
+and $S_{\rm t}$ is the appropriate overlap integral between basis states.
+Since evaluation
+of Eqs.~\eqref{e:ovrl-direct} and \eqref{e:ovrl-indirect} 
+is computationally inexpensive, we shall consider the overlap\hyp{}corrected
+Hamiltonian in the present work.
+
+
+\section{\label{s:4}Results and Discussion}
 
 All the models that were used to test the theory presented in this work
 were implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry program.\cite{Psi4.JCTC.2017}
 
-\section{\label{s:4}Results and Discussion}
 
 \section{\label{s:5}Summary and a few concluding remarks}
 
@@ -172,6 +454,74 @@ No.~665778. This project is funded by National Science Centre, Poland
 (grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
 \end{acknowledgments}
 
+\appendix
+
+\section{Explicit formulae for ET and HT OEP matrix elements\label{a:gdf-formulae}}
+
+As developed in Ref.\cite{Blasiak.Bednarska.Choluj.Bartkowiak.XXXX}, 
+the matrix elements of the OEP operators
+are computed from the generalized density fitting scheme, according to which
+%
+\begin{equation}
+ V^X_{\xi, M} = \sum_{\xi'\in X}^{\rm DF} 
+                \sum_{\varepsilon\in X}^{\rm RI}
+                [{\bf R}^{-1}]_{\xi\xi'} R_{\xi'\varepsilon} H^X_{\varepsilon, M} \;,
+\end{equation}
+%
+where
+%
+\begin{equation}
+ H^X_{\varepsilon, M} = \sum_{\varepsilon'\in X}^{\rm RI}
+                        [{\bf S}^{-1}]_{\varepsilon\varepsilon'} a_{\varepsilon'}^{X; M} \;.
+\end{equation}
+%
+In the above equations, the auxiliary matrices are defined by
+%
+\begin{equation}
+ S_{\eta\xi}  = \int 
+                       \varphi^*_\eta({\bf r}) \varphi_\xi({\bf r}) 
+                 d{\bf r} 
+\end{equation}
+%
+and
+%
+\begin{equation}
+ R_{\eta\xi}  = \iint 
+                       \frac{ \varphi^*_\eta({\bf r}_1) \varphi_\xi({\bf r}_2) } 
+                            {\vert {\bf r}_1 - {\bf r}_2\vert}  
+                 d{\bf r}_1 d{\bf r}_2 \;.
+\end{equation}
+%
+The elements of vector ${\bf a}^X$ for $M=$ ET1, ET2, HT1 and HT2 and $X=A, B$ are given by
+%
+\begin{subequations}
+\begin{align}
+a_{\alpha}^{A;{\rm ET1}} &= \sum_\beta C_{\beta L}^A F_{\alpha\beta}^A \nonumber \\
+ &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
+ \left\{ 2C^A_{\beta  H} C^A_{\gamma L} - C^A_{\beta  L} C^A_{\gamma H}\right\} C^A_{\delta H} \;,\\
+%
+a_{\alpha}^{B;{\rm ET1}} &= \sum_\beta C_{\beta L}^B F_{\alpha\beta}^B \;,\\
+%
+a_{\alpha}^{B;{\rm ET2}} &= \sum_\beta C_{\beta L}^B F_{\alpha\beta}^B \nonumber \\
+ &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
+ \left\{ 2C^B_{\beta  H} C^B_{\gamma L} - C^B_{\beta  L} C^B_{\gamma H}\right\} C^B_{\delta H} \;,\\
+%
+a_{\alpha}^{A;{\rm ET2}} &= \sum_\beta C_{\beta L}^A F_{\alpha\beta}^A \;,\\
+%
+a_{\alpha}^{A;{\rm HT1}} &=-\sum_\beta C_{\beta H}^A F_{\alpha\beta}^A \nonumber \\
+ &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
+ \left\{ 2C^A_{\beta  L} C^A_{\gamma H} - C^A_{\beta  H} C^A_{\gamma L}\right\} C^A_{\delta L} \;,\\
+%
+a_{\alpha}^{B;{\rm HT1}} &=-\sum_\beta C_{\beta L}^B F_{\alpha\beta}^B \;,\\
+%
+a_{\alpha}^{B;{\rm HT2}} &=-\sum_\beta C_{\beta H}^B F_{\alpha\beta}^B \nonumber \\
+ &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
+ \left\{ 2C^B_{\beta  L} C^B_{\gamma H} - C^B_{\beta  H} C^B_{\gamma L}\right\} C^B_{\delta L} \;,\\
+%
+a_{\alpha}^{A;{\rm HT2}} &=-\sum_\beta C_{\beta L}^A F_{\alpha\beta}^A \;.
+\end{align}
+\end{subequations}
+%
 % -----------------------
 \bibliography{references}
 % -----------------------
