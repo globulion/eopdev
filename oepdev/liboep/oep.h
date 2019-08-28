@@ -170,6 +170,9 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     /// Localize Occupied MO's
     virtual void localize(void);
 
+    /// Compute MO centroids from LCAO-MO matrix
+    virtual std::vector<psi::SharedVector> mo_centroids(psi::SharedMatrix C);
+
     /// Rotate 
     virtual void rotate(const Matrix& rotmat);
     /// Translate
@@ -326,13 +329,14 @@ class ChargeTransferEnergyOEPotential : public OEPotential
 /**\brief Generalized One-Electron Potential for EET coupling calculations.
  * 
  *  Contains the following OEP types:
- *    - `Fujimoto.ET1` 
- *    - `Fujimoto.ET2` 
- *    - `Fujimoto.HT1` 
- *    - `Fujimoto.HT1`
- *    - `Fujimoto.HT2` 
- *    - `Fujimoto.CT1` 
- *    - `Fujimoto.CT2`
+ *    - `Fujimoto.A.ET1` 
+ *    - `Fujimoto.B.ET1` 
+ *    - `Fujimoto.A.ET2` 
+ *    - `Fujimoto.B.ET2` 
+ *    - `Fujimoto.A.HT1` 
+ *    - `Fujimoto.B.HT1` 
+ *    - `Fujimoto.A.HT2`
+ *    - `Fujimoto.B.HT2`
  */
 class EETCouplingOEPotential : public OEPotential 
 {
@@ -350,6 +354,9 @@ class EETCouplingOEPotential : public OEPotential
   private:
     /// Set defaults
     void common_init();
+
+    /// Auxiliary computers
+
 };
 
 /** @}*/
