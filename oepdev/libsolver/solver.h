@@ -1086,6 +1086,9 @@ class EETCouplingSolver : public OEPDevSolver
 
     /// TI/CIS method - OEP-based (Fujimoto JPC 2012, Blasiak et al XXX 2019)
     double compute_oep_based_fujimoto_ti_cis();
+
+    ///
+    std::shared_ptr<CISData> get_cis_data(int i, int I, bool symm);
 };
 
 

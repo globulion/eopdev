@@ -148,42 +148,12 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   SharedMatrix Da_A = wfn_union_->l_wfn(0)->Da();
   SharedMatrix Da_B = wfn_union_->l_wfn(1)->Da();
 
-  // Density matrices (AO)
-  //SharedMatrix Peg_A, Peg_B, Pe_A, Pe_B;
-  // TrCAMM's
-  //SharedDMTPole trcamm_A, trcamm_B;
 
-
-  // Obtain CIS HOMO-LUMO amplitudes and unperturbed excitation energies
+  // Obtain CIS HOMO-LUMO amplitudes, unperturbed excitation energies and other CIS data
   psi::outfile->Printf(" --> Running CIS calculations on the monomers <--\n");
-  //double t_A, t_B, E_ex_A, E_ex_B;
   const bool symm = options_.get_bool("TrCAMM_SYMMETRIZE");
-  SharedCISData cis_data_A, cis_data_B;
-  {
-      std::shared_ptr<CISComputer> cis_A = CISComputer::build("RESTRICTED", wfn_union_->l_wfn(0), options_); 
-      cis_A->compute();
-      cis_A->determine_electronic_state(I);                  // Excited state ID in C++ convention
-      cis_data_A = cis_A->data(I, symm);
-      //E_ex_A = cis_A->eigenvalues()->get(I);                 // Excitation energy wrn ground state
-      //t_A = cis_A->U_homo_lumo(I).first * sqrt(na_A/na_AB);  // CIS amplitude scaled to the dimer
-      //trcamm_A = cis_A->trcamm(I, symm);                     // TrCAMM moments
-      //Pe_A  = cis_A->Da_ao(I); Pe_A ->add(cis_A->Db_ao(I));  // Excited state bond order matrices of monomers
-      //Peg_A = cis_A->Ta_ao(I); Peg_A->add(cis_A->Tb_ao(I));  // Transition density matrices of monomers
-      //psi::outfile->Printf("     State I= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
-      //                           I+1, cis_A->oscillator_strength(I), E_ex_A*OEPDEV_AU_EV, t_A);
-  }{
-      std::shared_ptr<CISComputer> cis_B = CISComputer::build("RESTRICTED", wfn_union_->l_wfn(1), options_); 
-      cis_B->compute();
-      cis_B->determine_electronic_state(J);
-      cis_data_B = cis_B->data(J, symm);
-      //E_ex_B = cis_B->eigenvalues()->get(J);
-      //t_B = cis_B->U_homo_lumo(J).first * sqrt(na_B/na_AB);
-      //trcamm_B = cis_B->trcamm(J, symm);
-      //Pe_B  = cis_B->Da_ao(J); Pe_B ->add(cis_B->Db_ao(J));
-      //Peg_B = cis_B->Ta_ao(J); Peg_B->add(cis_B->Tb_ao(J));
-      //psi::outfile->Printf("     State J= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
-      //                           J+1, cis_B->oscillator_strength(J), E_ex_B*OEPDEV_AU_EV, t_B);
-  }
+  SharedCISData cis_data_A = this->get_cis_data(0, I, symm);
+  SharedCISData cis_data_B = this->get_cis_data(1, J, symm);
   psi::outfile->Printf("\n");
 
   // Collect CIS data
@@ -726,6 +696,8 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   const int lumo_A = 0;
   const int lumo_B = 0;
 
+  psi::timer_on("Solver EET TI/CIS OEP-Based     ");
+
 //psi::SharedMatrix Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_A , nbf_B );
   psi::SharedMatrix Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_Aa, nbf_B );
   psi::SharedMatrix Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_A , nbf_Ba);
@@ -777,6 +749,10 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
        s_BA_QL->set(i, vl);
   }
 
+  const double na_A = (double)wfn_union_->l_wfn(0)->nalpha();
+  const double na_B = (double)wfn_union_->l_wfn(1)->nalpha();
+  const double na_AB= na_A + na_B;
+
 
   // V0_ET and V0_HT
   double V0_ET1 = oep_2->matrix("Fujimoto.GDF")->get_column(0, 0)->vector_dot(s_BA_QL) 
@@ -788,16 +764,110 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   double V0_HT2 = oep_1->matrix("Fujimoto.GDF")->get_column(0, 2)->vector_dot(s_AB_QH) 
                 + oep_2->matrix("Fujimoto.GDF")->get_column(0, 3)->vector_dot(s_BA_QH);
 
-  double t_A = oep_1->oep("Fujimoto.CIS").cis_data->t_homo_lumo; 
-  double t_B = oep_2->oep("Fujimoto.CIS").cis_data->t_homo_lumo; 
+  double t_A = oep_1->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(na_A/na_AB); 
+  double t_B = oep_2->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(na_B/na_AB); 
 
   V0_ET1 *= t_A;
   V0_ET2 *= t_B;
   V0_HT1 *= t_A;
   V0_HT2 *= t_B;
 
-  psi::timer_on("Solver EET TI/CIS OEP-Based     ");
-  // Return
   psi::timer_off("Solver EET TI/CIS OEP-Based     ");
+
+  // ---> Save <--- //
+  //psi::Process::environment.globals["EET V0 COUL CM-1"      ] = V0_Coul      *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V0 TrCAMM R1 CM-1" ] = V0_TrCAMM_R1 *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V0 TrCAMM R2 CM-1" ] = V0_TrCAMM_R2 *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V0 TrCAMM R3 CM-1" ] = V0_TrCAMM_R3 *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V0 TrCAMM R4 CM-1" ] = V0_TrCAMM_R4 *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V0 TrCAMM R5 CM-1" ] = V0_TrCAMM_R5 *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V0 EXCH CM-1"      ] = V0_Exch      *OEPDEV_AU_CMRec;  
+  //psi::Process::environment.globals["EET V0 EXCH(MULLIKEN) CM-1"] = V0_Exch_M*OEPDEV_AU_CMRec;  
+  //psi::Process::environment.globals["EET V COUL CM-1"       ] = V_Coul       *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V TrCAMM R1 CM-1"  ] = V_TrCAMM_R1  *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V TrCAMM R2 CM-1"  ] = V_TrCAMM_R2  *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V TrCAMM R3 CM-1"  ] = V_TrCAMM_R3  *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V TrCAMM R4 CM-1"  ] = V_TrCAMM_R4  *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V TrCAMM R5 CM-1"  ] = V_TrCAMM_R5  *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V EXCH CM-1"       ] = V_Exch       *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V OVRL CM-1"       ] = V_Ovrl       *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V EXCH(MULLIKEN) CM-1"       ] = V_Exch_M*OEPDEV_AU_CMRec;
+  ////                                                                                           
+  psi::Process::environment.globals["EET V0 ET1:OEP CM-1"       ] = V0_ET1       *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 ET2:OEP CM-1"       ] = V0_ET2       *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 HT1:OEP CM-1"       ] = V0_HT1       *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 HT2:OEP CM-1"       ] = V0_HT2       *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V0 CT CM-1"        ] = V0_CT        *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V0 CT(MULLIKEN) CM-1"] = V0_CT_M    *OEPDEV_AU_CMRec;
+  ////
+  //psi::Process::environment.globals["EET V ET1 CM-1"        ] = V_ET1        *OEPDEV_AU_CMRec;  
+  //psi::Process::environment.globals["EET V ET2 CM-1"        ] = V_ET2        *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V HT1 CM-1"        ] = V_HT1        *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V HT2 CM-1"        ] = V_HT2        *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V CT CM-1"         ] = V_CT         *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V CT(MULLIKEN) CM-1"] = V_CT_M      *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V0 TI(2) CM-1"     ] = V0_TI_2      *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V0 TI(3) CM-1"     ] = V0_TI_3      *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V TI(2) CM-1"      ] = V_TI_2       *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V TI(3) CM-1"      ] = V_TI_3       *OEPDEV_AU_CMRec;
+  ////
+  //psi::Process::environment.globals["EET V0 Direct CM-1"    ] = V0_direct    *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V0 Indirect CM-1"  ] = V0_indirect  *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V Direct CM-1"     ] = V_direct     *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V Indirect CM-1"   ] = V_indirect   *OEPDEV_AU_CMRec;
+  ////
+  //psi::Process::environment.globals["EET V0 TI_CIS CM-1"    ] = V0_TI_CIS   *OEPDEV_AU_CMRec;
+  //psi::Process::environment.globals["EET V TI_CIS CM-1"     ] = V_TI_CIS    *OEPDEV_AU_CMRec;
+
+  // ---> Print <--- //
+  if (wfn_union_->options().get_int("PRINT") > -1) {
+     psi::outfile->Printf("  ==> SOLVER: EET coupling constant <==\n"  );
+     psi::outfile->Printf("  ==>         OEP-Based (TI-CIS)    <==\n\n");
+     //psi::outfile->Printf("     V0 Coul   = %13.2f\n", V0_Coul *OEPDEV_AU_CMRec         );
+     //psi::outfile->Printf("     V0 Exch   = %13.2f\n", V0_Exch *OEPDEV_AU_CMRec         );
+     //psi::outfile->Printf("     -------------------------------\n"                      );
+     //psi::outfile->Printf("     V Coul    = %13.2f\n", V_Coul *OEPDEV_AU_CMRec          );
+     //psi::outfile->Printf("     V Exch    = %13.2f\n", V_Exch *OEPDEV_AU_CMRec          );
+     //psi::outfile->Printf("     V Ovrl    = %13.2f\n", V_Ovrl *OEPDEV_AU_CMRec          );
+     //psi::outfile->Printf("     -------------------------------\n"                      );
+     //psi::outfile->Printf("     V0 Exch(M)= %13.2f\n", V0_Exch_M*OEPDEV_AU_CMRec        );
+     //psi::outfile->Printf("     V Exch(M) = %13.2f\n", V_Exch_M *OEPDEV_AU_CMRec        );
+     //psi::outfile->Printf("     -------------------------------\n"                      );
+     //psi::outfile->Printf("     TrCAMM-R1 = %13.2f\n", V0_TrCAMM_R1 *OEPDEV_AU_CMRec    );
+     //psi::outfile->Printf("     TrCAMM-R2 = %13.2f\n", V0_TrCAMM_R2 *OEPDEV_AU_CMRec    );
+     //psi::outfile->Printf("     TrCAMM-R3 = %13.2f\n", V0_TrCAMM_R3 *OEPDEV_AU_CMRec    );
+     //psi::outfile->Printf("     TrCAMM-R4 = %13.2f\n", V0_TrCAMM_R4 *OEPDEV_AU_CMRec    );
+     //psi::outfile->Printf("     TrCAMM-R5 = %13.2f\n", V0_TrCAMM_R5 *OEPDEV_AU_CMRec    );
+     //psi::outfile->Printf("     -------------------------------\n"                      );
+     //psi::outfile->Printf("     V0 Direct = %13.2f\n", V0_direct*OEPDEV_AU_CMRec        );
+     //psi::outfile->Printf("     V  Direct = %13.2f\n", V_direct *OEPDEV_AU_CMRec        );
+     //psi::outfile->Printf("     ===============================\n"                      );
+     psi::outfile->Printf("     V0_ET1 = %13.2f V_ET1 = %13.2f\n", V0_ET1*OEPDEV_AU_CMRec, V0_ET1*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("     V0_ET2 = %13.2f V_ET2 = %13.2f\n", V0_ET2*OEPDEV_AU_CMRec, V0_ET2*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("     V0_HT1 = %13.2f V_HT1 = %13.2f\n", V0_HT1*OEPDEV_AU_CMRec, V0_HT1*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("     V0_HT2 = %13.2f V_HT2 = %13.2f\n", V0_HT2*OEPDEV_AU_CMRec, V0_HT2*OEPDEV_AU_CMRec);
+     //psi::outfile->Printf("     V0_CT  = %13.2f V_CT  = %13.2f\n", V0_CT *OEPDEV_AU_CMRec, V_CT *OEPDEV_AU_CMRec);
+     //psi::outfile->Printf("     V0_CT(M)= %13.2f V_CT(M)= %13.2f\n", V0_CT_M*OEPDEV_AU_CMRec, V_CT_M*OEPDEV_AU_CMRec);
+     //psi::outfile->Printf("     -------------------------------\n"                      );
+     //psi::outfile->Printf("     V0 TI_2= %13.2f V TI_2= %13.2f\n", V0_TI_2*OEPDEV_AU_CMRec, V_TI_2*OEPDEV_AU_CMRec);
+     //psi::outfile->Printf("     V0 TI_3= %13.2f V TI_3= %13.2f\n", V0_TI_3*OEPDEV_AU_CMRec, V_TI_3*OEPDEV_AU_CMRec);
+     //psi::outfile->Printf("     V0 TI_3(M)= %13.2f V TI_3(M)= %13.2f\n", V0_TI_3_M*OEPDEV_AU_CMRec, V_TI_3_M*OEPDEV_AU_CMRec);
+     //psi::outfile->Printf("     -------------------------------\n"                      );
+     //psi::outfile->Printf("     V0 Indir = %13.2f\n", V0_indirect*OEPDEV_AU_CMRec       );
+     //psi::outfile->Printf("     V  Indir = %13.2f\n", V_indirect *OEPDEV_AU_CMRec       );
+     //psi::outfile->Printf("     ===============================\n"                      );
+     //psi::outfile->Printf("     V0 TI/CIS= %13.2f\n", V0_TI_CIS  *OEPDEV_AU_CMRec       );
+     //psi::outfile->Printf("     V  TI/CIS= %13.2f\n", V_TI_CIS   *OEPDEV_AU_CMRec       );
+     psi::outfile->Printf("\n");
+  }
+
+
   return e; 
+}
+
+std::shared_ptr<CISData> EETCouplingSolver::get_cis_data(int i, int I, bool symm) {
+      std::shared_ptr<CISComputer> cis_A = CISComputer::build("RESTRICTED", wfn_union_->l_wfn(i), options_); 
+      cis_A->compute();
+      cis_A->determine_electronic_state(I); // Excited state ID in C++ convention
+      return cis_A->data(I, symm);
 }
