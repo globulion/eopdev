@@ -36,15 +36,28 @@ void EETCouplingOEPotential::common_init()
 
     // Provide correct classes (DF- or ESP-based) and number of OEP's involved in each type
     OEPType type_1 = {"Fujimoto.GDF", true, 4, mat_gdf};
+    OEPType type_2 = {"Fujimoto.CIS", false,1, std::make_shared<psi::Matrix>(), nullptr, nullptr};
 
     // Register OEPType's
     oepTypes_[type_1.name] = type_1;
+    oepTypes_[type_2.name] = type_2;
 }
 
 void EETCouplingOEPotential::compute(const std::string& oepType) 
 {
   if      (oepType == "Fujimoto.GDF"   ) compute_fujimoto_gdf();
+  else if (oepType == "Fujimoto.CIS"   ) compute_fujimoto_cis();
   else throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
+}
+void EETCouplingOEPotential::compute_fujimoto_cis()
+{
+      const bool symm = options_.get_bool("TrCAMM_SYMMETRIZE");
+      int I = options_.get_int("EXCITED_STATE");
+
+      std::shared_ptr<CISComputer> cis = CISComputer::build("RESTRICTED", wfn_, options_); 
+      cis->compute();
+      cis->determine_electronic_state(I);
+      oepTypes_.at("Fujimoto.CIS").cis_data = cis->data(I, symm);
 }
 void EETCouplingOEPotential::compute_fujimoto_gdf()
 {

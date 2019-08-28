@@ -14,6 +14,7 @@
 #include "psi4/libmints/matrix.h"
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/local.h"
+#include "../libutil/cis.h"
 #include "../libpsi/integral.h"
 #include "../libpsi/potential.h"
 #include "../lib3d/space3d.h"
@@ -29,9 +30,11 @@ using SharedMatrix       = std::shared_ptr<Matrix>;
 using SharedVector       = std::shared_ptr<Vector>;
 using SharedDMTPole      = std::shared_ptr<DMTPole>;
 using SharedLocalizer    = std::shared_ptr<Localizer>;
+using SharedCISData      = std::shared_ptr<CISData>;
 /** \addtogroup OEPDEV_OEPS
  * @{
  */
+
 
 /**
  *  \brief Container to handle the type of One-Electron Potentials.
@@ -48,7 +51,10 @@ struct OEPType
     SharedMatrix matrix;
     /// Distributed Multipole Object
     SharedDMTPole dmtp;
+    /// CIS data
+    SharedCISData cis_data;
 };
+
 
 /** \brief Generalized One-Electron Potential: Abstract base.
  * 
@@ -350,6 +356,7 @@ class EETCouplingOEPotential : public OEPotential
 
     /// Auxiliary computers
     void compute_fujimoto_gdf();
+    void compute_fujimoto_cis();
 
 
 };

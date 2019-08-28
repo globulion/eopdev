@@ -2,6 +2,7 @@
 #include<iostream>
 #include "util.h"
 #include "psi4/libmints/mintshelper.h"
+#include "../../include/oepdev_files.h"
 
 //#include "psi4/libpsi4util/PsiOutStream.h"
 
@@ -359,6 +360,60 @@ double CISComputer::oscillator_strength(int j) const {
 double CISComputer::oscillator_strength(int i, int j) const {
  double d = this->transition_dipole(i, j)->sum_of_squares();
  return (2.0/3.0) * d * (E_->get(j) - E_->get(i));
+}
+
+void CISComputer::determine_electronic_state(int& I) {
+ if (I<1) {
+   int count = 1;
+   const double ft = options_.get_double("OSCILLATOR_STRENGTH_THRESHOLD");
+   for (int i=0; i<this->nstates(); ++i) {
+        if (this->oscillator_strength(i) > ft) {
+            if (count == -I) {
+                I = i+1;
+                break;
+            }
+            count += 1;
+        }
+   }
+ } 
+ I -= 1; // transform to C++ indexing (from 0)
+}
+
+std::shared_ptr<CISData> CISComputer::data(int I, bool symm) {
+  //
+  double E_ex = this->eigenvalues()->get(I);                        // Excitation energy wrt ground state
+  double t = this->U_homo_lumo(I).first;                            // CIS amplitude
+  //
+  SharedMatrix Pe  = this->Da_ao(I); Pe ->add(this->Db_ao(I));      // Excited state bond order matrices of monomers
+  SharedMatrix Peg = this->Ta_ao(I); Peg->add(this->Tb_ao(I));      // Transition density matrices of monomers
+  //
+  SharedDMTPole trcamm = this->trcamm(I, symm);                     // TrCAMM moments
+  //
+  int nbf = this->ref_wfn_->basisset()->nbf();
+  SharedVector cl = this->ref_wfn_->Ca_subset("AO","VIR")->get_column(0, 0);
+  SharedMatrix D_lumo = std::make_shared<psi::Matrix>("", nbf, nbf);
+  for (int i=0; i<nbf; ++i) {
+       for (int j=0; j<nbf; ++j) {
+            D_lumo->set(i, j, cl->get(i) * cl->get(j));
+       }
+  }
+  std::vector<psi::SharedMatrix> Tvec; Tvec.push_back(D_lumo);
+  std::vector<bool> Bvec; Bvec.push_back(true);
+
+  SharedDMTPole camm_lumo = DMTPole::build("CAMM", ref_wfn_, 1);    // CAMM of LUMO orbital
+  camm_lumo->compute(Tvec, Bvec);
+
+      psi::outfile->Printf("     State I= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
+                                 I+1, this->oscillator_strength(I), E_ex*OEPDEV_AU_EV, t);
+
+  std::shared_ptr<CISData> cis_data = std::make_shared<CISData>();
+  cis_data->E_ex = E_ex;
+  cis_data->t_homo_lumo = t;
+  cis_data->Pe = Pe;
+  cis_data->Peg= Peg;
+  cis_data->trcamm = trcamm;
+  cis_data->camm_lumo = camm_lumo;
+  return cis_data;
 }
 
 

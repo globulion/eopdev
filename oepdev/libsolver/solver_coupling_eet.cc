@@ -3,6 +3,7 @@
 #include <utility>
 #include "../libutil/integrals_iter.h"
 #include "../libutil/util.h"
+#include "../libutil/cis.h"
 
 
 using namespace std;
@@ -46,23 +47,6 @@ double EETCouplingSolver::compute_benchmark(const std::string& method)
      throw psi::PSIEXCEPTION("Error. Incorrect benchmark method specified for EET coupling calculations!\n");
   }
   return e;
-}
-
-void EETCouplingSolver::determine_electronic_state(std::shared_ptr<CISComputer> cis, int& I) {
- if (I<1) {
-   int count = 1;
-   const double ft = options_.get_double("OSCILLATOR_STRENGTH_THRESHOLD");
-   for (int i=0; i<cis->nstates(); ++i) {
-        if (cis->oscillator_strength(i) > ft) {
-            if (count == -I) {
-                I = i+1;
-                break;
-            }
-            count += 1;
-        }
-   }
- } 
- I -= 1; // transform to C++ indexing (from 0)
 }
 double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double e = 0.0;
@@ -165,39 +149,55 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   SharedMatrix Da_B = wfn_union_->l_wfn(1)->Da();
 
   // Density matrices (AO)
-  SharedMatrix Peg_A, Peg_B, Pe_A, Pe_B;
+  //SharedMatrix Peg_A, Peg_B, Pe_A, Pe_B;
   // TrCAMM's
-  SharedDMTPole trcamm_A, trcamm_B;
+  //SharedDMTPole trcamm_A, trcamm_B;
 
 
   // Obtain CIS HOMO-LUMO amplitudes and unperturbed excitation energies
   psi::outfile->Printf(" --> Running CIS calculations on the monomers <--\n");
-  double t_A, t_B, E_ex_A, E_ex_B;
+  //double t_A, t_B, E_ex_A, E_ex_B;
   const bool symm = options_.get_bool("TrCAMM_SYMMETRIZE");
+  SharedCISData cis_data_A, cis_data_B;
   {
       std::shared_ptr<CISComputer> cis_A = CISComputer::build("RESTRICTED", wfn_union_->l_wfn(0), options_); 
       cis_A->compute();
-      this->determine_electronic_state(cis_A, I);            // Excited state ID in C++ convention
-      E_ex_A = cis_A->eigenvalues()->get(I);                 // Excitation energy wrn ground state
-      t_A = cis_A->U_homo_lumo(I).first * sqrt(na_A/na_AB);  // CIS amplitude scaled to the dimer
-      trcamm_A = cis_A->trcamm(I, symm);                     // TrCAMM moments
-      Pe_A  = cis_A->Da_ao(I); Pe_A ->add(cis_A->Db_ao(I));  // Excited state bond order matrices of monomers
-      Peg_A = cis_A->Ta_ao(I); Peg_A->add(cis_A->Tb_ao(I));  // Transition density matrices of monomers
-      psi::outfile->Printf("     State I= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
-                                 I+1, cis_A->oscillator_strength(I), E_ex_A*OEPDEV_AU_EV, t_A);
+      cis_A->determine_electronic_state(I);                  // Excited state ID in C++ convention
+      cis_data_A = cis_A->data(I, symm);
+      //E_ex_A = cis_A->eigenvalues()->get(I);                 // Excitation energy wrn ground state
+      //t_A = cis_A->U_homo_lumo(I).first * sqrt(na_A/na_AB);  // CIS amplitude scaled to the dimer
+      //trcamm_A = cis_A->trcamm(I, symm);                     // TrCAMM moments
+      //Pe_A  = cis_A->Da_ao(I); Pe_A ->add(cis_A->Db_ao(I));  // Excited state bond order matrices of monomers
+      //Peg_A = cis_A->Ta_ao(I); Peg_A->add(cis_A->Tb_ao(I));  // Transition density matrices of monomers
+      //psi::outfile->Printf("     State I= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
+      //                           I+1, cis_A->oscillator_strength(I), E_ex_A*OEPDEV_AU_EV, t_A);
   }{
       std::shared_ptr<CISComputer> cis_B = CISComputer::build("RESTRICTED", wfn_union_->l_wfn(1), options_); 
       cis_B->compute();
-      this->determine_electronic_state(cis_B, J);
-      E_ex_B = cis_B->eigenvalues()->get(J);
-      t_B = cis_B->U_homo_lumo(J).first * sqrt(na_B/na_AB);
-      trcamm_B = cis_B->trcamm(J, symm);
-      Pe_B  = cis_B->Da_ao(J); Pe_B ->add(cis_B->Db_ao(J));
-      Peg_B = cis_B->Ta_ao(J); Peg_B->add(cis_B->Tb_ao(J));
-      psi::outfile->Printf("     State J= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
-                                 J+1, cis_B->oscillator_strength(J), E_ex_B*OEPDEV_AU_EV, t_B);
+      cis_B->determine_electronic_state(J);
+      cis_data_B = cis_B->data(J, symm);
+      //E_ex_B = cis_B->eigenvalues()->get(J);
+      //t_B = cis_B->U_homo_lumo(J).first * sqrt(na_B/na_AB);
+      //trcamm_B = cis_B->trcamm(J, symm);
+      //Pe_B  = cis_B->Da_ao(J); Pe_B ->add(cis_B->Db_ao(J));
+      //Peg_B = cis_B->Ta_ao(J); Peg_B->add(cis_B->Tb_ao(J));
+      //psi::outfile->Printf("     State J= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
+      //                           J+1, cis_B->oscillator_strength(J), E_ex_B*OEPDEV_AU_EV, t_B);
   }
   psi::outfile->Printf("\n");
+
+  // Collect CIS data
+  double E_ex_A = cis_data_A->E_ex;                        // Excitation energy of A wrt ground state
+  double E_ex_B = cis_data_B->E_ex;                        // Excitation energy of B wrt ground state
+  double t_A = cis_data_A->t_homo_lumo * sqrt(na_A/na_AB); // CIS amplitude of A scaled to the dimer
+  double t_B = cis_data_B->t_homo_lumo * sqrt(na_B/na_AB); // CIS amplitude of B scaled to the dimer
+  SharedMatrix Pe_A = cis_data_A->Pe;                      // Excited state bond order matrix of A
+  SharedMatrix Pe_B = cis_data_B->Pe;                      // Excited state bond order matrix of B
+  SharedMatrix Peg_A = cis_data_A->Peg;                    // Transition density matrix of A
+  SharedMatrix Peg_B = cis_data_B->Peg;                    // Transition density matrix of B
+  SharedDMTPole trcamm_A = cis_data_A->trcamm;             // TrCAMM's of A
+  SharedDMTPole trcamm_B = cis_data_B->trcamm;             // TrCAMM's of B
+
 
   // Check the populations of states
   if (wfn_union_->options().get_int("PRINT") > -1) {
@@ -702,6 +702,100 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
 double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   double e = 0.0;
+  SharedOEPotential oep_1 = oepdev::OEPotential::build("EET COUPLING CONSTANT",
+                                                       wfn_union_->l_wfn(0), 
+                                                       wfn_union_->l_auxiliary(0), 
+                                                       wfn_union_->l_intermediate(0), 
+                                                       wfn_union_->options());
+  SharedOEPotential oep_2 = oepdev::OEPotential::build("EET COUPLING CONSTANT", 
+                                                       wfn_union_->l_wfn(1), 
+                                                       wfn_union_->l_auxiliary(1), 
+                                                       wfn_union_->l_intermediate(1), 
+                                                       wfn_union_->options());
+  oep_1->compute();
+  oep_2->compute();
+
+  // Allocate
+  int nbf   = wfn_union_->basisset()->nbf();
+  int nbf_A = wfn_union_->l_nbf(0);
+  int nbf_B = wfn_union_->l_nbf(1);
+  int nbf_Aa = wfn_union_->l_auxiliary(0)->nbf();
+  int nbf_Ba = wfn_union_->l_auxiliary(1)->nbf();
+  const int homo_A = oep_1->wfn()->nalpha() - 1;
+  const int homo_B = oep_2->wfn()->nalpha() - 1;
+  const int lumo_A = 0;
+  const int lumo_B = 0;
+
+//psi::SharedMatrix Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_A , nbf_B );
+  psi::SharedMatrix Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_Aa, nbf_B );
+  psi::SharedMatrix Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_A , nbf_Ba);
+
+//psi::IntegralFactory fact_1p2p(wfn_union_->l_primary  (0), wfn_union_->l_primary  (1), wfn_union_->l_primary  (0), wfn_union_->l_primary  (1));
+  psi::IntegralFactory fact_1a2p(wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1), wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1));
+  psi::IntegralFactory fact_1p2a(wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1), wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1));
+
+//std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2a(fact_1p2a.ao_overlap());
+
+  psi::SharedVector CH_A = oep_1->cOcc()->get_column(0, homo_A);
+  psi::SharedVector CH_B = oep_2->cOcc()->get_column(0, homo_B);
+  psi::SharedVector CL_A = oep_1->cVir()->get_column(0, lumo_A);
+  psi::SharedVector CL_B = oep_2->cVir()->get_column(0, lumo_B);
+
+  psi::SharedVector s_AB_QH = std::make_shared<psi::Vector>("", nbf_Aa);
+  psi::SharedVector s_AB_QL = std::make_shared<psi::Vector>("", nbf_Aa);
+  psi::SharedVector s_BA_QH = std::make_shared<psi::Vector>("", nbf_Ba);
+  psi::SharedVector s_BA_QL = std::make_shared<psi::Vector>("", nbf_Ba);
+
+  // One-electron integrals
+//ovlInt_1p2p->compute(Sao_1p2p);
+  ovlInt_1a2p->compute(Sao_1a2p);
+  ovlInt_1p2a->compute(Sao_1p2a);
+
+  double** sao_1a2p = Sao_1a2p->pointer();
+  double** sao_1p2a = Sao_1p2a->pointer();
+
+  for (int i=0; i<nbf_Aa; ++i) {
+       double vh = 0.0;
+       double vl = 0.0;
+       for (int j=0; j<nbf_B; ++j) {
+            vh += CH_A->get(j) * sao_1a2p[i][j];
+            vl += CL_A->get(j) * sao_1a2p[i][j];
+       }
+       s_AB_QH->set(i, vh);
+       s_AB_QL->set(i, vl);
+  }
+  for (int i=0; i<nbf_Ba; ++i) {
+       double vh = 0.0;
+       double vl = 0.0;
+       for (int j=0; j<nbf_A; ++j) {
+            vh += CH_B->get(j) * sao_1p2a[j][i];
+            vl += CL_B->get(j) * sao_1p2a[j][i];
+       }
+       s_BA_QH->set(i, vh);
+       s_BA_QL->set(i, vl);
+  }
+
+
+  // V0_ET and V0_HT
+  double V0_ET1 = oep_2->matrix("Fujimoto.GDF")->get_column(0, 0)->vector_dot(s_BA_QL) 
+                + oep_1->matrix("Fujimoto.GDF")->get_column(0, 1)->vector_dot(s_AB_QL);
+  double V0_ET2 = oep_1->matrix("Fujimoto.GDF")->get_column(0, 0)->vector_dot(s_AB_QL) 
+                + oep_2->matrix("Fujimoto.GDF")->get_column(0, 1)->vector_dot(s_BA_QL);
+  double V0_HT1 = oep_2->matrix("Fujimoto.GDF")->get_column(0, 2)->vector_dot(s_BA_QH) 
+                + oep_1->matrix("Fujimoto.GDF")->get_column(0, 3)->vector_dot(s_AB_QH);
+  double V0_HT2 = oep_1->matrix("Fujimoto.GDF")->get_column(0, 2)->vector_dot(s_AB_QH) 
+                + oep_2->matrix("Fujimoto.GDF")->get_column(0, 3)->vector_dot(s_BA_QH);
+
+  double t_A = oep_1->oep("Fujimoto.CIS").cis_data->t_homo_lumo; 
+  double t_B = oep_2->oep("Fujimoto.CIS").cis_data->t_homo_lumo; 
+
+  V0_ET1 *= t_A;
+  V0_ET2 *= t_B;
+  V0_HT1 *= t_A;
+  V0_HT2 *= t_B;
+
   psi::timer_on("Solver EET TI/CIS OEP-Based     ");
   // Return
   psi::timer_off("Solver EET TI/CIS OEP-Based     ");

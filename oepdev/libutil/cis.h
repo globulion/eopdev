@@ -36,6 +36,26 @@ using SharedIntegralTransform  = std::shared_ptr<psi::IntegralTransform>;
  * @{
  */
 
+/**
+ *  \brief Container to handle the CIS wavefunction parameters
+ */
+struct CISData
+{
+    /// Excitation energy
+    double E_ex;
+    /// CIS HOMO-LUMO amplitude
+    double t_homo_lumo;
+    /// Excited state density matrix (sum of alpha and beta)
+    SharedMatrix Pe;
+    /// Transition ground-to-excited state density matrix (sum of alpha and beta)
+    SharedMatrix Peg;
+    /// TrCAMM
+    SharedDMTPole trcamm;
+    /// CAMM for LUMO orbital
+    SharedDMTPole camm_lumo;
+};
+
+
 /** \brief CISComputer
  *
  */
@@ -232,9 +252,15 @@ class CISComputer {
    /// Compute oscillator strength for *i*->*j* transition
    double oscillator_strength(int i, int j) const;
 
+   /// Determine electronic state
+   void determine_electronic_state(int& I);
+
+   /// Return CIS data structure for a given excited state *I*
+   std::shared_ptr<CISData> data(int I, bool symmetrize_trcamm=false);
+
    /// Slater determinant possible references, that are implemented
    static const std::vector<std::string> reference_types;
- 
+
   protected:
    /// Reference wavefunction
    std::shared_ptr<psi::Wavefunction> ref_wfn_;

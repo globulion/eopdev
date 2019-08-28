@@ -14,7 +14,6 @@
 #include "psi4/libmints/integral.h"
 #include "psi4/libpsi4util/PsiOutStream.h"
 
-#include "../libutil/cis.h"
 #include "../libutil/wavefunction_union.h"
 #include "../libutil/integrals_iter.h"
 #include "../libpsi/integral.h"
@@ -1087,9 +1086,6 @@ class EETCouplingSolver : public OEPDevSolver
 
     /// TI/CIS method - OEP-based (Fujimoto JPC 2012, Blasiak et al XXX 2019)
     double compute_oep_based_fujimoto_ti_cis();
-
-    ///
-    void determine_electronic_state(std::shared_ptr<CISComputer>, int&);
 };
 
 
