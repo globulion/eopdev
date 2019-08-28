@@ -91,7 +91,7 @@ The first two site energies are given by
 \end{subequations}
 %
 where $E^X_{e\rightarrow g}$ is the excitation energy of isolated molecule $X$ whereas 
-$\Delta E^X_{e\rightarrow g}(Y)$ accounts for the environmental effect due to other molecule,
+$\Delta E^X_{e\rightarrow g}(Y)$ accounts for the environmental effect due to the other molecule,
 %
 \begin{equation}
  \Delta E^X_{e\rightarrow g}(Y) \cong \int \left[ \rho^{X}_{{\rm el},(e)}({\bf r}) - \rho^{X}_{{\rm el},(g)}({\bf r}) \right]
@@ -107,8 +107,8 @@ with the effective one\hyp{}electron potential given by
  \frac{\phi_i^*({\bf r}_1) \phi_i({\bf r}_1)
                     \phi_j^*({\bf r}_2) \phi_j({\bf r}_2)}{\vert {\bf r}_1 - {\bf r}_2 \vert}
   - \frac{1}{2}
-   \frac{\phi_i^*({\bf r}_1 \phi_j({\bf r}_1 
-                 \phi_j^*({\bf r}_2 \phi_i({\bf r}_2)}{\vert {\bf r}_1 - {\bf r}_2 \vert}
+   \frac{\phi_i^*({\bf r}_1) \phi_j({\bf r}_1)
+                 \phi_j^*({\bf r}_2) \phi_i({\bf r}_2)}{\vert {\bf r}_1 - {\bf r}_2 \vert}
   \Big\} \;.
 \end{multline}
 %
@@ -274,26 +274,26 @@ as
 \begin{equation}
  \bra{\phi_L^A} \left\{ \mathscr{F}_0^A - \hat{v}^A_{HH} \right\}
  + \bra{\phi_H^A} 2 \hat{v}^A_{LH} 
- \cong \sum_{\xi\in A}^{\rm DF} \bra{\xi} V^{A,{\rm ET1}}_{\xi,HL}
+ \cong \sum_{\xi\in A}^{\rm DF} \bra{\xi} V^{A;{\rm ET}}_{\xi;HL}
 \end{equation}
 %
 and
 %
 \begin{equation}
- \mathscr{F}_0^B \ket{\phi_L^B} \cong \sum_{\eta\in B}^{\rm DF} V^{B,{\rm ET1}}_{\eta,L} \ket{\eta} 
+ \mathscr{F}_0^B \ket{\phi_L^B} \cong \sum_{\eta\in B}^{\rm DF} V^{B;{\rm ET}}_{\eta;L} \ket{\eta} 
 \end{equation}
 %
 In the above transformations, that involve the generalized density fitting
 in an auxiliary basis set space,
-$V^{A,{\rm ET1}}_{\xi,HL}$ and $V^{B,{\rm ET1}}_{\eta,L}$
+$V^{A;{\rm ET}}_{\xi;HL}$ and $V^{B;{\rm ET}}_{\eta;L}$
 are the OEP matrix elements associated with the above
 effective potentials, separately defined for molecule $A$ and $B$. This allows one to
 further recast $V^{{\rm ET1},(0)}$ into
 %
 \begin{multline}\label{e:v0-et1-oep}
  V^{{\rm ET1},(0)} \cong t_{H\rightarrow L}^A \Big\{ 
- \sum_{\xi\in A}^{\rm DF} S_{\xi L}^{AB} V^{A,{\rm ET1}}_{\xi,HL} +
- \sum_{\eta\in B}^{\rm DF} S_{\eta L}^{BA} V^{B,{\rm ET1}}_{\eta,L}
+ \sum_{\xi\in A}^{\rm DF} S_{\xi L}^{AB} V^{A;{\rm ET}}_{\xi;HL} +
+ \sum_{\eta\in B}^{\rm DF} S_{\eta L}^{BA} V^{B;{\rm ET}}_{\eta;L}
  \Big\} \;,
 \end{multline}
 %
@@ -303,7 +303,7 @@ Note that if
 the OEP matrices are considered
 as effective fragment parameters, %pre\hyp{}computed only once.
 only overlap integrals between auxiliary basis functions and LUMO orbitals of molecule
-$A$ and $B$ are necessary to compute, i.e.,
+$A$ and $B$ are necessary to be computed, i.e.,
 %
 \begin{equation}
  S^{XY}_{\xi U} = \sum_{\beta\in Y} S_{\xi\beta}^{XY} C_{\beta U}^Y \text{ for $\xi\in X$} \;,
@@ -315,16 +315,20 @@ in which
  S_{\xi\beta}^{XY} = \int d{\bf r} \varphi_\xi^*({\bf r}) \varphi_\beta({\bf r})
 \end{equation}
 %
-and $C_{\beta U}^Y$ is the SCF LCAO-MO matrix for isolated molecule $Y$.
+and $C_{\beta U}^X$ is the SCF LCAO-MO matrix for isolated molecule $X$.
 It is straightforward to show that the twin term ET2 is
 %
 \begin{multline}\label{e:v0-et2-oep}
  V^{{\rm ET2},(0)} \cong t_{H\rightarrow L}^B \Big\{ 
- \sum_{\eta\in B}^{\rm DF} S_{\eta L}^{BA} V^{B,{\rm ET1}}_{\eta,HL} +
- \sum_{\xi\in A}^{\rm DF} S_{\xi L}^{AB} V^{A,{\rm ET1}}_{\xi,L}
+ \sum_{\eta\in B}^{\rm DF} S_{\eta L}^{BA} V^{B;{\rm ET}}_{\eta;HL} +
+ \sum_{\xi\in A}^{\rm DF} S_{\xi L}^{AB} V^{A;{\rm ET}}_{\xi;L}
  \Big\} \;.
 \end{multline}
 %
+Note that OEP matrices for ET1 and ET2 terms share similar structure.
+Therefore a joint superscript `ET' is used here to label the OEP matrices
+and additional subscripts
+$L$ and $HL$ denote the dependence on only LUMO and on both LUMO and HOMO orbitals, respectively.
 
 Similar considerations apply to the hole transfer (HT) matrix elements.
 The expression
@@ -341,8 +345,8 @@ can be recast as
 %
 \begin{multline}\label{e:v0-ht1-oep}
  V^{{\rm HT1},(0)} \cong t_{H\rightarrow L}^A \Big\{ 
- \sum_{\xi\in A}^{\rm DF} S_{\xi H}^{AB} V^{A,{\rm HT1}}_{\xi,HL} +
- \sum_{\eta\in B}^{\rm DF} S_{\eta H}^{BA} V^{B,{\rm HT1}}_{\eta,H}
+ \sum_{\xi\in A}^{\rm DF} S_{\xi H}^{AB} V^{A;{\rm HT}}_{\xi;HL} +
+ \sum_{\eta\in B}^{\rm DF} S_{\eta H}^{BA} V^{B;{\rm HT}}_{\eta;H}
  \Big\} \;,
 \end{multline}
 %
@@ -353,8 +357,8 @@ with the effective potential matrices given by
 \begin{align}
  \bra{\phi_H^A} \left\{ -\mathscr{F}_0^A - \hat{v}^A_{LL} \right\}
  + \bra{\phi_L^A} 2 \hat{v}^A_{HL} 
- &\cong \sum_{\xi\in A}^{\rm DF} \bra{\xi} V^{A,{\rm HT1}}_{\xi,HL} \\
- -\mathscr{F}_0^B \ket{\phi_H^B} &\cong \sum_{\eta\in B}^{\rm DF} V^{B,{\rm ET1}}_{\eta,H} \ket{\eta} 
+ &\cong \sum_{\xi\in A}^{\rm DF} \bra{\xi} V^{A,{\rm HT}}_{\xi,HL} \\
+ -\mathscr{F}_0^B \ket{\phi_H^B} &\cong \sum_{\eta\in B}^{\rm DF} V^{B,{\rm HT}}_{\eta,H} \ket{\eta} 
 \end{align}
 \end{subequations}
 %
@@ -362,8 +366,8 @@ The twin term HT2 is accordingly
 %
 \begin{multline}\label{e:v0-ht2-oep}
  V^{{\rm HT2},(0)} \cong t_{H\rightarrow L}^B \Big\{ 
- \sum_{\eta\in B}^{\rm DF} S_{\eta H}^{BA} V^{B,{\rm HT2}}_{\eta,HL} +
- \sum_{\xi\in A}^{\rm DF} S_{\xi H}^{AB} V^{A,{\rm HT2}}_{\xi,H}
+ \sum_{\eta\in B}^{\rm DF} S_{\eta H}^{BA} V^{B;{\rm HT}}_{\eta;HL} +
+ \sum_{\xi\in A}^{\rm DF} S_{\xi H}^{AB} V^{A;{\rm HT}}_{\xi;H}
  \Big\} \;.
 \end{multline}
 %
@@ -385,7 +389,7 @@ is
 \begin{equation}\label{e:v0-ct}
  V^{{\rm CT },(0)} = 
      2 \braket{\phi_H^A \phi_L^B}{\phi_L^A \phi_H^B}
-      -\braket{\phi_H^A \phi_H^B}{\phi_L^A \phi_L^B}
+      -\braket{\phi_H^A \phi_H^B}{\phi_L^A \phi_L^B} \;.
 \end{equation}
 %
 Since it involves ERI's of type $\braket{AB}{AB}$ OEP's cannot be directly defined here.
@@ -411,7 +415,7 @@ Application of the above approximation to Eq.~\eqref{e:v0-ct} yields
 where 
 %
 \begin{equation} 
- r_{UW}^X \equiv \braket{\phi_U^X \phi_U^X}{\phi_W^X \phi_W^X} \;.
+ r_{HL}^X \equiv \braket{\phi_H^X \phi_H^X}{\phi_L^X \phi_L^X} \;.
 \end{equation}
 %
 First of all, note that $r_{HL}^A$ and $r_{HL}^B$ are just constant numbers
@@ -473,7 +477,8 @@ is approximately given by
  \frac{q_{x;L}^A}{\vert {\bf r}_H^B - {\bf r}_x \vert} \Big]\;.
 \end{multline}
 %
-
+Thus, the computational cost of the above expression is negligible as
+compared to the original formula in Eq.~\eqref{e:v0-ct}.
 
 \subsection{\label{s:2.3}Approximate pure exchange coupling}
 
@@ -501,7 +506,7 @@ V^{{\rm Exch},(0)} \approx
 \end{multline}
 %
 with $G_{\mu\nu} \equiv \braket{\mu\mu}{\nu\nu}$. Note that $G_{\mu\nu}^A$ and $G_{\lambda\sigma}^B$
-are just constant matrices that can be considered as effective fragment potentials.
+are just constant matrices that can be considered as effective fragment parameters.
 
 \subsection{\label{s:2.4}Complete model of EET coupling}
 
@@ -512,7 +517,7 @@ by
   V \approx V^{\rm Direct} + V^{\rm Inirect} \;,
 \end{equation}
 %
-where the so called `direct' and `indirect' coupling constants are respectively
+where the direct and indirect coupling constants are respectively
 %
 \begin{subequations}
 \begin{align}
@@ -530,36 +535,7 @@ with
 \end{align}
 \end{subequations}
 %
-However, 
-the differences between the original Fujimoto's model and the newly derived OEP\hyp{}based model 
-are: 
-%
-\begin{enumerate}
- \item The Hamiltonian matrix elements are evaluated from the fragment effective 
-parameters, for which only the one\hyp{}electron integrals are needed. Therefore, the computational
-cost is significantly reduced as compared to the parent TI/CIS model. In particular, 
-$V^{\rm Coul}$ is evaluated by using the TrCAMM method developed previously,
-$V^{\rm Exch}$ and $V^{\rm CT}$ are computed from the Mulliken approximated
-formulae in Eqs.~\eqref{e:v0-exch.mulliken.working}, and \eqref{e:v0-ct.mulliken.working}, respectively,
-as well as $V^{\rm ET1}$, $V^{\rm ET2}$,
-$V^{\rm HT1}$ and $V^{\rm HT2}$ are treated by the generalized density fitting
-with OEP effective matrices as effective parameters spanned in auxiliary AO basis set 
-(Eqs.~\eqref{e:v0-et1-oep}, \eqref{e:v0-et2-oep}, \eqref{e:v0-ht1-oep}, \eqref{e:v0-ht2-oep}
-and Eqs.~\eqref{e:a:voep}-\eqref{e:a:aoep}); 
- \item The relaxation effects due to the intermolecular interactions are not included
-in the current OEP\hyp{}based model.
-Note that in the original TI/CIS model the basis states and all the one\hyp{}particle density matrices are built from the
-self\hyp{}consistently adjusted fragment densities according to the DFI method.
-\end{enumerate}
-%
-\paragraph*{Overlap corrections to the Hamiltonian.}
-Since in the TI/CIS method the basis states are constructed from the monomer wavefunctions,
-the overlap effects should be properly taken into account. It was reported previously
-that overlap correction to the $\left< \Phi_1 \vert \mathscr{H} \vert \Phi_2 \right>$ 
-matrix element brings negligible contributions to the 
-total EET coupling (c.f. the `overlap' contribution in Ref.). On the other hand,
-the importance of the overlap effects on the other off\hyp{}diagonal Hamiltonian matrix elements were not directly studied. 
-After the overlap correction, the constituents of the direct coupling take the form
+In the above, the direct EET coupling contributions are
 %
 \begin{subequations}\label{e:ovrl-direct}
 \begin{align}
@@ -569,7 +545,8 @@ After the overlap correction, the constituents of the direct coupling take the f
 \end{align}
 \end{subequations}
 %
-The overlap\hyp{}corrected ET, HT and CT matrix elements read
+whereas the indirect EET coupling is evaluated from
+the overlap\hyp{}corrected ET, HT and CT matrix elements that read
 %
 \begin{equation}\label{e:ovrl-indirect}
  V^{\rm t} = \left[ 1 - S_{\rm t}^2 \right]^{-1} \left\{ V^{{\rm t},(0)} - \frac{1}{2} (E_1+E_2) S_{\rm t} \right\} \;,
@@ -577,11 +554,45 @@ The overlap\hyp{}corrected ET, HT and CT matrix elements read
 %
 where `t' denotes one of the matrix element types (ET1, ET2, HT1, HT2, CT) 
 and $S_{\rm t}$ is the appropriate overlap integral between basis states.
-Since evaluation
-of Eqs.~\eqref{e:ovrl-direct} and \eqref{e:ovrl-indirect} 
-is computationally inexpensive, we shall consider the overlap\hyp{}corrected
-Hamiltonian in the present work.
 
+Despite the same general form,
+the differences between the original Fujimoto's model and the newly derived OEP\hyp{}based model 
+are significant:
+%
+\begin{enumerate}
+ \item The Hamiltonian matrix elements are evaluated from the fragment effective 
+parameters, for which only the one\hyp{}electron integrals are needed. Therefore, the computational
+cost is significantly reduced as compared to the parent TI/CIS model. In particular, 
+$V^{{\rm Coul},(0)}$ is evaluated by using the TrCAMM method developed previously,
+$V^{{\rm Exch},(0)}$ and $V^{{\rm CT},(0)}$ are computed from the Mulliken approximated
+formulae in Eqs.~\eqref{e:v0-exch.mulliken.working} and \eqref{e:v0-ct.mulliken.working}, respectively,
+as well as $V^{\rm ET1}$, $V^{\rm ET2}$,
+$V^{{\rm HT1},(0)}$ and $V^{{\rm HT2},(0)}$ are treated by the generalized density fitting
+with OEP effective matrices as effective parameters spanned in auxiliary AO basis set 
+(Eqs.~\eqref{e:v0-et1-oep}, \eqref{e:v0-et2-oep}, \eqref{e:v0-ht1-oep}, \eqref{e:v0-ht2-oep}
+and Eqs.~\eqref{e:a:voep}-\eqref{e:a:aoep}). Note that evaluation
+of Eqs.~\eqref{e:ovrl-direct} and \eqref{e:ovrl-indirect} 
+is computationally inexpensive because it involves computing only approximate overlap
+integrals between basis states;
+ \item The relaxation effects due to the intermolecular interactions are not included
+in the current OEP\hyp{}based model.
+Note that in the original TI/CIS model the basis states and all the one\hyp{}particle density matrices are built from the
+self\hyp{}consistently adjusted fragment densities according to the DFI method.
+\end{enumerate}
+%
+%\paragraph*{Overlap corrections to the Hamiltonian.}
+%Since in the TI/CIS method the basis states are constructed from the monomer wavefunctions,
+%the overlap effects should be properly taken into account. It was reported previously
+%that overlap correction to the $\left< \Phi_1 \vert \mathscr{H} \vert \Phi_2 \right>$ 
+%matrix element brings negligible contributions to the 
+%total EET coupling (c.f. the `overlap' contribution in Ref.). On the other hand,
+%the importance of the overlap effects on the other off\hyp{}diagonal Hamiltonian matrix elements were not directly studied. 
+%After the overlap correction, the constituents of the direct coupling take the form
+%
+%Since evaluation
+%of Eqs.~\eqref{e:ovrl-direct} and \eqref{e:ovrl-indirect} 
+%is computationally inexpensive, we shall consider the overlap\hyp{}corrected
+%Hamiltonian in the present work.
 
 \section{\label{s:4}Results and Discussion}
 
@@ -611,14 +622,14 @@ are computed from the generalized density fitting scheme, according to which
 \begin{equation}\label{e:a:voep}
  V^X_{\xi, M} = \sum_{\xi'\in X}^{\rm DF} 
                 \sum_{\varepsilon\in X}^{\rm RI}
-                [{\bf R}^{-1}]_{\xi\xi'} R_{\xi'\varepsilon} H^X_{\varepsilon, M} \;,
+                [{\bf R}^{-1}]_{\xi\xi'} R_{\xi'\varepsilon} H^{X;M}_{\varepsilon; N} \;,
 \end{equation}
 %
 where
 %
 \begin{equation}
- H^X_{\varepsilon, M} = \sum_{\varepsilon'\in X}^{\rm RI}
-                        [{\bf S}^{-1}]_{\varepsilon\varepsilon'} a_{\varepsilon'}^{X; M} \;.
+ H^{X;M}_{\varepsilon; N} = \sum_{\varepsilon'\in X}^{\rm RI}
+                        [{\bf S}^{-1}]_{\varepsilon\varepsilon'} a_{\varepsilon';N}^{X; M} \;.
 \end{equation}
 %
 In the above equations, the auxiliary matrices are defined by
@@ -638,36 +649,62 @@ and
                  d{\bf r}_1 d{\bf r}_2 \;.
 \end{equation}
 %
-The elements of vector ${\bf a}^{X;M}$ for $M=$ ET1, ET2, HT1 and HT2 and $X=A, B$ are given by
+The elements of vector ${\bf a}^{X;M}_N$ for $M=$ ET1, ET2, HT1 and HT2 and $N=$ H, L and HL are given by
 %
 \begin{subequations}\label{e:a:aoep}
 \begin{align}
-a_{\alpha}^{A;{\rm ET1}} &= \sum_\beta C_{\beta L}^A F_{\alpha\beta}^A \nonumber \\
+%
+a_{\alpha;L}^{X;{\rm ET}} &= \sum_\beta C_{\beta L}^X F_{\alpha\beta}^X \;,\\
+%
+a_{\alpha;HL}^{X;{\rm ET}} &= a_{\alpha;L}^{X;{\rm ET}} \nonumber \\
  &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
- \left\{ 2C^A_{\beta  H} C^A_{\gamma L} - C^A_{\beta  L} C^A_{\gamma H}\right\} C^A_{\delta H} \;,\\
+ \left\{ 2C^X_{\beta  H} C^X_{\gamma L} - C^X_{\beta  L} C^X_{\gamma H}\right\} C^X_{\delta H} \;,\\
 %
-a_{\alpha}^{B;{\rm ET1}} &= \sum_\beta C_{\beta L}^B F_{\alpha\beta}^B \;,\\
+a_{\alpha;H}^{X;{\rm HT}} &=-\sum_\beta C_{\beta H}^X F_{\alpha\beta}^X \;,\\
 %
-a_{\alpha}^{B;{\rm ET2}} &= \sum_\beta C_{\beta L}^B F_{\alpha\beta}^B \nonumber \\
+a_{\alpha;HL}^{X;{\rm HT}} &=a_{\alpha;H}^{X;{\rm HT}} \nonumber \\
  &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
- \left\{ 2C^B_{\beta  H} C^B_{\gamma L} - C^B_{\beta  L} C^B_{\gamma H}\right\} C^B_{\delta H} \;,\\
+ \left\{ 2C^X_{\beta  L} C^X_{\gamma H} - C^X_{\beta  H} C^X_{\gamma L}\right\} C^X_{\delta L} \;.
 %
-a_{\alpha}^{A;{\rm ET2}} &= \sum_\beta C_{\beta L}^A F_{\alpha\beta}^A \;,\\
-%
-a_{\alpha}^{A;{\rm HT1}} &=-\sum_\beta C_{\beta H}^A F_{\alpha\beta}^A \nonumber \\
- &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
- \left\{ 2C^A_{\beta  L} C^A_{\gamma H} - C^A_{\beta  H} C^A_{\gamma L}\right\} C^A_{\delta L} \;,\\
-%
-a_{\alpha}^{B;{\rm HT1}} &=-\sum_\beta C_{\beta L}^B F_{\alpha\beta}^B \;,\\
-%
-a_{\alpha}^{B;{\rm HT2}} &=-\sum_\beta C_{\beta H}^B F_{\alpha\beta}^B \nonumber \\
- &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
- \left\{ 2C^B_{\beta  L} C^B_{\gamma H} - C^B_{\beta  H} C^B_{\gamma L}\right\} C^B_{\delta L} \;,\\
-%
-a_{\alpha}^{A;{\rm HT2}} &=-\sum_\beta C_{\beta L}^A F_{\alpha\beta}^A \;.
+%a_{\alpha}^{A;{\rm ET1}} &= \sum_\beta C_{\beta L}^A F_{\alpha\beta}^A \nonumber \\
+% &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
+% \left\{ 2C^A_{\beta  H} C^A_{\gamma L} - C^A_{\beta  L} C^A_{\gamma H}\right\} C^A_{\delta H} \;,\\
+%%
+%a_{\alpha}^{B;{\rm ET1}} &= \sum_\beta C_{\beta L}^B F_{\alpha\beta}^B \;,\\
+%%
+%a_{\alpha}^{B;{\rm ET2}} &= \sum_\beta C_{\beta L}^B F_{\alpha\beta}^B \nonumber \\
+% &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
+% \left\{ 2C^B_{\beta  H} C^B_{\gamma L} - C^B_{\beta  L} C^B_{\gamma H}\right\} C^B_{\delta H} \;,\\
+%%
+%a_{\alpha}^{A;{\rm ET2}} &= \sum_\beta C_{\beta L}^A F_{\alpha\beta}^A \;,\\
+%%
+%a_{\alpha}^{A;{\rm HT1}} &=-\sum_\beta C_{\beta H}^A F_{\alpha\beta}^A \nonumber \\
+% &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
+% \left\{ 2C^A_{\beta  L} C^A_{\gamma H} - C^A_{\beta  H} C^A_{\gamma L}\right\} C^A_{\delta L} \;,\\
+%%
+%a_{\alpha}^{B;{\rm HT1}} &=-\sum_\beta C_{\beta H}^B F_{\alpha\beta}^B \;,\\
+%%
+%a_{\alpha}^{B;{\rm HT2}} &=-\sum_\beta C_{\beta H}^B F_{\alpha\beta}^B \nonumber \\
+% &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
+% \left\{ 2C^B_{\beta  L} C^B_{\gamma H} - C^B_{\beta  H} C^B_{\gamma L}\right\} C^B_{\delta L} \;,\\
+%%
+%a_{\alpha}^{A;{\rm HT2}} &=-\sum_\beta C_{\beta H}^A F_{\alpha\beta}^A \;.
 \end{align}
 \end{subequations}
 %
+Here, the Fock matrix in space spanned by the intermediate and primary AO basis sets
+needs to be computed. The respective contributions to ${\bf a}$ vectors can be
+written in a convenient to implement form as
+%
+\begin{multline}
+ \sum_\beta C_{\beta U}^X F_{\alpha\beta}^X = 
+ \sum_\beta C_{\beta U}^X h_{\alpha\beta}^X \\
+   + \sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
+     \left[ P_{\delta\gamma}^{X(g)} C_{\beta U}^X - \frac{1}{2} P_{\beta\gamma}^{X(g)} C_{\delta U}^X \right] \;,
+\end{multline}
+%
+where ${\bf h}^X$ is the one\hyp{}electron core Hamiltonian of molecule $X$.
+
 % -----------------------
 \bibliography{references}
 % -----------------------
