@@ -329,14 +329,7 @@ class ChargeTransferEnergyOEPotential : public OEPotential
 /**\brief Generalized One-Electron Potential for EET coupling calculations.
  * 
  *  Contains the following OEP types:
- *    - `Fujimoto.A.ET1` 
- *    - `Fujimoto.B.ET1` 
- *    - `Fujimoto.A.ET2` 
- *    - `Fujimoto.B.ET2` 
- *    - `Fujimoto.A.HT1` 
- *    - `Fujimoto.B.HT1` 
- *    - `Fujimoto.A.HT2`
- *    - `Fujimoto.B.HT2`
+ *    - `Fujimoto.GDF` - Joint OEP type for ET(L), ET(HL), HT(H) and HT(HL)
  */
 class EETCouplingOEPotential : public OEPotential 
 {
@@ -356,6 +349,8 @@ class EETCouplingOEPotential : public OEPotential
     void common_init();
 
     /// Auxiliary computers
+    void compute_fujimoto_gdf();
+
 
 };
 
