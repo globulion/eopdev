@@ -119,30 +119,30 @@ void EETCouplingOEPotential::compute_fujimoto_gdf()
         std::shared_ptr<oepdev::AOIntegralsIterator> intsIter = shellIter->ao_iterator("ALL");
         for (intsIter->first(); intsIter->is_done() == false; intsIter->next())
         {
-             int i = intsIter->i();  // \beta      : n
-             int j = intsIter->j();  // \gamma     : n
-             int k = intsIter->k();  // \delta     : n
-             int l = intsIter->l();  // \xi        : Q
+             int i = intsIter->i();  // \gamma     : n
+             int j = intsIter->j();  // \delta     : n
+             int k = intsIter->k();  // \beta      : n
+             int l = intsIter->l();  // \alpha     : Q
 
              double eri = buffer[intsIter->index()];
 
-             double dkj = d[k][j]; double dij = d[i][j];
+             double dij = d[i][j]; double dik = d[i][k];
              double cli = cl[i]; double clk = cl[k]; double clj = cl[j];
              double chi = ch[i]; double chk = ch[k]; double chj = ch[j];
 
-             double vl_l = eri * (2.0*cli*dkj - clk*dij);
-             double vl_h =-eri * (2.0*chi*dkj - chk*dij);
-             double vl_et= eri * (2.0*chi * clj - cli * chj) * chk;
-             double vl_ht= eri * (2.0*cli * chj - chi * clj) * clk;
+             double vl_l = eri * (2.0*clk*dij - clj*dik);
+             double vl_h =-eri * (2.0*chk*dij - chj*dik);
+             double vl_et= eri * (2.0*chk*cli - clk*chi)* chj;
+             double vl_ht= eri * (2.0*clk*chi - chk*cli)* clj;
 
              // ET A
-             V[l][0] += vl_l + vl_et;
+             V[l][0] += vl_l;
              // ET B
-             V[l][1] += vl_l;
+             V[l][1] += vl_l + vl_et;
              // HT A
-             V[l][2] += vl_h + vl_ht;
+             V[l][2] += vl_h;
              // HT B
-             V[l][3] += vl_h;
+             V[l][3] += vl_h + vl_ht;
         }
    }
 

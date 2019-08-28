@@ -732,8 +732,8 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
        double vh = 0.0;
        double vl = 0.0;
        for (int j=0; j<nbf_B; ++j) {
-            vh += CH_A->get(j) * sao_1a2p[i][j];
-            vl += CL_A->get(j) * sao_1a2p[i][j];
+            vh += CH_B->get(j) * sao_1a2p[i][j];
+            vl += CL_B->get(j) * sao_1a2p[i][j];
        }
        s_AB_QH->set(i, vh);
        s_AB_QL->set(i, vl);
@@ -742,8 +742,8 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
        double vh = 0.0;
        double vl = 0.0;
        for (int j=0; j<nbf_A; ++j) {
-            vh += CH_B->get(j) * sao_1p2a[j][i];
-            vl += CL_B->get(j) * sao_1p2a[j][i];
+            vh += CH_A->get(j) * sao_1p2a[j][i];
+            vl += CL_A->get(j) * sao_1p2a[j][i];
        }
        s_BA_QH->set(i, vh);
        s_BA_QL->set(i, vl);
