@@ -51,6 +51,11 @@ class TIData
    virtual double overlap_corrected_direct(double v);
    virtual double overlap_corrected_indirect(double v, double s);
 
+   void set_output_coupling_units_converter(double c);
+   void set_s(double, double, double, double, double, double);
+   void set_e(double, double, double, double);
+   void set_de(double, double);
+
  public:
 
    /// Overlap matrix elements between basis functions
@@ -72,6 +77,9 @@ class TIData
 
    /// V0_Coul multipole convergence
    oepdev::SharedDMTPConvergence v0_trcamm;
+
+ protected:
+   double c_;
 };
 
 

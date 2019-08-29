@@ -10,11 +10,34 @@ TIData::TIData()
    mulliken_approximation(false),
    overlap_correction(true),
    trcamm_approximation(false),
-   trcamm_convergence(oepdev::MultipoleConvergence::ConvergenceLevel::R5)
+   trcamm_convergence(oepdev::MultipoleConvergence::ConvergenceLevel::R5),
+   c_(1.0)
 {
 }
 TIData::~TIData() {}
 
+void TIData::set_output_coupling_units_converter(double c) {this->c_ = c;}
+void TIData::set_s(double s12, double s13, double s14, double s23, double s24, double s34)
+{
+ this->s12 = s12;
+ this->s13 = s13;
+ this->s14 = s14;
+ this->s23 = s23;
+ this->s24 = s24;
+ this->s34 = s34;
+}
+void TIData::set_e(double e1, double e2, double e3, double e4)
+{
+ this->e1 = e1;
+ this->e2 = e2;
+ this->e3 = e3;
+ this->e4 = e4;
+}
+void TIData::set_de(double de1, double de2)
+{
+ this->de1=de1;
+ this->de2=de2;
+}
 double TIData::overlap_corrected(const std::string& type) {
   double v; bool direct = false; double s;
   if      (type == "COUL") {v = this->v0.at("COUL"); direct=true; s=this->s12;}
@@ -26,6 +49,7 @@ double TIData::overlap_corrected(const std::string& type) {
   else if (type == "HT2" ) {v = this->v0.at("HT2"); s=this->s23;}
   else if (type == "CT"  ) {v = this->v0.at("CT" ); s=this->s34;}
   else if (type == "CT_M") {v = this->v0.at("CT_M");s=this->s34;}
+  else if (type == "EXCH_M") {v = this->v0.at("EXCH_M"); direct=true; s=this->s12;}
   else {throw psi::PSIEXCEPTION("Incorrect type of matrix element");}
 
   if (direct) {return this->overlap_corrected_direct  (v   );}
@@ -44,7 +68,7 @@ double TIData::overlap_corrected_indirect(double v, double s)
   double E1 = this->e1; 
   double E2 = this->e2;
   if (!this->diagonal_correction) {E1-=this->de1; E2-=this->de2;}
-  return 1.0/(1 - s*s) * (v - ((double)0.5)*(E1 + E2));
+  return 1.0/(1 - s*s) * (v - s*((double)0.5)*(E1 + E2));
 }
 double TIData::coupling_direct_coul(void) {
   double v;
@@ -128,4 +152,7 @@ double TIData::coupling_indirect_ti3(void) {
 
   double v = (V_ET1*V_ET2 + V_HT1*V_HT2) * V_CT / ((E3-E1)*(E4-E1));
   return v;
+}
+double TIData::coupling_total(void) {
+ return this->coupling_direct() + this->coupling_indirect();
 }

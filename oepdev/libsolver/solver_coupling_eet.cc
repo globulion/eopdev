@@ -1,4 +1,5 @@
 #include "solver.h"
+#include "ti_data.h"
 #include "psi4/libpsi4util/process.h"
 #include <utility>
 #include "../libutil/integrals_iter.h"
@@ -541,31 +542,53 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
     psi::outfile->Printf("\n");
   }
 
+  // Create TIData object
+  TIData data = TIData();
+  //data.set_output_coupling_units_converter(OEPDEV_AU_CMRec);
+  data.set_s(S12, S13, S14, S32, S42, S34);
+  data.set_e(E1, E2, E3, E4);
+  data.set_de(E1 - E01, E2 - E02);
+  data.v0["COUL"]= V0_Coul;
+  data.v0["EXCH"]= V0_Exch;
+  data.v0["ET1"] = V0_ET1;
+  data.v0["ET2"] = V0_ET2;
+  data.v0["HT1"] = V0_HT1;
+  data.v0["HT2"] = V0_HT2;
+  data.v0["CT" ] = V0_CT;
+  data.v0["EXCH_M"]= V0_Exch_M;
+  data.v0["CT_M"] = V0_CT_M;
+
+  data.diagonal_correction = true;
+  data.mulliken_approximation= false;
+  data.trcamm_approximation = false;
+  data.overlap_correction = true;
 
   // Compute overlap-corrected indirect coupling matrix elements
-  double V_ET1 = (V0_ET1 - 0.5*(S13*(E1+E2)))/(1.0 - S13*S13);
-  double V_ET2 = (V0_ET2 - 0.5*(S42*(E1+E2)))/(1.0 - S42*S42);
-  double V_HT1 = (V0_HT1 - 0.5*(S14*(E1+E2)))/(1.0 - S14*S14);
-  double V_HT2 = (V0_HT2 - 0.5*(S32*(E1+E2)))/(1.0 - S32*S32);
-  double V_CT  = (V0_CT  - 0.5*(S34*(E1+E2)))/(1.0 - S34*S34);
-  double V_CT_M= (V0_CT_M- 0.5*(S34*(E1+E2)))/(1.0 - S34*S34);
+  double V_ET1 = data.overlap_corrected("ET1");//(V0_ET1 - 0.5*(S13*(E1+E2)))/(1.0 - S13*S13);
+  double V_ET2 = data.overlap_corrected("ET2");//(V0_ET2 - 0.5*(S42*(E1+E2)))/(1.0 - S42*S42);
+  double V_HT1 = data.overlap_corrected("HT1");//(V0_HT1 - 0.5*(S14*(E1+E2)))/(1.0 - S14*S14);
+  double V_HT2 = data.overlap_corrected("HT2");//(V0_HT2 - 0.5*(S32*(E1+E2)))/(1.0 - S32*S32);
+  double V_CT  = data.overlap_corrected("CT")  ;//(V0_CT  - 0.5*(S34*(E1+E2)))/(1.0 - S34*S34);
+  double V_CT_M= data.overlap_corrected("CT_M");//(V0_CT_M- 0.5*(S34*(E1+E2)))/(1.0 - S34*S34);
 
   // Compute final coupling contributions
-  double V_Coul = V0_Coul / (1.0 - S12*S12);
-  double V_Exch = V0_Exch / (1.0 - S12*S12);
-  double V_Ovrl =-(E1 + E2)*S12/(2.0 * (1.0 - S12*S12));
+  double V_Coul = data.overlap_corrected("COUL");   //V0_Coul / (1.0 - S12*S12);
+  double V_Exch = data.overlap_corrected("EXCH");   //V0_Exch / (1.0 - S12*S12);
+  double V_Ovrl = data.overlap_corrected("OVRL");   //-(E1 + E2)*S12/(2.0 * (1.0 - S12*S12));
 
-  double V_Exch_M= V0_Exch_M/ (1.0 - S12*S12);
+  double V_Exch_M= data.overlap_corrected("EXCH_M");// V0_Exch_M/ (1.0 - S12*S12);
 
-  //E3 = E03; E4 = E04;
-  double V_TI_2 =-(V_ET1*V_HT2)/(E3-E1) -(V_HT1*V_ET2)/(E4-E1);
-  double V_TI_3 = (V_ET1*V_ET2 + V_HT1*V_HT2) * V_CT / ((E3-E1)*(E4-E1));
+  double V_TI_2 = data.coupling_indirect_ti2(); // =-(V_ET1*V_HT2)/(E3-E1) -(V_HT1*V_ET2)/(E4-E1);
+  double V_TI_3 = data.coupling_indirect_ti3(); // = (V_ET1*V_ET2 + V_HT1*V_HT2) * V_CT / ((E3-E1)*(E4-E1));
 
-  double V0_TI_2 =-(V0_ET1*V0_HT2)/(E3-E01) -(V0_HT1*V0_ET2)/(E4-E01);
-  double V0_TI_3 = (V0_ET1*V0_ET2 + V0_HT1*V0_HT2) * V0_CT / ((E3-E01)*(E4-E01));
+  data.diagonal_correction = false;
+  double V0_TI_2 = data.coupling_indirect_ti2(); //-(V0_ET1*V0_HT2)/(E3-E01) -(V0_HT1*V0_ET2)/(E4-E01);
+  double V0_TI_3 = data.coupling_indirect_ti3(); // (V0_ET1*V0_ET2 + V0_HT1*V0_HT2) * V0_CT / ((E3-E01)*(E4-E01));
 
-  double V_TI_3_M = (V_ET1*V_ET2 + V_HT1*V_HT2) * V_CT_M / ((E3-E1)*(E4-E1));
-  double V0_TI_3_M = (V0_ET1*V0_ET2 + V0_HT1*V0_HT2) * V0_CT_M / ((E3-E01)*(E4-E01));
+  data.mulliken_approximation = true;
+  double V0_TI_3_M = data.coupling_indirect_ti3(); // (V0_ET1*V0_ET2 + V0_HT1*V0_HT2) * V0_CT_M / ((E3-E01)*(E4-E01));
+  data.diagonal_correction = true;
+  double V_TI_3_M = data.coupling_indirect_ti3();  // (V_ET1*V_ET2 + V_HT1*V_HT2) * V_CT_M / ((E3-E1)*(E4-E1));
 
   double V_direct = V_Coul + V_Exch + V_Ovrl;
   double V_indirect = V_TI_2 + V_TI_3;
