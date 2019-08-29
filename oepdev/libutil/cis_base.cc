@@ -403,7 +403,7 @@ std::shared_ptr<CISData> CISComputer::data(int I, bool symm) {
   SharedDMTPole camm_lumo = DMTPole::build("CAMM", ref_wfn_, 1);    // CAMM of LUMO orbital
   camm_lumo->compute(Tvec, Bvec);
 
-      psi::outfile->Printf("     State I= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
+      psi::outfile->Printf("     State= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
                                  I+1, this->oscillator_strength(I), E_ex*OEPDEV_AU_EV, t);
 
   std::shared_ptr<CISData> cis_data = std::make_shared<CISData>();

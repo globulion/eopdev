@@ -82,7 +82,7 @@ void EETCouplingOEPotential::compute_fujimoto_gdf()
    std::shared_ptr<psi::OneBodyAOInt> potInt(fact_1.ao_potential());
 
    // ===> Compute One-Electron Integrals <=== //
-   kinInt->compute(Tao);
+   kinInt->compute(Tao); Tao->scale(0.5);
    potInt->compute(Vao);
 
    // ===> Compute Hcore Matrix in Target/Primary Space <=== //
@@ -131,17 +131,17 @@ void EETCouplingOEPotential::compute_fujimoto_gdf()
              double chi = ch[i]; double chk = ch[k]; double chj = ch[j];
 
              double vl_l = eri * (2.0*clk*dij - clj*dik);
-             double vl_h =-eri * (2.0*chk*dij - chj*dik);
+             double vl_h =-eri * (2.0*chk*dij - chj*dik);      // OK
              double vl_et= eri * (2.0*chk*cli - clk*chi)* chj;
-             double vl_ht= eri * (2.0*clk*chi - chk*cli)* clj;
+             double vl_ht= eri * (2.0*clk*chi - chk*cli)* clj; // OK
 
-             // ET A
+             // ET (L)
              V[l][0] += vl_l;
-             // ET B
+             // ET (HL)
              V[l][1] += vl_l + vl_et;
-             // HT A
+             // HT (H)
              V[l][2] += vl_h;
-             // HT B
+             // HT (HL)
              V[l][3] += vl_h + vl_ht;
         }
    }

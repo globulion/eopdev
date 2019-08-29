@@ -194,10 +194,10 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   }
 
   // Change the phases of the SCF HOMO and LUMO orbitals of monomers
-  if (options_.get_int("PHASE_HOMO_A") == -1) Ca_occ_A->scale_column(0, homo_A, -1.0);
-  if (options_.get_int("PHASE_HOMO_B") == -1) Ca_occ_B->scale_column(0, homo_B, -1.0);
-  if (options_.get_int("PHASE_LUMO_A") == -1) Ca_vir_A->scale_column(0, lumo_A, -1.0);
-  if (options_.get_int("PHASE_LUMO_B") == -1) Ca_vir_B->scale_column(0, lumo_B, -1.0);
+  //if (options_.get_int("PHASE_HOMO_A") == -1) Ca_occ_A->scale_column(0, homo_A, -1.0);
+  //if (options_.get_int("PHASE_HOMO_B") == -1) Ca_occ_B->scale_column(0, homo_B, -1.0);
+  //if (options_.get_int("PHASE_LUMO_A") == -1) Ca_vir_A->scale_column(0, lumo_A, -1.0);
+  //if (options_.get_int("PHASE_LUMO_B") == -1) Ca_vir_B->scale_column(0, lumo_B, -1.0);
 
   // [1.1] Compute Overlap integrals between basis functions
 
@@ -501,6 +501,22 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
      }
   }
 
+  // Debug: Print (L_A | F | L_B) and -(H_A | F | H_B) matrix elements
+  if (options_.get_int("PRINT")>-1) {
+      psi::SharedMatrix Fmo_AoBo = psi::Matrix::triplet(Ca_occ_A, Fao_AB, Ca_occ_B, true, false, false);
+      psi::SharedMatrix Fmo_AvBv = psi::Matrix::triplet(Ca_vir_A, Fao_AB, Ca_vir_B, true, false, false);
+      psi::outfile->Printf(" ===> Interfragment Fock Matrix Elements (cm-1) <===\n\n");
+      psi::outfile->Printf(" +(L_A| F_AB | L_B) = %14.2f\n",  Fmo_AvBv->get(lumo_A, lumo_B)*OEPDEV_AU_CMRec);
+      psi::outfile->Printf(" -(H_A| F_AB | H_B) = %14.2f\n", -Fmo_AoBo->get(homo_A, homo_B)*OEPDEV_AU_CMRec);
+      psi::outfile->Printf("\n");
+      psi::outfile->Printf(" ===> 2-Electron Contributions to V0_ETn and V0_HTn (cm-1) <===\n\n");
+      psi::outfile->Printf(" 2(L_A| v_HL_A | H_B) - (L_A| v_HH_A | L_B) = %14.2f\n", V0_ET1*OEPDEV_AU_CMRec);
+      psi::outfile->Printf(" 2(L_A| v_HL_B | H_B) - (L_A| v_HH_B | L_B) = %14.2f\n", V0_ET2*OEPDEV_AU_CMRec);
+      psi::outfile->Printf(" 2(L_A| v_HL_A | H_B) - (H_A| v_LL_A | H_B) = %14.2f\n", V0_HT1*OEPDEV_AU_CMRec);
+      psi::outfile->Printf(" 2(L_A| v_HL_B | H_B) - (H_A| v_LL_B | H_B) = %14.2f\n", V0_HT2*OEPDEV_AU_CMRec);
+      psi::outfile->Printf("\n");
+  }
+
   // ----> Add Fock matrix contributions to all V0 <---- //
   for (int i=0; i<nbf_A; ++i) {
   for (int j=0; j<nbf_B; ++j) {
@@ -672,6 +688,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
 double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   double e = 0.0;
+
+  // Compute OEP's
   SharedOEPotential oep_1 = oepdev::OEPotential::build("EET COUPLING CONSTANT",
                                                        wfn_union_->l_wfn(0), 
                                                        wfn_union_->l_auxiliary(0), 
@@ -689,8 +707,8 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   int nbf   = wfn_union_->basisset()->nbf();
   int nbf_A = wfn_union_->l_nbf(0);
   int nbf_B = wfn_union_->l_nbf(1);
-  int nbf_Aa = wfn_union_->l_auxiliary(0)->nbf();
-  int nbf_Ba = wfn_union_->l_auxiliary(1)->nbf();
+  int nbf_Aa= wfn_union_->l_auxiliary(0)->nbf();
+  int nbf_Ba= wfn_union_->l_auxiliary(1)->nbf();
   const int homo_A = oep_1->wfn()->nalpha() - 1;
   const int homo_B = oep_2->wfn()->nalpha() - 1;
   const int lumo_A = 0;
@@ -703,8 +721,10 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   psi::SharedMatrix Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_A , nbf_Ba);
 
 //psi::IntegralFactory fact_1p2p(wfn_union_->l_primary  (0), wfn_union_->l_primary  (1), wfn_union_->l_primary  (0), wfn_union_->l_primary  (1));
-  psi::IntegralFactory fact_1a2p(wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1), wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1));
-  psi::IntegralFactory fact_1p2a(wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1), wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1));
+  psi::IntegralFactory fact_1a2p(wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1), 
+                                 wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1));
+  psi::IntegralFactory fact_1p2a(wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1), 
+                                 wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1));
 
 //std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
@@ -749,10 +769,33 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
        s_BA_QL->set(i, vl);
   }
 
-  const double na_A = (double)wfn_union_->l_wfn(0)->nalpha();
-  const double na_B = (double)wfn_union_->l_wfn(1)->nalpha();
+  const double na_A = (double)oep_1->wfn()->nalpha();
+  const double na_B = (double)oep_2->wfn()->nalpha();
   const double na_AB= na_A + na_B;
 
+  // Debug: Print intermediate matrices
+  if (options_.get_int("PRINT")>-1) {
+     double v_LB_FB_LA = oep_2->matrix("Fujimoto.GDF")->get_column(0, 0)->vector_dot(s_BA_QL);            
+     double v_LB_FA_LA = oep_1->matrix("Fujimoto.GDF")->get_column(0, 0)->vector_dot(s_AB_QL);
+     double v_HB_FB_HA =-oep_2->matrix("Fujimoto.GDF")->get_column(0, 2)->vector_dot(s_BA_QH);
+     double v_HB_FA_HA =-oep_1->matrix("Fujimoto.GDF")->get_column(0, 2)->vector_dot(s_AB_QH);
+     //
+     double v_el_ET1 = oep_1->matrix("Fujimoto.GDF")->get_column(0, 1)->vector_dot(s_AB_QL) - v_LB_FA_LA;
+     double v_el_ET2 = oep_2->matrix("Fujimoto.GDF")->get_column(0, 1)->vector_dot(s_BA_QL) - v_LB_FB_LA;
+     double v_el_HT1 = oep_1->matrix("Fujimoto.GDF")->get_column(0, 3)->vector_dot(s_AB_QH) + v_HB_FA_HA;
+     double v_el_HT2 = oep_2->matrix("Fujimoto.GDF")->get_column(0, 3)->vector_dot(s_BA_QH) + v_HB_FB_HA;
+     //
+     psi::outfile->Printf(" ===> Interfragment Fock Matrix Elements (cm-1) <===\n\n");
+     psi::outfile->Printf(" +(L_A| F_AB | L_B) = %14.2f\n", (v_LB_FA_LA+v_LB_FB_LA)*OEPDEV_AU_CMRec);
+     psi::outfile->Printf(" -(H_A| F_AB | H_B) = %14.2f\n",-(v_HB_FA_HA+v_HB_FB_HA)*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("\n");
+     psi::outfile->Printf(" ===> 2-Electron Contributions to V0_ETn and V0_HTn (cm-1) <===\n\n");
+     psi::outfile->Printf(" 2(L_A| v_HL_A | H_B) - (L_A| v_HH_A | L_B) = %14.2f\n", v_el_ET1*OEPDEV_AU_CMRec);
+     psi::outfile->Printf(" 2(L_A| v_HL_B | H_B) - (L_A| v_HH_B | L_B) = %14.2f\n", v_el_ET2*OEPDEV_AU_CMRec);
+     psi::outfile->Printf(" 2(L_A| v_HL_A | H_B) - (H_A| v_LL_A | H_B) = %14.2f\n", v_el_HT1*OEPDEV_AU_CMRec);
+     psi::outfile->Printf(" 2(L_A| v_HL_B | H_B) - (H_A| v_LL_B | H_B) = %14.2f\n", v_el_HT2*OEPDEV_AU_CMRec);
+     psi::outfile->Printf("\n");
+  }
 
   // V0_ET and V0_HT
   double V0_ET1 = oep_2->matrix("Fujimoto.GDF")->get_column(0, 0)->vector_dot(s_BA_QL) 
@@ -771,6 +814,7 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   V0_ET2 *= t_B;
   V0_HT1 *= t_A;
   V0_HT2 *= t_B;
+
 
   psi::timer_off("Solver EET TI/CIS OEP-Based     ");
 
