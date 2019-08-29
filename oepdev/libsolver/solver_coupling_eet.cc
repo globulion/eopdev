@@ -818,13 +818,31 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
 
   psi::timer_off("Solver EET TI/CIS OEP-Based     ");
 
+  // ===> Compute TrCAMM coupling <=== //
+  psi::timer_on("Solver EET TrCAMM               ");
+  SharedMTPConv V0_TrCAMM = oep_1->oep("Fujimoto.CIS").cis_data->trcamm->energy(
+                            oep_2->oep("Fujimoto.CIS").cis_data->trcamm        );
+  double V0_TrCAMM_R1 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R1)->get(0,0);
+  double V0_TrCAMM_R2 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R2)->get(0,0);
+  double V0_TrCAMM_R3 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R3)->get(0,0);
+  double V0_TrCAMM_R4 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R4)->get(0,0);
+  double V0_TrCAMM_R5 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R5)->get(0,0);
+  double S12 = 0.0;
+  double V_TrCAMM_R1 = V0_TrCAMM_R1 / (1.0 - S12*S12);
+  double V_TrCAMM_R2 = V0_TrCAMM_R2 / (1.0 - S12*S12);
+  double V_TrCAMM_R3 = V0_TrCAMM_R3 / (1.0 - S12*S12);
+  double V_TrCAMM_R4 = V0_TrCAMM_R4 / (1.0 - S12*S12);
+  double V_TrCAMM_R5 = V0_TrCAMM_R5 / (1.0 - S12*S12); //ti_cis->overlap_correction_direct(V0_TrCAMM_R5);
+  psi::timer_off("Solver EET TrCAMM               ");
+
+
   // ---> Save <--- //
   //psi::Process::environment.globals["EET V0 COUL CM-1"      ] = V0_Coul      *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V0 TrCAMM R1 CM-1" ] = V0_TrCAMM_R1 *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V0 TrCAMM R2 CM-1" ] = V0_TrCAMM_R2 *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V0 TrCAMM R3 CM-1" ] = V0_TrCAMM_R3 *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V0 TrCAMM R4 CM-1" ] = V0_TrCAMM_R4 *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V0 TrCAMM R5 CM-1" ] = V0_TrCAMM_R5 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TrCAMM R1 CM-1" ] = V0_TrCAMM_R1 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TrCAMM R2 CM-1" ] = V0_TrCAMM_R2 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TrCAMM R3 CM-1" ] = V0_TrCAMM_R3 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TrCAMM R4 CM-1" ] = V0_TrCAMM_R4 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TrCAMM R5 CM-1" ] = V0_TrCAMM_R5 *OEPDEV_AU_CMRec;
   //psi::Process::environment.globals["EET V0 EXCH CM-1"      ] = V0_Exch      *OEPDEV_AU_CMRec;  
   //psi::Process::environment.globals["EET V0 EXCH(MULLIKEN) CM-1"] = V0_Exch_M*OEPDEV_AU_CMRec;  
   //psi::Process::environment.globals["EET V COUL CM-1"       ] = V_Coul       *OEPDEV_AU_CMRec;
