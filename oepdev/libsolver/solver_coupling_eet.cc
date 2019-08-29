@@ -544,7 +544,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
   // Create TIData object
   TIData data = TIData();
-  //data.set_output_coupling_units_converter(OEPDEV_AU_CMRec);
+//data.set_output_coupling_units_converter(OEPDEV_AU_CMRec);
   data.set_s(S12, S13, S14, S32, S42, S34);
   data.set_e(E1, E2, E3, E4);
   data.set_de(E1 - E01, E2 - E02);
@@ -564,31 +564,31 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   data.overlap_correction = true;
 
   // Compute overlap-corrected indirect coupling matrix elements
-  double V_ET1 = data.overlap_corrected("ET1");//(V0_ET1 - 0.5*(S13*(E1+E2)))/(1.0 - S13*S13);
-  double V_ET2 = data.overlap_corrected("ET2");//(V0_ET2 - 0.5*(S42*(E1+E2)))/(1.0 - S42*S42);
-  double V_HT1 = data.overlap_corrected("HT1");//(V0_HT1 - 0.5*(S14*(E1+E2)))/(1.0 - S14*S14);
-  double V_HT2 = data.overlap_corrected("HT2");//(V0_HT2 - 0.5*(S32*(E1+E2)))/(1.0 - S32*S32);
-  double V_CT  = data.overlap_corrected("CT")  ;//(V0_CT  - 0.5*(S34*(E1+E2)))/(1.0 - S34*S34);
-  double V_CT_M= data.overlap_corrected("CT_M");//(V0_CT_M- 0.5*(S34*(E1+E2)))/(1.0 - S34*S34);
+  double V_ET1 = data.overlap_corrected("ET1");
+  double V_ET2 = data.overlap_corrected("ET2");
+  double V_HT1 = data.overlap_corrected("HT1");
+  double V_HT2 = data.overlap_corrected("HT2");
+  double V_CT  = data.overlap_corrected("CT") ;
+  double V_CT_M= data.overlap_corrected("CT_M");
 
   // Compute final coupling contributions
-  double V_Coul = data.overlap_corrected("COUL");   //V0_Coul / (1.0 - S12*S12);
-  double V_Exch = data.overlap_corrected("EXCH");   //V0_Exch / (1.0 - S12*S12);
-  double V_Ovrl = data.overlap_corrected("OVRL");   //-(E1 + E2)*S12/(2.0 * (1.0 - S12*S12));
+  double V_Coul = data.overlap_corrected("COUL");
+  double V_Exch = data.overlap_corrected("EXCH");
+  double V_Ovrl = data.overlap_corrected("OVRL");
 
-  double V_Exch_M= data.overlap_corrected("EXCH_M");// V0_Exch_M/ (1.0 - S12*S12);
+  double V_Exch_M= data.overlap_corrected("EXCH_M");
 
-  double V_TI_2 = data.coupling_indirect_ti2(); // =-(V_ET1*V_HT2)/(E3-E1) -(V_HT1*V_ET2)/(E4-E1);
-  double V_TI_3 = data.coupling_indirect_ti3(); // = (V_ET1*V_ET2 + V_HT1*V_HT2) * V_CT / ((E3-E1)*(E4-E1));
+  double V_TI_2 = data.coupling_indirect_ti2();
+  double V_TI_3 = data.coupling_indirect_ti3();
 
   data.diagonal_correction = false;
-  double V0_TI_2 = data.coupling_indirect_ti2(); //-(V0_ET1*V0_HT2)/(E3-E01) -(V0_HT1*V0_ET2)/(E4-E01);
-  double V0_TI_3 = data.coupling_indirect_ti3(); // (V0_ET1*V0_ET2 + V0_HT1*V0_HT2) * V0_CT / ((E3-E01)*(E4-E01));
+  double V0_TI_2 = data.coupling_indirect_ti2();
+  double V0_TI_3 = data.coupling_indirect_ti3();
 
   data.mulliken_approximation = true;
-  double V0_TI_3_M = data.coupling_indirect_ti3(); // (V0_ET1*V0_ET2 + V0_HT1*V0_HT2) * V0_CT_M / ((E3-E01)*(E4-E01));
+  double V0_TI_3_M = data.coupling_indirect_ti3();
   data.diagonal_correction = true;
-  double V_TI_3_M = data.coupling_indirect_ti3();  // (V_ET1*V_ET2 + V_HT1*V_HT2) * V_CT_M / ((E3-E1)*(E4-E1));
+  double V_TI_3_M = data.coupling_indirect_ti3();
 
   double V_direct = V_Coul + V_Exch + V_Ovrl;
   double V_indirect = V_TI_2 + V_TI_3;
@@ -605,16 +605,17 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   // ===> Compute TrCAMM coupling <=== //
   psi::timer_on("Solver EET TrCAMM               ");
   SharedMTPConv V0_TrCAMM = trcamm_A->energy(trcamm_B);
-  double V0_TrCAMM_R1 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R1)->get(0,0);
-  double V0_TrCAMM_R2 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R2)->get(0,0);
-  double V0_TrCAMM_R3 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R3)->get(0,0);
-  double V0_TrCAMM_R4 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R4)->get(0,0);
-  double V0_TrCAMM_R5 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R5)->get(0,0);
-  double V_TrCAMM_R1 = V0_TrCAMM_R1 / (1.0 - S12*S12);
-  double V_TrCAMM_R2 = V0_TrCAMM_R2 / (1.0 - S12*S12);
-  double V_TrCAMM_R3 = V0_TrCAMM_R3 / (1.0 - S12*S12);
-  double V_TrCAMM_R4 = V0_TrCAMM_R4 / (1.0 - S12*S12);
-  double V_TrCAMM_R5 = V0_TrCAMM_R5 / (1.0 - S12*S12);
+  data.set_trcamm_coupling(V0_TrCAMM);
+  double V0_TrCAMM_R1 = data.coupling_trcamm("R1");
+  double V0_TrCAMM_R2 = data.coupling_trcamm("R2");
+  double V0_TrCAMM_R3 = data.coupling_trcamm("R3");
+  double V0_TrCAMM_R4 = data.coupling_trcamm("R4");
+  double V0_TrCAMM_R5 = data.coupling_trcamm("R5");
+  double V_TrCAMM_R1 = data.overlap_corrected("TrCAMM_R1");
+  double V_TrCAMM_R2 = data.overlap_corrected("TrCAMM_R2");
+  double V_TrCAMM_R3 = data.overlap_corrected("TrCAMM_R3");
+  double V_TrCAMM_R4 = data.overlap_corrected("TrCAMM_R4");
+  double V_TrCAMM_R5 = data.overlap_corrected("TrCAMM_R5");
   psi::timer_off("Solver EET TrCAMM               ");
 
 
@@ -739,17 +740,34 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
 
   psi::timer_on("Solver EET TI/CIS OEP-Based     ");
 
-//psi::SharedMatrix Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_A , nbf_B );
+  // Create TIData object
+  TIData data = TIData();
+
+  // ===> Compute TrCAMM coupling <=== //
+  psi::timer_on("Solver EET TrCAMM               ");
+  SharedMTPConv V0_TrCAMM = oep_1->oep("Fujimoto.CIS").cis_data->trcamm->energy(
+                            oep_2->oep("Fujimoto.CIS").cis_data->trcamm        );
+  data.set_trcamm_coupling(V0_TrCAMM);
+  psi::timer_off("Solver EET TrCAMM               ");
+
+  // Integral Factories
+  SharedVector eps_a_occ_A = oep_1->wfn()->epsilon_a_subset("MO","OCC");
+  SharedVector eps_a_occ_B = oep_2->wfn()->epsilon_a_subset("MO","OCC");
+  SharedVector eps_a_vir_A = oep_1->wfn()->epsilon_a_subset("MO","VIR");
+  SharedVector eps_a_vir_B = oep_2->wfn()->epsilon_a_subset("MO","VIR");
+
+  psi::SharedMatrix Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_A , nbf_B );
   psi::SharedMatrix Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_Aa, nbf_B );
   psi::SharedMatrix Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_A , nbf_Ba);
 
-//psi::IntegralFactory fact_1p2p(wfn_union_->l_primary  (0), wfn_union_->l_primary  (1), wfn_union_->l_primary  (0), wfn_union_->l_primary  (1));
+  psi::IntegralFactory fact_1p2p(wfn_union_->l_primary  (0), wfn_union_->l_primary  (1), 
+                                 wfn_union_->l_primary  (0), wfn_union_->l_primary  (1));
   psi::IntegralFactory fact_1a2p(wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1), 
                                  wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1));
   psi::IntegralFactory fact_1p2a(wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1), 
                                  wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1));
 
-//std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2a(fact_1p2a.ao_overlap());
 
@@ -764,7 +782,7 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   psi::SharedVector s_BA_QL = std::make_shared<psi::Vector>("", nbf_Ba);
 
   // One-electron integrals
-//ovlInt_1p2p->compute(Sao_1p2p);
+  ovlInt_1p2p->compute(Sao_1p2p);
   ovlInt_1a2p->compute(Sao_1a2p);
   ovlInt_1p2a->compute(Sao_1p2a);
 
@@ -795,6 +813,7 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   const double na_A = (double)oep_1->wfn()->nalpha();
   const double na_B = (double)oep_2->wfn()->nalpha();
   const double na_AB= na_A + na_B;
+  const int Ne = (oep_1->wfn()->nalpha() + oep_2->wfn()->nalpha()) * 2; // Total number of electrons
 
   // Debug: Print intermediate matrices
   if (options_.get_int("PRINT")>-1) {
@@ -820,6 +839,71 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
      psi::outfile->Printf("\n");
   }
 
+  // CIS amplitudes
+  double t_A = oep_1->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(na_A/na_AB); 
+  double t_B = oep_2->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(na_B/na_AB); 
+
+  // Compute Overlap integrals between basis functions
+  psi::SharedMatrix Smo_oAoB = psi::Matrix::triplet(oep_1->cOcc(), Sao_1p2p, oep_2->cOcc(), true, false, false);
+  psi::SharedMatrix Smo_vAvB = psi::Matrix::triplet(oep_1->cVir(), Sao_1p2p, oep_2->cVir(), true, false, false);
+  psi::SharedMatrix Smo_oAvB = psi::Matrix::triplet(oep_1->cOcc(), Sao_1p2p, oep_2->cVir(), true, false, false);
+  psi::SharedMatrix Smo_vAoB = psi::Matrix::triplet(oep_1->cVir(), Sao_1p2p, oep_2->cOcc(), true, false, false);
+  double s_HL_AB = Smo_oAvB->get(homo_A, lumo_B); Smo_oAvB.reset();
+  double s_LH_AB = Smo_vAoB->get(lumo_A, homo_B); Smo_vAoB.reset();
+  double s_HH_AB = Smo_oAoB->get(homo_A, homo_B); Smo_oAoB.reset();
+  double s_LL_AB = Smo_vAvB->get(lumo_A, lumo_B); Smo_vAvB.reset();
+  double Q1 = s_HL_AB * s_LH_AB / 2.000;
+  double Q2 =-s_HH_AB * s_LL_AB / 4.000;
+  double Q3 = Q1 + Q2;
+
+  // S12
+  SharedMatrix PSP = psi::Matrix::triplet(oep_1->oep("Fujimoto.CIS").cis_data->Peg, Sao_1p2p, 
+                                          oep_2->oep("Fujimoto.CIS").cis_data->Peg, false, false, false);
+  double S12 = psi::Matrix::doublet(PSP, Sao_1p2p, false, true)->trace();
+  S12*= -(1.0)/(double)Ne;
+  PSP.reset();
+  // S13
+  double S13 = -t_A * s_LL_AB/(double)Ne;
+  // S42
+  double S42 = -t_B * s_LL_AB/(double)Ne;
+  // S14
+  double S14 = +t_A * s_HH_AB/(double)Ne;
+  // S32
+  double S32 = +t_B * s_HH_AB/(double)Ne;
+  // S34
+  double S34 = -s_LL_AB * s_HH_AB/(double)Ne;
+
+  if (wfn_union_->options().get_int("PRINT") > -1) {
+     psi::outfile->Printf(" ===> Overlap matrix between basis states <===\n\n");
+     psi::outfile->Printf("         1.       2.       3.       4.\n");
+     psi::outfile->Printf("  1. %9.4f  %9.4f  %9.4f  %9.4f\n", 1.0, S12, S13, S14);
+     psi::outfile->Printf("  2. %9.4f  %9.4f  %9.4f  %9.4f\n", S12, 1.0, S32, S42);
+     psi::outfile->Printf("  3. %9.4f  %9.4f  %9.4f  %9.4f\n", S13, S32, 1.0, S34);
+     psi::outfile->Printf("  4. %9.4f  %9.4f  %9.4f  %9.4f\n", S14, S42, S34, 1.0);
+     psi::outfile->Printf("\n");
+  }
+
+
+  // Compute Hamiltonian diagonal elements
+  double E01= oep_1->oep("Fujimoto.CIS").cis_data->E_ex;
+  double E02= oep_2->oep("Fujimoto.CIS").cis_data->E_ex;
+  double E03=-eps_a_occ_A->get(homo_A) + eps_a_vir_B->get(lumo_B);
+  double E04= eps_a_vir_A->get(lumo_A) - eps_a_occ_B->get(homo_B);
+  double E3 = E03; // TODO
+  double E4 = E04; // TODO
+
+  // TrCAMM
+  double V0_TrCAMM_R1 = data.coupling_trcamm("R1");
+  double V0_TrCAMM_R2 = data.coupling_trcamm("R2");
+  double V0_TrCAMM_R3 = data.coupling_trcamm("R3");
+  double V0_TrCAMM_R4 = data.coupling_trcamm("R4");
+  double V0_TrCAMM_R5 = data.coupling_trcamm("R5");
+  double V_TrCAMM_R1 = data.overlap_corrected("TrCAMM_R1");
+  double V_TrCAMM_R2 = data.overlap_corrected("TrCAMM_R2");
+  double V_TrCAMM_R3 = data.overlap_corrected("TrCAMM_R3");
+  double V_TrCAMM_R4 = data.overlap_corrected("TrCAMM_R4");
+  double V_TrCAMM_R5 = data.overlap_corrected("TrCAMM_R5");
+
   // V0_ET and V0_HT
   double V0_ET1 = oep_2->matrix("Fujimoto.GDF")->get_column(0, 0)->vector_dot(s_BA_QL) 
                 + oep_1->matrix("Fujimoto.GDF")->get_column(0, 1)->vector_dot(s_AB_QL);
@@ -830,79 +914,87 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   double V0_HT2 = oep_1->matrix("Fujimoto.GDF")->get_column(0, 2)->vector_dot(s_AB_QH) 
                 + oep_2->matrix("Fujimoto.GDF")->get_column(0, 3)->vector_dot(s_BA_QH);
 
-  double t_A = oep_1->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(na_A/na_AB); 
-  double t_B = oep_2->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(na_B/na_AB); 
-
   V0_ET1 *= t_A;
   V0_ET2 *= t_B;
   V0_HT1 *= t_A;
   V0_HT2 *= t_B;
 
+//data.set_output_coupling_units_converter(OEPDEV_AU_CMRec);
+  data.set_s(S12, S13, S14, S32, S42, S34);
+  data.set_e(E01, E02, E3, E4);
+  data.set_de(0.0, 0.0);
+  data.v0["ET1"] = V0_ET1;
+  data.v0["ET2"] = V0_ET2;
+  data.v0["HT1"] = V0_HT1;
+  data.v0["HT2"] = V0_HT2;
+  data.v0["CT_M"]  = 0.0; // TODO
+  data.v0["EXCH_M"]= 0.0; // TODO
+//data.v0["EXCH_M"]= V0_Exch_M;
+//data.v0["CT_M"] = V0_CT_M;
+
+  data.diagonal_correction = false;
+  data.mulliken_approximation= true;
+  data.trcamm_approximation = true;
+  data.overlap_correction = true;
+
+  // Compute overlap-corrected indirect coupling matrix elements
+  double V_ET1 = data.overlap_corrected("ET1");
+  double V_ET2 = data.overlap_corrected("ET2");
+  double V_HT1 = data.overlap_corrected("HT1");
+  double V_HT2 = data.overlap_corrected("HT2");
+  double V_CT_M= data.overlap_corrected("CT_M");
+
+  // Compute final coupling contributions
+  double V_Coul = data.overlap_corrected("TrCAMM_R5");
+  double V_Exch = data.overlap_corrected("EXCH_M");
+  double V_Ovrl = data.overlap_corrected("OVRL");
+
+  double V_TI_2 = data.coupling_indirect_ti2();
+  double V_TI_3 = data.coupling_indirect_ti3();
+
+  double V_direct = V_Coul + V_Exch + V_Ovrl;
+  double V_indirect = V_TI_2 + V_TI_3;
+
+  double V_TI_CIS = V_direct + V_indirect;
+
 
   psi::timer_off("Solver EET TI/CIS OEP-Based     ");
 
-  // ===> Compute TrCAMM coupling <=== //
-  psi::timer_on("Solver EET TrCAMM               ");
-  SharedMTPConv V0_TrCAMM = oep_1->oep("Fujimoto.CIS").cis_data->trcamm->energy(
-                            oep_2->oep("Fujimoto.CIS").cis_data->trcamm        );
-  double V0_TrCAMM_R1 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R1)->get(0,0);
-  double V0_TrCAMM_R2 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R2)->get(0,0);
-  double V0_TrCAMM_R3 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R3)->get(0,0);
-  double V0_TrCAMM_R4 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R4)->get(0,0);
-  double V0_TrCAMM_R5 = V0_TrCAMM->level(oepdev::MultipoleConvergence::R5)->get(0,0);
-  double S12 = 0.0;
-  double V_TrCAMM_R1 = V0_TrCAMM_R1 / (1.0 - S12*S12);
-  double V_TrCAMM_R2 = V0_TrCAMM_R2 / (1.0 - S12*S12);
-  double V_TrCAMM_R3 = V0_TrCAMM_R3 / (1.0 - S12*S12);
-  double V_TrCAMM_R4 = V0_TrCAMM_R4 / (1.0 - S12*S12);
-  double V_TrCAMM_R5 = V0_TrCAMM_R5 / (1.0 - S12*S12); //ti_cis->overlap_correction_direct(V0_TrCAMM_R5);
-  psi::timer_off("Solver EET TrCAMM               ");
 
 
   // ---> Save <--- //
-  //psi::Process::environment.globals["EET V0 COUL CM-1"      ] = V0_Coul      *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 TrCAMM R1 CM-1" ] = V0_TrCAMM_R1 *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 TrCAMM R2 CM-1" ] = V0_TrCAMM_R2 *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 TrCAMM R3 CM-1" ] = V0_TrCAMM_R3 *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 TrCAMM R4 CM-1" ] = V0_TrCAMM_R4 *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 TrCAMM R5 CM-1" ] = V0_TrCAMM_R5 *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V0 EXCH CM-1"      ] = V0_Exch      *OEPDEV_AU_CMRec;  
-  //psi::Process::environment.globals["EET V0 EXCH(MULLIKEN) CM-1"] = V0_Exch_M*OEPDEV_AU_CMRec;  
-  //psi::Process::environment.globals["EET V COUL CM-1"       ] = V_Coul       *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V TrCAMM R1 CM-1"  ] = V_TrCAMM_R1  *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V TrCAMM R2 CM-1"  ] = V_TrCAMM_R2  *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V TrCAMM R3 CM-1"  ] = V_TrCAMM_R3  *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V TrCAMM R4 CM-1"  ] = V_TrCAMM_R4  *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V TrCAMM R5 CM-1"  ] = V_TrCAMM_R5  *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V EXCH CM-1"       ] = V_Exch       *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V OVRL CM-1"       ] = V_Ovrl       *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V EXCH(MULLIKEN) CM-1"       ] = V_Exch_M*OEPDEV_AU_CMRec;
+//psi::Process::environment.globals["EET V0 EXCH(MULLIKEN) CM-1"] = V0_Exch_M*OEPDEV_AU_CMRec;  
+  psi::Process::environment.globals["EET V TrCAMM R1 CM-1"  ] = V_TrCAMM_R1  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TrCAMM R2 CM-1"  ] = V_TrCAMM_R2  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TrCAMM R3 CM-1"  ] = V_TrCAMM_R3  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TrCAMM R4 CM-1"  ] = V_TrCAMM_R4  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TrCAMM R5 CM-1"  ] = V_TrCAMM_R5  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V OVRL CM-1"       ] = V_Ovrl       *OEPDEV_AU_CMRec;
+//psi::Process::environment.globals["EET V EXCH(MULLIKEN) CM-1"       ] = V_Exch_M*OEPDEV_AU_CMRec;
   ////                                                                                           
   psi::Process::environment.globals["EET V0 ET1:OEP CM-1"       ] = V0_ET1       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 ET2:OEP CM-1"       ] = V0_ET2       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 HT1:OEP CM-1"       ] = V0_HT1       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 HT2:OEP CM-1"       ] = V0_HT2       *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V0 CT CM-1"        ] = V0_CT        *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V0 CT(MULLIKEN) CM-1"] = V0_CT_M    *OEPDEV_AU_CMRec;
+//psi::Process::environment.globals["EET V0 CT(MULLIKEN) CM-1"] = V0_CT_M    *OEPDEV_AU_CMRec;
   ////
-  //psi::Process::environment.globals["EET V ET1 CM-1"        ] = V_ET1        *OEPDEV_AU_CMRec;  
-  //psi::Process::environment.globals["EET V ET2 CM-1"        ] = V_ET2        *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V HT1 CM-1"        ] = V_HT1        *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V HT2 CM-1"        ] = V_HT2        *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V CT CM-1"         ] = V_CT         *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V CT(MULLIKEN) CM-1"] = V_CT_M      *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V0 TI(2) CM-1"     ] = V0_TI_2      *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V0 TI(3) CM-1"     ] = V0_TI_3      *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V TI(2) CM-1"      ] = V_TI_2       *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V TI(3) CM-1"      ] = V_TI_3       *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V ET1 CM-1"        ] = V_ET1        *OEPDEV_AU_CMRec;  
+  psi::Process::environment.globals["EET V ET2 CM-1"        ] = V_ET2        *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V HT1 CM-1"        ] = V_HT1        *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V HT2 CM-1"        ] = V_HT2        *OEPDEV_AU_CMRec;
+//psi::Process::environment.globals["EET V CT(MULLIKEN) CM-1"] = V_CT_M      *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TI(2) CM-1"      ] = V_TI_2       *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TI(3) CM-1"      ] = V_TI_3       *OEPDEV_AU_CMRec;
   ////
-  //psi::Process::environment.globals["EET V0 Direct CM-1"    ] = V0_direct    *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V0 Indirect CM-1"  ] = V0_indirect  *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V Direct CM-1"     ] = V_direct     *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V Indirect CM-1"   ] = V_indirect   *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V Direct CM-1"     ] = V_direct     *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V Indirect CM-1"   ] = V_indirect   *OEPDEV_AU_CMRec;
   ////
-  //psi::Process::environment.globals["EET V0 TI_CIS CM-1"    ] = V0_TI_CIS   *OEPDEV_AU_CMRec;
-  //psi::Process::environment.globals["EET V TI_CIS CM-1"     ] = V_TI_CIS    *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TI_CIS CM-1"     ] = V_TI_CIS    *OEPDEV_AU_CMRec;
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > -1) {

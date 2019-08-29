@@ -32,12 +32,20 @@ class TIData
    /// Destroctor
    virtual ~TIData();
 
+   // <--- Modifiers ---> //
+
+   void set_s(double, double, double, double, double, double);
+   void set_e(double, double, double, double);
+   void set_de(double, double);
+   void set_trcamm_coupling(oepdev::SharedDMTPConvergence);
+ //void set_output_coupling_units_converter(double c);
 
    // <--- Computers ---> //
 
    /**\brief Compute overlap corrected matrix elements
     * 
     */
+   virtual double coupling_trcamm(const std::string& rn);
    virtual double coupling_direct(void);
    virtual double coupling_direct_coul(void);
    virtual double coupling_direct_exch(void);
@@ -51,10 +59,6 @@ class TIData
    virtual double overlap_corrected_direct(double v);
    virtual double overlap_corrected_indirect(double v, double s);
 
-   void set_output_coupling_units_converter(double c);
-   void set_s(double, double, double, double, double, double);
-   void set_e(double, double, double, double);
-   void set_de(double, double);
 
  public:
 

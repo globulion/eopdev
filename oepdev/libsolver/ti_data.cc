@@ -11,12 +11,12 @@ TIData::TIData()
    overlap_correction(true),
    trcamm_approximation(false),
    trcamm_convergence(oepdev::MultipoleConvergence::ConvergenceLevel::R5),
-   c_(1.0)
+   c_(1.0) // unit converter (not used as for now)
 {
 }
 TIData::~TIData() {}
 
-void TIData::set_output_coupling_units_converter(double c) {this->c_ = c;}
+//void TIData::set_output_coupling_units_converter(double c) {this->c_ = c;}
 void TIData::set_s(double s12, double s13, double s14, double s23, double s24, double s34)
 {
  this->s12 = s12;
@@ -42,6 +42,11 @@ double TIData::overlap_corrected(const std::string& type) {
   double v; bool direct = false; double s;
   if      (type == "COUL") {v = this->v0.at("COUL"); direct=true; s=this->s12;}
   else if (type == "EXCH") {v = this->v0.at("EXCH"); direct=true; s=this->s12;}
+  else if (type == "TrCAMM_R1") {v = this->v0.at("TrCAMM_R1"); direct=true; s=this->s12;}
+  else if (type == "TrCAMM_R2") {v = this->v0.at("TrCAMM_R2"); direct=true; s=this->s12;}
+  else if (type == "TrCAMM_R3") {v = this->v0.at("TrCAMM_R3"); direct=true; s=this->s12;}
+  else if (type == "TrCAMM_R4") {v = this->v0.at("TrCAMM_R4"); direct=true; s=this->s12;}
+  else if (type == "TrCAMM_R5") {v = this->v0.at("TrCAMM_R5"); direct=true; s=this->s12;}
   else if (type == "OVRL") {v = 0.0; s= this->s12;} 
   else if (type == "ET1" ) {v = this->v0.at("ET1"); s=this->s13;}
   else if (type == "ET2" ) {v = this->v0.at("ET2"); s=this->s24;}
@@ -155,4 +160,19 @@ double TIData::coupling_indirect_ti3(void) {
 }
 double TIData::coupling_total(void) {
  return this->coupling_direct() + this->coupling_indirect();
+}
+void TIData::set_trcamm_coupling(oepdev::SharedDMTPConvergence coupling) {
+  this->v0_trcamm = coupling;
+  this->v0.at("TrCAMM_R1") = this->v0_trcamm->level(oepdev::MultipoleConvergence::R1)->get(0,0);
+  this->v0.at("TrCAMM_R2") = this->v0_trcamm->level(oepdev::MultipoleConvergence::R2)->get(0,0);
+  this->v0.at("TrCAMM_R3") = this->v0_trcamm->level(oepdev::MultipoleConvergence::R3)->get(0,0);
+  this->v0.at("TrCAMM_R4") = this->v0_trcamm->level(oepdev::MultipoleConvergence::R4)->get(0,0);
+  this->v0.at("TrCAMM_R5") = this->v0_trcamm->level(oepdev::MultipoleConvergence::R5)->get(0,0);
+}
+double TIData::coupling_trcamm(const std::string& rn) {
+  if (rn == "R1") return this->v0.at("TrCAMM_R1");
+  if (rn == "R2") return this->v0.at("TrCAMM_R2");
+  if (rn == "R3") return this->v0.at("TrCAMM_R3");
+  if (rn == "R4") return this->v0.at("TrCAMM_R4");
+  if (rn == "R5") return this->v0.at("TrCAMM_R5");
 }
