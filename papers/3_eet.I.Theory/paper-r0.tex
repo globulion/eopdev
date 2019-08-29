@@ -230,21 +230,58 @@ Here, we approximate the Fock operator by constructing it from the unperturbed
 Fock operators of isolated monomers,
 %
 \begin{equation}
- \mathscr{F} \approx \mathscr{F}^{A}_0 + \mathscr{F}^{B}_0 \;,
+% \mathscr{F} \approx \mathscr{F}^{A}_0 + \mathscr{F}^{B}_0 \;,
+ \mathscr{F} \approx \hat{T} + 
+   \sum_X^{A,B} \left\{ 
+      \hat{V}^{X}_{\rm nuc} + \hat{J}({\bf P}^{X}_g) - \frac{1}{2} \hat{K}({\bf P}^{X}_g)
+ \right\} \;,
 \end{equation}
 %
-where
+where $\hat{T}$ is the kinetic energy operator, 
+$\hat{V}^{X}_{\rm nuc}$ is the operator associated with the electrostatic potential energy
+between nuclei and electrons in molecule $X$, and the Coulomb and exchange operators
+are defined by
+%
+\begin{subequations}
+\begin{align}
+ \hat{J}({\bf P}^{X}_g) &\equiv \sum_{\sigma\lambda} P^{X(g)}_{\lambda\sigma}
+           \iint \frac{\varphi_\lambda({\bf r}_1) \varphi^*_\sigma({\bf r}_1) }{\vert {\bf r}_1 - {\bf r}_2 \vert}
+           \square \; d{\bf r}_1 d{\bf r}_2 \;,\\
+ \hat{K}({\bf P}^{X}_g) &\equiv \sum_{\sigma\lambda} P^{X(g)}_{\lambda\sigma}
+           \iint \frac{\varphi_\lambda({\bf r}_1) \varphi^*_\sigma({\bf r}_2) }{\vert {\bf r}_1 - {\bf r}_2 \vert}
+           \square \; d{\bf r}_1 d{\bf r}_2 \;.
+\end{align} 
+\end{subequations}
+%
+In the above definitions, the `$\square$' symbol reminds that $\hat{J}$ and $\hat{K}$ are the integral operators
+and is given by
 %
 \begin{equation}
- \mathscr{F}^{X}_0 = \hat{T}^{X} + \hat{V}^{X}_{\rm nuc} + \hat{J}({\bf P}^{X}_g) - \frac{1}{2} \hat{K}({\bf P}^{X}_g) \;.
+ \square \equiv \iint \Ket{{\bf r}} \Bra{{\bf r}'} \; d{\bf r} d{\bf r}' \;.
 \end{equation}
 %
-Note that, without loss of generality, one can rewrite Eq.~\eqref{e:v0-et1}
+Note that the kinetic energy operator cannot be decomposed into particular molecules. However, 
+consider the following partitioning of the total Fock operator:
+%
+\begin{equation}
+ \mathscr{F} \approx \mathscr{G}^{A}_0 + \mathscr{G}^{B}_0 \;,
+\end{equation}
+%
+in which the auxiliary operator is defined as
+%
+\begin{equation}
+ \mathscr{G}^{X}_0 = \mathscr{F}^{X}_0 - \frac{1}{2}\hat{T}^{X} \;.
+\end{equation}
+%
+Here, the kinetic energy operator was symmetrically partitioned in between two molecules.
+%
+Now,
+note that, without loss of generality, one can rewrite Eq.~\eqref{e:v0-et1}
 as
 %
 \begin{multline}
  V^{{\rm ET1},(0)} = t_{H\rightarrow L}^A \times \Big\{ 
- \tbraket{\phi_L^A}{\mathscr{F}}{\phi_L^B} \\
+ \tbraket{\phi_L^A}{\left( \mathscr{G}^A_0 + \mathscr{G}^B_0 \right)}{\phi_L^B} \\
   + 2 \tbraket{\phi_H^A}{\hat{v}_{LH}^A}{\phi_L^B}
   -   \tbraket{\phi_L^A}{\hat{v}_{HH}^A}{\phi_L^B}
  \Big\} \;,
@@ -272,7 +309,7 @@ into one effective one\hyp{}electron operator
 as
 %
 \begin{equation}
- \bra{\phi_L^A} \left\{ \mathscr{F}_0^A - \hat{v}^A_{HH} \right\}
+ \bra{\phi_L^A} \left\{ \mathscr{G}_0^A - \hat{v}^A_{HH} \right\}
  + \bra{\phi_H^A} 2 \hat{v}^A_{LH} 
  \cong \sum_{\xi\in A}^{\rm DF} \bra{\xi} V^{A;{\rm ET}}_{\xi;HL}
 \end{equation}
@@ -280,7 +317,7 @@ as
 and
 %
 \begin{equation}
- \mathscr{F}_0^B \ket{\phi_L^B} \cong \sum_{\eta\in B}^{\rm DF} V^{B;{\rm ET}}_{\eta;L} \ket{\eta} 
+ \mathscr{G}_0^B \ket{\phi_L^B} \cong \sum_{\eta\in B}^{\rm DF} V^{B;{\rm ET}}_{\eta;L} \ket{\eta} 
 \end{equation}
 %
 In the above transformations, that involve the generalized density fitting
@@ -355,10 +392,10 @@ with the effective potential matrices given by
 %
 \begin{subequations}
 \begin{align}
- \bra{\phi_H^A} \left\{ -\mathscr{F}_0^A - \hat{v}^A_{LL} \right\}
+ \bra{\phi_H^A} \left\{ -\mathscr{G}_0^A - \hat{v}^A_{LL} \right\}
  + \bra{\phi_L^A} 2 \hat{v}^A_{HL} 
  &\cong \sum_{\xi\in A}^{\rm DF} \bra{\xi} V^{A,{\rm HT}}_{\xi,HL} \\
- -\mathscr{F}_0^B \ket{\phi_H^B} &\cong \sum_{\eta\in B}^{\rm DF} V^{B,{\rm HT}}_{\eta,H} \ket{\eta} 
+ -\mathscr{G}_0^B \ket{\phi_H^B} &\cong \sum_{\eta\in B}^{\rm DF} V^{B,{\rm HT}}_{\eta,H} \ket{\eta} 
 \end{align}
 \end{subequations}
 %
@@ -654,13 +691,13 @@ The elements of vector ${\bf a}^{X;M}_N$ for $M=$ ET1, ET2, HT1 and HT2 and $N=$
 \begin{subequations}\label{e:a:aoep}
 \begin{align}
 %
-a_{\alpha;L}^{X;{\rm ET}} &= \sum_\beta C_{\beta L}^X F_{\alpha\beta}^X \;,\\
+a_{\alpha;L}^{X;{\rm ET}} &= \sum_\beta C_{\beta L}^X G_{\alpha\beta}^X \;,\\
 %
 a_{\alpha;HL}^{X;{\rm ET}} &= a_{\alpha;L}^{X;{\rm ET}} \nonumber \\
  &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
  \left\{ 2C^X_{\beta  H} C^X_{\gamma L} - C^X_{\beta  L} C^X_{\gamma H}\right\} C^X_{\delta H} \;,\\
 %
-a_{\alpha;H}^{X;{\rm HT}} &=-\sum_\beta C_{\beta H}^X F_{\alpha\beta}^X \;,\\
+a_{\alpha;H}^{X;{\rm HT}} &=-\sum_\beta C_{\beta H}^X G_{\alpha\beta}^X \;,\\
 %
 a_{\alpha;HL}^{X;{\rm HT}} &=a_{\alpha;H}^{X;{\rm HT}} \nonumber \\
  &+\sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
@@ -692,19 +729,31 @@ a_{\alpha;HL}^{X;{\rm HT}} &=a_{\alpha;H}^{X;{\rm HT}} \nonumber \\
 \end{align}
 \end{subequations}
 %
-Here, the Fock matrix in space spanned by the intermediate and primary AO basis sets
+Here, the auxiliary one\hyp{}electron ${\mathscr{G}}^X$ operator represented
+in space spanned by the intermediate and primary AO basis sets
 needs to be computed. The respective contributions to ${\bf a}$ vectors can be
 written in a convenient to implement form as
 %
 \begin{multline}
- \sum_\beta C_{\beta U}^X F_{\alpha\beta}^X = 
- \sum_\beta C_{\beta U}^X h_{\alpha\beta}^X \\
+ \sum_\beta C_{\beta U}^X G_{\alpha\beta}^X = 
+ \sum_\beta C_{\beta U}^X \left( \frac{1}{2} T_{\alpha\beta}  + V_{{\rm nuc};\alpha\beta}^X \right)\\
    + \sum_{\beta\gamma\delta} \braket{\alpha\beta}{\gamma\delta}
      \left[ P_{\delta\gamma}^{X(g)} C_{\beta U}^X - \frac{1}{2} P_{\beta\gamma}^{X(g)} C_{\delta U}^X \right] \;,
 \end{multline}
 %
-where ${\bf h}^X$ is the one\hyp{}electron core Hamiltonian of molecule $X$.
-
+where
+%
+\begin{subequations}
+\begin{align}
+ T_{\alpha\beta} &= -\frac{1}{2} \int \varphi^*_\alpha({\bf r}) \nabla^2_{{\bf r}} \varphi_\beta({\bf r})\; d{\bf r} 
+ \text{ and}\\ 
+ V_{{\rm nuc};\alpha\beta}^X &= -\sum_{x\in X} Z_x \int 
+           \frac{\varphi^*_\alpha({\bf r})  \varphi_\beta({\bf r}) }{\vert {\bf r} - {\bf r}_x \vert} d{\bf r} \;.
+\end{align}
+\end{subequations}
+%
+In the above, $Z_x$ is the atomic number of the $x$th atom and $\nabla^2_{{\bf r}}\equiv 
+\frac{\partial^2}{\partial x^2} + \frac{\partial^2}{\partial y^2} + \frac{\partial^2}{\partial z^2}$.
 % -----------------------
 \bibliography{references}
 % -----------------------
