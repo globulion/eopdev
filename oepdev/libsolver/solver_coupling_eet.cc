@@ -815,6 +815,26 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   const double na_AB= na_A + na_B;
   const int Ne = (oep_1->wfn()->nalpha() + oep_2->wfn()->nalpha()) * 2; // Total number of electrons
 
+  // Pure Exchange
+  double V0_Exch_M = 0.0;
+  psi::SharedMatrix sps_A = psi::Matrix::triplet(Sao_1p2p, oep_1->oep("Fujimoto.CIS").cis_data->Peg, Sao_1p2p, true, false, false);
+  psi::SharedMatrix sps_B = psi::Matrix::triplet(Sao_1p2p, oep_2->oep("Fujimoto.CIS").cis_data->Peg, Sao_1p2p,false, false,  true);
+  double** pa = oep_1->oep("Fujimoto.CIS").cis_data->Peg->pointer();
+  double** pb = oep_2->oep("Fujimoto.CIS").cis_data->Peg->pointer();
+  double** ga = oep_1->oep("Fujimoto.EXCH").matrix->pointer();
+  double** gb = oep_2->oep("Fujimoto.EXCH").matrix->pointer();
+  for (int i=0; i<nbf_A; ++i) {
+       for (int j=0; j<nbf_A; ++j) {
+            V0_Exch_M += pa[j][i] * ga[i][j] * sps_B->get(i,j);
+       }
+  }
+  for (int i=0; i<nbf_B; ++i) {
+       for (int j=0; j<nbf_B; ++j) {
+            V0_Exch_M += pb[j][i] * gb[i][j] * sps_A->get(i,j);
+       }
+  }
+  V0_Exch_M /=-8.0; sps_A.reset(); sps_B.reset();
+
   // Debug: Print intermediate matrices
   if (options_.get_int("PRINT")>-1) {
      double v_LB_FB_LA = oep_2->matrix("Fujimoto.GDF")->get_column(0, 0)->vector_dot(s_BA_QL);            
@@ -932,6 +952,22 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   V0_HT1 *= t_A;
   V0_HT2 *= t_B;
 
+  // V0_CT_M
+  double uab = oep_1->oep("Fujimoto.CT_M").matrix->get(0,0) + 
+               oep_2->oep("Fujimoto.CT_M").matrix->get(0,0);
+
+  oepdev::MultipoleConvergence::ConvergenceLevel clvl = oepdev::DMTPole::determine_dmtp_convergence_level("DMTP_CONVER_TI_CIS_CT");
+  double e_hh = oep_1->oep("Fujimoto.CIS").cis_data->camm_homo->energy(
+                oep_2->oep("Fujimoto.CIS").cis_data->camm_homo)->level(clvl)->get(0,0);
+  double e_ll = oep_1->oep("Fujimoto.CIS").cis_data->camm_lumo->energy(
+                oep_2->oep("Fujimoto.CIS").cis_data->camm_lumo)->level(clvl)->get(0,0);
+  double e_hl = oep_1->oep("Fujimoto.CIS").cis_data->camm_homo->energy(
+                oep_2->oep("Fujimoto.CIS").cis_data->camm_lumo)->level(clvl)->get(0,0);
+  double e_lh = oep_1->oep("Fujimoto.CIS").cis_data->camm_lumo->energy(
+                oep_2->oep("Fujimoto.CIS").cis_data->camm_homo)->level(clvl)->get(0,0);
+
+  double V0_CT_M = Q1 * (uab + e_hh + e_ll) + Q2 * (uab + e_hl + e_lh);
+
 //data.set_output_coupling_units_converter(OEPDEV_AU_CMRec);
   data.set_s(S12, S13, S14, S32, S42, S34);
   data.set_e(E01, E02, E3, E4);
@@ -940,10 +976,8 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   data.v0["ET2"] = V0_ET2;
   data.v0["HT1"] = V0_HT1;
   data.v0["HT2"] = V0_HT2;
-  data.v0["CT_M"]  = 0.0; // TODO
-  data.v0["EXCH_M"]= 0.0; // TODO
-//data.v0["EXCH_M"]= V0_Exch_M;
-//data.v0["CT_M"] = V0_CT_M;
+  data.v0["EXCH_M"]= V0_Exch_M;
+  data.v0["CT_M"] = V0_CT_M;
 
   data.diagonal_correction = false;
   data.mulliken_approximation= true;

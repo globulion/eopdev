@@ -357,7 +357,8 @@ class EETCouplingOEPotential : public OEPotential
     /// Auxiliary computers
     void compute_fujimoto_gdf();
     void compute_fujimoto_cis();
-
+    void compute_fujimoto_exch();
+    void compute_fujimoto_ct_m();
 
 };
 

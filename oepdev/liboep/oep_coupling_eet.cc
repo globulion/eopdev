@@ -33,20 +33,28 @@ void EETCouplingOEPotential::common_init()
 
     // OEP Matrices
     SharedMatrix mat_gdf = std::make_shared<psi::Matrix>("ET and HT", n2, 4);  
+    SharedMatrix mat_exch= std::make_shared<psi::Matrix>("G(EXCH)", n1, n1);
+    SharedMatrix mat_ct_m= std::make_shared<psi::Matrix>("R(HL)", 1, 1);
 
     // Provide correct classes (DF- or ESP-based) and number of OEP's involved in each type
     OEPType type_1 = {"Fujimoto.GDF", true, 4, mat_gdf};
     OEPType type_2 = {"Fujimoto.CIS", false,1, std::make_shared<psi::Matrix>(), nullptr, nullptr};
+    OEPType type_3 = {"Fujimoto.EXCH", false, n1, mat_exch};
+    OEPType type_4 = {"Fujimoto.CT_M", false, 1, mat_ct_m};
 
     // Register OEPType's
     oepTypes_[type_1.name] = type_1;
     oepTypes_[type_2.name] = type_2;
+    oepTypes_[type_3.name] = type_3;
+    oepTypes_[type_4.name] = type_4;
 }
 
 void EETCouplingOEPotential::compute(const std::string& oepType) 
 {
   if      (oepType == "Fujimoto.GDF"   ) compute_fujimoto_gdf();
   else if (oepType == "Fujimoto.CIS"   ) compute_fujimoto_cis();
+  else if (oepType == "Fujimoto.EXCH"  ) compute_fujimoto_exch();
+  else if (oepType == "Fujimoto.CT_M"  ) compute_fujimoto_ct_m();
   else throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");
 }
 void EETCouplingOEPotential::compute_fujimoto_cis()
@@ -157,5 +165,72 @@ void EETCouplingOEPotential::compute_fujimoto_gdf()
    if (options_.get_int("PRINT") > 1) G->print();
 
 }
+void EETCouplingOEPotential::compute_fujimoto_exch()
+{
+   // ===> Allocate <=== //
+   std::shared_ptr<psi::Matrix> G = std::make_shared<psi::Matrix>("G" , primary_->nbf(), primary_->nbf());
+   psi::IntegralFactory fact(primary_, primary_, primary_, primary_);
+
+   // Compute //
+   std::shared_ptr<psi::TwoBodyAOInt> tei(fact.eri());
+   const double * buffer = tei->buffer();
+
+   std::shared_ptr<oepdev::ShellCombinationsIterator> shellIter = oepdev::ShellCombinationsIterator::build(fact, "ALL");
+
+   double** g = G->pointer(); 
+   for (shellIter->first(); shellIter->is_done() == false; shellIter->next())
+   {
+        shellIter->compute_shell(tei);
+        std::shared_ptr<oepdev::AOIntegralsIterator> intsIter = shellIter->ao_iterator("ALL");
+        for (intsIter->first(); intsIter->is_done() == false; intsIter->next())
+        {
+             int i = intsIter->i();
+             int j = intsIter->j();
+             int k = intsIter->k();
+             int l = intsIter->l();
+
+             double eri = buffer[intsIter->index()];
+             if ((i==j)&&(k==l)) g[i][j] = eri;
+        }
+   }
+
+   // ===> Save and Finish <=== //
+   oepTypes_.at("Fujimoto.EXCH").matrix->copy(G);
+   if (options_.get_int("PRINT") > 1) G->print();
+}
+void EETCouplingOEPotential::compute_fujimoto_ct_m()
+{
+   // ===> Allocate <=== //
+   psi::IntegralFactory fact(primary_, primary_, primary_, primary_);
+
+   // Compute //
+   std::shared_ptr<psi::TwoBodyAOInt> tei(fact.eri());
+   const double * buffer = tei->buffer();
+
+   std::shared_ptr<oepdev::ShellCombinationsIterator> shellIter = oepdev::ShellCombinationsIterator::build(fact, "ALL");
+
+   double v = 0.0; // (HH|LL) integral
+   double* ch = cOcc_->get_column(0, wfn_->nalpha()-1)->pointer();
+   double* cl = cVir_->get_column(0, 0)->pointer();
+   for (shellIter->first(); shellIter->is_done() == false; shellIter->next())
+   {
+        shellIter->compute_shell(tei);
+        std::shared_ptr<oepdev::AOIntegralsIterator> intsIter = shellIter->ao_iterator("ALL");
+        for (intsIter->first(); intsIter->is_done() == false; intsIter->next())
+        {
+             int i = intsIter->i();
+             int j = intsIter->j();
+             int k = intsIter->k();
+             int l = intsIter->l();
+
+             v += ch[i] * ch[j] * cl[k] * cl[l] * buffer[intsIter->index()];
+        }
+   }
+
+   // ===> Save and Finish <=== //
+   oepTypes_.at("Fujimoto.CT_M").matrix->set(0, 0, v);
+   if (options_.get_int("PRINT") > 1) psi::outfile->Printf("\n (HH|LL) = %14.6f\n\n", v);
+}
+
 void EETCouplingOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
 void EETCouplingOEPotential::print_header(void) const {}
