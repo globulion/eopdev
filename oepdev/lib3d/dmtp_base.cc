@@ -1,6 +1,7 @@
 #include "dmtp.h"
 #include "psi4/libmints/integral.h"
 #include "psi4/libmints/multipolesymmetry.h"
+#include "psi4/libpsi4util/process.h"
 #include <cassert>
 #include <iostream>
 
@@ -424,6 +425,7 @@ void MultipoleConvergence::compute_potential()
   throw psi::PSIEXCEPTION("The potential from DMTP's is not implemented yet.");
 }
 
+
 // DMTPole
 
 DMTPole::DMTPole(psi::SharedWavefunction wfn, int n) 
@@ -462,6 +464,17 @@ std::shared_ptr<DMTPole> DMTPole::build(const std::string& type,
   if (type == "CAMM") dmtp = std::make_shared<oepdev::CAMM>(wfn, n);
   else throw psi::PSIEXCEPTION("Invalid DMTP type requested.");
   return dmtp;
+}
+MultipoleConvergence::ConvergenceLevel DMTPole::determine_dmtp_convergence_level(const std::string& option)
+{
+  MultipoleConvergence::ConvergenceLevel clevel;
+  if      (psi::Process::environment.options.get_str(option) == "R1") clevel = MultipoleConvergence::ConvergenceLevel::R1;
+  else if (psi::Process::environment.options.get_str(option) == "R2") clevel = MultipoleConvergence::ConvergenceLevel::R2;
+  else if (psi::Process::environment.options.get_str(option) == "R3") clevel = MultipoleConvergence::ConvergenceLevel::R3;
+  else if (psi::Process::environment.options.get_str(option) == "R4") clevel = MultipoleConvergence::ConvergenceLevel::R4;
+  else if (psi::Process::environment.options.get_str(option) == "R5") clevel = MultipoleConvergence::ConvergenceLevel::R5;
+  else {throw psi::PSIEXCEPTION("Incorrect convergence level specified!");}
+  return clevel;
 }
 void DMTPole::allocate()
 {
@@ -803,5 +816,6 @@ void DMTPole::print(void) const
 // abstract methods
 void DMTPole::compute(psi::SharedMatrix D, bool transition, int i) {/* nothing to implement here */}
 void DMTPole::print_header(void) const {/* nothing to implement here */}
+
 
 } // EndNameSpace oepdev

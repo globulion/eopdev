@@ -44,6 +44,7 @@ class DMTPole;
 class MultipoleConvergence
 {
   public:
+
     /** 
      * Convergence level of the multipole expansion:
      *
@@ -76,6 +77,7 @@ class MultipoleConvergence
 
     /// Destructor
     virtual ~MultipoleConvergence();
+
 
     /** Compute the generalized property
      * 
@@ -151,6 +153,14 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     static std::shared_ptr<DMTPole> build(const std::string& type,
                                           std::shared_ptr<psi::Wavefunction> wfn, 
                                           int n = 1);
+
+    /** 
+     * Determine the CAMM convergence for a given global option
+     *
+     *  @param option - string for option
+     */
+    static MultipoleConvergence::ConvergenceLevel determine_dmtp_convergence_level(const std::string& option);
+
 
     /// Destructor
     virtual ~DMTPole();

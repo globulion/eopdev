@@ -51,6 +51,8 @@ struct CISData
     SharedMatrix Peg;
     /// TrCAMM
     SharedDMTPole trcamm;
+    /// CAMM for HOMO orbital
+    SharedDMTPole camm_homo;
     /// CAMM for LUMO orbital
     SharedDMTPole camm_lumo;
 };

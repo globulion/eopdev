@@ -163,11 +163,11 @@ double TIData::coupling_total(void) {
 }
 void TIData::set_trcamm_coupling(oepdev::SharedDMTPConvergence coupling) {
   this->v0_trcamm = coupling;
-  this->v0.at("TrCAMM_R1") = this->v0_trcamm->level(oepdev::MultipoleConvergence::R1)->get(0,0);
-  this->v0.at("TrCAMM_R2") = this->v0_trcamm->level(oepdev::MultipoleConvergence::R2)->get(0,0);
-  this->v0.at("TrCAMM_R3") = this->v0_trcamm->level(oepdev::MultipoleConvergence::R3)->get(0,0);
-  this->v0.at("TrCAMM_R4") = this->v0_trcamm->level(oepdev::MultipoleConvergence::R4)->get(0,0);
-  this->v0.at("TrCAMM_R5") = this->v0_trcamm->level(oepdev::MultipoleConvergence::R5)->get(0,0);
+  this->v0["TrCAMM_R1"] = this->v0_trcamm->level(oepdev::MultipoleConvergence::R1)->get(0,0);
+  this->v0["TrCAMM_R2"] = this->v0_trcamm->level(oepdev::MultipoleConvergence::R2)->get(0,0);
+  this->v0["TrCAMM_R3"] = this->v0_trcamm->level(oepdev::MultipoleConvergence::R3)->get(0,0);
+  this->v0["TrCAMM_R4"] = this->v0_trcamm->level(oepdev::MultipoleConvergence::R4)->get(0,0);
+  this->v0["TrCAMM_R5"] = this->v0_trcamm->level(oepdev::MultipoleConvergence::R5)->get(0,0);
 }
 double TIData::coupling_trcamm(const std::string& rn) {
   if (rn == "R1") return this->v0.at("TrCAMM_R1");

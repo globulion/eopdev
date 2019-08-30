@@ -380,6 +380,7 @@ void CISComputer::determine_electronic_state(int& I) {
 }
 
 std::shared_ptr<CISData> CISComputer::data(int I, bool symm) {
+  // Only for closed shells as for now
   //
   double E_ex = this->eigenvalues()->get(I);                        // Excitation energy wrt ground state
   double t = this->U_homo_lumo(I).first;                            // CIS amplitude
@@ -390,18 +391,25 @@ std::shared_ptr<CISData> CISComputer::data(int I, bool symm) {
   SharedDMTPole trcamm = this->trcamm(I, symm);                     // TrCAMM moments
   //
   int nbf = this->ref_wfn_->basisset()->nbf();
+  SharedVector ch = this->ref_wfn_->Ca_subset("AO","OCC")->get_column(0, this->ref_wfn_->nalpha() - 1);
   SharedVector cl = this->ref_wfn_->Ca_subset("AO","VIR")->get_column(0, 0);
+  SharedMatrix D_homo = std::make_shared<psi::Matrix>("", nbf, nbf);
   SharedMatrix D_lumo = std::make_shared<psi::Matrix>("", nbf, nbf);
   for (int i=0; i<nbf; ++i) {
        for (int j=0; j<nbf; ++j) {
+            D_homo->set(i, j, ch->get(i) * ch->get(j));
             D_lumo->set(i, j, cl->get(i) * cl->get(j));
        }
   }
-  std::vector<psi::SharedMatrix> Tvec; Tvec.push_back(D_lumo);
+  std::vector<psi::SharedMatrix> Hvec; Hvec.push_back(D_homo);
+  std::vector<psi::SharedMatrix> Lvec; Lvec.push_back(D_lumo);
   std::vector<bool> Bvec; Bvec.push_back(true);
 
+  SharedDMTPole camm_homo = DMTPole::build("CAMM", ref_wfn_, 1);    // CAMM of HOMO orbital
+  camm_homo->compute(Hvec, Bvec);
+
   SharedDMTPole camm_lumo = DMTPole::build("CAMM", ref_wfn_, 1);    // CAMM of LUMO orbital
-  camm_lumo->compute(Tvec, Bvec);
+  camm_lumo->compute(Lvec, Bvec);
 
       psi::outfile->Printf("     State= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
                                  I+1, this->oscillator_strength(I), E_ex*OEPDEV_AU_EV, t);
@@ -412,6 +420,7 @@ std::shared_ptr<CISData> CISComputer::data(int I, bool symm) {
   cis_data->Pe = Pe;
   cis_data->Peg= Peg;
   cis_data->trcamm = trcamm;
+  cis_data->camm_homo = camm_homo;
   cis_data->camm_lumo = camm_lumo;
   return cis_data;
 }
