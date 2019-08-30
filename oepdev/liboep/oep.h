@@ -336,6 +336,9 @@ class ChargeTransferEnergyOEPotential : public OEPotential
  * 
  *  Contains the following OEP types:
  *    - `Fujimoto.GDF` - Joint OEP type for ET(L), ET(HL), HT(H) and HT(HL)
+ *    - `Fujimoto.CIS` - CIS data
+ *    - `Fujimoto.EXCH`- Pure-exchange coupling matrix \f$ G_{\mu\nu} \equiv (\mu\mu | \nu\nu) \f$
+ *    - `Fujimoto.CT_M`- \f$ (HH|LL) \f$ integral for the H_34 Hamiltonian matrix elements (CT)
  */
 class EETCouplingOEPotential : public OEPotential 
 {

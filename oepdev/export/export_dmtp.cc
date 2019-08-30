@@ -61,6 +61,8 @@ void export_dmtp(py::module &m) {
 	.def       ("compute"          , compute_dmatrix(&oepdev::DMTPole::compute)                   , "Compute generalized CAMM's from user-provided density matrix")
 	.def       ("centres"          ,                 &oepdev::DMTPole::centres                    , "Get DMTP centres")
 	.def       ("origins"          ,                 &oepdev::DMTPole::origins                    , "Get DMTP origins")
+	.def       ("centre"           ,                 &oepdev::DMTPole::centre                     , "Get DMTP centre")
+	.def       ("origin"           ,                 &oepdev::DMTPole::origin                     , "Get DMTP origin")
 	.def       ("charges"          , get_matrix_int (&oepdev::DMTPole::charges)                   , "Get DMTP charges")
 	.def       ("dipoles"          , get_matrix_int (&oepdev::DMTPole::dipoles)                   , "Get DMTP dipoles")
 	.def       ("quadrupoles"      , get_matrix_int (&oepdev::DMTPole::quadrupoles)               , "Get DMTP quadrupoles")

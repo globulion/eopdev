@@ -95,6 +95,17 @@ extern "C" PSI_API
 std::shared_ptr<Molecule>
 extract_monomer(std::shared_ptr<const Molecule> molecule_dimer, int id);
 
+/** \brief Compute distance between two points in nD space.
+ *
+ *  @param v1 - vector 1
+ *  @param v2 - vector 2
+ *  @return distance
+ *  The vectors have to have the same length.
+ */
+extern "C" PSI_API
+double compute_distance(psi::SharedVector v1,
+                        psi::SharedVector v2);
+
 
 /** \brief Solve RHF-SCF equations for a given molecule in a given basis set.
  *

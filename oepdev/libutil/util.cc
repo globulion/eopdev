@@ -54,6 +54,17 @@ extract_monomer(std::shared_ptr<const Molecule> molecule_dimer, int id) {
 }
 
 extern "C" PSI_API
+double compute_distance(psi::SharedVector v1,
+                        psi::SharedVector v2)
+{
+  if (v1->dim() != v2->dim()) throw psi::PSIEXCEPTION("Vectors have different lengths!");
+  double r = 0.0;
+  for (int i=0; i<v1->dim(); ++i) r += pow(v2->get(i) - v1->get(i), 2.0);
+  r = sqrt(r);
+  return r;
+}
+
+extern "C" PSI_API
 std::shared_ptr<Wavefunction>
 solve_scf(std::shared_ptr<Molecule> molecule, 
           std::shared_ptr<BasisSet> primary, 

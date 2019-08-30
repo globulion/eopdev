@@ -184,6 +184,12 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     /// Get the positions of distribution origins
     virtual psi::SharedMatrix origins() const {return origins_;}
 
+    /// Get the position of the *x*th distribution centre 
+    virtual psi::SharedVector centre(int x) const;
+    /// Get the position of the *x*th distribution origin
+    virtual psi::SharedVector origin(int x) const;
+
+
     /// Get the distributed charges
     virtual std::vector<psi::SharedMatrix> charges() const {return charges_;}
     /// Get the distributed dipoles

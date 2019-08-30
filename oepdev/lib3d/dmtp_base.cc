@@ -465,6 +465,16 @@ std::shared_ptr<DMTPole> DMTPole::build(const std::string& type,
   else throw psi::PSIEXCEPTION("Invalid DMTP type requested.");
   return dmtp;
 }
+psi::SharedVector DMTPole::centre(int x) const {
+ psi::SharedVector r = std::make_shared<psi::Vector>("", 3);
+ for (int z=0; z<3; ++z) r->set(z, centres_->get(x, z));
+ return r;
+}
+psi::SharedVector DMTPole::origin(int x) const {
+ psi::SharedVector r = std::make_shared<psi::Vector>("", 3);
+ for (int z=0; z<3; ++z) r->set(z, origins_->get(x, z));
+ return r;
+}
 MultipoleConvergence::ConvergenceLevel DMTPole::determine_dmtp_convergence_level(const std::string& option)
 {
   MultipoleConvergence::ConvergenceLevel clevel;
