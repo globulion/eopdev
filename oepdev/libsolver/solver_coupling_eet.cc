@@ -621,48 +621,48 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
   // ---> Save <--- //
   psi::Process::environment.globals["EET V0 COUL CM-1"      ] = V0_Coul      *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 TrCAMM R1 CM-1" ] = V0_TrCAMM_R1 *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 TrCAMM R2 CM-1" ] = V0_TrCAMM_R2 *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 TrCAMM R3 CM-1" ] = V0_TrCAMM_R3 *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 TrCAMM R4 CM-1" ] = V0_TrCAMM_R4 *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 TrCAMM R5 CM-1" ] = V0_TrCAMM_R5 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TRCAMM R1 CM-1" ] = V0_TrCAMM_R1 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TRCAMM R2 CM-1" ] = V0_TrCAMM_R2 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TRCAMM R3 CM-1" ] = V0_TrCAMM_R3 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TRCAMM R4 CM-1" ] = V0_TrCAMM_R4 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TRCAMM R5 CM-1" ] = V0_TrCAMM_R5 *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 EXCH CM-1"      ] = V0_Exch      *OEPDEV_AU_CMRec;  
-  psi::Process::environment.globals["EET V0 EXCH(MULLIKEN) CM-1"] = V0_Exch_M*OEPDEV_AU_CMRec;  
+  psi::Process::environment.globals["EET V0 EXCH-M CM-1"    ] = V0_Exch_M*OEPDEV_AU_CMRec;  
   psi::Process::environment.globals["EET V COUL CM-1"       ] = V_Coul       *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TrCAMM R1 CM-1"  ] = V_TrCAMM_R1  *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TrCAMM R2 CM-1"  ] = V_TrCAMM_R2  *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TrCAMM R3 CM-1"  ] = V_TrCAMM_R3  *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TrCAMM R4 CM-1"  ] = V_TrCAMM_R4  *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TrCAMM R5 CM-1"  ] = V_TrCAMM_R5  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TRCAMM R1 CM-1"  ] = V_TrCAMM_R1  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TRCAMM R2 CM-1"  ] = V_TrCAMM_R2  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TRCAMM R3 CM-1"  ] = V_TrCAMM_R3  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TRCAMM R4 CM-1"  ] = V_TrCAMM_R4  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TRCAMM R5 CM-1"  ] = V_TrCAMM_R5  *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V EXCH CM-1"       ] = V_Exch       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V OVRL CM-1"       ] = V_Ovrl       *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V EXCH(MULLIKEN) CM-1"       ] = V_Exch_M*OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V EXCH-M CM-1"     ] = V_Exch_M*OEPDEV_AU_CMRec;
   //                                                                                           
   psi::Process::environment.globals["EET V0 ET1 CM-1"       ] = V0_ET1       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 ET2 CM-1"       ] = V0_ET2       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 HT1 CM-1"       ] = V0_HT1       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 HT2 CM-1"       ] = V0_HT2       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 CT CM-1"        ] = V0_CT        *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 CT(MULLIKEN) CM-1"] = V0_CT_M    *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 CT-M CM-1"      ] = V0_CT_M    *OEPDEV_AU_CMRec;
   //
   psi::Process::environment.globals["EET V ET1 CM-1"        ] = V_ET1        *OEPDEV_AU_CMRec;  
   psi::Process::environment.globals["EET V ET2 CM-1"        ] = V_ET2        *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V HT1 CM-1"        ] = V_HT1        *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V HT2 CM-1"        ] = V_HT2        *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V CT CM-1"         ] = V_CT         *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V CT(MULLIKEN) CM-1"] = V_CT_M      *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 TI(2) CM-1"     ] = V0_TI_2      *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 TI(3) CM-1"     ] = V0_TI_3      *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TI(2) CM-1"      ] = V_TI_2       *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TI(3) CM-1"      ] = V_TI_3       *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V CT-M CM-1"       ] = V_CT_M      *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TI-2 CM-1"      ] = V0_TI_2      *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TI-3 CM-1"      ] = V0_TI_3      *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TI-2 CM-1"       ] = V_TI_2       *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TI-3 CM-1"       ] = V_TI_3       *OEPDEV_AU_CMRec;
   //
-  psi::Process::environment.globals["EET V0 Direct CM-1"    ] = V0_direct    *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 Indirect CM-1"  ] = V0_indirect  *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V Direct CM-1"     ] = V_direct     *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V Indirect CM-1"   ] = V_indirect   *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 DIRECT CM-1"    ] = V0_direct    *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 INDIRECT CM-1"  ] = V0_indirect  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V DIRECT CM-1"     ] = V_direct     *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V INDIRECT CM-1"   ] = V_indirect   *OEPDEV_AU_CMRec;
   //
-  psi::Process::environment.globals["EET V0 TI_CIS CM-1"    ] = V0_TI_CIS   *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TI_CIS CM-1"     ] = V_TI_CIS    *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TI-CIS CM-1"    ] = V0_TI_CIS   *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TI-CIS CM-1"     ] = V_TI_CIS    *OEPDEV_AU_CMRec;
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > -1) {
@@ -1048,16 +1048,16 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   psi::Process::environment.globals["EET V OEP:EXCH CM-1"   ] = V_Exch       *OEPDEV_AU_CMRec;  
   psi::Process::environment.globals["EET V OEP:OVRL CM-1"   ] = V_Ovrl       *OEPDEV_AU_CMRec;
   //
-  psi::Process::environment.globals["EET V0 TrCAMM R1 CM-1" ] = V0_TrCAMM_R1 *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 TrCAMM R2 CM-1" ] = V0_TrCAMM_R2 *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 TrCAMM R3 CM-1" ] = V0_TrCAMM_R3 *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 TrCAMM R4 CM-1" ] = V0_TrCAMM_R4 *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V0 TrCAMM R5 CM-1" ] = V0_TrCAMM_R5 *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TrCAMM R1 CM-1"  ] = V_TrCAMM_R1  *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TrCAMM R2 CM-1"  ] = V_TrCAMM_R2  *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TrCAMM R3 CM-1"  ] = V_TrCAMM_R3  *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TrCAMM R4 CM-1"  ] = V_TrCAMM_R4  *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V TrCAMM R5 CM-1"  ] = V_TrCAMM_R5  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TRCAMM R1 CM-1" ] = V0_TrCAMM_R1 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TRCAMM R2 CM-1" ] = V0_TrCAMM_R2 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TRCAMM R3 CM-1" ] = V0_TrCAMM_R3 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TRCAMM R4 CM-1" ] = V0_TrCAMM_R4 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V0 TRCAMM R5 CM-1" ] = V0_TrCAMM_R5 *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TRCAMM R1 CM-1"  ] = V_TrCAMM_R1  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TRCAMM R2 CM-1"  ] = V_TrCAMM_R2  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TRCAMM R3 CM-1"  ] = V_TrCAMM_R3  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TRCAMM R4 CM-1"  ] = V_TrCAMM_R4  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V TRCAMM R5 CM-1"  ] = V_TrCAMM_R5  *OEPDEV_AU_CMRec;
   //                                                                                           
   psi::Process::environment.globals["EET V0 OEP:ET1 CM-1"       ] = V0_ET1       *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V0 OEP:ET2 CM-1"       ] = V0_ET2       *OEPDEV_AU_CMRec;
@@ -1072,16 +1072,16 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   psi::Process::environment.globals["EET V OEP:HT2 CM-1"        ] = V_HT2        *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V OEP:CT:CAMM CM-1"    ] = V_CT_CAMM    *OEPDEV_AU_CMRec;
   psi::Process::environment.globals["EET V OEP:CT:CC CM-1"      ] = V_CT_CC      *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V OEP:TI(2) CM-1"      ] = V_TI_2       *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V OEP:TI(3):CAMM CM-1" ] = V_TI_3       *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V OEP:TI(3):CC CM-1"   ] = V_TI_3_CC    *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V OEP:TI-2 CM-1"       ] = V_TI_2       *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V OEP:TI-3:CAMM CM-1"  ] = V_TI_3       *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V OEP:TI-3:CC CM-1"    ] = V_TI_3_CC    *OEPDEV_AU_CMRec;
   //
-  psi::Process::environment.globals["EET V OEP:Direct CM-1"     ] = V_direct     *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V OEP:Indirect:CAMM CM-1"]=V_indirect   *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V OEP:Indirect:CC CM-1"] = V_indirect_CC*OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V OEP:DIRECT CM-1"     ] = V_direct     *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V OEP:INDIRECT:CAMM CM-1"]=V_indirect   *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V OEP:INDIRECT:CC CM-1"] = V_indirect_CC*OEPDEV_AU_CMRec;
   //
-  psi::Process::environment.globals["EET V OEP:TI_CIS:CAMM CM-1"] = V_TI_CIS     *OEPDEV_AU_CMRec;
-  psi::Process::environment.globals["EET V OEP:TI_CIS:CC CM-1"  ] = V_TI_CIS_CC  *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V OEP:TI-CIS:CAMM CM-1"] = V_TI_CIS     *OEPDEV_AU_CMRec;
+  psi::Process::environment.globals["EET V OEP:TI-CIS:CC CM-1"  ] = V_TI_CIS_CC  *OEPDEV_AU_CMRec;
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > -1) {
