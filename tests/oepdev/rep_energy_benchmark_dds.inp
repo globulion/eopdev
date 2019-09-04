@@ -1,4 +1,5 @@
 #!/usr/bin/python
+sys.path.insert(0, './..')
 import oepdev
 
 # test molecule from Otto-Ladik 1980
