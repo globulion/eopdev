@@ -2,6 +2,7 @@
 #include "ti_data.h"
 #include "psi4/libpsi4util/process.h"
 #include <utility>
+#include <ctime>
 #include "../libutil/integrals_iter.h"
 #include "../libutil/util.h"
 #include "../libutil/cis.h"
@@ -57,6 +58,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   int nbf   = wfn_union_->basisset()->nbf();
   int nbf_A = wfn_union_->l_nbf(0);
   int nbf_B = wfn_union_->l_nbf(1);
+
+  clock_t t_time = -clock(); // Clock BEGIN
 
   SharedMatrix Sao_AB = std::make_shared<psi::Matrix>("Sao(A,B)" , nbf_A, nbf_B);
   SharedMatrix Tao_AB = std::make_shared<psi::Matrix>("Tao(A,B)" , nbf_A, nbf_B);
@@ -153,8 +156,10 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   // Obtain CIS HOMO-LUMO amplitudes, unperturbed excitation energies and other CIS data
   psi::outfile->Printf(" --> Running CIS calculations on the monomers <--\n");
   const bool symm = options_.get_bool("TrCAMM_SYMMETRIZE");
+  t_time+= clock();
   SharedCISData cis_data_A = this->get_cis_data(0, I, symm);
   SharedCISData cis_data_B = this->get_cis_data(1, J, symm);
+  t_time-= clock();
   psi::outfile->Printf("\n");
 
   // Collect CIS data
@@ -601,6 +606,10 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
   psi::timer_off("Solver EET TI/CIS               ");
 
+  t_time += clock(); // Clock END
+  cout << " o TIME TI/CIS: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+
+
 
   // ===> Compute TrCAMM coupling <=== //
   psi::timer_on("Solver EET TrCAMM               ");
@@ -726,6 +735,8 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
                                                        wfn_union_->options());
   oep_1->compute();
   oep_2->compute();
+
+  clock_t t_time = -clock(); // Clock BEGIN
 
   // Allocate
   int nbf   = wfn_union_->basisset()->nbf();
@@ -1040,6 +1051,9 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   double V_indirect_CC= data.coupling_indirect();
 
   psi::timer_off("Solver EET TI/CIS OEP-Based     ");
+
+  t_time += clock(); // Clock END
+  cout << " o TIME TI/CIS:OEP: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
 
 
 
