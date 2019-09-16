@@ -11,7 +11,7 @@
 """
 from gefp.core.utilities import wavefunction_union_from_dimer
 from gefp.core.utilities import wavefunction_union_from_dfi_solver
-from gefp.density.dfi import DFI_JK as DFI
+from gefp.density.dfi import DFI_J as DFI
 
 import oepdev
 import numpy
@@ -91,9 +91,9 @@ psi4.set_options({"scf_type"       : "df"    ,
                   "print"          : 0       ,
                   "excited_state_a":-1       ,
                   "excited_state_b":-1       ,
-                  "trcamm_symmetrize": False , 
+                  "trcamm_symmetrize": True , 
                   "ti_cis_scf_fock_matrix": False, 
-                  "ti_cis_print_fock_matrix": False})
+                  "ti_cis_print_fock_matrix": False,})
 
 # set Psi4 output
 psi4.core.set_output_file(sys.argv[0].replace('.py','.log'), True)
