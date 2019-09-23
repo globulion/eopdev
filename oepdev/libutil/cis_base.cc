@@ -379,11 +379,11 @@ void CISComputer::determine_electronic_state(int& I) {
  I -= 1; // transform to C++ indexing (from 0)
 }
 
-std::shared_ptr<CISData> CISComputer::data(int I, bool symm) {
+std::shared_ptr<CISData> CISComputer::data(int I, int h, int l, bool symm) {
   // Only for closed shells as for now
   //
   double E_ex = this->eigenvalues()->get(I);                        // Excitation energy wrt ground state
-  double t = this->U_homo_lumo(I).first;                            // CIS amplitude
+  double t = this->U_homo_lumo(I, h, l).first;                      // CIS amplitude (HOMO-h)-->(LUMO+l)
   //
   SharedMatrix Pe  = this->Da_ao(I); Pe ->add(this->Db_ao(I));      // Excited state bond order matrices of monomers
   SharedMatrix Peg = this->Ta_ao(I); Peg->add(this->Tb_ao(I));      // Transition density matrices of monomers
@@ -391,8 +391,8 @@ std::shared_ptr<CISData> CISComputer::data(int I, bool symm) {
   SharedDMTPole trcamm = this->trcamm(I, symm);                     // TrCAMM moments
   //
   int nbf = this->ref_wfn_->basisset()->nbf();
-  SharedVector ch = this->ref_wfn_->Ca_subset("AO","OCC")->get_column(0, this->ref_wfn_->nalpha() - 1);
-  SharedVector cl = this->ref_wfn_->Ca_subset("AO","VIR")->get_column(0, 0);
+  SharedVector ch = this->ref_wfn_->Ca_subset("AO","OCC")->get_column(0, this->ref_wfn_->nalpha() - 1 - h);
+  SharedVector cl = this->ref_wfn_->Ca_subset("AO","VIR")->get_column(0, l);
   SharedMatrix D_homo = std::make_shared<psi::Matrix>("", nbf, nbf);
   SharedMatrix D_lumo = std::make_shared<psi::Matrix>("", nbf, nbf);
   for (int i=0; i<nbf; ++i) {
@@ -405,14 +405,14 @@ std::shared_ptr<CISData> CISComputer::data(int I, bool symm) {
   std::vector<psi::SharedMatrix> Lvec; Lvec.push_back(D_lumo);
   std::vector<bool> Bvec; Bvec.push_back(true);
 
-  SharedDMTPole camm_homo = DMTPole::build("CAMM", ref_wfn_, 1);    // CAMM of HOMO orbital
+  SharedDMTPole camm_homo = DMTPole::build("CAMM", ref_wfn_, 1);    // CAMM of (HOMO-h) orbital
   camm_homo->compute(Hvec, Bvec);
 
-  SharedDMTPole camm_lumo = DMTPole::build("CAMM", ref_wfn_, 1);    // CAMM of LUMO orbital
+  SharedDMTPole camm_lumo = DMTPole::build("CAMM", ref_wfn_, 1);    // CAMM of (LUMO+l) orbital
   camm_lumo->compute(Lvec, Bvec);
 
-      psi::outfile->Printf("     State= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H->L)= %9.6f\n", 
-                                 I+1, this->oscillator_strength(I), E_ex*OEPDEV_AU_EV, t);
+      psi::outfile->Printf("     State= %2d, f= %9.6f [a.u.] E= %9.3f [EV] t(H-%d->L+%d)= %9.6f\n", 
+                                 I+1, this->oscillator_strength(I), E_ex*OEPDEV_AU_EV, h, l, t);
 
   std::shared_ptr<CISData> cis_data = std::make_shared<CISData>();
   cis_data->E_ex = E_ex;

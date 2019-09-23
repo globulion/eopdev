@@ -258,7 +258,7 @@ class CISComputer {
    void determine_electronic_state(int& I);
 
    /// Return CIS data structure for a given excited state *I*
-   std::shared_ptr<CISData> data(int I, bool symmetrize_trcamm=false);
+   std::shared_ptr<CISData> data(int I, int h, int l, bool symmetrize_trcamm=false);
 
    /// Slater determinant possible references, that are implemented
    static const std::vector<std::string> reference_types;

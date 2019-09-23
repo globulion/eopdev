@@ -1111,7 +1111,7 @@ class EETCouplingSolver : public OEPDevSolver
     double compute_oep_based_fujimoto_ti_cis();
 
     ///
-    std::shared_ptr<CISData> get_cis_data(int i, int I, bool symm);
+    std::shared_ptr<CISData> get_cis_data(int i, int I, int nH, int nL, bool symm);
 };
 
 

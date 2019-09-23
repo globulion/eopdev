@@ -61,11 +61,13 @@ void EETCouplingOEPotential::compute_fujimoto_cis()
 {
       const bool symm = options_.get_bool("TrCAMM_SYMMETRIZE");
       int I = options_.get_int("EXCITED_STATE");
+      const int nH = options_.get_int("OEPDEV_SOLVER_EET_HOMO");
+      const int nL = options_.get_int("OEPDEV_SOLVER_EET_LUMO");
 
       std::shared_ptr<CISComputer> cis = CISComputer::build("RESTRICTED", wfn_, options_); 
       cis->compute();
       cis->determine_electronic_state(I);
-      oepTypes_.at("Fujimoto.CIS").cis_data = cis->data(I, symm);
+      oepTypes_.at("Fujimoto.CIS").cis_data = cis->data(I, nH, nL, symm);
 }
 void EETCouplingOEPotential::compute_fujimoto_gdf()
 {
@@ -78,8 +80,10 @@ void EETCouplingOEPotential::compute_fujimoto_gdf()
    std::shared_ptr<psi::Matrix> Vao = std::make_shared<psi::Matrix>("Vao" , primary_->nbf(), target->nbf());
    std::shared_ptr<psi::Matrix> Hao = std::make_shared<psi::Matrix>("Hao" , primary_->nbf(), target->nbf());
    std::shared_ptr<psi::Matrix> vao = std::make_shared<psi::Matrix>("vao" , target->nbf(), 4);
-   const int homo = wfn_->nalpha() - 1;
-   const int lumo = 0;
+   const int nH = options_.get_int("OEPDEV_SOLVER_EET_HOMO");
+   const int nL = options_.get_int("OEPDEV_SOLVER_EET_LUMO");
+   const int homo = wfn_->nalpha() - 1 - nH;
+   const int lumo = nL;
    psi::SharedVector C_H = cOcc_->get_column(0, homo);
    psi::SharedVector C_L = cVir_->get_column(0, lumo);
 
@@ -210,8 +214,12 @@ void EETCouplingOEPotential::compute_fujimoto_ct_m()
    std::shared_ptr<oepdev::ShellCombinationsIterator> shellIter = oepdev::ShellCombinationsIterator::build(fact, "ALL");
 
    double v = 0.0; // (HH|LL) integral
-   double* ch = cOcc_->get_column(0, wfn_->nalpha()-1)->pointer();
-   double* cl = cVir_->get_column(0, 0)->pointer();
+   const int nH = options_.get_int("OEPDEV_SOLVER_EET_HOMO");
+   const int nL = options_.get_int("OEPDEV_SOLVER_EET_LUMO");
+   const int homo = wfn_->nalpha() - 1 - nH;
+   const int lumo = nL;
+   double* ch = cOcc_->get_column(0, homo)->pointer();
+   double* cl = cVir_->get_column(0, lumo)->pointer();
    for (shellIter->first(); shellIter->is_done() == false; shellIter->next())
    {
         shellIter->compute_shell(tei);

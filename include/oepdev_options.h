@@ -85,6 +85,12 @@ int read_options(std::string name, Options& options)
         options.add_bool   ("OEPDEV_SOLVER_EINT_CT_OEP"   , true                 );
         options.add_bool   ("OEPDEV_SOLVER_EINT_CT_EFP2"  , true                 );
         options.add_bool   ("OEPDEV_SOLVER_EET_V_TDFI_TI" , true                 );
+        options.add_int    ("OEPDEV_SOLVER_EET_HOMO"      , 0                    );
+        options.add_int    ("OEPDEV_SOLVER_EET_LUMO"      , 0                    );
+        options.add_int    ("OEPDEV_SOLVER_EET_HOMO_A"    , 0                    );
+        options.add_int    ("OEPDEV_SOLVER_EET_HOMO_B"    , 0                    );
+        options.add_int    ("OEPDEV_SOLVER_EET_LUMO_A"    , 0                    );
+        options.add_int    ("OEPDEV_SOLVER_EET_LUMO_B"    , 0                    );
 
         /*- Electronic excited states */
         options.add_int    ("EXCITED_STATE"               ,-1                    );

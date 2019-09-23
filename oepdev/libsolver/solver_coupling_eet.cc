@@ -128,12 +128,16 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   // Auxiliary data
   int I = options_.get_int("EXCITED_STATE_A");
   int J = options_.get_int("EXCITED_STATE_B");
+  const int nHI= options_.get_int("OEPDEV_SOLVER_EET_HOMO_A");
+  const int nHJ= options_.get_int("OEPDEV_SOLVER_EET_HOMO_B");
+  const int nLI= options_.get_int("OEPDEV_SOLVER_EET_LUMO_A");
+  const int nLJ= options_.get_int("OEPDEV_SOLVER_EET_LUMO_B");
 
   const int Ne = 2.0 * (wfn_union_->l_wfn(0)->nalpha() + wfn_union_->l_wfn(1)->nalpha());
-  const int homo_A = wfn_union_->l_wfn(0)->nalpha() - 1;
-  const int homo_B = wfn_union_->l_wfn(1)->nalpha() - 1;
-  const int lumo_A = 0;
-  const int lumo_B = 0;
+  const int homo_A = wfn_union_->l_wfn(0)->nalpha() - 1 - nHI;
+  const int homo_B = wfn_union_->l_wfn(1)->nalpha() - 1 - nHJ;
+  const int lumo_A = nLI;
+  const int lumo_B = nLJ;
   const double na_A = (double)wfn_union_->l_wfn(0)->nalpha();
   const double na_B = (double)wfn_union_->l_wfn(1)->nalpha();
   const double na_AB= na_A + na_B;
@@ -157,8 +161,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   psi::outfile->Printf(" --> Running CIS calculations on the monomers <--\n");
   const bool symm = options_.get_bool("TrCAMM_SYMMETRIZE");
   t_time+= clock();
-  SharedCISData cis_data_A = this->get_cis_data(0, I, symm);
-  SharedCISData cis_data_B = this->get_cis_data(1, J, symm);
+  SharedCISData cis_data_A = this->get_cis_data(0, I, nHI, nLI, symm);
+  SharedCISData cis_data_B = this->get_cis_data(1, J, nHJ, nLJ, symm);
   t_time-= clock();
   psi::outfile->Printf("\n");
 
@@ -728,12 +732,21 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
                                                        wfn_union_->l_auxiliary(0), 
                                                        wfn_union_->l_intermediate(0), 
                                                        wfn_union_->options());
+
   SharedOEPotential oep_2 = oepdev::OEPotential::build("EET COUPLING CONSTANT", 
                                                        wfn_union_->l_wfn(1), 
                                                        wfn_union_->l_auxiliary(1), 
                                                        wfn_union_->l_intermediate(1), 
                                                        wfn_union_->options());
+
+  options_.set_global_int("EXCITED_STATE", options_.get_int("EXCITED_STATE_A"));
+  options_.set_global_int("OEPDEV_SOLVER_EET_HOMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_A"));
+  options_.set_global_int("OEPDEV_SOLVER_EET_LUMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_A"));
   oep_1->compute();
+
+  options_.set_global_int("EXCITED_STATE", options_.get_int("EXCITED_STATE_B"));
+  options_.set_global_int("OEPDEV_SOLVER_EET_HOMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_B"));
+  options_.set_global_int("OEPDEV_SOLVER_EET_LUMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_B"));
   oep_2->compute();
 
   clock_t t_time = -clock(); // Clock BEGIN
@@ -744,10 +757,14 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   int nbf_B = wfn_union_->l_nbf(1);
   int nbf_Aa= wfn_union_->l_auxiliary(0)->nbf();
   int nbf_Ba= wfn_union_->l_auxiliary(1)->nbf();
-  const int homo_A = oep_1->wfn()->nalpha() - 1;
-  const int homo_B = oep_2->wfn()->nalpha() - 1;
-  const int lumo_A = 0;
-  const int lumo_B = 0;
+  const int nHI= options_.get_int("OEPDEV_SOLVER_EET_HOMO_A");
+  const int nHJ= options_.get_int("OEPDEV_SOLVER_EET_HOMO_B");
+  const int nLI= options_.get_int("OEPDEV_SOLVER_EET_LUMO_A");
+  const int nLJ= options_.get_int("OEPDEV_SOLVER_EET_LUMO_B");
+  const int homo_A = oep_1->wfn()->nalpha() - 1 - nHI;
+  const int homo_B = oep_2->wfn()->nalpha() - 1 - nHJ;
+  const int lumo_A = nLI;
+  const int lumo_B = nLJ;
   std::vector<psi::SharedVector> r_mo_A = oep_1->mo_centroids(oep_1->cOcc());
   std::vector<psi::SharedVector> r_mo_B = oep_2->mo_centroids(oep_2->cOcc());
   psi::SharedVector r_homo_A = std::make_shared<psi::Vector>("HOMO Centroid (A)", 3);
@@ -1135,9 +1152,9 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   return e; 
 }
 
-std::shared_ptr<CISData> EETCouplingSolver::get_cis_data(int i, int I, bool symm) {
+std::shared_ptr<CISData> EETCouplingSolver::get_cis_data(int i, int I, int nH, int nL, bool symm) {
       std::shared_ptr<CISComputer> cis_A = CISComputer::build("RESTRICTED", wfn_union_->l_wfn(i), options_); 
       cis_A->compute();
       cis_A->determine_electronic_state(I); // Excited state ID in C++ convention
-      return cis_A->data(I, symm);
+      return cis_A->data(I, nH, nL, symm);
 }
