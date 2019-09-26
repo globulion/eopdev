@@ -267,7 +267,7 @@ class CISComputer {
    /// Reference wavefunction
    std::shared_ptr<psi::Wavefunction> ref_wfn_;
    /// Psi4 Options
-   psi::Options options_;
+   psi::Options& options_;
 
    /// Number of MO's
    const int nmo_;
