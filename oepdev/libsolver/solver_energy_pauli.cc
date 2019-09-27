@@ -519,6 +519,11 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   return e+e_exch; 
 }
 double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
+
+  // Sanity check
+  if (!options_.get_bool("OEPDEV_LOCALIZE")) 
+      throw psi::PSIEXCEPTION("Error. OEPDEV_LOCALIZE must be set to True because LMO's are necessary");
+
   double e_s1 = 0.0, e_s2 = 0.0, e = 0;
 
   //psi::timer_on ("SOLVER: Repulsion Energy Calculations (Otto-Ladik)");
@@ -734,6 +739,11 @@ double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   return e+e_exch; 
 }
 double RepulsionEnergySolver::compute_benchmark_efp2() {
+
+  // Sanity check
+  if (!options_.get_bool("OEPDEV_LOCALIZE")) 
+      throw psi::PSIEXCEPTION("Error. OEPDEV_LOCALIZE must be set to True because LMO's are necessary");
+
   double e_s1 = 0.0, e_s2 = 0.0, e = 0;
 
   //psi::timer_on ("SOLVER: Repulsion Energy Calculations (EFP2)");

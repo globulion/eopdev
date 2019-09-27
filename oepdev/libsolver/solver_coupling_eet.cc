@@ -18,6 +18,10 @@ using SharedDMTPole = std::shared_ptr<oepdev::DMTPole>;
 EETCouplingSolver::EETCouplingSolver(SharedWavefunctionUnion wfn_union)
  : OEPDevSolver(wfn_union)
 {
+  // Sanity check
+  if (options_.get_bool("OEPDEV_LOCALIZE")) 
+      throw psi::PSIEXCEPTION("Error. OEPDEV_LOCALIZE must be set to False because CMO's are necessary");
+
   // Benchmarks
   methods_benchmark_.push_back("FUJIMOTO_TI_CIS");
 

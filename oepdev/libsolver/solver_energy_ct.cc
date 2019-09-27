@@ -10,6 +10,9 @@ using namespace oepdev;
 ChargeTransferEnergySolver::ChargeTransferEnergySolver(SharedWavefunctionUnion wfn_union)
  : OEPDevSolver(wfn_union)
 {
+  // Sanity check
+  if (options_.get_bool("OEPDEV_LOCALIZE")) 
+      throw psi::PSIEXCEPTION("Error. OEPDEV_LOCALIZE must be set to False because CMO's are necessary");
   // Benchmarks
   methods_benchmark_.push_back("OTTO_LADIK");
   methods_benchmark_.push_back("EFP2"      );
