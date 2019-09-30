@@ -33,7 +33,7 @@ double oepdev::test::Test::test_cis_rhf(void) {
 
   // Compute CIS(RHF)
   psi::timer_on("CIS RHF Calculation             ");
-  std::shared_ptr<oepdev::CISComputer> cis = oepdev::CISComputer::build("RESTRICTED", wfn_, wfn_->options());
+  std::shared_ptr<oepdev::CISComputer> cis = oepdev::CISComputer::build("RESTRICTED", wfn_, wfn_->options(), "RHF");
   cis->compute();
   psi::timer_off("CIS RHF Calculation             ");
 

@@ -1157,7 +1157,7 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
 }
 
 std::shared_ptr<CISData> EETCouplingSolver::get_cis_data(int i, int I, int nH, int nL, bool symm) {
-      std::shared_ptr<CISComputer> cis_A = CISComputer::build("RESTRICTED", wfn_union_->l_wfn(i), options_); 
+      std::shared_ptr<CISComputer> cis_A = CISComputer::build("RESTRICTED", wfn_union_->l_wfn(i), options_, "RHF"); 
       cis_A->compute();
       cis_A->determine_electronic_state(I); // Excited state ID in C++ convention
       return cis_A->data(I, nH, nL, symm);

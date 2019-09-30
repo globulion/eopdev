@@ -184,7 +184,7 @@ class CISComputer {
     */
    static std::shared_ptr<CISComputer> build(const std::string& type, 
                                              std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt,
-                                             const std::string& reference = "");
+                                             const std::string& reference);
 
    /// Destructor
    virtual ~CISComputer();

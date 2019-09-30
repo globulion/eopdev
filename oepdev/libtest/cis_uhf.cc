@@ -34,7 +34,7 @@ double oepdev::test::Test::test_cis_uhf(void) {
 
   // Compute CAMM
   psi::timer_on("CIS UHF Calculation             ");
-  std::shared_ptr<oepdev::CISComputer> cis = oepdev::CISComputer::build("UNRESTRICTED", wfn_, wfn_->options());
+  std::shared_ptr<oepdev::CISComputer> cis = oepdev::CISComputer::build("UNRESTRICTED", wfn_, wfn_->options(), "UHF");
   cis->compute();
   psi::timer_off("CIS UHF Calculation             ");
 

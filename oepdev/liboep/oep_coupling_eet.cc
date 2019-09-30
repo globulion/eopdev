@@ -64,7 +64,7 @@ void EETCouplingOEPotential::compute_fujimoto_cis()
       const int nH = options_.get_int("OEPDEV_SOLVER_EET_HOMO");
       const int nL = options_.get_int("OEPDEV_SOLVER_EET_LUMO");
 
-      std::shared_ptr<CISComputer> cis = CISComputer::build("RESTRICTED", wfn_, options_); 
+      std::shared_ptr<CISComputer> cis = CISComputer::build("RESTRICTED", wfn_, options_, "RHF"); 
       cis->compute();
       cis->determine_electronic_state(I);
       oepTypes_.at("Fujimoto.CIS").cis_data = cis->data(I, nH, nL, symm);
