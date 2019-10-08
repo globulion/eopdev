@@ -55,8 +55,13 @@ def _get_wavefunction_union_basis_sets(dimer):
     basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", opt_basis_df_oep_B, puream=pam)
 
     # --- intermediate (OEP)
-    basis_int_oep_A= psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"), puream=pam)
-    basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"), puream=pam)
+    if psi4.core.get_global_option("DF_BASIS_INT") == "":
+       b_int = psi4.core.get_global_option("DF_BASIS_SCF")
+    else:
+       b_int = psi4.core.get_global_option("DF_BASIS_INT")
+
+    basis_int_oep_A= psi4.core.BasisSet.build(molecule_A, "BASIS", b_int, puream=pam)
+    basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", b_int, puream=pam)
 
     basis        = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("BASIS"       ), puream=pam)
     basis_df_scf = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"), puream=pam)

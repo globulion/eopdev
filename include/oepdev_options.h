@@ -28,7 +28,7 @@ int read_options(std::string name, Options& options)
         options.add_str    ("DF_BASIS_OEP_B"        , ""                         );
 
         /*- Intermediate basis set for OEP density fitting -*/                                   
-        options.add_str    ("DF_BASIS_INT"          , "aug-cc-pVDZ-jkfit"        );
+        options.add_str    ("DF_BASIS_INT"          , ""                         );
 
         /*- Type of Density Fitting -*/
         options.add_str    ("OEPDEV_DF_TYPE"        , "DOUBLE"                   );

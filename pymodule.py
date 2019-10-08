@@ -80,7 +80,11 @@ def run_oepdev(name, **kwargs):
                                                puream=ref_wfn.basisset().has_puream())
        basis_df_oep = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("DF_BASIS_OEP"),
                                                puream=ref_wfn.basisset().has_puream())
-       basis_df_int = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("DF_BASIS_INT"),
+       if psi4.core.get_global_option("DF_BASIS_INT") == "":
+          b_int = psi4.core.get_global_option("DF_BASIS_SCF")
+       else:
+          b_int = psi4.core.get_global_option("DF_BASIS_INT")
+       basis_df_int = psi4.core.BasisSet.build(molecule  , "BASIS", b_int,
                                                puream=ref_wfn.basisset().has_puream())
 
        #if (psi4.core.get_option("SCF", "GUESS") == "SAD"):
@@ -128,9 +132,14 @@ def run_oepdev(name, **kwargs):
        basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", opt_basis_df_oep_B,
                                                  puream=ref_wfn.basisset().has_puream())
        # --- intermediate (OEP)
-       basis_int_oep_A= psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"),
+       if psi4.core.get_global_option("DF_BASIS_INT") == "":
+          b_int = psi4.core.get_global_option("DF_BASIS_SCF")
+       else:
+          b_int = psi4.core.get_global_option("DF_BASIS_INT")
+
+       basis_int_oep_A= psi4.core.BasisSet.build(molecule_A, "BASIS", b_int,
                                                  puream=ref_wfn.basisset().has_puream())
-       basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_INT"),
+       basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", b_int,
                                                  puream=ref_wfn.basisset().has_puream())
 
        # --- SAD Guess (Psi4)
