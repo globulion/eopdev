@@ -10,7 +10,8 @@ from . import parameters
 from . import functional
 from . import dmft
 from . import dfi
+from . import dms
 from . import ci
 
-__all__ = ["opdm", "partitioning", "dfi", "dmft", "functional", "parameters", "ci"]
+__all__ = ["opdm", "partitioning", "dfi", "dms", "dmft", "functional", "parameters", "ci"]
 __author__="Bartosz Błasiak"
