@@ -71,6 +71,7 @@ void export_cphf(py::module&);
 void export_solver(py::module&);
 void export_util(py::module&);
 void export_oep(py::module&);
+void export_gefp(py::module&);
 
 /** \brief Main routine of the OEPDev plugin.
  *
@@ -268,6 +269,8 @@ PYBIND11_MODULE(oepdev, m) {
   export_util(m);
   // Export OEP's
   export_oep(m);
+  // Export GEFP
+  export_gefp(m);
 }
 
 } // EndNameSpace psi
