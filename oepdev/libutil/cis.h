@@ -325,6 +325,15 @@ class R_CISComputer: public CISComputer {
    virtual void build_hamiltonian_(void);
 };
 
+class R_CISComputer_Direct: public R_CISComputer {
+  public:
+   R_CISComputer_Direct(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~R_CISComputer_Direct(); 
+  protected:
+   virtual void build_hamiltonian_(void);
+   virtual void transform_integrals_(void);
+};
+
 class U_CISComputer: public CISComputer {
   public:
    U_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);

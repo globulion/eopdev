@@ -104,6 +104,7 @@ int read_options(std::string name, Options& options)
         options.add_int    ("PHASE_HOMO_B"                , 1                    );
         options.add_int    ("PHASE_LUMO_A"                , 1                    );
         options.add_int    ("PHASE_LUMO_B"                , 1                    );
+	options.add_bool   ("CIS_DIRECT"                  , false                );
 
 
         // ---> CPHF Global Options  <--- //

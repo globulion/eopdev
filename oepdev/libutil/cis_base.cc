@@ -55,7 +55,7 @@ void CISComputer::prepare_for_cis_(void) {
 
 void CISComputer::clear_dpd(void) {
   // Destruct the IntegralTransform object
-  this->inttrans_.reset();
+  if (inttrans_) this->inttrans_.reset();
 }
 
 void CISComputer::transform_integrals_(void) {
@@ -105,9 +105,16 @@ std::shared_ptr<CISComputer> CISComputer::build(const std::string& type,
   // Create
   std::shared_ptr<CISComputer> cis;
 
-  if ((ref_wfn->molecule()->multiplicity() != 1) || (ref == "UHF")) 
-     { cis = std::make_shared<U_CISComputer>(ref_wfn, opt); }
-  else cis = std::make_shared<R_CISComputer>(ref_wfn, opt);
+  if ((ref_wfn->molecule()->multiplicity() != 1) || (ref == "UHF")) { 
+	 cis = std::make_shared<U_CISComputer>(ref_wfn, opt);
+  }
+  else {
+     if (opt.get_bool("CIS_DIRECT")) { 
+	 cis = std::make_shared<R_CISComputer_Direct>(ref_wfn, opt); 
+     } else {
+	 cis = std::make_shared<R_CISComputer>(ref_wfn, opt);
+     }
+  }
   
   // Return 
   return cis;
