@@ -218,8 +218,12 @@ void EETCouplingOEPotential::compute_fujimoto_ct_m()
    const int nL = options_.get_int("OEPDEV_SOLVER_EET_LUMO");
    const int homo = wfn_->nalpha() - 1 - nH;
    const int lumo = nL;
-   double* ch = cOcc_->get_column(0, homo)->pointer();
-   double* cl = cVir_->get_column(0, lumo)->pointer();
+   psi::SharedVector Vh = cOcc_->get_column(0, homo);
+   psi::SharedVector Vl = cVir_->get_column(0, lumo);
+   double* ch = Vh->pointer();
+   double* cl = Vl->pointer();
+ //double* ch = cOcc_->get_column(0, homo)->pointer(); --> memory leak!!!
+ //double* cl = cVir_->get_column(0, lumo)->pointer(); --> memory leak!!!
    for (shellIter->first(); shellIter->is_done() == false; shellIter->next())
    {
         shellIter->compute_shell(tei);
