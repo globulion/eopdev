@@ -59,6 +59,7 @@ set {
     oepdev_localize               False
     oepdev_enable_trial           False
     cis_direct                    True
+    cis_schwartz_cutoff           0.0e-4
     # ==> General Psi4 Options <== #
     scf_type                      direct 
     guess                         core

@@ -45,6 +45,8 @@ void R_CISComputer_Direct::build_hamiltonian_(void) {
  double** ca_occ = ref_wfn_->Ca_subset("AO","OCC")->pointer();
  double** ca_vir = ref_wfn_->Ca_subset("AO","VIR")->pointer();
 
+ const double eri_cutoff = options_.get_double("CIS_SCHWARTZ_CUTOFF");
+
  for (shellIter->first(); shellIter->is_done() == false; shellIter->next())
  {
       shellIter->compute_shell(tei);
@@ -58,30 +60,34 @@ void R_CISComputer_Direct::build_hamiltonian_(void) {
 
            double eri = buffer[intsIter->index()];
 
-           for (int i=0; i<naocc_; ++i) {
-           for (int a=0; a<navir_; ++a) {
-                int ia = navir_*i + a;
+           if (std::abs(eri) > eri_cutoff) {
 
-		double cIa = ca_vir[I][a];
-		double cJi = ca_occ[J][i];
-		double cLi = ca_occ[L][i];
+               for (int i=0; i<naocc_; ++i) {                
+               for (int a=0; a<navir_; ++a) {
+                    int ia = navir_*i + a;
+                                                            
+	            double cIi = ca_occ[I][i];
+	            double cJa = ca_vir[J][a];
+                    double cKa = ca_vir[K][a];
+                                                             
+                    for (int j=0; j<naocc_; ++j) {
+                    for (int b=0; b<navir_; ++b) {
+      	                 int jb = navir_*j + b;
+                         
+	                 double cJj = ca_occ[J][j];
+	                 double cKj = ca_occ[K][j];
+	                 double cLb = ca_vir[L][b];
+                                                             
+      	                 double c_1 = cIi * cJa * cKj * cLb;
+      	                 double c_2 = cIi * cJj * cKa * cLb;
+                                                             
+                         H[ia][jb    ] += (c_1 - c_2) * eri;
+      	                 H[ia][jb+off] +=  c_1        * eri;
+      	            }
+      	            }
+               }
+               }
 
-                for (int j=0; j<naocc_; ++j) {
-                for (int b=0; b<navir_; ++b) {
-      	             int jb = navir_*j + b;
-
-		     double cKj = ca_occ[K][j];
-		     double cJb = ca_vir[J][b];
-		     double cLb = ca_vir[L][b];
-
-      	             double c_1 = cIa * cJi * cKj * cLb;
-      	             double c_2 = cIa * cJb * cKj * cLi;
-
-                     H[ia][jb    ] += (c_1 - c_2) * eri;
-      	             H[ia][jb+off] +=  c_1        * eri;
-      	        }
-      	        }
-           }
            }
 
       }
