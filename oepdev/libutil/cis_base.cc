@@ -75,7 +75,7 @@ void CISComputer::transform_integrals_(void) {
 void CISComputer::diagonalize_hamiltonian_(void) {
  H_->diagonalize(U_, E_);
  //E_->scale(OEPDEV_AU_EV);
- if (options_.get_bool("PRINT")>3) {
+ if (options_.get_int("PRINT")>3) {
     E_->print_out();
     H_->print_out();
  }

@@ -41,9 +41,11 @@ void R_CISComputer_Direct::build_hamiltonian_(void) {
  const double * buffer = tei->buffer();
 
  std::shared_ptr<oepdev::ShellCombinationsIterator> shellIter = oepdev::ShellCombinationsIterator::build(fact, "ALL");
- 
- double** ca_occ = ref_wfn_->Ca_subset("AO","OCC")->pointer();
- double** ca_vir = ref_wfn_->Ca_subset("AO","VIR")->pointer();
+
+ psi::SharedMatrix ca_occ = ref_wfn_->Ca_subset("AO","OCC"); 
+ psi::SharedMatrix ca_vir = ref_wfn_->Ca_subset("AO","VIR"); 
+ double** co = ca_occ->pointer();
+ double** cv = ca_vir->pointer();
 
  const double eri_cutoff = options_.get_double("CIS_SCHWARTZ_CUTOFF");
 
@@ -65,26 +67,26 @@ void R_CISComputer_Direct::build_hamiltonian_(void) {
                for (int i=0; i<naocc_; ++i) {                
                for (int a=0; a<navir_; ++a) {
                     int ia = navir_*i + a;
-                                                            
-	            double cIi = ca_occ[I][i];
-	            double cJa = ca_vir[J][a];
-                    double cKa = ca_vir[K][a];
-                                                             
+
+                    double cIi = co[I][i];
+                    double cJa = cv[J][a];
+                    double cKa = cv[K][a];
+
                     for (int j=0; j<naocc_; ++j) {
                     for (int b=0; b<navir_; ++b) {
       	                 int jb = navir_*j + b;
-                         
-	                 double cJj = ca_occ[J][j];
-	                 double cKj = ca_occ[K][j];
-	                 double cLb = ca_vir[L][b];
-                                                             
-      	                 double c_1 = cIi * cJa * cKj * cLb;
-      	                 double c_2 = cIi * cJj * cKa * cLb;
-                                                             
+
+                         double cJj = co[J][j];
+                         double cKj = co[K][j];
+                         double cLb = cv[L][b];
+
+      	                 double c_1 = cIi * cJa * cKj * cLb; // ---> ( ia | jb )
+      	                 double c_2 = cIi * cJj * cKa * cLb; // ---> ( ij | ab )
+
                          H[ia][jb    ] += (c_1 - c_2) * eri;
       	                 H[ia][jb+off] +=  c_1        * eri;
-      	            }
-      	            }
+                    }
+                    }
                }
                }
 
