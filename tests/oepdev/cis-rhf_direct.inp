@@ -61,6 +61,7 @@ set {
     cis_direct                    True
     cis_schwartz_cutoff           1.0e-5
     # ==> General Psi4 Options <== #
+    freeze_core                   False
     scf_type                      direct
     guess                         core
     e_convergence                 1e-11
