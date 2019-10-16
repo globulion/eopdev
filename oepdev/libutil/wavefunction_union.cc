@@ -89,7 +89,7 @@ WavefunctionUnion::WavefunctionUnion(
 
    // Create full dimer wavefunction
    SharedWavefunction ref_wfn = oepdev::solve_scf(dimer, primary, auxiliary_df, 
-   		                create_superfunctional("HF", options_), options_, psi::PSIO::shared_object(), true);
+   		                create_superfunctional("HF", options_), options_, psi::PSIO::shared_object(), false);
    shallow_copy(ref_wfn);
    set_basisset("BASIS_DF_SCF", auxiliary_df);
 
