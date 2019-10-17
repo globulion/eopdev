@@ -352,7 +352,7 @@ def move_atom_scale_coordinates(mol, t):
     return
 
 
-def move_atom_rotate_molecule(mol, angles, t='zxy', units='bohr'):
+def move_atom_rotate_molecule(mol, angles, t='zxy'):
     "Rotate atoms in the molecule by applying rotation (3,3) matrix (provide Euler angles in degrees)"
     R = scipy.spatial.transform.Rotation.from_euler(t, angles, degrees=True)
     rot= R.as_dcm()
