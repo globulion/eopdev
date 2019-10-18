@@ -177,7 +177,7 @@ class DMSFit(ABC):
 
   @classmethod
   def create(cls, mol_A, mol_B = None, type="transl", nsampl_pol=100, nsampl_ct=100, method='scf'):
-      if type.lower().startswith("tran"): return Translation_SameMoleculeDMSFit(mol_A, method, nsampl_pol, nsampl_ct)
+      if type.lower().startswith("tran"): return Asymmetric_Translation_SameMoleculeDMSFit(mol_A, method, nsampl_pol, nsampl_ct)
       else: raise NotImplementedError("This type of DMS fitting is not implemented yet")
 
   def run(self):
@@ -189,6 +189,7 @@ class DMSFit(ABC):
   # --- protected --- #
 
   def _compute_wfn(self):
+      print(" * Computing Unperturbed Wavefunction")
       _g_A, self._wfn_A = psi4.gradient(self._method, molecule=self._mol_A, return_wfn=True)
       self._nbf_A = self._wfn_A.basisset().nbf()
       if self._mol_B is not None:
@@ -212,14 +213,16 @@ class DMSFit(ABC):
   def _construct_aggregate(self): pass
 
   def _invert_hessian(self, h):
-     hi = numpy.linalg.inv(hi)
+     det= numpy.linalg.det(h)
+     print(" * Hessian Determinant= %14.6f" % det)
+     hi = numpy.linalg.inv(h)
      I = numpy.dot(hi, h).diagonal().sum()
      d = I - len(hi)
-     if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic!")
+     if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic! I = %f" % I)
      return hi      
 
 class SameMoleculeDMSFit(DMSFit):
-  def __init__(mol_A, method, nsampl_pol, nsampl_ct):
+  def __init__(self, mol_A, method, nsampl_pol, nsampl_ct):
       DMSFit.__init__(self, mol_A, None, method, nsampl_pol, nsampl_ct)
       self._g_ind = None
       self._h_ind = None
@@ -229,6 +232,8 @@ class SameMoleculeDMSFit(DMSFit):
       self._dD_indB_set_ref = []
       self._dD_ctAB_set_ref = []
       self._S_AB_set = []
+      self._T_set = []
+      self._DIP_set = []
 
 
  #@abstractmethod
@@ -236,14 +241,14 @@ class SameMoleculeDMSFit(DMSFit):
  #@abstractmethod
  #def _compute_hessian(self): pass
 
-
-
 class Translation_SameMoleculeDMSFit(SameMoleculeDMSFit):
-  def __init__(mol_A, method, nsampl_pol, nsampl_ct):
-      SameMoleculeDMSFit.__init__(mol_A, method, wfn, nsampl_pol, nsampl_ct)
+  def __init__(self, mol_A, method, nsampl_pol, nsampl_ct):
+      SameMoleculeDMSFit.__init__(self, mol_A, method, nsampl_pol, nsampl_ct)
       self._i = -1
-      self._delta = 3.0
+      self._start = 3.0
+      self._delta = 0.003
       self._t = numpy.array([3.0, 4.0, 5.0]); self._t/= numpy.linalg.norm(self._t)
+      self._natoms = self._mol_A.natom()
 
   def _compute_dms_induction(self):
       self._dms_ind1 = numpy.zeros((self._nbf_A, self._nbf_A, self._natoms, 3))
@@ -267,36 +272,6 @@ class Translation_SameMoleculeDMSFit(SameMoleculeDMSFit):
       b_2 = numpy.zeros((self._natoms, 3, 3))
       #TODO fill up b_1 and b_2
       return b_1, b_2
- 
-  def _prepare_for_ct(self):
-      "Compute electric fields, CT kernels and reference deformation density matrices"
-      for n in range(self._nsampl_ct):
-          aggr= self._construct_aggregate()
-          dds = DensityDecomposition(aggr, method=self._method, acbs=True, jk_type='direct', 
-                                           no_cutoff=0.000, xc_scale=1.0, l_dds=False, n_eps=5.0E-5, cc_relax=True,
-                                           verbose=False) 
-          dds.compute(polar_approx=False)
-          self._S = dds.matrix["sqm"][:self._nbf_A,self._nbf_A:] # S_AB
-          self._S_AB_set.append(self._S.copy())
-          self._bfs_A = dds.data["bfs"][0]
-          self._bfs_B = dds.data["bfs"][1]
-                                                                                                           
-          dD_pol = solver.deformation_density('pol')
-          dD     = solver.deformation_density('fqm')
-
-          self._dD_indA_set_ref.append(dD_pol[:self._nbf_A,:self._nbf_A])
-          self._dD_indB_set_ref.append(dD_pol[self._nbf_A:,self._nbf_A:])
-          self._dD_ctAB_set_ref.append(dD_pol[:self._nbf_A,self._nbf_A:])
-
-          #F_A, F_B = self._compute_efield()
-          #self._F_A_set.append(F_A)
-          #self._F_B_set.append(F_B)
-
-          self._T_set.append(self._compute_T())
-
-      self._T_set = numpy.array(self._T_set)
-      #self._F_A_set = numpy.array(self._F_A_set)
-      #self._F_B_set = numpy.array(self._F_B_set)
 
   def _compute_efield(self):
       D = self._wfn_A.Da().to_array(dense=True)
@@ -346,7 +321,93 @@ class Translation_SameMoleculeDMSFit(SameMoleculeDMSFit):
       D = self._wfn_A.Da().to_array(dense=True)
       return D @ self._S
 
+  def _rms(self, a, b): return numpy.sqrt(((a-b)**2).sum()/a.size)
+
+
+  def _construct_aggregate(self): 
+      self._i += 1
+      log = "\n0 1\n"
+      for i in range(self._natoms):
+          log += "%s" % self._mol_A.symbol(i)
+          log += "%16.6f" % (self._mol_A.x(i) * psi4.constants.bohr2angstroms)
+          log += "%16.6f" % (self._mol_A.y(i) * psi4.constants.bohr2angstroms)
+          log += "%16.6f" % (self._mol_A.z(i) * psi4.constants.bohr2angstroms)
+          log += "\n"
+      log += "units angstrom\n"
+      log += "symmetry c1\n"
+      log += "no_reorient\n"
+      log += "no_com\n"
+
+      log += "--\n"
+      log += "0 1\n"
+
+      t =  (self._start + self._i * self._delta) * self._t
+      for i in range(self._natoms):
+          log += "%s" % self._mol_A.symbol(i)
+          log += "%16.6f" % (self._mol_A.x(i) * psi4.constants.bohr2angstroms + t[0])
+          log += "%16.6f" % (self._mol_A.y(i) * psi4.constants.bohr2angstroms + t[1])
+          log += "%16.6f" % (self._mol_A.z(i) * psi4.constants.bohr2angstroms + t[2])
+          log += "\n"
+      log += "units angstrom\n"
+      log += "symmetry c1\n"
+      log += "no_reorient\n"
+      log += "no_com\n"
+      print(log)
+
+      mol = psi4.geometry(log)
+      mol.update_geometry()
+      return mol
+ #def _compute_gradient(self): raise NotImplementedError
+ #    #TODO
+ #def _compute_hessian(self): raise NotImplementedError
+ #    #TODO
+
+
+
+class Symmetric_Translation_SameMoleculeDMSFit(Translation_SameMoleculeDMSFit):
+  def __init__(self, mol_A, method, nsampl_pol, nsampl_ct):
+      Translation_SameMoleculeDMSFit.__init__(self, mol_A, method, nsampl_pol, nsampl_ct)
+
+ 
+  def _prepare_for_ct(self):
+      "Compute electric fields, CT kernels and reference deformation density matrices"
+      print(" * Computing DDS for Each Sample")
+      mints = psi4.core.MintsHelper(self._wfn_A.basisset())
+      for n in range(self._nsampl_ct):
+          print(" * - Sample %d" % self._i)
+          aggr= self._construct_aggregate()
+          dds = DensityDecomposition(aggr, method=self._method, acbs=False, jk_type='direct', 
+                                           no_cutoff=0.000, xc_scale=1.0, l_dds=False, n_eps=5.0E-5, cc_relax=True,
+                                           verbose=False) 
+          dds.compute(polar_approx=False)
+          self._S = dds.matrix["sqm"][:self._nbf_A,self._nbf_A:] # S_AB
+          self._S_AB_set.append(self._S.copy())
+          self._bfs_A = dds.data["wfn"][0].basisset()
+          self._bfs_B = dds.data["wfn"][1].basisset()
+                                                                                                           
+          dD_pol = dds.deformation_density('pol')
+          dD     = dds.deformation_density('fqm')
+
+          self._dD_indA_set_ref.append(dD_pol[:self._nbf_A,:self._nbf_A])
+          self._dD_indB_set_ref.append(dD_pol[self._nbf_A:,self._nbf_A:])
+          self._dD_ctAB_set_ref.append(dD_pol[:self._nbf_A,self._nbf_A:])
+
+          #F_A, F_B = self._compute_efield()
+          #self._F_A_set.append(F_A)
+          #self._F_B_set.append(F_B)
+
+          self._T_set.append(self._compute_T())
+
+          #DIP = mints.ao_dipole()
+          #self._DIP_set.append(DIP)
+
+      self._T_set = numpy.array(self._T_set)
+      #self._F_A_set = numpy.array(self._F_A_set)
+      #self._F_B_set = numpy.array(self._F_B_set)
+
+
   def _compute_dms_ct(self):
+      print(" * Computing DMS CT")
       DIM = int(self._nbf_A * (self._nbf_A + 1) / 2)
       self._h_ct = numpy.zeros((DIM, DIM))
 
@@ -369,25 +430,31 @@ class Translation_SameMoleculeDMSFit(SameMoleculeDMSFit):
               kl = -1
               self._g_ct[ij] = DT[i,j]
               for k in range(self._nbf_A):
-                  for l in range(l+1):
+                  for l in range(k+1):
                       kl += 1
                       if j==l: self._h_ct[ij,kl] = TT[i,k]
 
       Hi = self._invert_hessian(self._h_ct)
-      B  = -numpy.dot(self._g_ct, Hi)
+      B  = -numpy.dot(Hi, self._g_ct)
+      print(((self._h_ct-self._h_ct.T)**2).sum())
+      print(B)
 
       self._dms_ct = numpy.zeros((self._nbf_A, self._nbf_A))
       ij = -1
       for i in range(self._nbf_A):
           for j in range(i+1):
               ij +=1
-              v = self._dms_ct[ij]
+              v = B[ij]
               self._dms_ct[i,j] = v
               self._dms_ct[j,i] = v
 
-  def _rms(self, a, b): return numpy.sqrt(((a-b)**2).sum()/a.size)
   def check_dms_ct(self):
+      print(" * Checking DMS CT")
       error = 0.0
+      D = self._wfn_A.Da().to_array(dense=True)
+
+      mints = psi4.core.MintsHelper(self._wfn_A.basisset())
+      DIP = mints.ao_dipole()
       for n in range(self._nsampl_ct):
           S      = self._S_AB_set[n]
           dD_ref = self._dD_ctAB_set_ref[n]
@@ -395,44 +462,158 @@ class Translation_SameMoleculeDMSFit(SameMoleculeDMSFit):
 
           rms = self._rms(dD_ref, dD_com)
           error += rms
+          av_ref = abs(dD_ref).mean()
+          av_com = abs(dD_com).mean()
+
+          # dipole moment due to CT
+          mu_ref = numpy.array([ 2.0*(dD_ref @ x.to_array(dense=True)).trace() for x in DIP])
+          mu_com = numpy.array([ 2.0*(dD_com @ x.to_array(dense=True)).trace() for x in DIP])
+          a_mu_ref = numpy.linalg.norm(mu_ref)
+          a_mu_com = numpy.linalg.norm(mu_com)
+          print(" * - Sample %d RMS= %14.5f  AV_C= %14.5f AV_R= %14.5f  M_C= %14.4f M_R=%14.4f" \
+                      % (n+1,rms, av_com, av_ref, a_mu_com, a_mu_ref))
+      error/=self._nsampl_ct
+      print(" * - Average RMS= %14.5f" % error)
       return error
 
+class Asymmetric_Translation_SameMoleculeDMSFit(Translation_SameMoleculeDMSFit):
+  def __init__(self, mol_A, method, nsampl_pol, nsampl_ct):
+      Translation_SameMoleculeDMSFit.__init__(self, mol_A, method, nsampl_pol, nsampl_ct)
+      self._R_set = []
 
-  def _construct_aggregate(self): 
-      self._i += 1
-      log = "0 1\n"
-      for i in range(self._natoms):
-          log += "%s" % self._mol_A.symbol(i)
-          log += "%16.6f" % self._mol_A.x(i)
-          log += "%16.6f" % self._mol_A.y(i)
-          log += "%16.6f" % self._mol_A.z(i)
-          log += "\n"
-      log += "units angstrom\n"
-      log += "symmetry c1\n"
-      log += "no_reorient\n"
-      log += "no_com\n"
+  def _compute_R(self):
+      D = self._wfn_A.Da().to_array(dense=True)
+      return D @ self._S
 
-      log += "--\n"
-      log += "0 1\n"
+  def _compute_T(self):
+      D = self._wfn_A.Da().to_array(dense=True)
+      return self._S @ D
 
-      t =  self._delta + self._i * self._t
-      for i in range(self._natoms):
-          log += "%s" % self._mol_A.symbol(i)
-          log += "%16.6f" % self._mol_A.x(i) + t[0]
-          log += "%16.6f" % self._mol_A.y(i) + t[1]
-          log += "%16.6f" % self._mol_A.z(i) + t[2]
-          log += "\n"
-      log += "units angstrom\n"
-      log += "symmetry c1\n"
-      log += "no_reorient\n"
-      log += "no_com\n"
 
-      mol = psi4.geometry(log)
-      mol.update_geometry()
-      return mol
- #def _compute_gradient(self): raise NotImplementedError
- #    #TODO
- #def _compute_hessian(self): raise NotImplementedError
- #    #TODO
+
+  def _prepare_for_ct(self):
+      "Compute electric fields, CT kernels and reference deformation density matrices"
+      print(" * Computing DDS for Each Sample")
+      for n in range(self._nsampl_ct):
+          print(" * - Sample %d" % self._i)
+          aggr= self._construct_aggregate()
+          dds = DensityDecomposition(aggr, method=self._method, acbs=False, jk_type='direct', 
+                                           no_cutoff=0.000, xc_scale=1.0, l_dds=False, n_eps=5.0E-5, cc_relax=True,
+                                           verbose=False) 
+          dds.compute(polar_approx=False)
+          self._S = dds.matrix["sqm"][:self._nbf_A,self._nbf_A:] # S_AB
+          self._S_AB_set.append(self._S.copy())
+          self._bfs_A = dds.data["wfn"][0].basisset()
+          self._bfs_B = dds.data["wfn"][1].basisset()
+                                                                                                           
+          dD_pol = dds.deformation_density('pol')
+          dD     = dds.deformation_density('fqm')
+
+          self._dD_indA_set_ref.append(dD_pol[:self._nbf_A,:self._nbf_A])
+          self._dD_indB_set_ref.append(dD_pol[self._nbf_A:,self._nbf_A:])
+          self._dD_ctAB_set_ref.append(dD_pol[:self._nbf_A,self._nbf_A:])
+
+          #F_A, F_B = self._compute_efield()
+          #self._F_A_set.append(F_A)
+          #self._F_B_set.append(F_B)
+
+          self._T_set.append(self._compute_T())
+          self._R_set.append(self._compute_R())
+
+          #DIP = mints.ao_dipole()
+          #self._DIP_set.append(DIP)
+
+      self._T_set = numpy.array(self._T_set)
+      self._R_set = numpy.array(self._R_set)
+      #self._F_A_set = numpy.array(self._F_A_set)
+      #self._F_B_set = numpy.array(self._F_B_set)
+
+
+  def _compute_dms_ct(self):
+      print(" * Computing DMS CT")
+      DIM = self._nbf_A**2
+      self._h_ct = numpy.zeros((DIM, DIM))
+
+      DT = numpy.zeros((self._nbf_A, self._nbf_A))
+      TT = numpy.zeros((self._nbf_A, self._nbf_A))
+      RD = numpy.zeros((self._nbf_A, self._nbf_A))
+      RR = numpy.zeros((self._nbf_A, self._nbf_A))
+
+      for n in range(self._nsampl_ct):
+          D = self._dD_ctAB_set_ref[n]
+          T = self._T_set[n]
+          R = self._R_set[n]
+          TT += T @ T.T
+          DT += D @ T.T
+          RD += R.T @ D
+          RR += R.T @ R 
+
+      p = numpy.einsum("nac,nbd->abcd", self._R_set, self._T_set) * 2.0
+      q = numpy.einsum("nca,ndb->abcd", self._R_set, self._T_set) * 2.0
+
+      DT *= -2.0
+      RD *= -2.0
+      TT *=  2.0
+      RR *=  2.0
+
+      self._g_ct = numpy.zeros(DIM)
+
+      for i in range(self._nbf_A):
+          for j in range(self._nbf_A):
+              ij = i*self._nbf_A + j
+              self._g_ct[ij] = DT[i,j] + RD[i,j]
+              for k in range(self._nbf_A):
+                  for l in range(self._nbf_A):
+                      kl = k*self._nbf_A + l
+                      v = 0.0
+                      #for N in range(self._nsampl_ct):
+                      #    v += self._R_set[N][i,k] * self._T_set[N][j,l]
+                      #    v += self._R_set[N][k,i] * self._T_set[N][l,j]
+                      #v *= 2.0
+                      v = p[i,j,k,l] + q[i,j,k,l]
+                      if i==k: v += TT[j,l]
+                      if j==l: v += RR[k,i] 
+                      
+                      self._h_ct[ij,kl] = v
+                      
+
+      Hi = self._invert_hessian(self._h_ct)
+      B  = -numpy.dot(Hi, self._g_ct)
+
+      self._dms_ct = numpy.zeros((self._nbf_A, self._nbf_A))
+      for i in range(self._nbf_A):
+          for j in range(self._nbf_A):
+              ij = i*self._nbf_A + j
+              self._dms_ct[i,j] = B[ij]
+      print(" * DMS CT: ")
+      print(self._dms_ct.round(2))
+
+  def check_dms_ct(self):
+      print(" * Checking DMS CT")
+      error = 0.0
+      D = self._wfn_A.Da().to_array(dense=True)
+
+      mints = psi4.core.MintsHelper(self._wfn_A.basisset())
+      DIP = mints.ao_dipole()
+      for n in range(self._nsampl_ct):
+          S      = self._S_AB_set[n]
+          dD_ref = self._dD_ctAB_set_ref[n]
+          dD_com = self._dms_ct @ S @ D + D @ S @ self._dms_ct
+
+          rms = self._rms(dD_ref, dD_com)
+          error += rms
+          av_ref = abs(dD_ref).mean()
+          av_com = abs(dD_com).mean()
+
+          # dipole moment due to CT
+          mu_ref = numpy.array([ 2.0*(dD_ref @ x.to_array(dense=True)).trace() for x in DIP])
+          mu_com = numpy.array([ 2.0*(dD_com @ x.to_array(dense=True)).trace() for x in DIP])
+          a_mu_ref = numpy.linalg.norm(mu_ref)
+          a_mu_com = numpy.linalg.norm(mu_com)
+          print(" * - Sample %d RMS= %14.5f  AV_C= %14.5f AV_R= %14.5f  M_C= %14.4f M_R=%14.4f" \
+                      % (n+1,rms, av_com, av_ref, a_mu_com, a_mu_ref))
+      error/=self._nsampl_ct
+      print(" * - Average RMS= %14.5f" % error)
+      return error
 
 
