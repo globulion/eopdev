@@ -13,7 +13,7 @@ import scipy.optimize
 import scipy.spatial.transform
 from abc import ABC, abstractmethod
 from .partitioning import DensityDecomposition
-from ..math.matrix import move_atom_rotate_molecule, rotate_ao_matrix
+from ..math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix_power
 
 __all__ = ["DMSFit", "DMS", "Computer"]
 
@@ -245,8 +245,8 @@ class Translation_SameMoleculeDMSFit(SameMoleculeDMSFit):
   def __init__(self, mol_A, method, nsampl_pol, nsampl_ct):
       SameMoleculeDMSFit.__init__(self, mol_A, method, nsampl_pol, nsampl_ct)
       self._i = -1
-      self._start = 3.0
-      self._delta = 0.003
+      self._start = 1.5
+      self._delta = 0.01
       self._t = numpy.array([3.0, 4.0, 5.0]); self._t/= numpy.linalg.norm(self._t)
       self._natoms = self._mol_A.natom()
 
@@ -482,11 +482,11 @@ class Asymmetric_Translation_SameMoleculeDMSFit(Translation_SameMoleculeDMSFit):
       self._R_set = []
 
   def _compute_R(self):
-      D = self._wfn_A.Da().to_array(dense=True)
+      D = self._W # self._wfn_A.Da().to_array(dense=True)
       return D @ self._S
 
   def _compute_T(self):
-      D = self._wfn_A.Da().to_array(dense=True)
+      D = self._W # self._wfn_A.Da().to_array(dense=True)
       return self._S @ D
 
 
@@ -494,7 +494,13 @@ class Asymmetric_Translation_SameMoleculeDMSFit(Translation_SameMoleculeDMSFit):
   def _prepare_for_ct(self):
       "Compute electric fields, CT kernels and reference deformation density matrices"
       print(" * Computing DDS for Each Sample")
+      s = self._wfn_A.S().to_array(dense=True)
+      self._bfs_A = self._wfn_A.basisset()
+      self._W = self._wfn_A.Da().to_array(dense=True)
+      self._W = s @ self._W @ s
+      #self._W = matrix_power(self._W, 0.5)
       for n in range(self._nsampl_ct):
+          psi4.core.clean()
           print(" * - Sample %d" % self._i)
           aggr= self._construct_aggregate()
           dds = DensityDecomposition(aggr, method=self._method, acbs=False, jk_type='direct', 
@@ -503,8 +509,10 @@ class Asymmetric_Translation_SameMoleculeDMSFit(Translation_SameMoleculeDMSFit):
           dds.compute(polar_approx=False)
           self._S = dds.matrix["sqm"][:self._nbf_A,self._nbf_A:] # S_AB
           self._S_AB_set.append(self._S.copy())
-          self._bfs_A = dds.data["wfn"][0].basisset()
-          self._bfs_B = dds.data["wfn"][1].basisset()
+          #self._bfs_A = dds.data["wfn"][0].basisset()
+          #self._bfs_B = dds.data["wfn"][1].basisset()
+          mol_B = aggr.extract_subsets(2)
+          self._bfs_B = psi4.core.BasisSet.build(mol_B, "BASIS", psi4.core.get_global_option("BASIS"), puream=psi4.core.get_global_option("PUREAM"))
                                                                                                            
           dD_pol = dds.deformation_density('pol')
           dD     = dds.deformation_density('fqm')
@@ -550,6 +558,8 @@ class Asymmetric_Translation_SameMoleculeDMSFit(Translation_SameMoleculeDMSFit):
 
       p = numpy.einsum("nac,nbd->abcd", self._R_set, self._T_set) * 2.0
       q = numpy.einsum("nca,ndb->abcd", self._R_set, self._T_set) * 2.0
+      #p = numpy.einsum("nad,nbc->abcd", self._R_set, self._T_set) * 2.0
+      #q = numpy.einsum("ncb,nda->abcd", self._R_set, self._T_set) * 2.0
 
       DT *= -2.0
       RD *= -2.0
@@ -562,6 +572,7 @@ class Asymmetric_Translation_SameMoleculeDMSFit(Translation_SameMoleculeDMSFit):
           for j in range(self._nbf_A):
               ij = i*self._nbf_A + j
               self._g_ct[ij] = DT[i,j] + RD[i,j]
+              #self._g_ct[ij] = DT[i,j] + RD[j,i]
               for k in range(self._nbf_A):
                   for l in range(self._nbf_A):
                       kl = k*self._nbf_A + l
@@ -571,7 +582,7 @@ class Asymmetric_Translation_SameMoleculeDMSFit(Translation_SameMoleculeDMSFit):
                       #    v += self._R_set[N][k,i] * self._T_set[N][l,j]
                       #v *= 2.0
                       v = p[i,j,k,l] + q[i,j,k,l]
-                      if i==k: v += TT[j,l]
+                      if i==k: v += TT[j,l] #+ RR[j,l]
                       if j==l: v += RR[k,i] 
                       
                       self._h_ct[ij,kl] = v
@@ -591,19 +602,22 @@ class Asymmetric_Translation_SameMoleculeDMSFit(Translation_SameMoleculeDMSFit):
   def check_dms_ct(self):
       print(" * Checking DMS CT")
       error = 0.0
-      D = self._wfn_A.Da().to_array(dense=True)
+      #D = self._wfn_A.Da().to_array(dense=True)
+      D = self._W
 
       mints = psi4.core.MintsHelper(self._wfn_A.basisset())
       DIP = mints.ao_dipole()
       for n in range(self._nsampl_ct):
           S      = self._S_AB_set[n]
           dD_ref = self._dD_ctAB_set_ref[n]
-          dD_com = self._dms_ct @ S @ D + D @ S @ self._dms_ct
+          dD_com = self._dms_ct @ S @ D + D @ S @ self._dms_ct #.T
 
           rms = self._rms(dD_ref, dD_com)
           error += rms
           av_ref = abs(dD_ref).mean()
           av_com = abs(dD_com).mean()
+          print(dD_ref[0])
+          print(dD_com[0])
 
           # dipole moment due to CT
           mu_ref = numpy.array([ 2.0*(dD_ref @ x.to_array(dense=True)).trace() for x in DIP])
