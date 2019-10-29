@@ -163,4 +163,12 @@ void U_CISComputer::build_hamiltonian_(void) {
  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 }
 
+void U_CISComputer::davidson_liu_compute_sigma(void) {
+ //TODO
+}
+
+void U_CISComputer::davidson_liu_compute_diagonal_hamiltonian(void) {
+ //TODO
+}
+
 } // EndNameSpace oepdev

@@ -74,6 +74,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/diis.cc
                        oepdev/libutil/cphf.cc
                        oepdev/libutil/graham_schmidt.cc
+                       oepdev/libutil/davidson_liu.cc
                        oepdev/libutil/wavefunction_union.cc
                        oepdev/libutil/integrals_iter.cc
                        oepdev/libutil/unitary_optimizer.cc

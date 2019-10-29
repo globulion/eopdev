@@ -38,15 +38,30 @@ class GrahamSchmidt {
   // --> public interface <-- //
   public:
 
+
+   /** \brief Construct the blank Graham-Schmidt Orthonormalizer.
+    *
+    */
+   GrahamSchmidt();
+
    /** \brief Construct the Graham-Schmidt Orthonormalizer.
     *
     * @param vectors - list of vectors to be orthogonalized.
     *
     */
    GrahamSchmidt(std::vector<psi::SharedVector> vectors);
+
    /// Destructor
    virtual ~GrahamSchmidt();
 
+   /// Retrieve all the vectors
+   virtual std::vector<psi::SharedVector> V(void) const {return V_;}
+
+   /// Retrieve the number of vectors
+   virtual int L(void) const {return L_;}
+
+   /// Retrieve the *i*th vector
+   virtual psi::SharedVector V(int i) const {return V_.at(i);}
 
    /// Normalize all the vectors
    void normalize(void);
@@ -57,8 +72,8 @@ class GrahamSchmidt {
    /// Orthogonalize all the vectors
    void orthogonalize(void);
 
-   /// Orthogonalize vector with respect to the vector set
-   psi::SharedVector orthogonalize_vector(psi::SharedVector d, bool normalize = false);
+   /// Orthogonalize vector with respect to the vector set. Modifies **d**.
+   void orthogonalize_vector(psi::SharedVector& d, bool normalize = false) const;
 
    /** Compute the projection vector.
     *
@@ -70,13 +85,16 @@ class GrahamSchmidt {
     *  {\bf v}' = \hat{P}_{{\bf u}} {\bf v} 
     *  \f]
     */
-   psi::SharedVector projection(psi::SharedVector u, psi::SharedVector v);
+   psi::SharedVector projection(psi::SharedVector u, psi::SharedVector v) const;
 
    /// Append new vector to the list
    void append(psi::SharedVector d);
 
-   /// Reset by providing other vectors
+   /// Reset by providing new vectors
    void reset(std::vector<psi::SharedVector> V);
+
+   /// Reset to empty state
+   void reset(void);
 
 
   protected:

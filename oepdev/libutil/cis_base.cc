@@ -12,8 +12,9 @@ const std::vector<std::string> CISComputer::reference_types = {"RHF", "UHF"};
 
 CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt, 
                          psi::IntegralTransform::TransformationType trans_type):
+          DavidsonLiu(opt),
           ref_wfn_(wfn),
-          options_(opt),
+          //options_(opt),
           //Fa_oo_(nullptr),
           //Fa_vv_(nullptr),
           //Fb_oo_(nullptr),
@@ -22,8 +23,8 @@ CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& o
           eps_a_v_(nullptr),
           eps_b_o_(nullptr),
           eps_b_v_(nullptr),
-          E_(nullptr),
-          U_(nullptr),
+          //E_(nullptr),
+          //U_(nullptr),
           H_(nullptr),
           nmo_(ref_wfn_->nmo()),
           naocc_(ref_wfn_->nalpha()),
@@ -44,11 +45,22 @@ void CISComputer::compute(void) {
  this->diagonalize_hamiltonian_(); 
 }
 
+void CISComputer::allocate_hamiltonian(void) {
+ H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
+}
+
+void CISComputer::allocate_memory(void) {
+ U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, nstates_);
+ E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", ndets_);
+ eps_a_o_ = ref_wfn_->epsilon_a_subset("MO", "OCC");
+ eps_a_v_ = ref_wfn_->epsilon_a_subset("MO", "VIR");
+ this->allocate_hamiltonian();
+}
+
 void CISComputer::prepare_for_cis_(void) {
 // Fa_oo_ = psi::Matrix::triplet(ref_wfn_->Ca_subset("AO","OCC"), ref_wfn_->Fa(), ref_wfn_->Ca_subset("AO","OCC"), true, false, false);
 // Fa_vv_ = psi::Matrix::triplet(ref_wfn_->Ca_subset("AO","VIR"), ref_wfn_->Fa(), ref_wfn_->Ca_subset("AO","VIR"), true, false, false);
- eps_a_o_ = ref_wfn_->epsilon_a_subset("MO", "OCC");
- eps_a_v_ = ref_wfn_->epsilon_a_subset("MO", "VIR");
+ this->allocate_memory();
  this->set_beta_();
  this->transform_integrals_();
 }
@@ -124,13 +136,11 @@ void CISComputer::set_beta_(void) {}
 
 void CISComputer::common_init(void) {
  ndets_ = naocc_ * navir_ + nbocc_ * nbvir_;
- H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
- U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, ndets_);
- E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", ndets_);
  if (true) {
      std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(ref_wfn_->basisset());
      mints->integrals();
  }
+ nstates_ = ndets_; // Assumes Explicit CIS (diagonalization of entire Hamiltonian)
 }
 
 std::pair<double,double> CISComputer::U_homo_lumo(int I, int h, int l) const {
