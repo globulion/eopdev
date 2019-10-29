@@ -1,6 +1,6 @@
-#ifndef _oepdev_libutil_graham_schmidt_h
-#define _oepdev_libutil_graham_schmidt_h
-/** @file graham_schmidt.h */
+#ifndef _oepdev_libutil_gram_schmidt_h
+#define _oepdev_libutil_gram_schmidt_h
+/** @file gram_schmidt.h */
 
 #include "psi4/libmints/vector.h"
 
@@ -14,7 +14,7 @@ using SharedVector             = std::shared_ptr<psi::Vector>;
  */
 
 /**
- *  \brief Graham-Schmidt orthogonalization method.
+ *  \brief Gram-Schmidt orthogonalization method.
  *
  * Orthonormalize a set of *L* vectors, i.e.,
  * \f[
@@ -33,26 +33,26 @@ using SharedVector             = std::shared_ptr<psi::Vector>;
  *   \hat{P}_{{\bf u}} = \frac{1}{u^2} {\bf u} [\square \cdot {\bf u}]
  * \f]
  */
-class GrahamSchmidt {
+class GramSchmidt {
 
   // --> public interface <-- //
   public:
 
 
-   /** \brief Construct the blank Graham-Schmidt Orthonormalizer.
+   /** \brief Construct the blank Gram-Schmidt Orthonormalizer.
     *
     */
-   GrahamSchmidt();
+   GramSchmidt();
 
-   /** \brief Construct the Graham-Schmidt Orthonormalizer.
+   /** \brief Construct the Gram-Schmidt Orthonormalizer.
     *
     * @param vectors - list of vectors to be orthogonalized.
     *
     */
-   GrahamSchmidt(std::vector<psi::SharedVector> vectors);
+   GramSchmidt(std::vector<psi::SharedVector> vectors);
 
    /// Destructor
-   virtual ~GrahamSchmidt();
+   virtual ~GramSchmidt();
 
    /// Retrieve all the vectors
    virtual std::vector<psi::SharedVector> V(void) const {return V_;}
@@ -114,4 +114,4 @@ class GrahamSchmidt {
 } // EndNameSpace oepdev
 
 
-#endif // _oepdev_libutil_graham_schmidt_h
+#endif // _oepdev_libutil_gram_schmidt_h

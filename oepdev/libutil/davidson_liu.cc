@@ -12,7 +12,7 @@ oepdev::DavidsonLiu::DavidsonLiu(psi::Options& opt) :
   davidson_liu_initialized_(false), 
   davidson_liu_finalized_(false), 
   options_(opt),
-  gs_(std::make_shared<oepdev::GrahamSchmidt>()),
+  gs_(std::make_shared<oepdev::GramSchmidt>()),
   H_diag_(nullptr),
   E_old_(nullptr),
   E_(nullptr),

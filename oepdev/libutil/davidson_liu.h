@@ -5,11 +5,9 @@
 #include "psi4/liboptions/liboptions.h"
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/matrix.h"
-#include "graham_schmidt.h"
+#include "gram_schmidt.h"
 
 namespace oepdev{
-
-using SharedVector             = std::shared_ptr<psi::Vector>;
 
 /** \addtogroup OEPDEV_UTILITIES 
  * @{
@@ -69,7 +67,7 @@ class DavidsonLiu {
     std::vector<psi::SharedVector> sigma_vectors_;
                                                                     
     /// Object storing guess vectors
-    std::shared_ptr<oepdev::GrahamSchmidt> gs_;
+    std::shared_ptr<oepdev::GramSchmidt> gs_;
                                                                     
     /// Diagonal elements of the matrix to diagonalize
     psi::SharedVector H_diag_;
