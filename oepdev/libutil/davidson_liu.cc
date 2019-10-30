@@ -29,7 +29,7 @@ void oepdev::DavidsonLiu::run_davidson_liu() {
 
   double conv = 1.0e+10;
   const double eps = this->options_.get_double("DAVIDSON_LIU_CONVER");
-  const int maxit = this->options_.get_double("DAVIDSON_LIU_MAXITER");
+  const int maxit = this->options_.get_int("DAVIDSON_LIU_MAXITER");
   int iter = 1;
 
   psi::outfile->Printf("\n ===> Starting Davidson-Liu Iterations <===\n\n");
@@ -77,7 +77,7 @@ void oepdev::DavidsonLiu::davidson_liu_initialize(int N, int L, int M) {
 
 void oepdev::DavidsonLiu::davidson_liu_initialize_guess_vectors()
 {
-  if (this->options_.get_bool("DAVIDSON_LIU_GUESS")) 
+  if (this->options_.get_str("DAVIDSON_LIU_GUESS") == "RANDOM") 
        {this->davidson_liu_initialize_guess_vectors_by_random();}
   else {this->davidson_liu_initialize_guess_vectors_by_custom();}
 }
@@ -126,7 +126,7 @@ void oepdev::DavidsonLiu::davidson_liu_add_guess_vectors()
   // Read the data from options
   const double threshold_large = options_.get_double("DAVIDSON_LIU_THRESH_LARGE");
   const double threshold_small = options_.get_double("DAVIDSON_LIU_THRESH_SMALL");
-  const int L_max = options_.get_int("DAVIDSON_LIU_MAX_SPACE");
+  const int L_max = options_.get_int("DAVIDSON_LIU_SPACE_MAX");
   this->E_old_->copy(*this->E_);
 
   // Form and diagonalize the sub-space Hamiltonian

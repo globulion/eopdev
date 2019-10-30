@@ -65,6 +65,9 @@ class Test
    /// Test the CIS(UHF) method
    double test_cis_uhf(void);
 
+   /// Test the CIS(RHF) method with Davidson-Liu algorithm
+   double test_cis_rhf_dl(void);
+
    /// Test the CPHF method
    double test_cphf(void);
 

@@ -5,6 +5,7 @@ add_test (NAME BASIC                 COMMAND "psi4" "tests/oepdev/basic.inp"    
 add_test (NAME CIS_RHF               COMMAND "psi4" "tests/oepdev/cis-rhf.inp"              "tests/oepdev/cis-rhf.out")
 add_test (NAME CIS_UHF               COMMAND "psi4" "tests/oepdev/cis-uhf.inp"              "tests/oepdev/cis-uhf.out")
 add_test (NAME CIS_RHF_DIRECT        COMMAND "psi4" "tests/oepdev/cis-rhf_direct.inp"       "tests/oepdev/cis-rhf_direct.out")
+add_test (NAME CIS_RHF_DAVIDSON_LIU  COMMAND "psi4" "tests/oepdev/cis-rhf_dl.inp"           "tests/oepdev/cis-rhf_dl.out")    
 add_test (NAME CPHF                  COMMAND "psi4" "tests/oepdev/cphf.inp"                 "tests/oepdev/cphf.out"   )
 add_test (NAME DMATPOL               COMMAND "psi4" "tests/oepdev/dmatpol.inp"              "tests/oepdev/dmatpol.out")
 add_test (NAME ERI_1_1               COMMAND "psi4" "tests/oepdev/eri_1_1.inp"              "tests/oepdev/eri_1_1.out")
@@ -31,6 +32,7 @@ set_tests_properties (BASIC                 PROPERTIES PASS_REGULAR_EXPRESSION "
 set_tests_properties (CIS_RHF               PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00013454")
 set_tests_properties (CIS_UHF               PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00541173")
 set_tests_properties (CIS_RHF_DIRECT        PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00013600")
+set_tests_properties (CIS_RHF_DAVIDSON_LIU  PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00013600") # Revise
 set_tests_properties (CPHF                  PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00"      )
 set_tests_properties (DMATPOL               PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00"      )
 set_tests_properties (ERI_1_1               PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")

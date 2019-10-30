@@ -120,14 +120,18 @@ std::shared_ptr<CISComputer> CISComputer::build(const std::string& type,
 
   // Create
   std::shared_ptr<CISComputer> cis;
+  std::string cis_type = opt.get_str("CIS_TYPE");
 
   if ((ref_wfn->molecule()->multiplicity() != 1) || (ref == "UHF")) { 
 	 cis = std::make_shared<U_CISComputer>(ref_wfn, opt);
   }
   else {
-     if (opt.get_bool("CIS_DIRECT")) { 
+     if (cis_type == "DIRECT") { 
 	 cis = std::make_shared<R_CISComputer_Direct>(ref_wfn, opt); 
-     } else {
+     } else 
+     if (cis_type == "DAVIDSON_LIU") {
+         cis = std::make_shared<R_CISComputer_DL>(ref_wfn, opt);
+     } else { // Explicit CIS
 	 cis = std::make_shared<R_CISComputer>(ref_wfn, opt);
      }
   }

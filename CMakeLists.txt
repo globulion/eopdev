@@ -127,6 +127,7 @@ add_psi4_plugin(oepdev main.cc
 		       oepdev/libtest/basic.cc
                        oepdev/libtest/cis_rhf.cc
                        oepdev/libtest/cis_uhf.cc
+                       oepdev/libtest/cis_rhf_dl.cc
 		       oepdev/libtest/cphf.cc
 		       oepdev/libtest/camm.cc
 		       oepdev/libtest/dmtp_energy.cc
