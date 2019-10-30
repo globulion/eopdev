@@ -310,6 +310,7 @@ class CISComputer : public DavidsonLiu {
 
    CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt, psi::IntegralTransform::TransformationType trans_type);
 
+   virtual void set_nstates_(void);
    virtual void allocate_memory(void);
    virtual void allocate_hamiltonian_(void);
    virtual void prepare_for_cis_(void);
@@ -344,6 +345,7 @@ class R_CISComputer_DL: public R_CISComputer {
    virtual void allocate_hamiltonian_(void);
    virtual void build_hamiltonian_(void);
    virtual void diagonalize_hamiltonian_(void);
+   virtual void set_nstates_(void);
 
    virtual void davidson_liu_compute_diagonal_hamiltonian(void);
    virtual void davidson_liu_compute_sigma(void);

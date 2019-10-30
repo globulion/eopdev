@@ -36,6 +36,7 @@ CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& o
           jk_(nullptr)
 {
   this->common_init(); 
+  this->set_nstates_();
   this->allocate_memory(); // moved here to allocate E_ and U_ before Davidson-Liu needs to be initialized
 }
 
@@ -45,7 +46,6 @@ void CISComputer::compute(void) {
  this->prepare_for_cis_();
  this->build_hamiltonian_();
  this->diagonalize_hamiltonian_(); 
- cout << "Here4?\n";
 
  // Clear memory
  this->jk_->finalize();
@@ -61,6 +61,11 @@ void CISComputer::allocate_memory(void) {
  eps_a_o_ = ref_wfn_->epsilon_a_subset("MO", "OCC");
  eps_a_v_ = ref_wfn_->epsilon_a_subset("MO", "VIR");
  this->allocate_hamiltonian_();
+}
+
+void CISComputer::set_nstates_() {
+  // Set the number of states as the number of roots in Davidson-Liu method
+  this->nstates_ = this->ndets_;
 }
 
 void CISComputer::prepare_for_cis_(void) {
@@ -149,7 +154,7 @@ void CISComputer::common_init(void) {
      std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(ref_wfn_->basisset());
      mints->integrals();
  }
- nstates_ = ndets_; // Assumes Explicit CIS (diagonalization of entire Hamiltonian)
+// nstates_ = ndets_; // Assumes Explicit CIS (diagonalization of entire Hamiltonian)
 
  // Construct the JK object
  jk_ = psi::JK::build_JK(ref_wfn_->basisset(), psi::BasisSet::zero_ao_basis_set(), options_);

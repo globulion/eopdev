@@ -18,7 +18,11 @@ oepdev::DavidsonLiu::DavidsonLiu(psi::Options& opt) :
   E_old_(nullptr),
   E_(nullptr),
   U_(nullptr)
+//N_(N),
+//L_(L),
+//M_(M)
 {
+//  this->davidson_liu_initialize();
 }
 
 oepdev::DavidsonLiu::~DavidsonLiu() {}
@@ -30,7 +34,7 @@ void oepdev::DavidsonLiu::run_davidson_liu() {
   double conv = 1.0e+2;
   const double eps = this->options_.get_double("DAVIDSON_LIU_CONVER");
   const int maxit = this->options_.get_int("DAVIDSON_LIU_MAXITER");
-  int iter = 0;
+  int iter = 1;
 
   psi::outfile->Printf("\n ===> Starting Davidson-Liu Iterations <===\n\n");
 
@@ -44,14 +48,14 @@ void oepdev::DavidsonLiu::run_davidson_liu() {
   psi::outfile->Printf("\n @Davidson-Liu: Starting iteration process.\n");
   while (conv > eps) {
 
-     psi::outfile->Printf(" @Davidson-Liu Iter=%4d Conv=%18.8f Nvec=%4d\n", iter, conv, L_);
+
+   //this->gs_->orthonormalize();
 
      this->davidson_liu_compute_sigma();
- std::cout << "A2?\n";
      this->davidson_liu_add_guess_vectors();
- std::cout << "A3?\n";
      conv = this->davidson_liu_compute_convergence();
- std::cout << "A4?\n";
+
+     psi::outfile->Printf(" @Davidson-Liu Iter=%4d Conv=%18.8f Nvec=%4d\n", iter, conv, L_);
 
      iter++;
      if (iter > maxit) {
@@ -74,8 +78,8 @@ void oepdev::DavidsonLiu::davidson_liu_initialize(int N, int L, int M) {
  this->N_ = N;
  this->L_ = L;
  this->M_ = M;
- this->H_diag_ = std::make_shared<psi::Vector>("", N);
- this->E_old_ = std::make_shared<psi::Vector>("", M);
+ this->H_diag_ = std::make_shared<psi::Vector>("", N_);
+ this->E_old_ = std::make_shared<psi::Vector>("", M_);
  this->davidson_liu_initialized_ = true;
 }
 
@@ -144,6 +148,8 @@ void oepdev::DavidsonLiu::davidson_liu_add_guess_vectors()
   double* e = E_->pointer();
   double* h = H_diag_->pointer();
 
+  std::cout << "NCOL=" << U_->ncol() << "NROW=" << U_->nrow() << std::endl;
+
   for (int i=0; i<L_; ++i) {
        g[i][i] = gs_->V(i)->vector_dot(sigma_vectors_[i]);
        for (int j=0; j<i; ++j) {
@@ -157,6 +163,7 @@ void oepdev::DavidsonLiu::davidson_liu_add_guess_vectors()
 
   // Save current eigenpairs
   for (int k=0; k<M_; ++k) {
+
        e[k] = E->get(k);
        for (int n=0; n<N_; ++n) {
             double v = 0.0;
@@ -176,10 +183,11 @@ void oepdev::DavidsonLiu::davidson_liu_add_guess_vectors()
        for (int n=0; n<N_; ++n) {
             double v = -e[k] * w[n][k];
             for (int l=0; l<L_; ++l) {
-                 v += sigma_vectors_[l]->get(n) * u[l][k];
+                 v += this->sigma_vectors_[l]->get(n) * u[l][k];
             }
             d->set(n, v/(e[k] - h[n]) );
        }
+
 
        // Add vectors to the guess space
        this->gs_->orthogonalize_vector(d, false);
