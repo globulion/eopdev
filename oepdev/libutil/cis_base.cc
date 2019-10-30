@@ -36,6 +36,7 @@ CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& o
           jk_(nullptr)
 {
   this->common_init(); 
+  this->allocate_memory(); // moved here to allocate E_ and U_ before Davidson-Liu needs to be initialized
 }
 
 CISComputer::~CISComputer() {}
@@ -44,6 +45,7 @@ void CISComputer::compute(void) {
  this->prepare_for_cis_();
  this->build_hamiltonian_();
  this->diagonalize_hamiltonian_(); 
+ cout << "Here4?\n";
 
  // Clear memory
  this->jk_->finalize();
@@ -64,7 +66,6 @@ void CISComputer::allocate_memory(void) {
 void CISComputer::prepare_for_cis_(void) {
 // Fa_oo_ = psi::Matrix::triplet(ref_wfn_->Ca_subset("AO","OCC"), ref_wfn_->Fa(), ref_wfn_->Ca_subset("AO","OCC"), true, false, false);
 // Fa_vv_ = psi::Matrix::triplet(ref_wfn_->Ca_subset("AO","VIR"), ref_wfn_->Fa(), ref_wfn_->Ca_subset("AO","VIR"), true, false, false);
- this->allocate_memory();
  this->set_beta_();
  this->transform_integrals_();
 }

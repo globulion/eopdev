@@ -58,10 +58,17 @@ set {
     oepdev_test_mode              monomer
     oepdev_localize               False
     oepdev_enable_trial           False
+    # --> OEPDEV CIS Routine Specification <-- #
     cis_type                      davidson_liu
     cis_schwartz_cutoff           1.0e-5
+    davidson_liu_conver           1.0e-15
+    davidson_liu_maxiter          200    
+    davidson_liu_guess            random 
+    davidson_liu_thresh_large     1.0e-03
+    davidson_liu_thresh_small     1.0e-06
+    davidson_liu_nroots           1
+    davidson_liu_space_start      1      
     davidson_liu_space_max        200
-    davidson_liu_nroots           1  
     # ==> General Psi4 Options <== #
     freeze_core                   False
     scf_type                      direct

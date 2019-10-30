@@ -27,13 +27,14 @@ oepdev::DavidsonLiu::~DavidsonLiu() {}
 void oepdev::DavidsonLiu::run_davidson_liu() {
   if (!davidson_liu_initialized_) throw psi::PSIEXCEPTION("Davidson-Liu must be initialized first!");
 
-  double conv = 1.0e+10;
+  double conv = 1.0e+2;
   const double eps = this->options_.get_double("DAVIDSON_LIU_CONVER");
   const int maxit = this->options_.get_int("DAVIDSON_LIU_MAXITER");
-  int iter = 1;
+  int iter = 0;
 
   psi::outfile->Printf("\n ===> Starting Davidson-Liu Iterations <===\n\n");
 
+  psi::outfile->Printf("  Dimension= %d  Initial vectors= %d  Number of roots= %d\n\n", N_, L_, M_);
   psi::outfile->Printf(" @Davidson-Liu: Initializing guess vectors.\n");
   this->davidson_liu_initialize_guess_vectors();
 
@@ -43,11 +44,14 @@ void oepdev::DavidsonLiu::run_davidson_liu() {
   psi::outfile->Printf("\n @Davidson-Liu: Starting iteration process.\n");
   while (conv > eps) {
 
-     this->davidson_liu_compute_sigma();
-     this->davidson_liu_add_guess_vectors();
-     conv = this->davidson_liu_compute_convergence();
+     psi::outfile->Printf(" @Davidson-Liu Iter=%4d Conv=%18.8f Nvec=%4d\n", iter, conv, L_);
 
-     psi::outfile->Printf(" @Davidson-Liu Iter=%4d Conv=%18.8f\n", iter, conv);
+     this->davidson_liu_compute_sigma();
+ std::cout << "A2?\n";
+     this->davidson_liu_add_guess_vectors();
+ std::cout << "A3?\n";
+     conv = this->davidson_liu_compute_convergence();
+ std::cout << "A4?\n";
 
      iter++;
      if (iter > maxit) {
@@ -66,11 +70,12 @@ void oepdev::DavidsonLiu::run_davidson_liu() {
 
 // Helper interface
 void oepdev::DavidsonLiu::davidson_liu_initialize(int N, int L, int M) {
+ if (!this->E_) throw psi::PSIEXCEPTION("Memory has not been alocated for Davidson-Liu!");
  this->N_ = N;
  this->L_ = L;
  this->M_ = M;
  this->H_diag_ = std::make_shared<psi::Vector>("", N);
- this->E_old_->copy(*this->E_);
+ this->E_old_ = std::make_shared<psi::Vector>("", M);
  this->davidson_liu_initialized_ = true;
 }
 

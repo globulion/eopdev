@@ -343,6 +343,8 @@ class R_CISComputer_DL: public R_CISComputer {
    virtual void transform_integrals_(void);
    virtual void allocate_hamiltonian_(void);
    virtual void build_hamiltonian_(void);
+   virtual void diagonalize_hamiltonian_(void);
+
    virtual void davidson_liu_compute_diagonal_hamiltonian(void);
    virtual void davidson_liu_compute_sigma(void);
 };
