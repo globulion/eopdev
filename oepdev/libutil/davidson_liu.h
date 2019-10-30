@@ -62,6 +62,9 @@ class DavidsonLiu {
                                                                     
     /// Is Davidson-Liu computer finished with calculations?
     bool davidson_liu_finalized_;
+
+    // Nmber of sigma vectors already computed
+    int davidson_liu_n_sigma_computed_;
                                                                     
     /// Sigma vectors stored
     std::vector<psi::SharedVector> sigma_vectors_;

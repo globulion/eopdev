@@ -32,7 +32,8 @@ CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& o
           navir_(nmo_ - naocc_),
           nbvir_(nmo_ - nbocc_),
           transformation_type_(trans_type),
-          inttrans_(nullptr)
+          inttrans_(nullptr),
+          jk_(nullptr)
 {
   this->common_init(); 
 }
@@ -43,6 +44,9 @@ void CISComputer::compute(void) {
  this->prepare_for_cis_();
  this->build_hamiltonian_();
  this->diagonalize_hamiltonian_(); 
+
+ // Clear memory
+ this->jk_->finalize();
 }
 
 void CISComputer::allocate_hamiltonian_(void) {
@@ -141,6 +145,12 @@ void CISComputer::common_init(void) {
      mints->integrals();
  }
  nstates_ = ndets_; // Assumes Explicit CIS (diagonalization of entire Hamiltonian)
+
+ // Construct the JK object
+ jk_ = psi::JK::build_JK(ref_wfn_->basisset(), psi::BasisSet::zero_ao_basis_set(), options_);
+ jk_->set_memory((options_.get_double("SCF_MEM_SAFETY_FACTOR")*(psi::Process::environment.get_memory() / 8L)));
+ jk_->initialize();
+ jk_->print_header();
 }
 
 std::pair<double,double> CISComputer::U_homo_lumo(int I, int h, int l) const {

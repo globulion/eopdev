@@ -11,6 +11,7 @@
 oepdev::DavidsonLiu::DavidsonLiu(psi::Options& opt) : 
   davidson_liu_initialized_(false), 
   davidson_liu_finalized_(false), 
+  davidson_liu_n_sigma_computed_(0),
   options_(opt),
   gs_(std::make_shared<oepdev::GramSchmidt>()),
   H_diag_(nullptr),
@@ -119,6 +120,9 @@ void oepdev::DavidsonLiu::davidson_liu_compute_sigma()
 
 void oepdev::DavidsonLiu::davidson_liu_add_guess_vectors()
 {
+  // Actualize the number of sigma vectors already computed
+  this->davidson_liu_n_sigma_computed_ = this->gs_->L();
+
   // Read the data from options
   const double threshold_large = options_.get_double("DAVIDSON_LIU_THRESH_LARGE");
   const double threshold_small = options_.get_double("DAVIDSON_LIU_THRESH_SMALL");
@@ -182,12 +186,15 @@ void oepdev::DavidsonLiu::davidson_liu_add_guess_vectors()
        if (std::abs(dn) > threshold) {
            d->scale(1.0/dn); 
            this->gs_->append(d);
+           this->L_ += 1;
 
            // Check if the size of guess space exceeds the imposed limits
            if (gs_->L() > L_max) {
                std::vector<psi::SharedVector> new_vec;
                for (int q=0; q<M_; ++q) new_vec.push_back(this->U_->get_column(0, q));
                gs_->reset(new_vec);
+               this->L_ = gs_->L();
+               this->davidson_liu_n_sigma_computed_ = 0;
                break;
            }
        }

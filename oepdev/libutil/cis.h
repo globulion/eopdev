@@ -17,6 +17,7 @@
 #include "psi4/libtrans/integraltransform.h"
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libdpd/dpd.h"
+#include "psi4/libfock/jk.h"
 
 #include "../lib3d/dmtp.h"
 #include "davidson_liu.h"
@@ -293,6 +294,9 @@ class CISComputer : public DavidsonLiu {
 
    // Fock matrices: OO, oo, VV and vv blocks
    //SharedMatrix Fa_oo_, Fb_oo_, Fa_vv_, Fb_vv_;
+
+   /// Computer of generalized JK objects
+   std::shared_ptr<psi::JK> jk_;
 
    // Canonical orbital energies
    SharedVector eps_a_o_, eps_a_v_, eps_b_o_, eps_b_v_;
