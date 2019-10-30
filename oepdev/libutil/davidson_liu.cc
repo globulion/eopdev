@@ -33,9 +33,13 @@ void oepdev::DavidsonLiu::run_davidson_liu() {
 
   psi::outfile->Printf("\n ===> Starting Davidson-Liu Iterations <===\n\n");
 
+  psi::outfile->Printf(" @Davidson-Liu: Initializing guess vectors.\n");
   this->davidson_liu_initialize_guess_vectors();
+
+  psi::outfile->Printf(" @Davidson-Liu: Computing diagonal Hamiltonian.\n");
   this->davidson_liu_compute_diagonal_hamiltonian();
 
+  psi::outfile->Printf("\n @Davidson-Liu: Starting iteration process.\n");
   while (conv > eps) {
 
      this->davidson_liu_compute_sigma();
@@ -56,6 +60,7 @@ void oepdev::DavidsonLiu::run_davidson_liu() {
   }
 
   this->davidson_liu_finalize();
+  psi::outfile->Printf("\n @Davidson-Liu: Done.\n");
 }
 
 // Helper interface

@@ -45,16 +45,16 @@ void CISComputer::compute(void) {
  this->diagonalize_hamiltonian_(); 
 }
 
-void CISComputer::allocate_hamiltonian(void) {
+void CISComputer::allocate_hamiltonian_(void) {
  H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
 }
 
 void CISComputer::allocate_memory(void) {
  U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, nstates_);
- E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", ndets_);
+ E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", nstates_);
  eps_a_o_ = ref_wfn_->epsilon_a_subset("MO", "OCC");
  eps_a_v_ = ref_wfn_->epsilon_a_subset("MO", "VIR");
- this->allocate_hamiltonian();
+ this->allocate_hamiltonian_();
 }
 
 void CISComputer::prepare_for_cis_(void) {

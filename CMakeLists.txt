@@ -81,8 +81,9 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/scf_perturb.cc
                        oepdev/libutil/cis_base.cc
                        oepdev/libutil/cis_rhf.cc
-                       oepdev/libutil/cis_uhf.cc
+                       oepdev/libutil/cis_rhf_dl.cc
 		       oepdev/libutil/cis_rhf_direct.cc
+                       oepdev/libutil/cis_uhf.cc
 		       # lib3d
                        oepdev/lib3d/space3d.cc
                        oepdev/lib3d/esp.cc
