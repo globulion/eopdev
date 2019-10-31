@@ -14,12 +14,13 @@
 #include "psi4/libmints/basisset.h"
 #include "psi4/libmints/molecule.h"
 #include "psi4/libmints/wavefunction.h"
-//#include "psi4/libmints/integral.h"
 #include "psi4/libtrans/integraltransform.h"
 #include "psi4/libtrans/mospace.h"
 #include "psi4/libdpd/dpd.h"
+#include "psi4/libfock/jk.h"
 
 #include "../lib3d/dmtp.h"
+#include "davidson_liu.h"
 
 
 namespace oepdev{
@@ -61,7 +62,7 @@ struct CISData
 /** \brief CISComputer
  *
  */
-class CISComputer {
+class CISComputer : public DavidsonLiu {
 
   // --> public interface <-- //
   public:
@@ -124,6 +125,8 @@ class CISComputer {
     * Note that \f$ E_I \f$ is *not* the excited state energy, but the energy relative the the HF reference
     * energy.
     *
+    * \see For Davidson-Liu solution to CIS problem, see oepdev::R_CISComputer_DL and oepdev::U_CISComputer_DL.
+    *
     * ## Transition density matrix
     *
     * AO basis transition density from ground (HF) to excited (CIS) state is given by
@@ -179,7 +182,9 @@ class CISComputer {
     * the transition density matrices in AO basis. The nuclear contribution is not included.
     *
     * \note Useful options:
-    *   - `CIS_NSTATES` - Number of lowest-energy excited states to include. Default: `-1` (means all states are saved)
+    *   - `CIS_NSTATES` - Number of lowest-energy excited states to include. Default: `-1` (means all states are saved).
+    *   - `CIS_TYPE`    - Algorithm of CIS. Available: `DAVIDSON_LIU` (Default), `DIRECT_EXPLICIT` (only RHF reference), `EXPLICIT`.
+    *   - `CIS_SCHWARTZ_CUTOFF`  - Cutoff for Schwartz ERI screening. Default: 0.0. Relevant if `DAVIDSON_LIU` or `DIRECT_EXPLICIT` are chosen as CIS type.
     *   - For UHF references, SAD guess might lead to triplet instabilities. It is then better to set `CORE` as the UHF guess
     */
    static std::shared_ptr<CISComputer> build(const std::string& type, 
@@ -196,15 +201,15 @@ class CISComputer {
    virtual void clear_dpd(void);
 
    /// Get the total number of excited states
-   int nstates(void) const {return ndets_;}
+   int nstates(void) const {return nstates_;}
 
    /// Get the CIS eigenvalues
-   SharedVector eigenvalues() const {return E_;}
-   SharedVector E() const {return E_;}
+   psi::SharedVector eigenvalues() const {return E_;}
+   psi::SharedVector E() const {return E_;}
 
    /// Get the CIS eigenvectors
-   SharedMatrix eigenvectors() const {return U_;}
-   SharedMatrix U() const {return U_;}
+   psi::SharedMatrix eigenvectors() const {return U_;}
+   psi::SharedMatrix U() const {return U_;}
 
    /// Get the HOMO+*h*->LUMO+*l* CIS coefficient for a given excited state *I* for spin alpha and beta
    std::pair<double,double> U_homo_lumo(int I, int h=0, int l=0) const;
@@ -267,7 +272,7 @@ class CISComputer {
    /// Reference wavefunction
    std::shared_ptr<psi::Wavefunction> ref_wfn_;
    /// Psi4 Options
-   psi::Options& options_;
+ //psi::Options& options_; --> moved to Davidson-Liu
 
    /// Number of MO's
    const int nmo_;
@@ -281,16 +286,21 @@ class CISComputer {
    const int nbvir_;
    /// Number of excited determinants
    int ndets_;
+   /// Number of excited states
+   int nstates_;
 
    /// CIS Excited State Hamiltonian in Slater determinantal basis
    SharedMatrix H_;
-   /// CIS Coefficients \f$ U_{uI} \f$ for each excited state *I* and basis Slater determinant *u*
+   // CIS Coefficients \f$ U_{uI} \f$ for each excited state *I* and basis Slater determinant *u*
    SharedMatrix U_;
-   /// Electronic excitation energies \f$ E_{I} \f$ wrt ground state
+   // Electronic excitation energies \f$ E_{I} \f$ wrt ground state
    SharedVector E_;
 
    // Fock matrices: OO, oo, VV and vv blocks
    //SharedMatrix Fa_oo_, Fb_oo_, Fa_vv_, Fb_vv_;
+
+   /// Computer of generalized JK objects
+   std::shared_ptr<psi::JK> jk_;
 
    // Canonical orbital energies
    SharedVector eps_a_o_, eps_a_v_, eps_b_o_, eps_b_v_;
@@ -304,12 +314,18 @@ class CISComputer {
 
    CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt, psi::IntegralTransform::TransformationType trans_type);
 
+   virtual void set_nstates_(void);
+   virtual void allocate_memory(void);
+   virtual void allocate_hamiltonian_(void);
    virtual void prepare_for_cis_(void);
    virtual void build_hamiltonian_(void) = 0;
    virtual void diagonalize_hamiltonian_(void);
 
    virtual void set_beta_(void) = 0;
    virtual void transform_integrals_(void);
+
+   virtual void davidson_liu_compute_diagonal_hamiltonian(void);
+   virtual void davidson_liu_compute_sigma(void);
 
   // --> private interface <-- //
   private:
@@ -323,6 +339,67 @@ class R_CISComputer: public CISComputer {
   protected:
    virtual void set_beta_(void);
    virtual void build_hamiltonian_(void);
+};
+
+/** \brief CIS Computer with RHF reference: Davidson-Liu Solver.
+ *
+ * Associated options:
+ *  - `CIS_TYPE`             - must be set to `DAVIDSON_LIU` (Default).
+ *  - `CIS_SCHWARTZ_CUTOFF`  - Cutoff for Schwartz ERI screening. Default: 0.0.
+ *
+ * # Implementation
+ * ## Diagonal Hamiltonian elements
+ *
+ * They are computed by using direct method with Schwartz screening of AO ERI's.
+ * The implementation formula is
+ * \f[
+ *    H_{ii}^{aa} = \varepsilon_a - \varepsilon_i + 
+ *          \sum_{\alpha\beta\gamma\delta} 
+ *         (\alpha\beta \vert \gamma\delta) C_{\alpha i} C_{\delta a} 
+ *     \left( C_{\beta a} C_{\gamma i} - C_{\beta i} C_{\gamma a}\right)
+ * \f]
+ * The block associated with beta spin is equal to alpha block.
+ *
+ * ## Sigma vectors
+ *
+ * The sigma vectors are computed from
+ * \f{align*}{
+ *   \sigma_{i}^{a,k} &= (\varepsilon_a - \varepsilon_i) b_{i}^{a,k} 
+ *        + J_{i}^{a}({\bf T}^{(k)})
+ *        + J_{i}^{a}(\overline{{\bf T}^{(k)}})
+ *        - K_{i}^{a}({\bf T}^{(k)}) \\
+ *   \sigma_{\overline{i}}^{\overline{a},k} &= (\varepsilon_{a} - \varepsilon_i) b_{\overline{i}}^{\overline{a},k} 
+ *        + J_{i}^{a}({\bf T}^{(k)})
+ *        + J_{i}^{a}(\overline{{\bf T}^{(k)}})
+ *        - K_{i}^{a}(\overline{{\bf T}^{(k)}}) 
+ * \f}
+ * where *k* labels the vectors and
+ * where the generalized one-particle density matrices are defined by
+ * \f{align*}{
+ *  T_{\gamma\delta}^{(k)} &= \sum_{jb} C_{\delta b} b_{j}^{b,k} C_{\gamma j} \\
+ *  \overline{T}_{\gamma\delta}^{(k)}
+ *                   &= \sum_{\overline{j}\overline{b}} C_{\delta \overline{b}} 
+ *                   b_{\overline{j}}^{\overline{b},k}  C_{\gamma \overline{j}} 
+ * \f}
+ * The **J** and **K** matrices in AO basis are computed by using the `psi::JK` object, and subsequently 
+ * transformed to CMO's.
+ *
+ */
+class R_CISComputer_DL: public R_CISComputer {
+  public:
+   R_CISComputer_DL(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~R_CISComputer_DL(); 
+  protected:
+   virtual void set_nstates_(void);
+   virtual void transform_integrals_(void);
+   virtual void allocate_hamiltonian_(void);
+   virtual void build_hamiltonian_(void);
+   virtual void diagonalize_hamiltonian_(void);
+
+   virtual void davidson_liu_compute_diagonal_hamiltonian(void);
+   virtual void davidson_liu_compute_sigma(void);
+  private:
+   psi::SharedMatrix Ca_occ__, Ca_vir__;
 };
 
 class R_CISComputer_Direct: public R_CISComputer {
@@ -341,8 +418,74 @@ class U_CISComputer: public CISComputer {
   protected:
    virtual void set_beta_(void);
    virtual void build_hamiltonian_(void);
-
 };
+
+/** \brief CIS Computer with UHF reference: Davidson-Liu Solver.
+ *
+ * Associated options:
+ *  - `CIS_TYPE`             - must be set to `DAVIDSON_LIU` (Default).
+ *  - `CIS_SCHWARTZ_CUTOFF`  - Cutoff for Schwartz ERI screening. Default: 0.0.
+ *
+ * # Implementation
+ * ## Diagonal Hamiltonian elements
+ *
+ * They are computed by using direct method with Schwartz screening of AO ERI's.
+ * The implementation formula is
+ * \f{align*}{
+ *    H_{ii}^{aa} &= \varepsilon_a - \varepsilon_i + 
+ *          \sum_{\alpha\beta\gamma\delta} 
+ *         (\alpha\beta \vert \gamma\delta) C_{\alpha i} C_{\delta a} 
+ *     \left( C_{\beta a} C_{\gamma i} - C_{\beta i} C_{\gamma a}\right)  \\
+ *    H_{\overline{i}\overline{i}}^{\overline{a}\overline{a}} &= \varepsilon_{\overline{a}} - \varepsilon_{\overline{i}} + 
+ *          \sum_{\alpha\beta\gamma\delta} 
+ *         (\alpha\beta \vert \gamma\delta) C_{\alpha \overline{i}} C_{\delta \overline{a}} 
+ *     \left( C_{\beta \overline{a}} C_{\gamma \overline{i}} - C_{\beta \overline{i}} C_{\gamma \overline{a}}\right)  
+ * \f}
+ *
+ * ## Sigma vectors
+ *
+ * The sigma vectors are computed from
+ * \f{align*}{
+ *   \sigma_{i}^{a,k} &= (\varepsilon_a - \varepsilon_i) b_{i}^{a,k} 
+ *        + J_{i}^{a}({\bf T}^{(k)})
+ *        + J_{i}^{a}(\overline{{\bf T}^{(k)}})
+ *        - K_{i}^{a}({\bf T}^{(k)}) \\
+ *   \sigma_{\overline{i}}^{\overline{a},k} &= (\varepsilon_{\overline{a}} - \varepsilon_{\overline{i}}) 
+ *                b_{\overline{i}}^{\overline{a},k} 
+ *        + J_{\overline{i}}^{\overline{i}}({\bf T}^{(k)})
+ *        + J_{\overline{i}}^{\overline{i}}(\overline{{\bf T}^{(k)}})
+ *        - K_{\overline{i}}^{\overline{i}}(\overline{{\bf T}^{(k)}}) 
+ * \f}
+ * where *k* labels the vectors and
+ * where the generalized one-particle density matrices are defined by
+ * \f{align*}{
+ *  T_{\gamma\delta}^{(k)} &= \sum_{jb} C_{\delta b} b_{j}^{b,k} C_{\gamma j} \\
+ *  \overline{T}_{\gamma\delta}^{(k)}
+ *                   &= \sum_{\overline{j}\overline{b}} C_{\delta \overline{b}} 
+ *                   b_{\overline{j}}^{\overline{b},k}  C_{\gamma \overline{j}} 
+ * \f}
+ * The **J** and **K** matrices in AO basis are computed by using the `psi::JK` object, and subsequently 
+ * transformed to CMO's.
+ *
+ */
+
+class U_CISComputer_DL: public U_CISComputer {
+  public:
+   U_CISComputer_DL(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~U_CISComputer_DL(); 
+  protected:
+   virtual void set_nstates_(void);
+   virtual void transform_integrals_(void);
+   virtual void allocate_hamiltonian_(void);
+   virtual void build_hamiltonian_(void);
+   virtual void diagonalize_hamiltonian_(void);
+
+   virtual void davidson_liu_compute_diagonal_hamiltonian(void);
+   virtual void davidson_liu_compute_sigma(void);
+  private:
+   psi::SharedMatrix Ca_occ__, Ca_vir__, Cb_occ__, Cb_vir__;
+};
+
 
 
 /** @}*/

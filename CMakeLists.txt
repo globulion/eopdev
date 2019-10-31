@@ -73,13 +73,17 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/util.cc
                        oepdev/libutil/diis.cc
                        oepdev/libutil/cphf.cc
+                       oepdev/libutil/gram_schmidt.cc
+                       oepdev/libutil/davidson_liu.cc
                        oepdev/libutil/wavefunction_union.cc
                        oepdev/libutil/integrals_iter.cc
                        oepdev/libutil/unitary_optimizer.cc
                        oepdev/libutil/scf_perturb.cc
                        oepdev/libutil/cis_base.cc
                        oepdev/libutil/cis_rhf.cc
+                       oepdev/libutil/cis_rhf_dl.cc
                        oepdev/libutil/cis_uhf.cc
+                       oepdev/libutil/cis_uhf_dl.cc
 		       oepdev/libutil/cis_rhf_direct.cc
 		       # lib3d
                        oepdev/lib3d/space3d.cc
@@ -123,7 +127,9 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libtest/test.cc
 		       oepdev/libtest/basic.cc
                        oepdev/libtest/cis_rhf.cc
+                       oepdev/libtest/cis_rhf_dl.cc
                        oepdev/libtest/cis_uhf.cc
+                       oepdev/libtest/cis_uhf_dl.cc
 		       oepdev/libtest/cphf.cc
 		       oepdev/libtest/camm.cc
 		       oepdev/libtest/dmtp_energy.cc
