@@ -125,6 +125,8 @@ class CISComputer : public DavidsonLiu {
     * Note that \f$ E_I \f$ is *not* the excited state energy, but the energy relative the the HF reference
     * energy.
     *
+    * \see For Davidson-Liu solution to CIS problem, see oepdev::R_CISComputer_DL and oepdev::U_CISComputer_DL.
+    *
     * ## Transition density matrix
     *
     * AO basis transition density from ground (HF) to excited (CIS) state is given by
@@ -180,7 +182,9 @@ class CISComputer : public DavidsonLiu {
     * the transition density matrices in AO basis. The nuclear contribution is not included.
     *
     * \note Useful options:
-    *   - `CIS_NSTATES` - Number of lowest-energy excited states to include. Default: `-1` (means all states are saved)
+    *   - `CIS_NSTATES` - Number of lowest-energy excited states to include. Default: `-1` (means all states are saved).
+    *   - `CIS_TYPE`    - Algorithm of CIS. Available: `DAVIDSON_LIU` (Default), `DIRECT_EXPLICIT` (only RHF reference), `EXPLICIT`.
+    *   - `CIS_SCHWARTZ_CUTOFF`  - Cutoff for Schwartz ERI screening. Default: 0.0. Relevant if `DAVIDSON_LIU` or `DIRECT_EXPLICIT` are chosen as CIS type.
     *   - For UHF references, SAD guess might lead to triplet instabilities. It is then better to set `CORE` as the UHF guess
     */
    static std::shared_ptr<CISComputer> build(const std::string& type, 
@@ -337,6 +341,50 @@ class R_CISComputer: public CISComputer {
    virtual void build_hamiltonian_(void);
 };
 
+/** \brief CIS Computer with RHF reference: Davidson-Liu Solver.
+ *
+ * Associated options:
+ *  - `CIS_TYPE`             - must be set to `DAVIDSON_LIU` (Default).
+ *  - `CIS_SCHWARTZ_CUTOFF`  - Cutoff for Schwartz ERI screening. Default: 0.0.
+ *
+ * # Implementation
+ * ## Diagonal Hamiltonian elements
+ *
+ * They are computed by using direct method with Schwartz screening of AO ERI's.
+ * The implementation formula is
+ * \f[
+ *    H_{ii}^{aa} = \varepsilon_a - \varepsilon_i + 
+ *          \sum_{\alpha\beta\gamma\delta} 
+ *         (\alpha\beta \vert \gamma\delta) C_{\alpha i} C_{\delta a} 
+ *     \left( C_{\beta a} C_{\gamma i} - C_{\beta i} C_{\gamma a}\right)
+ * \f]
+ * The block associated with beta spin is equal to alpha block.
+ *
+ * ## Sigma vectors
+ *
+ * The sigma vectors are computed from
+ * \f{align*}{
+ *   \sigma_{i}^{a,k} &= (\varepsilon_a - \varepsilon_i) b_{i}^{a,k} 
+ *        + J_{i}^{a}({\bf T}^{(k)})
+ *        + J_{i}^{a}(\overline{{\bf T}^{(k)}})
+ *        - K_{i}^{a}({\bf T}^{(k)}) \\
+ *   \sigma_{\overline{i}}^{\overline{a},k} &= (\varepsilon_{a} - \varepsilon_i) b_{\overline{i}}^{\overline{a},k} 
+ *        + J_{i}^{a}({\bf T}^{(k)})
+ *        + J_{i}^{a}(\overline{{\bf T}^{(k)}})
+ *        - K_{i}^{a}(\overline{{\bf T}^{(k)}}) 
+ * \f}
+ * where *k* labels the vectors and
+ * where the generalized one-particle density matrices are defined by
+ * \f{align*}{
+ *  T_{\gamma\delta}^{(k)} &= \sum_{jb} C_{\delta b} b_{j}^{b,k} C_{\gamma j} \\
+ *  \overline{T}_{\gamma\delta}^{(k)}
+ *                   &= \sum_{\overline{j}\overline{b}} C_{\delta \overline{b}} 
+ *                   b_{\overline{j}}^{\overline{b},k}  C_{\gamma \overline{j}} 
+ * \f}
+ * The **J** and **K** matrices in AO basis are computed by using the `psi::JK` object, and subsequently 
+ * transformed to CMO's.
+ *
+ */
 class R_CISComputer_DL: public R_CISComputer {
   public:
    R_CISComputer_DL(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
@@ -371,6 +419,55 @@ class U_CISComputer: public CISComputer {
    virtual void set_beta_(void);
    virtual void build_hamiltonian_(void);
 };
+
+/** \brief CIS Computer with UHF reference: Davidson-Liu Solver.
+ *
+ * Associated options:
+ *  - `CIS_TYPE`             - must be set to `DAVIDSON_LIU` (Default).
+ *  - `CIS_SCHWARTZ_CUTOFF`  - Cutoff for Schwartz ERI screening. Default: 0.0.
+ *
+ * # Implementation
+ * ## Diagonal Hamiltonian elements
+ *
+ * They are computed by using direct method with Schwartz screening of AO ERI's.
+ * The implementation formula is
+ * \f{align*}{
+ *    H_{ii}^{aa} &= \varepsilon_a - \varepsilon_i + 
+ *          \sum_{\alpha\beta\gamma\delta} 
+ *         (\alpha\beta \vert \gamma\delta) C_{\alpha i} C_{\delta a} 
+ *     \left( C_{\beta a} C_{\gamma i} - C_{\beta i} C_{\gamma a}\right)  \\
+ *    H_{\overline{i}\overline{i}}^{\overline{a}\overline{a}} &= \varepsilon_{\overline{a}} - \varepsilon_{\overline{i}} + 
+ *          \sum_{\alpha\beta\gamma\delta} 
+ *         (\alpha\beta \vert \gamma\delta) C_{\alpha \overline{i}} C_{\delta \overline{a}} 
+ *     \left( C_{\beta \overline{a}} C_{\gamma \overline{i}} - C_{\beta \overline{i}} C_{\gamma \overline{a}}\right)  
+ * \f}
+ *
+ * ## Sigma vectors
+ *
+ * The sigma vectors are computed from
+ * \f{align*}{
+ *   \sigma_{i}^{a,k} &= (\varepsilon_a - \varepsilon_i) b_{i}^{a,k} 
+ *        + J_{i}^{a}({\bf T}^{(k)})
+ *        + J_{i}^{a}(\overline{{\bf T}^{(k)}})
+ *        - K_{i}^{a}({\bf T}^{(k)}) \\
+ *   \sigma_{\overline{i}}^{\overline{a},k} &= (\varepsilon_{\overline{a}} - \varepsilon_{\overline{i}}) 
+ *                b_{\overline{i}}^{\overline{a},k} 
+ *        + J_{\overline{i}}^{\overline{i}}({\bf T}^{(k)})
+ *        + J_{\overline{i}}^{\overline{i}}(\overline{{\bf T}^{(k)}})
+ *        - K_{\overline{i}}^{\overline{i}}(\overline{{\bf T}^{(k)}}) 
+ * \f}
+ * where *k* labels the vectors and
+ * where the generalized one-particle density matrices are defined by
+ * \f{align*}{
+ *  T_{\gamma\delta}^{(k)} &= \sum_{jb} C_{\delta b} b_{j}^{b,k} C_{\gamma j} \\
+ *  \overline{T}_{\gamma\delta}^{(k)}
+ *                   &= \sum_{\overline{j}\overline{b}} C_{\delta \overline{b}} 
+ *                   b_{\overline{j}}^{\overline{b},k}  C_{\gamma \overline{j}} 
+ * \f}
+ * The **J** and **K** matrices in AO basis are computed by using the `psi::JK` object, and subsequently 
+ * transformed to CMO's.
+ *
+ */
 
 class U_CISComputer_DL: public U_CISComputer {
   public:
