@@ -5,35 +5,40 @@
 using namespace std;
 
 
-double oepdev::test::Test::test_cis_rhf_dl(void) {
-  // This test is for H2O at HF/6-31G* 6D molecule multiplicity singlet
+double oepdev::test::Test::test_cis_uhf_dl(void) {
+  // This test is for H2O at HF/6-31G* 6D molecule multiplicity triplet
   // The Gaussian 2016 input and output are given in refs
   double result = 0.0;
 
   // Reference energies
-  const double E_ref[11] = {8.212409544202391, 9.216164293339032, 
-      10.154430162329664, 10.303295256306203, 10.984749936098458,
-      11.689811665332998, 12.011992061283568, 13.466813981526869,
-      13.819390225017136, 14.851902189703274, 14.982747984237099};
-  const int tr_J[5] {2, 5, 7, 9, 11};
-  const double tr_ref[15] = {0.0108,      0.0639,      0.2397,    // 2
-                            -0.0000,     -0.0002,     -0.0007,    // 5
-                             0.4872,      0.3878,     -0.1253,    // 7
-                             0.3411,     -0.3985,      0.0909,    // 9
-                            -0.7383,      0.8587,     -0.1957};   // 11
-  const double f_ref[5] = {0.0139, 0.0000, 0.1187, 0.0960, 0.4848};
+  const double E_ref[11] = {2.155183853880288, 2.624280601617274,
+       6.181243536823391, 14.442628590338225, 14.541305258786490,
+      15.092987981838029, 16.511819294165495, 16.575685580676815,
+      17.143246255410293, 20.266527134865147, 20.372973644109411};
+  const int tr_J[8] {1, 2, 4, 5, 7, 8, 9, 10};
+  const double tr_ref[24] = {-1.0709,      1.2477,     -0.2845,    // 1 
+                              0.0053,      0.0314,      0.1179,    // 2 
+                              0.2434,      0.1913,     -0.0619,    // 4 
+                              0.0361,     -0.0657,      0.0159,    // 5
+                             -0.1407,     -0.1689,      0.0513,    // 7 
+                             -0.4981,      0.5561,     -0.1258,    // 8 
+                             -0.4913,      0.5775,     -0.1319,    // 9 
+                             -0.4281,      0.5138,     -0.1177};   // 10 
+   const double f_ref[8] = {0.1470, 0.0010, 0.0353, 0.0021, 0.0206, 0.2328, 
+                             0.2487, 0.2289};
 
-  // Compute CIS(RHF)
-  psi::timer_on("CIS RHF Calculation             ");
-  std::shared_ptr<oepdev::CISComputer> cis = oepdev::CISComputer::build("RESTRICTED", wfn_, wfn_->options(), "RHF");
+
+  // Compute CAMM
+  psi::timer_on("CIS UHF Calculation             ");
+  std::shared_ptr<oepdev::CISComputer> cis = oepdev::CISComputer::build("UNRESTRICTED", wfn_, wfn_->options(), "UHF");
   cis->compute();
-  psi::timer_off("CIS RHF Calculation             ");
+  psi::timer_off("CIS UHF Calculation             ");
 
   // Extract excitation energies
   psi::SharedVector E = cis->eigenvalues();
 
   // Compute all transition dipole moments for 0->j transition
-  //for (int i=0; i<E->dim(); ++i) cis->transition_dipole(i)->print_out();
+  // for (int i=0; i<E->dim(); ++i) cis->transition_dipole(i)->print_out();
 
   // Build-up error
   for (int i=0; i<11; ++i) {
@@ -42,7 +47,7 @@ double oepdev::test::Test::test_cis_rhf_dl(void) {
        psi::outfile->Printf(" Transition 0-%2d energy: %14.5f [EV]\n", i+1, ei      );
        psi::outfile->Printf( "        (g16 reference): %14.5f [EV]\n", i+1, E_ref[i]);
   }
-  for (int i=0; i<5; ++i) {
+  for (int i=0; i<8; ++i) {
        int j = tr_J[i]-1;
        psi::SharedVector tj = cis->transition_dipole(j);
        double f = cis->oscillator_strength(j);

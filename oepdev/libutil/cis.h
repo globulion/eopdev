@@ -354,7 +354,6 @@ class R_CISComputer_DL: public R_CISComputer {
    psi::SharedMatrix Ca_occ__, Ca_vir__;
 };
 
-
 class R_CISComputer_Direct: public R_CISComputer {
   public:
    R_CISComputer_Direct(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
@@ -372,6 +371,24 @@ class U_CISComputer: public CISComputer {
    virtual void set_beta_(void);
    virtual void build_hamiltonian_(void);
 };
+
+class U_CISComputer_DL: public U_CISComputer {
+  public:
+   U_CISComputer_DL(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~U_CISComputer_DL(); 
+  protected:
+   virtual void set_nstates_(void);
+   virtual void transform_integrals_(void);
+   virtual void allocate_hamiltonian_(void);
+   virtual void build_hamiltonian_(void);
+   virtual void diagonalize_hamiltonian_(void);
+
+   virtual void davidson_liu_compute_diagonal_hamiltonian(void);
+   virtual void davidson_liu_compute_sigma(void);
+  private:
+   psi::SharedMatrix Ca_occ__, Ca_vir__, Cb_occ__, Cb_vir__;
+};
+
 
 
 /** @}*/

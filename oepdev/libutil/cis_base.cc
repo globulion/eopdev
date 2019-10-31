@@ -147,7 +147,11 @@ std::shared_ptr<CISComputer> CISComputer::build(const std::string& type,
   std::string cis_type = opt.get_str("CIS_TYPE");
 
   if ((ref_wfn->molecule()->multiplicity() != 1) || (ref == "UHF")) { 
+     if (cis_type == "DAVIDSON_LIU") {
+	 cis = std::make_shared<U_CISComputer_DL>(ref_wfn, opt);
+     } else {
 	 cis = std::make_shared<U_CISComputer>(ref_wfn, opt);
+     }
   }
   else {
      if (cis_type == "DIRECT") { 
