@@ -154,7 +154,7 @@ std::shared_ptr<CISComputer> CISComputer::build(const std::string& type,
      }
   }
   else {
-     if (cis_type == "DIRECT") { 
+     if (cis_type == "DIRECT_EXPLICIT") { 
 	 cis = std::make_shared<R_CISComputer_Direct>(ref_wfn, opt); 
      } else 
      if (cis_type == "DAVIDSON_LIU") {

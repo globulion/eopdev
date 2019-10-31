@@ -58,7 +58,7 @@ set {
     oepdev_test_mode              monomer
     oepdev_localize               False
     oepdev_enable_trial           False
-    cis_type                      direct
+    cis_type                      direct_explicit
     cis_schwartz_cutoff           1.0e-5
     # ==> General Psi4 Options <== #
     freeze_core                   False
