@@ -30,32 +30,47 @@ class DavidsonLiu {
 
    /// Constructor
    DavidsonLiu(psi::Options& opt);
+
    /// Destructor
    virtual ~DavidsonLiu();
 
    /// Run the Davidson-Liu solver
    virtual void run_davidson_liu();
 
+   /// Get the eigenvalues
+   psi::SharedVector eigenvalues_davidson_liu() const {return E_davidson_liu_;}
+   psi::SharedVector E_davidson_liu() const {return E_davidson_liu_;}
+
+   /// Get the eigenvectors
+   psi::SharedMatrix eigenvectors_davidson_liu() const {return U_davidson_liu_;}
+   psi::SharedMatrix U_davidson_liu() const {return U_davidson_liu_;}
+
 
   protected:
 
     /// Dimensionality of Hamiltonian                               
-    int N_;
+    int N_davidson_liu_;
                                                                     
     /// Number of guess vectors
-    int L_;
+    int L_davidson_liu_;
                                                                     
     /// Number of roots of interest
-    int M_;
+    int M_davidson_liu_;
 
     /// Psi4 options
     psi::Options& options_;
                                                                     
     /// Eigenvalues
-    psi::SharedVector E_;
+    psi::SharedVector E_davidson_liu_;
                                                                     
     /// Eigenvectors
-    psi::SharedMatrix U_;
+    psi::SharedMatrix U_davidson_liu_;
+
+    /// Diagonal elements of the matrix to diagonalize
+    psi::SharedVector H_diag_davidson_liu_;
+                                                                    
+    /// Old estimation of eigenvalues
+    psi::SharedVector E_old_davidson_liu_;
                                                                     
     /// Is Davidson-Liu computer ready for calculations?
     bool davidson_liu_initialized_;
@@ -67,18 +82,12 @@ class DavidsonLiu {
     int davidson_liu_n_sigma_computed_;
                                                                     
     /// Sigma vectors stored
-    std::vector<psi::SharedVector> sigma_vectors_;
+    std::vector<psi::SharedVector> sigma_vectors_davidson_liu_;
                                                                     
     /// Object storing guess vectors
-    std::shared_ptr<oepdev::GramSchmidt> gs_;
+    std::shared_ptr<oepdev::GramSchmidt> guess_vectors_davidson_liu_;
                                                                     
-    /// Diagonal elements of the matrix to diagonalize
-    psi::SharedVector H_diag_;
-                                                                    
-    /// Old estimation of eigenvalues
-    psi::SharedVector E_old_;
-                                                                    
-                                                                    
+
     /// Helper interface
     virtual void davidson_liu_initialize(int N, int L, int M);
     virtual void davidson_liu_initialize_guess_vectors();

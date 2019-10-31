@@ -64,7 +64,7 @@ set {
     davidson_liu_conver           1.0e-15
     davidson_liu_maxiter          200    
     davidson_liu_guess            random 
-    davidson_liu_thresh_large     1.0e-06
+    davidson_liu_thresh_large     1.0e-03
     davidson_liu_thresh_small     1.0e-06
     davidson_liu_nroots           80
   # davidson_liu_space_start      2

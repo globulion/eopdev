@@ -22,8 +22,8 @@ CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& o
           eps_a_v_(nullptr),
           eps_b_o_(nullptr),
           eps_b_v_(nullptr),
-          //E_(nullptr),
-          //U_(nullptr),
+          E_(nullptr),
+          U_(nullptr),
           H_(nullptr),
           nmo_(ref_wfn_->nmo()),
           naocc_(ref_wfn_->nalpha()),
@@ -60,14 +60,14 @@ void CISComputer::set_nstates_() {
 void CISComputer::set_beta_(void) {}
 
 void CISComputer::allocate_memory(void) {
- U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, nstates_);
- E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", nstates_);
  eps_a_o_ = ref_wfn_->epsilon_a_subset("MO", "OCC");
  eps_a_v_ = ref_wfn_->epsilon_a_subset("MO", "VIR");
  this->allocate_hamiltonian_();
 }
 
 void CISComputer::allocate_hamiltonian_(void) {
+ U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, nstates_);
+ E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", nstates_);
  H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
 }
 

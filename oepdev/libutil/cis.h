@@ -197,15 +197,15 @@ class CISComputer : public DavidsonLiu {
    virtual void clear_dpd(void);
 
    /// Get the total number of excited states
-   int nstates(void) const {return ndets_;}
+   int nstates(void) const {return nstates_;}
 
    /// Get the CIS eigenvalues
-   SharedVector eigenvalues() const {return E_;}
-   SharedVector E() const {return E_;}
+   psi::SharedVector eigenvalues() const {return E_;}
+   psi::SharedVector E() const {return E_;}
 
    /// Get the CIS eigenvectors
-   SharedMatrix eigenvectors() const {return U_;}
-   SharedMatrix U() const {return U_;}
+   psi::SharedMatrix eigenvectors() const {return U_;}
+   psi::SharedMatrix U() const {return U_;}
 
    /// Get the HOMO+*h*->LUMO+*l* CIS coefficient for a given excited state *I* for spin alpha and beta
    std::pair<double,double> U_homo_lumo(int I, int h=0, int l=0) const;
@@ -288,9 +288,9 @@ class CISComputer : public DavidsonLiu {
    /// CIS Excited State Hamiltonian in Slater determinantal basis
    SharedMatrix H_;
    // CIS Coefficients \f$ U_{uI} \f$ for each excited state *I* and basis Slater determinant *u*
- //SharedMatrix U_;
+   SharedMatrix U_;
    // Electronic excitation energies \f$ E_{I} \f$ wrt ground state
- //SharedVector E_;
+   SharedVector E_;
 
    // Fock matrices: OO, oo, VV and vv blocks
    //SharedMatrix Fa_oo_, Fb_oo_, Fa_vv_, Fb_vv_;
@@ -350,6 +350,8 @@ class R_CISComputer_DL: public R_CISComputer {
 
    virtual void davidson_liu_compute_diagonal_hamiltonian(void);
    virtual void davidson_liu_compute_sigma(void);
+  private:
+   psi::SharedMatrix Ca_occ__, Ca_vir__;
 };
 
 
