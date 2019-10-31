@@ -20,8 +20,21 @@ namespace oepdev{
  * Find the lowest *M* eigenvalues and associated eigenvectors 
  * of the real, symmetric (square) matrix **H**.
  *
+ * # Usage
+ *
+ * This class is an abstract base. In order to use the Davidson-Liu method 
+ * fully implemented here, one must define a child class inheriting from oepdev::DavidsonLiu
+ * and implementing two of the pure methods:
+ *  * `davidson_liu_compute_diagonal_hamiltonian` - method specifying
+ *     the calculation of the \f$ \boldsymbol{\sigma} \f$ vectors, which are stored
+ *     in the `std::vector<psi::SharedVector> sigma_vectors_davidson_liu_`;
+ *  * `davidson_liu_compute_diagonal_hamiltonian` - method specifying
+ *     the calculation of the diagonal elements of the Hamiltonian,
+ *     stored in the `psi::SharedVector H_diag_davidson_liu_`.
+ *
  * # Implementation
- * TODO
+ * 
+ * Th
  */
 class DavidsonLiu {
 
@@ -107,6 +120,18 @@ class DavidsonLiu {
 /** @}*/
 
 } // EndNameSpace oepdev
+
+/** \example example_davidson_liu.cc
+ *
+ * This example is a trivial demo to use `oepdev::DavidsonLiu`
+ * in order to diagonalize a real, symmetric matrix **H**,
+ * stored in a `psi::SharedMatrix H`. This can help you to construct
+ * more complicated classes that need to solve eigenpairs for very large, sparse
+ * matrices such as CI Hamiltonians.
+ *
+ * \note This example might need compile properly (it's only a draft). Debug if necessary.
+ */
+
 
 
 #endif // _oepdev_libutil_davidson_liu_h
