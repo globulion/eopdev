@@ -109,14 +109,6 @@ void R_CISComputer::build_hamiltonian_(void) {
 
 }
 
-void R_CISComputer::davidson_liu_compute_sigma(void) {
- //TODO
-}
-
-void R_CISComputer::davidson_liu_compute_diagonal_hamiltonian(void) {
- //TODO
-}
-
 
 
 } // EndNameSpace oepdev

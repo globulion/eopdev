@@ -4,7 +4,6 @@
 #include "psi4/libmints/mintshelper.h"
 #include "../../include/oepdev_files.h"
 
-//#include "psi4/libpsi4util/PsiOutStream.h"
 
 namespace oepdev{
 
@@ -36,24 +35,29 @@ CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& o
           jk_(nullptr)
 {
   this->common_init(); 
-  this->set_nstates_();
-  this->allocate_memory(); // moved here to allocate E_ and U_ before Davidson-Liu needs to be initialized
 }
 
 CISComputer::~CISComputer() {}
 
-void CISComputer::compute(void) {
- this->prepare_for_cis_();
- this->build_hamiltonian_();
- this->diagonalize_hamiltonian_(); 
+void CISComputer::common_init(void) {
+ ndets_ = naocc_ * navir_ + nbocc_ * nbvir_;
+ if (true) {
+     std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(ref_wfn_->basisset());
+     mints->integrals();
+ }
+ // nstates_ is not set here but during computation since it depends on the type of CIS calculation
 
- // Clear memory
- this->jk_->finalize();
+ // Construct the JK object
+ jk_ = psi::JK::build_JK(ref_wfn_->basisset(), psi::BasisSet::zero_ao_basis_set(), options_);
+ jk_->set_memory((options_.get_double("SCF_MEM_SAFETY_FACTOR")*(psi::Process::environment.get_memory() / 8L)));
+ jk_->initialize();
+ jk_->print_header();
 }
 
-void CISComputer::allocate_hamiltonian_(void) {
- H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
+void CISComputer::set_nstates_() {
+  this->nstates_ = this->ndets_;
 }
+void CISComputer::set_beta_(void) {}
 
 void CISComputer::allocate_memory(void) {
  U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, nstates_);
@@ -63,9 +67,20 @@ void CISComputer::allocate_memory(void) {
  this->allocate_hamiltonian_();
 }
 
-void CISComputer::set_nstates_() {
-  // Set the number of states as the number of roots in Davidson-Liu method
-  this->nstates_ = this->ndets_;
+void CISComputer::allocate_hamiltonian_(void) {
+ H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
+}
+
+void CISComputer::compute(void) {
+ this->set_nstates_();    // Maybe better to move it to constructor? 
+                          // (then Davidson-Liu must be re-adapted) - this needs to be now here
+ this->allocate_memory(); // moved here to allocate E_ and U_ before Davidson-Liu needs to be initialized
+ this->prepare_for_cis_();
+ this->build_hamiltonian_();
+ this->diagonalize_hamiltonian_(); 
+
+ // Clear memory
+ this->jk_->finalize();
 }
 
 void CISComputer::prepare_for_cis_(void) {
@@ -102,6 +117,9 @@ void CISComputer::diagonalize_hamiltonian_(void) {
     H_->print_out();
  }
 }
+
+void CISComputer::davidson_liu_compute_sigma(void) {}
+void CISComputer::davidson_liu_compute_diagonal_hamiltonian(void) {}
 
 std::shared_ptr<CISComputer> CISComputer::build(const std::string& type, 
                                                 std::shared_ptr<psi::Wavefunction> ref_wfn, 
@@ -146,22 +164,6 @@ std::shared_ptr<CISComputer> CISComputer::build(const std::string& type,
   return cis;
 }
 
-void CISComputer::set_beta_(void) {}
-
-void CISComputer::common_init(void) {
- ndets_ = naocc_ * navir_ + nbocc_ * nbvir_;
- if (true) {
-     std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(ref_wfn_->basisset());
-     mints->integrals();
- }
-// nstates_ = ndets_; // Assumes Explicit CIS (diagonalization of entire Hamiltonian)
-
- // Construct the JK object
- jk_ = psi::JK::build_JK(ref_wfn_->basisset(), psi::BasisSet::zero_ao_basis_set(), options_);
- jk_->set_memory((options_.get_double("SCF_MEM_SAFETY_FACTOR")*(psi::Process::environment.get_memory() / 8L)));
- jk_->initialize();
- jk_->print_header();
-}
 
 std::pair<double,double> CISComputer::U_homo_lumo(int I, int h, int l) const {
   int i  = naocc_-1-h;

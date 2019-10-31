@@ -268,7 +268,7 @@ class CISComputer : public DavidsonLiu {
    /// Reference wavefunction
    std::shared_ptr<psi::Wavefunction> ref_wfn_;
    /// Psi4 Options
- //psi::Options& options_;
+ //psi::Options& options_; --> moved to Davidson-Liu
 
    /// Number of MO's
    const int nmo_;
@@ -287,9 +287,9 @@ class CISComputer : public DavidsonLiu {
 
    /// CIS Excited State Hamiltonian in Slater determinantal basis
    SharedMatrix H_;
-   /// CIS Coefficients \f$ U_{uI} \f$ for each excited state *I* and basis Slater determinant *u*
+   // CIS Coefficients \f$ U_{uI} \f$ for each excited state *I* and basis Slater determinant *u*
  //SharedMatrix U_;
-   /// Electronic excitation energies \f$ E_{I} \f$ wrt ground state
+   // Electronic excitation energies \f$ E_{I} \f$ wrt ground state
  //SharedVector E_;
 
    // Fock matrices: OO, oo, VV and vv blocks
@@ -320,6 +320,9 @@ class CISComputer : public DavidsonLiu {
    virtual void set_beta_(void) = 0;
    virtual void transform_integrals_(void);
 
+   virtual void davidson_liu_compute_diagonal_hamiltonian(void);
+   virtual void davidson_liu_compute_sigma(void);
+
   // --> private interface <-- //
   private:
    void common_init(void);
@@ -332,8 +335,6 @@ class R_CISComputer: public CISComputer {
   protected:
    virtual void set_beta_(void);
    virtual void build_hamiltonian_(void);
-   virtual void davidson_liu_compute_diagonal_hamiltonian(void);
-   virtual void davidson_liu_compute_sigma(void);
 };
 
 class R_CISComputer_DL: public R_CISComputer {
@@ -341,11 +342,11 @@ class R_CISComputer_DL: public R_CISComputer {
    R_CISComputer_DL(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~R_CISComputer_DL(); 
   protected:
+   virtual void set_nstates_(void);
    virtual void transform_integrals_(void);
    virtual void allocate_hamiltonian_(void);
    virtual void build_hamiltonian_(void);
    virtual void diagonalize_hamiltonian_(void);
-   virtual void set_nstates_(void);
 
    virtual void davidson_liu_compute_diagonal_hamiltonian(void);
    virtual void davidson_liu_compute_sigma(void);
@@ -368,8 +369,6 @@ class U_CISComputer: public CISComputer {
   protected:
    virtual void set_beta_(void);
    virtual void build_hamiltonian_(void);
-   virtual void davidson_liu_compute_diagonal_hamiltonian(void);
-   virtual void davidson_liu_compute_sigma(void);
 };
 
 

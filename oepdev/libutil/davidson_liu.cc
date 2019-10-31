@@ -136,6 +136,7 @@ void oepdev::DavidsonLiu::davidson_liu_add_guess_vectors()
   const double threshold_large = options_.get_double("DAVIDSON_LIU_THRESH_LARGE");
   const double threshold_small = options_.get_double("DAVIDSON_LIU_THRESH_SMALL");
   const int L_max = options_.get_int("DAVIDSON_LIU_SPACE_MAX");
+  const int L_current = this->L_;
   this->E_old_->copy(*this->E_);
 
   // Form and diagonalize the sub-space Hamiltonian
@@ -147,8 +148,6 @@ void oepdev::DavidsonLiu::davidson_liu_add_guess_vectors()
   double** w =U_->pointer();
   double* e = E_->pointer();
   double* h = H_diag_->pointer();
-
-  std::cout << "NCOL=" << U_->ncol() << "NROW=" << U_->nrow() << std::endl;
 
   for (int i=0; i<L_; ++i) {
        g[i][i] = gs_->V(i)->vector_dot(sigma_vectors_[i]);
@@ -167,12 +166,13 @@ void oepdev::DavidsonLiu::davidson_liu_add_guess_vectors()
        e[k] = E->get(k);
        for (int n=0; n<N_; ++n) {
             double v = 0.0;
-            for (int l=0; l<L_; ++l) {
+            for (int l=0; l<L_current; ++l) {
                  v += u[l][k] * gs_->V(l)->get(n);
             }
             w[n][k] = v;
        }
   }
+
 
   // Enlarge the guess space
   for (int k=0; k<M_; ++k) {
@@ -182,11 +182,12 @@ void oepdev::DavidsonLiu::davidson_liu_add_guess_vectors()
 
        for (int n=0; n<N_; ++n) {
             double v = -e[k] * w[n][k];
-            for (int l=0; l<L_; ++l) {
+            for (int l=0; l<L_current; ++l) {
                  v += this->sigma_vectors_[l]->get(n) * u[l][k];
             }
             d->set(n, v/(e[k] - h[n]) );
        }
+
 
 
        // Add vectors to the guess space
