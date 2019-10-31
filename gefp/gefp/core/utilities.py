@@ -90,6 +90,9 @@ def wavefunction_union_from_dimer(dimer, wfn_1=None, wfn_2=None,
     #psi4_io.set_default_path('/home/globulion/scr-d')
     psi4.core.clean()
 
+    wfn_1.set_basisset("BASIS_DF_SCF", basis_df_scf_A)
+    wfn_2.set_basisset("BASIS_DF_SCF", basis_df_scf_B)
+
     un = oepdev.WavefunctionUnion(dimer, basis, basis_df_scf,
                                   basis_A, basis_B,
                                   basis_df_oep_A, basis_df_oep_B,
