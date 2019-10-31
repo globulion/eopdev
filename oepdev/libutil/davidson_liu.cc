@@ -202,11 +202,15 @@ void oepdev::DavidsonLiu::davidson_liu_add_guess_vectors()
 
            // Check if the size of guess space exceeds the imposed limits
            if (guess_vectors_davidson_liu_->L() > L_max) {
+               psi::outfile->Printf(" @Davidson-Liu warning: Maximum dimension exceeded!\n");
                std::vector<psi::SharedVector> new_vec;
                for (int q=0; q<M_davidson_liu_; ++q) new_vec.push_back(this->U_davidson_liu_->get_column(0, q));
-               guess_vectors_davidson_liu_->reset(new_vec);
+               this->guess_vectors_davidson_liu_->reset(new_vec);
+             //this->guess_vectors_davidson_liu_->orthonormalize(); // do it just in case!
                this->L_davidson_liu_ = guess_vectors_davidson_liu_->L();
                this->davidson_liu_n_sigma_computed_ = 0;
+               this->sigma_vectors_davidson_liu_.clear();
+               this->E_davidson_liu_->scale(10.0);
                break;
            }
        }
