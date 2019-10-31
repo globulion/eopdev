@@ -2,7 +2,7 @@
 class Diagonalize : public DavidsonLiu {
 
  public:
-  Diagonalize(psi::SharedMatrix H, psi::Options& opt);
+  Diagonalize(psi::SharedMatrix H, psi::Options& opt, int M);
   virtual void ~Diagonalize() {};
 
  protected: 

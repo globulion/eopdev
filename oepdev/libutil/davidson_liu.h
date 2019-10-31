@@ -20,7 +20,19 @@ namespace oepdev{
  * Find the lowest *M* eigenvalues and associated eigenvectors 
  * of the real, symmetric (square) matrix **H**.
  *
- * # Usage
+ * Associated options:
+ *  * `DAVIDSON_LIU_NROOTS`       - number of roots of interest. Default: 1.
+ *  * `DAVIDSON_LIU_CONVER`       - convergence of the iterative procedure as RMS of old and current eigenvalues. Default: 1.0E-10.
+ *  * `DAVIDSON_LIU_MAXITER`      - maximum number of iterations. Default: 500.
+ *  * `DAVIDSON_LIU_GUESS`        - Type of guess vectors. Default: `RANDOM`, which is constructing ranrom vectors.
+ *  * `DAVIDSON_LIU_THRESH_LARGE` - Small correction vector threshold (see description below). Default: 1.0E-03. 
+ *  * `DAVIDSON_LIU_THRESH_SMALL` - Small correction vector threshold (see description below). Default: 1.0E-06. 
+ *  * `DAVIDSON_LIU_SPACE_MAX`    - Maximum number of guess vectors. Default: 200.     
+ *  * `DAVIDSON_LIU_SPACE_START`  - Starting amount of guess vectors. Must be larger or equal to number of roots. 
+ *                                  Default: -1, which means that number of roots is taken.
+ *
+ *
+ * # Usage in C++ programming
  *
  * This class is an abstract base. In order to use the Davidson-Liu method 
  * fully implemented here, one must define a child class inheriting from oepdev::DavidsonLiu
@@ -32,9 +44,62 @@ namespace oepdev{
  *     the calculation of the diagonal elements of the Hamiltonian,
  *     stored in the `psi::SharedVector H_diag_davidson_liu_`.
  *
+ * \see Examples for demo use.
+ *
  * # Implementation
  * 
- * Th
+ * The implementation follows Figure 5, Section 3.2.1 in Ref.[1].
+ * Dimensionality:
+ *  * `N` - number of rows/collumns of matrix to diagonalize
+ *  * `L` - current number of guess vectors
+ *  * `M` - number of roots of interest
+ *
+ * Sigma vectors are defined to be 
+ * \f[
+ *   {\bf S} = {\bf H} {\bf B}
+ * \f]
+ * where **B** are the guess vectors stored as a matrix of size (N, L) in core memory.
+ * Subspace Hamiltonain is then given by
+ * \f[
+ *   {\bf G} = {\bf B}^{\rm T} {\bf S}
+ * \f]
+ * and is diagonalized using standard diagonalization technique,
+ * \f[
+ *   {\bf G} = {\bf U} {\bf z} {\bf U}^{\rm T}
+ * \f]
+ * where **z** are the eigenvalues. First *M* lowest eigenvalues and associated eigenvectors
+ * are saved in **E** and **A**, respectively (with the latter having size of (L, M)).
+ * The current eigenvector matrix **C** containing roots
+ * is given by
+ * \f[
+ *   {\bf C} = {\bf B} {\bf A}
+ * \f]
+ * Once this step is completed, the correction vectors are computed for each eigenvalue according to
+ * \f[
+ *   \delta_{Ik} = \frac{1}{E_k - H_{II}} 
+ *    \left[ -E_k C_{Ik} + \sum_l^L \sigma_{Il} A_{lk} \right]
+ * \f]
+ * and they are orthonormalized against all the collumns of **B** by using the Gram-Schmidt procedure.
+ * If the norm of such orthonormalized correction vector is larger than threshold value,
+ * it is appended to **B** as new guess vector.
+ *
+ * \note
+ *   Note that the current implementation uses the original Davidson's preconditioner, 
+ *   which might have problems with breaking spin symmetry of the solution.
+ * 
+ * ## Treatment of correction vector threshold.
+ * In the current implementation, two threshold values are defined:
+ *  * larger threshold, controlled by `DAVIDSON_LIU_THRESH_LARGE` Psi4 option, 
+ *    is used for the first lowest eigenvalue.
+ *  * smaller threshold, controlled by `DAVIDSON_LIU_THRESH_SMALL` Psi4 option, 
+ *    is used for the next eigenvalues if *M* > 1.
+ * 
+ * 
+ * 
+ * 
+ * 
+ * # References
+ *  [1] C. David Sherrillt and Henry F. Schaefer III, *Adv. Quant. Chem.* **1999** (34), pp. 94720-1460.
  */
 class DavidsonLiu {
 
