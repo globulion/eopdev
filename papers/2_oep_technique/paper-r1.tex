@@ -33,10 +33,53 @@ molecular aggregates such as interacting molecules in condensed phases.
 
 \tableofcontents
 
-\section{\label{s:1}Introduction}
+%\section{\label{s:1}Introduction}
 
-\section{\label{s:2}Effective One-Electron Potentials: General Theory}
+\section{\label{ss.5.2}Introduction}
 
+Charge transfer (CT) between molecules occurs when the net electronic populations 
+of interacting molecules change which leads to an additional stabilization 
+of a molecular aggregate. The effect of CT on the interaction energy 
+is known to be often non\hyp{}negligible, especially
+in donor\hyp{}acceptor systems such as H\hyp{}bonded species
+and charged complexes.
+\emph{Ab initio} fragmentation methods, such as
+the second generation of the effective fragment potential method (EFP2),
+are often used to describe the homogeneous extended molecular systems 
+such as solutions
+and recently even biomolecules. EFP2 relies on the intermolecular 
+perturbation theory, and the total interaction energy is approximated as
+a sum of five contributions due to the Coulombic interaction of the unperturbed (isolated)
+charge densities of the monomers, exchange\hyp{}repulsion energy,
+induction energy due to mutual polarization, intermolecular dispersion energy,
+as well as the CT energy,
+%
+\begin{equation}
+ U^{\rm EFP2} \approx U^{\rm Coul} + U^{\rm Ex-Rep} + U^{\rm Ind} + U^{\rm Disp} + U^{\rm CT} \;.
+\end{equation}
+%
+However, calculating the CT stabilization energy is usually much more expensive 
+than evaluating the contributions due to other effects.\cite{Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012}
+%However, the computational cost of the CT term is usually at least few times larger
+%than the next costly contribution $U^{\rm Ex-Rep}$, which is still too costly
+%to perform molecular dynamics (MD) simulations including the $U^{\rm CT}$. 
+In effect,
+this part of the EFP2 energy is usually ignored in most of the applications. In the 
+recent LIBEFP library, CT term were even not implemented due to those reasons.
+
+In this work, we propose an alternative formulation of the CT energy compatible with the
+EFP2 method. We start from the perturbation theory of Murrell et al.
+and
+introduce the effective one\hyp{}electron potential (OEP) operators
+to eliminate the electron\hyp{}repulsion integrals (ERI's) from the original theory.
+Later we validate the model against the EFP2 method in Section XXX. Finally,
+we conclude this work and provide few remarks on future development in Section XXX.
+
+\section{\label{s:2}Effective One-Electron Potential Operators}
+
+To establish the notation within the present work, 
+the formalism of one\hyp{}electron potential (OEP) operators is
+given first.
 The one\hyp{}electron Coulomb static effective potential $v^{\rm eff}({\bf r})$
 produced by a certain effective one\hyp{}electron charge density distribution $\rho^{\rm eff}({\bf r})$
 is 
@@ -140,169 +183,7 @@ is defined according to
 \end{equation}
 %
 
-
-\section{\label{s:3}Effective One-Electron Potentials: Configuration Interaction}
-
-The time\hyp{}independent Schr{\"o}dinger equation provides the stationary solution to the
-electronic state
-of a molecular system in terms of its $N$\hyp{}electron wavefunction, $\Psi$,
-%
-\begin{equation} \label{e:schrodinger}
- E = \tBraKet{\Psi}{\mathscr{H}}{\Psi} \;,
-\end{equation}
-%
-for a quantum Hamiltonian, $\mathscr{H} = \hat{h}(1) + \hat{o}(2)$,
-with $\hat{h}(1)$ being the core Hamiltonian one\hyp{}electron operator,
-$\hat{h}(1) = \hat{v}_{\rm nuc} -\frac{1}{2}\sum_e^{\rm el} \nabla_e^2$,
-and $\hat{o}(2)$ the two\hyp{}electron repulsion operator.
-From the above solution, any property $P$, understood as an expectation value of the
-associated operator $\mathscr{P}$, can be computed according to
-%
-\begin{equation} \label{e:prop}
- P = \tBraKet{\Psi}{\mathscr{P}}{\Psi} \;.
-\end{equation}
-%
-The exact solution to Eq.~\eqref{e:schrodinger} is formally given by
-the configuration interaction (CI) expansion around the reference 
-(approximate) wavefunction, $\Psi^{(0)}$,
-typically the solution to the Hartree\hyp{}Fock (HF) problem\cite{Roothaan.RevModPhys.1951},
-%
-\begin{equation} \label{e:ci}
- \Ket{\Psi} = \Ket{\Psi^{(0)}} + \sum_{ra} C_{r}^{a} \Ket{\Psi_{r}^{a}} + 
-	 \sum_{rsab} C_{rs}^{ab} \Ket{\Psi_{rs}^{ab}} + \ldots
-\end{equation}
-%
-In the above equation,
-$\Ket{\Psi_{rs\ldots}^{ab\ldots}}$ are called the CI configurations
-with the associated CI coefficients $C_{rs\ldots}^{ab\ldots}$, created by `exciting'
-one or more electrons from the $a$th ($b$th) occupied molecular orbital to the $a$th ($b$th)
-virtual (unoccupied) molecular orbital, obtained from the HF solution.
-By inserting Eq.~\eqref{e:ci} into Eq.~\eqref{e:prop} 
-and using the Slater\hyp{}Condon rules for evaluating the one\hyp{} and two\hyp{}electron
-operator matrix element between
-the CI configurations, it can be shown that the following holds
-%
-\begin{equation} \label{e:exp-val-series}
-	P =
-	\sum_{ij} P_{ij} \tBraKet{i}{\hat{h}}{j}
-	+ \sum_{ijkl} P_{ijkl} \BraKet{ij}{kl}  \;,
-\end{equation}
-%
-%where $\tBraKet{i}{\hat{h}}{j} \equiv \int \phi^*_i({\bf r}) \hat{h} \phi_j({\bf r}) d{\bf r} $
-%$\BraKet{ij}{kl}$ is the electron\hyp{}repulsion integral (ERI) defined by
-%%
-%\begin{equation}
-%	\BraKet{ij}{kl} \equiv
-%	\iint 
-%	\frac{ \phi_i^{*}({\bf r}_1) \phi_j({\bf r}_1) 
-%	       \phi_k^{*}({\bf r}_2) \phi_l({\bf r}_2) }{ \vert {\bf r}_1 - {\bf r}_2 \vert}
-%	d{\bf r}_1 d{\bf r}_2  \;,
-%\end{equation}
-%%
-where the second\hyp{}rank tensor ${\bf P}^{(2)}$ 
-and the fourth\hyp{}rank tensor ${\bf P}^{(4)}$ 
-are well defined and characteristic for the property of interest.
-In fact, they are certain functions of the CI coefficients, i.e.,
-%
-\begin{equation}
-{\bf P} = {\bf P}
-\left(
- \left\{
-  C_{r}^{a}, C_{rs}^{ab}, \ldots 
- \right\} 
-\right)
-\end{equation}
-%
-and, in principle, are known as long as the solution to the CI problem 
-or its approximation is available.
-
-%In this work we are interested in cases when
-
-%$\Psi^{AB}$. In this Section we consider theories to calculate the effect of the interaction
-%of molecules $A$ and $B$ on the property $P$ knowing only the unperturbed wavefunctions,
-%$\Psi^{A}$ and $\Psi^{B}$.
-
-
-\subsection{\label{ss:2.1}Intermolecular Interaction-Induced Property}
-
-Consider a molecular aggregate consisting of two interacting 
-molecules $A$ and $B$. The part of property that arises due to the
-intermolecular interaction between $A$ and $B$ can be calculated
-based on the supermolecular approach,
-%
-\begin{multline} \label{e:delta-p}
-	\Delta^{AB} P = \tBraKet{\Psi^{AB}}{\mathscr{P}}{\Psi^{AB}} \\- 
-	\left(
-	    \tBraKet{\Psi^{A}}{\mathscr{P}}{\Psi^{A}} +
-	    \tBraKet{\Psi^{B}}{\mathscr{P}}{\Psi^{B}}
-	\right)
-	\;,
-\end{multline}
-%
-where $\Psi^{AB}$ and $\Psi^{A(B)}$ are the wavefunctions of the interacting molecular aggregate
-and the unperturbed (non\hyp{}interacting) molecules, respectively.
-The notation $\Delta^{AB}$ emphasizes on the two\hyp{}body character of the interaction\hyp{}induced
-property. In this work we focus on re\hyp{}expressing $\Delta^{AB}P$ in terms of separate
-fragments associated with either molecule. In general case when the basis set
-is complete, such an operation is not possible. However,
-assuming an approximation
-in which the basis functions $\phi_i$ 
-are localized on either molecule it allows one to partition the basis set space
-and the resulting 2\hyp{} and 4\hyp{}index tensor elements
-into subsets `belonging' either to molecule $A$ or to molecule $B$.
-Such an approximation is essentially a foundation of any fragment\hyp{}based strategy
-and, in particular, designing \emph{ab initio} force fields such as EFP2
-of SolEFP.
-
-Application of Eq.~\eqref{e:exp-val-series}
-to Eq.~\eqref{e:delta-p} and adopting the localized basis set approximation
-yields the partitioning of the interaction\hyp{}induced property,
-%
-\begin{equation} \label{e:delta-p-part}
- \Delta^{AB} P = \Delta^{AB} P(1) + \Delta^{AB} P(2) \;,
-\end{equation}
-%
-for which the one\hyp{}electron part reads
-%
-\begin{multline} \label{e:delta-p-part-1el}
- \Delta^{AB} P(1) \approx
-	\sum_{ij} \Big\{ 
-	P^{AA}_{ij}  \tBraKet{A}{\hat{h}}{A} +    %\tBraKet{i^A}{\hat{h}}{j^A} + 
-	P^{BB}_{ij}  \tBraKet{B}{\hat{h}}{B} \\ + %\tBraKet{i^B}{\hat{h}}{j^B} + 2 
-2	P^{AB}_{ij}  \tBraKet{A}{\hat{h}}{B}      %\tBraKet{i^A}{\hat{h}}{j^B} 
-	\Big\}
-\end{multline}
-%
-and the two\hyp{}electron part is given by
-%
-\begin{multline} \label{e:delta-p-part-2el}
- \Delta^{AB} P(2) \approx
-	\sum_{ijkl} \Big\{ 
-	P^{AAAA}_{ijkl} \BraKet{AA}{AA} \\ +    %\BraKet{i^Aj^A}{k^Al^A} +
-	P^{BBBB}_{ijkl} \BraKet{BB}{BB} +  %\BraKet{i^Bj^B}{k^Bl^B} +
-	{s} \left[ P^{AABB}_{ijkl} \BraKet{AA}{BB} \right] \\ + 
-	{s} \left[ P^{ABAB}_{ijkl} \BraKet{AB}{AB} \right] + 
-	{s} \left[ P^{AAAB}_{ijkl} \BraKet{AA}{AB} \right] \\ +
-	{s} \left[ P^{ABBB}_{ijkl} \BraKet{AB}{BB} \right]
-	\Big\} \;.
-\end{multline}
-%
-To simplify the resulting expressions
-in Eqs.~\eqref{e:delta-p-part-1el} and \eqref{e:delta-p-part-2el},
-the shorthand notation $\tBraKet{A}{\hat{h}}{B} \equiv \tBraKet{i^A}{\hat{h}}{j^B}$ and 
-$\BraKet{AB}{CD} \equiv \BraKet{i^Aj^B}{k^Cl^D}$
-was introduced, and
-the real orbitals 
-were assumed to simplify the symmetry of the one\hyp{} and two\hyp{}electron integrals.
-The operator $s$ permutes and sums over all the combinations of the basis function indices
-given their partitioning scheme between molecules $A$ and $B$.
-All the summation components from Eqs.~\eqref{e:delta-p-part-1el} and \eqref{e:delta-p-part-2el} 
-can be grouped into the three
-sub\hyp{}categories: (i) Coulomb\hyp{}like terms
-with integrals of the type $\BraKet{AA}{BB}$, (ii) overlap\hyp{}like terms with $\BraKet{AA}{AB}$
-and $\BraKet{AB}{BB}$ and (iii) exchange\hyp{}like terms with $\BraKet{AB}{AB}$.
-
-%Therefore, the interaction\hyp{}induced property can be recast in a following way
+%\subsection{\label{s.334}Practical OEP-Based Calculations}
 
 \subsection{\label{ss:2.3}Incorporating Electron Repulsion Integrals into Effective Potentials}
 
@@ -355,120 +236,10 @@ partitioned in between the interacting fragments.
 %Note also, that, in principle, there is no approximation 
 %made here at that moment.
 
-\subsection{\label{ss:2.4}Definition of Interaction-Induced Property Effective Potentials}
 
-The above technique can be now applied to the CI expansion of the interaction\hyp{}induced property
-under the localized basis set approximation 
-from Eq.~\eqref{e:delta-p-part}.
-%Coulomb\hyp{}like and overlap\hyp{}like 
-%terms from Eq.~\eqref{e:delta-p-part-2el}. 
-For example, the Coulomb\hyp{}like contributions
-can be rewritten without making any further approximation as
-%
-\begin{equation}
- \sum_{ijkl} 
-	{s} \left[ P^{AABB}_{ijkl} \BraKet{AA}{BB} \right]
- \equiv
-	\sum_{kl\in B} 
-	\tBraKet{k^B}{\hat{v}^{{\rm eff},A}}{l^B}
-\end{equation}
-%
-with
-%
-\begin{equation}
- \hat{v}^{{\rm eff},A} 
-	\equiv \sum_{ij\in A} {s} \left[ P^{AABB}_{ijkl} \hat{v}^{AA}_{ij} \right]  \;.
-\end{equation}
-%
-Similarly for the overlap\hyp{}like term we have
-%
-\begin{equation}
- \sum_{ijkl} 
-	{s} \left[ P^{AAAB}_{ijkl} \BraKet{AA}{AB} \right]
- \equiv
-	\sum_{k\in A} \sum_{l\in B} 
-	\tBraKet{k^A}{\hat{v}^{{\rm eff},A}}{l^B}
-\end{equation}
-%
-and the associated effective potential reads
-%
-\begin{equation}
- \hat{v}^{{\rm eff},A} 
-	\equiv \sum_{ij\in A} {s} \left[ P^{AAAB}_{ijkl} \hat{v}^{AA}_{ij} \right] \;.
-\end{equation}
-%
-Note that the exchange\hyp{}like terms cannot be represented in terms of OEP's.
-Gathering the above arguments, $\Delta^{AB}P$ adopts the following form
-%
-\begin{multline} \label{e:ci-oep-master}
- \Delta^{AB}P \approx \Delta_{\rm ex}^{AB} P
-	+ \sum_{i\in A} \sum_{j\in B} 
-	  \tBraKet{i}{ \left\{ \hat{v}^{{\rm eff},AB}_{1(ij)} + \hat{v}^{{\rm eff},BA}_{1(ij)}  \right\} }{j}
-	 \\ +
-	\sum_{i\in A} \sum_{k\in A}
-	  \tBraKet{i}{\hat{v}^{{\rm eff},BA}_{2(ik)} }{k}
-	 +
-        \sum_{j\in B} \sum_{l\in B}
-          \tBraKet{j}{\hat{v}^{{\rm eff},AB}_{2(jl)} }{l}
-\end{multline}
-%
-where the exchange\hyp{}like component is
-%
-\begin{equation}
-	\Delta_{\rm ex}^{AB} P = 
-	s \sum_{ik\in A} \sum_{jl\in B}
-	P^{ABAB}_{ijkl} \BraKet{ij}{kl} \;,
-\end{equation}
-%
-and
-the overlap\hyp{}like and the Coulomb\hyp{}like 
-OEP's are defined as follows
-%
-\begin{subequations}
-\begin{align} \label{e:oep-exch-like}
-	\hat{v}^{{\rm eff},BA}_{1(ij)} &\equiv P_{ij}^{AB} \hat{h}
-	+ s \sum_{mk\in A}  P^{AAAB}_{mkij} \hat{v}_{mk}^{AA} \;, \\
-	%
-	\hat{v}^{{\rm eff},BA}_{2(ik)} &\equiv P_{ik}^{AA} \hat{h} 
-        + s \sum_{mk'\in A} P^{AAAA}_{ikmk'} \hat{v}_{mk'}^{AA}  \nonumber
-        \\ \label{e:oep-coul-like}
-	& \qquad\qquad+ \frac{1}{2}
-        s \sum_{jl'\in B}  P^{AABB}_{ik'jl} \hat{v}_{jl'}^{BB} \;,
-\end{align}
-\end{subequations}
-%
-and accordingly for the twin operators $\hat{v}^{{\rm eff},AB}_{\text{$1$ and $2$}}$.
 
-\subsection{\label{s.242}Separability of P-Coefficients}
-
-Until that point, the effective potentials from Eqs.~\eqref{e:oep-exch-like}
-and \eqref{e:oep-coul-like} are not separable in terms of the interacting molecules
-because the $\bf P$ tensors are derived from the CI wavefunction of
-the entire interacting system $AB$. However, if there exist an approximate
-separation as, for example,
-%
-\begin{align}
- P^{AB}_{ij} &\approx \sum_{k\in A} \sum_{l\in B} X^A_{ik} S_{kl}^{AB} X^B_{lj} \;,\\
- P^{AAAB}_{mkij} &\approx \sum_{k\in A} \sum_{l\in B} 
-                 X^A_{mkik'} S^{AB}_{k'l'} Y^{B}_{l'j} \;, \\
- P^{AABB}_{ikjl} &\approx Z^A_{ik} Y^{AB}_{} Z^{ B}_{jl} \;,
-\end{align}
-%
-and if the matrices ${\bf X}^{A(B)}$, 
-${\bf Z}^{A(B)}$ and ${\bf P}^{AA(BB)}$ as well as the tensors
-${\bf P}^{AAAA(BBBB)}$ 
-are properties of the unperturbed (isolated) molecules,
-further rearrangements in Eq.~\eqref{e:ci-oep-master} are possible
-leading to computationally more efficient expressions.
-
-Note also that the matrices ${\bf Y}^{AB}$ and ${\bf P}^{AB}$ depend on their instantaneous 
-relative positions.
-
-%then the molecule\hyp{}specific OEP's can be defined.
-
-\section{\label{s.334}Practical OEP-Based Calculations}
-
-There are two general cases of basis function partitioning scheme
+Two general cases of basis function partitioning scheme
+are considered in this work,
 in which it is possible to define an effective one\hyp{}electron
 potential. They are listed in Table~\ref{t:oep-matrix-element-types}.
 The first type is a Coulomb\hyp{}like contribution, for which multipole expansion or density fitting can be used.
@@ -523,7 +294,7 @@ according to
 d{\bf r}_1 d{\bf r}_2 \;.
 \end{equation}
 %
-The above double integral can be approximated by the
+The above integral can be approximated by the
 distributed multipole (DMTP)
 expansions of the respective densities as follows
 %
@@ -764,186 +535,17 @@ and the auxiliary and intermediate basis sets depend solely on one unperturbed m
 $V^A_{i\xi}$ can be calculated just once and stored in a file as effective fragment parameters.
 
 
-\section{\label{s:4}Calculation Details}
 
-All the models that were used to test the theory presented in this work
-were implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry program.\cite{Psi4.JCTC.2017}
 
-\section{\label{s:5}Results and Discussion}
-\subsection{\label{ss.5.1}Pauli-Repulsion Interaction Energy}
+\section{\label{s:34r}Charge Transfer Interaction Energy for Fragment Potentials}
 
-At short intermolecular interactions, wavefunction overlap increases
-which causes the electrons from either molecules to move apart to minimize the repulsive interactions.
-The resulting interaction energy can be estimated based on perturbation theory approaches.
-In this section, we demonstrate the use of OEP operators to significanlty reduce the computational
-cost of such calculations, that can be used in fragment\hyp{}based modelling of extended molecular
-aggregates in terms of force field methods.
+\subsection{\label{s:34rg} Murrell et al.'s Model: Starting Point}
 
-As a starting point we consider perturbation theory model of Murrell et al.,
-in which repulsive energy is originally given by
-%
-\begin{equation}
- \Delta^{AB} E^{\rm Rep} = 
- \Delta^{AB} E^{\rm Rep}(S^{-1}) + 
- \Delta^{AB} E^{\rm Rep}(S^{-2}) \;,
-\end{equation}
-%
-where the first\hyp{}order term with respect to the intermolecular overlap is
-%
-\begin{multline} \label{e:rep.murrell-etal.S1}
-  \Delta^{AB}  E^{\rm Rep}(S^{-1}) = -2\sum_{i\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}
-               S_{ij} \Big\{
-           V^A_{ij} 
-         + V^B_{ji} \\
- + \sum_{k\in A}^{\rm Occ} \left[ 2\BraKet{ij}{kk} - \BraKet{ik}{jk} \right] 
- + \sum_{l\in B}^{\rm Occ} \left[ 2\BraKet{ij}{ll} - \BraKet{il}{jl} \right]
-                \Big\}
-\end{multline}
-%
-and the second\hyp{}order term is given in Eq.(XXX) in Ref. %cite
-In this work, we focus to simplify only the former term because this is usually
-the bottleneck of evaluating the Pauli repulsive contributions to
-forces in molecular dynamics when using the effective potential method, whereas
-very inexpensive approximation to the latter term has already been worked out previously. %cite
-Note that the Coulomb and exchange integrals can be re\hyp{}cast as follows:
-%
-\begin{subequations}
- \begin{align}
- \BraKet{ij}{kk} &\equiv \sum_{\mu\in A} 
-     C_{\mu i}^A \tBraKet{\mu}{\hat{v}_{kk}}{j} \;, \\
- \BraKet{ik}{jk} &\equiv \sum_{\mu\in A} 
-     C_{\mu k}^A \tBraKet{\mu}{\hat{v}_{ik}}{j} \;.
- \end{align}
-\end{subequations}
-%
-%Similarly, the exchange integrals reduce to
-%
-%\begin{equation}
-% \BraKet{ik}{jk} \equiv \sum_{\mu\in A} 
-%     C_{\mu k}^A \tBraKet{\mu}{\hat{v}_{ik}}{j} \;.
-%\end{equation}
-%
-In the above equations, the auxiliary potential operators are given by
-%
-\begin{equation}
-  \hat{v}_{ik} \equiv \int d{\bf r} \Ket{{\bf r}} 
-        \left[
-        \int d{\bf r}' \frac{\phi_i^{*}({\bf r}') \phi_k({\bf r}')}{\vert {\bf r}' - {\bf r}\vert}
-        \right] \Bra{{\bf r}} \;.
-\end{equation}
-%
-Now, using the prescription in Eq.~\eqref{e:ft-reduction} one can define a joint OEP
-operator from nuclear, Coulomb and exchange parts as
-%
-\begin{equation}
- V^A_{ij} + 
- \sum_{k\in A}^{\rm Occ} 
-  \left\{ 2\BraKet{ij}{kk} - \BraKet{ik}{jk} \right\}
-\equiv \sum_{\mu\in A} \tBraKet{\mu}{ 
-\hat{v}^{A[\mu i]}_{\rm eff}
- }{j}
-\end{equation}
-%
-with
-%
-\begin{equation}
- \hat{v}^{A[\mu i]}_{\rm eff} \equiv C_{\mu i} \hat{v}^A_{\rm nuc} + 
- \sum_{k\in A}^{\rm Occ} \left[
- 2C_{\mu i}^A \hat{v}^A_{kk} - C_{\mu k}^A \hat{v}^A_{ik}
- \right] \;.
-\end{equation}
-%
-%The nuclear part can also be incorporated within the effective potential
-%resulting in the following reduction
-%
-%
-On the other hand, it immediately follows that
-%
-\begin{equation}
- \hat{v}^{A[\mu i]}_{\rm eff} \Ket{\mu} = 
-  \sum_{k\in A}^{\rm Occ} \left\{
-     2\hat{v}^A_{kk} \Ket{i} - \hat{v}^A_{ik} \Ket{k}
-  \right\} \;.
-\end{equation}
-%
-For practical calculations, the right hand side of the above equation can be expanded 
-in the auxiliary basis,
-%
-\begin{equation} \label{e:v-oep.rep}
-  \sum_{k\in A}^{\rm Occ} \left\{
-     2\hat{v}^A_{kk} \Ket{i} - \hat{v}^A_{ik} \Ket{k}
-  \right\} \cong
-  \sum_{\xi\in A}^{\rm DF} 
-  V_{\xi i}^A \Ket{\xi} \;,
-\end{equation}
-%
-where the matrix ${\bf V}^A$ can be considered as effective fragment parameters.
-Doing the same operations on the twin operators associated with the molecule $B$
-original theory of Murrell et. al from Eq.~\eqref{e:rep.murrell-etal.S1}
-reduces to
-%
-\begin{equation}
-  \Delta^{AB}  E^{\rm Rep}(S^{-1}) \cong 
- -2\sum_{i\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}
-               S_{ij} \Big\{
-           \sum_{\xi \in A}^{\rm DF} V_{\xi i}^A S_{\xi j}
-         + \sum_{\eta\in B}^{\rm DF} V_{\eta j}^B S_{\eta i}
-                \Big\}
-\end{equation}
-%
-which is a fully OEP\hyp{}based result. Note, that now only 
-overlap integrals, which are relatively computationally very inexpensive,
-need to be evaluated.
-
-As another benchmark model for accuracy, we compare our results with 
-the exchange and repulsion energy term 
-from the density\hyp{}based scheme of partitioning the interaction energy
-(here abbreviated as DDS),
-that was developed by Mandado and Hermida-Ramon. 
-%In the above equations, the Pauli deformation density 
-%%
-%\begin{equation}
-%   \Delta {\bf D}^{\rm Pauli} \equiv {\bf D}^{oo} - {\bf D}
-%\end{equation}
-%%
-%where \f$ {\bf D}^{oo}\f$ and \f$ {\bf D}\f$ are the density matrix formed from
-%mutually orthogonal sets of molecular orbitals within the entire aggregate (formed
-%by symmetric orthogonalization of MO's) and the density matrix of the unperturbed
-%system (that can be understood as a Hadamard sum \f$ {\bf D} \equiv {\bf D}^A \oplus {\bf D}^B\f$).
-% 
-%At HF level, the Pauli deformation density matrix is given by
-%\f[
-%  \Delta {\bf D}^{\rm Pauli} = {\bf C} \left[ {\bf S}^{-1} - {\bf 1} \right] {\bf C}^\dagger
-%\f]
-%whereas the density matrix constructed from mutually orthogonal orbitals is
-%\f[
-%   {\bf D}^{oo} = {\bf C} {\bf S}^{-1} {\bf C}^\dagger
-%\f]
-%In the above equations, \f$ {\bf S} \f$ is the overlap matrix between doubly occupied molecular orbitals
-% of the entire aggregate.
-It is also mentioned here that the DDS model of exchange-repulsion at HF level of theory
-is equivalent to the perturbative method of Hayes and Stone and the two methods
-yield the same results, although the exchange and repulsive interaction energies
-are slightly different.
-
-\subsubsection{\label{ssdff.sd}Defining OEP's for Repulsive Potential}
-
-\subsection{\label{ss.5.2}Charge-Transfer Interaction Energy}
-
-Charge transfer (CT) between molecules occurs when the net electronic populations 
-of interacting molecules change which leads to an additional stabilization 
-of a molecular aggregate. Since the effect of CT on the interaction energy 
-is known to be often non\hyp{}negligible, it is quite important to model 
-CT energies with reasonable accuracy and efficiency when performing energy 
-and molecular dynamics calculations with \emph{ab initio} force fields, 
-especially in donor\hyp{}acceptor systems such as H\hyp{}bonded species. 
-However, estimating the CT stabilization energy is usually much more expensive 
-than estimating the contributions due to other effects such as electrostatics, 
-exchange\hyp{}repulsion and dispersion.\cite{Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012}
-
-As an illustration of application of the OEP technique for efficient calculation 
-of CT energy we consider the second\hyp{}order perturbation theory of Murrell et al.,
-in which the energy associated with the charge transfer from molecule $A$ to $B$ is given by
+After the OEP technique has been formulated, it can be applied 
+to the calculation of interaction\hyp{}induced properties following the
+fragment\hyp{}based philosophy. 
+According to the second\hyp{}order intermolecular perturbation theory of Murrell et al.,
+the energy associated with the charge transfer from molecule $A$ to $B$ is given by
 %
 \begin{equation} \label{e:ct-murell-etal.e}
  E^{A\rightarrow B} = 2 \sum_{i\in A}^{\rm Occ} \sum_{n\in B}^{\rm Vir} 
@@ -970,7 +572,7 @@ whereas the coupling constant is given by
         \BraKet{nj}{ik} \;.
 \end{multline}
 %
-In the above expression, the following effective potentials,
+In the above expression, the following effective one\hyp{}electron operators,
 %
 \begin{subequations} 
 \begin{align} \label{e:ct-murell-etal.vtot-vi}
@@ -980,7 +582,13 @@ In the above expression, the following effective potentials,
 \end{subequations}
 %
 were introduced without making any approximation to the original equation
-from Ref. One can immediately notice that the five summation terms
+from Ref. 
+The goal of this work is to apply the technique sketched in Eq.XXX
+to eliminate ERI's from Eq.~\eqref{e:ct-murell-etal.vin} in terms of OEP's.
+
+\subsection{\label{s:34rag} Murrell et al.'s Model: Application of OEP Technique}
+
+One can immediately notice that the five summation terms
 from Eq.~\eqref{e:ct-murell-etal.vin} can be classified into three groups
 regarding the type of ERI's that are required:
 (i) $\BraKet{AB}{BB}$ -- the first two terms;
@@ -1364,7 +972,16 @@ due to CT from molecule $B$ to $A$.
 %  \Bigg\}  
 %%
 %\end{multline}
-%%
+%
+
+
+
+
+\section{\label{s:4}Calculation Details}
+
+All the models that were used to test the theory presented in this work
+were implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry program.\cite{Psi4.JCTC.2017}
+
 
 \subsection{\label{s:413s6}Reduction of computational costs}
 
