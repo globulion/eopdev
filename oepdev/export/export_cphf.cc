@@ -23,7 +23,9 @@ void export_cphf(py::module &m) {
 	.def(py::init<std::shared_ptr<psi::Wavefunction>, psi::Options&>())
 	.def("compute", &oepdev::CPHF::compute, "")
 	.def("nocc", &oepdev::CPHF::nocc, "", py::return_value_policy::copy)
+        .def("wfn", &oepdev::CPHF::wfn, "")
 	.def("print", &oepdev::CPHF::print, "")
+        .def("lmo_centroid", &oepdev::CPHF::lmo_centroid, "")
 	.def("polarizability", mat_void(&oepdev::CPHF::polarizability), "")
 	.def("polarizability", mat_int (&oepdev::CPHF::polarizability), "")
 	    ;
