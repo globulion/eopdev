@@ -16,6 +16,40 @@ __all__ = ["psi_molecule_from_file",
 __all__+= ["UnitaryOptimizer", "UnitaryOptimizer_4_2"]
 
 
+#def psi_molecule_f: 
+#      self._i += 1
+#      log = "\n0 1\n"
+#      for i in range(self._natoms):
+#          log += "%s" % self._mol_A.symbol(i)
+#          log += "%16.6f" % (self._mol_A.x(i) * psi4.constants.bohr2angstroms)
+#          log += "%16.6f" % (self._mol_A.y(i) * psi4.constants.bohr2angstroms)
+#          log += "%16.6f" % (self._mol_A.z(i) * psi4.constants.bohr2angstroms)
+#          log += "\n"
+#      log += "units angstrom\n"
+#      log += "symmetry c1\n"
+#      log += "no_reorient\n"
+#      log += "no_com\n"
+#
+#      log += "--\n"
+#      log += "0 1\n"
+#
+#      t =  (self._start + self._i * self._delta) * self._t
+#      for i in range(self._natoms):
+#          log += "%s" % self._mol_A.symbol(i)
+#          log += "%16.6f" % (self._mol_A.x(i) * psi4.constants.bohr2angstroms + t[0])
+#          log += "%16.6f" % (self._mol_A.y(i) * psi4.constants.bohr2angstroms + t[1])
+#          log += "%16.6f" % (self._mol_A.z(i) * psi4.constants.bohr2angstroms + t[2])
+#          log += "\n"
+#      log += "units angstrom\n"
+#      log += "symmetry c1\n"
+#      log += "no_reorient\n"
+#      log += "no_com\n"
+#      print(log)
+#
+#      mol = psi4.geometry(log)
+#      mol.update_geometry()
+#      return mol
+
 def psi_molecule_from_file(f, frm=None, no_com=True, no_reorient=True):
     "Construct psi4.core.Molecule object from structure file"
     if frm is None: frm = f.split('.')[-1].lower()
@@ -23,6 +57,11 @@ def psi_molecule_from_file(f, frm=None, no_com=True, no_reorient=True):
     if   frm == 'xyz':
        qmol = psi4.qcdb.Molecule.init_with_xyz(f, no_com=no_com, no_reorient=no_reorient)  
        mol  = psi4.geometry(qmol.create_psi4_string_from_molecule())
+    #
+    elif frm == 'psi':
+       log = open(f).read()
+       mol = psi4.geometry('\n'+log)
+    # 
     else: raise ValueError("Unrecognised format - %s -" % frm)
     #
     mol.update_geometry()

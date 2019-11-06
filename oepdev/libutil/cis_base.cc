@@ -48,7 +48,11 @@ void CISComputer::common_init(void) {
  // nstates_ is not set here but during computation since it depends on the type of CIS calculation
 
  // Construct the JK object
- jk_ = psi::JK::build_JK(ref_wfn_->basisset(), ref_wfn_->get_basisset("BASIS_DF_SCF"), options_);
+ if (ref_wfn_->basisset_exists("BASIS_DF_SCF")) {
+     jk_ = psi::JK::build_JK(ref_wfn_->basisset(), ref_wfn_->get_basisset("BASIS_DF_SCF"), options_);
+ } else {
+     jk_ = psi::JK::build_JK(ref_wfn_->basisset(), BasisSet::zero_ao_basis_set(), options_);
+ }
  jk_->set_memory((options_.get_double("SCF_MEM_SAFETY_FACTOR")*(psi::Process::environment.get_memory() / 8L)));
  jk_->initialize();
  jk_->print_header();
