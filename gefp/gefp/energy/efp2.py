@@ -27,8 +27,34 @@ def t_2(ra, rb):
 def electric_field(cphf, r):
     "Compute electric field from CPHF object at position r"
     f = numpy.zeros(3)
-    # TODO
+
+    # prepare
+    D = cphf.wfn().Da().to_array(dense=True)
+    mints = psi4.core.MintsHelper(cphf.wfn().basisset())
+    mol = cphf.wfn().molecule()
+
+    ints = mints.electric_field(origin=r)
+
+    # nuclear contribution
+    rx, ry, rz = r
+    for i in range(mol.natom()):
+        x = mol.x(i)
+        y = mol.y(i)
+        z = mol.z(i)
+        Z = numpy.float64(mol.Z(i))
+
+        rai = numpy.array([rx-x, ry-y, rz-z])
+        rai_norm = numpy.linalg.norm(rai)
+        f += Z * rai / rai_norm**3
+
+    # add electronic contribution
+    f[0] += (D @ ints[0].to_array(dense=True)).trace() 
+    f[1] += (D @ ints[1].to_array(dense=True)).trace() 
+    f[2] += (D @ ints[2].to_array(dense=True)).trace() 
+
     return f
+
+
 
 def induction(*cphfs):
     "Compute EFP2 induction energy from list of CPHF objects."
