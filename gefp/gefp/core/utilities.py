@@ -9,6 +9,7 @@ import psi4
 import oepdev
 
 __all__ = ["psi_molecule_from_file", 
+           "psi_supermolecule_from_molecules",
            "wavefunction_union_from_dimer",
            "wavefunction_union_from_dfi_solver",
            "substitute_matrices_in_psi4_wavefunction"]
@@ -16,39 +17,6 @@ __all__ = ["psi_molecule_from_file",
 __all__+= ["UnitaryOptimizer", "UnitaryOptimizer_4_2"]
 
 
-#def psi_molecule_f: 
-#      self._i += 1
-#      log = "\n0 1\n"
-#      for i in range(self._natoms):
-#          log += "%s" % self._mol_A.symbol(i)
-#          log += "%16.6f" % (self._mol_A.x(i) * psi4.constants.bohr2angstroms)
-#          log += "%16.6f" % (self._mol_A.y(i) * psi4.constants.bohr2angstroms)
-#          log += "%16.6f" % (self._mol_A.z(i) * psi4.constants.bohr2angstroms)
-#          log += "\n"
-#      log += "units angstrom\n"
-#      log += "symmetry c1\n"
-#      log += "no_reorient\n"
-#      log += "no_com\n"
-#
-#      log += "--\n"
-#      log += "0 1\n"
-#
-#      t =  (self._start + self._i * self._delta) * self._t
-#      for i in range(self._natoms):
-#          log += "%s" % self._mol_A.symbol(i)
-#          log += "%16.6f" % (self._mol_A.x(i) * psi4.constants.bohr2angstroms + t[0])
-#          log += "%16.6f" % (self._mol_A.y(i) * psi4.constants.bohr2angstroms + t[1])
-#          log += "%16.6f" % (self._mol_A.z(i) * psi4.constants.bohr2angstroms + t[2])
-#          log += "\n"
-#      log += "units angstrom\n"
-#      log += "symmetry c1\n"
-#      log += "no_reorient\n"
-#      log += "no_com\n"
-#      print(log)
-#
-#      mol = psi4.geometry(log)
-#      mol.update_geometry()
-#      return mol
 
 def psi_molecule_from_file(f, frm=None, no_com=True, no_reorient=True):
     "Construct psi4.core.Molecule object from structure file"
@@ -66,6 +34,33 @@ def psi_molecule_from_file(f, frm=None, no_com=True, no_reorient=True):
     #
     mol.update_geometry()
     return mol
+
+def psi_supermolecule_from_molecules(*molecules, units='angs'):
+    "Create one molecule object from multiple molecules. Assumes C1 symmetry"
+    c = 1.0; log_units = "units bohr\n"
+    if units.lower().startswith("angs"):
+       c = psi4.constants.bohr2angstroms
+       log_units = "units angstrom\n"
+    log = "\n"
+    for molecule in molecules:
+        log+= "%d %d\n" % (molecule.molecular_charge(), molecule.multiplicity())
+        for i in range(molecule.natom()):
+            log += "%s"     %  molecule.symbol(i)
+            log += "%16.6f" % (molecule.x(i) * c)
+            log += "%16.6f" % (molecule.y(i) * c)
+            log += "%16.6f" % (molecule.z(i) * c)
+            log += "\n"
+        log += log_units
+        log += "symmetry c1\n"
+        log += "no_reorient\n"
+        log += "no_com\n"
+                                                                                 
+        log += "--\n"
+    log = log[:-3]
+
+    aggregate = psi4.geometry(log)
+    aggregate.update_geometry()
+    return aggregate
 
 def _get_wavefunction_union_basis_sets(dimer):
     "Construct basis set objects necessary to build the oepdev.WavefunctionUnion object"
