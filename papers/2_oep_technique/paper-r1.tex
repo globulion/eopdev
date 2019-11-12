@@ -565,10 +565,10 @@ whereas the coupling constant is given by
  V^{A\rightarrow B}_{in} = 
         \tBraKet{i}{\hat{v}^B_{\rm tot} }{n} 
       - \sum_{j\in B}^{\rm Occ} \BraKet{nj}{ij} 
-      - \sum_{k\in A}^{\rm Occ} S_{nk} \left(1+\delta_{ik}\right) \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} \\
-      - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{\rm tot} }{n}  
+      - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} \\
+      - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
      + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
-        S_{kj} \BraKet{nj}{ik} \;.
+        S_{kj} \left(1+\delta_{ik}\right) \BraKet{nj}{ik} \;.
 \end{multline}
 %
 In the above expression, the following effective one\hyp{}electron operators,
@@ -576,7 +576,7 @@ In the above expression, the following effective one\hyp{}electron operators,
 \begin{subequations} 
 \begin{align} \label{e:ct-murell-etal.vtot-vi}
  \hat{v}^B_{\rm tot} &= \hat{v}^B_{\rm nuc} + 2\sum_{j\in B}^{\rm Occ} \hat{v}^B_{jj} \quad\text{ and }\\ 
-%\hat{v}^A_{i      } &= \hat{v}^A_{\rm tot} - 2\hat{v}^A_{ii} \;,
+ \hat{v}^A_{i      } &= \hat{v}^A_{\rm tot} - 2\hat{v}^A_{ii} \;,
 \end{align}
 \end{subequations}
 %
@@ -725,8 +725,8 @@ ${\bf r}_i = \tBraKet{i}{\hat{\bf r}}{i}$ with $\chi_i({\bf r})$ being localized
 this group can be written as
 %
 \begin{equation} \label{e:ct.group-2}
-      - \sum_{k\in A}^{\rm Occ} S_{nk} \left(1+\delta_{ik}\right) \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} 
- \cong - \sum_{k\in A}^{\rm Occ} S_{nk} \left(1+\delta_{ik}\right) \rho_{ki}^A \odot \rho^B_{\rm tot} \;.
+      - \sum_{k\in A}^{\rm Occ} S_{nk}  \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} 
+ \cong - \sum_{k\in A}^{\rm Occ} S_{nk} \rho_{ki}^A \odot \rho^B_{\rm tot} \;.
 \end{equation}
 %
 Note that, in general, $\rho_{ki}^A$ is complex whereas $\rho^B_{\rm tot}$ is always real.
@@ -762,8 +762,8 @@ respective LMO charge centroids vanish.
 This means that Eq.~\eqref{e:ct.group-2} can be approximated as follows:
 %
 \begin{equation} \label{e:ct.group-ii.final}
-      - \sum_{k\in A}^{\rm Occ} S_{nk} \left(1+\delta_{ik}\right) \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} 
- \approx 2S_{ni}  \left[
+      - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} 
+ \approx S_{ni}  \left[
   %\sum_{i\in A}^{\rm LC} 
  \sum_{y\in B}^{\rm At}
   \frac{Z_y}{ r_{yi} } 
@@ -786,9 +786,9 @@ occupied molecular orbitals need to be localized.
 The terms with the overlap integrals involving the occupied MO on $A$
 can be combined into a single summation term, i.e.,
 \begin{multline}
-       - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{\rm tot} }{n}  
+       - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
      + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
-        S_{kj} 
+        S_{kj} \left( 1 - \delta_{ik} \right)
         \BraKet{nj}{ik} \\ = -
  \sum_{k\in A}^{\rm Occ} 
  \sum_{j\in B}^{\rm Occ}
@@ -796,7 +796,7 @@ can be combined into a single summation term, i.e.,
  \tBraKet{j}{
  \underbrace{
  \left\{ 
-  \delta_{ik} \hat{v}^A_{\rm tot} - \hat{v}^A_{ik}
+  \delta_{ik} \left( \hat{v}^A_{k} + \hat{v}^A_{ik} \right)   - \hat{v}^A_{ik}
  \right\} 
   }_{\hat{v}^{A,{\rm eff}}_{ik}}
  }{n}  \\ \cong -
@@ -814,18 +814,22 @@ is defined by
 \begin{equation} \label{e:ct.group-iii.oep}
  {v}^{A,{\rm eff}}_{ik}({\bf r}) \equiv
  \delta_{ik} 
- {v}^A_{\rm tot} ({\bf r})- {v}^A_{ik} ({\bf r}) \;.
+ \left[
+  v^A_{\rm tot} ({\bf r}) - 2 v^A_{kk} ({\bf r}) + v^A_{ik} ({\bf r})
+ \right] 
+  - v^A_{ik} ({\bf r}) \;.
 \end{equation}
 %
 Now, it is first assumed here that $\rho^{B}_{nj} ({\bf r}) \approx 0$ if occupied MO's on $B$ are localized.
 This means that
 %
-\begin{equation} \label{e:ct.group-iii.final.a}
+\begin{multline} \label{e:ct.group-iii.final.a}
         - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{\rm tot} }{n}  
      + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
-        S_{kj} 
-        \BraKet{nj}{ik} \approx 0 \;.
-\end{equation}
+        S_{kj} \left( 1 - \delta_{ik} \right)
+        \BraKet{nj}{ik} \\ 
+    \approx 0 \;.
+\end{multline}
 %
 The above result is a crude approximation, since the channels $j\rightarrow n$
 are quite important contributions in most of perturbation theory treatments.
@@ -852,7 +856,7 @@ simplifies to
 \begin{equation} \label{e:ct.group-iii.oep.simplified}
  {v}^{A,{\rm eff}}_{ik}({\bf r}) \approx
  \delta_{ik} \left\{
- {v}^A_{\rm tot} ({\bf r})- {v}^A_{ii} ({\bf r}) \right\} \;,
+ {v}^A_{\rm tot} ({\bf r})- 2{v}^A_{kk} ({\bf r}) \right\} \;,
 \end{equation}
 %
 which
@@ -870,7 +874,7 @@ leads to
  \left[ 
    \sum_{x\in A}^{\rm At}
    \frac{Z_x}{r_{xy}}
-  + \frac{1}{r_{iy}}
+  + \frac{2}{r_{iy}}
   - \sum_{k\in A}^{\rm Occ}
     \frac{2}{r_{ky}} 
  \right]
@@ -888,7 +892,7 @@ can be given as follows
 \Approx{ V_{in}^{A\rightarrow B} }{1}
        &= \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} 
  +
-2 S_{ni} u_i^{BA} \;, \\
+S_{ni} u_i^{BA} \;, \\
 %
 \Approx{ V_{in}^{A\rightarrow B} }{2} &=
 \Approx{ V_{in}^{A\rightarrow B} }{1} -
@@ -912,7 +916,7 @@ where the auxiliary variables are
  w_{yi}^{BA} &\equiv 
    \sum_{x\in A}^{\rm At}
    \frac{Z_x}{r_{xy}}
-  + \frac{1}{r_{iy}}
+  + \frac{2}{r_{iy}}
   - \sum_{k\in A}^{\rm Occ}
     \frac{2}{r_{ky}} 
                 \;.
