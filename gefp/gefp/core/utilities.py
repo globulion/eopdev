@@ -9,6 +9,7 @@ import psi4
 import oepdev
 
 __all__ = ["psi_molecule_from_file", 
+           "psi_molecule_to_file",
            "psi_supermolecule_from_molecules",
            "wavefunction_union_from_dimer",
            "wavefunction_union_from_dfi_solver",
@@ -17,6 +18,19 @@ __all__ = ["psi_molecule_from_file",
 __all__+= ["UnitaryOptimizer", "UnitaryOptimizer_4_2"]
 
 
+
+def psi_molecule_to_file(mol, f, frm=None):
+    "Save psi4.core.Molecule object to file."
+    if frm is None: frm = f.split('.')[-1].lower()
+    #
+    log = ""
+    out = open(f[:-3] + frm, 'w')
+    if   frm == 'xyz': log+= mol.to_string('xyz') + '\n'
+    else: raise ValueError("Unrecognised format - %s -" % frm)
+
+    out.write(log)
+    out.close()     
+    return
 
 def psi_molecule_from_file(f, frm=None, no_com=True, no_reorient=True):
     "Construct psi4.core.Molecule object from structure file"
