@@ -838,7 +838,7 @@ atomic charges $\{ q^{B,(nj)}_{y} \}$ associated with the effective one\hyp{}par
  D^{B,(nj)}_{\beta\delta} = C_{\beta n} C_{\delta j} \;.
 \end{equation}
 %
-In this work, the effective charges were computed via the CAMM or ESP methods as
+In this work, the effective charges were computed via the Mulliken method as
 discussed in Section~XXX. 
 Note now that both effective densities in 
 $\rho^B_{jn} \odot \rho^{A,{\rm eff}}_{ik}$ are generally complex and one cannot apply the SOA
@@ -883,22 +883,28 @@ leads to
 Gathering the results from Eqs. the coupling constant
 can be given as follows
 %
-\begin{subequations}
-\begin{align} \label{e:ct-murell-etal.vin.oep}
-\Approx{ V_{in}^{A\rightarrow B} }{1}
-       &= \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} 
- +
-S_{ni} u_i^{BA} \;, \\
+\begin{equation} \label{e:ct-murell-etal.vin.oep}
+V_{in}^{A\rightarrow B} 
+       \approx 
+ G_{1;in}^{A\rightarrow B} 
++G_{2;in}^{A\rightarrow B} 
++G_{3;in}^{A\rightarrow B} \;,
+\end{equation}
 %
-\Approx{ V_{in}^{A\rightarrow B} }{2} &=
-\Approx{ V_{in}^{A\rightarrow B} }{1} -
-  \sum_{j   \in B}^{\rm Occ} S_{ij}
+where
+%
+\begin{subequations}
+\begin{align}
+ G_{1;in}^{A\rightarrow B} &\equiv \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} \;, \\
+ G_{2;in}^{A\rightarrow B} &\equiv S_{ni} u_i^{BA} \;, \\
+ G_{3;in}^{A\rightarrow B} &\equiv
+ -\sum_{j   \in B}^{\rm Occ} S_{ij}
   \sum_{y   \in B}^{\rm At} q_y^{B,(nj)} w_{yi}^{BA}
-\;,
+\;.
 \end{align}
 \end{subequations}
 %
-where the auxiliary variables are
+In the above, the auxiliary variables are
 %
 \begin{subequations}
 \begin{align} \label{e:ct-murell-etal.vin.oep.aux-var}
@@ -923,14 +929,14 @@ To compute the interaction energy due to CT from $A$ to $B$ by using the above S
 approximations, coupling elements need to be transformed from localized to canonical MO basis, i.e.,
 %
 \begin{equation} \label{e:ect-oep.prefinal}
- E^{A\rightarrow B} \approx
+ E^{A\rightarrow B} \approx 
  2 
  \sum_{i\in A}^{\rm CMO}
  \sum_{n\in B}^{\rm Vir}
  \frac{
  \lvert
    \sum_{i'\in A}^{\rm LMO} L_{ii'}^A
-   \Approx{V_{i'n}^{A\rightarrow B}}{} 
+   V_{i'n}^{A\rightarrow B}
  \rvert^2 }{\varepsilon_i - \varepsilon_n} \;,
 \end{equation}
 %
@@ -949,21 +955,26 @@ Thus, the final working formula for the interaction energy due to CT from $A$ to
  \sum_{n\in B}^{\rm Vir}
  \frac{1}{\varepsilon_i - \varepsilon_n} \times 
  \Bigg(
-   \Approx{V_{in}^{A\rightarrow B}}{\rm G1} \\
+   G_{1,in}^{A\rightarrow B} \\
   +
    \sum_{i'\in A}^{\rm LMO} L_{ii'}^A
    \left\{
-   \Approx{V_{i'n}^{A\rightarrow B}}{\rm G2} 
-  +\Approx{V_{i'n}^{A\rightarrow B}}{\rm G3}
+   G_{2,i'n}^{A\rightarrow B}
+  +G_{3,i'n}^{A\rightarrow B}
   \right\}
  \Bigg)^2 \;,
 \end{multline}
 %
-where the subscripts G$n$ ($n$ = 1, 2, 3) denote a particular group of 
+where the subscripts $G_n$ ($n$ = 1, 2, 3) denote a particular group of 
 terms from Eqs.~\eqref{e:ct.group-i.final}, \eqref{e:ct.group-ii.final} and \eqref{e:ct.group-iii.final.a}
 or \eqref{e:ct.group-iii.final.b}. 
 The total CT energy is given by the sum of the above contribution and the twin contribution
-due to CT from molecule $B$ to $A$.
+due to CT from molecule $B$ to $A$,
+%
+\begin{equation}
+ \Delta E^{\rm CT} = E^{A\rightarrow B} + E^{B\rightarrow A} \;.
+\end{equation}
+%
 
 %
 %he above formula does not explicitly define an OEP due to the summation over different
@@ -997,11 +1008,95 @@ due to CT from molecule $B$ to $A$.
 
 \section{\label{s:4}Calculation Details}
 
+Four selected molecular pairs composed of H$_2$O, CH$_3$OH, NH$_4^+$ and NO$_3^-$
+(Figure 1) were chosen to validate the OEP\hyp{}based model of the CT energy
+at the PT/HF formulation level. Structures of the molecular dimers were first 
+energy\hyp{}optimized at the HF/6-31+G(d,p) level by using
+the Gaussian 16 quantum chemistry program package.\cite{Gaussian16}
+To obtain the PT/HF benchmark CT energy, it was estimated
+from the following approximation:
+%
+\begin{equation}\label{e:ct-pthf-ref}
+ \Delta E^{\rm CT}_{\rm PT/HF} \cong \Delta E^{\rm Pol}_{\rm DDS/HF} 
+ + \frac{1}{2} {\bf F}^{\rm T} \cdot {\bf D}^{-1} \cdot {\bf F} \;,
+\end{equation}
+%
+where $\Delta E^{\rm Pol}_{\rm DDS/HF}$ is the Hartree\hyp{}Fock polarization energy
+defined
+according to the density decomposition scheme (here referred as to the DDS) 
+proposed by Mandado and Hermida\hyp{}Ram{\'o}n,\cite{Mandado.Hermida-Ramon.JCTC.2011} 
+whereas the remainder term is the 
+approximate pure induction energy due to the polarizability effects.\cite{Li.Netzloff.Gordon.JCP.2006}
+The DDS polarization energy encompasses all the charge delocalization
+effects that are not associated with the Pauli exclusion principle
+in the first order, and is computed by
+%
+\begin{multline}\label{e:de-pol-dds}
+\Delta E^{\rm Pol}_{\rm DDS/HF} \equiv \Delta E^{\rm HF} \\
+ - \left(
+   \Delta E^{\rm Coul}_{\rm DDS/HF}
+ + \Delta E^{\rm Exch}_{\rm DDS/HF}
+ + \Delta E^{\rm Rep}_{\rm DDS/HF} 
+   \right)\;.
+\end{multline}
+%
+In the above, $\Delta E^{\rm Coul}_{\rm DDS/HF}$ is the pure Coulombic interaction energy
+between the unperturbed (non\hyp{}interacting) charge densities of the monomers in the complex,
+and
+$\Delta E^{\rm Exch}_{\rm DDS/HF}$ and $\Delta E^{\rm Rep}_{\rm DDS/HF}$
+are the exchange and Pauli\hyp{}repulsion interaction energies, respectively. 
+At the HF level of theory, their sum is in fact
+equivalent to the first\hyp{}order exchange\hyp{}repulsion energy 
+in the intermolecular perturbation theory with exchange of Hayes and Stone.\cite{Hayes.Stone.MolPhys.1984} 
+It was also shown by 
+Mandado and Hermida\hyp{}Ram{\'o}n,\cite{Mandado.Hermida-Ramon.JCTC.2011}
+that the Coulombic and exchange\hyp{}repulsion term
+in the DDS method reproduce the first\hyp{}order Coulombic and exchange\hyp{}repulsion
+interaction energy in the symmetry adapted perturbation theory\cite{Jeziorski.Moszynski.Szalewicz.ChemRev.1994}
+(SAPT)
+with accuracy below 0.5 kcal/mole.
+Therefore, Eq.~\eqref{e:ct-pthf-ref} is believed to be sufficient
+in order to compute the PT/HF CT energy, because there is no dispersion
+contribution to the DDS polarization energy at the HF level.
+
+The pure induction energy was estimated by using the distributed
+dipole\hyp{}dipole polarizability approximation by using the computational
+methodology by Li et al.,\cite{Li.Netzloff.Gordon.JCP.2006} 
+in which ${\bf F}$ constitutes the electric fields aligned in a super\hyp{}vector 
+according to each polarizable center, i.e. ${\bf F} = \{ {\bf F}_1, {\bf F}_2, \ldots\}$,
+whereas
+the ${\bf D}$ matrix is defined as
+%
+\begin{equation}
+ {\bf D}_{ab} = 
+\left\{\begin{matrix}
+{\BM\alpha}_a^{-1} &\text{if $a=b$} \\ 
+0                  &\text{if $a\ne b \land a,b \in$ same molecule}\\ 
+-{\bf T}_{ab}      &\text{if $a\ne b \land a,b \notin$ same molecule}
+\end{matrix}\right.
+\end{equation}
+%
+and ${\bf T}_{ab}$ is the dipole\hyp{}dipole interaction tensor
+given by
+%
+\begin{equation}
+ {\bf T}_{ab} \equiv \frac{3}{r_{ab}^5} {\bf r}_{ab} \otimes {\bf r}_{ab}
+  - \frac{1}{r_{ab}^3} {\bf 1} \;,
+\end{equation}
+%
+with ${\bf r}_{ab} \equiv {\bf r}_{a} - {\bf r}_{b}$ being the
+relative distance between the LMO centroids.
+The distributed polarizabilities {\bf\textalpha} ${\boldsymbol{\mathrm{\upalpha}}}_a$ centered at the LMO centroids
+were computed by utilizing the coupled\hyp{}perturbed Hartree\hyp{}Fock
+method.\cite{McWeeny.RevModPhys.1960,Dodds.McWeeney.Sadlej.MolPhys.1977} 
+Orbital localization was performed by using the Boys method.\cite{Boys.RevModPhys.1960} 
+
 All the models that were used to test the theory presented in this work
 were implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry program.\cite{Psi4.JCTC.2017}
 
 \section{\label{s:fwefsdv}Results and Discussion}
 
+\subsection{\label{s:gsdzdv}Accuracy of OEP-based model}
 %
 \begin{figure}[t]
 \includegraphics[width=0.5\textwidth]{fig-2.eps}
@@ -1023,7 +1118,16 @@ All data were obtained at HF/6-31+G** level of theory.
 
 \subsection{\label{s:413s6}Reduction of computational costs}
 
-Until this moment in this work, two models have been tested with application of the OEP technique.
+The utmost goal of this work is to reduce the computational cost of
+the CT PT/HF energy evaluation in the calculations involving effective fragment
+potentials. The EFP2 CT expression has the computational cost
+roughly proportional to $(10on^2 + 2n^3 + o^2n^2)v$, where the
+$o$ and $n$ denote the number of occupied orbitals and the number of atomic basis functions,
+respectively, whereas $v$ is the relative cost. On the other hand, OEP\hyp{}based expression
+from Eq.~\eqref{} has the cost of approximately $on(Q+N+o)$, where 
+$Q$ and $N$ denote the number of auxiliary basis functions and the number of atoms,
+respectively. 
+
 In this section, computational cost is estimated from the formulas.
 In
 Table~\ref{t:oep-costs} 
