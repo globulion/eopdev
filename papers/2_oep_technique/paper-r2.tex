@@ -1009,7 +1009,7 @@ due to CT from molecule $B$ to $A$,
 \section{\label{s:4}Calculation Details}
 
 Four selected molecular pairs composed of H$_2$O, CH$_3$OH, NH$_4^+$ and NO$_3^-$
-(Figure 1) were chosen to validate the OEP\hyp{}based model of the CT energy
+(Figure 1) molecules or ions were chosen to validate the OEP\hyp{}based model of the CT energy
 at the PT/HF formulation level. Structures of the molecular dimers were first 
 energy\hyp{}optimized at the HF/6-31+G(d,p) level by using
 the Gaussian 16 quantum chemistry program package.\cite{Gaussian16}
@@ -1018,15 +1018,15 @@ from the following approximation:
 %
 \begin{equation}\label{e:ct-pthf-ref}
  \Delta E^{\rm CT}_{\rm PT/HF} \cong \Delta E^{\rm Pol}_{\rm DDS/HF} 
- + \frac{1}{2} {\bf F}^{\rm T} \cdot {\bf D}^{-1} \cdot {\bf F} \;,
+ - \Delta E^{\rm Ind} \;,
 \end{equation}
 %
 where $\Delta E^{\rm Pol}_{\rm DDS/HF}$ is the Hartree\hyp{}Fock polarization energy
 defined
 according to the density decomposition scheme (here referred as to the DDS) 
 proposed by Mandado and Hermida\hyp{}Ram{\'o}n,\cite{Mandado.Hermida-Ramon.JCTC.2011} 
-whereas the remainder term is the 
-approximate pure induction energy due to the polarizability effects.\cite{Li.Netzloff.Gordon.JCP.2006}
+whereas $\Delta E^{\rm Ind}$ term is the 
+approximate pure induction energy due to the polarizability effects.\cite{Stone.TheTheoryOfIntermolecularForces.1996}
 The DDS polarization energy encompasses all the charge delocalization
 effects that are not associated with the Pauli exclusion principle
 in the first order, and is computed by
@@ -1044,8 +1044,8 @@ In the above, $\Delta E^{\rm Coul}_{\rm DDS/HF}$ is the pure Coulombic interacti
 between the unperturbed (non\hyp{}interacting) charge densities of the monomers in the complex,
 and
 $\Delta E^{\rm Exch}_{\rm DDS/HF}$ and $\Delta E^{\rm Rep}_{\rm DDS/HF}$
-are the exchange and Pauli\hyp{}repulsion interaction energies, respectively. 
-At the HF level of theory, their sum is in fact
+are the exchange and the Pauli\hyp{}repulsion interaction energies, respectively. 
+At the HF level of theory, the sum of the latter two terms is in fact
 equivalent to the first\hyp{}order exchange\hyp{}repulsion energy 
 in the intermolecular perturbation theory with exchange of Hayes and Stone.\cite{Hayes.Stone.MolPhys.1984} 
 It was also shown by 
@@ -1054,25 +1054,37 @@ that the Coulombic and exchange\hyp{}repulsion term
 in the DDS method reproduce the first\hyp{}order Coulombic and exchange\hyp{}repulsion
 interaction energy in the symmetry adapted perturbation theory\cite{Jeziorski.Moszynski.Szalewicz.ChemRev.1994}
 (SAPT)
-with accuracy below 0.5 kcal/mole.
+with accuracy below 0.3 kcal/mole.
 Therefore, Eq.~\eqref{e:ct-pthf-ref} is believed to be sufficient
 in order to compute the PT/HF CT energy, because there is no dispersion
 contribution to the DDS polarization energy at the HF level.
 
 The pure induction energy was estimated by using the distributed
-dipole\hyp{}dipole polarizability approximation by using the computational
-methodology by Li et al.,\cite{Li.Netzloff.Gordon.JCP.2006} 
-in which ${\bf F}$ constitutes the electric fields aligned in a super\hyp{}vector 
-according to each polarizable center, i.e. ${\bf F} = \{ {\bf F}_1, {\bf F}_2, \ldots\}$,
-whereas
-the ${\bf D}$ matrix is defined as
+dipole\hyp{}dipole polarizability approximation according to the computational
+methodology of Li et al.,\cite{Li.Netzloff.Gordon.JCP.2006}
+in which
+%
+\begin{equation}\label{e:ind-ref}
+ \Delta E^{\rm Ind} \approx - \frac{1}{2} {\bf F}^{\rm T} \cdot {\bf D}^{-1} \cdot {\bf F} \;.
+\end{equation}
+%
+In the above equation, ${\bf F} = \{ \ldots, {\bf F}({\bf r}_a), \ldots\}$
+is a super\hyp{}vector of electric fields at the $a$th distributed site
+due to the surrounding unperturbed molecular charge densities in the complex
+(i.e., the charge\hyp{}density of the molecule that contains $a$th center
+is not included in ${\bf F}({\bf r}_a)$).
+%The electric field components are
+%aligned in a super\hyp{}vector 
+%according to each polarizable center, i.e. ${\bf F} = \{ \ldots, {\bf F}({\bf r}_a), \ldots\}$,
+%where $a$ labels the LMO centroids.
+The ${\bf D}$ matrix is defined as
 %
 \begin{equation}
  {\bf D}_{ab} = 
 \left\{\begin{matrix}
-{\BM\alpha}_a^{-1} &\text{if $a=b$} \\ 
-0                  &\text{if $a\ne b \land a,b \in$ same molecule}\\ 
--{\bf T}_{ab}      &\text{if $a\ne b \land a,b \notin$ same molecule}
+{\BM\upalpha}_a^{-1} &\text{if $a=b$} \\ 
+0                    &\text{if $a\ne b \land a,b \in$ same molecule}\\ 
+-{\bf T}_{ab}        &\text{if $a\ne b \land a,b \notin$ same molecule}
 \end{matrix}\right.
 \end{equation}
 %
@@ -1086,7 +1098,20 @@ given by
 %
 with ${\bf r}_{ab} \equiv {\bf r}_{a} - {\bf r}_{b}$ being the
 relative distance between the LMO centroids.
-The distributed polarizabilities {\bf\textalpha} ${\boldsymbol{\mathrm{\upalpha}}}_a$ centered at the LMO centroids
+The electric fields at the LMO centroids were computed from
+the unperturbed HF charge\hyp{}density distributions
+%
+\begin{equation}
+ {\bf F}({\bf r}_a) = \sum_x^{\rm At} \frac{Z_x}{r_{ax}^3} {\bf r}_{ax} 
+  + 2 \sum_{\alpha\gamma} D_{\alpha\gamma} 
+%    \tBraKet{\gamma}{\frac{{\bf r}_a - {\bf r}}{\vert {\bf r}_a - {\bf r} \vert^3} }{\alpha}_{\bf r} \;.
+  \left< \gamma \left| 
+    \frac{{\bf r}_a - {\bf r}}{\vert {\bf r}_a - {\bf r} \vert^3}
+               \right| \alpha \right>_{\bf r} \;.
+\end{equation}
+%
+The distributed anisotropic dipole\hyp{}dipole
+polarizabilities ${\BM{\upalpha}}_a$ centered at the LMO centroids
 were computed by utilizing the coupled\hyp{}perturbed Hartree\hyp{}Fock
 method.\cite{McWeeny.RevModPhys.1960,Dodds.McWeeney.Sadlej.MolPhys.1977} 
 Orbital localization was performed by using the Boys method.\cite{Boys.RevModPhys.1960} 
