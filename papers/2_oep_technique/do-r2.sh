@@ -1,6 +1,10 @@
 #!/bin/bash
 base=paper-r2
+si=supplementary-r2
 
-latex  ${base}.tex
-bibtex ${base}.aux
-dvipdf ${base}.dvi
+for i in $base $si
+do
+  latex  ${i}.tex
+  bibtex ${i}.aux
+  dvipdf ${i}.dvi
+done

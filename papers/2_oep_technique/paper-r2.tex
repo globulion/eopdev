@@ -54,6 +54,38 @@ as well as the CT energy,
  U^{\rm EFP2} \approx U^{\rm Coul} + U^{\rm Ex-Rep} + U^{\rm Ind} + U^{\rm Disp} + U^{\rm CT} \;.
 \end{equation}
 %
+Xu and Gordon used the expansion of the overlap density 
+in Taylor series and found four different approximate
+theories for the CT energy. The optimal theory, which was shown
+by them to best reproduce the reduced variational scheme (RVS)
+reads
+%
+\begin{equation}
+ E^{A\rightarrow B} \approx 
+ 2\sum_{i\in A}^{\rm Occ}
+  \sum_{n\in B}^{\rm Vir}
+   \frac{ \left| V_{in}^{A\rightarrow B} \right|^2}{F_{ii} - T_{nn}} \;,
+\end{equation}
+%
+where
+%
+\begin{multline}
+ \left| V_{in}^{A\rightarrow B} \right|^2 \approx
+ \frac{U_{in}}{1-\sum_{m\in A}^{\rm All} S_{mn}^2}
+ \Bigg\{
+   U_{in} \\ + \sum_{j\in B}^{\rm Occ} S_{ij} 
+   \left( 
+     T_{nj} - \sum_{m\in A}^{\rm All} S_{nm} T_{mj}
+   \right)
+ \Bigg\} \;,
+\end{multline}
+%
+and 
+%
+\begin{equation}
+ U_{in} \equiv V_{in}^{{\rm EF},B} - \sum_{m\in A}^{\rm All} V_{im}^{{\rm EF},B} S_{mn} \;.
+\end{equation}
+%
 However, calculating the CT stabilization energy is usually much more expensive 
 than evaluating the contributions due to other effects.\cite{Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012}
 %However, the computational cost of the CT term is usually at least few times larger
@@ -754,7 +786,7 @@ of the above becomes
 because the distributed charges
 $q_i = -1$ whereas the distributed dipole moments %${\BM{\upmu}_i}$ 
 centered at their
-respective LMO charge centroids vanish.
+respective LMO charge centroids vanish.\cite{Etchebest.Lavery.Pullman.TheorChimActa.1982}
 This means that Eq.~\eqref{e:ct.group-2} can be approximated as follows:
 %
 \begin{equation} \label{e:ct.group-ii.final}
@@ -1122,12 +1154,53 @@ were implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry pro
 \section{\label{s:fwefsdv}Results and Discussion}
 
 \subsection{\label{s:gsdzdv}Accuracy of OEP-based model}
+
+First, the asymptotic dependence of the CT energy
+was investigated for four chosen molecular pairs and the results are
+shown in Figure~\ref{f:fig-1} and Figure~S1 for the methanol-water system. 
+Overall, OEP technique of effective
+elimination of ERI's sketched in Eq.~\eqref{e:ft-reduction} 
+works
+quantitatively well for water dimer and ammonium nitrate (Figures~\ref{f:fig-1}(a) and (c)),
+and methanol-water (Figure~S1)
+reproducing the reference Otto\hyp{}Ladik CT energy,
+whereas in the case of water\hyp{}ammonium cation complex the OEP
+method overestimates the CT energy by around 50\%, even for large
+intermonomer separations. Careful inspection
+(see SI)
+revealed that the reason is the SOA in $G_2$ and $G_3$ and not
+the generalized density fitting in $G_1$ terms, in the case of which
+the aug-cc-pVDZ-jkfit basis set was sufficient as auxiliary space of OEP transformation.
+On the other hand, analysis of the statistical sets of dimeric complexes
+shown in Figure~XXX
+confirmed that in the great majority of cases the 
+OEP technique gives reasonably accurate results with respect
+to the parent model with relative errors less than 10\%,
+unless systems are charged.
+
+In the case of water dimer and methanol-water complex, EFP2 and PT/HF estimations
+coincide with the OEP model. However, in the presence of ions, 
+the deviation of the OEP model from the PT/HF energy 
+become significant, in contrast to the EFP2 model, which gives very good estimates
+of the PT/HF energy in mostly all cases.
+Naturally, the accuracy of the Otto\hyp{}Ladik model limits the absolute accuracy
+of the OEP model, which is manifested in the ammonium nitrate system
+in Figure~\ref{f:fig-1}(c) or the problems with SOA. 
+In order to improve the performance for ionic systems,
+further studies are necessary, that will modify the original formulation
+of Otto and Ladik and SOA treatment. Nevertheless, except from the ionic systems,
+it is clear that the level of accuracy of the EFP2 and OEP models are rather comparable
+(Figure~XX) across a wide range of various interacting complexes including 
+systems with H-boding, dominated by dipole-dipole or dispersion interactions or 
+exhibiting substantial CT.
+
+
 %
-\begin{figure}[t]
-\includegraphics[width=0.5\textwidth]{fig-2.eps}
-\caption{\label{f:fig-1} {\bf Accuracy of the OEP approach to estimate the charge transfer energy
-in the PT/HF formulation.} 
-Asymptotic dependencies of the charge transfer energy is plotted for 
+\begin{figure}[h]
+\includegraphics[width=0.46\textwidth]{fig-2.eps}
+\caption{\label{f:fig-1} {\bf Asymptotic dependence of the charge transfer energy
+in the PT/HF formulation for selected bi\hyp{}molecular complexes.} 
+The charge transfer energy estimates are plotted for 
 (a) water dimer, 
 (b) water\hyp{}ammonium complex, and 
 (c) ammonium\hyp{}nitrate complex,
@@ -1139,6 +1212,32 @@ All data were obtained at HF/6-31+G** level of theory.
 } 
 \end{figure}
 %
+
+%
+\begin{figure*}[h]
+\includegraphics[width=0.8\textwidth]{fig-3.eps}
+\caption{\label{f:fig-1} {\bf Performance of the OEP-based vs EFP2 method for the PT/HF charge transfer interaction energy.}
+(a) accuracy of the ERI elimination technique; 
+(b) accuracy of the OEP and EFP2 estimates of the CT energy with respect to the
+PT/HF estimate. 
+The structures of bi\hyp{}molecular complexes
+were taken from the databases developed by the Truhlar's group:
+the HB6/04 hydrogen bonding database 
+(red),\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
+the DI6/04 dipoleinteraction database 
+(green),\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
+the CT7/04 charge-transfer complex database 
+(blue),\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
+the WI7/05 weak interaction database 
+(yellow),\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
+and PPS5/05 the $\pi$-$\pi$ stacking database 
+(black).\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
+6-311++G** basis set was used for the CT energy calculations.
+} 
+\end{figure*}
+%
+
+
 
 
 \subsection{\label{s:413s6}Reduction of computational costs}

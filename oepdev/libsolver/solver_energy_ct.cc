@@ -1300,8 +1300,10 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
             v_ba_v2->set(i, n, v); 
        }
   }
-  v_ab_v2->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v2->clone(), 0.0);
-  v_ba_v2->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v2->clone(), 0.0);
+  psi::SharedMatrix v_ab_v2_copy = v_ab_v2->clone(); v_ab_v2->zero();
+  psi::SharedMatrix v_ba_v2_copy = v_ba_v2->clone(); v_ba_v2->zero();
+  v_ab_v2->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v2_copy, 0.0);
+  v_ba_v2->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v2_copy, 0.0);
 
   // ===> Compute V3 term <=== //
   std::shared_ptr<psi::Matrix> v_ab_v3 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
@@ -1329,8 +1331,10 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
             v_ba_v3->set(i, n, v);
        }
   }
-  v_ab_v3->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v3->clone(), 0.0);
-  v_ba_v3->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v3->clone(), 0.0);
+  psi::SharedMatrix v_ab_v3_copy = v_ab_v3->clone(); v_ab_v3->zero();
+  psi::SharedMatrix v_ba_v3_copy = v_ba_v3->clone(); v_ba_v3->zero();
+  v_ab_v3->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v3_copy, 0.0);
+  v_ba_v3->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v3_copy, 0.0);
 
 
   // ---> Add coupling constant contributions <--- //
