@@ -31,79 +31,201 @@ molecular aggregates such as interacting molecules in condensed phases.
 
 \tableofcontents
 
-\section{\label{ss.5.2}Introduction}
+\section{\label{s:1.introduction}Introduction}
 
 Charge transfer (CT) between molecules occurs when the net electronic populations 
 of interacting molecules change which leads to an additional stabilization 
-of a molecular aggregate. The effect of CT on the interaction energy 
-is known to be often non\hyp{}negligible, especially
-in donor\hyp{}acceptor systems such as H\hyp{}bonded species
-and charged complexes.
-\emph{Ab initio} fragmentation methods, such as
-the second generation of the effective fragment potential method (EFP2),
-are often used to describe the homogeneous extended molecular systems 
-such as solutions
-and recently even biomolecules. EFP2 relies on the intermolecular 
-perturbation theory, and the total interaction energy is approximated as
-a sum of five contributions due to the Coulombic interaction of the unperturbed (isolated)
-charge densities of the monomers, exchange\hyp{}repulsion energy,
-induction energy due to mutual polarization, intermolecular dispersion energy,
-as well as the CT energy,
+of a molecular aggregate.\cite{Otto.Ladik.IJQC.1980,Stone.TheTheoryOfIntermolecularForces.1996}
+Although CT processes can be relatively easily scrutinized based
+on the total amount of charge transferred between interacting species,\cite{Otto.Ladik.IJQC.1980}
+evaluation of its contribution to the intermolecular interaction
+potential\cite{Stone.TheTheoryOfIntermolecularForces.1996} is far from trivial due to 
+its very complex quantum mechanical (QM) origins even at the Hartree\hyp{}Fock approximation level,\cite{Otto.Ladik.ChemPhys.1975}
+and cannot be realized in terms of any classical nor semi\hyp{}classical approach.
+In fact, CT does not naturally emerge in the symmetry 
+adapted perturbation theory\cite{Jeziorski.Moszynski.Szalewicz.ChemRev.1994} (SAPT)
+due to certain technical aspects related with the use of finite basis set expansions
+in modern quantum chemistry calculations and minimizing the basis set superimposition error (BSSE). 
+Recently, Stone and Misquitta showed that CT energy
+can be extracted from SAPT calculations by comparing the induction energies
+of fictional systems in which basis functions are centered either on the monomers only, or the entire 
+interacting complex.\cite{Stone.Misquitta.CPL.2009}
+CT energy was formulated by Murrell et al.~\cite{Murrell.Randic.Williams.Longuet-Higgins.ProcRSocLondA.1965} 
+in their perturbation theory in the region of small wavefunction overlap up to second order.
+However, their theory is also computationally too expensive to apply for efficient
+calculation of intermolecular forces in molecular dynamics because
+it involces instantaneous calculations of the electron repulsion integrals (ERI's)
+in molecular orbital (MO) basis.\cite{Otto.Ladik.ChemPhys.1975}
+
+The apparent difficulty in theoretically characterising the CT energy
+in terms of the interacting molecular fragments
+is indeed a challenge in developing modern force fields 
+or \emph{ab initio} fragmentation methods\cite{Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012}
+for modeling structure
+and dynamics in condensed phases.
+This needs to be contrasted with the
+Coulombic electrostatics,
+non\hyp{}Coulombic repulsion (i.e., due to Pauli exclusion principle), 
+dispersion and induction for instance, 
+which to a certain extent
+can be well described by, respectively, 
+the multipole moments of charge density distributions,\cite{Sokalski.Poirier.CPL.1983,
+Etchebest.Lavery.Pullman.TheorChimActa.1982,Stone.JCTC.2005}
+the van der Waals repulsive and attractive potentials, 
+as well as the polarizability models, i.e., all being relatively simple and computationally
+inexpensive to evaluate mathematical models. 
+Due to this reason, the
+CT effects 
+%while usually of significant and non\hyp{}negligible magnitude as compared 
+%to the total interaction energy, 
+are not included in any molecular mechanics force field developed up to date
+such as OPLS, Amber, CHARMM, Gromos or even polarizale AMOEBA force field. 
+The only way to
+incorporate the CT effects in the condensed\hyp{}phase simulations,
+apart from performing full QM molecular dynamics simulations,
+is through the second generation of the effective fragment potential 
+(EFP2) method,\cite{Gordon.Smith.Xu.Slipchenko.AnnuRevPhysChem.2013,
+   Nguyen.Pachter.Day.JCP.2014,
+   Day.Jensen.Gordon.Webb.Stevens.Krauss.Garmer.Basch.Cohen.JCP.1996}
+developed by Gordon group.\cite{Li.Gordon.Jensen.JCP.2006,Xu.Gordon.JCP.2013}
+EFP2 is an \emph{ab initio} force field
+derived on the grounds of the first\hyp{}principles perturbation theory
+at the HF level and including the intermolecular dispersion effects
+by the response theory based on the imaginary frequency\hyp{}dependent dipole\hyp{}dipole polarizabilities.
+That is to say, the total intermolecular 
+interaction potential is approximated as 
 %
-\begin{equation}
+\begin{equation}\label{e:u-efp2}
  U^{\rm EFP2} \approx U^{\rm Coul} + U^{\rm Ex-Rep} + U^{\rm Ind} + U^{\rm Disp} + U^{\rm CT} \;.
 \end{equation}
 %
-Xu and Gordon used the expansion of the overlap density 
-in Taylor series and found four different approximate
-theories for the CT energy. The optimal theory, which was shown
-by them to best reproduce the reduced variational scheme (RVS)
-reads
-%
-\begin{equation}
- E^{A\rightarrow B} \approx 
- 2\sum_{i\in A}^{\rm Occ}
-  \sum_{n\in B}^{\rm Vir}
-   \frac{ \left| V_{in}^{A\rightarrow B} \right|^2}{F_{ii} - T_{nn}} \;,
-\end{equation}
-%
-where
-%
-\begin{multline}
- \left| V_{in}^{A\rightarrow B} \right|^2 \approx
- \frac{U_{in}}{1-\sum_{m\in A}^{\rm All} S_{mn}^2}
- \Bigg\{
-   U_{in} \\ + \sum_{j\in B}^{\rm Occ} S_{ij} 
-   \left( 
-     T_{nj} - \sum_{m\in A}^{\rm All} S_{nm} T_{mj}
-   \right)
- \Bigg\} \;,
-\end{multline}
-%
-and 
-%
-\begin{equation}
- U_{in} \equiv V_{in}^{{\rm EF},B} - \sum_{m\in A}^{\rm All} V_{im}^{{\rm EF},B} S_{mn} \;.
-\end{equation}
-%
-However, calculating the CT stabilization energy is usually much more expensive 
-than evaluating the contributions due to other effects.\cite{Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012}
+where $U^{\rm Coul}$ is the Coulombic interaction energy of the unperturbed charge\hyp{}density
+distributions of the monomers, approximated by the distributed multipole approximation,
+$U^{\rm Ex-Rep}$ is the exchange\hyp{}repulsion energy originating from the Pauli exclusion
+principle, that could be roughly understood as the Heitler\hyp{}London interaction
+energy with $U^{\rm Coul}$ subtracted, $U^{\rm Ind}$ and $U^{\rm Disp}$
+are the induction and dispersion energies obtained from the distributed polarizability
+approximation, and finally $U^{\rm CT}$ is the CT energy, the focus of this work.
+
+Despite the considerable success of the EFP2 theory
+in accurately modeling the extended molecular systems 
+like solutions and recently even biomolecules
+with the level of accuracy
+roughly arguably comparable to the M{\o}ller\hyp{}Plesset perturbation theory,
+evaluation of the CT energy in EFP2 model is still too costly for
+typical uses in the
+molecular dynamics simulations. It has been reported that 
+the implementation of the EFP2 CT energy component in GAMESS
+is on average 3-10 times more demanding than the exchange\hyp{}repulsion
+component, becoming a bottleneck of evaluation of total interaction 
+energy and gradients.\cite{Gordon.Smith.Xu.Slipchenko.AnnuRevPhysChem.2013,
+Li.Gordon.Jensen.JCP.2006}
+In effect, the CT energy component is usually ignored in most of the applications. In the 
+recent LIBEFP library, CT term were not implemented in the official release 
+of the code.\cite{Kaliman.Slipchenko.JCC.2015}
+
+%However, calculating the CT stabilization energy is usually much more expensive 
+%than evaluating the contributions due to other effects.
 %However, the computational cost of the CT term is usually at least few times larger
 %than the next costly contribution $U^{\rm Ex-Rep}$, which is still too costly
 %to perform molecular dynamics (MD) simulations including the $U^{\rm CT}$. 
-In effect,
-this part of the EFP2 energy is usually ignored in most of the applications. In the 
-recent LIBEFP library, CT term were even not implemented due to those reasons.
 
-In this work, we propose an alternative formulation of the CT energy compatible with the
-EFP2 method. We start from the perturbation theory of Murrell et al.
-and
-introduce the effective one\hyp{}electron potential (OEP) operators
-to eliminate the electron\hyp{}repulsion integrals (ERI's) from the original theory.
-Later we validate the model against the EFP2 method in Section XXX. Finally,
-we conclude this work and provide few remarks on future development in Section XXX.
+The effect of CT on the interaction energy 
+is known to be often non\hyp{}negligible, especially
+in donor\hyp{}acceptor systems such as H\hyp{}bonded species
+and charged complexes, although highly depends on the theoretical
+approach being used. 
+The approach adopted by the founders of EFP2 model
+is based on
+%The most common methodology,
+%adopted also by the founders of EFP2 model,
+%is 
+the approximation to SAPT at HF level of theory 
+which is based on the isolated monomeric wave functons
+as references (here abbreviated to CT/HF0).
+In this formulation, the CT energy can be understood
+as a part of the polarization energy that cannot be
+linked to dispersion and pure induction interactions. 
+In this definition of CT, mixing of virtual and occupied MO's
+technically belonging to different unperturbed wavefunction occurs,
+unlike the pure induction and dispersion, in which such mixings are contained
+solely within one monomer.
+%This level of definition of the CT energy will be referred here as to
+%the IPTO-CT energy. 
+%For defining the CT/HF0, 
+%most common reference is the HF approximation
+%most certainly because the HF energy functional is known
+%and its properties are well understood.
+%In the EFP2 model, the total interaction energy is approximated as
+%a sum of five contributions due to the Coulombic interaction of the unperturbed (isolated)
+%charge densities of the monomers, exchange\hyp{}repulsion energy,
+%induction energy due to mutual polarization, intermolecular dispersion energy,
+%as well as the CT energy.
+%For developing the efficient 
+%\emph{ab initio} fragmentation method 
+%
+% the second generation of the effective fragment potential method (EFP2),
+%the Hartree\hyp{}Fock (HF) model or the density functional theory (DFT) were
+%employed as starting points 
+%Modelling the structure and dynamics of extended molecular aggregates, such as
+%liquids and solutions require
+%EFP2 relies on the intermolecular 
+%perturbation theory, and the total interaction energy is approximated as ...
+%
+%\begin{equation}
+% U^{\rm EFP2} \approx U^{\rm Coul} + U^{\rm Ex-Rep} + U^{\rm Ind} + U^{\rm Disp} + U^{\rm CT} \;.
+%\end{equation}
+%%
 
-\section{\label{s:2}Effective One-Electron Potential Operators}
+One of the main goals of this work, apart from developing
+more efficient model of the CT/HF0 energy, is to
+extend the effective one\hyp{}electron potentials (here referred to as the OEP) 
+technique
+used previously\cite{
+Otto.Ladik.ChemPhys.1975,
+Holas.March.PhysRevA.1991,
+Weber.Thiel.TCA.2000,
+Neese.JCP.2005,
+Cisneros.Andres.Piquemal.Darden.JCP.2005,
+Piquemal.Cisneros.Reinhardt.Gresh.Darden.JCP.2006,
+Li.Gordon.Jensen.JCP.2006,
+Blasiak.Lee.Cho.JCP.2013,
+Blasiak.Maj.Cho.Gora.JCTC.2015}
+to simplify the rigorous and costly quantum chemistry models of extended systems
+with a particular emphasis on solvation phenomena and molecular dynamics.
+The presented OEP technique of removing ERI's from the working
+equations
+follows the notion of the importance of 
+one\hyp{}electron densities in chemistry\cite{Holas.March.PhysRevA.1991},
+thus reducing the complicated summations involving ERI's to much shorter expressions involving
+only one\hyp{}electron integrals.
+Therefore, the OEP computational method is first presented in Section~II.
+Next, in Section III,
+the new technique is used to derive an alternative formulation of the CT/HF0 energy
+compatible with the EFP2 method. Subsequently, after details of computations
+are discussed in Section IV, in Section V the validation of the 
+OEP\hyp{}based CT/HF0 model is presented and its performance in terms 
+of accuracy and computational speed is compared against the EFP2
+model. Finally, few concluding remarks and comments for future work
+are given in Section VI.
+%ERI's, which are oftentimes the main bottleneck
+%in simulating large systems, will be projected out from the working equations
+%to ultimately form the effective fragments in a form of small matrices that are much easier to handle.
+%The proposed methodology aims in removing ERI's from the working equations
+%to ultimately form the effective fragments that are much easier to handle.
+%
+%It is believed that the proposed concept can be helpful in designing future methods tuned 
+%for studying electronically excited states in solutions, better describing molecular
+%dynamics as well as enabling the vibrational analysis of extended systems
+%In this work, we propose an alternative formulation of the CT energy compatible with the
+%EFP2 method. We start from the perturbation theory of Murrell et al.
+%and
+%introduce the effective one\hyp{}electron potential (OEP) operators
+%to eliminate the electron\hyp{}repulsion integrals (ERI's) from the original theory.
+%Later we validate the model against the EFP2 method in Section XXX. Finally,
+%we conclude this work and provide few remarks on future development in Section XXX.
+
+\section{\label{s:2.oep}Effective One-Electron Potential Operators}
 
 To establish the notation within the present work, 
 the formalism of one\hyp{}electron potential (OEP) operators is
@@ -125,10 +247,10 @@ For convenience, the total effective density can be split into nuclear and elect
 %
 where $\lambda$ is a certain parameter and is assumed either 1 or 0 in this work.
 Formally, the electronic part can be expanded in terms of an effective
-one\hyp{}particle density matrix represented in a certain basis of orbitals, $\BM{\phi}({\bf r})$,
+bond order matrix represented in a certain basis of orbitals, $\BM{\phi}({\bf r})$,
 %
 \begin{equation} \label{e:d-spectral}
-	\rho^{\rm eff}_{\rm el}({\bf r}) = \sum_{\alpha\beta} D_{\alpha\beta}^{\rm eff} 
+	\rho^{\rm eff}_{\rm el}({\bf r}) = \sum_{\alpha\beta} P_{\alpha\beta}^{\rm eff} 
 	\phi_\alpha({\bf r}) \phi_\beta^{*}({\bf r})  \;.
 \end{equation}
 %
@@ -159,7 +281,7 @@ defined by
 %
 %\begin{subequations}
 %\begin{align}
-\begin{equation}
+\begin{equation} \label{e:oep-operator-nuc}
         \hat{v}_{\rm nuc} \equiv \sum_x^{\rm At}  
                      \int d{\bf r} \Ket{{\bf r}} 
                      \frac{Z_x}{\vert {\bf r} - {\bf r}_x \vert}
@@ -177,15 +299,15 @@ and $\BraKet{\bf r}{\alpha} = \varphi_\alpha({\bf r})$.
 The matrix element of the effective potential operator
 is therefore given by
 %
-\begin{equation}
+\begin{equation} \label{e:oep-matrix-element}
 	\tBraKet{\alpha}{ \hat{v}^{\rm eff} }{\beta}
 	= \lambda \sum_x^{\rm At} W_{\alpha\beta}^{(x)} +
-        \sum_{\gamma\delta} \BraKet{\alpha\beta}{\gamma\delta} D^{\rm eff}_{\gamma\delta}  \;,
+        \sum_{\gamma\delta} \BraKet{\alpha\beta}{\gamma\delta} P^{\rm eff}_{\gamma\delta}  \;,
 \end{equation}
 %
 where 
 %
-\begin{equation}
+\begin{equation} \label{e:oep-matrix-element-nuc}
  W_{\alpha\beta}^{(x)} = 
  Z_x \int \frac{\phi^*_\alpha({\bf r}) \phi_\beta({\bf r})}{\vert {\bf r} - {\bf r}_x \vert} d{\bf r} \;,
 \end{equation}
@@ -194,7 +316,7 @@ $Z_x$ is the atomic number of the $x$th atom,
 and the symbol `At' denotes all atoms that contribute to the effective potential.
 In the above equation and throughout the work, 
 %
-\begin{equation}
+\begin{equation} \label{e:1el-operator}
 \tBraKet{\alpha}{\mathscr{O}(1)}{\beta} \equiv \int \phi^*_\alpha({\bf r}) \mathscr{O}(1) \phi_\beta({\bf r}) d{\bf r} 
 \end{equation}
 %
@@ -202,7 +324,7 @@ for any one\hyp{}electron operator $\mathscr{O}(1)$
 and the electron repulsion integral (ERI)
 is defined according to
 %
-\begin{equation}
+\begin{equation} \label{e:eri}
 	\BraKet{\alpha\beta}{\gamma\delta} \equiv
 	\iint 
 	\frac{ \phi_\alpha^{*}({\bf r}_1) \phi_\beta({\bf r}_1) 
@@ -211,9 +333,7 @@ is defined according to
 \end{equation}
 %
 
-%\subsection{\label{s.334}Practical OEP-Based Calculations}
-
-\subsection{\label{ss:2.3}Incorporating Electron Repulsion Integrals into Effective Potentials}
+\subsection{\label{ss:2.1.oep-technique}Incorporating Electron Repulsion Integrals into Effective Potentials}
 
 Consider now an arbirtary functional $\mathcal{F}$ that explicitly depends on the 
 ERI's. In this work, OEP's are defined by the following transformation
@@ -253,8 +373,11 @@ summing over all possible functionals ${\mathcal{F}}_t$
 \end{equation}
 %
 The above design has the advantage that it opens the possibility to define first\hyp{}principles
-effective fragments as long as the $P_{ij}$ and $P_{ijkl}$ 
-from Eq.~\eqref{e:exp-val-series} are computable and can be approximately
+effective fragments as long as 
+the functionals ${\mathcal{F}}_t$ 
+%the $P_{ij}$ and $P_{ijkl}$ 
+%from Eq.~\eqref{e:exp-val-series} 
+are computable and can be approximately
 partitioned in between the interacting fragments.
 %the resulting effective potentials are fully first\hyp{}principles
 %and no extensive case\hyp{}dependent fitting procedures are necessary as long as the $P_{ij}$ and $P_{ijkl}$
@@ -263,8 +386,6 @@ partitioned in between the interacting fragments.
 %and stored in a file. 
 %Note also, that, in principle, there is no approximation 
 %made here at that moment.
-
-
 
 Two general cases of basis function partitioning scheme
 are considered in this work,
@@ -304,7 +425,7 @@ DMTP\footnotemark[4] Form
 }
 %
 
-\subsection{\label{s.333}Distributed Multipole Expansion of OEP's}
+\subsection{\label{ss:2.2.oep-DMTP}Distributed Multipole Expansion of OEP's}
 
 This scheme is most applicable in the case of matrix elements of the type
 $
@@ -316,7 +437,7 @@ In general, given certain two effective one\hyp{}electron density distributions,
 the associated effective Coulombic interaction energy can be estimated from the classical formula
 according to
 %
-\begin{equation}
+\begin{equation} \label{e:coulomb-energy:general}
  \Delta^{(XY)}_{\rm eff} E_{\rm Coul} = \iint \frac{\rho_{\rm eff}^X({\bf r}_1) \rho_{\rm eff}^Y({\bf r}_2)}
  {\vert {\bf r}_1 - {\bf r}_2 \vert} 
 d{\bf r}_1 d{\bf r}_2 \;.
@@ -326,7 +447,7 @@ The above integral can be approximated by the
 distributed multipole (DMTP)
 expansions of the respective densities as follows
 %
-\begin{multline}
+\begin{multline} \label{e:coulomb-energy:dmtp}
   \Delta^{(XY)}_{\rm eff} E_{\rm Coul} \approx
  \rho_{\rm eff}^X \odot \rho_{\rm eff}^Y \equiv
  \sum_{u\in A} \sum_{w\in B} \Big\{ 
@@ -350,12 +471,12 @@ performed over the DMTP's of molecule $X$ and $Y$ to yield the associated intera
 The choice of the distribution centres as well as the truncation order of the multipole expansion
 is crucial in compromising the accuracy and computational cost of the resulting expressions.
 There is many ways in which this can be achieved, e.g., through the distributed multipole analysis (DMA)
-of Stone and Anderton, %cite
-the cumulative atomic multipole moments of Sokalski and Poirier, %cite
-the localised distributed multipole expansion (LMTP) of Etchtebest et al. %cite
-or schemes based on fitting to electrostatic potential.
+of Stone\cite{Stone.JCTC.2005}
+the cumulative atomic multipole moments of Sokalski and Poirier\cite{Sokalski.Poirier.CPL.1983}
+the localised distributed multipole expansion (LMTP) of Etchtebest, Lavery and Pullman\cite{Etchebest.Lavery.Pullman.TheorChimActa.1982}
+or schemes based on fitting to electrostatic potential such as ChelpG\cite{Breneman.Wiberg.JCC.1990} for instance.
 
-\subsection{\label{s.3344}Density Fitting of OEP's}
+\subsection{\label{ss:2.3.oep-GDF}Density Fitting of OEP's}
 
 This scheme is most useful in the case of matrix elements of the type
 $
@@ -366,7 +487,7 @@ one can use a procedure similar to
 the typical density fitting or resolution of identity, both of which are nowadays widely used 
 to compute electron\hyp{}repulsion integrals (ERI's) more efficiently. 
 
-\subsubsection{Density Fitting in Nearly-Complete Space}
+\subsubsection{\label{sss:2.3.1.GDF-1}Density Fitting in Nearly-Complete Space}
 
 An arbitrary one\hyp{}electron potential of molecule $A$ acting on any state vector 
 associated with molecule $A$ can be expanded in an auxiliary space centered 
@@ -390,7 +511,7 @@ Such a general expansion can be obtained by
 utilizing the density fitting
 in the nearly\hyp{}complete space,
 %
-\begin{equation}
+\begin{equation} \label{e:v-compl}
  \hat{v}^{A}\Ket{i} = \sum_{\xi}^{\rm RI} V^A_{i\xi} \Ket{\xi} \;.
 \end{equation}
 %
@@ -406,7 +527,7 @@ Let $Z_i[{\bf V}^A]$ be the least\hyp{}squares objective function
 %
 with the error density defined by
 %
-\begin{equation}
+\begin{equation} \label{e:error-compl}
  \Xi_i({\bf r}) = v^A({\bf r}) \phi_i({\bf r}) - \sum_\xi^{\rm RI} V^A_{i\xi} \varphi_\xi({\bf r}) \;.
 \end{equation}
 %
@@ -418,7 +539,7 @@ By requiring that
 %
 one finds the coefficients of the $i$th row of ${\bf V}^A$ to be
 %
-\begin{equation} \label{e:gdf-coml.v}
+\begin{equation} \label{e:gdf-compl.v}
 % {\bf v}_i = {\bf a}^{(i)} \cdot {\bf S}^{-1}
   V^A_{i\xi} = \sum_\eta^{\rm RI} [{\bf S}^{-1}]_{\xi\eta} a^{(i)}_\eta \;,
 \end{equation}
@@ -452,7 +573,7 @@ potential form from Eq.~\eqref{e:v-eff}
 along with the spectral representation of the effective density from Eq.~\eqref{e:d-spectral} 
 which finally gives
 %
-\begin{equation}
+\begin{equation} \label{e:a-coeff-compl}
  a^{(i)}_\eta = \lambda \sum_{x} W_{\eta i}^{(x)} + 
  \sum_{\alpha\beta} D^A_{\alpha\beta} 
   \BraKet{\alpha\beta}{\eta i} \;.
@@ -462,13 +583,13 @@ which finally gives
 \end{equation}
 %
 
-\subsubsection{Density Fitting in Incomplete Space}
+\subsubsection{\label{sss:2.3.1.GDF-2}Density Fitting in Incomplete Space}
 
 Density fitting scheme from previous section has practical disadvantage of a nearly\hyp{}complete basis set
 being usually very large (spanned by large amount of basis set vectors). 
 Since most of basis sets used in quantum chemistry do not form a nealy complete
 set, it is beneficial to design a modified scheme in which it is possible to obtain the effective 
-matrix elements of the OEP operator in a incomplete auxiliary space. This can be achieved by minimizing 
+matrix elements of the OEP operator in an incomplete auxiliary space. This can be achieved by minimizing 
 the following objective function
 %
 \begin{equation} \label{e:z-incompl}
@@ -479,7 +600,7 @@ the following objective function
 %
 with the error density defined by
 %
-\begin{equation}
+\begin{equation} \label{e:error-incompl}
  \Xi_i({\bf r}) = v^A({\bf r}) \phi_i({\bf r}) - \sum_\xi^{\rm DF} V^A_{i\xi} \varphi_\xi({\bf r}) \;.
 \end{equation}
 %
@@ -487,7 +608,7 @@ where the symbol `DF' denotes the generally incomplete auxiliary basis set.
 From the requirement given in Eq.~\eqref{e:z-necessary-requirement}
 one obtains
 %
-\begin{equation} \label{e:v-noncompl}
+\begin{equation} \label{e:v-incompl}
 % {\bf G}^{(i)} = {\bf b}^{(i)} \cdot {\bf A}^{-1}
   V^A_{i\xi} = \sum_\eta^{\rm DF} [{\bf R}^{-1}]_{\xi\eta} b^{(i)}_\eta \;,
 \end{equation}
@@ -536,7 +657,7 @@ This can be achieved by performing additional density fitting in a nearly comple
 %where the symbol `RI' denotes the intermediate basis from a chosen resolution of identity.
 The working equation is therefore given by
 %
-\begin{equation}
+\begin{equation} \label{e:v-compl-b-coeff}
  b^{(i)}_\eta = \sum_\varepsilon^{\rm RI} H_{i\varepsilon} R_{\varepsilon\eta} \;,
 \end{equation}
 %
@@ -550,9 +671,9 @@ The working equation is therefore given by
 %\end{equation}
 %%
 which can be easily evaluated by noting that
-$H_{i\varepsilon}$ are given by Eq.~\eqref{e:gdf-coml.v}.
+$H_{i\varepsilon}$ are given by Eq.~\eqref{e:v-compl}.
 Thus, the matrix elements of the OEP operator can be found
-by using Eq.~\eqref{e:v-noncompl}.
+by using Eq.~\eqref{e:v-incompl}.
 %Therefore, in order to use this generalized density fitting scheme
 %one must to compute two\hyp{}centre electron repulsion integrals
 %as well as four\hyp{}centre asymmetric electron repulsion integrals of the type $ (\alpha\beta\gamma||\eta) $.
@@ -565,15 +686,102 @@ $V^A_{i\xi}$ can be calculated just once and stored in a file as effective fragm
 
 
 
-\section{\label{s:34r}Charge Transfer Interaction Energy for Fragment Potentials}
+\section{\label{s:3.ct}Charge Transfer Interaction Energy for Fragment Potentials}
 
-\subsection{\label{s:34rg} Murrell et al.'s Model: Starting Point}
+In the CT/HF0 treatments of bi\hyp{}molecular complexes, the CT energy
+can be expressed as a sum of the energy stabilization due to 
+CT from molecule $A$ to $B$ and vice versa, i.e.,
+%
+\begin{equation} \label{e:ct-hf0}
+ U^{\rm CT} =  E^{A\rightarrow B} + E^{B\rightarrow A}\;.
+\end{equation}
+%
 
-After the OEP technique has been formulated, it can be applied 
-to the calculation of interaction\hyp{}induced properties following the
-fragment\hyp{}based philosophy. 
-According to the second\hyp{}order intermolecular perturbation theory of Murrell et al.,
-the energy associated with the charge transfer from molecule $A$ to $B$ is given by
+\subsection{\label{ss:3.1.EFP2} EFP2 Model}
+
+Li, Gordon and Jensen used the expansion of the overlap density 
+in Taylor series and found four different approximate
+theories for the CT energy.\cite{Li.Gordon.Jensen.JCP.2006} 
+The optimal theory, which was shown
+to well reproduce the CT/HF0 energies obtained by using 
+the reduced variational space (RVS)
+analysis of Stevens and Fink\cite{Stevens.Fink.CPL.1987},
+reads
+%
+\begin{equation} \label{e:u-efp2-ct}
+ E^{A\rightarrow B} \approx 
+ 2\sum_{i\in A}^{\rm Occ}
+  \sum_{n\in B}^{\rm Vir}
+   \frac{ \left| V_{in}^{A\rightarrow B} \right|^2}{\varepsilon_{i} - T_{nn}} \;,
+\end{equation}
+%
+where
+%
+\begin{multline} \label{e:u-efp2-ct-v2}
+ \left| V_{in}^{A\rightarrow B} \right|^2 \approx
+ \frac{U_{in}}{1-\sum_{m\in A}^{\rm All} S_{mn}^2}
+ \Bigg\{
+   U_{in} \\ + \sum_{j\in B}^{\rm Occ} S_{ij} 
+   \left( 
+     T_{nj} - \sum_{m\in A}^{\rm All} S_{nm} T_{mj}
+   \right)
+ \Bigg\} \;,
+\end{multline}
+%
+and 
+%
+\begin{equation} \label{e:uin-efp2}
+ U_{in} \equiv V_{in}^{{\rm EF},B} - \sum_{m\in A}^{\rm All} V_{im}^{{\rm EF},B} S_{mn} \;,
+\end{equation}
+%
+in which the summations extend over occupied (denoted by `Occ'), virtual (denoted by `Vir') 
+or both (denoted by `All') MO's. The effective potential 
+matrices are defined by
+%
+\begin{equation} \label{e:v-efp2-eff}
+ V_{in}^{{\rm EF},B} \equiv 
+ \tBraKet{i}{\hat{v}^B_{\rm tot} }{n} \;,
+\end{equation}
+%
+and are evaluated by expanding the $\hat{v}^B_{\rm tot}$ operator
+in distributed multipoles. The resulting calculation requires computation
+of potential, electric field and electric field gradient one\hyp{}electron integrals
+and their contractions with the DMTP distributions.
+The apparent success of the EFP2 scheme is rooted in the dramatic simplifications of the
+\emph{ab initio} expressions for interaction energy, in which
+the relatively very costly ERI's
+have been effectively removed from the working models while maintaining the required accuracy. 
+That is, the canonical orbital energies $\varepsilon_i$ are
+constant parameters, whereas the overlap $S_{nm}$, kinetic energy $T_{mn}$ and effective
+one\hyp{}electron electrostatic potential $V_{in}^{{\rm EF}}$ matrix elements
+are all certain types of the one\hyp{}electron integrals, orders of magnitude cheaper to
+evaluate than ERI's. Unfortunately, due to extensive summations over virtual orbitals
+evaluating Eq.~\eqref{e:u-efp2-ct} is still considerable in cost because typically large basis sets
+need to be used for generating the EFP2 parameters. Moreover, calculation of $V_{in}^{{\rm EF}}$
+is much more expensive as compared to other types of one\hyp{}electron integrals.
+
+In the following subsections, the alternative model of the CT/HF0 energy is proposed
+by introducing OEP's. Although application of the OEP method to the CT/HF0 formulation in EFP2 method
+is probably possible, it would be relatively difficult to discuss the resulting OEP\hyp{}based
+EFP2 models because there are four distinct versions of this theory
+with a set of different approximations, selected based on performance assessment rather than 
+a rigorous derivation manner.
+Instead, perturbation theory of Murrell et al.\cite{Murrell.Randic.Williams.Longuet-Higgins.ProcRSocLondA.1965} 
+with the
+explicit formulation for closed shell systems by Otto and Ladik\cite{Otto.Ladik.ChemPhys.1975},
+which is somewhat more rigorous than the EFP2 CT model,
+is chosen as a starting point in this work. 
+It is believed that this choice will allow a clear demonstration 
+of the OEP technique in fragment\hyp{}based modelling.
+
+
+\subsection{\label{ss:3.2.OL} Murrell et al.'s Model: Starting Point}
+
+%According to the second\hyp{}order intermolecular perturbation theory 
+%with wavefunction overlap of Murrell et al.,
+%the energy associated with the charge transfer from molecule $A$ to $B$ is given by
+The CT/HF0 energy can be expressed
+by\cite{Murrell.Randic.Williams.Longuet-Higgins.ProcRSocLondA.1965,Otto.Ladik.ChemPhys.1975}
 %
 \begin{equation} \label{e:ct-murell-etal.e}
  E^{A\rightarrow B} = 2 \sum_{i\in A}^{\rm Occ} \sum_{n\in B}^{\rm Vir} 
@@ -585,7 +793,7 @@ the energy associated with the charge transfer from molecule $A$ to $B$ is given
 %of optimization and applications in condensed phase simulations. [3]
 %
 where $\varepsilon_i$ and $\varepsilon_n$ are the canonical energies
-of the occupied (denoted by `Occ') and virtual (denoted by `Vir') 
+of the occupied and virtual
 HF molecular orbitals, respectively,
 whereas the coupling constant is given by
 %
@@ -613,7 +821,7 @@ from Ref.
 The goal of this work is to apply the technique sketched in Eq.XXX
 to eliminate ERI's from Eq.~\eqref{e:ct-murell-etal.vin} in terms of OEP's.
 
-\subsection{\label{s:34rag} Murrell et al.'s Model: Application of OEP Technique}
+\subsection{\label{ss:3.3.OEP} Murrell et al.'s Model: Application of OEP Technique}
 
 One can immediately notice that the five summation terms
 from Eq.~\eqref{e:ct-murell-etal.vin} can be classified into three groups
@@ -664,7 +872,7 @@ Substituting the above equation into Eq.~\eqref{e:z-incompl}
 %using resolution of identity to simplify the 
 leads to
 %
-\begin{equation}
+\begin{equation} \label{e:v-oep-group-1-prefinal}
  V^B_{n\xi} = \sum_{\eta\in B}^{\rm DF} \left[ {\bf R}^{-1} \right]_{\xi\eta} b_\eta^{(n)} \;,
 \end{equation}
 %
@@ -690,12 +898,12 @@ However, the following application of the resolution of identity,
 \end{equation}
 %
 leads to a much simpler formula
-that requires only the one- and two\hyp{}electron integrals. 
+that requires only the one\hyp{} and two\hyp{}electron integrals. 
 Therefore, by combining
-equations %which equations?
+equations~\eqref{e:v-oep-group-1-prefinal}, \eqref{e:v-compl-b-coeff} and \eqref{e:gdf-compl.v}
 one arrives to
 %
-\begin{equation}
+\begin{equation} \label{e:v-oep-group-1-final}
  V^B_{n\xi} = \sum_{\eta\in B}^{\rm DF} 
           \sum_{\varepsilon\in B}^{\rm RI}
          \left[ {\bf R}^{-1} \right]_{\xi\eta}
@@ -705,14 +913,14 @@ one arrives to
 %
 where
 %
-\begin{equation}
+\begin{equation} \label{e:v-oep-group-1-final:H-matrix}
  H_{n\varepsilon}^B = \sum_{\zeta\in B}^{\rm RI} \left[ {\bf S}^{-1} \right]_{\varepsilon\zeta}
    a_\zeta^{(n)}
 \end{equation}
 %
 and
 %%
-\begin{align}
+\begin{align} \label{e:v-oep-group-1-final:a-vector}
  a^{(n)}_\zeta &= \tBraKet{\zeta}{\hat{v}^B_{\rm tot}}{n}
       - \sum_{j\in B}^{\rm Occ} \tBraKet{\zeta}{\hat{v}^B_{nj}}{j} \nonumber \\
  &= \sum_{y\in B} W^{(y)}_{\zeta n} 
@@ -813,7 +1021,7 @@ occupied molecular orbitals need to be localized.
 \paragraph{Group (iii).}
 The terms with the overlap integrals involving the occupied MO on $A$
 can be combined into a single summation term, i.e.,
-\begin{multline}
+\begin{multline} \label{e:ct.group-iii}
        - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
      + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
         S_{kj} \left( 1 - \delta_{ik} \right)
@@ -866,12 +1074,12 @@ In order to include the $\rho^{B}_{nj}$ density, it is approximately represented
 cumulative
 atomic charges $\{ q^{B,(nj)}_{y} \}$ associated with the effective one\hyp{}particle density matrix
 %
-\begin{equation}
+\begin{equation} \label{e:oed-group-iii}
  D^{B,(nj)}_{\beta\delta} = C_{\beta n} C_{\delta j} \;.
 \end{equation}
 %
 In this work, the effective charges were computed via the Mulliken method as
-discussed in Section~XXX. 
+discussed in Appendix~\ref{e:a1-v.oep-camm} with $\lambda=0$. 
 Note now that both effective densities in 
 $\rho^B_{jn} \odot \rho^{A,{\rm eff}}_{ik}$ are generally complex and one cannot apply the SOA
 for $\rho^{A,{\rm eff}}_{ik}$. In the LMO picture however, it can be shown that
@@ -925,7 +1133,7 @@ V_{in}^{A\rightarrow B}
 %
 where
 %
-\begin{subequations}
+\begin{subequations} \label{e:ct-murrell-etal.vin.oep-gterms}
 \begin{align}
  G_{1;in}^{A\rightarrow B} &\equiv \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} \;, \\
  G_{2;in}^{A\rightarrow B} &\equiv S_{ni} u_i^{BA} \;, \\
@@ -1001,12 +1209,7 @@ where the subscripts $G_n$ ($n$ = 1, 2, 3) denote a particular group of
 terms from Eqs.~\eqref{e:ct.group-i.final}, \eqref{e:ct.group-ii.final} and \eqref{e:ct.group-iii.final.a}
 or \eqref{e:ct.group-iii.final.b}. 
 The total CT energy is given by the sum of the above contribution and the twin contribution
-due to CT from molecule $B$ to $A$,
-%
-\begin{equation}
- \Delta E^{\rm CT} = E^{A\rightarrow B} + E^{B\rightarrow A} \;.
-\end{equation}
-%
+due to CT from molecule $B$ to $A$ according to Eq.~\eqref{e:ct-hf0}.
 
 %
 %he above formula does not explicitly define an OEP due to the summation over different
@@ -1038,7 +1241,7 @@ due to CT from molecule $B$ to $A$,
 
 
 
-\section{\label{s:4}Calculation Details}
+\section{\label{s:4.calculations}Calculation Details}
 
 Four selected molecular pairs composed of H$_2$O, CH$_3$OH, NH$_4^+$ and NO$_3^-$
 (Figure 1) molecules or ions were chosen to validate the OEP\hyp{}based model of the CT energy
@@ -1111,7 +1314,7 @@ is not included in ${\bf F}({\bf r}_a)$).
 %where $a$ labels the LMO centroids.
 The ${\bf D}$ matrix is defined as
 %
-\begin{equation}
+\begin{equation} \label{e:ind-ref.d-matrix}
  {\bf D}_{ab} = 
 \left\{\begin{matrix}
 {\BM\upalpha}_a^{-1} &\text{if $a=b$} \\ 
@@ -1123,7 +1326,7 @@ The ${\bf D}$ matrix is defined as
 and ${\bf T}_{ab}$ is the dipole\hyp{}dipole interaction tensor
 given by
 %
-\begin{equation}
+\begin{equation} \label{e:ind-ref.t-matrix}
  {\bf T}_{ab} \equiv \frac{3}{r_{ab}^5} {\bf r}_{ab} \otimes {\bf r}_{ab}
   - \frac{1}{r_{ab}^3} {\bf 1} \;,
 \end{equation}
@@ -1133,7 +1336,7 @@ relative distance between the LMO centroids.
 The electric fields at the LMO centroids were computed from
 the unperturbed HF charge\hyp{}density distributions
 %
-\begin{equation}
+\begin{equation} \label{e:ind-ref.efield}
  {\bf F}({\bf r}_a) = \sum_x^{\rm At} \frac{Z_x}{r_{ax}^3} {\bf r}_{ax} 
   + 2 \sum_{\alpha\gamma} D_{\alpha\gamma} 
 %    \tBraKet{\gamma}{\frac{{\bf r}_a - {\bf r}}{\vert {\bf r}_a - {\bf r} \vert^3} }{\alpha}_{\bf r} \;.
@@ -1151,17 +1354,17 @@ Orbital localization was performed by using the Boys method.\cite{Boys.RevModPhy
 All the models that were used to test the theory presented in this work
 were implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry program.\cite{Psi4.JCTC.2017}
 
-\section{\label{s:fwefsdv}Results and Discussion}
+\section{\label{s:5.results}Results and Discussion}
 
-\subsection{\label{s:gsdzdv}Accuracy of OEP-based model}
+\subsection{\label{ss:5.1.accuracy}Accuracy of OEP-based model}
 
 First, the asymptotic dependence of the CT energy
 was investigated for four chosen molecular pairs and the results are
-shown in Figure~\ref{f:fig-1} and Figure~S1 for the methanol-water system. 
+shown in Figure~\ref{f:fig-2} and Figure~S1 for the methanol-water system. 
 Overall, OEP technique of effective
 elimination of ERI's sketched in Eq.~\eqref{e:ft-reduction} 
 works
-quantitatively well for water dimer and ammonium nitrate (Figures~\ref{f:fig-1}(a) and (c)),
+quantitatively well for water dimer and ammonium nitrate (Figures~\ref{f:fig-2}(a) and (c)),
 and methanol-water (Figure~S1)
 reproducing the reference Otto\hyp{}Ladik CT energy,
 whereas in the case of water\hyp{}ammonium cation complex the OEP
@@ -1177,6 +1380,58 @@ confirmed that in the great majority of cases the
 OEP technique gives reasonably accurate results with respect
 to the parent model with relative errors less than 10\%,
 unless systems are charged.
+%
+{
+\renewcommand{\arraystretch}{1.4}
+\begin{table}[h]
+\caption[Accuracy of approximate CT/HF0 energy methods across wide range of bi\hyp{}molecular complexes]
+{{\bf Accuracy of approximate CT/HF0 energy methods across wide range of bi\hyp{}molecular complexes\footnotemark[1]}
+}
+\label{t:2}
+\begin{ruledtabular}
+\begin{tabular}{lclcccccccc}
+         &&       && \multicolumn{7}{c}{RMSE (kcal/mol) } \\
+\cline{4-11}
+\multicolumn{3}{c}{Database}
+   && OL\footnotemark[2]  
+                  && \multicolumn{3}{c}{OEP\footnotemark[3]}  
+                  && EFP2\footnotemark[4] \\
+\cline{1-3}
+\cline{4-5}
+\cline{6-9}
+\cline{10-11}
+NCB31\footnotemark[5] 
+      &&  HB6/04  && 1.38 && 1.36 && 0.37 && 2.45 \\ % 
+      &&  DI6/04  && 0.35 && 0.66 && 0.22 && 0.44 \\ % 
+      &&  CT7/04  && 0.98 && 2.82 && 0.71 && 4.06 \\ % 
+      &&  WI7/04  && 0.01 && 0.09 && 0.05 && 0.02 \\ % 
+      &&  PPS5/05 && 0.07 && 1.31 && 0.79 && 0.60 \\ % 
+      &&  Total   && 0.83 && 1.69 && 0.53 && 2.39 \\ % 
+\cline{1-3}
+\cline{4-5}
+\cline{6-9}
+\cline{10-11}
+
+BBI\footnotemark[6]   
+      &&  Subset\footnotemark[7]
+                  && 0.26 && 0.56 && 0.13* && 0.12 \\ %
+\end{tabular}
+\end{ruledtabular}
+%
+\footnotetext[1]{Validated against Eq.~\eqref{e:ct-pthf-ref}.}
+\footnotetext[2]{Otto and Ladik's expression from Eq.~(4) in Ref.~\cite{Otto.Ladik.ChemPhys.1975}}
+\footnotetext[3]{This work, Eq.~\eqref{e:ect-oep.final-scaled} 
+with $C=1.00$ (left column) and $C=1.56$ (right columm).
+GDF(1)/aug-cc-pVDZ-jkfit scheme was used for the extended density fitting of group (i) OEP's.}
+\footnotetext[4]{Ref.~\cite{Li.Gordon.Jensen.JCP.2006}, Eq.~\eqref{e:u-efp2-ct}.}
+\footnotetext[5]{Ref.~\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Schultz.Truhlar.JCTC.2006}}
+\footnotetext[6]{Ref.~\cite{Burns.Faver.Zheng.Marshall.Smith.Vanommeslaeghe.MacKerell.Merz.Sherrill.JCP.2017}}
+\footnotetext[7]{100 backbone\hyp{}sidechains complexes were randomly selected.}
+%
+\end{table}
+}
+%
+
 
 In the case of water dimer and methanol-water complex, EFP2 and PT/HF estimations
 coincide with the OEP model. However, in the presence of ions, 
@@ -1185,7 +1440,7 @@ become significant, in contrast to the EFP2 model, which gives very good estimat
 of the PT/HF energy in mostly all cases.
 Naturally, the accuracy of the Otto\hyp{}Ladik model limits the absolute accuracy
 of the OEP model, which is manifested in the ammonium nitrate system
-in Figure~\ref{f:fig-1}(c) or the problems with SOA. 
+in Figure~\ref{f:fig-2}(c) or the problems with SOA. 
 In order to improve the performance for ionic systems,
 further studies are necessary, that will modify the original formulation
 of Otto and Ladik and SOA treatment. Nevertheless, except from the ionic systems,
@@ -1193,35 +1448,36 @@ it is clear that the level of accuracy of the EFP2 and OEP models are rather com
 (Figure~XX) across a wide range of various interacting complexes including 
 systems with H-boding, dominated by dipole-dipole or dispersion interactions or 
 exhibiting substantial CT.
-
-
 %
 \begin{figure}[h]
-\includegraphics[width=0.46\textwidth]{fig-2.eps}
-\caption{\label{f:fig-1} {\bf Asymptotic dependence of the charge transfer energy
-in the PT/HF formulation for selected bi\hyp{}molecular complexes.} 
+\includegraphics[width=0.46\textwidth]{fig-2.pdf}
+\caption{\label{f:fig-2} {\bf Asymptotic dependence of the charge transfer energy
+in the CT/HF0 formulation for selected bi\hyp{}molecular complexes.} 
 The charge transfer energy estimates are plotted for 
 (a) water dimer, 
 (b) water\hyp{}ammonium complex, and 
 (c) ammonium\hyp{}nitrate complex,
 where one molecule has been translated by $R$ from the starting geometry
-along the vector specified in Fig. 1.
+optimized at HF/6-31+G(d,p) level,
+along the vector specified in the insets.
 The counterpoise\hyp{}corrected total interaction energy
 is also shown for comparison in light grey color in this figure.
-All data were obtained at HF/6-31+G** level of theory.
+Interaction energies were obtained at the HF/6-311++G(2df,2pd) level of theory
+with the single GDF scheme and aug-cc-pVQZ-jkfit auxiliary basis set.
 } 
 \end{figure}
 %
 
 %
 \begin{figure*}[h]
-\includegraphics[width=0.8\textwidth]{fig-3.eps}
-\caption{\label{f:fig-1} {\bf Performance of the OEP-based vs EFP2 method for the PT/HF charge transfer interaction energy.}
+\includegraphics[width=0.9\textwidth]{fig-3.pdf}
+\caption{\label{f:fig-3} {\bf Performance of the OEP and EFP2 methods for the CT/HF0 charge transfer interaction energy
+in small bi\hyp{}molecular neutral complexes.}
 (a) accuracy of the ERI elimination technique; 
 (b) accuracy of the OEP and EFP2 estimates of the CT energy with respect to the
-PT/HF estimate. 
+CT/HF0 estimate. 
 The structures of bi\hyp{}molecular complexes
-were taken from the databases developed by the Truhlar's group:
+were taken from the NCB31 database developed by the Truhlar's group:
 the HB6/04 hydrogen bonding database 
 (red),\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
 the DI6/04 dipoleinteraction database 
@@ -1232,7 +1488,27 @@ the WI7/05 weak interaction database
 (yellow),\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
 and PPS5/05 the $\pi$-$\pi$ stacking database 
 (black).\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
-6-311++G** basis set was used for the CT energy calculations.
+6-311++G** basis set was used for the CT energy calculations
+and the single GDF scheme with the aug-cc-pVDZ auxiliary basis set
+for the OEP calculations.
+} 
+\end{figure*}
+%
+
+%
+\begin{figure*}[h]
+\includegraphics[width=0.9\textwidth]{fig-4.pdf}
+\caption{\label{f:fig-4} {\bf Performance of the OEP and EFP2 methods for the CT/HF0 charge transfer interaction energy
+in aminoacid pairs.}
+(a) accuracy of the ERI elimination technique; 
+(b) accuracy of the OEP and EFP2 estimates of the CT energy with respect to the
+CT/HF0 estimate. 
+The structures of 100 aminoacid pairs
+were randomly selected from the BBI Bioo database
+for backbone\hyp{}sidechain interactions.\cite{Burns.Faver.Zheng.Marshall.Smith.Vanommeslaeghe.MacKerell.Merz.Sherrill.JCP.2017}
+6-31+G(d,p) basis set was used for the CT energy calculations
+and the single GDF scheme with the aug-cc-pVDZ auxiliary basis set
+for the OEP calculations.
 } 
 \end{figure*}
 %
@@ -1240,7 +1516,8 @@ and PPS5/05 the $\pi$-$\pi$ stacking database
 
 
 
-\subsection{\label{s:413s6}Reduction of computational costs}
+
+\subsection{\label{ss:5.2.cost}Reduction of computational costs}
 
 The utmost goal of this work is to reduce the computational cost of
 the CT PT/HF energy evaluation in the calculations involving effective fragment
@@ -1248,51 +1525,160 @@ potentials. The EFP2 CT expression has the computational cost
 roughly proportional to $(10on^2 + 2n^3 + o^2n^2)v$, where the
 $o$ and $n$ denote the number of occupied orbitals and the number of atomic basis functions,
 respectively, whereas $v$ is the relative cost. On the other hand, OEP\hyp{}based expression
-from Eq.~\eqref{} has the cost of approximately $on(Q+N+o)$, where 
+from Eq.~\eqref{e:ect-oep.final} has the cost of approximately $on(Q+N+o)$, where 
 $Q$ and $N$ denote the number of auxiliary basis functions and the number of atoms,
 respectively. 
-
-In this section, computational cost is estimated from the formulas.
-In
-Table~\ref{t:oep-costs} 
 %
 {
 \renewcommand{\arraystretch}{1.4}
-\begin{table}[b]
-\caption[Computational cost of the benchmark and OEP-based methods: calculation of coupling constant]
-{{\bf Computational cost of the benchmark and OEP-based methods\footnotemark[1]}
+\begin{table}[h]
+\caption[Minimal auxiliary basis set optimized for OEP\hyp{}based CT/HF0 calculations.]
+{{\bf}Minimal auxiliary basis set optimized for OEP\hyp{}based CT/HF0 calculations.\footnotemark[1]
 }
-\label{t:oep-costs}
+\label{t:3}
 \begin{ruledtabular}
-\begin{tabular}{lcccccc}
-Method             && Murrell et al. &&    EFP2        &&      OEP     \\ 
-	\cline{1-7}
-Group (i)         &&  &&        &&   $obQ$     \\
-Group (ii)        &&  &&        &&   $ob$      \\
-Group (iii)       &&  &&        &&   $ob(n+o)$     \\
-Total Cost        &&  && $10ob^2 + 2b^3 + o^2b^2$       &&   $ob(Q+n+o)$     \\
+\begin{tabular}{lldcd}
+ AO's &  & \multicolumn{3}{c}{Exponents (a.u.)}\\
+      &  & \text{Methanol}         && \text{Water}           \\
+\cline{1-2}
+\cline{3-5}
+ H    &1s&   7.7369294534   &&   29.5837988322 \\
+ C    &1s& 880.3654511045   &&                 \\
+      &2s& 123.8276940826   &&                 \\
+      &2p&  11.6748155072   &&                 \\
+ O    &1s& 902.9798919021   && 1030.5721050297 \\
+      &2s& 203.7584408153   &&  142.1022267153 \\
+      &2p&  20.2442429692   &&   40.9175702474 \\
 \end{tabular}
 \end{ruledtabular}
 %
-\footnotetext[1]{Numbers of: $o$ - occupied molecular orbitals; $b$ - atomic basis functions; $n$ - atoms; 
-$Q$ - auxiliary basis functions. It was assumed that the number of virtual orbitals is equal to $b$.}
+\footnotetext[1]{Fitting performed according to Appendix.~\eqref{a:auxiliary-basis} assuming 6-311++G(d,p) 
+and aug-cc-pVDZ-jkfit primary and test basis sets, respectively.}
 %
 \end{table}
 }
 %
+
+
+In this section, computational cost is estimated from the formulas.
+%In
+%Table~\ref{t:oep-costs} 
+%
+%{
+%\renewcommand{\arraystretch}{1.4}
+%\begin{table}[b]
+%\caption[Computational cost of the benchmark and OEP-based methods: calculation of coupling constant]
+%{{\bf Computational cost of the benchmark and OEP-based methods\footnotemark[1]}
+%}
+%\label{t:oep-costs}
+%\begin{ruledtabular}
+%\begin{tabular}{lcccccc}
+%Method             && Murrell et al. &&    EFP2        &&      OEP     \\ 
+%	\cline{1-7}
+%Group (i)         &&  &&        &&   $obQ$     \\
+%Group (ii)        &&  &&        &&   $ob$      \\
+%Group (iii)       &&  &&        &&   $ob(n+o)$     \\
+%Total Cost        &&  && $10ob^2 + 2b^3 + o^2b^2$       &&   $ob(Q+n+o)$     \\
+%\end{tabular}
+%\end{ruledtabular}
+%%
+%\footnotetext[1]{Numbers of: $o$ - occupied molecular orbitals; $b$ - atomic basis functions; $n$ - atoms; 
+%$Q$ - auxiliary basis functions. It was assumed that the number of virtual orbitals is equal to $b$.}
+%%
+%\end{table}
+%}
+%
+{
+\renewcommand{\arraystretch}{1.4}
+\begin{table}[h]
+\caption[Minimal auxiliary basis set optimized for OEP\hyp{}based CT/HF0 calculations.]
+{{\bf}CPU timings in miliseconds of CT/HF0 single point energy calculations
+for water-methanol complex at 6-311++G(d,p) primary basis set\footnotemark[1]
+}
+\label{t:4.oep-costs}
+\begin{ruledtabular}
+\begin{tabular}{llccc}
+                      && Water-Methanol && Water dimer \\
+\cline{3-5}
+OL                    && 774    &&\\
+EFP2                  &&  42.3  &&\\
+OEP/aug-cc-pVQZ-jkfit &&   4.7  &&\\
+OEP/aug-cc-pVTZ-jkfit &&   4.0  &&\\
+OEP/aug-cc-pVDZ-jkfit &&   3.8  &&\\
+OEP/6-311++G(d,p)     &&   3.0  &&\\
+OEP/mini              &&   2.5  &&\\
+\end{tabular}
+\end{ruledtabular}
+%
+\footnotetext[1]{CPU: XXX. See the implementation details in Section~\ref{s:4.calculations} and Section~\ref{ss:5.2.cost}.}
+%
+\end{table}
+}
+%
+
+
+%
 It is clear that the cost of the OEP\hyp{}based equations is much lesser than the cost of EFP2 method,
 and many orders of magnitude lesser than the original theory of Murrell et al.
+%
+\begin{figure}[h]
+\includegraphics[width=0.46\textwidth]{fig-5.pdf}
+\caption{\label{f:fig-5} {\bf Asymptotic dependence of the charge transfer energy
+in the CT/HF0 formulation for methanol-warer complex with minimal OEP auxiliary basis.} 
+Water molecule has been translated by $R$ from the starting geometry
+optimized at HF/6-31+G(d,p) level,
+along the vector specified in the insets.
+The counterpoise\hyp{}corrected total interaction energy
+is also shown for comparison in light grey color in this figure.
+Interaction energies were obtained at the HF/6-311++G(d,p) level of theory.
+In this figure, `OEP' denotes single GDF scheme with aug-cc-pVQZ-jkfit auxiliary basis set
+whereas `OEP/mini` denotes double GDF scheme with the minimal auxiliary basis
+developed here for water and methanol.
+} 
+\end{figure}
+%
 
 
-\section{\label{s:6}Summary and a few concluding remarks}
 
-Bla.
+\section{\label{s:6.conclusions}Summary and a few concluding remarks}
+
+In this work, the one\hyp{}electron effective potential operator technique
+for eliminating electron repulsion integrals in the fragment\hyp{}based
+theories of intermolecular interactions
+was derived and applied to calculating the charge transfer energy
+in condensed phases simulations. It was shown that in general case two types of OEP's
+can be defined and worked out either through the density fitting or the distributed
+multipole expansion. For the first group of OEP's, the density fitting was generalized
+and two computational treatments of OEP's were developed: the single GDF scheme
+for RI\hyp{}type auxiliary basis sets, as well as the double GDF scheme, for
+essentially all other types of basis sets. The presented validation of the OEP technique
+against the Otto\hyp{}Ladik CT/HF0 model as parent theory showed that in most cases
+elimination of ERI's is quantitatively accurate, with few exceptions
+where only qualitative accuracy was found. 
+Finally, it was found that, while the proposed OEP\hyp{}based Otto\hyp{}Ladik
+model is of comparable accuracy as the CT/HF0 formulation within the
+state\hyp{}of\hyp{}the\hyp{}art EFP2 model, it significantly outperforms the latter
+in terms of computational efficiency reaching speedups up to 30--40 times.
+%Since EFP2 method is based on the PT/HF0 foundations
+%with fragments defined in gas phase state,
+%interaction energies without the CT contribution
+%in this model
+%are
+%conceptually incomplete.
+Therefore, it is believed that the OEP\hyp{}based
+model can be incorporated within the EFP2 method, enabling
+the full (CT\hyp{}including) EFP2 energy calculations and 
+molecular dynamics simulations in large systems. However, further 
+study is necessary and the following issues need to be carefully addressed:
 
 \begin{acknowledgments}
 This project is carried out under POLONEZ programme which has received funding from the European Union's
-Horizon~2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement 
+Horizon~2020 research and innovation programme under the Marie Sk{\l}odowska-Curie grant agreement 
 No.~665778. This project is funded by National Science Centre, Poland 
 (grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+We thank Professor Marcos Mandado from University of Vigo in Spain
+for providing us with his benchmark calculations to validate our implementation
+of the DDS method.
 \end{acknowledgments}
 
 %%
@@ -1313,8 +1699,11 @@ the following objective function is minimized
 %
 where $\{\xi\}$ is the auxiliary basis set to optimize, whereas $\{\alpha\}$
 is the `test' basis set used to probe the accuracy of the density fitting.
-The forms of the Pauli and charge\hyp{}transfer DF matrices $\tBraKet{\alpha}{\hat{v}_{\rm eff}}{i}$
-can be directly derived from Eqs.~\eqref{e:v-oep.rep} and \eqref{e:v-oep.ct}, respectively, 
+The forms of the %Pauli and 
+charge\hyp{}transfer DF matrices $\tBraKet{\alpha}{\hat{v}_{\rm eff}}{i}$
+can be directly derived 
+from Eq.~\eqref{e:v-oep.ct}
+%from Eqs.~\eqref{e:v-oep.rep} and \eqref{e:v-oep.ct}, respectively, 
 by expanding the MO's in terms of atomic basis functions. The working formulae
 are given below:
 %
@@ -1340,6 +1729,48 @@ are given below:
 %
 In the above equations, ${\bf C}$ is the LCAO\hyp{}MO matrix whereas ${\bf D}$
 is the one\hyp{}particle density matrix in AO basis.
+
+\section{Coulomb-like OEP via Cumulative Atomic Multipole Moments\label{a:oep-camm}}
+
+Overlap\hyp{}like OEP's are always associated with the effective one\hyp{}particle density
+(or bond\hyp{}order) 
+matrices and the $\lambda$ parameter from Eq.~\eqref{e:oep-operator} being either 1 or 0. 
+Therefore, one can use this fact to compute the effective distributed multipole
+moments. In this work, the cumulative atomic multipole moments (CAMM)
+of Sokalski and Poirier with Mulliken partitioning of the AO space
+were chosen because of their simplicity.
+One of examples
+of such OEP\hyp{}based models reported already in the literature is
+the transition cumulative atomic multipole moments (TrCAMM) model
+for estimation of the excitation energy transfer (EET) couplings in the F{\"o}rster
+limit\cite{Blasiak.Maj.Cho.Gora.JCTC.2015}, 
+or the vibrational solvatochromic distributed multipole moments
+(SolCAMM) for the determination of the vibrational frequency shifts
+of spatially localized IR probes.\cite{Blasiak.Lee.Cho.JCP.2013}
+In general, having the OED and $\lambda$, the effective cumulative atomic charges
+and dipole moments are given by
+%
+\begin{subequations} \label{e:a1-v.oep-camm}
+ \begin{align}
+  q_x^{\rm eff} &= \lambda Z_x - 
+       \sum_{\alpha\in x}\sum_{\beta} 
+        P_{\alpha\beta}^{\rm eff} \BraKet{\alpha}{\beta} \;, \\
+  {\BM\upmu}_x^{\rm eff} &= 
+       \sum_{\alpha\in x}\sum_{\beta} 
+        P_{\alpha\beta}^{\rm eff}
+   \left\{ 
+    \BraKet{\alpha}{\beta} {\bf R}_x - \tBraKet{\alpha}{\bf r}{\beta} 
+   \right\}
+   \;,
+ \end{align}
+\end{subequations}
+%
+where ${\bf R}_x$ is the position vector of the $x$-th nucleus.
+Note that $P_{\alpha\beta}^{\rm eff}$ can refer to the particular electron
+spin, or their sum as a bond order matrix as well.
+Equations for the effective distributed quadrupoles, octupoles and hexadecapoles
+can be easily obtained by analogy from Ref.~\cite{Blasiak.Maj.Cho.Gora.JCTC.2015}
+
 
 %
 %\section{\label{a:mcmurchie-davidson} McMurchie-Davidson Method for Asymmetric Electron Repulsion Integrals}

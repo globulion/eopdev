@@ -2,9 +2,9 @@
 base=paper-r2
 si=supplementary-r2
 
-for i in $base $si
+for i in $base #$si
 do
-  latex  ${i}.tex
+  pdflatex  ${i}.tex
   bibtex ${i}.aux
-  dvipdf ${i}.dvi
+  #dvipdf ${i}.dvi
 done
