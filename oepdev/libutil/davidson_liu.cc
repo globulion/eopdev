@@ -44,6 +44,8 @@ void oepdev::DavidsonLiu::run_davidson_liu() {
   this->davidson_liu_compute_diagonal_hamiltonian();
 
   psi::outfile->Printf("\n @Davidson-Liu: Starting iteration process.\n");
+  bool success = false;
+
   while (conv > eps) {
 
    //this->guess_vectors_davidson_liu_->orthonormalize(); -> not needed since guess vectors are already orthonormal (but maybe useful in the future)
@@ -57,15 +59,17 @@ void oepdev::DavidsonLiu::run_davidson_liu() {
      iter++;
      if (iter > maxit) {
          psi::outfile->Printf(" @Davidson-Liu: Maximum iterations %d exceeded!\n", maxit);
+         success = false;
          break;}
 
      if (conv < eps  ) {
          psi::outfile->Printf(" @Davidson-Liu: Maximum iterations converged successfully!\n");
+         success = true;
          break;}
 
   }
 
-  this->davidson_liu_finalize();
+  this->davidson_liu_finalize(success);
   psi::outfile->Printf("\n @Davidson-Liu: Done.\n");
 }
 
@@ -223,9 +227,13 @@ double oepdev::DavidsonLiu::davidson_liu_compute_convergence()
   return E_old_davidson_liu_->rms();
 }
 
-void oepdev::DavidsonLiu::davidson_liu_finalize()
+void oepdev::DavidsonLiu::davidson_liu_finalize(bool success)
 {
   this->sigma_vectors_davidson_liu_.clear();
   this->guess_vectors_davidson_liu_->reset();
   this->davidson_liu_finalized_ = true;
+
+  if (!success && options_.get_bool("DAVIDSON_LIU_STOP_WHEN_UNCONVERGED")) {
+       throw psi::PSIEXCEPTION(" Davidson-Liu did not converge! Restart with different options.");
+  }
 }

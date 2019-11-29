@@ -114,6 +114,7 @@ int read_options(std::string name, Options& options)
         options.add_double ("DAVIDSON_LIU_THRESH_SMALL"   , 1.0E-06              );
         options.add_int    ("DAVIDSON_LIU_SPACE_MAX"      , 200                  );
         options.add_int    ("DAVIDSON_LIU_SPACE_START"    ,-1                    );
+        options.add_bool   ("DAVIDSON_LIU_STOP_WHEN_UNCONVERGED", true           );
 
 
         // ---> CPHF Global Options  <--- //

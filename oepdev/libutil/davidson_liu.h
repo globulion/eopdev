@@ -30,6 +30,7 @@ namespace oepdev{
  *  * `DAVIDSON_LIU_SPACE_MAX`    - Maximum number of guess vectors. Default: 200.     
  *  * `DAVIDSON_LIU_SPACE_START`  - Starting amount of guess vectors. Must be larger or equal to number of roots. 
  *                                  Default: -1, which means that number of roots is taken.
+ *  * `DAVIDSON_LIU_STOP_WHEN_UNCONVERGED` - Raise error when iterations do not converge. Default: True.
  *
  *
  * # Usage in C++ programming
@@ -175,7 +176,7 @@ class DavidsonLiu {
     virtual void davidson_liu_compute_sigma() = 0;
     virtual void davidson_liu_add_guess_vectors();
     virtual double davidson_liu_compute_convergence();
-    virtual void davidson_liu_finalize();
+    virtual void davidson_liu_finalize(bool);
 
 
 };
