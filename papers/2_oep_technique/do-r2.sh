@@ -2,7 +2,7 @@
 base=paper-r2
 si=supplementary-r2
 
-for i in $base #$si
+for i in $base $si
 do
   pdflatex  ${i}.tex
   bibtex ${i}.aux

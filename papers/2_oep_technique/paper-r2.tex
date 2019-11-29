@@ -122,7 +122,7 @@ interaction potential, which can also be perceived as an approximation
 to SAPT at HF level with added intermolecular dispersion correction, is approximated as 
 %
 \begin{equation}\label{e:u-efp2}
- U^{\rm EFP2} \approx U^{\rm Coul} + U^{\rm Ex-Rep} + U^{\rm Ind} + U^{\rm Disp} + U^{\rm CT} \;.
+ U^{\rm EFP2} \approx U^{\rm Coul} + U^{\rm Ex-Rep} + U^{\rm Ind} + U^{\rm Disp} + U^{\rm CT} \;,
 \end{equation}
 %
 where $U^{\rm Coul}$ is the Coulombic interaction energy of the unperturbed charge\hyp{}density
@@ -708,7 +708,7 @@ where
 \begin{subequations}
 \begin{align}
  b^{(i)}_\eta &= \iint 
-                       \frac{ \varphi^*_\eta({\bf r}_1) \hat{v} \phi_i({\bf r}_2) } 
+                       \frac{ \varphi^*_\eta({\bf r}_1) \hat{v}^A \phi_i({\bf r}_2) } 
                             {\vert {\bf r}_1 - {\bf r}_2\vert}  
                  d{\bf r}_1 d{\bf r}_2 \;, \\
  R_{\eta\xi}  &= \iint 
@@ -1389,7 +1389,8 @@ the HB6/04 hydrogen bonding database,\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.T
 the DI6/04 dipoleinteraction database,\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
 the CT7/04 charge-transfer complex database,\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
 the WI7/05 weak interaction database,\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
-and PPS5/05 the $\pi$-$\pi$ stacking database.\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
+and 
+the PPS5/05 the $\pi$-$\pi$ stacking database.\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
 
 The benchmark CT/HF0 energy was estimated
 from the following assumption:
@@ -1707,7 +1708,7 @@ the CT7/04 charge-transfer complex database
 (blue),\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
 the WI7/05 weak interaction database 
 (yellow),\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
-and PPS5/05 the $\pi$-$\pi$ stacking database 
+and the PPS5/05 the $\pi$-$\pi$ stacking database 
 (black).\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
 6-311++G(d,p) basis set was used for the CT energy calculations
 and the single GDF scheme with the aug-cc-pVDZ auxiliary basis set
@@ -1910,7 +1911,7 @@ by definition.
 The above profiling settings allows one to compare the performances
 of OL, EFP2 and OEP methods as effective fragment parameter methods.
 
-Even for the rather large auxiliary quadruple\hyp{}$\zeta$ basis set,
+Even for the rather large quadruple\hyp{}$\zeta$ auxiliary basis set,
 the OEP\hyp{}based model is roughly 9 times more efficient than evaluating the EFP2 CT energy.
 Reducing the size of auxiliary basis set up to minimal basis from Table~\ref{t:3}
 scales down the cost further by a factor of $1.9$ in water-methanol system,
@@ -2005,6 +2006,8 @@ This project is carried out under POLONEZ programme which has received funding f
 Horizon~2020 research and innovation programme under the Marie Sk{\l}odowska-Curie grant agreement 
 No.~665778. This project is funded by National Science Centre, Poland 
 (grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+Wroclaw Centre for Networking and Supercomputing (WCSS) is acknowledged for
+computational resources.
 We thank Professor Marcos Mandado from University of Vigo in Spain
 for providing us with his benchmark calculations to validate our implementation
 of the DDS method.
@@ -2033,30 +2036,28 @@ charge\hyp{}transfer DF matrices $\tBraKet{\alpha}{\hat{v}_{\rm eff}}{i}$
 can be directly derived 
 from Eq.~\eqref{e:v-oep.ct}
 %from Eqs.~\eqref{e:v-oep.rep} and \eqref{e:v-oep.ct}, respectively, 
-by expanding the MO's in terms of atomic basis functions. The working formulae
-are given below:
+by expanding the MO's in terms of atomic basis functions. The working formula
+is %given below:
 %
-\begin{subequations} \label{e:a1-v.oep}
- \begin{align}
-   \tBraKet{\alpha}{\hat{v}_{\rm eff}^{\rm Rep}}{i}
-     &= \sum_{x}^{\rm At} W_{\alpha i}^{(x)} \nonumber   \\ 
-        + \sum_{\beta\gamma\delta} &
-           \left\{ 
-             2 C_{\beta i} D_{\gamma\delta} - C_{\gamma i} D_{\beta \delta}
-           \right\}
-           \BraKet{\alpha\beta}{\gamma\delta} \;,\\
-   \tBraKet{\alpha}{\hat{v}_{\rm eff}^{\rm CT}}{n} 
-     &= \sum_{x}^{\rm At} W_{\alpha n}^{(x)} \nonumber   \\
-       + \sum_{\beta\gamma\delta} &
+\begin{multline} \label{e:a1-v.oep}
+   \tBraKet{\alpha}{\hat{v}_{\rm eff}^{{\rm G}_1}}{n} 
+     = \sum_{x}^{\rm At} W_{\alpha n}^{(x)}   \\
+       + \sum_{\beta\gamma\delta} 
            \left\{
              2 C_{\beta n} D_{\gamma\delta} - C_{\gamma n} D_{\beta \delta}
            \right\}
            \BraKet{\alpha\beta}{\gamma\delta}
-    \;.
- \end{align}
-\end{subequations}
+%    \;.
+\end{multline}
 %
-In the above equations, ${\bf C}$ is the LCAO\hyp{}MO matrix whereas ${\bf D}$
+for the OEP operator defined by 
+%
+\begin{equation}
+ \sum_{\eta\in B}^{\rm DF} \hat{v}_{\rm eff}^{{\rm G}_1} \Ket{\eta} \equiv 
+ \sum_{\eta\in B}^{\rm DF} V^B_{n\eta} \Ket{\eta} \;.
+\end{equation}
+%
+In Eq.~\eqref{e:a1-v.oep}, ${\bf C}$ is the LCAO\hyp{}MO matrix whereas ${\bf D}$
 is the one\hyp{}particle density matrix in AO basis.
 
 \section{Coulomb-like OEP via Cumulative Atomic Multipole Moments\label{a:oep-camm}}
@@ -2088,7 +2089,7 @@ and dipole moments are given by
        \sum_{\alpha\in x}\sum_{\beta} 
         P_{\alpha\beta}^{\rm eff}
    \left\{ 
-    \BraKet{\alpha}{\beta} {\bf R}_x - \tBraKet{\alpha}{\bf r}{\beta} 
+    \BraKet{\alpha}{\beta} {\bf R}_x - \tBraKet{\alpha}{\hat{\bf r}}{\beta} 
    \right\}
    \;,
  \end{align}

@@ -1,0 +1,109 @@
+#!/usr/bin/gnuplot
+#
+# ------------------------------------------------
+# Figure S1. Charge-Transfer Energy OEP Paper.
+# Bartosz Błasiak, Gundelfingen 12 November 2019
+# ------------------------------------------------
+#
+set terminal epslatex size 7.1cm,5.1cm color colortext standalone \
+   font "cmss, 8" \
+   header \
+   "\\newcommand{\\ft}[0]{\\footnotesize}\\usepackage{amsmath}\\usepackage{amssymb}\\usepackage{upgreek}\\usepackage{tikz}\\usetikzlibrary{arrows.meta,calc,decorations.markings,math,arrows.meta,shapes.arrows}"
+
+c_border = "#515151"
+c_side = "#c7c7c7"
+c_ol   = "#0c8a1b"
+c_est  = "#333333"
+c_efp2 = "#0035ba"
+
+set style line 1 lc rgb c_ol   lt 1 lw 2 pt 7 pi -1 ps 1.0   # OEP
+set style line 2 lc rgb c_ol   lt 1 lw 2 pt 6 pi -1 ps 1.0   # OL
+set style line 3 lc rgb c_efp2 lt 1 lw 2 pt 7 pi -1 ps 1.0   # EFP2
+set style line 4 lc rgb c_est  lt 1 lw 2 pt 7 pi -1 ps 1.5   # Est
+set style line 5 lc rgb c_side lt 1 lw 2 pt 7 pi -1 ps 1.0   # Eint(HF)
+
+set style line 6 lc rgb c_border lt 1 lw 1 
+
+set pointintervalbox 1.2
+
+# global settings for each subplot
+#set border 1+2+4 lw 3 lc rgbcolor c_border
+#set border lw 3 lc "red"
+
+unset key
+set grid x y
+
+# output file
+set output 'fig-s1.tex'
+set loadpath "./data/"
+set multiplot layout 1,1
+
+# physical scaling factors
+c1 = 627.509             # --> kcal/mole
+
+
+# origins
+ox   = 0.1000
+o11x = ox; o11y = 0.17;
+
+# scale
+s    = 0.77;
+
+# margins
+set bmargin 0
+set lmargin 0
+set rmargin 0
+set tmargin 0
+
+# label positions
+graph_label_x = 0.07
+graph_label_y = 0.88
+
+# ------ Graph I
+set format x "%2.1f"
+set format y "%2.1f"
+set format y2 "%3.1f"
+
+set xrange [-0.3:1.0]
+set yrange [-3:0.05]
+set y2range [-4.6:-2.2]
+
+set size square s, s
+set origin o11x, o11y
+set border 8 lw 3 lc rgbcolor c_side
+unset xtics
+unset ytics
+set y2tics (-4.5, -4.0, -3.5, -3.0, -2.5) tc rgbcolor c_side nomirror
+set y2label "$\\Delta E^{\\text{HF}}$ (kcal/mol)" tc rgbcolor c_side offset -1.4
+plot "water-methanol._6_311_pp_g_ss_AUX_accq.dat" u 1:2 axis x1y2  with lines       ls 5 notitle
+
+set size square s, s
+set origin o11x, o11y
+set border 7 lw 3 lc rgbcolor c_border
+unset y2tics
+unset y2label
+set xtics  ("" -0.4, "" -0.2, "" 0.0, "" 0.2, "" 0.4, "" 0.6, "" 0.8) tc rgbcolor c_border
+set ytics  (-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0) tc rgbcolor c_border nomirror 
+unset xlabel
+
+set key at graph 0.95, 0.37 box  opaque samplen 0.1 width 0.3 height 0.3
+set ylabel "$\\Delta E^{\\text{CT}}$ (kcal/mol)" offset 0.4 #tc rgbcolor c_border
+
+set xtics (-0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8) tc rgbcolor c_border nomirror
+set xlabel "Displacement (\\AA)"
+
+#set label 22 "\\Large \\textbf{(a)}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+
+plot "water-methanol._6_311_pp_g_ss_AUX_accq.dat" \
+                       u 1:13 axis x1y1  with lines       ls 4 notitle, \
+     ''                u 1:10 axis x1y1  with linespoints ls 2 notitle, \
+     ''                u 1: 7 axis x1y1  with linespoints ls 3 notitle, \
+     ''                u 1: 9 axis x1y1  with linespoints ls 1 notitle, \
+     NaN                      axis x1y1  with linespoints ls 1 t 'OEP', \
+     NaN                      axis x1y1  with linespoints ls 2 t 'OL', \
+     NaN                      axis x1y1  with linespoints ls 3 t 'EFP2', \
+     NaN                      axis x1y1  with lines       ls 4 t 'Est'
+
+
+# ------------------------------------------------------------------------------------------------- #
+unset multiplot

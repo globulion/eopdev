@@ -1,0 +1,190 @@
+#!/usr/bin/gnuplot
+#
+# ------------------------------------------------
+# Figure 2. Charge-Transfer Energy OEP Paper.
+# Bartosz Błasiak, Gundelfingen 12 November 2019
+# ------------------------------------------------
+#
+set terminal epslatex size 16.1cm,8.1cm color colortext standalone \
+   font "cmss, 8" \
+   header \
+   "\\newcommand{\\ft}[0]{\\footnotesize}\\usepackage{amsmath}\\usepackage{amssymb}\\usepackage{upgreek}"
+
+c_border = "#515151"
+c_side = "#c7c7c7"
+c_ol   = "#0c8a1b"
+c_est  = "#333333"
+c_efp2 = "#0035ba"
+c_oep  = c_ol
+
+c_hb =  "#404040"
+c_di =  "#4C990C"
+c_ct =  "#0000FF"
+c_wi =  "#FFFF00"
+c_pps=  "#FF0000"
+
+set style line 1 lc rgb "#404040" lw 0.8 dt 2
+set style line 2 lc rgb c_side   lw 0.5 dt 3
+
+psn = 1.0
+set style line 11 lc rgb c_hb   lt 1 lw 2 pt 4 pi -1 ps psn  # HB : EFP2
+set style line 12 lc rgb c_hb   lt 1 lw 2 pt 7 pi -1 ps psn  # HB : OEP
+set style line 21 lc rgb c_di   lt 1 lw 2 pt 4 pi -1 ps psn  # DI : EFP2
+set style line 22 lc rgb c_di   lt 1 lw 2 pt 7 pi -1 ps psn  # DI : OEP
+set style line 31 lc rgb c_ct   lt 1 lw 2 pt 4 pi -1 ps psn  # CT : EFP2
+set style line 32 lc rgb c_ct   lt 1 lw 2 pt 7 pi -1 ps psn  # CT : OEP
+set style line 41 lc rgb c_wi   lt 1 lw 2 pt 4 pi -1 ps psn  # WI : EFP2
+set style line 42 lc rgb c_wi   lt 1 lw 2 pt 7 pi -1 ps psn  # WI : OEP
+set style line 51 lc rgb c_pps  lt 1 lw 2 pt 4 pi -1 ps psn  # PPS: EFP2
+set style line 52 lc rgb c_pps  lt 1 lw 2 pt 7 pi -1 ps psn  # PPS: OEP
+
+
+set pointintervalbox 2.9
+set size ratio -1
+
+# global settings for each subplot
+#set border 1+2+4 lw 3 lc rgbcolor c_border
+#set border lw 3 lc "red"
+
+# output file
+set output 'fig-2.tex'
+set loadpath "./data/"
+set multiplot
+
+# physical scaling factors
+c1 = 627.509             # --> kcal/mole
+
+
+# origins
+o11x =-0.25; o11y = 0.1;
+o12x = 0.19; o12y = 0.1;
+
+# R2 box position
+ob1x = 0.07; ob1y = 0.86;
+ob2x = 0.59; ob2y = 0.96;
+
+# scale
+s    = 0.5;
+
+# margins
+set bmargin 2
+set lmargin 0
+set rmargin 0
+set tmargin 7
+
+# label positions
+graph_label_x1= -0.37
+graph_label_y1=  1.10
+graph_label_x2= -0.53
+graph_label_y2=  1.10
+
+set format x "%2.1f"
+set format y "%2.1f"
+
+set border lw 3 lc rgbcolor c_border
+
+
+# ------ Graph I
+set xrange [-13:1.0]
+set yrange [-18:1.0]
+#set grid xtics ytics mxtics mytics ls 1, ls 2
+set grid xtics ytics ls 1, ls 2
+
+set xtics 3
+set ytics 3
+set mxtics 3
+set mytics 3
+set size ratio -1
+set origin o11x, o11y
+plot  x with lines lw 3 lc rgbcolor c_border notitle
+
+set size ratio -1
+set origin o11x, o11y
+set xlabel "$\\Delta E^{\\text{CT}}_{\\text{Otto-Ladik}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set ylabel "$\\Delta E^{\\text{CT}}_{\\text{OEP}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set label 22 "\\Large \\textbf{(a)}" front at graph graph_label_x1,graph_label_y1 tc rgbcolor "#000000"
+set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
+set label 11 "$R^2=0.7354$" front at graph 0.1,0.9 tc rgbcolor "#515151"
+plot "stat_db_ncb31_6_311_pp_g_ss.dat" u 3:4 axis x1y1 with points pt 7 ps psn lc rgbcolor "#171717" notitle
+
+
+
+# ------ Graph II
+#set xtics  ("" -0.4, "" -0.2, "" 0.0, "" 0.2, "" 0.4, "" 0.6, "" 0.8) tc rgbcolor c_border
+#set ytics  (-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0) tc rgbcolor c_border nomirror 
+set xrange [-10.3:1.0]
+set yrange [-20.3:1.0]
+
+unset label 22
+unset label 11
+unset object 1
+unset key
+unset grid
+unset xlabel
+unset ylabel
+unset xtics
+unset ytics
+
+set size ratio -1
+set origin o12x, o12y
+plot  x with lines lw 3 lc rgbcolor c_border notitle
+
+set size ratio -1
+set origin o12x, o12y
+plot "stat_db_ncb31_6_311_pp_g_ss_WI.dat" \
+                       u 1:2 axis x1y1 with points ls 41 notitle,\
+     ''                u 1:4 axis x1y1 with points ls 42 notitle
+
+set size ratio -1
+set origin o12x, o12y
+
+plot "stat_db_ncb31_6_311_pp_g_ss_PPS.dat" \
+                       u 1:2 axis x1y1 with points ls 51 notitle,\
+     ''                u 1:4 axis x1y1 with points ls 52 notitle
+
+
+set size ratio -1
+set origin o12x, o12y
+plot "stat_db_ncb31_6_311_pp_g_ss_DI.dat" \
+                       u 1:2 axis x1y1 with points ls 21 notitle,\
+     ''                u 1:4 axis x1y1 with points ls 22 notitle
+
+set size ratio -1
+set origin o12x, o12y
+plot "stat_db_ncb31_6_311_pp_g_ss_CT.dat" \
+                       u 1:2 axis x1y1 with points ls 31 notitle,\
+     ''                u 1:4 axis x1y1 with points ls 32 notitle
+
+
+set grid x, y
+set xlabel "$\\Delta E^{\\text{CT}}_{\\text{Est}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set ylabel "$\\Delta E^{\\text{CT}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set label 22 "\\Large \\textbf{(b)}" front at graph graph_label_x2,graph_label_y2 tc rgbcolor "#000000"
+set xtics
+set ytics
+
+set key reverse Left at graph 2.30, 0.87 nobox  opaque spacing 1.2 samplen 0.1 width 0.3 height 0.3
+
+set size ratio -1
+set origin o12x, o12y
+plot "stat_db_ncb31_6_311_pp_g_ss_HB.dat" \
+                       u 1:2 axis x1y1 with points ls 11 notitle,\
+     ''                u 1:4 axis x1y1 with points ls 12 notitle,\
+     NaN                     axis x1y1 with points ls 12 pt 5 ps 2 title 'hydrogen bonded',\
+     NaN                     axis x1y1 with points ls 22 pt 5 ps 2 title 'dipole interacting',\
+     NaN                     axis x1y1 with points ls 32 pt 5 ps 2 title 'charge transfer',\
+     NaN                     axis x1y1 with points ls 42 pt 5 ps 2 title 'weakly interacting',\
+     NaN                     axis x1y1 with points ls 52 pt 5 ps 2 title "$\\pi$-$\\pi$ stacking"
+
+
+set size ratio -1
+set origin o12x, o12y
+set key reverse Left at graph 1.55, 0.3  nobox  opaque spacing 2 samplen 0.1 width 0.3 height 0.3
+plot NaN axis x1y1 with points lc rgbcolor "#404040" pt 7 ps 2 title "OEP",\
+     NaN axis x1y1 with points lc rgbcolor "#404040" pt 4 ps 2 title "EFP2"
+
+
+# ------------------------------------------------------------------------------------------------- #
+
+
+unset multiplot
