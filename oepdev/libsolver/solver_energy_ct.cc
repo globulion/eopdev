@@ -1273,6 +1273,10 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   std::shared_ptr<psi::Vector> u_2 = this->compute_u_vector(rmo_2, rmo_1, mol_1);
   std::shared_ptr<psi::Matrix> w_1 = this->compute_w_matrix(mol_1, mol_2, rmo_1);
   std::shared_ptr<psi::Matrix> w_2 = this->compute_w_matrix(mol_2, mol_1, rmo_2);
+  u_1->set_name("Auxiliary calculables: Vector u_1"); u_1->print();
+  w_1->set_name("Auxiliary calculables: Matrix w_1"); w_1->print();
+  u_2->set_name("Auxiliary calculables: Vector u_2"); u_2->print();
+  w_2->set_name("Auxiliary calculables: Matrix w_2"); w_2->print();
 
   // ---> Get distributed effective charges <--- //
   std::vector<std::shared_ptr<psi::Matrix>> q_1 = oep_1->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();

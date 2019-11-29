@@ -128,6 +128,7 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
         else 
              throw psi::PSIEXCEPTION("OEPDEV: Invalid OEP build category selected!");
 
+      //oep->localize(); // add later option for it
         oep->compute();
 	oep->print_header();
 	oep->print();
