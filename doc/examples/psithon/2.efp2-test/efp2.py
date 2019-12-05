@@ -13,7 +13,7 @@ def oei(wfn_i, wfn_j, t='s'):
 def transform(A, B, C):
     return numpy.linalg.multi_dot([A.T, B, C])
 def get_V(mol, bfs):
-    "Potential matrix of mol's nuclei in bfs AO basis"      
+    "Potential energy matrix of interaction of mol's nuclei with electronic density, in bfs AO basis of electronic density"
     ep = psi4.core.ExternalPotential()
     BohrToAngstrom = 0.5291772086
     for a in range(mol.natom()):

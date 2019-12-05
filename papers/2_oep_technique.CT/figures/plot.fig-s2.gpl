@@ -1,0 +1,162 @@
+#!/usr/bin/gnuplot
+#
+# ------------------------------------------------
+# Figure 2. Charge-Transfer Energy OEP Paper.
+# Bartosz Błasiak, Gundelfingen 12 November 2019
+# ------------------------------------------------
+#
+set terminal epslatex size 16.1cm,14.1cm color colortext standalone \
+   font "cmss, 8" \
+   header \
+   "\\newcommand{\\ft}[0]{\\footnotesize}\\usepackage{amsmath}\\usepackage{amssymb}\\usepackage{upgreek}"
+
+c_border = "#515151"
+c_side = "#c7c7c7"
+c_data =  "#404040"
+
+set style line 1 lc rgb c_data lw 0.8 dt 2
+set style line 2 lc rgb c_side lw 0.5 dt 3
+
+psn = 1.0
+set style line 11 lc rgb c_data lt 1 lw 2 pt 4 pi -1 ps psn 
+
+set pointintervalbox 2.9
+set size ratio -1
+
+# global settings for each subplot
+
+# output file
+set output 'fig-s2.tex'
+set loadpath "./data/"
+set multiplot layout 2,2
+
+# origins
+o11x = 0.05; o11y = 0.55;
+o12x = 0.53; o12y = 0.55;
+o21x = 0.05; o21y = 0.07;
+o22x = 0.53; o22y = 0.07;
+
+# margins
+set bmargin 2
+set lmargin 0
+set rmargin 0
+set tmargin 7
+
+# label positions
+graph_label_x1= -0.37
+graph_label_y1=  1.10
+graph_label_x2= -0.53
+graph_label_y2=  1.10
+
+set format x "%2.1f"
+set format y "%2.1f"
+
+set border lw 3 lc rgbcolor c_border
+
+
+# ------ Graph I
+set xrange [-45:10.0]
+set yrange [-45:10.0]
+#set grid xtics ytics mxtics mytics ls 1, ls 2
+set grid xtics ytics ls 1, ls 2
+
+set xtics 12
+set ytics 12
+set mxtics 3
+set mytics 3
+set size ratio -1
+set origin o11x, o11y
+plot  x with lines lw 3 lc rgbcolor c_border notitle
+
+set size ratio -1
+set origin o11x, o11y
+set xlabel "$\\Delta E^{\\text{Coul}}_{\\text{DDS/HF}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set ylabel "$\\Delta E^{\\text{Coul}}_{\\text{EFP2}}$ GAMESS US (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set label 22 "\\Large \\textbf{(a)}" front at graph graph_label_x1,graph_label_y1 tc rgbcolor "#000000"
+plot "db_ncb31_gamess_6311ppgss.dat" u 5:1 axis x1y1 with points pt 7 ps psn lc rgbcolor c_data notitle
+
+# ------ Graph II
+set xrange [0.0:50]
+set yrange [0.0:50]
+#set grid xtics ytics mxtics mytics ls 1, ls 2
+set grid xtics ytics ls 1, ls 2
+
+unset xlabel 
+unset ylabel
+unset label 22
+
+set xtics 12
+set ytics 12
+set mxtics 3
+set mytics 3
+set size ratio -1
+set origin o12x, o12y
+plot  x with lines lw 3 lc rgbcolor c_border notitle
+
+set size ratio -1
+set origin o12x, o12y
+set xlabel "$\\Delta E^{\\text{Ex-Rep}}_{\\text{DDS/HF}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set ylabel "$\\Delta E^{\\text{Ex-Rep}}_{\\text{EFP2}}$ GAMESS US (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set label 22 "\\Large \\textbf{(b)}" front at graph graph_label_x1,graph_label_y1 tc rgbcolor "#000000"
+plot "db_ncb31_gamess_6311ppgss.dat" u 6:2 axis x1y1 with points pt 7 ps psn lc rgbcolor c_data notitle
+
+# ------ Graph III
+set xrange [-12:0.0]
+set yrange [-12:0.0]
+#set grid xtics ytics mxtics mytics ls 1, ls 2
+set grid xtics ytics ls 1, ls 2
+
+unset xlabel 
+unset ylabel
+unset label 22
+
+set xtics 2
+set ytics 2
+set mxtics 3
+set mytics 3
+set size ratio -1
+set origin o21x, o21y
+plot  x with lines lw 3 lc rgbcolor c_border notitle
+
+set size ratio -1
+set origin o21x, o21y
+set xlabel "$\\Delta E^{\\text{Ind}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set ylabel "$\\Delta E^{\\text{Ind}}_{\\text{EFP2}}$ GAMESS US (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set label 22 "\\Large \\textbf{(c)}" front at graph graph_label_x1,graph_label_y1 tc rgbcolor "#000000"
+plot "db_ncb31_gamess_6311ppgss.dat" u 7:3 axis x1y1 with points pt 7 ps psn lc rgbcolor c_data notitle
+
+
+# ------ Graph IV
+set xrange [-12:1.0]
+set yrange [-12:1.0]
+#set grid xtics ytics mxtics mytics ls 1, ls 2
+set grid xtics ytics ls 1, ls 2
+
+unset xlabel 
+unset ylabel
+unset label 22
+
+set xtics 2
+set ytics 2
+set mxtics 3
+set mytics 3
+set size ratio -1
+set origin o22x, o22y
+plot  x with lines lw 3 lc rgbcolor c_border notitle
+
+set size ratio -1
+set origin o22x, o22y
+set xlabel "$\\Delta E^{\\text{CT}}_{\\text{EFP2}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set ylabel "$\\Delta E^{\\text{CT}}_{\\text{EFP2}}$ GAMESS US (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set label 22 "\\Large \\textbf{(d)}" front at graph graph_label_x1,graph_label_y1 tc rgbcolor "#000000"
+plot \
+     "db_ncb31_gamess_6311ppgss.dat" u 9:4 axis x1y1 with points pt 3 ps psn lc rgbcolor "#0000FF" notitle,\
+     "db_ncb31_gamess_6311ppgss.dat" u 8:4 axis x1y1 with points pt 7 ps psn lc rgbcolor c_data notitle
+
+
+
+
+# ------------------------------------------------------------------------------------------------- #
+
+
+unset multiplot

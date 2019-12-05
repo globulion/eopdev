@@ -56,6 +56,7 @@ e:ct-murell-etal.vin.oep.aux-var.w
 e:ect-oep.prefinal                      OEP-based model: prefinal
 e:ect-oep.final                         OEP-based model: final
 e:ect-oep.final-scaled                  OEP-based model: final: scaled
+e:ect-oep.final-vin                     OEP-based model: final form of V_in
 e:ct-pthf-ref                           CT/HF0 estimate
 e:de-pol-dds                            DDS(Pol)
 e:ind-ref                               Ind(EFP2-like)

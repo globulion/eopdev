@@ -56,6 +56,8 @@ set {
     basis                         6-31+G
     df_basis_oep                  aug-cc-pVDZ-jkfit
     df_basis_int                  aug-cc-pVDZ-jkfit
+    EFP2_CT_POTENTIAL_INTS        DMTP
+    EFP2_CT_NO_OCTUPOLES          True
     dmtp_conver                   R1
     guess                         core
     print                         1
