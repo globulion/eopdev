@@ -1425,7 +1425,7 @@ The reference (zero\hyp{}displacement) geometries
 were obtained by
 performing energy\hyp{}optimizations at the HF/6-31+G(d,p) level,
 as implemented in 
-the {\sc Gaussian~16} quantum chemistry program package.\cite{Gaussian16}
+the {\sc Gaussian16} quantum chemistry program package.\cite{Gaussian16}
 Subsequently, 30 displaced geometries for each model complex
 were obtained by translating one of the monomers along the vector 
 co\hyp{}linear with the H-bond or N--N distance in the case of ammonium nitrate.
@@ -1972,20 +1972,24 @@ for water-methanol complex at 6-311++G(d,p) primary basis set\footnotemark[1]}
 }
 \label{t:5}
 \begin{ruledtabular}
-\begin{tabular}{llccc}
-                      && Water-Methanol && Water dimer \\
-\cline{3-5}
-OL                    &&14749.1 &&  2909.9\\     %14716.1 &&  2876.9 added 33 sec and 17 sec for ERI/AO calculation from timer.dat
-EFP2                  &&  42.3  &&    15.4\\
-OEP/aug-cc-pVQZ-jkfit &&   4.7  &&     1.8\\
-OEP/aug-cc-pVTZ-jkfit &&   4.0  &&     1.5\\
-OEP/aug-cc-pVDZ-jkfit &&   3.8  &&     1.4\\
-OEP/6-311++G(d,p)     &&   3.0  &&     1.0\\
-OEP/mini\footnotemark[2]&& 2.5  &&     0.75\\
+\begin{tabular}{llccccc}
+                      && \multicolumn{2}{c}{Water-Methanol} && \multicolumn{2}{c}{Water dimer} \\
+\cline{3-4}
+\cline{6-7}
+OL                    &&1.48$\times 10^{4}$ 
+                                &(-0.81)&& 2.91$\times 10^{3}$     
+                                                    &(-0.85) \\  %14716.1 &&  2876.9 added 33 sec and 17 sec for ERI/AO calculation from timer.dat
+EFP2                  &&  42.7  &(-1.27)&&   15.6   &(-1.06) \\
+OEP/aug-cc-pVQZ-jkfit &&   4.36 &(-1.03)&&    1.64  &(-1.05) \\
+OEP/aug-cc-pVTZ-jkfit &&   3.63 &(-1.07)&&    1.35  &(-1.09) \\
+OEP/aug-cc-pVDZ-jkfit &&   3.60 &(-1.05)&&    1.26  &(-1.03) \\
+OEP/6-311++G(d,p)     &&   2.74 &(-1.37)&&    0.933 &(-1.31) \\
+OEP/mini\footnotemark[2]&& 2.25 &(-1.34)&&    0.623 &(-1.13) \\
 \end{tabular}
 \end{ruledtabular}
 %
 \footnotetext[1]{1.2 GHz AMD EPYC\texttrademark{} 7301 16-Core Processor, calculations performed on 1 core. 
+CT/HF0 energies are given in parentheses for reference (kcal/mol).
 See also the implementation details in Section~\ref{s:4.calculations} and Section~\ref{ss:5.2.cost}.}
 \footnotetext[2]{This work, Table~\ref{t:3}.}
 %
@@ -1995,7 +1999,7 @@ See also the implementation details in Section~\ref{s:4.calculations} and Sectio
 
 In this work, the minimal uncontracted auxiliary basis sets were optimized for water and methanol
 that consist of only $s$ and $p$\hyp{}type functions,
-and the orbital exponents are shown in Table~\ref{t:3},
+and the orbital exponents are shown in Table~\ref{t:3}
 whereas the procedure is outlined in Appendix~\ref{a:auxiliary-basis}.
 Unfortunately, we were not able to successfully fit the auxiliary basis sets
 for NH$_4^+$ and NO$_3^-$ using current approach
@@ -2007,7 +2011,7 @@ for water\hyp{}methanol system is correctly reproduced by the OEP/mini variant
 which
 performs comparably well as the OEP/aug-cc-pVQZ-jkfit. 
 The total time required for evaluation of the CT/HF0 energies by using EFP2 and OEP
-models was measured for this system and also for the water-water system in their reference geometries,
+models was measured for this system and also for the water\hyp{}water system in their reference geometries,
 and the results are shown in Table~\ref{t:5}. 
 Profiling of the code for OL, EFP2 and OEP methods was performed 
 for all the computational operations required for a
@@ -2023,25 +2027,27 @@ HF procedure, as well as calculations of the
 OEP matrices from Eq.~\eqref{e:v-oep.ct} 
 via EDF-2 scheme and atomic effective charges from Eq.~\eqref{e:a1-v.oep-camm.q}
 using the OED in Eq.~\eqref{e:oed-group-iii}
-was not included because these quantities constitute the effective fragments
+were not included because these quantities constitute the effective fragments
 by definition.
 The above profiling settings allows one to compare the performances
-of OL, EFP2 and OEP methods as effective fragment parameter methods.
+of the OL, EFP2 and OEP methods as effective fragment parameter methods.
 
 Even for the rather large quadruple\hyp{}$\zeta$ auxiliary basis set,
-the OEP\hyp{}based model is roughly 9 times more efficient than evaluating the EFP2 CT energy.
+the OEP\hyp{}based model is roughly 10 times more efficient than evaluating the EFP2 CT energy.
 Reducing the size of auxiliary basis set up to minimal basis from Table~\ref{t:3}
-scales down the cost further by a factor of $1.9$ in water-methanol system,
-and $2.4$ in water dimer system, reaching in total roughly 20\hyp{}fold
+scales down the cost further by a factor of $2.0$ in water\hyp{}methanol system,
+and $2.6$ in water dimer system, reaching in total roughly 20\hyp{}fold
 reduction in CPU time as compared to the EFP2 model, and more than three orders of magnitude
 as compared to the OL model. Since the size of such a minimal basis
 is very small as compared to the primary basis sets recommended for constructing
 the EFP2 parameters, the additional superimposition costs of the auxiliary basis
-should be negligible.
+should be negligible. 
 It is also worth mentioning here that, while using the usual 6-311++G(d,p) basis
 in a role of auxiliary basis set 
-gave already accurate results, the STO-3G basis as auxiliary space resulted
-in CT energies of around $-8$ kcal/mol (data not shown). Therefore, the basis set optimization
+gave already accurate results, the minimal STO-3G basis as auxiliary space resulted
+in CT energies of $-8.4$ and $-8.8$ kcal/mol in water\hyp{}methanol and water dimer systems (data not shown),
+much lower than the reference values of $-0.81$ and $-0.85$ kcal/mol, respecively. 
+Therefore, the basis set optimization
 described in Appendix~\ref{a:auxiliary-basis} was necessary for the minimal basis to be applicable
 in the CT calculations using OEP technique, with OEP's generated by the EDF-2 scheme
 developed in Section~\ref{sss:2.3.1.GDF-2}. 
@@ -2094,8 +2100,9 @@ It should be emphasized that there is still more room for optimization of the
 OEP technique. First of all, not only group (i) terms, but also
 all the summations over the virtual orbitals can be optimized,
 e.g., by using the QUAMBO's, following Xu and Gordon.\cite{Xu.Gordon.JCP.2013}
-In addition, effective atomic charges are most of the time very small
-and could be neglected, leading to further cost reductions.
+Secondly, effective atomic charges $q_y^{B,(nj)}$ from Eq.~\eqref{e:ct.group-iii.final.b}
+are most of the time very small
+and could be neglected, leading to further cost reductions (not shown here).
 In addition, the possibility of the OEP\hyp{}based formulation of the direct EFP2 CT formulation
 should be studied in the future as well.
 %Since EFP2 method is based on the PT/HF0 foundations

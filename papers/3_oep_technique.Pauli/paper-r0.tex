@@ -1,0 +1,376 @@
+\input{header.tex}
+\begin{document}
+\preprint{AIP/123-OEP}
+
+\title{Ab Initio Effective One-Electron Potential Operators. II.
+Applications for Exchange-Repulsion Energy in Effective Fragment Potentials}
+
+\author{Bartosz B{\l}asiak}
+\email[]{blasiak.bartosz@gmail.com}
+\homepage[]{https://www.polonez.pwr.edu.pl}
+
+\author{Wojciech Bartkowiak}
+
+\affiliation{Department of Physical and Quantum Chemistry, Faculty of Chemistry, 
+Wroc{\l}aw University of Science and Technology, 
+Wybrze{\.z}e Wyspia{\'n}skiego 27, Wroc{\l}aw 50-370, Poland}
+
+\date{\today}
+
+\begin{abstract}
+Recently, it was shown that
+the effective one\hyp{}electron potentials (OEP) method
+of effective elimination of the electron repulsion integrals
+can be used to lower the computational cost
+of evaluation of the charge transfer interaction energy
+within the effective fragment potential method (EFP2)
+by the factor of 20, making it no longer a bottleneck
+in EFP2\hyp{}based simulations of complex systems.
+Here, OEP technique 
+is used to enhance computational efficiency in evaluating the
+exchange\hyp{}repulsion EFP2 interaction energy
+by incorporating the kinetic energy operator in the OEP
+via the extended density fitting in incomplete auxiliary basis.
+It is shown that the computational cost can be reduced by a factor
+of 1.5 and kinetic energy integrals are no longer necessary to evaluate.
+\end{abstract}
+
+\pacs{}
+
+\maketitle
+
+\tableofcontents
+
+\section{\label{s:1.introduction}Introduction}
+
+The exchange\hyp{}repulsion (EXR) interaction energy in the
+second generation of the
+effective fragment potentials (EFP2) method\cite{Gordon.Smith.Xu.Slipchenko.AnnuRevPhysChem.2013,
+   Nguyen.Pachter.Day.JCP.2014,
+   Day.Jensen.Gordon.Webb.Stevens.Krauss.Garmer.Basch.Cohen.JCP.1996}
+describes the non\hyp{}electrostatic repulsion
+between two Hartree\hyp{}Fock\cite{Roothaan.RevModPhys.1951} 
+isolated and unperturbed wavefunctions in an interacting
+bi\hyp{}molecular complex.
+The EXR EFP2 term was derived from the intermolecular perturbation theory
+of Murrell et al.\cite{Murrell.Randic.Williams.Longuet-Higgins.ProcRSocLondA.1965,Otto.Ladik.ChemPhys.1975} 
+up to second order with respect to the wavefunction overlap,
+and is given by~\cite{Jensen.JCP.1996,Jensen.Gordon.MolPhys.1996,Jensen.Gordon.JCP.1998}
+%
+\begin{equation} \label{e:exr-efp2}
+ E^{\rm Ex-Rep} \approx
+ E^{\rm Ex} +
+ E^{\rm Rep}(S^{-1}) + 
+ E^{\rm Rep}(S^{-2}) \;.
+\end{equation}
+%
+In the above equation,
+$E^{\rm Ex}$ is the exchange energy,\cite{Jensen.JCP.1996}
+%
+\begin{equation} \label{e:exc-efp2}
+ E^{\rm Ex} \approx 2 \sum_{i\in A}^{\rm Locc} \sum_{j\in B}^{\rm Locc} 
+ \sqrt{\frac{-2\ln{\vert S_{ij}\vert}}{\pi}} \frac{S^2_{ij}}{r_{ij}} \;,
+\end{equation}
+%
+whereas the first\hyp{} and second\hyp{}order repulsion terms
+are accordingly~\cite{Jensen.Gordon.MolPhys.1996,Jensen.Gordon.JCP.1998}
+%
+\begin{multline} \label{e:rep-efp2.s1}
+ E^{\rm Rep}(S^{-1}) \approx - 2 \sum_{i\in A}^{\rm Locc} \sum_{j\in B}^{\rm Locc} S_{ij} \\
+ \times
+ \left\{
+ \sum_{k\in A}^{\rm Locc} F_{ik}^A S_{kj} 
++\sum_{l\in B}^{\rm Locc} F_{jl}^A S_{li} 
+ -2T_{ij}
+ \right\}
+\end{multline}
+%
+and 
+%
+\begin{multline} \label{e:rep-efp2.s2}
+ E^{\rm Rep}(S^{-2}) \approx 2 \sum_{i\in A}^{\rm Locc} \sum_{j\in B}^{\rm Locc} S_{ij}^2 
+ \\ \times 
+ \Bigg\{
+ \sum_{x\in A}^{\rm At}  \frac{-Z_x}{r_{xb}}
++\sum_{y\in B}^{\rm At}  \frac{-Z_y}{r_{ya}} 
++\sum_{k\in A}^{\rm Locc} \frac{   2}{r_{jk}}
++\sum_{l\in B}^{\rm Locc} \frac{   2}{r_{il}}
+-r_{ij}^{-1}
+ \Bigg\} \;.
+\end{multline}
+%
+The indices $i$, $j$, $k$ and $l$ label the localized occupied orbitals (LMO's, denoted by `Locc')
+located at their charge centroids ${\bf r}_{i(j)}$,
+whereas $x$ and $y$ label atomic nuclei (denoted by `At') with atomic numbers 
+$Z_{x(y)}$ located at ${\bf r}_{x(y)}$. The relative distances are
+defined by $r_{uw}=\vert {\bf r}_u-{\bf r}_w\vert$.
+It is known that evaluating Eq.~\eqref{e:exr-efp2}
+is remarkably efficient and gives usually very accurate
+estimates of the benchmark EXR energy according to the symmetry 
+adapted perturbation theory\cite{Jeziorski.Moszynski.Szalewicz.ChemRev.1994} (SAPT).
+The computational cost of
+the exchange and second\hyp{}order terms
+is much less than the first\hyp{}order term,
+which requires evaluaton of not only the one\hyp{}electron overlap,
+but also the kinetic
+energy integrals in a space of occupied molecular orbital (MO) basis.
+
+In this work, an alternative formulation for the first\hyp{}order
+term is proposed based on the effective one\hyp{}electron potential (OEP)
+operator technique developed in the preceeding contribution.~\cite{Blasiak.Bednarska.Choluj.Bartkowiak.JCP.2019}
+It is shown that calculation of kinetic energy integrals can be avoided
+by introducing OEP's.
+
+\section{Results}
+
+A theoretical foundation of the
+first\hyp{}order repulsive term in the EFP2 model
+is the perturbation theory of
+Murrell et~al.~\cite{Murrell.Randic.Williams.Longuet-Higgins.ProcRSocLondA.1965} 
+in which
+%
+\begin{multline} \label{e:rep.murrell-etal.S1}
+    E^{\rm Rep}(S^{-1}) = -2\sum_{i\in A}^{\rm Locc} \sum_{j\in B}^{\rm Locc}
+               S_{ij} \Big\{
+           W^A_{ij} 
+         + W^B_{ji} \\
+ + \sum_{k\in A}^{\rm Occ} \left[ 2\BraKet{ij}{kk} - \BraKet{ik}{jk} \right] 
+ + \sum_{l\in B}^{\rm Occ} \left[ 2\BraKet{ij}{ll} - \BraKet{il}{jl} \right]
+                \Big\}
+\end{multline}
+%
+where $W^A_{ij} \equiv \tBraKet{i}{\hat{v}^A_{\rm nuc}}{j}$,
+$\hat{v}^A_{\rm nuc}$
+is the nucleus\hyp{}electron potential operator
+and
+ERI is defined by
+%
+\begin{equation} \label{e:eri}
+	\BraKet{\alpha\beta}{\gamma\delta} \equiv
+	\iint 
+	\frac{ \phi_\alpha^{*}({\bf r}_1) \phi_\beta({\bf r}_1) 
+	       \phi_\gamma^{*}({\bf r}_2) \phi_\delta({\bf r}_2) }{ \vert {\bf r}_1 - {\bf r}_2 \vert}
+	d{\bf r}_1 d{\bf r}_2  \;.
+\end{equation}
+%
+Now, note that the Coulomb and exchange integrals can be re\hyp{}cast as follows:
+%
+\begin{subequations}
+ \begin{align}
+ \BraKet{ij}{kk} &\equiv \sum_{\mu\in A} 
+     C_{\mu i}^A \tBraKet{\mu}{\hat{v}_{kk}}{j} \;, \\
+ \BraKet{ik}{jk} &\equiv \sum_{\mu\in A} 
+     C_{\mu k}^A \tBraKet{\mu}{\hat{v}_{ik}}{j} \;.
+ \end{align}
+\end{subequations}
+%
+%Similarly, the exchange integrals reduce to
+%
+%\begin{equation}
+% \BraKet{ik}{jk} \equiv \sum_{\mu\in A} 
+%     C_{\mu k}^A \tBraKet{\mu}{\hat{v}_{ik}}{j} \;.
+%\end{equation}
+%
+In the above equations, the auxiliary potential operators are given by
+%
+\begin{equation}
+  \hat{v}_{ik} \equiv \int d{\bf r} \Ket{{\bf r}} 
+        \left[
+        \int d{\bf r}' \frac{\phi_i^{*}({\bf r}') \phi_k({\bf r}')}{\vert {\bf r}' - {\bf r}\vert}
+        \right] \Bra{{\bf r}} \;.
+\end{equation}
+%
+ERI's can be effectively eliminated from Eq.~\eqref{e:rep.murrell-etal.S1} 
+by using the following prescription~\cite{Blasiak.Bednarska.Choluj.Bartkowiak.JCP.2019}
+%
+\begin{equation} \label{e:ft-reduction}
+	\sum_t \sum_{ij}\sum_{kl\in A} {\mathcal{F}}_t\left[ 
+   \BraKet{ij}{k^Al^A}
+ \right] = \sum_{ij} \tBraKet{i}{\hat{v}_{\text{eff}}^A}{j} \;.
+\end{equation}
+%
+where ${\mathcal{F}}_t$ is a certain and well defined functional of ERI's.
+Application of Eq.~\eqref{e:ft-reduction} enables to define
+a joint OEP
+operator constructed from nuclear, Coulomb and exchange parts 
+as
+%
+\begin{equation}
+ V^A_{ij} + 
+ \sum_{k\in A}^{\rm Occ} 
+  \left\{ 2\BraKet{ij}{kk} - \BraKet{ik}{jk} \right\}
+\equiv \sum_{\mu\in A} \tBraKet{\mu}{ 
+\hat{v}^{A[\mu i]}_{\rm eff}
+ }{j}
+\end{equation}
+%
+with
+%
+\begin{equation}
+ \hat{v}^{A[\mu i]}_{\rm eff} \equiv C_{\mu i} \hat{v}^A_{\rm nuc} + 
+ \sum_{k\in A}^{\rm Occ} \left[
+ 2C_{\mu i}^A \hat{v}^A_{kk} - C_{\mu k}^A \hat{v}^A_{ik}
+ \right] \;.
+\end{equation}
+%
+%The nuclear part can also be incorporated within the effective potential
+%resulting in the following reduction
+%
+%
+On the other hand, it immediately follows that
+%
+\begin{equation}
+ \hat{v}^{A[\mu i]}_{\rm eff} \Ket{\mu} = 
+  \sum_{k\in A}^{\rm Occ} \left\{
+     2\hat{v}^A_{kk} \Ket{i} - \hat{v}^A_{ik} \Ket{k}
+  \right\} \;.
+\end{equation}
+%
+For practical calculations, the right hand side of the above equation can be expanded 
+in the auxiliary basis,
+%
+\begin{equation} \label{e:v-oep.rep}
+  \sum_{k\in A}^{\rm Occ} \left\{
+     2\hat{v}^A_{kk} \Ket{i} - \hat{v}^A_{ik} \Ket{k}
+  \right\} \cong
+  \sum_{\xi\in A}^{\rm DF} 
+  V_{\xi i}^A \Ket{\xi} \;,
+\end{equation}
+%
+where the matrix ${\bf V}^A$ can be considered as effective fragment parameters.
+Doing the same operations on the twin operators associated with the molecule $B$
+original theory of Murrell et. al from Eq.~\eqref{e:rep.murrell-etal.S1}
+reduces to
+%
+\begin{equation} \label{e:rep.murrell-etal.S1.oep}
+    E^{\rm Rep}(S^{-1}) \cong 
+ -2\sum_{i\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}
+               S_{ij} \Big\{
+           \sum_{\xi \in A}^{\rm DF} V_{\xi i}^A S_{\xi j}
+         + \sum_{\eta\in B}^{\rm DF} V_{\eta j}^B S_{\eta i}
+                \Big\} \;,
+\end{equation}
+%
+where 
+effective fragment parameters
+%the matrix elements $V_{\xi i}^A$ 
+can be obtained 
+from the extended density fitting\cite{Blasiak.Bednarska.Choluj.Bartkowiak.JCP.2019} (EDF)
+by
+%
+\begin{equation} \label{e:rep.murrell-etal.S1.oep-edf}
+            V_{\xi i}^X = \sum_{\eta\in X}^{\rm DF} 
+                          \sum_{\varepsilon,\zeta\in X}^{\rm RI}
+%                         \sum_{\zeta\in A}^{\rm RI}
+                          \left[ {\bf R}^{-1} \right]_{\xi\eta} R_{\eta\varepsilon} 
+                          \left[ {\bf S}^{-1} \right]_{\varepsilon\zeta} 
+                          \tBraKet{\zeta}{\hat{v}_{\rm eff}^{X[\zeta i]}}{i}
+                \;.
+\end{equation}
+%
+In the procedure, the required OEP matrix elements can be calculated from
+%
+\begin{equation} \label{e:rep.murrell-etal.S1.oep-v}
+   \tBraKet{\zeta}{\hat{v}_{\rm eff}^{X[\zeta i]}}{i}
+     = \sum_{x\in X}^{\rm At} W_{\zeta i}^{(x)} 
+        + \sum_{\beta\gamma\delta\in X}^{\rm AO}
+           \left\{ 
+             2 C_{\beta i}^X D_{\gamma\delta}^X - C_{\gamma i}^X D_{\beta \delta}^X
+           \right\}
+           \BraKet{\zeta\beta}{\gamma\delta} \;,
+\end{equation}
+%
+where ${\bf D}^X$ and ${\bf C}^X$ is the one\hyp{}particle AO density and
+the LCAO\hyp{}MO matrices of isolated molecule $X$, respectively.
+%where $\{\phi_\alpha\}$ is the test basis set, assumed here to be identical
+%to the intermediate basis set necessary to perform the extended density fitting (EDF).
+%
+Eq.~\eqref{e:rep.murrell-etal.S1.oep} and Eq.~\eqref{e:rep-efp2.s1} have almost
+the same form, with two exceptions in the new OEP formulation: 
+(i) only overlap integrals, which are relatively computationally inexpensive,
+need to be evaluated, instead of additional kinetic energy integrals in the EFP2
+formulation that are slightly more expensive;
+(ii) overlap integrals need to be evaluated also between
+auxiliary basis set. The smaller the size of the auxiliary basis, the less expensive
+evaluation of the $E^{\rm Rep}(S^{-1})$ becomes. 
+%\section{\label{s:5.results}Results and Discussion}
+
+Three complexes: 
+(i) (H$_2$O)$_2$, 
+(ii) H$_2$O--HOCH$_3$, 
+(iii) (DMSO)$_2$,
+were chosen as model systems to analyze the asymptotic dependence 
+of EXR energy, which is shown in Figure~XXX. 
+The reference (zero\hyp{}displacement) geometries
+were obtained as described in Ref.\cite{Blasiak.Bednarska.Choluj.Bartkowiak.JCP.2019} 
+and the structures  
+along with the translation direction are depicted
+in the insets in Figure~XXX.
+Energy\hyp{}optimizations were performed at the HF/6-31+G(d,p) level,
+as implemented in 
+the {\sc Gaussian16} quantum chemistry program package.\cite{Gaussian16}
+Small auxiliary basis sets for H$_2$O, CH$_3$OH and DMSO were developed
+to minimize the computational cost of evaluating the summation terms
+from Eq.~\eqref{e:rep.murrell-etal.S1.oep}. For this purpose, the basis set optimization 
+as described in the Appendix~A in Ref.~\cite{Blasiak.Bednarska.Choluj.Bartkowiak.JCP.2019} was implemented
+in conjunction with the basin hopping global optimization algorithm,  %cite
+available in the SciPy Python module. %cite
+
+
+
+To investigate the accuracy of the OEP\hyp{}based repulsion
+term across
+%perform statistical error analysis for 
+a variety of
+interacting systems, databases
+of bi\hyp{}molecular complexes in the non\hyp{}covalent
+interactions database NCB31 developed by the Truhlar's 
+group,\cite{Zhao.Schultz.Truhlar.JCTC.2006,
+Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
+as well as the BioFragment Database subset BBI for backbone\hyp{}backbone
+interactions in proteins,\cite{Burns.Faver.Zheng.Marshall.Smith.Vanommeslaeghe.MacKerell.Merz.Sherrill.JCP.2017} 
+as implemented in the {\sc Psi4}
+program,\cite{Psi4.JCTC.2017}
+were utilized as sources of equilibrium structures. 
+In Figure~YYY we show statistical error analysis...
+
+%In particular, the subsets from the NCB31 database were separately considered:
+%the HB6/04 hydrogen bonding database,\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
+%the DI6/04 dipoleinteraction database,\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
+%the CT7/04 charge-transfer complex database,\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
+%the WI7/05 weak interaction database,\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
+%and PPS5/05 the $\pi$-$\pi$ stacking database.\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
+
+
+
+
+
+\section{\label{s:6.conclusions}Summary and a few concluding remarks}
+
+Therefore, the following model is proposed for the
+total exchange\hyp{}repulsion energy in the EFP2 model: 
+(i) $E^{\rm Ex}$ and $E^{\rm Rep}(S^{-2})$ are evaluated
+from the original EFP2 formulae of Jensen and Gordon, i.e.,
+from Eqs.~\eqref{e:exc-efp2} and \eqref{e:rep-efp2.s2}, respectively;
+(ii) $E^{\rm Rep}(S^{-1})$ term is evaluated from Eq.~\eqref{e:rep.murrell-etal.S1.oep}
+and assuming a small auxiliary basis sets, optimized for each
+EFP2 fragment separately.
+
+
+
+
+\begin{acknowledgments}
+This project is carried out under POLONEZ programme which has received funding from the European Union's
+Horizon~2020 research and innovation programme under the Marie Sk{\l}odowska-Curie grant agreement 
+No.~665778. This project is funded by National Science Centre, Poland 
+(grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+\end{acknowledgments}
+
+%%
+
+
+% -----------------------
+\bibliography{references}
+% -----------------------
+
+\end{document}
