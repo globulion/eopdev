@@ -1,0 +1,189 @@
+#!/usr/bin/gnuplot
+#
+# ------------------------------------------------
+# Figure 1. Charge-Transfer Energy OEP Paper.
+# Bartosz Błasiak, Gundelfingen 12 November 2019
+# ------------------------------------------------
+#
+set terminal epslatex size 7.1cm,13cm color colortext standalone \
+   font "cmss, 8" \
+   header \
+   "\\newcommand{\\ft}[0]{\\footnotesize}\\usepackage{amsmath}\\usepackage{amssymb}\\usepackage{upgreek}\\usepackage{tikz}\\usetikzlibrary{arrows.meta,calc,decorations.markings,math,arrows.meta,shapes.arrows}"
+
+c_border = "#515151"
+c_side = "#c7c7c7"
+c_ol   = "#0c8a1b"
+c_est  = "#333333"
+c_efp2 = "#0035ba"
+
+set style line 1 lc rgb c_ol   lt 1 lw 2 pt 7 pi -1 ps 1.0   # OEP
+set style line 2 lc rgb c_ol   lt 1 lw 2 pt 6 pi -1 ps 1.0   # OL
+set style line 3 lc rgb c_efp2 lt 1 lw 2 pt 7 pi -1 ps 1.0   # EFP2
+set style line 4 lc rgb c_est  lt 1 lw 2 pt 7 pi -1 ps 1.5   # Est
+set style line 5 lc rgb c_side lt 1 lw 2 pt 7 pi -1 ps 1.0   # Eint(HF)
+
+set style line 6 lc rgb c_border lt 1 lw 1 
+
+set pointintervalbox 1.2
+
+# global settings for each subplot
+
+unset key
+set grid x y
+
+# output file
+set output 'fig-1.tex'
+set loadpath "./../data/"
+set multiplot layout 3,1 #margins 0.1,0.98,0.1,0.98 #spacing 0.08,0.08
+
+# physical scaling factors
+c1 = 627.509             # --> kcal/mole
+
+
+# origins
+ox   = 0.220
+o11x = ox; o11y = 0.60;
+o21x = ox; o21y = 0.28;
+o31x = ox; o31y =-0.04;
+
+# R2 box position
+ob1x = 0.07; ob1y = 0.86;
+ob2x = 0.59; ob2y = 0.96;
+
+# scale
+s    = 0.5;
+
+# margins
+set bmargin 0
+set lmargin 0
+set rmargin 0
+set tmargin 0
+
+# label positions
+graph_label_x = 0.07
+graph_label_y = 0.88
+
+# ------ Graph I
+set format x "%2.1f"
+set format y "%2.1f"
+set format y2 "%3.1f"
+
+set xrange [-0.5:1.0]
+set yrange [0.0:40]
+set y2range [-5.5:0.5]
+
+set size ratio 0.8 s, s
+set origin o11x, o11y
+set border 8 lw 3 lc rgbcolor c_side
+unset xtics
+unset ytics
+set y2tics 1 tc rgbcolor c_side nomirror
+set y2label "$\\Delta E^{\\text{HF}}$ (kcal/mol)" tc rgbcolor c_side offset -1.4
+plot "water-water._6_311_pp_g_ss.dat" u 1:2 axis x1y2  with lines       ls 5 notitle
+
+set size ratio 0.8 s, s
+set origin o11x, o11y
+set border 7 lw 3 lc rgbcolor c_border
+unset y2tics
+unset y2label
+set xtics 0.3 tc rgbcolor c_border
+set ytics  8 tc rgbcolor c_border nomirror 
+unset xlabel
+
+set key at graph 0.95, 0.35 Right box  opaque samplen 0.1 spacing 0.8 width -1.8 height 0.3
+set ylabel "$\\Delta E^{\\text{Ex-Rep}}$ (kcal/mol)" offset 0.4 #tc rgbcolor c_border
+set label 22 "\\Large \\textbf{(a)}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+set label 24 "\\small 6-311++G(d,p)" front at graph graph_label_x+0.17,graph_label_y+0.2 tc rgbcolor "#000000"
+
+plot "water-water._6_311_pp_g_ss.dat" \
+                       u 1:5  axis x1y1  with lines       ls 4 notitle,\
+     ''                u 1:9  axis x1y1  with linespoints ls 3 notitle,\
+     ''                u 1:12 axis x1y1  with linespoints ls 1 notitle,\
+     NaN                      axis x1y1  with linespoints ls 1 t "\\tiny OEP",\
+     NaN                      axis x1y1  with linespoints ls 3 t "\\tiny EFP2",\
+     NaN                      axis x1y1  with lines       ls 4 t "\\tiny DDS"
+
+# ------ Graph II 
+unset key
+unset label 22
+
+
+set xrange [-0.5:1.0]
+set yrange [0.0:40]
+set y2range [-5.5:0.5]
+
+
+set size ratio 0.8 s, s
+set origin o21x, o21y
+set border 8 lw 3 lc rgbcolor c_side
+unset xtics
+unset ytics
+unset ylabel
+set y2tics 1 tc rgbcolor c_side nomirror 
+set y2label "$\\Delta E^{\\text{HF}}$ (kcal/mol)" tc rgbcolor c_side
+plot "water-methanol._6_311_pp_g_ss.dat" u 1:2 axis x1y2  with lines       ls 5 notitle
+
+set size ratio 0.8 s, s
+set origin o21x, o21y
+set border 7 lw 3 lc rgbcolor c_border
+unset y2tics
+unset y2label
+set xtics 0.3 tc rgbcolor c_border 
+set ytics 8 tc rgbcolor c_border nomirror
+set ylabel "$\\Delta E^{\\text{Ex-Rep}}$ (kcal/mol)" offset 1.3
+set label 22 "\\Large \\textbf{(b)}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+plot "water-methanol._6_311_pp_g_ss.dat" \
+                       u 1:5  axis x1y1  with lines       ls 4 notitle,\
+     ''                u 1:9  axis x1y1  with linespoints ls 3 notitle,\
+     ''                u 1:12 axis x1y1  with linespoints ls 1 notitle,\
+     NaN                      axis x1y1  with linespoints ls 1 t "\\tiny OEP",\
+     NaN                      axis x1y1  with linespoints ls 3 t "\\tiny EFP2",\
+     NaN                      axis x1y1  with lines       ls 4 t "\\tiny DDS"
+
+
+# ------ Graph III
+unset key
+unset label 22
+unset label 24
+
+set xrange [-0.7:1.0]
+set yrange [0:60]
+set y2range [-10:1.5]
+
+set size ratio 0.8 s, s
+set origin o31x, o31y
+set border 8 lw 3 lc rgbcolor c_side
+unset xtics
+unset ytics
+unset ylabel
+set y2tics 2 tc rgbcolor c_side nomirror
+set y2label "$\\Delta E^{\\text{HF}}$ (kcal/mol)" tc rgbcolor c_side offset -1.0
+plot "dmso-dmso._6_31_pp_g_ss.dat" u 1:2 axis x1y2  with lines       ls 5 notitle
+
+
+set size ratio 0.8 s, s
+set origin o31x, o31y
+set border 7 lw 3 lc rgbcolor c_border
+unset y2tics
+unset y2label
+set xtics 0.3 tc rgbcolor c_border 
+set ytics 12 tc rgbcolor c_border nomirror
+set ylabel "$\\Delta E^{\\text{Ex-Rep}}$ (kcal/mol)" offset 1.3
+set xlabel "Displacement (\\AA)"
+set label 22 "\\Large \\textbf{(c)}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
+set label 24 "\\small 6-31++G(d,p)" front at graph graph_label_x+0.191,graph_label_y+0.2 tc rgbcolor "#000000"
+
+plot "dmso-dmso._6_31_pp_g_ss.dat" \
+                       u 1:5  axis x1y1  with lines       ls 4 notitle,\
+     ''                u 1:9  axis x1y1  with linespoints ls 3 notitle,\
+     ''                u 1:12 axis x1y1  with linespoints ls 1 notitle,\
+     NaN                      axis x1y1  with linespoints ls 1 t "\\tiny OEP",\
+     NaN                      axis x1y1  with linespoints ls 3 t "\\tiny EFP2",\
+     NaN                      axis x1y1  with lines       ls 4 t "\\tiny DDS"
+
+
+
+# ------------------------------------------------------------------------------------------------- #
+
+
+unset multiplot

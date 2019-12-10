@@ -293,7 +293,40 @@ formulation that are slightly more expensive;
 (ii) overlap integrals need to be evaluated also between
 auxiliary basis set. The smaller the size of the auxiliary basis, the less expensive
 evaluation of the $E^{\rm Rep}(S^{-1})$ becomes. 
+The alternative EFP2 formulation %with OEP\hyp{}based first\hyp{}order term
+is therefore still given by Eq.~\eqref{e:exr-efp2}
+%
+%\begin{equation} \label{e:exrep-new}
+%E^{\rm Ex-Rep} \approx E^{\rm Ex} + E^{\rm Rep}_{\rm OEP} + E^{\rm Rep}(S^{-2}) \;,
+%\end{equation}
+%
+but with $E^{\rm Rep}(S^{-1})$ replaced by OEP\hyp{}based
+first\hyp{}order term from Eq.~\eqref{e:rep.murrell-etal.S1.oep}.
+%with $E^{\rm Ex}$ given by Eq.~\eqref{e:exc-efp2}, 
+%$E^{\rm Rep}(S^{-1})$ given by Eq.~\eqref{e:rep.murrell-etal.S1.oep} and
+%$E^{\rm Rep}(S^{-2})$ given by Eq.~\eqref{e:rep-efp2.s2}.
 %\section{\label{s:5.results}Results and Discussion}
+
+We implemented EXR energy models from Eq.~\eqref{e:exr-efp2}
+(EFP2), Eq.~\eqref{e:rep.murrell-etal.S1.oep} (OEP), as well as the repulsion term of Murrell et~al.
+from Eq.~\eqref{e:rep.murrell-etal.S1} (here abbreviated as S1-Ref) for validation of the EDF technique.
+Benchmark EXR energy were estimated from the density decomposition scheme 
+at the Hartree\hyp{}Fock level of theory (here referred as to the DDS/HF) 
+developed by Mandado and Hermida\hyp{}Ram{\'o}n,\cite{Mandado.Hermida-Ramon.JCTC.2011} 
+which is equivalent to the exact EXR energy 
+in the intermolecular perturbation theory with exchange of Hayes and Stone
+at this level of theory.\cite{Hayes.Stone.MolPhys.1984} 
+To localize molecular orbitals, procedure that is necessary for the EFP2 calculations,
+the Boys method\cite{Boys.RevModPhys.1960} was used. Note here that, since
+Murrell et~al.'s theory is invariant with respect to unitary transformation
+of molecular orbitals, Eq.~\eqref{e:rep.murrell-etal.S1.oep} is also invariant and does not require
+orbital localization. 
+%in which
+%
+%\begin{equation}\label{e:dds-exr}
+% \Delta E^{\rm Ex-Rep}_{\rm DDS/HF} = 
+%\end{equation}
+%
 
 Three complexes: 
 (i) (H$_2$O)$_2$, 
@@ -312,9 +345,61 @@ the {\sc Gaussian16} quantum chemistry program package.\cite{Gaussian16}
 Small auxiliary basis sets for H$_2$O, CH$_3$OH and DMSO were developed
 to minimize the computational cost of evaluating the summation terms
 from Eq.~\eqref{e:rep.murrell-etal.S1.oep}. For this purpose, the basis set optimization 
-as described in the Appendix~A in Ref.~\cite{Blasiak.Bednarska.Choluj.Bartkowiak.JCP.2019} was implemented
+as described in Appendix~A to Ref.~\cite{Blasiak.Bednarska.Choluj.Bartkowiak.JCP.2019} was implemented
 in conjunction with the basin hopping global optimization algorithm,  %cite
 available in the SciPy Python module. %cite
+
+{
+\renewcommand{\arraystretch}{1.4}
+\begin{table}[h]
+\caption[]
+{{\bf CPU timings in miliseconds of exchange\hyp{}repulsion single point 
+energy calculations via various methods\footnotemark[1]}
+}
+\label{t:5}
+\begin{ruledtabular}
+\begin{tabular}{llccccccccc}
+                      && \multicolumn{2}{c}{(H$_2$O)$_2$\footnotemark[2]} 
+                      && \multicolumn{2}{c}{H$_2$O--HOCH$_3$\footnotemark[2]} 
+                      && \multicolumn{2}{c}{(DMSO)$_2$\footnotemark[3]} \\
+\cline{3-4}
+\cline{6-7}
+\cline{9-10}
+Murrell et al.\footnotemark[4] && 3$\times 10^4$  & (10.0)  
+                               && 3$\times 10^4$  & (10.0)
+                               && 3$\times 10^4$  & (10.0) \\
+Hayes-Stone\footnotemark[5]    && 3$\times 10^4$  & (10.0)  
+                               && 3$\times 10^4$  & (10.0)
+                               && 3$\times 10^4$  & (10.0) \\
+EFP2                           && 3$\times 10^4$  & (10.0)  
+                               && 3$\times 10^4$  & (10.0)
+                               && 3$\times 10^4$  & (10.0) \\
+OEP/large\footnotemark[6]      && 3$\times 10^4$  & (10.0)  
+                               && 3$\times 10^4$  & (10.0)
+                               && 3$\times 10^4$  & (10.0) \\
+OEP/mini\footnotemark[6]       && 3$\times 10^4$  & (10.0)  
+                               && 3$\times 10^4$  & (10.0)
+                               && 3$\times 10^4$  & (10.0) \\
+\end{tabular}
+\end{ruledtabular}
+%
+\footnotetext[1]{1.2 GHz AMD EPYC\texttrademark{} 7301 16-Core Processor, calculations performed on 1 core. 
+Exchange\hyp{}repulsion energies are given in parentheses for reference (kcal/mol).
+See also the implementation details in the main text.}
+\footnotetext[2]{Primary basis set: 6-311++G(d,p).}
+\footnotetext[3]{Primary basis set: 6-31++G(d,p).}
+\footnotetext[4]{Reference~\cite{Murrell.Randic.Williams.Longuet-Higgins.ProcRSocLondA.1965}.}
+\footnotetext[5]{Reference~\cite{Hayes.Stone.MolPhys.1984}.}
+\footnotetext[6]{Eq.~\eqref{}. Auxiliary basis sets for the EDF in $E^{\rm Rep}(S^{-1})$ 
+from Eq.~\eqref{e:rep.murrell-etal.S1.oep}
+are: `large' - aug-cc-pVDZ-jkfit for (H$_2$O)$_2$ and H$_2$O--HOCH$_3$ systems as well as
+aug-cc-pVDZ-ri for (DMSO)$_2$ system;
+`mini' - optimized small basis sets (see Supporting Information).}
+%
+\end{table}
+}
+%
+
 
 
 
