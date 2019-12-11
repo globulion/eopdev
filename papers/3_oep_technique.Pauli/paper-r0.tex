@@ -9,6 +9,7 @@ Applications for Exchange-Repulsion Energy in Effective Fragment Potentials}
 \email[]{blasiak.bartosz@gmail.com}
 \homepage[]{https://www.polonez.pwr.edu.pl}
 
+\author{Robert W. G{\'o}ra}
 \author{Wojciech Bartkowiak}
 
 \affiliation{Department of Physical and Quantum Chemistry, Faculty of Chemistry, 
@@ -351,7 +352,7 @@ available in the SciPy Python module. %cite
 
 {
 \renewcommand{\arraystretch}{1.4}
-\begin{table}[h]
+\begin{table*}[h]
 \caption[]
 {{\bf CPU timings in miliseconds of exchange\hyp{}repulsion single point 
 energy calculations via various methods\footnotemark[1]}
@@ -365,21 +366,21 @@ energy calculations via various methods\footnotemark[1]}
 \cline{3-4}
 \cline{6-7}
 \cline{9-10}
-Murrell et al.\footnotemark[4] && 3$\times 10^4$  & (10.0)  
-                               && 3$\times 10^4$  & (10.0)
-                               && 3$\times 10^4$  & (10.0) \\
-Hayes-Stone\footnotemark[5]    && 3$\times 10^4$  & (10.0)  
-                               && 3$\times 10^4$  & (10.0)
-                               && 3$\times 10^4$  & (10.0) \\
-EFP2                           && 3$\times 10^4$  & (10.0)  
-                               && 3$\times 10^4$  & (10.0)
-                               && 3$\times 10^4$  & (10.0) \\
-OEP/large\footnotemark[6]      && 3$\times 10^4$  & (10.0)  
-                               && 3$\times 10^4$  & (10.0)
-                               && 3$\times 10^4$  & (10.0) \\
-OEP/mini\footnotemark[6]       && 3$\times 10^4$  & (10.0)  
-                               && 3$\times 10^4$  & (10.0)
-                               && 3$\times 10^4$  & (10.0) \\
+Hayes \& Stone\footnotemark[4] && 1.16$\times 10^3$  & (4.81)  
+                               && 1.12$\times 10^4$  & (4.72)
+                               && 1.31$\times 10^5$  & (7.34) \\
+Murrell et al.\footnotemark[5] && 2.33$\times 10^2$  & (4.53)  
+                               && 3.87$\times 10^3$  & (4.44)
+                               && 2.79$\times 10^4$  & (6.84) \\
+EFP2                           && 0.496              & (4.45)  
+                               && 0.84               & (4.44)
+                               && 4.65   & (6.56) \\
+OEP/large\footnotemark[6]      && 0.884  & (4.83)  
+                               && 1.836  & (4.83)
+                               && 8.95   & (6.77) \\
+OEP/mini\footnotemark[6]       && 0.324  & (5.13)  
+                               && 0.566  & (4.81)
+                               && 3.00   & (7.41) \\
 \end{tabular}
 \end{ruledtabular}
 %
@@ -388,15 +389,15 @@ Exchange\hyp{}repulsion energies are given in parentheses for reference (kcal/mo
 See also the implementation details in the main text.}
 \footnotetext[2]{Primary basis set: 6-311++G(d,p).}
 \footnotetext[3]{Primary basis set: 6-31++G(d,p).}
-\footnotetext[4]{Reference~\cite{Murrell.Randic.Williams.Longuet-Higgins.ProcRSocLondA.1965}.}
-\footnotetext[5]{Reference~\cite{Hayes.Stone.MolPhys.1984}.}
+\footnotetext[4]{Reference~\cite{Hayes.Stone.MolPhys.1984}.}
+\footnotetext[5]{Reference~\cite{Murrell.Randic.Williams.Longuet-Higgins.ProcRSocLondA.1965}.}
 \footnotetext[6]{Eq.~\eqref{}. Auxiliary basis sets for the EDF in $E^{\rm Rep}(S^{-1})$ 
 from Eq.~\eqref{e:rep.murrell-etal.S1.oep}
 are: `large' - aug-cc-pVDZ-jkfit for (H$_2$O)$_2$ and H$_2$O--HOCH$_3$ systems as well as
 aug-cc-pVDZ-ri for (DMSO)$_2$ system;
 `mini' - optimized small basis sets (see Supporting Information).}
 %
-\end{table}
+\end{table*}
 }
 %
 
