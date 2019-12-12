@@ -26,6 +26,7 @@ set style line 6 lc rgb c_border lt 1 lw 1
 
 set pointintervalbox 1.2
 
+
 # global settings for each subplot
 
 unset key
@@ -38,6 +39,7 @@ set multiplot layout 3,1 #margins 0.1,0.98,0.1,0.98 #spacing 0.08,0.08
 
 # physical scaling factors
 c1 = 627.509             # --> kcal/mole
+
 
 
 # origins
@@ -75,8 +77,11 @@ set y2range [-5.5:0.5]
 set size ratio 0.8 s, s
 set origin o11x, o11y
 set border 8 lw 3 lc rgbcolor c_side
+
+set tics format '\small $%h$'
 unset xtics
 unset ytics
+unset y2tics
 set y2tics 1 tc rgbcolor c_side nomirror
 set y2label "$\\Delta E^{\\text{HF}}$ (kcal/mol)" tc rgbcolor c_side offset -1.4
 plot "water-water._6_311_pp_g_ss.dat" u 1:2 axis x1y2  with lines       ls 5 notitle
@@ -101,7 +106,7 @@ plot "water-water._6_311_pp_g_ss.dat" \
      ''                u 1:12 axis x1y1  with linespoints ls 1 notitle,\
      NaN                      axis x1y1  with linespoints ls 1 t "\\tiny OEP",\
      NaN                      axis x1y1  with linespoints ls 3 t "\\tiny EFP2",\
-     NaN                      axis x1y1  with lines       ls 4 t "\\tiny DDS"
+     NaN                      axis x1y1  with lines       ls 4 t "\\tiny HS"
 
 # ------ Graph II 
 unset key
@@ -138,7 +143,7 @@ plot "water-methanol._6_311_pp_g_ss.dat" \
      ''                u 1:12 axis x1y1  with linespoints ls 1 notitle,\
      NaN                      axis x1y1  with linespoints ls 1 t "\\tiny OEP",\
      NaN                      axis x1y1  with linespoints ls 3 t "\\tiny EFP2",\
-     NaN                      axis x1y1  with lines       ls 4 t "\\tiny DDS"
+     NaN                      axis x1y1  with lines       ls 4 t "\\tiny HS"
 
 
 # ------ Graph III
@@ -179,7 +184,7 @@ plot "dmso-dmso._6_31_pp_g_ss.dat" \
      ''                u 1:12 axis x1y1  with linespoints ls 1 notitle,\
      NaN                      axis x1y1  with linespoints ls 1 t "\\tiny OEP",\
      NaN                      axis x1y1  with linespoints ls 3 t "\\tiny EFP2",\
-     NaN                      axis x1y1  with lines       ls 4 t "\\tiny DDS"
+     NaN                      axis x1y1  with lines       ls 4 t "\\tiny HS"
 
 
 
