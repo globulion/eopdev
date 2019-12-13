@@ -2,8 +2,8 @@ CREV = r2
 PREV = r1
 CNAME = paper-$(CREV)
 PNAME = paper-$(PREV)
-CSUPP = supplementary-$(CREV).supp
-PSUPP = supplementary-$(PREV).supp
+CSUPP = supplementary-$(CREV)
+PSUPP = supplementary-$(PREV)
 
 .DEFAULT: pdf bibtex
 
