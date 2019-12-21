@@ -1,6 +1,6 @@
 \input{header.tex}
 \begin{document}
-\preprint{AIP/123-OEP}
+%\preprint{AIP/123-OEP}
 
 \title{Ab Initio Effective One-Electron Potential Operators. II.
 Applications for Exchange-Repulsion Energy in Effective Fragment Potentials}
@@ -33,7 +33,7 @@ exchange\hyp{}repulsion EFP2 interaction energy
 by redefining the first\hyp{}order repulsive term of 
 Murrell~et al. [Murrell et al., Proc. R. Soc. Lond. A 284, 566 (1965)] through
 the extended density fitting in incomplete auxiliary basis.
-In the proposed approach the evaluation kinetic energy integrals is no
+In the proposed approach the evaluation of the kinetic energy integrals is no
 longer required and the computational cost can be reduced roughly by a factor
 of 1.5 as compared to the original EFP2 formulation.
 \end{abstract}
@@ -107,6 +107,9 @@ located at their charge centroids ${\bf r}_{i(j)}$,
 whereas $x$ and $y$ label atomic nuclei (denoted by `At') with atomic numbers 
 $Z_{x(y)}$ located at ${\bf r}_{x(y)}$. The relative distances are
 defined by $r_{uw}=\vert {\bf r}_u-{\bf r}_w\vert$.
+$S_{ij}$ and $T_{ij}$ are the overlap and kinetic\hyp{}energy
+integrals, respectively, whereas $F_{ik}^X$ are the Fock matrix elements
+of unperturbed monomer $X$, all defined in LMO basis.
 It is known that evaluating Eq.~\eqref{e:exr-efp2}
 is remarkably efficient and gives usually very accurate
 estimates of the reference EXR energies according to the symmetry 
@@ -346,7 +349,8 @@ by
                 \;.
 \end{equation}
 %
-In this procedure, the required OEP matrix elements can be calculated from
+In this procedure, $R_{\alpha\gamma}= \iint d{\bf r}_1 d{\bf r}_2 \frac{\phi_{\alpha}^*({\bf r}_1) \phi_{\beta}({\bf r}_2) }{\lvert {\bf r}_1 - {\bf r}_2 \rvert}$, ${\bf S}$ is the matrix of overlap integrals in AO basis
+and the required OEP matrix elements can be calculated from
 %
 \begin{multline} \label{e:rep.murrell-etal.S1.oep-v}
    \tBraKet{\zeta}{\hat{v}_{\rm eff}^{X[\zeta i]}}{i}
