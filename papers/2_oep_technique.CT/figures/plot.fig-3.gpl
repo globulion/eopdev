@@ -5,8 +5,8 @@
 # Bartosz Błasiak, Gundelfingen 12 November 2019
 # ------------------------------------------------
 #
-set terminal epslatex size 16.1cm,8.1cm color colortext standalone \
-   font "cmss, 8" \
+set terminal epslatex size 14.5cm,8.1cm color colortext standalone \
+   font ", 8" \
    header \
    "\\newcommand{\\ft}[0]{\\footnotesize}\\usepackage{amsmath}\\usepackage{amssymb}\\usepackage{upgreek}"
 
@@ -17,12 +17,31 @@ c_est  = "#333333"
 c_efp2 = "#0035ba"
 c_oep  = c_ol
 
+c_hb =  "#121212"
+c_di =  "#4C990C"
+c_ct =  "#0000FF"
+c_wi =  "#FF9933" # FFFF00
+c_pps=  "#FF0000"
+
 set style line 1 lc rgb "#404040" lw 0.8 dt 2
 set style line 2 lc rgb c_side   lw 0.5 dt 3
 
 psn = 1.0
-set style line 11 lc rgb c_efp2 lt 1 lw 2 pt 4 pi -1 ps psn  # EFP2
-set style line 12 lc rgb c_oep  lt 1 lw 2 pt 5 pi -1 ps psn  # OEP
+set style line 11 lc rgb c_hb   lt 1 lw 2 pt 4 pi -1 ps psn  # HB : EFP2
+set style line 12 lc rgb c_hb   lt 1 lw 2 pt 7 pi -1 ps psn  # HB : OEP
+set style line 21 lc rgb c_di   lt 1 lw 2 pt 4 pi -1 ps psn  # DI : EFP2
+set style line 22 lc rgb c_di   lt 1 lw 2 pt 7 pi -1 ps psn  # DI : OEP
+set style line 31 lc rgb c_ct   lt 1 lw 2 pt 4 pi -1 ps psn  # CT : EFP2
+set style line 32 lc rgb c_ct   lt 1 lw 2 pt 7 pi -1 ps psn  # CT : OEP
+set style line 41 lc rgb c_wi   lt 1 lw 2 pt 4 pi -1 ps psn  # WI : EFP2
+set style line 42 lc rgb c_wi   lt 1 lw 2 pt 7 pi -1 ps psn  # WI : OEP
+set style line 51 lc rgb c_pps  lt 1 lw 2 pt 4 pi -1 ps psn  # PPS: EFP2
+set style line 52 lc rgb c_pps  lt 1 lw 2 pt 7 pi -1 ps psn  # PPS: OEP
+
+
+psn = 1.0
+set style line 13 lc rgb c_efp2 lt 1 lw 2 pt 4 pi -1 ps psn  # EFP2
+set style line 14 lc rgb c_oep  lt 1 lw 2 pt 5 pi -1 ps psn  # OEP
 
 
 set pointintervalbox 2.9
@@ -40,7 +59,7 @@ c1 = 627.509             # --> kcal/mole
 
 
 # origins
-o11x =-0.16; o11y = 0.1;
+o11x =-0.25; o11y = 0.1;
 o12x = 0.35; o12y = 0.1;
 
 # R2 box position
@@ -69,27 +88,83 @@ set border lw 3 lc rgbcolor c_border
 
 
 # ------ Graph I
-set xrange [-5:0]
-set yrange [-5:0]
-#set grid xtics ytics mxtics mytics ls 1, ls 2
-set grid xtics ytics ls 1, ls 2
+set xtics  ("" -0.4, "" -0.2, "" 0.0, "" 0.2, "" 0.4, "" 0.6, "" 0.8) tc rgbcolor c_border
+set ytics  (-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0) tc rgbcolor c_border nomirror 
+set xrange [-10.3:1.0]
+set yrange [-17.3:1.0]
+set tics format '\small $%2.1f$'
 
-set xtics 1
-set ytics 1
-set mxtics 2
-set mytics 2
+
+unset label 22
+unset label 11
+unset object 1
+unset key
+unset grid
+unset xlabel
+unset ylabel
+unset xtics
+unset ytics
+
 set size ratio -1
 set origin o11x, o11y
 plot  x with lines lw 3 lc rgbcolor c_border notitle
 
 set size ratio -1
 set origin o11x, o11y
-set xlabel "$\\Delta E^{\\text{CT}}_{\\text{Otto-Ladik}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
-set ylabel "$\\Delta E^{\\text{CT}}_{\\text{OEP}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
-set label 22 "\\Large \\textbf{(a)}" front at graph graph_label_x1,graph_label_y1 tc rgbcolor "#000000"
-set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
-set label 11 "$R^2=0.6221$" front at graph 0.1,0.9 tc rgbcolor "#515151"
-plot "stat_db_bbi_6_31_p_g_ss.dat" u 3:4 axis x1y1 with points pt 7 ps psn lc rgbcolor "#171717" notitle
+plot "stat_db_ncb31_6_311_pp_g_ss_WI.dat" \
+                       u 1:2 axis x1y1 with points ls 41 notitle,\
+     ''                u 1:4 axis x1y1 with points ls 42 notitle
+
+set size ratio -1
+set origin o11x, o11y
+
+plot "stat_db_ncb31_6_311_pp_g_ss_PPS.dat" \
+                       u 1:2 axis x1y1 with points ls 51 notitle,\
+     ''                u 1:4 axis x1y1 with points ls 52 notitle
+
+
+set size ratio -1
+set origin o11x, o11y
+plot "stat_db_ncb31_6_311_pp_g_ss_DI.dat" \
+                       u 1:2 axis x1y1 with points ls 21 notitle,\
+     ''                u 1:4 axis x1y1 with points ls 22 notitle
+
+set size ratio -1
+set origin o11x, o11y
+plot "stat_db_ncb31_6_311_pp_g_ss_CT.dat" \
+                       u 1:2 axis x1y1 with points ls 31 notitle,\
+     ''                u 1:4 axis x1y1 with points ls 32 notitle
+
+
+set grid x, y
+set xlabel "$\\Delta E^{\\text{CT}}_{\\text{Est}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set ylabel "$\\Delta E^{\\text{CT}}$ (kcal/mol)" offset 2 #tc rgbcolor c_border
+set label 22 "\\Large \\textbf{(a)}" front at graph graph_label_x2+0.06,graph_label_y2 tc rgbcolor "#000000"
+set label 23 "\\Large \\textbf{NCB31}" front at graph graph_label_x1+0.68,graph_label_y1 tc rgbcolor "#000000"
+set label 24 "\\small 6-311++G(d,p)" front at graph graph_label_x1+0.6,graph_label_y1-0.05 tc rgbcolor "#000000"
+set xtics
+set ytics
+
+set key reverse Left at graph 2.10, 0.87 nobox  opaque spacing 1.2 samplen 0.1 width 0.3 height 0.3
+
+set size ratio -1
+set origin o11x, o11y
+plot "stat_db_ncb31_6_311_pp_g_ss_HB.dat" \
+                       u 1:2 axis x1y1 with points ls 11 notitle,\
+     ''                u 1:4 axis x1y1 with points ls 12 notitle,\
+     NaN                     axis x1y1 with points ls 12 pt 5 ps 2 title 'hydrogen bonded',\
+     NaN                     axis x1y1 with points ls 22 pt 5 ps 2 title 'dipole interacting',\
+     NaN                     axis x1y1 with points ls 32 pt 5 ps 2 title 'charge transfer',\
+     NaN                     axis x1y1 with points ls 42 pt 5 ps 2 title 'weakly interacting',\
+     NaN                     axis x1y1 with points ls 52 pt 5 ps 2 title "$\\pi$-$\\pi$ stacking"
+
+
+set size ratio -1
+set origin o11x, o11y
+set key reverse Left at graph 1.55, 0.3  nobox  opaque spacing 1.2 samplen 0.1 width 0.9 height 0.5
+plot NaN axis x1y1 with points lc rgbcolor "#121212" pt 7 ps 2 title "OEP",\
+     NaN axis x1y1 with points lc rgbcolor "#121212" pt 4 ps 2 title "EFP2"
+
 
 
 
@@ -97,9 +172,11 @@ plot "stat_db_bbi_6_31_p_g_ss.dat" u 3:4 axis x1y1 with points pt 7 ps psn lc rg
 #set xtics  ("" -0.4, "" -0.2, "" 0.0, "" 0.2, "" 0.4, "" 0.6, "" 0.8) tc rgbcolor c_border
 #set ytics  (-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0) tc rgbcolor c_border nomirror 
 set xrange [-3.0:0.0]
-set yrange [-5.0:0.0]
+set yrange [-4.8:0.2]
 
 unset label 22
+unset label 23
+unset label 24
 unset label 11
 unset object 1
 unset key
@@ -112,8 +189,10 @@ unset ytics
 
 set grid x, y
 set xlabel "$\\Delta E^{\\text{CT}}_{\\text{Est}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
-set ylabel "$\\Delta E^{\\text{CT}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
-set label 22 "\\Large \\textbf{(b)}" front at graph graph_label_x2,graph_label_y2 tc rgbcolor "#000000"
+set ylabel "$\\Delta E^{\\text{CT}}$ (kcal/mol)" offset 2 #tc rgbcolor c_border
+set label 22 "\\Large \\textbf{(b)}" front at graph graph_label_x2+0.1,graph_label_y2 tc rgbcolor "#000000"
+set label 23 "\\Large \\textbf{BBI}" front at graph graph_label_x1+0.8,graph_label_y1 tc rgbcolor "#000000"
+set label 24 "\\small 6-31+G(d,p)" front at graph graph_label_x1+0.7,graph_label_y1-0.05 tc rgbcolor "#000000"
 set xtics
 set ytics
 
@@ -126,7 +205,7 @@ plot  x with lines lw 3 lc rgbcolor c_border notitle,\
                        u 1:2 axis x1y1 with points ls 11 notitle,\
      ''                u 1:4 axis x1y1 with points ls 12 notitle,\
      NaN               with points ls 12 ps 1.8 title 'OEP',\
-     NaN               with points ls 11 ps 1.8 pt 5 title 'EFP2'
+     NaN               with points ls 11 ps 1.8 title 'EFP2'
 
 
 

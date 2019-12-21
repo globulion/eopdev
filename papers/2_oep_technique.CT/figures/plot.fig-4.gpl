@@ -6,12 +6,12 @@
 # ------------------------------------------------
 #
 set terminal epslatex size 7.1cm,5.1cm color colortext standalone \
-   font "cmss, 8" \
+   font ", 8" \
    header \
    "\\newcommand{\\ft}[0]{\\footnotesize}\\usepackage{amsmath}\\usepackage{amssymb}\\usepackage{upgreek}\\usepackage{tikz}\\usetikzlibrary{arrows.meta,calc,decorations.markings,math,arrows.meta,shapes.arrows}"
 
 c_border = "#515151"
-c_side = "#c7c7c7"
+c_side = "#8D8D8D" # c7c7c7
 c_ol   = "#0c8a1b"
 c_est  = "#333333"
 c_efp2 = "#0035ba"
@@ -63,6 +63,8 @@ graph_label_y = 0.88
 set format x "%2.1f"
 set format y "%2.1f"
 set format y2 "%3.1f"
+set tics format '\small $%2.1f$'
+
 
 set xrange [-0.3:1.0]
 set yrange [-3:0.05]
@@ -87,7 +89,7 @@ set ytics  (-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0) tc rgbcolor c_border nomirr
 unset xlabel
 
 set key at graph 0.98, 0.40 box  opaque samplen 0.1 width 0.3 height 0.3
-set ylabel "$\\Delta E^{\\text{CT}}$ (kcal/mol)" offset 0.4 #tc rgbcolor c_border
+set ylabel "$E^{\\text{CT}}$ (kcal/mol)" offset 2.0 #tc rgbcolor c_border
 
 set xtics (-0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8) tc rgbcolor c_border nomirror
 set xlabel "Displacement (\\AA)"
