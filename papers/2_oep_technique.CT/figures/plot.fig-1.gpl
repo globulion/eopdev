@@ -5,13 +5,13 @@
 # Bartosz Błasiak, Gundelfingen 12 November 2019
 # ------------------------------------------------
 #
-set terminal epslatex size 7.1cm,14cm color colortext standalone \
-   font "cmss, 8" \
+set terminal epslatex size 7.1cm,12cm color colortext standalone \
+   font ", 8" \
    header \
    "\\newcommand{\\ft}[0]{\\footnotesize}\\usepackage{amsmath}\\usepackage{amssymb}\\usepackage{upgreek}\\usepackage{tikz}\\usetikzlibrary{arrows.meta,calc,decorations.markings,math,arrows.meta,shapes.arrows}"
 
 c_border = "#515151"
-c_side = "#c7c7c7"
+c_side = "#8D8D8D" # c7c7c7
 c_ol   = "#0c8a1b"
 c_est  = "#333333"
 c_efp2 = "#0035ba"
@@ -83,16 +83,18 @@ set xrange [-0.3:1.0]
 set yrange [-3:0.05]
 set y2range [-4.6:-2.2]
 
-set size square s, s
+set size ratio 0.8 s, s
 set origin o11x, o11y
 set border 8 lw 3 lc rgbcolor c_side
+set tics format '\small $%2.1f$'
+
 unset xtics
 unset ytics
 set y2tics (-4.5, -4.0, -3.5, -3.0, -2.5) tc rgbcolor c_side nomirror
 set y2label "$\\Delta E^{\\text{HF}}$ (kcal/mol)" tc rgbcolor c_side offset -1.4
 plot "water-water._6_311_pp_g_ss_AUX_accq.dat" u 1:2 axis x1y2  with lines       ls 5 notitle
 
-set size square s, s
+set size ratio 0.8 s, s
 set origin o11x, o11y
 set border 7 lw 3 lc rgbcolor c_border
 unset y2tics
@@ -101,8 +103,8 @@ set xtics  ("" -0.4, "" -0.2, "" 0.0, "" 0.2, "" 0.4, "" 0.6, "" 0.8) tc rgbcolo
 set ytics  (-3.0, -2.5, -2.0, -1.5, -1.0, -0.5, 0.0) tc rgbcolor c_border nomirror 
 unset xlabel
 
-set key at graph 0.95, 0.37 box  opaque samplen 0.1 width 0.3 height 0.3
-set ylabel "$\\Delta E^{\\text{CT}}$ (kcal/mol)" offset 0.4 #tc rgbcolor c_border
+set key at graph 0.96, 0.45 box  opaque samplen 0.1 spacing 1.7 width 5.8 height 0.7 font ",8"
+set ylabel "$E^{\\text{CT}}$ (kcal/mol)" offset 2 #tc rgbcolor c_border
 set label 22 "\\Large \\textbf{(a)}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 
 plot "water-water._6_311_pp_g_ss_AUX_accq.dat" \
@@ -123,24 +125,24 @@ set xrange [-0.3:1.0]
 set yrange [-10:0.05]
 set y2range [-20:-12]
 
-set size square s, s
+set size ratio 0.8 s, s
 set origin o21x, o21y
 set border 8 lw 3 lc rgbcolor c_side
 unset xtics
 unset ytics
 unset ylabel
 set y2tics (-20, -18.0, -16.0, -14.0, -12.0) tc rgbcolor c_side nomirror 
-set y2label "$\\Delta E^{\\text{HF}}$ (kcal/mol)" tc rgbcolor c_side
+set y2label "$\\Delta E^{\\text{HF}}$ (kcal/mol)" tc rgbcolor c_side offset -2.3
 plot "water-ammonium._6_311_pp_g_ss_AUX_accq.dat" u 1:2 axis x1y2  with lines       ls 5 notitle
 
-set size square s, s
+set size ratio 0.8 s, s
 set origin o21x, o21y
 set border 7 lw 3 lc rgbcolor c_border
 unset y2tics
 unset y2label
 set xtics ("" -0.4, "" -0.2, "" 0.0, "" 0.2, "" 0.4, "" 0.6, "" 0.8) tc rgbcolor c_border
 set ytics (-10.0, -8.0, -6.0, -4.0, -2.0, 0.0) tc rgbcolor c_border nomirror
-set ylabel "$\\Delta E^{\\text{CT}}$ (kcal/mol)" offset 1.3
+set ylabel "$E^{\\text{CT}}$ (kcal/mol)" offset 2.8
 set label 22 "\\Large \\textbf{(b)}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 plot "water-ammonium._6_311_pp_g_ss_AUX_accq.dat" \
                        u 1: 7 axis x1y1  with linespoints ls 3 notitle, \
@@ -160,25 +162,25 @@ set xrange [-0.3:1.0]
 set yrange [-30:0.05]
 set y2range [-119:-91]
 
-set size square s, s
+set size ratio 0.8 s, s
 set origin o31x, o31y
 set border 8 lw 3 lc rgbcolor c_side
 unset xtics
 unset ytics
 unset ylabel
 set y2tics (-115.0, -110.0, -105.0, -100.0, -95.0, -90.0) tc rgbcolor c_side nomirror
-set y2label "$\\Delta E^{\\text{HF}}$ (kcal/mol)" tc rgbcolor c_side offset -1.0
+set y2label "$\\Delta E^{\\text{HF}}$ (kcal/mol)" tc rgbcolor c_side offset -2.4
 plot "ammonium-nitrate._6_311_pp_g_ss_AUX_accq.dat" u 1:2 axis x1y2  with lines       ls 5 notitle
 
 
-set size square s, s
+set size ratio 0.8 s, s
 set origin o31x, o31y
 set border 7 lw 3 lc rgbcolor c_border
 unset y2tics
 unset y2label
 set xtics (-0.4, -0.2, 0.0, 0.2, 0.4, 0.6, 0.8) tc rgbcolor c_border nomirror
 set ytics (-30.0, -25.0, -20.0, -15.0, -10.0, -5.0, 0.0) tc rgbcolor c_border nomirror
-set ylabel "$\\Delta E^{\\text{CT}}$ (kcal/mol)" offset 1.3
+set ylabel "$E^{\\text{CT}}$ (kcal/mol)" offset 2.6
 set xlabel "Displacement (\\AA)"
 set label 22 "\\Large \\textbf{(c)}" front at graph graph_label_x,graph_label_y tc rgbcolor "#000000"
 #plot "ammonium-nitrate._6_311_pp_g_ss_AUX_accq.dat" \
