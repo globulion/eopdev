@@ -6,7 +6,7 @@
 # ------------------------------------------------
 #
 set terminal epslatex size 16.1cm,8.1cm color colortext standalone \
-   font "cmss, 8" \
+   font ", 8" \
    header \
    "\\newcommand{\\ft}[0]{\\footnotesize}\\usepackage{amsmath}\\usepackage{amssymb}\\usepackage{upgreek}"
 
@@ -20,7 +20,7 @@ c_oep  = c_ol
 c_hb =  "#404040"
 c_di =  "#4C990C"
 c_ct =  "#0000FF"
-c_wi =  "#FFFF00"
+c_wi =  "#FF9933" # FFFF00
 c_pps=  "#FF0000"
 
 set style line 1 lc rgb "#404040" lw 0.8 dt 2
@@ -89,6 +89,7 @@ set xrange [-13:1.0]
 set yrange [-18:1.0]
 #set grid xtics ytics mxtics mytics ls 1, ls 2
 set grid xtics ytics ls 1, ls 2
+set tics format '\small $%2.1f$'
 
 set xtics 3
 set ytics 3
@@ -101,7 +102,7 @@ plot  x with lines lw 3 lc rgbcolor c_border notitle
 set size ratio -1
 set origin o11x, o11y
 set xlabel "$\\Delta E^{\\text{CT}}_{\\text{Otto-Ladik}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
-set ylabel "$\\Delta E^{\\text{CT}}_{\\text{OEP}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set ylabel "$\\Delta E^{\\text{CT}}_{\\text{OEP}}$ (kcal/mol)" offset 2 #tc rgbcolor c_border
 set label 22 "\\Large \\textbf{(a)}" front at graph graph_label_x1,graph_label_y1 tc rgbcolor "#000000"
 set object 1 rectangle from graph ob1x,ob1y to graph ob2x,ob2y lw 1
 set label 11 "$R^2=0.7354$" front at graph 0.1,0.9 tc rgbcolor "#515151"
@@ -158,7 +159,7 @@ plot "stat_db_ncb31_6_311_pp_g_ss_CT.dat" \
 
 set grid x, y
 set xlabel "$\\Delta E^{\\text{CT}}_{\\text{Est}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
-set ylabel "$\\Delta E^{\\text{CT}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set ylabel "$\\Delta E^{\\text{CT}}$ (kcal/mol)" offset 2 #tc rgbcolor c_border
 set label 22 "\\Large \\textbf{(b)}" front at graph graph_label_x2,graph_label_y2 tc rgbcolor "#000000"
 set xtics
 set ytics
