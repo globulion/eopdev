@@ -1,7 +1,7 @@
 #!/usr/bin/gnuplot
 #
 # ------------------------------------------------
-# Figure 2. Pauli Repulsion Energy OEP Paper.
+# Figure S1. Pauli Repulsion Energy OEP Paper.
 # Bartosz Błasiak, Gundelfingen 11 December 2019
 # ------------------------------------------------
 #
@@ -36,7 +36,7 @@ set size ratio -1
 #set border lw 3 lc "red"
 
 # output file
-set output 'fig-2.tex'
+set output 'fig-s1.tex'
 set loadpath "./../data/"
 set multiplot
 
