@@ -1,5 +1,6 @@
 \input{header.tex}
 \begin{document}
+%\preprint{AIP/123-OEP}
 
 \title{Ab Initio Effective One-Electron Potential Operators. II.
 Applications for Exchange-Repulsion Energy in Effective Fragment Potentials}
@@ -45,18 +46,23 @@ of 1.5 as compared to the original EFP2 formulation.
 
 \section{\label{s:1.introduction}Introduction}
 
-The exchange\hyp{}repulsion (EXR) interaction energy in the
+The exchange\hyp{}repulsion (EXR) interaction energy 
+usually describes the non\hyp{}electrostatic repulsion
+between two isolated and unperturbed 
+wavefunctions in an interacting
+molecular 
+complex.\cite{Murrell.Randic.Williams.Longuet-Higgins.ProcRSocLondA.1965,Otto.Ladik.ChemPhys.1975,Hayes.Stone.MolPhys.1984,Jeziorski.Moszynski.Szalewicz.ChemRev.1994,Jensen.Gordon.MolPhys.1996,Hesselmann.Jansen.Schutz.JCP.2005,Mandado.Hermida-Ramon.JCTC.2011}
+In the
 second generation of the
 effective fragment potentials (EFP2) method\cite{Gordon.Smith.Xu.Slipchenko.AnnuRevPhysChem.2013,
    Nguyen.Pachter.Day.JCP.2014,
    Day.Jensen.Gordon.Webb.Stevens.Krauss.Garmer.Basch.Cohen.JCP.1996}
-describes the non\hyp{}electrostatic repulsion
-between two isolated and unperturbed Hartree\hyp{}Fock\cite{Roothaan.RevModPhys.1951} 
-wavefunctions in an interacting
-bi\hyp{}molecular complex.
-The EXR EFP2 term was derived from the intermolecular perturbation theory
+the EXR energy is an important component of the total interaction energy.
+It is
+derived from the intermolecular perturbation theory
 of Murrell et al.\cite{Murrell.Randic.Williams.Longuet-Higgins.ProcRSocLondA.1965,Otto.Ladik.ChemPhys.1975} 
-up to the second order with respect to the wavefunction overlap,
+up to the second order with respect to the wavefunction overlap
+assuming Hartree\hyp{}Fock\cite{Roothaan.RevModPhys.1951} (HF) wavefunctions,
 and is given by~\cite{Jensen.JCP.1996,Jensen.Gordon.MolPhys.1996,Jensen.Gordon.JCP.1998}
 %
 \begin{equation} \label{e:exr-efp2}
@@ -161,7 +167,7 @@ in which
     E^{\rm Rep}(S^{-1}) = -2\sum_{i\in A}^{\rm Locc} \sum_{j\in B}^{\rm Locc}
                S_{ij} \Big\{
          - W^A_{ij} 
-         - W^B_{ji} \\
+         - W^B_{ij} \\
  + \sum_{k\in A}^{\rm Occ} \left[ 2\BraKet{ij}{kk} - \BraKet{ik}{jk} \right] 
  + \sum_{l\in B}^{\rm Occ} \left[ 2\BraKet{ij}{ll} - \BraKet{il}{jl} \right]
                 \Big\}
@@ -169,7 +175,7 @@ in which
 %
 where $W^A_{ij} \equiv \tBraKet{i}{\hat{v}^A_{\rm nuc}}{j}$,
 $\hat{v}^A_{\rm nuc}$
-is the nucleus\hyp{}electron potential operator
+is the electrostatic potential operator due to nuclei
 and
 ERIs are defined by
 %
@@ -397,7 +403,7 @@ we implemented EXR energy models from Eq.~\eqref{e:exr-efp2}
 the approximate intermolecular perturbation theory with exchange of 
 Murrell et~al.\cite{Murrell.Randic.Williams.Longuet-Higgins.ProcRSocLondA.1965},
 %from Eq.~\eqref{e:rep.murrell-etal.S1} 
-the exact EXR energy of Hayes \& Stone\cite{Hayes.Stone.MolPhys.1984},
+and the exact EXR energy of Hayes \& Stone\cite{Hayes.Stone.MolPhys.1984},
 here referred to as the HS model.
 The latter was
 implemented in the dimer\hyp{}centered basis set\cite{Chalasinski.Gutowski.MolPhys.1985} (DCBS),
@@ -414,7 +420,7 @@ superposition error (DCBS) in the benchmark calculations.
 %Using DCBS also allows one to eliminate the basis set
 %superimposition error (DCBS).
 The Boys method\cite{Boys.RevModPhys.1960} was used to localize
-molecular orbitals---the same as in the original EFP2 formulation,
+molecular orbitals---the same as in the original EFP2 formulation.
 Note here that, since
 Murrell et~al. theory is invariant with respect to unitary transformation
 of molecular orbitals, the OEP\hyp{}based expression 
@@ -432,7 +438,7 @@ orbital localization.
 \caption{\label{f:fig-2} {\bf Accuracy of the OEP and EFP2 models of exchange\hyp{}repulsion energy
 across various bi\hyp{}molecular systems.} 
 (a) NCB31 
-database,\cite{Zhao.Schultz.Truhlar.JCTC.2006,
+database\cite{Zhao.Schultz.Truhlar.JCTC.2006,
 Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005} 
 of non\hyp{}covalent interactions
 and
@@ -468,7 +474,7 @@ the CPU timings of EXR calculations in the OEP method are comparable but roughly
 times higher than that of the EFP2 model
 when the usual density fitting auxiliary basis sets such as aug-cc-pVDZ-jkfit or aug-cc-pVDZ-ri are used
 (Table~\ref{t:tab-1}).
-Computational cost of $\Delta E^{\rm Rep}(S^{-1})$ in EFP2 model
+Computational cost of $E^{\rm Rep}(S^{-1})$ in EFP2 model
 is approximately $s(on^2 + o^2n) + t(on^2 + o^2n) + 2o^3$, whereas in OEP model
 is $s(on^2 + o^2n) + 2ao^2$, both of which have comparable magnitudes. 
 Here, $s$ and $t$ denote the relative costs of evaluation of the overlap
@@ -508,25 +514,74 @@ as well as the BioFragment Database subset BBI for backbone\hyp{}backbone
 interactions in proteins of Sherrill group,\cite{Burns.Faver.Zheng.Marshall.Smith.Vanommeslaeghe.MacKerell.Merz.Sherrill.JCP.2017} 
 as implemented in the {\sc Psi4}
 program,\cite{Psi4.JCTC.2017}
-were utilized. The computed
-EXR energies were compared with the reference HS results (Figure~\ref{f:fig-2}).
-On average, OEP and EFP2 methods tend to underestimate the EXR energy by 0.7\% and 7.6\%
-in the NCB31/6-311++G(d,p) data set, and 6.0\% and 15\% in the BBI/6-31+G(d,p) data set,
-respectively.
+was utilized. The computed
+EXR energies were compared with the reference Murrell~et~al. results (Figure~\ref{f:fig-2})
+as well as with the reference HS results (Figure~S1).
+On average, OEP and EFP2 methods are in good agreement
+with the reference models and correlation $R^2$ coefficients
+are between 90--99\% in all data sets. 
+The mutual differences between EFP2 and OEP estimations of 
+$E^{\rm Rep}(S^{-1})$ are on the average 0.7 kcal/mol  (Figure~S2) which shows that the ERI elimination proposed here is accurate.
+Root mean square errors (RMSE) of EXR energy estimation
+via OEP and EFP2 models
+%against both %the Murrell~et~al. and the HS reference
+are around 2.0~kcal/mol and 2.6~kcal/mol in the NCB31/6-311++G(d,p) data set, and 0.6~kcal/mol 
+and 0.3--1.2~kcal/mol
+in the BBI/6-31+G(d,p) data set, respectively. However,
+while the OEP and EFP2 models tend to overestimate
+the EXR energy as compared to the Murrell~et~al. reference
+by 7--12\%
+(except for the EFP2 model in the BBI/6-31+G(d,p) data set that shows very good agreement), 
+they consistently underestimate the EXR energy
+as compared to the HS reference by 0.7--7\% (OEP)
+and 8--15\% (EFP2).
 This is mostly due to BSSE, that is corrected for
-only in the reference calculations with the HS model, and the effect is usually larger
-when smaller primary basis sets are used.
-The OEP model performs slightly better when compared to the EFP2
-method for systems studied in this work, with 
-root-mean-square errors of OEP and EFP2 models of
-2.0 kcal/mol and 2.6 kcal/mol, respectively, for NCB31/6-311++G(d,p) data set, 
-or
-0.5 kcal/mol and 1.2 kcal/mol for BBI/6-31+G(d,p) data set.
-The slightly better performance of OEP is most likely due to
-fruitful cancellation of errors, since
-the mutual differences between EFP2 and OEP estimations of 
-$\Delta E^{\rm Rep}(S^{-1})$ are on the average much smaller
-(RMSE between EFP2 and OEP is only 0.7\% in all data sets).
+only in the reference calculations with the HS model.
+%, and the effect is usually larger
+%when smaller primary basis sets are used.
+%
+% though the.
+%
+%much smaller
+%(RMSE between EFP2 and OEP is only 0.7\% in all data sets).
+%
+%with root mean square errors (RMSE)
+%not larger than 2.3~kcal/mol and 2.9~kcal/mol
+%in NCB31/6-311++G(d,p) data set,
+%as well as
+%0.6~kcal/mol and 1.2~kcal/mol 
+%for BBI/6-31+G(d,p) data set. 
+%On the one hand, when compared to the HS model as reference,
+%OEP and EFP2 tend to underestimate the EXR energy
+%in all studied cases. On the other hand, EFP2 well
+%reproduces EXR energies obtained by using the Murrell~et~al. %model,
+%while OEP slightly overestimates the 
+%
+%However, due to the nature of
+%approximations made, the origins of errors are 
+%
+%tend to underestimate the EXR energy by 0.7\% and 7.6\%
+%in the NCB31/6-311++G(d,p) data set, and 6.0\% and 15\% in the BBI/6-31+G(d,p) data set,
+%respectively.
+%The OEP model performs slightly better when compared to the EFP2
+%method for systems studied in this work, with 
+%root-mean-square errors of OEP and EFP2 models of
+%2.0 kcal/mol and 2.6 kcal/mol, respectively, for NCB31/6-311++G(d,p) data set, 
+%or
+%0.5 kcal/mol and 1.2 kcal/mol for BBI/6-31+G(d,p) data set.
+%On the other hand, when compared to 
+%the Murrell~et~al. theory as reference (see Supplementary Information),
+%EFP2 model performs 
+%slightly better than OEP model. Note that in this case BSSE
+%is not included in the reference calculations.
+%Therefore
+%The slightly better performance of OEP vs HS reference 
+%is most likely due to
+%fruitful cancellation of errors, 
+%
+%Careful inspection (Figure~S1) revealed that when compared to 
+%the Murrell~et~al. theory as reference, EFP2 model performs 
+%slightly better than OEP model.
 %
 % RWG: Aren't they increasing with the magnitude of interaction
 % energy? For instance what is the difference in magnitudes for the
@@ -540,17 +595,12 @@ $\Delta E^{\rm Rep}(S^{-1})$ are on the average much smaller
 % this trend would be consistent in larger basis set then it is
 % pretty obvious that it is not just fruitful cancellation.
 %
-Nevertheless, together with the performance data of both models
+Nevertheless,
+OEP model is rather of roughly comparable accuracy as EFP2 model in all the systems studied.
+Together with the performance data of both models
 from Table~\ref{t:tab-1}, OEP model consistently outperforms the
-EFP2 approach in terms of accuracy and also performance, provided
+EFP2 approach provided
 that the minimal auxiliary basis set is used.
-
-%In particular, the subsets from the NCB31 database were separately considered:
-%the HB6/04 hydrogen bonding database,\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
-%the DI6/04 dipoleinteraction database,\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
-%the CT7/04 charge-transfer complex database,\cite{Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005}
-%the WI7/05 weak interaction database,\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
-%and PPS5/05 the $\pi$-$\pi$ stacking database.\cite{Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005,Zhao.Truhlar.JPCA.2005}
 
 \section{\label{s:6.conclusions}Summary and a few concluding remarks}
 
@@ -582,6 +632,8 @@ This project is carried out under POLONEZ programme which has received funding f
 Horizon~2020 research and innovation programme under the Marie Sk{\l}odowska-Curie grant agreement 
 No.~665778. This project is funded by National Science Centre, Poland 
 (grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+Wroclaw Centre for Networking and Supercomputing (WCSS) is acknowledged for
+computational resources.
 \end{acknowledgments}
 
 %%
