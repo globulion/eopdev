@@ -165,8 +165,11 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   psi::outfile->Printf(" --> Running CIS calculations on the monomers <--\n");
   const bool symm = options_.get_bool("TrCAMM_SYMMETRIZE");
   t_time+= clock();
+  clock_t t_time_cis = -clock();
   SharedCISData cis_data_A = this->get_cis_data(0, I, nHI, nLI, symm);
   SharedCISData cis_data_B = this->get_cis_data(1, J, nHJ, nLJ, symm);
+  t_time_cis += clock();
+  cout << " o TIME TI/CIS - CIS(MONOMERS): " << ((double)t_time_cis*1000/CLOCKS_PER_SEC) << endl;
   t_time-= clock();
   psi::outfile->Printf("\n");
 
@@ -615,7 +618,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   psi::timer_off("Solver EET TI/CIS               ");
 
   t_time += clock(); // Clock END
-  cout << " o TIME TI/CIS: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+  cout << " o TIME TI/CIS: " << ((double)t_time*1000/CLOCKS_PER_SEC) << endl;
 
 
 
@@ -786,8 +789,11 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
 
   // ===> Compute TrCAMM coupling <=== //
   psi::timer_on("Solver EET TrCAMM               ");
+  clock_t t_time_trcamm = -clock();
   SharedMTPConv V0_TrCAMM = oep_1->oep("Fujimoto.CIS").cis_data->trcamm->energy(
                             oep_2->oep("Fujimoto.CIS").cis_data->trcamm        );
+  t_time_trcamm += clock();
+  cout << " o TIME TRCAMM: " << ((double)t_time_trcamm*1000/CLOCKS_PER_SEC) << endl;
   data.set_trcamm_coupling(V0_TrCAMM);
   psi::timer_off("Solver EET TrCAMM               ");
 
