@@ -1080,7 +1080,7 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   psi::timer_off("Solver EET TI/CIS OEP-Based     ");
 
   t_time += clock(); // Clock END
-  cout << " o TIME TI/CIS:OEP: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+  cout << " o TIME TI/CIS:OEP: " << ((double)t_time*1000/CLOCKS_PER_SEC) << endl;
 
 
 
