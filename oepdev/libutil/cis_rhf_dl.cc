@@ -54,15 +54,12 @@ void R_CISComputer_DL::diagonalize_hamiltonian_(void)
 
 void R_CISComputer_DL::davidson_liu_compute_diagonal_hamiltonian(void) {
 
- /* 
-    Loop over ERI's explicitly. This is more efficient in terms of memory because
-    too many generalized AO density matrices needs to be generated for JK object.
- */
-
  double* eps_a_o = this->eps_a_o_->pointer();
  double* eps_a_v = this->eps_a_v_->pointer();
+ double** cao = Ca_occ__->pointer();
  double* h = this->H_diag_davidson_liu_->pointer();
  const int off = this->naocc_ * this->navir_;
+ const int nbf = this->ref_wfn_->basisset()->nbf();
 
  // Fock matrix contribution directly in MO basis
  for (int i=0; i<naocc_; ++i) {
@@ -75,50 +72,47 @@ void R_CISComputer_DL::davidson_liu_compute_diagonal_hamiltonian(void) {
  }
  }
 
- // ERI contribution in AO basis on the fly
- psi::IntegralFactory fact(ref_wfn_->basisset());
- std::shared_ptr<psi::TwoBodyAOInt> tei(fact.eri());                                           
- const double * buffer = tei->buffer();
+ // ERI contribution directly in MO basis
+ std::vector<psi::SharedMatrix>& C_left = jk_->C_left();
+ std::vector<psi::SharedMatrix>& C_right= jk_->C_right();
+ const std::vector<psi::SharedMatrix>& J = jk_->J();
+ const std::vector<psi::SharedMatrix>& K = jk_->K();
+ C_left.clear(); C_right.clear();
 
- std::shared_ptr<oepdev::ShellCombinationsIterator> shellIter = oepdev::ShellCombinationsIterator::build(fact, "ALL");
+ std::vector<psi::SharedMatrix> Wa, Wb;
+ for (int i=0; i<this->naocc_; ++i) {
+      psi::SharedMatrix Wia = std::make_shared<psi::Matrix>("", nbf, nbf); 
+      Wa.push_back(Wia);
+ }
+ for (int ii=0; ii<nbf; ++ii) {
+ for (int jj=0; jj<nbf; ++jj) {
+      for (int i=0; i<this->naocc_; ++i) {
+           Wa[i]->set(ii,jj,cao[ii][i]*cao[jj][i]);
+      }
+ }
+ }
 
- double** co = Ca_occ__->pointer();
- double** cv = Ca_vir__->pointer();
+ psi::SharedMatrix identity = std::make_shared<psi::Matrix>("", nbf, nbf);
+ identity->identity();
 
- const double eri_cutoff = options_.get_double("CIS_SCHWARTZ_CUTOFF");
+ for (int i=0; i<this->naocc_; ++i) {
+      psi::SharedMatrix I1 = identity->clone();
 
- for (shellIter->first(); shellIter->is_done() == false; shellIter->next())
- {
-      shellIter->compute_shell(tei);
-      std::shared_ptr<oepdev::AOIntegralsIterator> intsIter = shellIter->ao_iterator("ALL");
-      for (intsIter->first(); intsIter->is_done() == false; intsIter->next())
-      {
-           int I = intsIter->i();  // \alpha  
-           int J = intsIter->j();  // \beta   
-           int K = intsIter->k();  // \gamma  
-           int L = intsIter->l();  // \delta  
+      C_left.push_back(Wa[i]);
+      C_right.push_back(I1);
+ }
+ this->jk_->compute();
 
-           double eri = buffer[intsIter->index()];
-
-           if (std::abs(eri) > eri_cutoff) {
-
-               for (int i=0; i<naocc_; ++i) {                
-                    double cIi = co[I][i];
-                    double cJi = co[J][i];
-                    double cKi = co[K][i];
-               for (int a=0; a<navir_; ++a) {
-                    int ia = navir_*i + a;
-
-                    double cJa = cv[J][a];
-                    double cKa = cv[K][a];
-                    double cLa = cv[L][a];
-
-                    double v = eri * cIi * cLa * (cJa * cKi - cJi * cKa);
-                    h[ia    ] += v;
-                    h[ia+off] += v;
-               }
-               }
-           }
+ // Add to Hamiltonian
+ for (int i=0; i<this->naocc_; ++i) {
+      psi::SharedMatrix Ji_aa = psi::Matrix::triplet(Ca_vir__, J[i], Ca_vir__, true, false, false);
+      psi::SharedMatrix Ki_aa = psi::Matrix::triplet(Ca_vir__, K[i], Ca_vir__, true, false, false);
+      for (int a=0; a<this->navir_; ++a) {
+           int ia = navir_*i + a;
+           double iaia = Ki_aa->get(a,a);
+           double iiaa = Ji_aa->get(a,a);
+           h[ia    ] += iaia - iiaa;
+           h[ia+off] += iaia - iiaa;
       }
  }
 
