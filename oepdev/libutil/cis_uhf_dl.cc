@@ -85,17 +85,12 @@ void U_CISComputer_DL::davidson_liu_compute_diagonal_hamiltonian(void) {
  }
 
  // ERI contribution directly in MO basis
-
- // Access the JK memory
  std::vector<psi::SharedMatrix>& C_left = jk_->C_left();
  std::vector<psi::SharedMatrix>& C_right= jk_->C_right();
  const std::vector<psi::SharedMatrix>& J = jk_->J();
  const std::vector<psi::SharedMatrix>& K = jk_->K();
-
- // Clear JK buffers
  C_left.clear(); C_right.clear();
 
- // Compute generalized density matrices from LCAO-MO matrices
  std::vector<psi::SharedMatrix> Wa, Wb;
  for (int i=0; i<this->naocc_; ++i) {
       psi::SharedMatrix Wia = std::make_shared<psi::Matrix>("", nbf, nbf); 
@@ -117,8 +112,6 @@ void U_CISComputer_DL::davidson_liu_compute_diagonal_hamiltonian(void) {
  }
  }
 
-
- // Compute generalized J and K matrices
  psi::SharedMatrix identity = std::make_shared<psi::Matrix>("", nbf, nbf);
  identity->identity();
 
