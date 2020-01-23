@@ -102,12 +102,16 @@ void U_CISComputer_DL::davidson_liu_compute_diagonal_hamiltonian(void) {
  }
 
  for (int ii=0; ii<nbf; ++ii) {
- for (int jj=0; jj<nbf; ++jj) {
+ for (int jj=0; jj<ii+1; ++jj) {
       for (int i=0; i<this->naocc_; ++i) {
-           Wa[i]->set(ii,jj,cao[ii][i]*cao[jj][i]);
+           double v = cao[ii][i]*cao[jj][i];
+           Wa[i]->set(ii,jj,v);
+           if (ii!=jj) Wa[i]->set(jj,ii,v);
       }
       for (int i=0; i<this->nbocc_; ++i) {
-           Wb[i]->set(ii,jj,cbo[ii][i]*cbo[jj][i]);
+           double v = cbo[ii][i]*cbo[jj][i];
+           Wb[i]->set(ii,jj,v);
+           if (ii!=jj) Wa[i]->set(jj,ii,v);
       }
  }
  }
