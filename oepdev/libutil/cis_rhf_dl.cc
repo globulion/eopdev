@@ -61,48 +61,36 @@ void R_CISComputer_DL::davidson_liu_compute_diagonal_hamiltonian(void) {
  const int off = this->naocc_ * this->navir_;
  const int nbf = this->ref_wfn_->basisset()->nbf();
 
- // Fock matrix contribution directly in MO basis
- for (int i=0; i<naocc_; ++i) {
- for (int a=0; a<navir_; ++a) {
-      int ia = navir_*i + a;
-
-      double v  = eps_a_v[a] - eps_a_o[i];
-      h[ia    ] = v;  // A block
-      h[ia+off] = v;  // B block
- }
- }
-
- // ERI contribution directly in MO basis
+ // Fock matrix and ERI contribution directly in MO basis
  std::vector<psi::SharedMatrix>& C_left = jk_->C_left();
  std::vector<psi::SharedMatrix>& C_right= jk_->C_right();
  const std::vector<psi::SharedMatrix>& J = jk_->J();
  const std::vector<psi::SharedMatrix>& K = jk_->K();
  C_left.clear(); C_right.clear();
 
- std::vector<psi::SharedMatrix> Wa, Wb;
- for (int i=0; i<this->naocc_; ++i) {
-      psi::SharedMatrix Wia = std::make_shared<psi::Matrix>("", nbf, nbf); 
-      Wa.push_back(Wia);
- }
- for (int ii=0; ii<nbf; ++ii) {
- for (int jj=0; jj<ii+1; ++jj) {
-      for (int i=0; i<this->naocc_; ++i) {
-           double v = cao[ii][i]*cao[jj][i];
-           Wa[i]->set(ii,jj,v);
-           if (ii!=jj) Wa[i]->set(jj,ii,v);
-      }
- }
- }
-
  psi::SharedMatrix identity = std::make_shared<psi::Matrix>("", nbf, nbf);
  identity->identity();
 
  for (int i=0; i<this->naocc_; ++i) {
-      psi::SharedMatrix I1 = identity->clone();
+      psi::SharedMatrix Wia = std::make_shared<psi::Matrix>("", nbf, nbf); 
+      psi::SharedVector Cai = Ca_occ__->get_column(0, i);
+      double*  cai = Cai->pointer();
+      double** wai = Wia->pointer();
+      for (int ii=0; ii<nbf; ++ii) {
+           double cai_ii = cai[ii];
+           wai[ii][ii] = cai_ii * cai_ii;
+           for (int jj=0; jj<ii; ++jj) {
+                double v = cai_ii * cai[jj];
+                wai[ii][jj] = v; 
+                wai[jj][ii] = v;
+           }
+      }
 
-      C_left.push_back(Wa[i]);
+      psi::SharedMatrix I1 = identity->clone();
+      C_left.push_back(Wia);
       C_right.push_back(I1);
  }
+
  this->jk_->compute();
 
  // Add to Hamiltonian
@@ -113,8 +101,9 @@ void R_CISComputer_DL::davidson_liu_compute_diagonal_hamiltonian(void) {
            int ia = navir_*i + a;
            double iaia = Ki_aa->get(a,a);
            double iiaa = Ji_aa->get(a,a);
-           h[ia    ] += iaia - iiaa;
-           h[ia+off] += iaia - iiaa;
+           double v  = eps_a_v[a] - eps_a_o[i] + iaia - iiaa;
+           h[ia    ] = v; // A block
+           h[ia+off] = v; // B block
       }
  }
 
