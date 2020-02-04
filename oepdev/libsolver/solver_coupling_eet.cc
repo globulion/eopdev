@@ -298,6 +298,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
   psi::SharedMatrix PS_AB = psi::Matrix::doublet(Peg_A, Sao_AB, false, false);
   psi::SharedMatrix PS_BA = psi::Matrix::doublet(Peg_B, Sao_AB, false, true );
+  psi::SharedMatrix SP_AB = psi::Matrix::doublet(Sao_AB,Peg_B , false, false);
+  psi::SharedMatrix SP_BA = psi::Matrix::doublet(Sao_AB,Peg_A , true , false);
   psi::SharedMatrix SPS_A = psi::Matrix::doublet(Sao_AB, PS_AB, true , false);
   psi::SharedMatrix SPS_B = psi::Matrix::doublet(Sao_AB, PS_BA, false, false);
 
@@ -314,6 +316,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double** cvB= Ca_vir_B->pointer();
   double** psab= PS_AB->pointer();
   double** psba= PS_BA->pointer();
+  double** spab= SP_AB->pointer();
+  double** spba= SP_BA->pointer();
   double** spsa= SPS_A->pointer();
   double** spsb= SPS_B->pointer();
 
@@ -419,7 +423,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
          // V0_Exch_M
          if ((i==j) && (k==l)) 
-             V0_Exch_M-= 0.25 * eri * psab[i][k] * psba[k][i];
+           //V0_Exch_M-= 0.25 * eri * psab[i][k] * psba[k][i]; ---> Wrong!
+             V0_Exch_M-= 0.125 * eri * (psab[i][k] * psba[k][i] + spab[i][k] * spba[k][i]); 
 
          // V0_CT_M
          V0_CT_M += Q1 * eri * coA[i][homo_A] * coA[j][homo_A] * coB[k][homo_B] * coB[l][homo_B];
