@@ -753,12 +753,12 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
 
   options_.set_global_int("EXCITED_STATE", options_.get_int("EXCITED_STATE_A"));
   options_.set_global_int("OEPDEV_SOLVER_EET_HOMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_A"));
-  options_.set_global_int("OEPDEV_SOLVER_EET_LUMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_A"));
+  options_.set_global_int("OEPDEV_SOLVER_EET_LUMO", options_.get_int("OEPDEV_SOLVER_EET_LUMO_A"));
   oep_1->compute();
 
   options_.set_global_int("EXCITED_STATE", options_.get_int("EXCITED_STATE_B"));
   options_.set_global_int("OEPDEV_SOLVER_EET_HOMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_B"));
-  options_.set_global_int("OEPDEV_SOLVER_EET_LUMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_B"));
+  options_.set_global_int("OEPDEV_SOLVER_EET_LUMO", options_.get_int("OEPDEV_SOLVER_EET_LUMO_B"));
   oep_2->compute();
 
   clock_t t_time = -clock(); // Clock BEGIN
