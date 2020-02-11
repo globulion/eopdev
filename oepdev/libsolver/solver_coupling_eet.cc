@@ -176,8 +176,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   // Collect CIS data
   double E_ex_A = cis_data_A->E_ex;                        // Excitation energy of A wrt ground state
   double E_ex_B = cis_data_B->E_ex;                        // Excitation energy of B wrt ground state
-  double t_A = cis_data_A->t_homo_lumo * sqrt(na_A/na_AB); // CIS amplitude of A scaled to the dimer
-  double t_B = cis_data_B->t_homo_lumo * sqrt(na_B/na_AB); // CIS amplitude of B scaled to the dimer
+  double t_A = cis_data_A->t_homo_lumo * sqrt(1.0/2.0);    // CIS amplitude of A renormalized to the dimer
+  double t_B = cis_data_B->t_homo_lumo * sqrt(1.0/2.0);    // CIS amplitude of B renormalized to the dimer
   SharedMatrix Pe_A = cis_data_A->Pe;                      // Excited state bond order matrix of A
   SharedMatrix Pe_B = cis_data_B->Pe;                      // Excited state bond order matrix of B
   SharedMatrix Peg_A = cis_data_A->Peg;                    // Transition density matrix of A
@@ -911,9 +911,9 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
      psi::outfile->Printf("\n");
   }
 
-  // CIS amplitudes
-  double t_A = oep_1->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(na_A/na_AB); 
-  double t_B = oep_2->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(na_B/na_AB); 
+  // CIS amplitudes (aggregate)
+  double t_A = oep_1->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(1.0/2.0); // sqrt(na_A/na_AB); --> wrong!
+  double t_B = oep_2->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(1.0/2.0); // sqrt(na_B/na_AB); --> wrong!
 
   // Compute Overlap integrals between basis functions
   psi::SharedMatrix Smo_oAoB = psi::Matrix::triplet(oep_1->cOcc(), Sao_1p2p, oep_2->cOcc(), true, false, false);
