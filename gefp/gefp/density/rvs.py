@@ -30,8 +30,10 @@ class RVS:
  o Projection of frozen orbitals is achieved by projecting
    Fock matrix to orthogonal MO basis of entire n-fragment 
    aggregate, and setting all the off-diagonal matrix elements
-   that are associated to the frozen orbitals to zero.
-   Orthogonal MO basis is constructed from the original
+   that are associated to the frozen orbitals to zero 
+   [Kairys & Jensen, J. Phys. Chem. A, Vol. 104, No. 28, 2000].
+
+ o Orthogonal MO basis is constructed from the original
    mutually non-orthogonal MOs of isolated fragments by 
    GrammSchmidt orthogonalization with respect to the frozen
    MOs. If no frozen MOs are requested, symmetric Lowdin
