@@ -2,7 +2,7 @@
 #*-* coding: utf-8 *-*
 """
  Reduced Variational Scheme of Stevens and Fink module.
- Bartosz Błasiak, Gundelfingen, Mar 2019
+ Bartosz Błasiak, Gundelfingen, 14 Feb 2020
 """
 import psi4
 import numpy
