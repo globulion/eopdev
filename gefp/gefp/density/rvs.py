@@ -27,7 +27,7 @@ class RVS:
    multimers, define a subclass and redefine the `run` method
    to include n-mers for n>2.
 
- o Projection of frozen orbitals is achieved by projecting
+ o Projection of frozen orbitals is achieved by transforming
    Fock matrix to orthogonal MO basis of entire n-fragment 
    aggregate, and setting all the off-diagonal matrix elements
    that are associated to the frozen orbitals to zero 
@@ -83,6 +83,10 @@ class RVS:
   def __init__(self, wfn):
       "Initialize RVS solver"
 
+      # sanity check
+      if wfn.molecule().nfragments() == 1:
+         raise ValueError(" RVS Error: There must be at least 2 fragments in the system.")
+
       # basic data
       self._wfn = wfn
       self._bfs = wfn.basisset()
@@ -132,8 +136,8 @@ class RVS:
 
       # RVS energy components    -Focc-  -Avir-  -Xocc-
 
-      #E_A               = self._scf([ ], [0  ], [1], conver, maxiter, damp=0.0, ndamp=ndamp, label=' A')   
-      #E_B               = self._scf([ ], [1  ], [0], conver, maxiter, damp=0.0, ndamp=ndamp, label=' B')   
+     #E_A               = self._scf([ ], [0  ], [1], conver, maxiter, damp=0.0, ndamp=ndamp, label=' A')   
+     #E_B               = self._scf([ ], [1  ], [0], conver, maxiter, damp=0.0, ndamp=ndamp, label=' B')   
 
       E_Ao_Bo           = self._scf([ ], [   ], [ ], conver, maxiter, damp=0.0, ndamp=ndamp, label=' Ao  Bo') # HP energy
       # 
@@ -244,34 +248,40 @@ class RVS:
                  conver, maxiter, damp=0.0, ndamp=10, label=None): 
       "Solve RVS SCF problem for a given set of frozen occupied orbitals and active virtual orbitals"
 
-      # create C matrix
       active_occ = [x for x in range(self._nfrag) if x not in frozen_occ+exclude_occ]
+      all_occ    = [x for x in range(self._nfrag) if x not in            exclude_occ]
 
+      # [1] Create AO-MO transformation matrices
       C_occ_active = numpy.hstack([self._c_occ_0[i].copy() for i in active_occ ])
-      C_occ        = numpy.hstack([self._c_occ_0[i].copy() for i in range(self._nfrag) if i not in exclude_occ])
-      C            = C_occ_active.copy()            # nMO basis (AO x nMO)
+      C_occ_all    = numpy.hstack([self._c_occ_0[i].copy() for i in     all_occ])
+
+      C_act        = C_occ_active.copy() # nMO basis (AO x nMO)
       if active_vir:
          C_vir     = numpy.hstack([self._c_vir_0[i].copy() for i in active_vir ])
-         C         = numpy.hstack([C_occ_active, C_vir])
+         C_act     = numpy.hstack([C_occ_active, C_vir]).copy()
+         del C_vir
 
       naocc_active = C_occ_active.shape[1]
-
       naocc_frozen = 0
+
+      C_occ_frozen = None
       if frozen_occ:
          C_occ_frozen = numpy.hstack([self._c_occ_0[i].copy() for i in frozen_occ ])
          naocc_frozen = C_occ_frozen.shape[1]
-         C_ = self._orthogonalize(C, C_occ_frozen, method='gs')
+         C_ = self._orthogonalize(C_act, C_occ_frozen, method='gs')
       else:
-         C_occ_frozen = None
-         C_ = self._orthogonalize(C, C_occ_frozen, method='lowdin')
+         C_ = self._orthogonalize(C_act, C_occ_frozen, method='lowdin')
+
+      naocc = naocc_active+naocc_frozen
+      del C_act, C_occ_active, C_occ_frozen
         
-      # iteration cycles
+      # [2] Iteration cycles
       if label is not None:
          print(" @RVS-SCF: Starting iterations of %s" % label)
       E_old = 1.0e+10
       H = self._H_core_ao(exclude_occ)
-      F = self._Fock_ao(H, C_occ)                       # Fock matrix (AO x AO)         
-      D = C_occ @ C_occ.T                               # OPDM (AO x AO)
+      F = self._Fock_ao(H, C_occ_all)                   # Fock matrix (AO x AO)         
+      D = C_occ_all @ C_occ_all.T                       # OPDM (AO x AO)
       E = self._energy(H, F, D, exclude_occ)
       E_new = E
       F_new = F
@@ -288,12 +298,9 @@ class RVS:
           k_, a_ = numpy.linalg.eigh(f_)                    # Orbitals (oMO x O-MO) 
      #    a = x @ a_                                        # Orbitals (nMO x O-MO)
           A = C_@ a_                                        # Orbitals (AO x O-MO)
-          naocc = naocc_active+naocc_frozen
-          A_occ = A[:,:naocc]                               # Orbitals (AO x O-MO_occ)
-          D_new = A_occ @ A_occ.T                           # OPDM (AO x AO)
-                                                                                            
-          C_occ = A_occ
-          F_new = self._Fock_ao(H, C_occ)
+          C_occ_all = A[:,:naocc]                           # Orbitals (AO x O-MO_occ)
+          D_new = C_occ_all @ C_occ_all.T                   # OPDM (AO x AO)
+          F_new = self._Fock_ao(H, C_occ_all)
           if Iter <= ndamp:
              F_new = damp * F_old + (1.0 - damp) * F_new
           E_new = self._energy(H, F_new, D_new, exclude_occ)
@@ -364,7 +371,7 @@ class RVS:
       J = self._global_jk.J()[0].to_array(dense=True)
       K = self._global_jk.K()[0].to_array(dense=True)
 
-      F = H_core + 2.0 * J - K                               # Fock matrix (AO x AO)
+      F = H_core + 2.0 * J - K # Fock matrix (AO x AO)
       return F
 
   def _H_core_ao(self, exclude_occ):
