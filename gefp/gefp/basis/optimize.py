@@ -235,9 +235,9 @@ class DFBasisOptimizer:
   
   # ---> public interface <--- #
 
-  def fit(self, maxiter=1000):
+  def fit(self, maxiter=1000, tol=1.e-9, method='slsqp'):
       "Perform fitting of basis set exponents"
-      success = self._fit(maxiter)
+      success = self._fit(maxiter, tol, method)
       return success
 
   def compute_error(self, basis, rms=False):
@@ -255,11 +255,11 @@ class DFBasisOptimizer:
 
   # ---> protected interface <--- #
 
-  def _fit(self, maxiter):
+  def _fit(self, maxiter, tol, method):
       "The actual fitting procedure"
       param_0 = self.basis_fit.param
-      options = {"disp": True, "maxiter": maxiter, "ftol": 1.0e-9, "iprint": 4}
-      res = scipy.optimize.minimize(self._objective_function, param_0, args=(), tol=1.0e-9, method='slsqp',
+      options = {"disp": True, "maxiter": maxiter, "ftol": tol, "iprint": 4}
+      res = scipy.optimize.minimize(self._objective_function, param_0, args=(), tol=tol, method=method,
                   options=options, bounds=self.basis_fit.bounds, constraints=self.basis_fit.constraints)
       param = res.x
       self.oep.dfbasis.basisset(param)

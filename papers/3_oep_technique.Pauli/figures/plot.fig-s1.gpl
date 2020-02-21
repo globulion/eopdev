@@ -1,0 +1,186 @@
+#!/usr/bin/gnuplot
+#
+# ------------------------------------------------
+# Figure S1. Pauli Repulsion Energy OEP Paper.
+# Bartosz Błasiak, Gundelfingen 11 December 2019
+# ------------------------------------------------
+#
+set terminal epslatex size 16.1cm,8.1cm color colortext standalone \
+   font ", 8" \
+   header \
+   "\\newcommand{\\ft}[0]{\\footnotesize}\\usepackage{amsmath}\\usepackage{amssymb}\\usepackage{upgreek}"
+
+c_border = "#515151"
+c_side = "#8D8D8D"
+c_ol   = "#0c8a1b"
+c_est  = "#333333"
+c_efp2 = "#0035ba"
+c_oep  = c_ol
+
+c_hb =  "#404040"
+c_di =  "#4C990C"
+c_ct =  "#0000FF"
+c_wi =  "#FFFF00"
+c_pps=  "#FF0000"
+
+set style line 1 lc rgb "#404040" lw 0.8 dt 2
+set style line 2 lc rgb c_side   lw 0.5 dt 3
+
+psn = 0.8
+
+set pointintervalbox 2.9
+set size ratio -1
+
+# global settings for each subplot
+#set border 1+2+4 lw 3 lc rgbcolor c_border
+#set border lw 3 lc "red"
+
+# output file
+set output 'fig-s1.tex'
+set loadpath "./../data/"
+set multiplot
+
+# physical scaling factors
+c1 = 627.509             # --> kcal/mole
+
+
+# origins
+o11x =-0.22; o11y = 0.1;
+o12x = 0.30; o12y = 0.1;
+ox   = 0.10; oy   = 0.17;
+
+# R2 box position
+ob1x = 0.07; ob1y = 0.86;
+ob2x = 0.59; ob2y = 0.96;
+
+# scale
+s    = 0.53;
+
+# margins
+set bmargin 2
+set lmargin 0
+set rmargin 0
+set tmargin 7
+
+# label positions
+graph_label_x1= -0.37
+graph_label_y1=  1.10
+graph_label_x2= -0.53
+graph_label_y2=  1.10
+
+set format x "%2.1f"
+set format y "%2.1f"
+
+set border lw 3 back lc rgbcolor c_border
+
+
+# ------ Graph I
+set xrange [0:65.0]
+set yrange [0:65.0]
+#set grid xtics ytics mxtics mytics ls 1, ls 2
+set grid back xtics ytics ls 1, ls 2
+set tics format '\small $%h$'
+
+
+set xtics 10
+set ytics 10
+set mxtics 2
+set mytics 2
+set size ratio -1 1,1
+set origin o11x, o11y
+plot  x with lines lw 3 lc rgbcolor c_border notitle
+
+set size ratio -1 1,1
+set origin o11x, o11y
+set xlabel "$E^{\\text{Ex-Rep}}_{\\text{HS}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set ylabel "$E^{\\text{Ex-Rep}}_{\\text{Theory}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set label 22 "\\Large \\textbf{(a)}" front at graph graph_label_x1+0.1,graph_label_y1 tc rgbcolor "#000000"
+set label 23 "\\Large \\textbf{NCB31}" front at graph graph_label_x1+0.76,graph_label_y1 tc rgbcolor "#000000"
+set label 24 "\\small 6-311++G(d,p)" front at graph graph_label_x1+0.70,graph_label_y1-0.05 tc rgbcolor "#000000"
+
+
+set key top left inside box opaque samplen 0.3 width 1.1 height 1.1 spacing 1.1
+plot "ncb31_6_311_pp_g_ss.dat" u 7:4          with points pt 7 ps psn lc rgbcolor c_efp2 notitle,\
+     ""                        u 7:($1+$3+$5) with points pt 7 ps psn lc rgbcolor c_ol   notitle,\
+     NaN                                      with points pt 7 ps psn+0.3 lc rgbcolor c_ol   t "OEP",\
+     NaN                                      with points pt 7 ps psn+0.3 lc rgbcolor c_efp2 t "EFP2"
+
+unset key
+
+set origin ox, oy
+set size s,s
+set border lw 1.3 lc rgbcolor c_border
+set xrange[0:15] 
+set yrange[0:15] 
+unset grid
+#unset object 1
+unset label 22
+unset label 23
+unset label 24
+#unset label 11
+unset xlabel
+unset ylabel
+unset xtics
+unset ytics
+set object 1 rectangle from screen ox+0.182,oy+0.02 to screen ox+0.33,oy+0.322 fillstyle solid noborder behind 
+plot  x with lines lw 2 lc rgbcolor c_border notitle 
+
+set xtics 4 
+set ytics 4
+set tics scale 0.4, 0.1, 1, 1, 1 front 
+set tics format '\tiny $%h$'
+replot "ncb31_6_311_pp_g_ss.dat" u 7:4          with points pt 7 ps psn-0.2 lc rgbcolor c_efp2 notitle,\
+       ""                        u 7:($1+$3+$5) with points pt 7 ps psn-0.2 lc rgbcolor c_ol   notitle
+
+
+# ------ Graph II
+set border lw 3 back  lc rgbcolor c_border
+set grid back xtics ytics ls 1, ls 2
+set tics format '\small $%h$'
+
+unset label 22
+unset label 23
+unset label 24
+unset object 1
+#unset label 11
+#unset label 12
+#unset object 1
+unset key
+unset grid
+unset xlabel
+unset ylabel
+unset xtics
+unset ytics
+
+set xrange [0:25]
+set yrange [0:25]
+#set grid xtics ytics mxtics mytics ls 1, ls 2
+set grid xtics ytics ls 1, ls 2
+
+set xtics 5
+set ytics 5
+set mxtics 2
+set mytics 2
+set size ratio -1 1,1
+set origin o12x, o12y
+plot  x with lines lw 3 lc rgbcolor c_border notitle
+
+set size ratio -1 1,1
+set origin o12x, o12y
+set xlabel "$E^{\\text{Ex-Rep}}_{\\text{HS}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set ylabel "$E^{\\text{Ex-Rep}}_{\\text{Theory}}$ (kcal/mol)" #offset 0.4 #tc rgbcolor c_border
+set label 22 "\\Large \\textbf{(b)}" front at graph graph_label_x1+0.1,graph_label_y1 tc rgbcolor "#000000"
+set label 23 "\\Large \\textbf{BBI}" front at graph graph_label_x1+0.8,graph_label_y1 tc rgbcolor "#000000"
+set label 24 "\\small 6-31+G(d,p)" front at graph graph_label_x1+0.74,graph_label_y1-0.05 tc rgbcolor "#000000"
+#set object 1 rectangle from graph ob1x,ob1y to graph ob2x-0.22,ob2y lw 1
+#set label 11 "$R^2=0.62$" front at graph 0.1,0.9 tc rgbcolor "#515151"
+plot "bbi_6_31_p_g_ss.dat"     u 7:4          with points pt 7 ps psn lc rgbcolor c_efp2 notitle,\
+     ""                        u 7:($1+$3+$5) with points pt 7 ps psn lc rgbcolor c_ol   notitle,\
+     NaN                                      with points pt 7 ps psn lc rgbcolor c_ol   t "OEP",\
+     NaN                                      with points pt 7 ps psn lc rgbcolor c_efp2 t "EFP2"
+
+
+
+
+
+unset multiplot

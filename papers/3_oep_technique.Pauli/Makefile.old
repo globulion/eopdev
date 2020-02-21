@@ -1,0 +1,44 @@
+CNAME = paper-r2
+PNAME = 04c535dbf8ee573506ca00abd4f176a11f0ffc9a
+CSUPP = supplementary-r1
+
+.DEFAULT: pdf bibtex
+
+.PHONY: all clean pdf bibtex diff pdiff esi show
+
+all: pdf bibtex show
+
+exts := .aux .bbl .blg .lof .lot .log .pdf
+clean:
+	rm -rvf $(foreach ext,$(exts), $(CNAME)$(ext));
+	rm -rvf $(foreach ext,$(exts), $(PNAME)$(ext));
+	rm -rvf $(foreach ext,$(exts), $(CNAME)$(ext));
+	rm -rvf $(foreach ext,$(exts), $(PNAME)$(ext));
+	rm -rvf $(foreach ext,$(exts), $(CSUPP)$(ext));
+	rm -rvf $(foreach ext,$(exts), $(PSUPP)$(ext));
+	rm -rvf $(CNAME).diff.*
+	rm -rvf $(CSUPP).diff.*
+
+pdf:    $(CNAME).pdf
+bibtex: $(CNAME).bbl
+show: pdf
+	acroread $(CNAME).pdf &
+
+diff:
+	git-latexdiff --main  $(CNAME).tex --view --quiet --ignore-latex-errors --pdf-viewer acroread -b HEAD~ --
+pdiff:
+	git-latexdiff --main  $(CNAME).tex --view --quiet --ignore-latex-errors --pdf-viewer acroread -b $(PNAME) --
+
+esi:  $(CSUPP).pdf $(CSUPP).bbl
+
+%.bbl: %.tex
+	while (bibtex $(basename $<); pdflatex $<; \
+	  grep "Rerun to get citations correct" $(basename $<).log ) do true; \
+	done
+	rm -rvf acs-$(basename $@).bib
+
+%.pdf: %.tex
+	while (pdflatex $<; \
+	  grep "Rerun to get cross" $(basename $<).log ) do true ; \
+	done
+

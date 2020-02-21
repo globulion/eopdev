@@ -100,8 +100,13 @@ void CPHF::compute(void) {
     }
  
     // Set JK object for 2-body part //
+    std::shared_ptr<JK> jk;
+    if (_wfn->basisset_exists("BASIS_DF_SCF")) {
+      jk = JK::build_JK(_primary,_wfn->get_basisset("BASIS_DF_SCF"), _options);
+    } else {
+      jk = JK::build_JK(_primary, BasisSet::zero_ao_basis_set(), _options);
+    }
 
-    std::shared_ptr<JK> jk = JK::build_JK(_primary, BasisSet::zero_ao_basis_set(), _options);
     jk->set_memory(_memory / 8L); 
     jk->initialize();
     jk->print_header();

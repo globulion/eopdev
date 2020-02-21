@@ -58,7 +58,9 @@ set {
     oepdev_test_mode              monomer
     oepdev_localize               False
     oepdev_enable_trial           False
+    cis_type                      explicit
     # ==> General Psi4 Options <== #
+    freeze_core                   False
     scf_type                      direct 
     guess                         core
     e_convergence                 1e-11

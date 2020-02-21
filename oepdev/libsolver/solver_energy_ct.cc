@@ -1273,6 +1273,10 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   std::shared_ptr<psi::Vector> u_2 = this->compute_u_vector(rmo_2, rmo_1, mol_1);
   std::shared_ptr<psi::Matrix> w_1 = this->compute_w_matrix(mol_1, mol_2, rmo_1);
   std::shared_ptr<psi::Matrix> w_2 = this->compute_w_matrix(mol_2, mol_1, rmo_2);
+  u_1->set_name("Auxiliary calculables: Vector u_1"); u_1->print();
+  w_1->set_name("Auxiliary calculables: Matrix w_1"); w_1->print();
+  u_2->set_name("Auxiliary calculables: Vector u_2"); u_2->print();
+  w_2->set_name("Auxiliary calculables: Matrix w_2"); w_2->print();
 
   // ---> Get distributed effective charges <--- //
   std::vector<std::shared_ptr<psi::Matrix>> q_1 = oep_1->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
@@ -1300,8 +1304,10 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
             v_ba_v2->set(i, n, v); 
        }
   }
-  v_ab_v2->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v2->clone(), 0.0);
-  v_ba_v2->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v2->clone(), 0.0);
+  psi::SharedMatrix v_ab_v2_copy = v_ab_v2->clone(); v_ab_v2->zero();
+  psi::SharedMatrix v_ba_v2_copy = v_ba_v2->clone(); v_ba_v2->zero();
+  v_ab_v2->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v2_copy, 0.0);
+  v_ba_v2->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v2_copy, 0.0);
 
   // ===> Compute V3 term <=== //
   std::shared_ptr<psi::Matrix> v_ab_v3 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
@@ -1329,8 +1335,10 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
             v_ba_v3->set(i, n, v);
        }
   }
-  v_ab_v3->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v3->clone(), 0.0);
-  v_ba_v3->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v3->clone(), 0.0);
+  psi::SharedMatrix v_ab_v3_copy = v_ab_v3->clone(); v_ab_v3->zero();
+  psi::SharedMatrix v_ba_v3_copy = v_ba_v3->clone(); v_ba_v3->zero();
+  v_ab_v3->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v3_copy, 0.0);
+  v_ba_v3->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v3_copy, 0.0);
 
 
   // ---> Add coupling constant contributions <--- //

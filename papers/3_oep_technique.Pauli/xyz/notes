@@ -1,0 +1,4 @@
+* structures optimized via HF/6-31+G(d,p) 6D 10F, g16-C (2016-C.01, bem.wcss.pl)
+  #P RHF/6-31+G(d,p) 6D 10F GFPrint NoSymm SCF(conver=11,novaracc,QC,Tight)
+
+* DMSO dimer was optimized in Psi4 at the same level at C_i symmetry.

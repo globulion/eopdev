@@ -4,7 +4,6 @@
 #include "psi4/libmints/mintshelper.h"
 #include "../../include/oepdev_files.h"
 
-//#include "psi4/libpsi4util/PsiOutStream.h"
 
 namespace oepdev{
 
@@ -12,8 +11,9 @@ const std::vector<std::string> CISComputer::reference_types = {"RHF", "UHF"};
 
 CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt, 
                          psi::IntegralTransform::TransformationType trans_type):
+          DavidsonLiu(opt),
           ref_wfn_(wfn),
-          options_(opt),
+          //options_(opt),
           //Fa_oo_(nullptr),
           //Fa_vv_(nullptr),
           //Fb_oo_(nullptr),
@@ -31,31 +31,72 @@ CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& o
           navir_(nmo_ - naocc_),
           nbvir_(nmo_ - nbocc_),
           transformation_type_(trans_type),
-          inttrans_(nullptr)
+          inttrans_(nullptr),
+          jk_(nullptr)
 {
   this->common_init(); 
 }
 
 CISComputer::~CISComputer() {}
 
+void CISComputer::common_init(void) {
+ ndets_ = naocc_ * navir_ + nbocc_ * nbvir_;
+ if (true) {
+     std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(ref_wfn_->basisset());
+     mints->integrals();
+ }
+ // nstates_ is not set here but during computation since it depends on the type of CIS calculation
+
+ // Construct the JK object
+ if (ref_wfn_->basisset_exists("BASIS_DF_SCF")) {
+     jk_ = psi::JK::build_JK(ref_wfn_->basisset(), ref_wfn_->get_basisset("BASIS_DF_SCF"), options_);
+ } else {
+     jk_ = psi::JK::build_JK(ref_wfn_->basisset(), BasisSet::zero_ao_basis_set(), options_);
+ }
+ jk_->set_memory((options_.get_double("SCF_MEM_SAFETY_FACTOR")*(psi::Process::environment.get_memory() / 8L)));
+ jk_->initialize();
+ jk_->print_header();
+}
+
+void CISComputer::set_nstates_() {
+  this->nstates_ = this->ndets_;
+}
+void CISComputer::set_beta_(void) {}
+
+void CISComputer::allocate_memory(void) {
+ eps_a_o_ = ref_wfn_->epsilon_a_subset("MO", "OCC");
+ eps_a_v_ = ref_wfn_->epsilon_a_subset("MO", "VIR");
+ this->allocate_hamiltonian_();
+}
+
+void CISComputer::allocate_hamiltonian_(void) {
+ U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, nstates_);
+ E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", nstates_);
+ H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
+}
+
 void CISComputer::compute(void) {
+ this->set_nstates_();    // Maybe better to move it to constructor? 
+                          // (then Davidson-Liu must be re-adapted) - this needs to be now here
+ this->allocate_memory(); // moved here to allocate E_ and U_ before Davidson-Liu needs to be initialized
  this->prepare_for_cis_();
  this->build_hamiltonian_();
  this->diagonalize_hamiltonian_(); 
+
+ // Clear memory
+ this->jk_->finalize();
 }
 
 void CISComputer::prepare_for_cis_(void) {
 // Fa_oo_ = psi::Matrix::triplet(ref_wfn_->Ca_subset("AO","OCC"), ref_wfn_->Fa(), ref_wfn_->Ca_subset("AO","OCC"), true, false, false);
 // Fa_vv_ = psi::Matrix::triplet(ref_wfn_->Ca_subset("AO","VIR"), ref_wfn_->Fa(), ref_wfn_->Ca_subset("AO","VIR"), true, false, false);
- eps_a_o_ = ref_wfn_->epsilon_a_subset("MO", "OCC");
- eps_a_v_ = ref_wfn_->epsilon_a_subset("MO", "VIR");
  this->set_beta_();
  this->transform_integrals_();
 }
 
 void CISComputer::clear_dpd(void) {
   // Destruct the IntegralTransform object
-  this->inttrans_.reset();
+  if (inttrans_) this->inttrans_.reset();
 }
 
 void CISComputer::transform_integrals_(void) {
@@ -75,11 +116,14 @@ void CISComputer::transform_integrals_(void) {
 void CISComputer::diagonalize_hamiltonian_(void) {
  H_->diagonalize(U_, E_);
  //E_->scale(OEPDEV_AU_EV);
- if (options_.get_bool("PRINT")>3) {
+ if (options_.get_int("PRINT")>3) {
     E_->print_out();
     H_->print_out();
  }
 }
+
+void CISComputer::davidson_liu_compute_sigma(void) {}
+void CISComputer::davidson_liu_compute_diagonal_hamiltonian(void) {}
 
 std::shared_ptr<CISComputer> CISComputer::build(const std::string& type, 
                                                 std::shared_ptr<psi::Wavefunction> ref_wfn, 
@@ -104,27 +148,30 @@ std::shared_ptr<CISComputer> CISComputer::build(const std::string& type,
 
   // Create
   std::shared_ptr<CISComputer> cis;
+  std::string cis_type = opt.get_str("CIS_TYPE");
 
-  if ((ref_wfn->molecule()->multiplicity() != 1) || (ref == "UHF")) 
-     { cis = std::make_shared<U_CISComputer>(ref_wfn, opt); }
-  else cis = std::make_shared<R_CISComputer>(ref_wfn, opt);
+  if ((ref_wfn->molecule()->multiplicity() != 1) || (ref == "UHF")) { 
+     if (cis_type == "DAVIDSON_LIU") {
+	 cis = std::make_shared<U_CISComputer_DL>(ref_wfn, opt);
+     } else {
+	 cis = std::make_shared<U_CISComputer>(ref_wfn, opt);
+     }
+  }
+  else {
+     if (cis_type == "DIRECT_EXPLICIT") { 
+	 cis = std::make_shared<R_CISComputer_Direct>(ref_wfn, opt); 
+     } else 
+     if (cis_type == "DAVIDSON_LIU") {
+         cis = std::make_shared<R_CISComputer_DL>(ref_wfn, opt);
+     } else { // Explicit CIS
+	 cis = std::make_shared<R_CISComputer>(ref_wfn, opt);
+     }
+  }
   
   // Return 
   return cis;
 }
 
-void CISComputer::set_beta_(void) {}
-
-void CISComputer::common_init(void) {
- ndets_ = naocc_ * navir_ + nbocc_ * nbvir_;
- H_ = std::make_shared<psi::Matrix>("CIS Excited State Hamiltonian", ndets_, ndets_);
- U_ = std::make_shared<psi::Matrix>("CIS Eigenvectors", ndets_, ndets_);
- E_ = std::make_shared<psi::Vector>("CIS Eigenvalues", ndets_);
- if (true) {
-     std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(ref_wfn_->basisset());
-     mints->integrals();
- }
-}
 
 std::pair<double,double> CISComputer::U_homo_lumo(int I, int h, int l) const {
   int i  = naocc_-1-h;

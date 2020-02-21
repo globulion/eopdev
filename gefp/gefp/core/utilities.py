@@ -9,12 +9,28 @@ import psi4
 import oepdev
 
 __all__ = ["psi_molecule_from_file", 
+           "psi_molecule_to_file",
+           "psi_supermolecule_from_molecules",
            "wavefunction_union_from_dimer",
            "wavefunction_union_from_dfi_solver",
            "substitute_matrices_in_psi4_wavefunction"]
 
 __all__+= ["UnitaryOptimizer", "UnitaryOptimizer_4_2"]
 
+
+
+def psi_molecule_to_file(mol, f, frm=None):
+    "Save psi4.core.Molecule object to file."
+    if frm is None: frm = f.split('.')[-1].lower()
+    #
+    log = ""
+    out = open(f[:-3] + frm, 'w')
+    if   frm == 'xyz': log+= mol.to_string('xyz') + '\n'
+    else: raise ValueError("Unrecognised format - %s -" % frm)
+
+    out.write(log)
+    out.close()     
+    return
 
 def psi_molecule_from_file(f, frm=None, no_com=True, no_reorient=True):
     "Construct psi4.core.Molecule object from structure file"
@@ -23,10 +39,42 @@ def psi_molecule_from_file(f, frm=None, no_com=True, no_reorient=True):
     if   frm == 'xyz':
        qmol = psi4.qcdb.Molecule.init_with_xyz(f, no_com=no_com, no_reorient=no_reorient)  
        mol  = psi4.geometry(qmol.create_psi4_string_from_molecule())
+    #
+    elif frm == 'psi':
+       log = open(f).read()
+       mol = psi4.geometry('\n'+log)
+    # 
     else: raise ValueError("Unrecognised format - %s -" % frm)
     #
     mol.update_geometry()
     return mol
+
+def psi_supermolecule_from_molecules(*molecules, units='angs'):
+    "Create one molecule object from multiple molecules. Assumes C1 symmetry"
+    c = 1.0; log_units = "units bohr\n"
+    if units.lower().startswith("angs"):
+       c = psi4.constants.bohr2angstroms
+       log_units = "units angstrom\n"
+    log = "\n"
+    for molecule in molecules:
+        log+= "%d %d\n" % (molecule.molecular_charge(), molecule.multiplicity())
+        for i in range(molecule.natom()):
+            log += "%s"     %  molecule.symbol(i)
+            log += "%16.6f" % (molecule.x(i) * c)
+            log += "%16.6f" % (molecule.y(i) * c)
+            log += "%16.6f" % (molecule.z(i) * c)
+            log += "\n"
+        log += log_units
+        log += "symmetry c1\n"
+        log += "no_reorient\n"
+        log += "no_com\n"
+                                                                                 
+        log += "--\n"
+    log = log[:-3]
+
+    aggregate = psi4.geometry(log)
+    aggregate.update_geometry()
+    return aggregate
 
 def _get_wavefunction_union_basis_sets(dimer):
     "Construct basis set objects necessary to build the oepdev.WavefunctionUnion object"
@@ -89,6 +137,9 @@ def wavefunction_union_from_dimer(dimer, wfn_1=None, wfn_2=None,
 
     #psi4_io.set_default_path('/home/globulion/scr-d')
     psi4.core.clean()
+
+    wfn_1.set_basisset("BASIS_DF_SCF", basis_df_scf_A)
+    wfn_2.set_basisset("BASIS_DF_SCF", basis_df_scf_B)
 
     un = oepdev.WavefunctionUnion(dimer, basis, basis_df_scf,
                                   basis_A, basis_B,

@@ -1,0 +1,1524 @@
+\input{header.tex}
+\begin{document}
+\preprint{AIP/123-OEP}
+
+\title{Ab Initio Effective One-Electron Potentials Revisited:
+General Theory and Example Applications for Charge-Transfer Energy Calculations}
+
+\author{Bartosz B{\l}asiak}
+\email[]{blasiak.bartosz@gmail.com}
+\homepage[]{https://www.polonez.pwr.edu.pl}
+
+\author{Marta Cho{\l}uj} 
+\author{Joanna D. Bednarska}
+\author{Wojciech Bartkowiak}
+
+\affiliation{Department of Physical and Quantum Chemistry, Faculty of Chemistry, 
+Wroc{\l}aw University of Science and Technology, 
+Wybrze{\.z}e Wyspia{\'n}skiego 27, Wroc{\l}aw 50-370, Poland}
+
+\date{\today}
+
+\begin{abstract}
+The concept of the effective one-electron potentials has been useful for many decades
+in efficient description of electronic structure of chemical systems, especially extended
+molecular aggregates such as interacting molecules in condensed phases. 
+%In this Work, \emph{ab initio} effective potentials are studied for a number of theories
+%of the intemolecular interaction energy.
+\end{abstract}
+
+\pacs{}
+
+\maketitle
+
+\tableofcontents
+
+\section{\label{s:1}Introduction}
+
+\section{\label{s:2}Effective One-Electron Potentials: General Theory}
+
+The one\hyp{}electron Coulomb static effective potential $v^{\rm eff}({\bf r})$
+produced by a certain effective one\hyp{}electron charge density distribution $\rho^{\rm eff}({\bf r})$
+is 
+%
+\begin{equation} \label{e:v-eff}
+	v^{\rm eff}({\bf r}) = \int \frac{ \rho^{\rm eff}({\bf r}') }{ \vert {\bf r}' - {\bf r} \vert} d{\bf r}' \;,
+\end{equation}
+%
+where ${\bf r}$ is a spatial coordinate. 
+For convenience, the total effective density can be split into nuclear and electronic contributions,
+%
+\begin{equation} \label{e:rho-eff}
+ \rho^{\rm eff}({\bf r}) = \lambda \rho^{\rm eff}_{\rm nuc}({\bf r}) + \rho^{\rm eff}_{\rm el}({\bf r}) \;,
+\end{equation}
+%
+where $\lambda$ is a certain parameter and is assumed either 1 or 0 in this work.
+Formally, the electronic part can be expanded in terms of an effective
+one\hyp{}particle density matrix represented in a certain basis of orbitals, $\BM{\phi}({\bf r})$,
+%
+\begin{equation} \label{e:d-spectral}
+	\rho^{\rm eff}_{\rm el}({\bf r}) = \sum_{\alpha\beta} D_{\alpha\beta}^{\rm eff} 
+	\phi_\alpha({\bf r}) \phi_\beta^{*}({\bf r})  \;.
+\end{equation}
+%
+Based on that, the operator form of the effective potential 
+can be written as
+%
+\begin{equation} \label{e:oep-operator}
+	\hat{v}^{\rm eff} = 
+        \lambda \hat{v}_{\rm nuc} +
+        %\sum_{\alpha\beta} 
+	%\Ket{\alpha} 
+        \int d{\bf r} \Ket{{\bf r}} 
+        v^{\rm eff}({\bf r})
+	%\left[
+	%\int
+	%\hat{J}^{\rm}_{\alpha\beta}({\bf r}') 
+	%\rho^{\rm eff}({\bf r}')
+	%d{\bf r}' 
+	%\right]
+	%\Bra{\beta}  
+        \Bra{{\bf r}}
+\end{equation}
+%
+with the nuclear
+%and Coulomb operators 
+operator
+defined by
+%
+%\begin{subequations}
+%\begin{align}
+\begin{equation}
+        \hat{v}_{\rm nuc} \equiv \sum_x^{\rm At}  
+                     \int d{\bf r} \Ket{{\bf r}} 
+                     \frac{Z_x}{\vert {\bf r} - {\bf r}_x \vert}
+                     \Bra{{\bf r}} \;.
+	%\hat{J}^{\rm}_{\alpha\beta}({\bf r}) f({\bf r}) &\equiv
+	%f({\bf r}) 
+	%\int
+	%\frac{ \phi_\alpha^{*}({\bf r}') \phi_\beta({\bf r}') }{ \vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+\end{equation}
+%\end{align}
+%\end{subequations}
+%
+%for any one\hyp{}electron function $f({\bf r})$. 
+and $\BraKet{\bf r}{\alpha} = \varphi_\alpha({\bf r})$.
+The matrix element of the effective potential operator
+is therefore given by
+%
+\begin{equation}
+	\tBraKet{\alpha}{ \hat{v}^{\rm eff} }{\beta}
+	= \lambda \sum_x^{\rm At} W_{\alpha\beta}^{(x)} +
+        \sum_{\gamma\delta} \BraKet{\alpha\beta}{\gamma\delta} D^{\rm eff}_{\gamma\delta}  \;,
+\end{equation}
+%
+where 
+%
+\begin{equation}
+ W_{\alpha\beta}^{(x)} = 
+ Z_x \int \frac{\phi^*_\alpha({\bf r}) \phi_\beta({\bf r})}{\vert {\bf r} - {\bf r}_x \vert} d{\bf r} \;,
+\end{equation}
+%
+$Z_x$ is the atomic number of the $x$th atom,
+and the symbol `At' denotes all atoms that contribute to the effective potential.
+In the above equation and throughout the work, 
+%
+\begin{equation}
+\tBraKet{\alpha}{\mathscr{O}(1)}{\beta} \equiv \int \phi^*_\alpha({\bf r}) \mathscr{O}(1) \phi_\beta({\bf r}) d{\bf r} 
+\end{equation}
+%
+for any one\hyp{}electron operator $\mathscr{O}(1)$ 
+and the electron repulsion integral (ERI)
+is defined according to
+%
+\begin{equation}
+	\BraKet{\alpha\beta}{\gamma\delta} \equiv
+	\iint 
+	\frac{ \phi_\alpha^{*}({\bf r}_1) \phi_\beta({\bf r}_1) 
+	       \phi_\gamma^{*}({\bf r}_2) \phi_\delta({\bf r}_2) }{ \vert {\bf r}_1 - {\bf r}_2 \vert}
+	d{\bf r}_1 d{\bf r}_2  \;.
+\end{equation}
+%
+
+
+\section{\label{s:3}Effective One-Electron Potentials: Configuration Interaction}
+
+The time\hyp{}independent Schr{\"o}dinger equation provides the stationary solution to the
+electronic state
+of a molecular system in terms of its $N$\hyp{}electron wavefunction, $\Psi$,
+%
+\begin{equation} \label{e:schrodinger}
+ E = \tBraKet{\Psi}{\mathscr{H}}{\Psi} \;,
+\end{equation}
+%
+for a quantum Hamiltonian, $\mathscr{H} = \hat{h}(1) + \hat{o}(2)$,
+with $\hat{h}(1)$ being the core Hamiltonian one\hyp{}electron operator,
+$\hat{h}(1) = \hat{v}_{\rm nuc} -\frac{1}{2}\sum_e^{\rm el} \nabla_e^2$,
+and $\hat{o}(2)$ the two\hyp{}electron repulsion operator.
+From the above solution, any property $P$, understood as an expectation value of the
+associated operator $\mathscr{P}$, can be computed according to
+%
+\begin{equation} \label{e:prop}
+ P = \tBraKet{\Psi}{\mathscr{P}}{\Psi} \;.
+\end{equation}
+%
+The exact solution to Eq.~\eqref{e:schrodinger} is formally given by
+the configuration interaction (CI) expansion around the reference 
+(approximate) wavefunction, $\Psi^{(0)}$,
+typically the solution to the Hartree\hyp{}Fock (HF) problem\cite{Roothaan.RevModPhys.1951},
+%
+\begin{equation} \label{e:ci}
+ \Ket{\Psi} = \Ket{\Psi^{(0)}} + \sum_{ra} C_{r}^{a} \Ket{\Psi_{r}^{a}} + 
+	 \sum_{rsab} C_{rs}^{ab} \Ket{\Psi_{rs}^{ab}} + \ldots
+\end{equation}
+%
+In the above equation,
+$\Ket{\Psi_{rs\ldots}^{ab\ldots}}$ are called the CI configurations
+with the associated CI coefficients $C_{rs\ldots}^{ab\ldots}$, created by `exciting'
+one or more electrons from the $a$th ($b$th) occupied molecular orbital to the $a$th ($b$th)
+virtual (unoccupied) molecular orbital, obtained from the HF solution.
+By inserting Eq.~\eqref{e:ci} into Eq.~\eqref{e:prop} 
+and using the Slater\hyp{}Condon rules for evaluating the one\hyp{} and two\hyp{}electron
+operator matrix element between
+the CI configurations, it can be shown that the following holds
+%
+\begin{equation} \label{e:exp-val-series}
+	P =
+	\sum_{ij} P_{ij} \tBraKet{i}{\hat{h}}{j}
+	+ \sum_{ijkl} P_{ijkl} \BraKet{ij}{kl}  \;,
+\end{equation}
+%
+%where $\tBraKet{i}{\hat{h}}{j} \equiv \int \phi^*_i({\bf r}) \hat{h} \phi_j({\bf r}) d{\bf r} $
+%$\BraKet{ij}{kl}$ is the electron\hyp{}repulsion integral (ERI) defined by
+%%
+%\begin{equation}
+%	\BraKet{ij}{kl} \equiv
+%	\iint 
+%	\frac{ \phi_i^{*}({\bf r}_1) \phi_j({\bf r}_1) 
+%	       \phi_k^{*}({\bf r}_2) \phi_l({\bf r}_2) }{ \vert {\bf r}_1 - {\bf r}_2 \vert}
+%	d{\bf r}_1 d{\bf r}_2  \;,
+%\end{equation}
+%%
+where the second\hyp{}rank tensor ${\bf P}^{(2)}$ 
+and the fourth\hyp{}rank tensor ${\bf P}^{(4)}$ 
+are well defined and characteristic for the property of interest.
+In fact, they are certain functions of the CI coefficients, i.e.,
+%
+\begin{equation}
+{\bf P} = {\bf P}
+\left(
+ \left\{
+  C_{r}^{a}, C_{rs}^{ab}, \ldots 
+ \right\} 
+\right)
+\end{equation}
+%
+and, in principle, are known as long as the solution to the CI problem 
+or its approximation is available.
+
+%In this work we are interested in cases when
+
+%$\Psi^{AB}$. In this Section we consider theories to calculate the effect of the interaction
+%of molecules $A$ and $B$ on the property $P$ knowing only the unperturbed wavefunctions,
+%$\Psi^{A}$ and $\Psi^{B}$.
+
+
+\subsection{\label{ss:2.1}Intermolecular Interaction-Induced Property}
+
+Consider a molecular aggregate consisting of two interacting 
+molecules $A$ and $B$. The part of property that arises due to the
+intermolecular interaction between $A$ and $B$ can be calculated
+based on the supermolecular approach,
+%
+\begin{multline} \label{e:delta-p}
+	\Delta^{AB} P = \tBraKet{\Psi^{AB}}{\mathscr{P}}{\Psi^{AB}} \\- 
+	\left(
+	    \tBraKet{\Psi^{A}}{\mathscr{P}}{\Psi^{A}} +
+	    \tBraKet{\Psi^{B}}{\mathscr{P}}{\Psi^{B}}
+	\right)
+	\;,
+\end{multline}
+%
+where $\Psi^{AB}$ and $\Psi^{A(B)}$ are the wavefunctions of the interacting molecular aggregate
+and the unperturbed (non\hyp{}interacting) molecules, respectively.
+The notation $\Delta^{AB}$ emphasizes on the two\hyp{}body character of the interaction\hyp{}induced
+property. In this work we focus on re\hyp{}expressing $\Delta^{AB}P$ in terms of separate
+fragments associated with either molecule. In general case when the basis set
+is complete, such an operation is not possible. However,
+assuming an approximation
+in which the basis functions $\phi_i$ 
+are localized on either molecule it allows one to partition the basis set space
+and the resulting 2\hyp{} and 4\hyp{}index tensor elements
+into subsets `belonging' either to molecule $A$ or to molecule $B$.
+Such an approximation is essentially a foundation of any fragment\hyp{}based strategy
+and, in particular, designing \emph{ab initio} force fields such as EFP2
+of SolEFP.
+
+Application of Eq.~\eqref{e:exp-val-series}
+to Eq.~\eqref{e:delta-p} and adopting the localized basis set approximation
+yields the partitioning of the interaction\hyp{}induced property,
+%
+\begin{equation} \label{e:delta-p-part}
+ \Delta^{AB} P = \Delta^{AB} P(1) + \Delta^{AB} P(2) \;,
+\end{equation}
+%
+for which the one\hyp{}electron part reads
+%
+\begin{multline} \label{e:delta-p-part-1el}
+ \Delta^{AB} P(1) \approx
+	\sum_{ij} \Big\{ 
+	P^{AA}_{ij}  \tBraKet{A}{\hat{h}}{A} +    %\tBraKet{i^A}{\hat{h}}{j^A} + 
+	P^{BB}_{ij}  \tBraKet{B}{\hat{h}}{B} \\ + %\tBraKet{i^B}{\hat{h}}{j^B} + 2 
+2	P^{AB}_{ij}  \tBraKet{A}{\hat{h}}{B}      %\tBraKet{i^A}{\hat{h}}{j^B} 
+	\Big\}
+\end{multline}
+%
+and the two\hyp{}electron part is given by
+%
+\begin{multline} \label{e:delta-p-part-2el}
+ \Delta^{AB} P(2) \approx
+	\sum_{ijkl} \Big\{ 
+	P^{AAAA}_{ijkl} \BraKet{AA}{AA} \\ +    %\BraKet{i^Aj^A}{k^Al^A} +
+	P^{BBBB}_{ijkl} \BraKet{BB}{BB} +  %\BraKet{i^Bj^B}{k^Bl^B} +
+	{s} \left[ P^{AABB}_{ijkl} \BraKet{AA}{BB} \right] \\ + 
+	{s} \left[ P^{ABAB}_{ijkl} \BraKet{AB}{AB} \right] + 
+	{s} \left[ P^{AAAB}_{ijkl} \BraKet{AA}{AB} \right] \\ +
+	{s} \left[ P^{ABBB}_{ijkl} \BraKet{AB}{BB} \right]
+	\Big\} \;.
+\end{multline}
+%
+To simplify the resulting expressions
+in Eqs.~\eqref{e:delta-p-part-1el} and \eqref{e:delta-p-part-2el},
+the shorthand notation $\tBraKet{A}{\hat{h}}{B} \equiv \tBraKet{i^A}{\hat{h}}{j^B}$ and 
+$\BraKet{AB}{CD} \equiv \BraKet{i^Aj^B}{k^Cl^D}$
+was introduced, and
+the real orbitals 
+were assumed to simplify the symmetry of the one\hyp{} and two\hyp{}electron integrals.
+The operator $s$ permutes and sums over all the combinations of the basis function indices
+given their partitioning scheme between molecules $A$ and $B$.
+All the summation components from Eqs.~\eqref{e:delta-p-part-1el} and \eqref{e:delta-p-part-2el} 
+can be grouped into the three
+sub\hyp{}categories: (i) Coulomb\hyp{}like terms
+with integrals of the type $\BraKet{AA}{BB}$, (ii) overlap\hyp{}like terms with $\BraKet{AA}{AB}$
+and $\BraKet{AB}{BB}$ and (iii) exchange\hyp{}like terms with $\BraKet{AB}{AB}$.
+
+%Therefore, the interaction\hyp{}induced property can be recast in a following way
+
+\subsection{\label{ss:2.3}Incorporating Electron Repulsion Integrals into Effective Potentials}
+
+Consider now an arbirtary functional $\mathcal{F}$ that explicitly depends on the 
+ERI's. In this work, OEP's are defined by the following transformation
+%
+ \begin{equation}
+ \mathcal{F}
+ \left[ 
+   \BraKet{ij}{k^Al^A}
+	 \right] = \tBraKet{i}{\hat{v}_{kl}^A}{j}  \;,
+ \end{equation}
+%
+where 
+% $A$ and $B$ denote different molecules and $\phi_i$ is the $i$th molecular orbital
+%or basis function.
+$\hat{v}_{kl}^A$ is the effective one-electron potential operator given by Eq.~\eqref{e:oep-operator} 
+with the
+effective density $\rho_{kl}^A({\bf r}) \equiv \phi_k^A({\bf r})\phi_l^A({\bf r})$.
+The summations over $k$ and $l$ can be incorporated into the total effective one-electron potential operator
+$\hat{v}_{\text{eff}}^A$
+to produce
+%
+\begin{equation}
+	\sum_{ij}\sum_{kl\in A} \mathcal{F}\left[ 
+   \BraKet{ij}{k^Al^A}
+ \right] = \sum_{ij} \tBraKet{i}{\hat{v}_{\text{eff}}^A}{j}  \;.
+\end{equation}
+%
+Thus, the total computational effort is, in principle, reduced from the fourth-fold
+sum involving evaluation of ERI's to the two-fold sums of cheaper one-electron integrals.
+It is also possible to generalize the above expression even further by
+summing over all possible functionals ${\mathcal{F}}_t$
+%
+\begin{equation} \label{e:ft-reduction}
+	\sum_t \sum_{ij}\sum_{kl\in A} {\mathcal{F}}_t\left[ 
+   \BraKet{ij}{k^Al^A}
+ \right] = \sum_{ij} \tBraKet{i}{\hat{v}_{\text{eff}}^A}{j} \;.
+\end{equation}
+%
+The above design has the advantage that it opens the possibility to define first\hyp{}principles
+effective fragments as long as the $P_{ij}$ and $P_{ijkl}$ 
+from Eq.~\eqref{e:exp-val-series} are computable and can be approximately
+partitioned in between the interacting fragments.
+%the resulting effective potentials are fully first\hyp{}principles
+%and no extensive case\hyp{}dependent fitting procedures are necessary as long as the $P_{ij}$ and $P_{ijkl}$
+%are computable.
+%Only the effective potentials of \emph{independent} fragment $A$ need to be determined once and for all
+%and stored in a file. 
+%Note also, that, in principle, there is no approximation 
+%made here at that moment.
+
+\subsection{\label{ss:2.4}Definition of Interaction-Induced Property Effective Potentials}
+
+The above technique can be now applied to the CI expansion of the interaction\hyp{}induced property
+under the localized basis set approximation 
+from Eq.~\eqref{e:delta-p-part}.
+%Coulomb\hyp{}like and overlap\hyp{}like 
+%terms from Eq.~\eqref{e:delta-p-part-2el}. 
+For example, the Coulomb\hyp{}like contributions
+can be rewritten without making any further approximation as
+%
+\begin{equation}
+ \sum_{ijkl} 
+	{s} \left[ P^{AABB}_{ijkl} \BraKet{AA}{BB} \right]
+ \equiv
+	\sum_{kl\in B} 
+	\tBraKet{k^B}{\hat{v}^{{\rm eff},A}}{l^B}
+\end{equation}
+%
+with
+%
+\begin{equation}
+ \hat{v}^{{\rm eff},A} 
+	\equiv \sum_{ij\in A} {s} \left[ P^{AABB}_{ijkl} \hat{v}^{AA}_{ij} \right]  \;.
+\end{equation}
+%
+Similarly for the overlap\hyp{}like term we have
+%
+\begin{equation}
+ \sum_{ijkl} 
+	{s} \left[ P^{AAAB}_{ijkl} \BraKet{AA}{AB} \right]
+ \equiv
+	\sum_{k\in A} \sum_{l\in B} 
+	\tBraKet{k^A}{\hat{v}^{{\rm eff},A}}{l^B}
+\end{equation}
+%
+and the associated effective potential reads
+%
+\begin{equation}
+ \hat{v}^{{\rm eff},A} 
+	\equiv \sum_{ij\in A} {s} \left[ P^{AAAB}_{ijkl} \hat{v}^{AA}_{ij} \right] \;.
+\end{equation}
+%
+Note that the exchange\hyp{}like terms cannot be represented in terms of OEP's.
+Gathering the above arguments, $\Delta^{AB}P$ adopts the following form
+%
+\begin{multline} \label{e:ci-oep-master}
+ \Delta^{AB}P \approx \Delta_{\rm ex}^{AB} P
+	+ \sum_{i\in A} \sum_{j\in B} 
+	  \tBraKet{i}{ \left\{ \hat{v}^{{\rm eff},AB}_{1(ij)} + \hat{v}^{{\rm eff},BA}_{1(ij)}  \right\} }{j}
+	 \\ +
+	\sum_{i\in A} \sum_{k\in A}
+	  \tBraKet{i}{\hat{v}^{{\rm eff},BA}_{2(ik)} }{k}
+	 +
+        \sum_{j\in B} \sum_{l\in B}
+          \tBraKet{j}{\hat{v}^{{\rm eff},AB}_{2(jl)} }{l}
+\end{multline}
+%
+where the exchange\hyp{}like component is
+%
+\begin{equation}
+	\Delta_{\rm ex}^{AB} P = 
+	s \sum_{ik\in A} \sum_{jl\in B}
+	P^{ABAB}_{ijkl} \BraKet{ij}{kl} \;,
+\end{equation}
+%
+and
+the overlap\hyp{}like and the Coulomb\hyp{}like 
+OEP's are defined as follows
+%
+\begin{subequations}
+\begin{align} \label{e:oep-exch-like}
+	\hat{v}^{{\rm eff},BA}_{1(ij)} &\equiv P_{ij}^{AB} \hat{h}
+	+ s \sum_{mk\in A}  P^{AAAB}_{mkij} \hat{v}_{mk}^{AA} \;, \\
+	%
+	\hat{v}^{{\rm eff},BA}_{2(ik)} &\equiv P_{ik}^{AA} \hat{h} 
+        + s \sum_{mk'\in A} P^{AAAA}_{ikmk'} \hat{v}_{mk'}^{AA}  \nonumber
+        \\ \label{e:oep-coul-like}
+	& \qquad\qquad+ \frac{1}{2}
+        s \sum_{jl'\in B}  P^{AABB}_{ik'jl} \hat{v}_{jl'}^{BB} \;,
+\end{align}
+\end{subequations}
+%
+and accordingly for the twin operators $\hat{v}^{{\rm eff},AB}_{\text{$1$ and $2$}}$.
+
+\subsection{\label{s.242}Separability of P-Coefficients}
+
+Until that point, the effective potentials from Eqs.~\eqref{e:oep-exch-like}
+and \eqref{e:oep-coul-like} are not separable in terms of the interacting molecules
+because the $\bf P$ tensors are derived from the CI wavefunction of
+the entire interacting system $AB$. However, if there exist an approximate
+separation as, for example,
+%
+\begin{align}
+ P^{AB}_{ij} &\approx \sum_{k\in A} \sum_{l\in B} X^A_{ik} S_{kl}^{AB} X^B_{lj} \;,\\
+ P^{AAAB}_{mkij} &\approx \sum_{k\in A} \sum_{l\in B} 
+                 X^A_{mkik'} S^{AB}_{k'l'} Y^{B}_{l'j} \;, \\
+ P^{AABB}_{ikjl} &\approx Z^A_{ik} Y^{AB}_{} Z^{ B}_{jl} \;,
+\end{align}
+%
+and if the matrices ${\bf X}^{A(B)}$, 
+${\bf Z}^{A(B)}$ and ${\bf P}^{AA(BB)}$ as well as the tensors
+${\bf P}^{AAAA(BBBB)}$ 
+are properties of the unperturbed (isolated) molecules,
+further rearrangements in Eq.~\eqref{e:ci-oep-master} are possible
+leading to computationally more efficient expressions.
+
+Note also that the matrices ${\bf Y}^{AB}$ and ${\bf P}^{AB}$ depend on their instantaneous 
+relative positions.
+
+%then the molecule\hyp{}specific OEP's can be defined.
+
+\section{\label{s.334}Practical OEP-Based Calculations}
+
+There are two general cases of basis function partitioning scheme
+in which it is possible to define an effective one\hyp{}electron
+potential. They are listed in Table~\ref{t:oep-matrix-element-types}.
+The first type is a Coulomb\hyp{}like contribution, for which multipole expansion or density fitting can be used.
+The second type is an overlap\hyp{}like contribution, which can be approximated via the density fitting. 
+%
+{
+\renewcommand{\arraystretch}{1.4}
+\begin{table}[b]
+\caption[Types of matrix elements with OEP operators]
+{{\bf Types of matrix elements with OEP operators\footnotemark[1]}
+}
+\label{t:oep-matrix-element-types}
+\begin{ruledtabular}
+\begin{tabular}{lcccc}
+Matrix element      &&            `Overlap-like'                &&            `Coulomb-like'               \\ 
+                    && $\tBraKet{i}{\hat{v}^{A}_{\rm eff}}{j} $ && $\tBraKet{j}{\hat{v}^{A}_{\rm eff}}{l}$ \\ 
+	\cline{1-5}
+Partitioning scheme &&            $i\in A, j\in B$              &&               $j,l\in B$                \\
+Associated ERI's    &&            $\BraKet{AA}{AB}$             &&               $\BraKet{AA}{BB}$         \\
+DF\footnotemark[2]/RI\footnotemark[3] Form    
+&& $\sum_{\xi\in A}^{\rm Aux} v^A_{i\xi} S^{AB}_{\xi j} $  
+&& $\sum_{\xi\zeta\in A}^{\rm Aux} S^{BA}_{j\xi} v^A_{\xi\zeta} S^{AB}_{\zeta l} $ \\
+DMTP\footnotemark[4] Form                     
+&& --  &  &  $\rho_{jl}^B \odot \rho_{\rm eff}^A$ \\
+\end{tabular}
+\end{ruledtabular}
+%
+\footnotetext[1]{Test footnotemark.}
+\footnotetext[2]{Density Fitting}
+\footnotetext[3]{Resolution of Identity}
+\footnotetext[4]{Distributed Multipole Expansion}
+%
+\end{table}
+}
+%
+
+\subsection{\label{s.333}Distributed Multipole Expansion of OEP's}
+
+This scheme is most applicable in the case of matrix elements of the type
+$
+ \tBraKet{j^B}{\hat{v}_{\rm eff}^A}{l^B}
+$
+because it can be considered as a Coulombic interaction between $\rho^B_{jl}$
+and $\rho^A_{\rm eff}$. 
+In general, given certain two effective one\hyp{}electron density distributions,
+the associated effective Coulombic interaction energy can be estimated from the classical formula
+according to
+%
+\begin{equation}
+ \Delta^{(XY)}_{\rm eff} E_{\rm Coul} = \iint \frac{\rho_{\rm eff}^X({\bf r}_1) \rho_{\rm eff}^Y({\bf r}_2)}
+ {\vert {\bf r}_1 - {\bf r}_2 \vert} 
+d{\bf r}_1 d{\bf r}_2 \;.
+\end{equation}
+%
+The above double integral can be approximated by the
+distributed multipole (DMTP)
+expansions of the respective densities as follows
+%
+\begin{multline}
+  \Delta^{(XY)}_{\rm eff} E_{\rm Coul} \approx
+ \rho_{\rm eff}^X \odot \rho_{\rm eff}^Y \equiv
+ \sum_{u\in A} \sum_{w\in B} \Big\{ 
+ T^{(0)}_{uw}
+ q_{\rm eff}^{(u)}  q_{\rm eff}^{(w)} \\
+ - {\bf T}^{(1)}_{uw} \cdot 
+   \left[ q_{\rm eff}^{(u)} {\BM\upmu}_{\rm eff}^{(w)} - q_{\rm eff}^{(w)} {\BM\upmu}_{\rm eff}^{(u)} \right]
+ - {\bf T}^{(2)}_{uw} : 
+  {\BM\upmu}_{\rm eff}^{(u)}  \otimes {\BM\upmu}_{\rm eff}^{(w)} 
+ \ldots
+ \Big\}
+\end{multline}
+%
+In the above equations, $q_{\rm eff}^{(u)}$ and ${\BM\upmu}^{(u)}_{\rm eff}$ 
+are the effective distributed monopole (charge)
+and dipole moment, respectively, centered on the $u$th site, 
+whereas ${{\bf T}^{(r)}_{uw}}$ are the so called interaction tensors or rank $r$ 
+that can be found elsewhere.
+The symbol `$\odot$' denotes the sum of all the tensor contractions
+performed over the DMTP's of molecule $X$ and $Y$ to yield the associated interaction energy.
+The choice of the distribution centres as well as the truncation order of the multipole expansion
+is crucial in compromising the accuracy and computational cost of the resulting expressions.
+There is many ways in which this can be achieved, e.g., through the distributed multipole analysis (DMA)
+of Stone and Anderton, %cite
+the cumulative atomic multipole moments of Sokalski and Poirier, %cite
+the localised distributed multipole expansion (LMTP) of Etchtebest et al. %cite
+or schemes based on fitting to electrostatic potential.
+
+\subsection{\label{s.3344}Density Fitting of OEP's}
+
+This scheme is most useful in the case of matrix elements of the type
+$
+ \tBraKet{i^A}{\hat{v}_{\rm eff}^A}{j^B}
+$.
+To get the \emph{ab initio} representation of such an overlap\hyp{}like matrix element,
+one can use a procedure similar to
+the typical density fitting or resolution of identity, both of which are nowadays widely used 
+to compute electron\hyp{}repulsion integrals (ERI's) more efficiently. 
+
+\subsubsection{Density Fitting in Nearly-Complete Space}
+
+An arbitrary one\hyp{}electron potential of molecule $A$ acting on any state vector 
+associated with molecule $A$ can be expanded in an auxiliary space centered 
+on $A$ as
+%
+\begin{equation}
+   \hat{v}^{A}\Ket{i} = \sum_{\xi\eta}^{\rm RI} \hat{v}^{A}\Ket{\xi} [{\bf S}^{-1}]_{\xi\eta} \BraKet{\eta}{i}
+\end{equation}
+%
+under the necessary assumption that the auxiliary basis set is nearly complete,
+i.e., 
+$\sum_{\xi\eta}^{\rm RI} \Ket{\xi}[{\bf S}^{-1}]_{\xi\eta} \Bra{\eta} \cong 1$.
+In the equations above, 
+the `RI' symbol denotes a certain auxiliary basis set that fulfills the resolution of identity. 
+%In a special case when the basis set is orthogonal (e.g., molecular orbitals)
+%the above relation simplifies to
+%\begin{equation}
+%   v\vert i) = \sum_{\xi} v\vert \xi) ( \xi \vert i)
+%\end{equation}
+Such a general expansion can be obtained by 
+utilizing the density fitting
+in the nearly\hyp{}complete space,
+%
+\begin{equation}
+ \hat{v}^{A}\Ket{i} = \sum_{\xi}^{\rm RI} V^A_{i\xi} \Ket{\xi} \;.
+\end{equation}
+%
+In the above equation,
+the matrix ${\bf V}^A$
+is the projection of the state vector $\hat{v}^{A} \Ket{i}$
+onto the complete basis $\{ \varphi_\xi \}$.
+Let $Z_i[{\bf V}^A]$ be the least\hyp{}squares objective function 
+%
+\begin{equation} \label{e:z-compl}
+ Z_i[{\bf V}^A] = \int \vert \Xi_i({\bf r}) \vert^2 d{\bf r}
+\end{equation}
+%
+with the error density defined by
+%
+\begin{equation}
+ \Xi_i({\bf r}) = v^A({\bf r}) \phi_i({\bf r}) - \sum_\xi^{\rm RI} V^A_{i\xi} \varphi_\xi({\bf r}) \;.
+\end{equation}
+%
+By requiring that
+%
+\begin{equation} \label{e:z-necessary-requirement}
+ \frac{\partial Z_i[{\bf V}^A]}{\partial V^A_{i\mu}} = 0 \text{ for all $\mu$}
+\end{equation}
+%
+one finds the coefficients of the $i$th row of ${\bf V}^A$ to be
+%
+\begin{equation} \label{e:gdf-coml.v}
+% {\bf v}_i = {\bf a}^{(i)} \cdot {\bf S}^{-1}
+  V^A_{i\xi} = \sum_\eta^{\rm RI} [{\bf S}^{-1}]_{\xi\eta} a^{(i)}_\eta \;,
+\end{equation}
+%
+where the auxiliary matrices are given by
+%
+\begin{subequations}
+\begin{align}
+ a^{(i)}_\eta &= \int \varphi^*_\eta({\bf r}) \hat{v}^A \phi_i({\bf r}) d{\bf r} \;,\\  
+ S_{\eta\xi}  &= \int \varphi^*_\eta({\bf r}) \varphi_\xi({\bf r}) d{\bf r} \;.
+\end{align}
+\end{subequations}
+%
+%Since matrix elements of an OEP operator in auxiliary space can be computed 
+%in the same way as the matrix elements with any other basis function, 
+%one can formally write the following identity
+%\begin{equation}
+% (X \vert v\vert i) = \sum_{\xi\eta} S_{X \xi} [{\bf S}^{-1}]_{\xi\eta} (\eta\vert v\vert i)
+%\end{equation}
+%where $ X $ is an arbitrary orbital.
+%When the other orbital
+%does not belong to molecule $A$ but to the (changing) environment, it is 
+%straightforward to compute the resulting matrix element, which is simply given as  
+%\begin{equation}
+%   (j_{\in B} \vert v^A \vert i_{\in A}) = \sum_\xi {S_{j\xi}} {G_{i\xi}}
+%\end{equation}
+%where $j$ denotes the other (environmental) basis function.
+%
+The working formula for $a^{(i)}_\eta$ can be found by applying 
+potential form from Eq.~\eqref{e:v-eff}
+along with the spectral representation of the effective density from Eq.~\eqref{e:d-spectral} 
+which finally gives
+%
+\begin{equation}
+ a^{(i)}_\eta = \lambda \sum_{x} W_{\eta i}^{(x)} + 
+ \sum_{\alpha\beta} D^A_{\alpha\beta} 
+  \BraKet{\alpha\beta}{\eta i} \;.
+%  \iint \frac{ \phi_\alpha^*({\bf r}_1)  \phi_\beta({\bf r}_1) \varphi^*_\eta({\bf r}_2) \phi_i({\bf r}_2)}
+% {\vert {\bf r}_1 - {\bf r}_2 \vert }
+% d{\bf r}_1 d{\bf r}_2
+\end{equation}
+%
+
+\subsubsection{Density Fitting in Incomplete Space}
+
+Density fitting scheme from previous section has practical disadvantage of a nearly\hyp{}complete basis set
+being usually very large (spanned by large amount of basis set vectors). 
+Since most of basis sets used in quantum chemistry do not form a nealy complete
+set, it is beneficial to design a modified scheme in which it is possible to obtain the effective 
+matrix elements of the OEP operator in a incomplete auxiliary space. This can be achieved by minimizing 
+the following objective function
+%
+\begin{equation} \label{e:z-incompl}
+	Z_i[{\bf V}^A] = \iint 
+        \frac{ \Xi_i^*({\bf r}_1) \Xi_i({\bf r}_2) }{\vert {\bf r}_1 - {\bf r}_2 \vert}  
+         d{\bf r}_1 d{\bf r}_2  \;.
+\end{equation}
+%
+with the error density defined by
+%
+\begin{equation}
+ \Xi_i({\bf r}) = v^A({\bf r}) \phi_i({\bf r}) - \sum_\xi^{\rm DF} V^A_{i\xi} \varphi_\xi({\bf r}) \;.
+\end{equation}
+%
+where the symbol `DF' denotes the generally incomplete auxiliary basis set.
+From the requirement given in Eq.~\eqref{e:z-necessary-requirement}
+one obtains
+%
+\begin{equation} \label{e:v-noncompl}
+% {\bf G}^{(i)} = {\bf b}^{(i)} \cdot {\bf A}^{-1}
+  V^A_{i\xi} = \sum_\eta^{\rm DF} [{\bf R}^{-1}]_{\xi\eta} b^{(i)}_\eta \;,
+\end{equation}
+%
+where 
+%
+\begin{subequations}
+\begin{align}
+ b^{(i)}_\eta &= \iint 
+                       \frac{ \varphi^*_\eta({\bf r}_1) \hat{v} \phi_i({\bf r}_2) } 
+                            {\vert {\bf r}_1 - {\bf r}_2\vert}  
+                 d{\bf r}_1 d{\bf r}_2 \;, \\
+ R_{\eta\xi}  &= \iint 
+                       \frac{ \varphi^*_\eta({\bf r}_1) \varphi_\xi({\bf r}_2) } 
+                            {\vert {\bf r}_1 - {\bf r}_2\vert}  
+                 d{\bf r}_1 d{\bf r}_2 \;.
+\end{align}
+\end{subequations}
+%
+%The symbol $ \vert\vert $ is to denote the operator $ r_{12}^{-1}$ and double integration over $ {\bf r}_1 $
+%and $ {\bf r}_2 $. 
+Note that, while $R_{\eta\xi}$ is a typical 2\hyp{}center ERI 
+that can be evaluated by standard means,
+$b^{(i)}_\eta$ matrix elements are not at all trivial to calculate
+because the OEP operator, which contains integration over an electron coordinate,
+is present inside the double integral. Therefore, the following triple integral,
+%
+\begin{equation} \label{e:triple-integral}
+ b^{(i)}_\eta = \iiint 
+           \frac{ \varphi^*_\eta({\bf r}_1) \phi_i({\bf r}_2)  \rho^{\rm eff}({\bf r}_3) }
+            {\vert {\bf r}_1 - {\bf r}_2 \vert \vert {\bf r}_3 - {\bf r}_2 \vert}
+           d{\bf r}_1 d{\bf r}_2 d{\bf r}_3 \;,
+\end{equation}
+%
+has to be computed.
+Obtaining all the necessery integrals of this kind directly 
+by performing integrations in Eq.~\eqref{e:triple-integral} is very costly 
+and impractical even for medium sized molecules. 
+However, one can introduce the effective potential in order to eliminate one integration. 
+This can be achieved by performing additional density fitting in a nearly complete intermediate basis 
+%
+\begin{equation}
+ \hat{v}^{\rm eff} \Ket{i} = \sum_\varepsilon^{\rm RI} H_{i\varepsilon} \Ket{\varepsilon} \;,
+\end{equation}
+%
+%where the symbol `RI' denotes the intermediate basis from a chosen resolution of identity.
+The working equation is therefore given by
+%
+\begin{equation}
+ b^{(i)}_\eta = \sum_\varepsilon^{\rm RI} H_{i\varepsilon} R_{\varepsilon\eta} \;,
+\end{equation}
+%
+%with
+%%
+%\begin{equation}
+% R_{\varepsilon\eta} \equiv \iint 
+%                       \frac{ \varphi^*_\varepsilon({\bf r}_1) \varphi_\eta({\bf r}_2) } 
+%                            {\vert {\bf r}_1 - {\bf r}_2\vert}  
+%                 d{\bf r}_1 d{\bf r}_2 \;,
+%\end{equation}
+%%
+which can be easily evaluated by noting that
+$H_{i\varepsilon}$ are given by Eq.~\eqref{e:gdf-coml.v}.
+Thus, the matrix elements of the OEP operator can be found
+by using Eq.~\eqref{e:v-noncompl}.
+%Therefore, in order to use this generalized density fitting scheme
+%one must to compute two\hyp{}centre electron repulsion integrals
+%as well as four\hyp{}centre asymmetric electron repulsion integrals of the type $ (\alpha\beta\gamma||\eta) $.
+%The evaluation of such integrals is discussed in Appendix~\ref{a:mcmurchie-davidson}.
+
+It is emphasized here that, as long as the state vector $\Ket{i}$, OEP operator $\hat{v}^A$ 
+and the auxiliary and intermediate basis sets depend solely on one unperturbed molecule $A$, the matrix elements
+$V^A_{i\xi}$ can be calculated just once and stored in a file as effective fragment parameters.
+
+
+\section{\label{s:4}Calculation Details}
+
+All the models that were used to test the theory presented in this work
+were implemented in our in\hyp{}house plugin to {\sc Psi4} quantum chemistry program.\cite{Psi4.JCTC.2017}
+
+\section{\label{s:5}Results and Discussion}
+\subsection{\label{ss.5.1}Pauli-Repulsion Interaction Energy}
+
+At short intermolecular interactions, wavefunction overlap increases
+which causes the electrons from either molecules to move apart to minimize the repulsive interactions.
+The resulting interaction energy can be estimated based on perturbation theory approaches.
+In this section, we demonstrate the use of OEP operators to significanlty reduce the computational
+cost of such calculations, that can be used in fragment\hyp{}based modelling of extended molecular
+aggregates in terms of force field methods.
+
+As a starting point we consider perturbation theory model of Murrell et al.,
+in which repulsive energy is originally given by
+%
+\begin{equation}
+ \Delta^{AB} E^{\rm Rep} = 
+ \Delta^{AB} E^{\rm Rep}(S^{-1}) + 
+ \Delta^{AB} E^{\rm Rep}(S^{-2}) \;,
+\end{equation}
+%
+where the first\hyp{}order term with respect to the intermolecular overlap is
+%
+\begin{multline} \label{e:rep.murrell-etal.S1}
+  \Delta^{AB}  E^{\rm Rep}(S^{-1}) = -2\sum_{i\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}
+               S_{ij} \Big\{
+           V^A_{ij} 
+         + V^B_{ji} \\
+ + \sum_{k\in A}^{\rm Occ} \left[ 2\BraKet{ij}{kk} - \BraKet{ik}{jk} \right] 
+ + \sum_{l\in B}^{\rm Occ} \left[ 2\BraKet{ij}{ll} - \BraKet{il}{jl} \right]
+                \Big\}
+\end{multline}
+%
+and the second\hyp{}order term is given in Eq.(XXX) in Ref. %cite
+In this work, we focus to simplify only the former term because this is usually
+the bottleneck of evaluating the Pauli repulsive contributions to
+forces in molecular dynamics when using the effective potential method, whereas
+very inexpensive approximation to the latter term has already been worked out previously. %cite
+Note that the Coulomb and exchange integrals can be re\hyp{}cast as follows:
+%
+\begin{subequations}
+ \begin{align}
+ \BraKet{ij}{kk} &\equiv \sum_{\mu\in A} 
+     C_{\mu i}^A \tBraKet{\mu}{\hat{v}_{kk}}{j} \;, \\
+ \BraKet{ik}{jk} &\equiv \sum_{\mu\in A} 
+     C_{\mu k}^A \tBraKet{\mu}{\hat{v}_{ik}}{j} \;.
+ \end{align}
+\end{subequations}
+%
+%Similarly, the exchange integrals reduce to
+%
+%\begin{equation}
+% \BraKet{ik}{jk} \equiv \sum_{\mu\in A} 
+%     C_{\mu k}^A \tBraKet{\mu}{\hat{v}_{ik}}{j} \;.
+%\end{equation}
+%
+In the above equations, the auxiliary potential operators are given by
+%
+\begin{equation}
+  \hat{v}_{ik} \equiv \int d{\bf r} \Ket{{\bf r}} 
+        \left[
+        \int d{\bf r}' \frac{\phi_i^{*}({\bf r}') \phi_k({\bf r}')}{\vert {\bf r}' - {\bf r}\vert}
+        \right] \Bra{{\bf r}} \;.
+\end{equation}
+%
+Now, using the prescription in Eq.~\eqref{e:ft-reduction} one can define a joint OEP
+operator from nuclear, Coulomb and exchange parts as
+%
+\begin{equation}
+ V^A_{ij} + 
+ \sum_{k\in A}^{\rm Occ} 
+  \left\{ 2\BraKet{ij}{kk} - \BraKet{ik}{jk} \right\}
+\equiv \sum_{\mu\in A} \tBraKet{\mu}{ 
+\hat{v}^{A[\mu i]}_{\rm eff}
+ }{j}
+\end{equation}
+%
+with
+%
+\begin{equation}
+ \hat{v}^{A[\mu i]}_{\rm eff} \equiv C_{\mu i} \hat{v}^A_{\rm nuc} + 
+ \sum_{k\in A}^{\rm Occ} \left[
+ 2C_{\mu i}^A \hat{v}^A_{kk} - C_{\mu k}^A \hat{v}^A_{ik}
+ \right] \;.
+\end{equation}
+%
+%The nuclear part can also be incorporated within the effective potential
+%resulting in the following reduction
+%
+%
+On the other hand, it immediately follows that
+%
+\begin{equation}
+ \hat{v}^{A[\mu i]}_{\rm eff} \Ket{\mu} = 
+  \sum_{k\in A}^{\rm Occ} \left\{
+     2\hat{v}^A_{kk} \Ket{i} - \hat{v}^A_{ik} \Ket{k}
+  \right\} \;.
+\end{equation}
+%
+For practical calculations, the right hand side of the above equation can be expanded 
+in the auxiliary basis,
+%
+\begin{equation} \label{e:v-oep.rep}
+  \sum_{k\in A}^{\rm Occ} \left\{
+     2\hat{v}^A_{kk} \Ket{i} - \hat{v}^A_{ik} \Ket{k}
+  \right\} \cong
+  \sum_{\xi\in A}^{\rm DF} 
+  V_{\xi i}^A \Ket{\xi} \;,
+\end{equation}
+%
+where the matrix ${\bf V}^A$ can be considered as effective fragment parameters.
+Doing the same operations on the twin operators associated with the molecule $B$
+original theory of Murrell et. al from Eq.~\eqref{e:rep.murrell-etal.S1}
+reduces to
+%
+\begin{equation}
+  \Delta^{AB}  E^{\rm Rep}(S^{-1}) \cong 
+ -2\sum_{i\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}
+               S_{ij} \Big\{
+           \sum_{\xi \in A}^{\rm DF} V_{\xi i}^A S_{\xi j}
+         + \sum_{\eta\in B}^{\rm DF} V_{\eta j}^B S_{\eta i}
+                \Big\}
+\end{equation}
+%
+which is a fully OEP\hyp{}based result. Note, that now only 
+overlap integrals, which are relatively computationally very inexpensive,
+need to be evaluated.
+
+As another benchmark model for accuracy, we compare our results with 
+the exchange and repulsion energy term 
+from the density\hyp{}based scheme of partitioning the interaction energy
+(here abbreviated as DDS),
+that was developed by Mandado and Hermida-Ramon. 
+%In the above equations, the Pauli deformation density 
+%%
+%\begin{equation}
+%   \Delta {\bf D}^{\rm Pauli} \equiv {\bf D}^{oo} - {\bf D}
+%\end{equation}
+%%
+%where \f$ {\bf D}^{oo}\f$ and \f$ {\bf D}\f$ are the density matrix formed from
+%mutually orthogonal sets of molecular orbitals within the entire aggregate (formed
+%by symmetric orthogonalization of MO's) and the density matrix of the unperturbed
+%system (that can be understood as a Hadamard sum \f$ {\bf D} \equiv {\bf D}^A \oplus {\bf D}^B\f$).
+% 
+%At HF level, the Pauli deformation density matrix is given by
+%\f[
+%  \Delta {\bf D}^{\rm Pauli} = {\bf C} \left[ {\bf S}^{-1} - {\bf 1} \right] {\bf C}^\dagger
+%\f]
+%whereas the density matrix constructed from mutually orthogonal orbitals is
+%\f[
+%   {\bf D}^{oo} = {\bf C} {\bf S}^{-1} {\bf C}^\dagger
+%\f]
+%In the above equations, \f$ {\bf S} \f$ is the overlap matrix between doubly occupied molecular orbitals
+% of the entire aggregate.
+It is also mentioned here that the DDS model of exchange-repulsion at HF level of theory
+is equivalent to the perturbative method of Hayes and Stone and the two methods
+yield the same results, although the exchange and repulsive interaction energies
+are slightly different.
+
+\subsubsection{\label{ssdff.sd}Defining OEP's for Repulsive Potential}
+
+\subsection{\label{ss.5.2}Charge-Transfer Interaction Energy}
+
+Charge transfer (CT) between molecules occurs when the net electronic populations 
+of interacting molecules change which leads to an additional stabilization 
+of a molecular aggregate. Since the effect of CT on the interaction energy 
+is known to be often non\hyp{}negligible, it is quite important to model 
+CT energies with reasonable accuracy and efficiency when performing energy 
+and molecular dynamics calculations with \emph{ab initio} force fields, 
+especially in donor\hyp{}acceptor systems such as H\hyp{}bonded species. 
+However, estimating the CT stabilization energy is usually much more expensive 
+than estimating the contributions due to other effects such as electrostatics, 
+exchange\hyp{}repulsion and dispersion.\cite{Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012}
+
+As an illustration of application of the OEP technique for efficient calculation 
+of CT energy we consider the second\hyp{}order perturbation theory of Murrell et al.,
+in which the energy associated with the charge transfer from molecule $A$ to $B$ is given by
+%
+\begin{equation} \label{e:ct-murell-etal.e}
+ E^{A\rightarrow B} = 2 \sum_{i\in A}^{\rm Occ} \sum_{n\in B}^{\rm Vir} 
+  \frac{\vert V^{A\rightarrow B}_{in} \vert^2 }{\varepsilon_i - \varepsilon_n}
+\end{equation}
+%
+%coupling constants between occupied and virtual molecular orbitals 
+%are re-expressed by the effective one-electron potentials. The resulting formula provides new possibilities 
+%of optimization and applications in condensed phase simulations. [3]
+%
+where $\varepsilon_i$ and $\varepsilon_n$ are the canonical energies
+of the occupied (denoted by `Occ') and virtual (denoted by `Vir') 
+HF molecular orbitals, respectively,
+whereas the coupling constant is given by
+%
+\begin{multline} \label{e:ct-murell-etal.vin}
+ V^{A\rightarrow B}_{in} = 
+        \tBraKet{i}{\hat{v}^B_{\rm tot} }{n} 
+      - \sum_{j\in B}^{\rm Occ} \BraKet{nj}{ij} 
+      - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} \\
+      - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
+     + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
+        S_{kj} \left( 1 - \delta_{ik} \right) 
+        \BraKet{nj}{ik} \;.
+\end{multline}
+%
+In the above expression, the following effective potentials,
+%
+\begin{subequations} 
+\begin{align} \label{e:ct-murell-etal.vtot-vi}
+ \hat{v}^B_{\rm tot} &= \hat{v}^B_{\rm nuc} + 2\sum_{j\in B}^{\rm Occ} \hat{v}^B_{jj} \quad\text{ and }\\ 
+ \hat{v}^A_{i      } &= \hat{v}^A_{\rm tot} - 2\hat{v}^A_{ii} \;,
+\end{align}
+\end{subequations}
+%
+were introduced without making any approximation to the original equation
+from Ref. One can immediately notice that the five summation terms
+from Eq.~\eqref{e:ct-murell-etal.vin} can be classified into three groups
+regarding the type of ERI's that are required:
+(i) $\BraKet{AB}{BB}$ -- the first two terms;
+(ii) $\BraKet{AA}{BB}$ -- the third term and
+(iii) $\BraKet{BB}{AA}$ -- the two last terms. 
+Note also that there are no exchange\hyp{}like terms needed in this case.
+Therefore, all the contributions can be re\hyp{}cast in terms of the OEP's.
+%Note that groups (ii) and (iii) correspond to the Coulomb interactions between
+%The group (i) corresponds to the overlap\hyp{}like integrals, whereas the groups (ii) and (iii)
+%correspond to the Coulomb\hyp{}like integrals
+
+\paragraph{Group (i).}
+Group (i) can be rewritten by noticing that
+%
+\begin{equation} \label{e:ct-murell-etal.group-i.notice}
+ \sum_{j\in B}^{\rm Occ} 
+ \BraKet{nj}{ij} =
+ \Bra{i} \left[ \hat{v}^B_{nj} \Ket{j} \right]  \;,
+\end{equation}
+%
+which, by combining with the first term from Eq.~\eqref{e:ct-murell-etal.vin}, 
+allows to apply the density fitting in an
+incomplete basis set as follows
+%
+\begin{equation} \label{e:v-oep.ct}
+\Bra{i} \left[ \hat{v}^B_{\rm tot} \Ket{n} - \sum_{j\in B}^{\rm Occ} \hat{v}^B_{nj} \Ket{j} \right]
+\cong \Bra{i} \sum_{\eta\in B}^{\rm DF} V^B_{n\eta} \Ket{\eta}
+\end{equation}
+%
+with the error density defined by
+%
+\begin{multline}
+ \Xi_n({\bf r}) = 
+  \left\{
+      v_{nuc}^B({\bf r}) + 2 \sum_{j\in B}^{\rm Occ}
+   \int \frac{ \vert \phi_j({\bf r}') \vert^2 }{\vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+  \right\}
+  \phi_n({{\bf r}})  \\
+ - \sum_{j\in B}^{\rm Occ} \phi_j({{\bf r}})
+   \int \frac{ \phi^*_n({\bf r}') \phi_j({{\bf r}'}) }{\vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+ - \sum_{\eta\in B}^{\rm DF} V^B_{n\eta} \varphi_\eta({\bf r}) \;.
+\end{multline}
+%
+Substituting the above equation into Eq.~\eqref{e:z-incompl}
+%and then
+%using resolution of identity to simplify the 
+leads to
+%
+\begin{equation}
+ V^B_{n\xi} = \sum_{\eta\in B}^{\rm DF} \left[ {\bf R}^{-1} \right]_{\xi\eta} b_\eta^{(n)} \;,
+\end{equation}
+%
+where
+%
+\begin{multline}
+ b^{(n)}_\eta = \iint 
+           d{\bf r}_1 d{\bf r}_2  
+           \frac{ \varphi^*_\eta({\bf r}_1) }
+            {\vert {\bf r}_1 - {\bf r}_2 \vert } \\ \times
+          \left[ 
+           \hat{v}^B_{\rm tot}  \phi_n({\bf r}_2) 
+         - \sum_{j\in B}^{\rm Occ} \hat{v}^B_{nj} \phi_j({{\bf r}_2})
+           \right]  \;.
+\end{multline}
+%
+The above result is given by a sum of triple integrals from Eq.~\eqref{e:triple-integral}.
+However, the following application of the resolution of identity,
+%
+\begin{equation}
+ \hat{v}^B_{\rm tot} \Ket{n} - \sum_{j\in B}^{\rm Occ} \hat{v}^B_{nj} \Ket{j}
+ \cong \sum_{\varepsilon\in B}^{\rm RI} H_{n\varepsilon}^B \Ket{\varepsilon} \;,
+\end{equation}
+%
+leads to a much simpler formula
+that requires only the one- and two\hyp{}electron integrals. 
+Therefore, by combining
+equations %which equations?
+one arrives to
+%
+\begin{equation}
+ V^B_{n\xi} = \sum_{\eta\in B}^{\rm DF} 
+          \sum_{\varepsilon\in B}^{\rm RI}
+         \left[ {\bf R}^{-1} \right]_{\xi\eta}
+         R_{\eta \varepsilon} 
+         H_{n\varepsilon}^B \;,
+\end{equation}
+%
+where
+%
+\begin{equation}
+ H_{n\varepsilon}^B = \sum_{\zeta\in B}^{\rm RI} \left[ {\bf S}^{-1} \right]_{\varepsilon\zeta}
+   a_\zeta^{(n)}
+\end{equation}
+%
+and
+%%
+\begin{align}
+ a^{(n)}_\zeta &= \tBraKet{\zeta}{\hat{v}^B_{\rm tot}}{n}
+      - \sum_{j\in B}^{\rm Occ} \tBraKet{\zeta}{\hat{v}^B_{nj}}{j} \nonumber \\
+ &= \sum_{y\in B} W^{(y)}_{\zeta n} 
+  + \sum_{j\in B}^{\rm Occ} 
+  \left\{
+   2\BraKet{\zeta n}{jj} - \BraKet{\zeta j}{nj} 
+  \right\} \;.
+\end{align}
+%
+Note that all the calculations that are required to obtain $V^B_{n\xi}$ are performed
+solely on the densities and basis sets associated with the unperturbed molecule $B$.
+Therefore, $V^B_{n\xi}$ can be considered as effective fragment parameters
+used to compute the first two terms of Eq.~\eqref{e:ct-murell-etal.vin} by
+%
+\begin{equation} \label{e:ct.group-i.final}
+        \tBraKet{i}{\hat{v}^B_{\rm tot} }{n} 
+      - \sum_{j\in B}^{\rm Occ} \BraKet{nj}{ij} 
+       = \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} \;,
+\end{equation}
+%
+which is a great simplification over the original form of group (i)
+because only the overlap integrals between the $i$th MO on molecule $A$
+and $\eta$th auxiliary orbital on molecule $B$ need to be evaluated on the fly.
+Note that the only approximation made so far was the application of density fitting
+and resolution of identity. If the auxiliary and intermediate
+basis sets are sufficiently large, the errors
+due to this approximation can be minimal and negligible.
+
+
+
+\paragraph{Group (ii).}
+The term belonging to this group can be considered as a sum of interaction
+energies between the total charge density distribution of molecule $B$
+and the partial density $\rho_{ik}({\bf r})$ of molecule $A$,
+weighted by the overlap integrals $S_{nk}$. Using the distributed multipole 
+expansion this group can be written as
+%
+\begin{equation} \label{e:ct.group-2}
+      - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} 
+ \cong - \sum_{k\in A}^{\rm Occ} S_{nk} \rho_{ki}^A \odot \rho^B_{\rm tot} \;.
+\end{equation}
+%
+Consider now a situation in which the localized occupied MO's are used.
+If the multipole series expansions are truncated
+at the distributed charges $q_i$ and dipole moments ${\BM{\upmu}_i}$, 
+located at the centroids ${\bf r}_i = \tBraKet{i}{\hat{\bf r}}{i}$, 
+then the interaction energy becomes
+%
+\begin{multline}
+ \rho_{ki}^A \odot \rho^B_{\rm tot} 
+ \approx 
+ q_{ki} 
+ \left[
+  %\sum_{i\in A}^{\rm LC} 
+ \sum_{y\in B}^{\rm At}
+  \frac{Z_y}{\vert {\bf r}_y - {\bf r}_i \vert } 
+ +
+ 2\sum_{j\in B}^{\rm LC}
+  \frac{q_j}{\vert {\bf r}_j - {\bf r}_i \vert } 
+ \right] \\
+ + \text{ dipole terms } \;.
+\end{multline}
+%
+Note however that $q_{ik} = -\delta_{ik}$ and $q_j = -1$. Moreover, 
+if the localized orbitals are perfectly spherical distributed dipole moments vanish.
+This means that Eq.~\eqref{e:ct.group-2} can be approximated as follows:
+%
+\begin{equation} \label{e:ct.group-ii.final}
+      - \sum_{k\in A}^{\rm Occ} S_{nk} \tBraKet{k}{\hat{v}^B_{\rm tot} }{i} 
+ \approx S_{ni}  \left[
+  %\sum_{i\in A}^{\rm LC} 
+ \sum_{y\in B}^{\rm At}
+  \frac{Z_y}{ r_{yi} } 
+ -
+ \sum_{j\in B}^{\rm LC}
+  \frac{2}{r_{ji}} 
+ \right] \;.
+\end{equation}
+%
+Therefore, only overlap integrals and relative distances between
+atomic and LC's are needed, which leads to a great reduction of the
+calculation cost,
+as compared either to the original expression or to the multipole expansion (left\hyp{} and right\hyp{}hand sides
+of Eq.~\eqref{e:ct.group-2}, respectively).
+We shall refer to this approximation as to
+the spherical overlap approximation (SOA). Note that in order for this approximation to be valid,
+occupied molecular orbitals need to be localized.
+
+\paragraph{Group (iii).}
+The terms with the overlap integrals involving the occupied MO on $A$
+can be combined into a single summation term, i.e.,
+\begin{multline}
+       - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
+     + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
+        S_{kj} \left( 1 - \delta_{ik} \right) 
+        \BraKet{nj}{ik} \\ = -
+ \sum_{k\in A}^{\rm Occ} 
+ \sum_{j\in B}^{\rm Occ}
+ S_{kj} 
+ \tBraKet{j}{
+ \underbrace{
+ \left\{ 
+  \delta_{ik} \left( \hat{v}^A_{k} + \hat{v}^A_{ik} \right)
+  - \hat{v}^A_{ik}
+ \right\} 
+  }_{\hat{v}^{A,{\rm eff}}_{ik}}
+ }{n}  \\ \cong -
+%
+  \sum_{k\in A}^{\rm Occ} 
+ \sum_{j\in B}^{\rm Occ}
+ S_{kj} 
+ \rho_{nj}^B \odot \rho^{A,{\rm eff}}_{ik} \;,
+\end{multline}
+%
+where the effective potential ${v}^{A,{\rm eff}}_{ik}$ (with the associated 
+effective density $\rho^{A,{\rm eff}}_{ik}$) 
+is defined by
+%
+\begin{equation} \label{e:ct.group-iii.oep}
+ {v}^{A,{\rm eff}}_{ik}({\bf r}) \equiv
+ \delta_{ik} 
+ \left[
+  v^A_{\rm tot} ({\bf r}) - 2 v^A_{kk} ({\bf r}) + v^A_{ik} ({\bf r})
+ \right] 
+  - v^A_{ik} ({\bf r}) \;.
+\end{equation}
+%
+Now, it is first assumed here that $\rho^{B}_{nj} ({\bf r}) \approx 0$ if occupied MO's on $B$ are localized.
+This means that
+%
+\begin{multline} \label{e:ct.group-iii.final.a}
+        - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
+     + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
+        S_{kj} \left( 1 - \delta_{ik} \right) 
+        \BraKet{nj}{ik}  \\
+ \approx 0 \;.
+\end{multline}
+%
+The above result is a crude approximation, since the channels $j\rightarrow n$
+are quite important contributions in most of perturbation theory treatments.
+%virtual MO's can penetrate the occupied MO's to some extent.
+In order to include the $\rho^{B}_{nj}$ density, it is approximately represented here by a set of effective 
+cumulative
+atomic charges $\{ q^{B,(nj)}_{y} \}$ associated with the effective one\hyp{}particle density matrix
+%
+\begin{equation}
+ D^{B,(nj)}_{\beta\delta} = C_{\beta n} C_{\delta j} \;.
+\end{equation}
+%
+In this work, the effective charges were computed via the CAMM or ESP methods as
+discussed in Section~XXX. Applying the SOA 
+and the effective potential from Eq.~\eqref{e:ct.group-iii.oep} 
+leads to 
+%
+\begin{multline} \label{e:ct.group-iii.final.b}
+        - \sum_{j\in B}^{\rm Occ} S_{ij} \tBraKet{j}{\hat{v}^A_{i} }{n}  
+     + \sum_{k\in A}^{\rm Occ} \sum_{j\in B}^{\rm Occ}  
+        S_{kj} \left( 1 - \delta_{ik} \right) 
+        \BraKet{nj}{ik}  \\
+ \approx  -
+ \sum_{j\in B}^{\rm Occ} S_{ij}
+ \sum_{y\in B}^{\rm At} 
+ q^{B,(nj)}_{y} 
+ \left[ 
+   \sum_{x\in A}^{\rm At}
+   \frac{Z_x}{r_{xy}}
+  + \frac{2}{r_{iy}}
+  - \sum_{k\in A}^{\rm Occ}
+    \frac{2}{r_{ky}} 
+ \right]
+ \;.
+\end{multline}
+%
+
+
+\paragraph{Final OEP-based forms of the coupling constant.}
+Gathering the results from Eqs. the coupling constant
+can be given as follows
+%
+\begin{subequations}
+\begin{align} \label{e:ct-murell-etal.vin.oep}
+\Approx{ V_{in}^{A\rightarrow B} }{1}
+       &= \sum_{\eta\in B}^{\rm RI} V^B_{n\eta} S_{\eta i} 
+ +
+S_{ni} u_i^{BA} \;, \\
+%
+\Approx{ V_{in}^{A\rightarrow B} }{2} &=
+\Approx{ V_{in}^{A\rightarrow B} }{1} -
+  \sum_{j   \in B}^{\rm Occ} S_{ij}
+  \sum_{y   \in B}^{\rm At} q_y^{B,(nj)} w_{yi}^{BA}
+\;,
+\end{align}
+\end{subequations}
+%
+where the auxiliary variables are
+%
+\begin{subequations}
+\begin{align} \label{e:ct-murell-etal.vin.oep.aux-var}
+ u_i^{BA} &\equiv    
+ \sum_{y\in B}^{\rm At}
+  \frac{Z_y}{ r_{yi} } 
+ -
+ \sum_{j\in B}^{\rm LC}
+  \frac{2}{r_{ji}} 
+                \;, \\
+ w_{yi}^{BA} &\equiv 
+   \sum_{x\in A}^{\rm At}
+   \frac{Z_x}{r_{xy}}
+  + \frac{2}{r_{iy}}
+  - \sum_{k\in A}^{\rm Occ}
+    \frac{2}{r_{ky}} 
+                \;.
+\end{align}
+\end{subequations}
+%
+To compute the interaction energy due to CT from $A$ to $B$ by using the above SOA\hyp{}based
+approximations, coupling elements need to be transformed from localized to canonical MO basis, i.e.,
+%
+\begin{equation} \label{e:ect-oep.prefinal}
+ E^{A\rightarrow B} \approx
+ 2 
+ \sum_{i\in A}^{\rm CMO}
+ \sum_{n\in B}^{\rm Vir}
+ \frac{
+ \lvert
+   \sum_{i'\in A}^{\rm LMO} L_{ii'}^A
+   \Approx{V_{i'n}^{A\rightarrow B}}{} 
+ \rvert^2 }{\varepsilon_i - \varepsilon_n} \;,
+\end{equation}
+%
+where ${\bf L}^A$ is the CMO\hyp{}LMO transformation matrix for occupied orbitals of $A$. 
+Note however, that the effective potential parameters from the density fitted term of group (i) 
+do not involve any occupied orbitals.
+Therefore, to save computational costs, only groups (ii) and (iii) need to be transformed
+whereas for group (i) the overlap integrals from Eq.~\eqref{e:ct.group-i.final} 
+can be already evaluated in CMO basis.
+Thus, the final working formula for the interaction energy due to CT from $A$ to $B$ reads
+%
+\begin{multline} \label{e:ect-oep.final}
+ E^{A\rightarrow B} \approx
+ 2 
+ \sum_{i\in A}^{\rm CMO}
+ \sum_{n\in B}^{\rm Vir}
+ \frac{1}{\varepsilon_i - \varepsilon_n} \times 
+ \Bigg(
+   \Approx{V_{in}^{A\rightarrow B}}{\rm G1} \\
+  +
+   \sum_{i'\in A}^{\rm LMO} L_{ii'}^A
+   \left\{
+   \Approx{V_{i'n}^{A\rightarrow B}}{\rm G2} 
+  +\Approx{V_{i'n}^{A\rightarrow B}}{\rm G3}
+  \right\}
+ \Bigg)^2 \;,
+\end{multline}
+%
+where the subscripts G$n$ ($n$ = 1, 2, 3) denote a particular group of 
+terms from Eqs.~\eqref{e:ct.group-i.final}, \eqref{e:ct.group-ii.final} and \eqref{e:ct.group-iii.final.a}
+or \eqref{e:ct.group-iii.final.b}. 
+The total CT energy is given by the sum of the above contribution and the twin contribution
+due to CT from molecule $B$ to $A$.
+
+%
+%he above formula does not explicitly define an OEP due to the summation over different
+%state vectors. 
+%However, it can be achieved
+%by transforming from MO to AO basis, i.e.,
+%%
+%\begin{equation}
+% \hat{v}^B_{\rm tot} \Ket{n} - \sum_{j\in B}^{\rm Occ} \hat{v}^B_{nj} \Ket{j}
+% = \sum_{\beta\in B}^{\rm AO} 
+% \left\{ 
+%  C_{\beta n} \hat{v}^B_{\rm tot} - \sum_{j\in B}^{\rm Occ} C_{\beta j} \hat{v}^B_{nj} 
+% \right\} \Ket{\beta} \;,
+%\end{equation}
+%%
+%which leads to the OEP in spatial representation
+%%
+%\begin{multline}
+% v_{\beta n}({\bf r}) \equiv C_{\beta n} v_{nuc}^B({\bf r}) \\ + 
+%  \sum_{j\in B}^{\rm Occ} \Bigg\{ 
+%   2 C_{\beta n} \int \frac{ \vert \phi_j({\bf r}') \vert^2 }{\vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+% %\\
+% - C_{\beta j} \int \frac{ \phi^*_n({\bf r}') \phi_j({\bf r}') }{\vert {\bf r}' - {\bf r} \vert} d{\bf r}'
+%  \Bigg\}  
+%%
+%\end{multline}
+%%
+
+\subsection{\label{s:413s6}Reduction of computational costs}
+
+Until this moment in this work, two models have been tested with application of the OEP technique.
+In this section, computational cost is estimated from the formulas.
+In
+Table~\ref{t:oep-costs} 
+%
+{
+\renewcommand{\arraystretch}{1.4}
+\begin{table}[b]
+\caption[Computational cost of the benchmark and OEP-based methods: calculation of coupling constant]
+{{\bf Computational cost of the benchmark and OEP-based methods\footnotemark[1]}
+}
+\label{t:oep-costs}
+\begin{ruledtabular}
+\begin{tabular}{lcccccc}
+Method             && Murrell et al. &&    EFP2        &&      OEP     \\ 
+	\cline{1-7}
+Group (i)         &&  &&        &&   $obQ$     \\
+Group (ii)        &&  &&        &&   $ob$      \\
+Group (iii)       &&  &&        &&   $ob(n+o)$     \\
+Total Cost        &&  && $10ob^2 + 2b^3 + o^2b^2$       &&   $ob(Q+n+o)$     \\
+\end{tabular}
+\end{ruledtabular}
+%
+\footnotetext[1]{Numbers of: $o$ - occupied molecular orbitals; $b$ - atomic basis functions; $n$ - atoms; 
+$Q$ - auxiliary basis functions. It was assumed that the number of virtual orbitals is equal to $b$.}
+%
+\end{table}
+}
+%
+It is clear that the cost of the OEP\hyp{}based equations is much lesser than the cost of EFP2 method,
+and many orders of magnitude lesser than the original theory of Murrell et al.
+
+
+\section{\label{s:6}Summary and a few concluding remarks}
+
+Bla.
+
+\begin{acknowledgments}
+This project is carried out under POLONEZ programme which has received funding from the European Union's
+Horizon~2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement 
+No.~665778. This project is funded by National Science Centre, Poland 
+(grant~no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+\end{acknowledgments}
+
+%%
+\appendix
+
+\section{Optimized Auxiliary Basis Sets for OEP Applications\label{a:auxiliary-basis}}
+
+To fit the auxiliary DF basis for the treatment of the overlap\hyp{}like
+OEP matrix elements with the operator $\hat{v}_{\rm eff}$, 
+the following objective function is minimized
+%
+\begin{equation} \label{e:a1-obj}
+ Z[\{\xi\}] = \sum_{\alpha i} \left[ 
+     \tBraKet{\alpha}{\hat{v}_{\rm eff}}{i} - 
+     \sum_{\xi}^{\rm DF} V_{\xi i} S_{\alpha \xi} 
+    \right]^2 \;,
+\end{equation}
+%
+where $\{\xi\}$ is the auxiliary basis set to optimize, whereas $\{\alpha\}$
+is the `test' basis set used to probe the accuracy of the density fitting.
+The forms of the Pauli and charge\hyp{}transfer DF matrices $\tBraKet{\alpha}{\hat{v}_{\rm eff}}{i}$
+can be directly derived from Eqs.~\eqref{e:v-oep.rep} and \eqref{e:v-oep.ct}, respectively, 
+by expanding the MO's in terms of atomic basis functions. The working formulae
+are given below:
+%
+\begin{subequations} \label{e:a1-v.oep}
+ \begin{align}
+   \tBraKet{\alpha}{\hat{v}_{\rm eff}^{\rm Rep}}{i}
+     &= \sum_{x}^{\rm At} W_{\alpha i}^{(x)} \nonumber   \\ 
+        + \sum_{\beta\gamma\delta} &
+           \left\{ 
+             2 C_{\beta i} D_{\gamma\delta} - C_{\gamma i} D_{\beta \delta}
+           \right\}
+           \BraKet{\alpha\beta}{\gamma\delta} \;,\\
+   \tBraKet{\alpha}{\hat{v}_{\rm eff}^{\rm CT}}{n} 
+     &= \sum_{x}^{\rm At} W_{\alpha n}^{(x)} \nonumber   \\
+       + \sum_{\beta\gamma\delta} &
+           \left\{
+             2 C_{\beta n} D_{\gamma\delta} - C_{\gamma n} D_{\beta \delta}
+           \right\}
+           \BraKet{\alpha\beta}{\gamma\delta}
+    \;.
+ \end{align}
+\end{subequations}
+%
+In the above equations, ${\bf C}$ is the LCAO\hyp{}MO matrix whereas ${\bf D}$
+is the one\hyp{}particle density matrix in AO basis.
+
+%
+%\section{\label{a:mcmurchie-davidson} McMurchie-Davidson Method for Asymmetric Electron Repulsion Integrals}
+%
+%Evaluation of integrals $(ijk\vert l)$,
+%that are necessary for the generalized density fitting of OEP's,
+%can be easily carried out by re\hyp{}expressing the
+%unnormalized product of three primitive Gaussian\hyp{}type (GTO) functions,
+%%
+%\begin{equation} \label{e:1}
+%[ijk] \equiv \phi_i({\bf r}) \phi_j({\bf r}) \phi_k({\bf r}) \;,
+%\end{equation}
+%%
+%in terms of Hermite functions. It can be shown that
+%%
+%\begin{multline} \label{e:2}
+%   [ijk] = E_{ijk} \sum_{N=0}^{n_1+n_2+n_3} \sum_{L=0}^{l_1+l_2+l+3} \sum_{M=0}^{m_1+m_2+m_3} 
+%	\\
+%          d_N^{n_1n_2n_3} d_L^{l_1l_2l_3} d_M^{m_1m_2m_3}
+%          \Lambda_N(x_R)\Lambda_L(y_R)\Lambda_M(z_R)e^{-\alpha_Rr_R^2}
+%\end{multline}
+%%
+%in which the McMurchie-Davidson $d3$ coefficients are given by the following recurrence relationships
+%%
+% \begin{align} \label{e:3}
+%  d_N^{n_1+1,n_2,n_3} &= \frac{1}{2\alpha_R} d_{N-1}^{n_1n_2n_3} 
+%                             + \vert {\bf R} - {\bf A}\vert_x d_N^{n_1n_2n_3} \nonumber \\ 
+%			    & \qquad\qquad + (N+1) d_{N+1}^{n_1n_2n_3} \\
+%  d_N^{n_1,n_2+1,n_3} &= \frac{1}{2\alpha_R} d_{N-1}^{n_1n_2n_3} 
+%                             + \vert {\bf R} - {\bf B}\vert_x d_N^{n_1n_2n_3} \nonumber \\
+%			    & \qquad\qquad + (N+1) d_{N+1}^{n_1n_2n_3} \\
+%  d_N^{n_1,n_2,n_3+1} &= \frac{1}{2\alpha_R} d_{N-1}^{n_1n_2n_3} 
+%                             + \vert {\bf R} - {\bf C}\vert_x d_N^{n_1n_2n_3} \nonumber \\
+%			    & \qquad\qquad + (N+1) d_{N+1}^{n_1n_2n_3} 
+%\end{align}
+%%
+%with $d_0^{000} = 1$.
+%In Eq.~\eqref{e:1},
+%$\phi_i({\bf r})$ is given by
+%%
+%\begin{equation}
+%\phi_i({\bf r}) \equiv x_A^{n_1} y_A^{l_1} z_A^{m_1} e^{-\alpha_1r_A^2}
+%\end{equation}
+%%
+%where 
+%${\bf r}_A \equiv {\bf r} - {\bf A}$,
+%${\bf A}$ is the centre of the GTO, $\alpha_1$ its exponent, whereas $n_1,l_1,m_1$
+%the Cartesian angular momenta, with the total angular momentum $\theta_1 = n_1+l_1+m_1$.
+%
+%It can be easily shown that the multiplicative constant $E_{ijk}$ is given by
+%%
+%\begin{multline}
+%  E_{ijk}(\alpha_1,\alpha_2,\alpha_3)  = \exp{\left[-\frac{\alpha_1\alpha_2}
+%                                        {\alpha_1+\alpha_2}\vert {\bf A}-{\bf B}\vert^2\right]} \\ \times
+%                                         \exp{\left[-\frac{(\alpha_1+\alpha_2)\alpha_3}
+%                                        {\alpha_1+\alpha_2+\alpha_3}
+%                                         \vert {\bf P}-{\bf C}\vert^2\right]} 
+%\end{multline}
+%%
+
+% -----------------------
+\bibliography{references}
+% -----------------------
+
+\end{document}

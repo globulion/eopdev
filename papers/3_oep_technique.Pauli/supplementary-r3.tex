@@ -1,0 +1,169 @@
+\documentclass[aip,jcp,amsmath,amssymb,reprint,floatfix]{revtex4-1}
+\input{header.tex}
+\begin{document}
+
+% numbering for Figures in SI
+\renewcommand{\thefigure}{S\arabic{figure}}
+\setcounter{figure}{0}
+
+\title{Supplementary Information\\Ab Initio Effective One-Electron Potential Operators. II.
+Applications for Exchange-Repulsion Energy in Effective Fragment Potentials}
+
+\author{Bartosz B{\l}asiak}
+\email[]{blasiak.bartosz@gmail.com}
+\homepage[]{https://www.polonez.pwr.edu.pl}
+
+\author{Robert W. G{\'o}ra}
+\author{Wojciech Bartkowiak}
+
+\affiliation{Department of Physical and Quantum Chemistry, Faculty of Chemistry, 
+Wroc{\l}aw University of Science and Technology, 
+Wybrze{\.z}e Wyspia{\'n}skiego 27, Wroc{\l}aw 50-370, Poland}
+
+\date{\today}
+
+
+
+\pacs{}
+
+\maketitle
+
+\tableofcontents
+
+\section{Minimalistic auxiliary basis sets for water, methanol and DMSO molecules}
+
+The basis sets are given below. Note that in case of DMSO, the basis set size is smaller than the
+minimal basis size (3p orbital on S atoms were not necessary to obtain good fitting in the test basis set).
+
+\begin{verbatim}
+[ water ]
+cartesian
+# primary basis set: 6-311++G** 6D
+****
+H     0
+S   1   1.00
+        0.500             1.000000
+****
+O     0
+S   2   1.00
+      937.182             0.986162 
+        6.892             0.014190 
+S   1   1.00
+       45.156             1.000000
+P   2   1.00
+       24.823             0.277579 
+        2.783             0.301334 
+****
+
+[ methanol ]
+cartesian
+# primary basis set: 6-311++G** 6D
+****
+H     0
+S   1   1.00
+        0.539             1.000000
+****
+C     0
+S   1   1.00
+      939.683             1.000000
+S   1   1.00
+       30.185             1.000000
+P   1   1.00
+        5.832             1.000000
+P   1   1.00
+        0.326             1.000000
+****
+O     0
+S   1   1.00
+      731.638             1.000000
+S   1   1.00
+       37.387             1.000000
+P   1   1.00
+        9.214             1.000000
+P   1   1.00
+        0.368             1.000000
+****
+
+[ dmso ]
+cartesian
+# primary basis set: 6-31++G** 6D
+****
+H     0
+S   1   1.00
+        0.365             1.000000
+****
+C     0
+S   1   1.00
+      207.472             1.000000
+S   1   1.00
+       15.052             1.000000
+P   1   1.00
+        7.228             1.000000
+****
+O     0
+S   1   1.00
+      302.339             1.000000
+S   1   1.00
+       15.248             1.000000
+P   1   1.00
+        7.612             1.000000
+****
+S     0
+S   1   1.00
+      689.986             1.000000
+S   1   1.00
+      145.419             1.000000
+S   1   1.00
+        9.046             1.000000
+P   1   1.00
+       28.979             1.000000
+****
+\end{verbatim}
+
+\vfill
+\section{Accuracy of OEP and EFP2 models for exchange-repulsion energy estimation}
+%\hspace{-1000pt}
+%
+\begin{figure*}[h]
+\includegraphics[width=0.8\textwidth]{fig-s1.pdf}
+\caption{\label{f:fig-2} {\bf Accuracy of the OEP and EFP2 models of exchange\hyp{}repulsion energy
+across various bi\hyp{}molecular systems.} 
+(a) NCB31 
+database\cite{Zhao.Schultz.Truhlar.JCTC.2006,
+Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005} 
+of non\hyp{}covalent interactions
+and
+(b) BBI subset\cite{Burns.Faver.Zheng.Marshall.Smith.Vanommeslaeghe.MacKerell.Merz.Sherrill.JCP.2017} 
+of backbone\hyp{}backbone interactions in proteins from the BioFragment Database.
+For the OEP calculations, the EDF-1 scheme with the aug-cc-pVDZ-jkfit auxiliary basis set
+was used.
+} 
+\end{figure*}
+%
+%
+\begin{figure*}[b]
+\includegraphics[width=0.8\textwidth]{fig-s2.pdf}
+\caption{\label{f:fig-2} {\bf Accuracy of the OEP and EFP2 models of first\hyp{}order repulsion energy
+across various bi\hyp{}molecular systems.} 
+(a) NCB31 
+database\cite{Zhao.Schultz.Truhlar.JCTC.2006,
+Zhao.Truhlar.JCTC.2005,Zhao.Schultz.Truhlar.JCTC.2006,Zhao.Schultz.Truhlar.JCP.2005} 
+of non\hyp{}covalent interactions
+and
+(b) BBI subset\cite{Burns.Faver.Zheng.Marshall.Smith.Vanommeslaeghe.MacKerell.Merz.Sherrill.JCP.2017} 
+of backbone\hyp{}backbone interactions in proteins from the BioFragment Database.
+For the OEP calculations, the EDF-1 scheme with the aug-cc-pVDZ-jkfit auxiliary basis set
+was used.
+} 
+\end{figure*}
+%
+
+
+\clearpage
+\section{References}
+
+% -----------------------
+\bibliography{references}
+% -----------------------
+
+\end{document}

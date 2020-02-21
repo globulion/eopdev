@@ -272,7 +272,7 @@ def dmft_solver(wfn, xc_functional='MBB',
 
 
 def gdf_basisset_optimizer(mol, oep_type, 
-                           out='oepfit.gbs', maxiter=1000,
+                           out='oepfit.gbs', maxiter=1000, tolerance=1.0e-9, method='slsqp',
                            basis=None, 
                            basis_int="AUG-CC-PVDZ-JKFIT", basis_xpl="6-311++G**",
                            templ_file='templ.dat', param_file='param.dat', 
@@ -297,6 +297,8 @@ def gdf_basisset_optimizer(mol, oep_type,
                                       bounds_file     = None,
                                       constraints     = (),
                                       maxiter         = 1000,
+                                      tolerance       = 1.0e-9,
+                                      method          = "slsqp",
                                       exp_lower_bound = None,
                                       exp_upper_bound = None,
                                       ctr_lower_bound = None,
@@ -319,6 +321,8 @@ def gdf_basisset_optimizer(mol, oep_type,
     o constraints     - parameter constraints. If provided, need to be in format 
                         of scipy.optimize.minimize constraints
     o maxiter         - maximum number of optimization iterations
+    o tolerance       - convergence of the fitting
+    o method          - minimization method from SciPy
     o exp_lower_bound - custom value of default exponent lower bound 
     o exp_upper_bound - custom value of default exponent upper bound 
     o ctr_lower_bound - custom value of default contraction coefficient lower bound 
@@ -405,7 +409,7 @@ def gdf_basisset_optimizer(mol, oep_type,
     oep     = OEP.create(oep_type, w_hf, dfbasis)
     opt     = DFBasisOptimizer(oep)
 
-    success = opt.fit(maxiter)
+    success = opt.fit(maxiter, tolerance)
     
     # fetch the optimal basis
     basis_gdf_aux = opt.oep.dfbasis.basis

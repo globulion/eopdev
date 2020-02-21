@@ -165,16 +165,19 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   psi::outfile->Printf(" --> Running CIS calculations on the monomers <--\n");
   const bool symm = options_.get_bool("TrCAMM_SYMMETRIZE");
   t_time+= clock();
+  clock_t t_time_cis = -clock();
   SharedCISData cis_data_A = this->get_cis_data(0, I, nHI, nLI, symm);
   SharedCISData cis_data_B = this->get_cis_data(1, J, nHJ, nLJ, symm);
+  t_time_cis += clock();
+  cout << " o TIME TI/CIS - CIS(MONOMERS): " << ((double)t_time_cis*1000/CLOCKS_PER_SEC) << endl;
   t_time-= clock();
   psi::outfile->Printf("\n");
 
   // Collect CIS data
   double E_ex_A = cis_data_A->E_ex;                        // Excitation energy of A wrt ground state
   double E_ex_B = cis_data_B->E_ex;                        // Excitation energy of B wrt ground state
-  double t_A = cis_data_A->t_homo_lumo * sqrt(na_A/na_AB); // CIS amplitude of A scaled to the dimer
-  double t_B = cis_data_B->t_homo_lumo * sqrt(na_B/na_AB); // CIS amplitude of B scaled to the dimer
+  double t_A = cis_data_A->t_homo_lumo * sqrt(1.0/2.0);    // CIS amplitude of A renormalized to the dimer
+  double t_B = cis_data_B->t_homo_lumo * sqrt(1.0/2.0);    // CIS amplitude of B renormalized to the dimer
   SharedMatrix Pe_A = cis_data_A->Pe;                      // Excited state bond order matrix of A
   SharedMatrix Pe_B = cis_data_B->Pe;                      // Excited state bond order matrix of B
   SharedMatrix Peg_A = cis_data_A->Peg;                    // Transition density matrix of A
@@ -295,6 +298,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
   psi::SharedMatrix PS_AB = psi::Matrix::doublet(Peg_A, Sao_AB, false, false);
   psi::SharedMatrix PS_BA = psi::Matrix::doublet(Peg_B, Sao_AB, false, true );
+  psi::SharedMatrix SP_AB = psi::Matrix::doublet(Sao_AB,Peg_B , false, false);
+  psi::SharedMatrix SP_BA = psi::Matrix::doublet(Sao_AB,Peg_A , true , false);
   psi::SharedMatrix SPS_A = psi::Matrix::doublet(Sao_AB, PS_AB, true , false);
   psi::SharedMatrix SPS_B = psi::Matrix::doublet(Sao_AB, PS_BA, false, false);
 
@@ -311,6 +316,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   double** cvB= Ca_vir_B->pointer();
   double** psab= PS_AB->pointer();
   double** psba= PS_BA->pointer();
+  double** spab= SP_AB->pointer();
+  double** spba= SP_BA->pointer();
   double** spsa= SPS_A->pointer();
   double** spsb= SPS_B->pointer();
 
@@ -416,7 +423,8 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
 
          // V0_Exch_M
          if ((i==j) && (k==l)) 
-             V0_Exch_M-= 0.25 * eri * psab[i][k] * psba[k][i];
+           //V0_Exch_M-= 0.25 * eri * psab[i][k] * psba[k][i]; ---> Wrong!
+             V0_Exch_M-= 0.125 * eri * (psab[i][k] * psba[k][i] + spab[i][k] * spba[k][i]); 
 
          // V0_CT_M
          V0_CT_M += Q1 * eri * coA[i][homo_A] * coA[j][homo_A] * coB[k][homo_B] * coB[l][homo_B];
@@ -615,7 +623,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   psi::timer_off("Solver EET TI/CIS               ");
 
   t_time += clock(); // Clock END
-  cout << " o TIME TI/CIS: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+  cout << " o TIME TI/CIS: " << ((double)t_time*1000/CLOCKS_PER_SEC) << endl;
 
 
 
@@ -745,12 +753,12 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
 
   options_.set_global_int("EXCITED_STATE", options_.get_int("EXCITED_STATE_A"));
   options_.set_global_int("OEPDEV_SOLVER_EET_HOMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_A"));
-  options_.set_global_int("OEPDEV_SOLVER_EET_LUMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_A"));
+  options_.set_global_int("OEPDEV_SOLVER_EET_LUMO", options_.get_int("OEPDEV_SOLVER_EET_LUMO_A"));
   oep_1->compute();
 
   options_.set_global_int("EXCITED_STATE", options_.get_int("EXCITED_STATE_B"));
   options_.set_global_int("OEPDEV_SOLVER_EET_HOMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_B"));
-  options_.set_global_int("OEPDEV_SOLVER_EET_LUMO", options_.get_int("OEPDEV_SOLVER_EET_HOMO_B"));
+  options_.set_global_int("OEPDEV_SOLVER_EET_LUMO", options_.get_int("OEPDEV_SOLVER_EET_LUMO_B"));
   oep_2->compute();
 
   clock_t t_time = -clock(); // Clock BEGIN
@@ -786,8 +794,11 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
 
   // ===> Compute TrCAMM coupling <=== //
   psi::timer_on("Solver EET TrCAMM               ");
+  clock_t t_time_trcamm = -clock();
   SharedMTPConv V0_TrCAMM = oep_1->oep("Fujimoto.CIS").cis_data->trcamm->energy(
                             oep_2->oep("Fujimoto.CIS").cis_data->trcamm        );
+  t_time_trcamm += clock();
+  cout << " o TIME TRCAMM: " << ((double)t_time_trcamm*1000/CLOCKS_PER_SEC) << endl;
   data.set_trcamm_coupling(V0_TrCAMM);
   psi::timer_off("Solver EET TrCAMM               ");
 
@@ -900,9 +911,9 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
      psi::outfile->Printf("\n");
   }
 
-  // CIS amplitudes
-  double t_A = oep_1->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(na_A/na_AB); 
-  double t_B = oep_2->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(na_B/na_AB); 
+  // CIS amplitudes (aggregate)
+  double t_A = oep_1->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(1.0/2.0); // sqrt(na_A/na_AB); --> wrong!
+  double t_B = oep_2->oep("Fujimoto.CIS").cis_data->t_homo_lumo * sqrt(1.0/2.0); // sqrt(na_B/na_AB); --> wrong!
 
   // Compute Overlap integrals between basis functions
   psi::SharedMatrix Smo_oAoB = psi::Matrix::triplet(oep_1->cOcc(), Sao_1p2p, oep_2->cOcc(), true, false, false);
@@ -1074,7 +1085,7 @@ double EETCouplingSolver::compute_oep_based_fujimoto_ti_cis() { //TODO
   psi::timer_off("Solver EET TI/CIS OEP-Based     ");
 
   t_time += clock(); // Clock END
-  cout << " o TIME TI/CIS:OEP: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+  cout << " o TIME TI/CIS:OEP: " << ((double)t_time*1000/CLOCKS_PER_SEC) << endl;
 
 
 
