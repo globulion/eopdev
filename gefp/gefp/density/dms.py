@@ -12,128 +12,110 @@ import psi4, oepdev
 import scipy.optimize
 import scipy.spatial.transform
 from abc import ABC, abstractmethod
-from .partitioning import DensityDecomposition
-from ..math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix_power
-
-__all__ = ["DMSFit", "DMS", "Computer"]
-
-class Computer: #TODO
-  def __init__(self, *dms):
-      self._set_work(*dms)
-
-  def _set_work(self, *dms):
-      self._data = {}
-      self._data["dms"] = dms
-      #self._data["nbf"] = numpy.array([x._bfs.nbf() for x in dms])
-      #self._data["d"] = numpy.array([x._D for x in dms])
-
-      self._dim = sum(self._data["nbf"])
-      self._work = numpy.zeros((self._dim, self._dim))
-
-  def deformation_density(self, return_all=False):
-      dD_pau = self._deformation_density_pauli()
-      dD_pol = self._deformation_density_polar()
-      dD = dD_pau + dD_pol
-      if return_all: return dD_pau, dD_pol, dD
-      return dD
-
-  # protected
-  @abstractmethod
-  def _deformation_density_pauli(self): pass
-
-  @abstractmethod
-  def _deformation_density_polar(self): pass
-#      for i in range(self._nfrag):
-#          for j in range(self._nfrag):
-#              computer_ij = Computer_Dimer(*self._dms_set[i,j])
-
-class UnperturbedField_Computer(Computer): pass
-
-#class DMS_Computer(Computer):
-#
-#  def __init__(self, *dms):
-#      Computer.__init__(self, *dms)
-#
-#  def _deformation_density_pauli(self):
-#      raise NotImplementedError
-#      S_mo_t    = numpy.zeros((self._nmo_t, self._nmo_t), numpy.float64)
-#      W_mo_t    = numpy.zeros((self._nmo_t             ), numpy.float64)
-#      C_ao_mo_t = numpy.zeros((self._nbf_t, self._nmo_t), numpy.float64)
-#
-#      for i in range(self._nfrag):
-#          bfs_i = self._nbf_set[i]
-#          non_i = self._data["non"][i]
-#          noc_i = self._data["noc"][i]
-#          nmo_i = self._data["nmo"][i]
-#          nbf_i = self._data["nbf"][i]
-#          ofm_i = self._data["ofm"][i]
-#          ofb_i = self._data["ofb"][i]
-#          S_ao_ii = self._mints.ao_overlap(
-#          S_mo_ii = noc_i.T @ S_ao_ii @ noc_i
-#          S_mo_t[ofm_i:ofm_i+nmo_i, ofm_i:ofm_i+nmo_i] = S_mo_ii
-#          W_mo_t[ofm_i:ofm_i+nmo_i] = numpy.sqrt(non_i)
-#          C_ao_mo_t[ofb_i:ofb_i+nbf_i,ofm_i:ofm_i+nmo_i] = noc_i
-#
-#          for j in range(i):
-#              wfn_j = self.data["wfn"][j]
-#              noc_j = self.data["noc"][j]
-#              nmo_j = self.data["nmo"][j]
-#              nbf_j = self.data["nbf"][j]
-#              ofm_j = self.data["ofm"][j]
-#              ofb_j = self.data["ofb"][j]
-#              S_ao_ij = self._mints.ao_overlap(bfs_i, bfs_j)
-#              S_mo_ij = noc_i.T @ S_ao_ij @ noc_j
-#              S_mo_t[ofm_i:ofm_i+nmo_i, ofm_j:ofm_j+nmo_j] = S_mo_ij 
-#              S_mo_t[ofm_j:ofm_j+nmo_j, ofm_i:ofm_i+nmo_i] = S_mo_ij.T
-#
-#      n_mo_t = W_mo_t * W_mo_t
-#
-#      WSW = numpy.diag(W_mo_t) @ S_mo_t @ numpy.diag(W_mo_t)                  # mo::mo
-#      WSWm12 = matrix_power(WSW, -0.5)                                        # mo::mo
-#
-#      K = WSWm12 @ numpy.diag(n_mo_t) @ WSWm12                                # mo::mo
-#      CW = C_ao_mo_t @ numpy.diag(W_mo_t))                                    # ao::mo
-#      Doo_ao_t = CW @ K @ CW.T                                                # ao::ao
-#      D_ao_t = C_ao_mo_t @ numpy.diag(n_mo_t) @ C_ao_mo_t.T                   # ao::ao
-#
-#      # NO analysis of Antisymmetrized wavefunction
-#      if False:
-#         noo, coo = Density.natural_orbitals(Doo_ao_t.copy(), None, None, 
-#                                          orthogonalize_mo = True,
-#                                          order='descending', no_cutoff=0.0,
-#                                          return_ao_orthogonal = False,
-#                                          ignore_large_n = False,
-#                                          renormalize = False,
-#                                          n_eps = 0.0)
-#         print("Sum of natural orbital occupations for noo= %13.6f" % noo.sum())
-#
-#      # save
-#      return Doo_ao_t - D_ao_t
+#from ..math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix_power
+from gefp.math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix_power
 
 
+__all__ = ["DMSFit", "DMS"]
+
+PSI4_DRIVER = psi4.energy
 
 
 class DMS(ABC):
-  def __init__(self, bfs, D):
-      self._bfs = bfs            # BasisSet object
-      self._mol = bfs.molecule() # Molecule object
-      self._D   = D.copy()       # OPDM associated with molecule
-      self._B_ind = None         # DMS (induction)
-      self._B_ct  = None         # DMS (polarization)
+  """
+ Density Matrix Susceptibility Tensor. 
+ Abstract Base.
 
-  def rotate(self, rot): 
+ This describes the DMS of Density or Fock matrix as EFP.
+
+ EFPs:
+  - nuclear structure
+  - unperturbed Density or Fock matrix (alpha or beta)
+  - DMS tensors
+
+ Functionalities:
+  - rotation, translation and superimposition
+  - read/write capabilities based on FRG format (Solvshift)
+"""
+  def __init__(self, typ):#OK
+      ABC.__init__(self)
+
+      self._bfs      = None           # BasisSet
+      self._mol      = None           # Molecule
+      self._s1       = None           # DMS parameter space
+      self._s2       = None           # DMS parameter space
+      self._B        = {}             # DMS tensors
+      self._M        = None           # Zeroth-order matrix
+      self._type     = None           # Type of DMS (Density or Fock)
+      self._type_long= None           # ..as above (long version)
+      self._n        = None           # Sizing: number of AOs
+      self._N        = None           # Sizing: number of distributed sites (atoms)
+
+      self._init(typ)
+      self._available_orders = None   # Implemented orders of DMS tensors
+
+  @classmethod
+  def create(cls, dms_type='da', order_type='basic'):#OK
+      if   order_type.lower() == 'basicct': return BasicCT_DMS(dms_type)
+      elif order_type.lower() == 'basic'  : return Basic_DMS(dms_type)
+      else:
+         raise NotImplementedError
+      
+
+  def available_orders(self): return self._available_orders #OK
+
+  @property
+  def N(self): return self._N
+  @property
+  def n(self): return self._n
+  def B(self, m, n): 
+      if (m,n) in self._available_orders:
+          return self._B[(m,n)]
+      else:
+          raise ValueError("DMS Error: B(%i,%i) is not available" % (m,n))
+
+  def set_bfs(self, bfs):#OK
+      self._bfs = bfs
+      self._mol = bfs.molecule()
+      self._n   = bfs.nbf()
+      self._N   = self._mol.natom()
+  def set_M(self, M): self._M = M.copy()
+  def set_s1(self, s): self._s1 = s.copy()
+  def set_s2(self, s): self._s2 = s.copy()
+
+  def _init(self, t):#OK
+      "Initialize information"
+      u = {"d": "Density", "f": "Fock", "a": "Alpha", "b": "Beta"}
+      m, s = [x for x in t.lower()]
+      self._type      = t.lower()
+      self._type_long = u[m] + '-' + u[s]
+
+  def B(self, m, n):#OK
+      "Retrieve DMS tensor from parameter vector"
+      order = (m, n)
+      if order in self._available_orders:
+         if order in self._B.keys(): 
+            return self._B[order]
+         else:
+            self._generate_B_from_s(m, n)
+      else:
+         raise ValueError("This DMS object does not include order (%i,%i)" %(m,n))
+
+  def rotate(self, rot):#OK
+      "Rotate DMS tensor. Warning: bfs is not rotated. Only DMS and molecule."
       # rotate OPDM
-      self._D, R = rotate_ao_matrix(self._D, rot, self._bfs, return_rot=True, aomo=False)
+      self._M, R = rotate_ao_matrix(self._M, rot, self._bfs, return_rot=True, aomo=False)
       # rotate molecule
       angles = scipy.spatial.transform.Rotation.from_dcm(rot).as_euler('zxy', degrees=True)
       move_atom_rotate_molecule(self._mol, angles, t='zxy')
       # rotate basis set
-      raise NotImplementedError
+      None # no need for it as for now
       # rotate DMS tensor
-      self._rotate_dms_ind(rot, R)
-      self._rotate_dms_ct(R)
+      for order in self._available_orders:
+          self._rotate(rot, R, order)
 
-  def translate(self, t): 
+  def translate(self, t):#OK
+      "Translate DMS object"
       # translate molecule
       xyz = self._mol.geometry().to_array(dense=True)
       self._mol.set_geometry(psi4.core.Matrix.from_array(xyz))
@@ -141,126 +123,567 @@ class DMS(ABC):
       for i in range(self._mol.natom()):
           self._bfs.move_atom(i, t)
 
-  def superimpose(self, xyz, suplist=None): 
+  def superimpose(self, xyz, suplist=None):#TODO
+      "Superimpose DMS object"
+      raise NotImplementedError("Please implement superimposition since it is easy")
+
+
+  def read(self, out):#TODO
+      "Create DMS object from file"
       raise NotImplementedError
 
-  def _rotate_dms_ind(self, r, R):
-      self._B_ind1 = numpy.einsum("ab,cd,uw,bdw->acu", R, R, r, self._B_ind1)
-      self._B_ind2 = numpy.einsum("ab,cd,uw,xz,bdwz->acux", R, R, r, r, self._B_ind2)
+  def write(self, out):#TODO
+      "Write DMS object to file"
+      raise NotImplementedError
 
-  def _rotate_dms_ct(self, R):
-      self._B_ct = R.T @ self._B_ct @ R
+  def _generate_B_from_s(self, order):#TODO
+      "Retrieve DMS tensor from its parameter vector"
+      n  = self._n
+      n2 = self._n**2 
+      N  = self._N
 
-class Ind_DMS(DMS):
-  def __init__(self):
-      DMS.__init__(self)
-  
+      # ---> Group Z(1) <--- #
+      # (1,0)
+      # (2,0)
+      # (0,2)
+      #TODO
+
+      # ---> Group Z(2) <--- #
+      # (0,1)
+      if (0,1) in self._available_orders:
+          START = 0
+          END   = START + n2
+          self._B[(0,1)] = self._s2[START:END].reshape(n,n)
+
+      # (1,1)
+      if (1,1) in self._available_orders:
+          START = n2
+          END   = START + n2*N*3
+          self._B[(1,1)] = self._s2[START:END].reshape(n,n,N,3)
+
+      # (2,1)
+      if (2,1) in self._available_orders:
+          START = END
+          END   = START + n2*N*6
+          B     = self._s2[START:END].reshape(n,n,N,6)
+
+
+
+  def _rotate(self, r, R, order):#TODO
+      "Rotate DMS tensors"
+      B = self.B(*order)
+      #
+      if   order == (1,0): 
+           for i in range(self._N):
+               Bi= numpy.einsum("abu,ac,bd,ux->cdx", B[:,:,i,:], R, R, r)
+               B[:,:,i,:] = Bi
+      #
+      elif order == (2,0): 
+           for i in range(self._N):
+               Bi= numpy.einsum("abuw,ac,bd,xy->cdxy", B[:,:,i,:], R, R, r, r)
+               B[:,:,i,:,:] = Bi
+      #
+      elif order == (0,1): raise NotImplementedError(" DMS Error: Rotation (%i,%i)" % order)
+      elif order == (1,1): raise NotImplementedError(" DMS Error: Rotation (%i,%i)" % order)
+      elif order == (0,2): raise NotImplementedError(" DMS Error: Rotation (%i,%i)" % order)
+      elif order == (1,2): raise NotImplementedError(" DMS Error: Rotation (%i,%i)" % order)
+      elif order == (2,1): raise NotImplementedError(" DMS Error: Rotation (%i,%i)" % order)
+      elif order == (2,2): raise NotImplementedError(" DMS Error: Rotation (%i,%i)" % order)
+      else: 
+          raise ValueError(" DMS Error: Wrong order for rotation chosen")
+
+
+class Basic_DMS(DMS):
+  """
+ Basic model of DMS that handles induction up to second-order and
+ first-order pure Pauli effects.
+
+ The order of DMS blocks:
+
+ Block         DMS order      Interaction    Symmetry       Dimension     Group
+ -----         ---------      -----------    ------------  -----------   -------
+  1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
+  2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
+  3.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
+"""
+  def __init__(self, type='da'):#OK
+      DMS.__init__(self, type)
+
+      self._available_orders = [(1,0), (2,0), (0,1)]
+
+
+class BasicCT_DMS(DMS):
+  """
+ Basic model of DMS that handles induction up to second-order,
+ first-order pure Pauli effects and first-order pure CT effects.
+
+ The order of DMS blocks:
+
+ Block         DMS order      Interaction    Symmetry       Dimension     Group
+ -----         ---------      -----------    ------------  -----------   -------
+  1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
+  2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
+  3.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
+  4.            (1,1)          CT             Asymmetric    (n,n,N,3)     Z(2)
+"""
+  def __init__(self, type='da'):#OK
+      DMS.__init__(self, type)
+
+      self._available_orders = [(1,0), (2,0), (0,1), (1,1)]
+
+
+  # --> Implementation <-- #
+
+
 class DMSFit(ABC):
-  def __init__(self, mol_A, mol_B, method, nsampl_pol, nsampl_ct):
+  """
+ Method to fit DMS tensors.
+"""
+  minimum_atom_atom_distance = 1.2 / psi4.constants.bohr2angstroms
+
+  def __init__(self, mol, method, 
+                     nsamples, dms_type, order_type, use_non_iterative_model):#OK
       ABC.__init__(self)
-      self._mol_A = mol_A
-      self._mol_B = mol_B
-      self._method = method
-      self._nsampl_pol= nsampl_pol
-      self._nsampl_ct = nsampl_ct
+
+      self._mol       = mol
+      self._method    = method
+      self._natoms    = mol.natom()
+      self._nsamples  = nsamples
+      self._dms_type  = dms_type
+      self._order_type= order_type
       psi4.set_options({"DMATPOL_TRAINING_MODE":"CHARGES",
                         "DMATPOL_FIELD_RANK"   : 2,
                         "DMATPOL_GRADIENT_RANK": 0,
-                        "DMATPOL_NSAMPLES"     : nsampl_pol,
+                        "DMATPOL_NSAMPLES"     : nsamples,
                         "DMATPOL_NTEST_CHARGE" : 10,
                         "DMATPOL_TEST_CHARGE"  : 0.001})
-      self._wfn_A, self._wfn_B = None, None
-      self._dms_pol1_A, self._dms_pol1_B = None, None
-      self._dms_pol2_A, self._dms_pol2_B = None, None
-      self._dms_ct_A, self._dms_ct_B = None, None
-      self._nbf_A, self._nbf_B = None, None
+      self._use_non_iterative_model = use_non_iterative_model
+      self._wfn_0= None
+      self._bfs_0= None
+      self._nbf = None
+      self._dms = None
+      self._D0  = None
 
   @classmethod
-  def create(cls, mol_A, mol_B = None, type="transl", nsampl_pol=100, nsampl_ct=100, method='scf'):
-      if type.lower().startswith("tran"): return Asymmetric_Translation_SameMoleculeDMSFit(mol_A, method, nsampl_pol, nsampl_ct)
-      else: raise NotImplementedError("This type of DMS fitting is not implemented yet")
+  def create(cls, mol, fit_type="transl", dms_type="da", order_type='basic',
+                  nsamples=100, method='scf', 
+                  use_non_iterative_model=True):#OK
+      if fit_type.lower().startswith("tran"): 
+         return Translation_DMSFit(mol, method, nsamples, dms_type, order_type, use_non_iterative_model)
+      else: 
+         raise NotImplementedError("This type of DMS fitting is not implemented yet")
 
-  def run(self):
+  def run(self):#TODO
+      "Run the fitting procedure"
       self._compute_wfn()
-     #self._compute_dms_induction()
-      self._prepare_for_ct()
-      self._compute_dms_ct()
+     #self._compute_dms_external_field()
+      self._compute_samples()
+     #self._compute_group_1()
+      self._compute_group_2()
+      self._check()
+
+  def B(self, m, n):
+      "Get the susceptibilities"
+      return self._dms.B(m,n)
 
   # --- protected --- #
 
-  def _compute_wfn(self):
+  def _compute_wfn(self):#OK
       print(" * Computing Unperturbed Wavefunction")
-      _g_A, self._wfn_A = psi4.gradient(self._method, molecule=self._mol_A, return_wfn=True)
-      self._nbf_A = self._wfn_A.basisset().nbf()
-      if self._mol_B is not None:
-         _g_B, self._wfn_B = psi4.gradient(self._method, molecule=self._mol_B, return_wfn=True)
-         self._nbf_B = self._wfn_B.basisset().nbf()
+      g, self._wfn_0 = PSI4_DRIVER(self._method, molecule=self._mol, return_wfn=True)
+      self._nbf = self._wfn_0.basisset().nbf()
+      self._dms = DMS.create(self._dms_type, self._order_type)
+      self._dms.set_bfs(self._wfn_0.basisset())
 
-  def _compute_dms_induction(self): # this is to be reimplemented in child classes
-      solver_A = oepdev.GenEffParFactory.build("POLARIZATION", self._wfn_A, self._wfn_A.options())
-      self._dms_pol_A = solver_A.compute()
-      if self._mol_A is not None:
-         solver_B = oepdev.GenEffParFactory.build("POLARIZATION", self._wfn_B, self._wfn_B.options())
-         self._dms_pol_B = solver_B.compute()
+      if   self._dms_type.lower() == 'da': M = self._wfn_0.Da().to_array(dense=True)
+      elif self._dms_type.lower() == 'db': M = self._wfn_0.Db().to_array(dense=True)
+      elif self._dms_type.lower() == 'fa': M = self._wfn_0.Fa().to_array(dense=True)
+      elif self._dms_type.lower() == 'fb': M = self._wfn_0.Fb().to_array(dense=True)
+      else:
+          raise valueerror(" DMSFit Error: Incorrect type of dms tensors. Available: da, db, fa, fb.")
 
-  @abstractmethod
-  def _prepare_for_ct(self): pass
+      self._dms.set_M(M)
+      self._D0 = self._wfn_0.Da().to_array(dense=True)
+      self._bfs_0 = self._wfn_0.basisset()
 
-  @abstractmethod
-  def _compute_dms_ct(self): pass
+  def _compute_dms_external_field(self):#OK
+      "DMS for external electric field only (without other molecules)"
+      solver = oepdev.GenEffParFactory.build("POLARIZATION", self._wfn_0, self._wfn.options())
+      self._dms_ind_0 = solver.compute()
+
+  def _invert_hessian(self, h):#OK
+     "Invert Hessian matrix"
+     det= numpy.linalg.det(h)
+     print(" * Hessian Determinant= %14.6E" % det)
+     hi = numpy.linalg.inv(h)
+     I = numpy.dot(hi, h).diagonal().sum()
+     d = I - len(hi)
+     if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic! d=%f I= %f DIM=%f" % (d,I,h.shape[0]))
+     return hi      
+
+  def _compute_efield_due_to_fragment(self, mol_j, D_j, ints_j, ri):#OK
+      "Compute electric field at ri due to mol_j with D_j and field integrals ints_j"
+      fi= numpy.zeros(3)
+      for j in range(mol_j.natom()):
+          xj= mol_j.x(j)
+          yj= mol_j.y(j)
+          zj= mol_j.z(j)
+          Zj= numpy.float(mol_j.Z(j))
+
+          rij = numpy.array([ri[0]-xj, ri[1]-yj, ri[2]-zj])
+          rij_norm = numpy.linalg.norm(rij)
+          fi += Zj * rij / rij_norm**3
+
+      fi[0] += (D_j @ ints_j[0]).trace() 
+      fi[1] += (D_j @ ints_j[1]).trace() 
+      fi[2] += (D_j @ ints_j[2]).trace() 
+      return fi
+
+  def _clash(self, geom_1, geom_2):#OK
+      "Determine if two geometries clash or not"
+      clash = False
+      for a in geom_1:
+          for b in geom_2:
+              r_ab = numpy.sqrt(sum((a-b)**2))
+              if r_ab < DMSFit.minimum_atom_atom_distance:
+                 clash = True
+                 break
+      return clash
+
+  # ---> Abstract methods <--- #
 
   @abstractmethod
   def _construct_aggregate(self): pass
 
-  def _invert_hessian(self, h):
-     det= numpy.linalg.det(h)
-     print(" * Hessian Determinant= %14.6f" % det)
-     hi = numpy.linalg.inv(h)
-     I = numpy.dot(hi, h).diagonal().sum()
-     d = I - len(hi)
-     if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic! I = %f" % I)
-     return hi      
+  @abstractmethod
+  def _compute_samples(self): pass
 
-class SameMoleculeDMSFit(DMSFit):
-  def __init__(self, mol_A, method, nsampl_pol, nsampl_ct):
-      DMSFit.__init__(self, mol_A, None, method, nsampl_pol, nsampl_ct)
+  @abstractmethod
+  def _compute_group_1(self): pass
+
+  @abstractmethod
+  def _compute_group_2(self): pass
+
+  @abstractmethod
+  def _check(self): pass
+
+class Translation_DMSFit(DMSFit):
+  """
+ Translation method to fit DMS tensors.
+"""
+  def __init__(self, mol, method, nsamples, dms_type, order_type, use_non_iterative_model):
+      DMSFit.__init__(self, mol, method, nsamples, dms_type, order_type, use_non_iterative_model)
+
+      # translation parameters
+      self._i = 0
+      self._start = 1.5
+      self._range = 2.0
+
+      self._dimer_wfn = None
+      self._dimer_mol = None
+      self._mints_dimer = None
+
       self._g_ind = None
       self._h_ind = None
       self._g_ct  = None
       self._h_ct  = None
-      self._dD_indA_set_ref = []
-      self._dD_indB_set_ref = []
-      self._dD_ctAB_set_ref = []
+
+      self._dD_AA_set_ref = []
+      self._dD_BB_set_ref = []
+      self._dD_AB_set_ref = []
       self._S_AB_set = []
       self._T_set = []
-      self._DIP_set = []
+      self._F_A_set = []
+      self._F_B_set = []
+      self._W_AB_set= []
+      self._W_BA_set= []
+     #self._Wf_AB_set= []
+     #self._Wf_BA_set= []
+      self._A_AB_set= []
+      self._A_BA_set= []
+     #self._Af_AB_set= []
+     #self._Af_BA_set= []
+     #self._Aff_AB_set= []
+     #self._Aff_BA_set= []
+      self._K_set   = []
+      self._L_set   = []
+      self._DIP_set = []      
 
 
- #@abstractmethod
- #def _compute_gradient(self): pass
- #@abstractmethod
- #def _compute_hessian(self): pass
+  # ---> Implementation <--- #
 
-class Translation_SameMoleculeDMSFit(SameMoleculeDMSFit):
-  def __init__(self, mol_A, method, nsampl_pol, nsampl_ct):
-      SameMoleculeDMSFit.__init__(self, mol_A, method, nsampl_pol, nsampl_ct)
-      self._i = -1
-      self._start = 1.5
-      self._delta = 0.01
-      self._t = numpy.array([3.0, 4.0, 5.0]); self._t/= numpy.linalg.norm(self._t)
-      self._natoms = self._mol_A.natom()
+  def _construct_aggregate(self):#OK
+      "Create next dimer by translating a molecule"
+      psi4.core.clean()
 
-  def _compute_dms_induction(self):
-      self._dms_ind1 = numpy.zeros((self._nbf_A, self._nbf_A, self._natoms, 3))
-      self._dms_ind2 = numpy.zeros((self._nbf_A, self._nbf_A, self._natoms, 3, 3))
+      self._i += 1
+      log = "\n0 1\n"
+      for i in range(self._natoms):
+          log += "%s" % self._mol.symbol(i)
+          log += "%16.6f" % (self._mol.x(i) * psi4.constants.bohr2angstroms)
+          log += "%16.6f" % (self._mol.y(i) * psi4.constants.bohr2angstroms)
+          log += "%16.6f" % (self._mol.z(i) * psi4.constants.bohr2angstroms)
+          log += "\n"
+      log += "units angstrom\n"
+      log += "symmetry c1\n"
+      log += "no_reorient\n"
+      log += "no_com\n"
 
-      for i in range(self._nbf_A):
-          for j in range(self._nbf_A):
-              b_1, b_2 = self._compute_dms_induction_ij(i, j)
-              self._dms_ind1[i,j] = b1
-              self._dms_ind2[i,j] = b2
+      log += "--\n"
+      log += "0 1\n"
 
-  def _compute_dms_induction_ij(self, i, j):
+      t = self._new_translation()
+
+      for i in range(self._natoms):
+          log += "%s" % self._mol.symbol(i)
+          log += "%16.6f" % (self._mol.x(i) * psi4.constants.bohr2angstroms + t[0])
+          log += "%16.6f" % (self._mol.y(i) * psi4.constants.bohr2angstroms + t[1])
+          log += "%16.6f" % (self._mol.z(i) * psi4.constants.bohr2angstroms + t[2])
+          log += "\n"
+      log += "units angstrom\n"
+      log += "symmetry c1\n"
+      log += "no_reorient\n"
+      log += "no_com\n"
+      print(log)
+
+      mol = psi4.geometry(log)
+      mol.update_geometry()
+
+      e_dimer, wfn_dimer = PSI4_DRIVER(self._method, molecule=mol, return_wfn=True)
+      self._dimer_wfn = wfn_dimer
+      self._dimer_mol = mol
+      self._dimer_bfs = wfn_dimer.basisset()
+      self._dimer_mints = psi4.core.MintsHelper(self._dimer_bfs)
+
+      self._mol_A = self._mol
+      self._mol_B = mol.extract_subsets(2)
+      e_monomer, wfn_B = PSI4_DRIVER(self._method, molecule=self._mol_B, return_wfn=True)
+      self._wfn_A = self._wfn_0
+      self._wfn_B = wfn_B
+      self._bfs_A = self._bfs_0
+      self._bfs_B = wfn_B.basisset()
+
+      e_int = e_dimer - 2.0 * e_monomer # MCBS
+      print(" Interaction energy= %13.6f [a.u.]" % e_int)
+      #
+      return mol
+
+  def _compute_samples(self):#OK
+      "Compute electric fields, CT kernels and reference deformation density matrices"
+
+      print(" * Computing WFN for Each Sample")
+      for n in range(self._nsamples):
+          print(" * - Sample %d" % (self._i+1))
+          aggr= self._construct_aggregate()
+
+          self._determine_perturbing_densities()
+
+          S_AB = self._dimer_wfn.S().to_array(dense=True)[:self._nbf,self._nbf:]
+                                                                                                         
+          dD     = self._dimer_wfn.Da().to_array(dense=True)
+          dD[:self._nbf,:self._nbf]-= self._D0
+          dD[self._nbf:,self._nbf:]-= self._D0
+          self._save_dD(dD)
+
+          F_A, F_B, F_A_mat, F_B_mat = self._compute_efield()
+
+
+          dD_AA = dD[:self._nbf,:self._nbf].copy()
+          dD_BB = dD[self._nbf:,self._nbf:].copy()
+          dD_AB = dD[:self._nbf,self._nbf:].copy()
+
+          W_AB = self._DA @ S_AB
+          W_BA = self._DB @ S_AB.T
+
+         #Wf_AB= numpy.einsum("ixab,bc->acix",F_A_mat, W_AB) # i.e. F_A_mat[:,:,i,x] @ W_AB 
+         #Wf_BA= numpy.einsum("ixab,bc->acix",F_B_mat, W_BA) # i.e. F_B_mat[:,:,i,x] @ W_BA 
+
+          A_AB = W_AB.T @ W_AB
+          A_BA = W_BA.T @ W_BA
+
+         #Af_AB= numpy.einsum("acix,ad->cdix",Wf_AB, W_AB)
+         #Af_BA= numpy.einsum("acix,ad->cdix",Wf_BA, W_BA)
+
+         #Aff_AB= numpy.einsum("acix,adjy->cdixjy",Wf_AB, Wf_AB)
+         #Aff_BA= numpy.einsum("acix,adjy->cdixjy",Wf_BA, Wf_BA)
+
+          K    = W_AB.T @ dD_AB
+          L    = W_BA.T @ dD_AB.T
+
+          self._S_AB_set.append(S_AB.copy())
+          self._W_AB_set.append(W_AB)
+          self._W_BA_set.append(W_BA)
+          self._A_AB_set.append(A_AB)
+          self._A_BA_set.append(A_BA)
+
+         #self._Wf_AB_set.append(Wf_AB)
+         #self._Wf_BA_set.append(Wf_BA)
+
+         #self._Af_AB_set.append(Af_AB)
+         #self._Af_BA_set.append(Af_BA)
+
+         #self._Aff_AB_set.append(Aff_AB)
+         #self._Aff_BA_set.append(Aff_BA)
+
+
+          self._K_set.append(K)
+          self._L_set.append(L)
+
+          self._dD_AA_set_ref.append(dD_AA)
+          self._dD_BB_set_ref.append(dD_BB)
+          self._dD_AB_set_ref.append(dD_AB)
+
+          self._F_A_set.append(F_A)
+          self._F_B_set.append(F_B)
+
+          #DIP = mints.ao_dipole()
+          #self._DIP_set.append(DIP)
+
+      self._F_A_set = numpy.array(self._F_A_set)
+      self._F_B_set = numpy.array(self._F_B_set)
+      self._S_AB_set= numpy.array(self._S_AB_set)
+      self._W_AB_set= numpy.array(self._W_AB_set)
+      self._W_BA_set= numpy.array(self._W_BA_set)
+      self._A_AB_set= numpy.array(self._A_AB_set)
+      self._A_BA_set= numpy.array(self._A_BA_set)
+     #self._Wf_AB_set= numpy.array(self._Wf_AB_set)
+     #self._Wf_BA_set= numpy.array(self._Wf_BA_set)
+     #self._Af_AB_set= numpy.array(self._Af_AB_set)
+     #self._Af_BA_set= numpy.array(self._Af_BA_set)
+     #self._Aff_AB_set= numpy.array(self._Aff_AB_set)
+     #self._Aff_BA_set= numpy.array(self._Aff_BA_set)
+      self._K_set   = numpy.array(self._K_set)
+      self._L_set   = numpy.array(self._L_set)
+      pass
+
+  def _compute_group_1(self):#OK
+      "Compute 1st group of parameters"
+
+      # Only (1,0) and (2,0) susceptibilities: fitting for each target matrix element separately
+      if (0,2) not in self._dms.available_orders():
+
+          dms_ind1 = numpy.zeros((self._nbf, self._nbf, self._natoms, 3))
+          dms_ind2 = numpy.zeros((self._nbf, self._nbf, self._natoms, 3, 3))
+
+          for i in range(self._nbf):                              
+              for j in range(self._nbf):
+                  b_1, b_2 = self._compute_dms_induction_ij(i, j)
+                  dms_ind1[i,j] = b1
+                  dms_ind2[i,j] = b2
+
+          par = [ dms_ind1.ravel(), dms_ind2.ravel() ]
+          s = numpy.hstack( par )
+ 
+      # higher-order susceptibilities included: need to evaluate full Hessian in S1 subspace
+      else:
+          raise NotImplementedError
+
+      self._dms.set_s1(s)
+
+  def _compute_group_2(self):#TODO
+      "Compute 2nd group of parameters"
+
+      OFFs= [0,]
+      # (0,1)
+      DIM = self._dms.n**2
+      OFFs.append(DIM)
+      # (1,1)
+      if (1,1) in self._dms.available_orders():
+          DIM +=  3*self._dms.N*self._dms.n**2
+          OFFs.append(DIM)
+      # (2,1)
+      if (2,1) in self._dms.available_orders():
+          DIM +=  6*self._dms.N*self._dms.n**2
+          OFFs.append(DIM)
+    
+      # allocate 
+      g = numpy.zeros(DIM)
+      H = numpy.zeros((DIM, DIM))
+
+      # gradient
+      # (01) block
+      START = OFFs[0]
+      END   = OFFs[1]
+      KL = self._K_set + self._L_set
+      g[START:END] = KL.sum(axis=0).ravel()
+
+      # (11) block
+      if (1,1) in self._dms.available_orders():
+          START = OFFs[1]
+          END   = OFFs[2]
+          #
+          g[START:END] = numpy.einsum("nab,niu->abiu", self._K_set, self._F_A_set).ravel()
+          g[START:END]+= numpy.einsum("nab,niu->abiu", self._L_set, self._F_B_set).ravel()
+
+      # (21) block
+      if (2,1) in self._dms.available_orders():
+          START = OFFs[2]
+          END   = OFFs[3]
+          #
+          pass #TODO
+      g *= -2.0
+
+      # Hessian
+      I = numpy.identity(self._nbf)
+      A = self._A_AB_set + self._A_BA_set
+     #Af= self._Af_AB_set + self._Af_BA_set
+     #Aff= self._Aff_AB_set + self._Aff_BA_set
+
+      # (01) susceptibility
+      START = OFFs[0]
+      END   = OFFs[1]
+      L = END - START
+      H_01_01 = numpy.einsum("bd,ac->abcd",I,A.sum(axis=0))
+      H_01_01+= numpy.einsum("nda,nbc->abcd",self._W_AB_set,self._W_BA_set)
+      H_01_01+= numpy.einsum("nda,nbc->abcd",self._W_BA_set,self._W_AB_set)
+      H[START:END,START:END] = H_01_01.reshape(L,L).copy() ; del H_01_01
+
+      # (11) susceptibility
+      if (1,1) in self._dms.available_orders():
+          PREV  = OFFs[0]
+          START = OFFs[1]
+          END   = OFFs[2]
+          L = END - START
+          M = START - PREV
+          #
+          H_11_11 = numpy.einsum("bd,nac,niu,njw->abiucdjw",I,self._A_AB_set,self._F_A_set,self._F_A_set)               
+          H_11_11+= numpy.einsum("bd,nac,niu,njw->abiucdjw",I,self._A_BA_set,self._F_B_set,self._F_B_set)
+          H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw",self._W_AB_set,self._W_BA_set,self._F_A_set,self._F_B_set)
+          H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw",self._W_BA_set,self._W_AB_set,self._F_B_set,self._F_A_set)
+          #
+          H_01_11 = numpy.einsum("bd,nac,njw->abcdjw",I,self._A_AB_set,self._F_A_set)
+          H_01_11+= numpy.einsum("bd,nac,njw->abcdjw",I,self._A_BA_set,self._F_B_set)
+          H_01_11+= numpy.einsum("nda,nbc,njw->abcdjw",self._W_AB_set,self._W_BA_set,self._F_B_set)
+          H_01_11+= numpy.einsum("nda,nbc,njw->abcdjw",self._W_BA_set,self._W_AB_set,self._F_A_set)
+          #                                                                                                              
+          H[START:  END,START:  END] = H_11_11.reshape(L,L).copy() ; del H_11_11
+          H[PREV :START,START:  END] = H_01_11.reshape(M,L).copy()
+          H[START:  END, PREV:START] = H_01_11.reshape(M,L).T.copy() ; del H_01_11
+
+      # (21) susceptibility
+      if (2,1) in self._dms.available_orders():
+          DPREV = OFFs[0]  
+          PREV  = OFFs[1]
+          START = OFFs[2]
+          END   = OFFs[3]
+          L = END - START
+          M = START - PREV
+          N = PREV - DPREV
+          pass #TODO
+
+      H *= 2.0
+
+      # fit
+      Hi = self._invert_hessian(H)
+      s = - g @ Hi
+
+      # extract susceptibilities
+      self._dms.set_s2(s)
+      for order in [(0,1),(1,1),]:
+          if order in self._dms.available_orders():
+             self._dms._generate_B_from_s(order)
+
+  def _compute_dms_induction_ij(self, i, j):#TODO
       #TODO build up gradient and hessian
       self._g_ind.fill(0.0)
       self._H_ind.fill(0.0)
@@ -273,361 +696,134 @@ class Translation_SameMoleculeDMSFit(SameMoleculeDMSFit):
       #TODO fill up b_1 and b_2
       return b_1, b_2
 
-  def _compute_efield(self):
-      D = self._wfn_A.Da().to_array(dense=True)
-      mints_A = psi4.core.MintsHelper(self._bfs_A)
-      mints_B = psi4.core.MintsHelper(self._bfs_B)
-      mol_A = self._bfs_A.molecule()      
-      mol_B = self._bfs_B.molecule()
+  def _check(self):
+      "Check the quality of fitting on training set"
 
-      # field on A atoms
-      F_A_set = []
-      for i in range(mol_A.natom()):
-          xyz_i = [mol_A.x(i), mol_A.y(i), mol_A.z(i)]
-          ints = mints_B.electric_field(origin=xyz_i)
+      B_01 = self.B(0,1)
+      if (1,1) in self._dms.available_orders(): 
+          B_11 = self.B(1,1)
+      if (2,1) in self._dms.available_orders(): 
+          B_21 = self.B(2,1)
 
-          #F_nuc_x = ...
-          #F_nuc_y = ...
-          #F_nuc_z = ...
+      print(" DMSFit: Check - training set")
+      for s in range(self._nsamples):
+          
+          W_AB = self._W_AB_set[s]
+          W_BA = self._W_BA_set[s]
+         #Wf_AB= self._Wf_AB_set[s]
+         #Wf_BA= self._Wf_BA_set[s]
+          F_A  = self._F_A_set[s]
+          F_B  = self._F_B_set[s]
 
-          Fi_x = (D @ ints[0].to_array(dense=True)).trace() + F_nuc_x
-          Fi_y = (D @ ints[1].to_array(dense=True)).trace() + F_nux_y
-          Fi_z = (D @ ints[2].to_array(dense=True)).trace() + F_nuc_z
+          dD_AB_ref = self._dD_AB_set_ref[s]
+          dD_AB_com = W_AB @ B_01 + B_01.T @ W_BA.T
+         #dD_AB_com+= numpy.einsum("acix,cbix->ab",Wf_AB, B_11)
+         #dD_AB_com+= numpy.einsum("acix,cbix->ab",Wf_BA, B_11).T
+          if (1,1) in self._dms.available_orders():
+              dD_AB_com+= numpy.einsum("ac,ix,cbix->ab",W_AB, F_A, B_11)
+              dD_AB_com+= numpy.einsum("ac,ix,cbix->ab",W_BA, F_B, B_11).T
 
-          F_A_set.append([Fi_x, Fi_y, Fi_z])
+          rms = self._rms(dD_AB_ref, dD_AB_com)
 
-      F_A_set = numpy.array(F_A_set)
+          print(" Sample=%03d  RMS=%13.5E  %14.5f %14.5f" % (s+1, rms, dD_AB_ref[0,0], dD_AB_com[0,0]))
 
-      # field on B atoms
+          self._i = s
+          self._save_dD(dD_AB_ref, prefix='ref')
+          self._save_dD(dD_AB_com, prefix='com')
+
+
+
+
+
+  # -----> Utility methods <----- #
+
+  def _compute_efield(self):#OK
+      "Compute instantaneous electric field on fragment due to other fragment"
+
+      # field due to B evaluated on A atoms
       F_B_set = []
-      for i in range(mol_B.natom()):
-          xyz_i = [mol_B.x(i), mol_B.y(i), mol_B.z(i)]
-          ints = mints_A.electric_field(origin=xyz_i)
+      F_B_mat_set = []
+      for i in range(self._mol_A.natom()):
+          xi= self._mol_A.x(i)
+          yi= self._mol_A.y(i)
+          zi= self._mol_A.z(i)
 
-          #F_nuc_x = ...
-          #F_nuc_y = ...
-          #F_nuc_z = ...
+          ri = numpy.array([xi,yi,zi])
+          ints = [x.to_array(dense=True)[self._nbf:,self._nbf:] for x in self._dimer_mints.electric_field(origin=ri)]
 
-          Fi_x = (D @ ints[0].to_array(dense=True)).trace() + F_nuc_x
-          Fi_y = (D @ ints[1].to_array(dense=True)).trace() + F_nux_y
-          Fi_z = (D @ ints[2].to_array(dense=True)).trace() + F_nuc_z
-
-          F_B_set.append([Fi_x, Fi_y, Fi_z])
+          f = self._compute_efield_due_to_fragment(self._mol_B, self._DB, ints, ri)
+          F_B_set.append(f)
+          F_B_mat_set.append(numpy.array(ints))
 
       F_B_set = numpy.array(F_B_set)
-      return F_A_set, F_B_set
+      F_B_mat_set = numpy.array(F_B_mat_set)
+
+      # field due to A evaluated on B atoms
+      F_A_set = []
+      F_A_mat_set = []
+      for i in range(self._mol_B.natom()):
+          xi= self._mol_B.x(i)
+          yi= self._mol_B.y(i)
+          zi= self._mol_B.z(i)
+
+          ri = numpy.array([xi,yi,zi])
+          ints = [x.to_array(dense=True)[:self._nbf,:self._nbf] for x in self._dimer_mints.electric_field(origin=ri)]
+
+          f = self._compute_efield_due_to_fragment(self._mol_A, self._DA, ints, ri)
+          F_A_set.append(f)
+          F_A_mat_set.append(numpy.array(ints))
+
+      F_A_set = numpy.array(F_A_set)
+      F_A_mat_set = numpy.array(F_A_mat_set)
+
+      return F_A_set, F_B_set, F_A_mat_set, F_B_mat_set
    
-  def _compute_T(self):
-      D = self._wfn_A.Da().to_array(dense=True)
-      return D @ self._S
+
 
   def _rms(self, a, b): return numpy.sqrt(((a-b)**2).sum()/a.size)
 
+  def _draw_translation(self):#OK
+      theta = numpy.arccos(numpy.random.random())
+      phi   = 2.0 * numpy.pi * numpy.random.random()
+      r     = self._start + self._range * numpy.sqrt(numpy.random.random())
+      x     = r * numpy.sin(theta) * numpy.cos(phi)
+      y     = r * numpy.sin(theta) * numpy.sin(phi)
+      z     = r * numpy.cos(theta)                 
 
-  def _construct_aggregate(self): 
-      self._i += 1
-      log = "\n0 1\n"
-      for i in range(self._natoms):
-          log += "%s" % self._mol_A.symbol(i)
-          log += "%16.6f" % (self._mol_A.x(i) * psi4.constants.bohr2angstroms)
-          log += "%16.6f" % (self._mol_A.y(i) * psi4.constants.bohr2angstroms)
-          log += "%16.6f" % (self._mol_A.z(i) * psi4.constants.bohr2angstroms)
-          log += "\n"
-      log += "units angstrom\n"
-      log += "symmetry c1\n"
-      log += "no_reorient\n"
-      log += "no_com\n"
+      t     = numpy.array([x,y,z])
+      return t
 
-      log += "--\n"
-      log += "0 1\n"
+  def _new_translation(self):#OK
+      "Select new random translation"
+      done = False
+      geom = self._mol.geometry().to_array(dense=True) 
+      while not done:
+         t = self._draw_translation()
+         if not self._clash(geom, geom+t):
+            done = True 
+      return t
 
-      t =  (self._start + self._i * self._delta) * self._t
-      for i in range(self._natoms):
-          log += "%s" % self._mol_A.symbol(i)
-          log += "%16.6f" % (self._mol_A.x(i) * psi4.constants.bohr2angstroms + t[0])
-          log += "%16.6f" % (self._mol_A.y(i) * psi4.constants.bohr2angstroms + t[1])
-          log += "%16.6f" % (self._mol_A.z(i) * psi4.constants.bohr2angstroms + t[2])
-          log += "\n"
-      log += "units angstrom\n"
-      log += "symmetry c1\n"
-      log += "no_reorient\n"
-      log += "no_com\n"
-      print(log)
+  def _save_dD(self, D, prefix='dd'):#OK
+      name= prefix + '_%03d.dat' 
+      out = open(name % self._i, 'w')
+      log = ''
+      n = len(D)
+      for row in D:
+          log+= n*"%13.5E" % tuple(row) + "\n"
+      out.write(log)
+      out.close() 
 
-      mol = psi4.geometry(log)
-      mol.update_geometry()
-      return mol
- #def _compute_gradient(self): raise NotImplementedError
- #    #TODO
- #def _compute_hessian(self): raise NotImplementedError
- #    #TODO
+  def _determine_perturbing_densities(self):
+      if self._use_non_iterative_model:
+         DA = self._D0.copy()
+         DB = DA.copy()
+      else:
+         D = self._dimer_wfn.Da().to_array(dense=True)
+         DA= D[:self._nbf,:self._nbf]
+         DB= D[self._nbf:,self._nbf:]
 
+      self._DA = DA
+      self._DB = DB
 
-
-class Symmetric_Translation_SameMoleculeDMSFit(Translation_SameMoleculeDMSFit):
-  def __init__(self, mol_A, method, nsampl_pol, nsampl_ct):
-      Translation_SameMoleculeDMSFit.__init__(self, mol_A, method, nsampl_pol, nsampl_ct)
-
- 
-  def _prepare_for_ct(self):
-      "Compute electric fields, CT kernels and reference deformation density matrices"
-      print(" * Computing DDS for Each Sample")
-      mints = psi4.core.MintsHelper(self._wfn_A.basisset())
-      for n in range(self._nsampl_ct):
-          print(" * - Sample %d" % self._i)
-          aggr= self._construct_aggregate()
-          dds = DensityDecomposition(aggr, method=self._method, acbs=False, jk_type='direct', 
-                                           no_cutoff=0.000, xc_scale=1.0, l_dds=False, n_eps=5.0E-5, cc_relax=True,
-                                           verbose=False) 
-          dds.compute(polar_approx=False)
-          self._S = dds.matrix["sqm"][:self._nbf_A,self._nbf_A:] # S_AB
-          self._S_AB_set.append(self._S.copy())
-          self._bfs_A = dds.data["wfn"][0].basisset()
-          self._bfs_B = dds.data["wfn"][1].basisset()
-                                                                                                           
-          dD_pol = dds.deformation_density('pol')
-          dD     = dds.deformation_density('fqm')
-
-          self._dD_indA_set_ref.append(dD_pol[:self._nbf_A,:self._nbf_A])
-          self._dD_indB_set_ref.append(dD_pol[self._nbf_A:,self._nbf_A:])
-          self._dD_ctAB_set_ref.append(dD_pol[:self._nbf_A,self._nbf_A:])
-
-          #F_A, F_B = self._compute_efield()
-          #self._F_A_set.append(F_A)
-          #self._F_B_set.append(F_B)
-
-          self._T_set.append(self._compute_T())
-
-          #DIP = mints.ao_dipole()
-          #self._DIP_set.append(DIP)
-
-      self._T_set = numpy.array(self._T_set)
-      #self._F_A_set = numpy.array(self._F_A_set)
-      #self._F_B_set = numpy.array(self._F_B_set)
-
-
-  def _compute_dms_ct(self):
-      print(" * Computing DMS CT")
-      DIM = int(self._nbf_A * (self._nbf_A + 1) / 2)
-      self._h_ct = numpy.zeros((DIM, DIM))
-
-      DT = numpy.zeros((self._nbf_A, self._nbf_A))
-      TT = numpy.zeros((self._nbf_A, self._nbf_A))
-      for n in range(self._nsampl_ct):
-          D = self._dD_ctAB_set_ref[n]
-          T = self._T_set[n]
-          TT += T.T @ T
-          DT += D.T @ T
-      DT *= -8.0
-      TT *= 16.0
-
-      self._g_ct = numpy.zeros(DIM)
-
-      ij = -1
-      for i in range(self._nbf_A):
-          for j in range(i+1):
-              ij += 1
-              kl = -1
-              self._g_ct[ij] = DT[i,j]
-              for k in range(self._nbf_A):
-                  for l in range(k+1):
-                      kl += 1
-                      if j==l: self._h_ct[ij,kl] = TT[i,k]
-
-      Hi = self._invert_hessian(self._h_ct)
-      B  = -numpy.dot(Hi, self._g_ct)
-      print(((self._h_ct-self._h_ct.T)**2).sum())
-      print(B)
-
-      self._dms_ct = numpy.zeros((self._nbf_A, self._nbf_A))
-      ij = -1
-      for i in range(self._nbf_A):
-          for j in range(i+1):
-              ij +=1
-              v = B[ij]
-              self._dms_ct[i,j] = v
-              self._dms_ct[j,i] = v
-
-  def check_dms_ct(self):
-      print(" * Checking DMS CT")
-      error = 0.0
-      D = self._wfn_A.Da().to_array(dense=True)
-
-      mints = psi4.core.MintsHelper(self._wfn_A.basisset())
-      DIP = mints.ao_dipole()
-      for n in range(self._nsampl_ct):
-          S      = self._S_AB_set[n]
-          dD_ref = self._dD_ctAB_set_ref[n]
-          dD_com = 2.0 * D @ S @ self._dms_ct
-
-          rms = self._rms(dD_ref, dD_com)
-          error += rms
-          av_ref = abs(dD_ref).mean()
-          av_com = abs(dD_com).mean()
-
-          # dipole moment due to CT
-          mu_ref = numpy.array([ 2.0*(dD_ref @ x.to_array(dense=True)).trace() for x in DIP])
-          mu_com = numpy.array([ 2.0*(dD_com @ x.to_array(dense=True)).trace() for x in DIP])
-          a_mu_ref = numpy.linalg.norm(mu_ref)
-          a_mu_com = numpy.linalg.norm(mu_com)
-          print(" * - Sample %d RMS= %14.5f  AV_C= %14.5f AV_R= %14.5f  M_C= %14.4f M_R=%14.4f" \
-                      % (n+1,rms, av_com, av_ref, a_mu_com, a_mu_ref))
-      error/=self._nsampl_ct
-      print(" * - Average RMS= %14.5f" % error)
-      return error
-
-class Asymmetric_Translation_SameMoleculeDMSFit(Translation_SameMoleculeDMSFit):
-  def __init__(self, mol_A, method, nsampl_pol, nsampl_ct):
-      Translation_SameMoleculeDMSFit.__init__(self, mol_A, method, nsampl_pol, nsampl_ct)
-      self._R_set = []
-
-  def _compute_R(self):
-      D = self._W # self._wfn_A.Da().to_array(dense=True)
-      return D @ self._S
-
-  def _compute_T(self):
-      D = self._W # self._wfn_A.Da().to_array(dense=True)
-      return self._S @ D
-
-
-
-  def _prepare_for_ct(self):
-      "Compute electric fields, CT kernels and reference deformation density matrices"
-      print(" * Computing DDS for Each Sample")
-      s = self._wfn_A.S().to_array(dense=True)
-      self._bfs_A = self._wfn_A.basisset()
-      self._W = self._wfn_A.Da().to_array(dense=True)
-      self._W = s @ self._W @ s
-      #self._W = matrix_power(self._W, 0.5)
-      for n in range(self._nsampl_ct):
-          psi4.core.clean()
-          print(" * - Sample %d" % self._i)
-          aggr= self._construct_aggregate()
-          dds = DensityDecomposition(aggr, method=self._method, acbs=False, jk_type='direct', 
-                                           no_cutoff=0.000, xc_scale=1.0, l_dds=False, n_eps=5.0E-5, cc_relax=True,
-                                           verbose=False) 
-          dds.compute(polar_approx=False)
-          self._S = dds.matrix["sqm"][:self._nbf_A,self._nbf_A:] # S_AB
-          self._S_AB_set.append(self._S.copy())
-          #self._bfs_A = dds.data["wfn"][0].basisset()
-          #self._bfs_B = dds.data["wfn"][1].basisset()
-          mol_B = aggr.extract_subsets(2)
-          self._bfs_B = psi4.core.BasisSet.build(mol_B, "BASIS", psi4.core.get_global_option("BASIS"), puream=psi4.core.get_global_option("PUREAM"))
-                                                                                                           
-          dD_pol = dds.deformation_density('pol')
-          dD     = dds.deformation_density('fqm')
-
-          self._dD_indA_set_ref.append(dD_pol[:self._nbf_A,:self._nbf_A])
-          self._dD_indB_set_ref.append(dD_pol[self._nbf_A:,self._nbf_A:])
-          self._dD_ctAB_set_ref.append(dD_pol[:self._nbf_A,self._nbf_A:])
-
-          #F_A, F_B = self._compute_efield()
-          #self._F_A_set.append(F_A)
-          #self._F_B_set.append(F_B)
-
-          self._T_set.append(self._compute_T())
-          self._R_set.append(self._compute_R())
-
-          #DIP = mints.ao_dipole()
-          #self._DIP_set.append(DIP)
-
-      self._T_set = numpy.array(self._T_set)
-      self._R_set = numpy.array(self._R_set)
-      #self._F_A_set = numpy.array(self._F_A_set)
-      #self._F_B_set = numpy.array(self._F_B_set)
-
-
-  def _compute_dms_ct(self):
-      print(" * Computing DMS CT")
-      DIM = self._nbf_A**2
-      self._h_ct = numpy.zeros((DIM, DIM))
-
-      DT = numpy.zeros((self._nbf_A, self._nbf_A))
-      TT = numpy.zeros((self._nbf_A, self._nbf_A))
-      RD = numpy.zeros((self._nbf_A, self._nbf_A))
-      RR = numpy.zeros((self._nbf_A, self._nbf_A))
-
-      for n in range(self._nsampl_ct):
-          D = self._dD_ctAB_set_ref[n]
-          T = self._T_set[n]
-          R = self._R_set[n]
-          TT += T @ T.T
-          DT += D @ T.T
-          RD += R.T @ D
-          RR += R.T @ R 
-
-      p = numpy.einsum("nac,nbd->abcd", self._R_set, self._T_set) * 2.0
-      q = numpy.einsum("nca,ndb->abcd", self._R_set, self._T_set) * 2.0
-      #p = numpy.einsum("nad,nbc->abcd", self._R_set, self._T_set) * 2.0
-      #q = numpy.einsum("ncb,nda->abcd", self._R_set, self._T_set) * 2.0
-
-      DT *= -2.0
-      RD *= -2.0
-      TT *=  2.0
-      RR *=  2.0
-
-      self._g_ct = numpy.zeros(DIM)
-
-      for i in range(self._nbf_A):
-          for j in range(self._nbf_A):
-              ij = i*self._nbf_A + j
-              self._g_ct[ij] = DT[i,j] + RD[i,j]
-              #self._g_ct[ij] = DT[i,j] + RD[j,i]
-              for k in range(self._nbf_A):
-                  for l in range(self._nbf_A):
-                      kl = k*self._nbf_A + l
-                      v = 0.0
-                      #for N in range(self._nsampl_ct):
-                      #    v += self._R_set[N][i,k] * self._T_set[N][j,l]
-                      #    v += self._R_set[N][k,i] * self._T_set[N][l,j]
-                      #v *= 2.0
-                      v = p[i,j,k,l] + q[i,j,k,l]
-                      if i==k: v += TT[j,l] #+ RR[j,l]
-                      if j==l: v += RR[k,i] 
-                      
-                      self._h_ct[ij,kl] = v
-                      
-
-      Hi = self._invert_hessian(self._h_ct)
-      B  = -numpy.dot(Hi, self._g_ct)
-
-      self._dms_ct = numpy.zeros((self._nbf_A, self._nbf_A))
-      for i in range(self._nbf_A):
-          for j in range(self._nbf_A):
-              ij = i*self._nbf_A + j
-              self._dms_ct[i,j] = B[ij]
-      print(" * DMS CT: ")
-      print(self._dms_ct.round(2))
-
-  def check_dms_ct(self):
-      print(" * Checking DMS CT")
-      error = 0.0
-      #D = self._wfn_A.Da().to_array(dense=True)
-      D = self._W
-
-      mints = psi4.core.MintsHelper(self._wfn_A.basisset())
-      DIP = mints.ao_dipole()
-      for n in range(self._nsampl_ct):
-          S      = self._S_AB_set[n]
-          dD_ref = self._dD_ctAB_set_ref[n]
-          dD_com = self._dms_ct @ S @ D + D @ S @ self._dms_ct #.T
-
-          rms = self._rms(dD_ref, dD_com)
-          error += rms
-          av_ref = abs(dD_ref).mean()
-          av_com = abs(dD_com).mean()
-          print(dD_ref[0])
-          print(dD_com[0])
-
-          # dipole moment due to CT
-          mu_ref = numpy.array([ 2.0*(dD_ref @ x.to_array(dense=True)).trace() for x in DIP])
-          mu_com = numpy.array([ 2.0*(dD_com @ x.to_array(dense=True)).trace() for x in DIP])
-          a_mu_ref = numpy.linalg.norm(mu_ref)
-          a_mu_com = numpy.linalg.norm(mu_com)
-          print(" * - Sample %d RMS= %14.5f  AV_C= %14.5f AV_R= %14.5f  M_C= %14.4f M_R=%14.4f" \
-                      % (n+1,rms, av_com, av_ref, a_mu_com, a_mu_ref))
-      error/=self._nsampl_ct
-      print(" * - Average RMS= %14.5f" % error)
-      return error
 
 
