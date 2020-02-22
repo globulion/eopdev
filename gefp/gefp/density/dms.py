@@ -165,7 +165,24 @@ class DMS(ABC):
       if (2,1) in self._available_orders:
           START = END
           END   = START + n2*N*6
-          B     = self._s2[START:END].reshape(n,n,N,6)
+          b     = self._s2[START:END].reshape(n,n,N,6)
+          B     = numpy.zeros((n,n,N,3,3))
+          xx = b[:,:,:,0]
+          xy = b[:,:,:,1]
+          xz = b[:,:,:,2]
+          yy = b[:,:,:,3]
+          yz = b[:,:,:,4]
+          zz = b[:,:,:,5]
+          B[:,:,:,0,0] = xx
+          B[:,:,:,0,1] = xy
+          B[:,:,:,0,2] = xz
+          B[:,:,:,1,1] = yy
+          B[:,:,:,1,2] = yz
+          B[:,:,:,2,2] = zz
+          B[:,:,:,1,0] = xy.copy()
+          B[:,:,:,2,0] = xz.copy()
+          B[:,:,:,2,1] = yz.copy()
+          self._B[(1,1)] = B
 
 
 
@@ -233,6 +250,31 @@ class BasicCT_DMS(DMS):
 
 
   # --> Implementation <-- #
+
+class CT_DMS(DMS):
+  """
+ Basic model of DMS that handles induction up to second-order,
+ first-order pure Pauli effects and second-order pure CT effects.
+
+ The order of DMS blocks:
+
+ Block         DMS order      Interaction    Symmetry       Dimension     Group
+ -----         ---------      -----------    ------------  -----------   -------
+  1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
+  2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
+  3.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
+  4.            (1,1)          CT             Asymmetric    (n,n,N,3)     Z(2)
+  5.            (2,1)          CT             Asymmetric    (n,n,N,3,3)   Z(2)
+"""
+  def __init__(self, type='da'):#OK
+      DMS.__init__(self, type)
+
+      self._available_orders = [(1,0), (2,0), (0,1), (1,1), (2,1)]
+
+
+  # --> Implementation <-- #
+
+
 
 
 class DMSFit(ABC):
@@ -371,13 +413,14 @@ class Translation_DMSFit(DMSFit):
   """
  Translation method to fit DMS tensors.
 """
-  def __init__(self, mol, method, nsamples, dms_type, order_type, use_non_iterative_model):
+  def __init__(self, mol, method, nsamples, dms_type, order_type, use_non_iterative_model,
+                     start=1.5, srange=2.0):
       DMSFit.__init__(self, mol, method, nsamples, dms_type, order_type, use_non_iterative_model)
 
       # translation parameters
       self._i = 0
-      self._start = 1.5
-      self._range = 2.0
+      self._start = start
+      self._range = srange
 
       self._dimer_wfn = None
       self._dimer_mol = None
@@ -602,6 +645,7 @@ class Translation_DMSFit(DMSFit):
 
       # gradient
       # (01) block
+      print(" * Computing Gradient (0,1)...")
       START = OFFs[0]
       END   = OFFs[1]
       KL = self._K_set + self._L_set
@@ -609,6 +653,7 @@ class Translation_DMSFit(DMSFit):
 
       # (11) block
       if (1,1) in self._dms.available_orders():
+          print(" * Computing Gradient (1,1)...")
           START = OFFs[1]
           END   = OFFs[2]
           #
@@ -617,10 +662,20 @@ class Translation_DMSFit(DMSFit):
 
       # (21) block
       if (2,1) in self._dms.available_orders():
+          print(" * Computing Gradient (2,1)...")
           START = OFFs[2]
           END   = OFFs[3]
           #
-          pass #TODO
+          gw = numpy.einsum("nab,niu,niw->abiuw",self._K_set, self._F_A_set, self._F_A_set)
+          gw+= numpy.einsum("nab,niu,niw->abiuw",self._L_set, self._F_B_set, self._F_B_set)
+
+          g[START:END][:,:,:,0] = gw[:,:,:,0,0]      # xx
+          g[START:END][:,:,:,1] = gw[:,:,:,0,1] *2.0 # xy
+          g[START:END][:,:,:,2] = gw[:,:,:,0,2] *2.0 # xz
+          g[START:END][:,:,:,3] = gw[:,:,:,1,1]      # yy
+          g[START:END][:,:,:,4] = gw[:,:,:,1,2] *2.0 # yz
+          g[START:END][:,:,:,5] = gw[:,:,:,2,2]      # zz
+
       g *= -2.0
 
       # Hessian
@@ -630,6 +685,7 @@ class Translation_DMSFit(DMSFit):
      #Aff= self._Aff_AB_set + self._Aff_BA_set
 
       # (01) susceptibility
+      print(" * Computing Hessian (0,1) (0,1)...")
       START = OFFs[0]
       END   = OFFs[1]
       L = END - START
@@ -646,11 +702,13 @@ class Translation_DMSFit(DMSFit):
           L = END - START
           M = START - PREV
           #
+          print(" * Computing Hessian (1,1) (1,1)...")
           H_11_11 = numpy.einsum("bd,nac,niu,njw->abiucdjw",I,self._A_AB_set,self._F_A_set,self._F_A_set)               
           H_11_11+= numpy.einsum("bd,nac,niu,njw->abiucdjw",I,self._A_BA_set,self._F_B_set,self._F_B_set)
           H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw",self._W_AB_set,self._W_BA_set,self._F_A_set,self._F_B_set)
           H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw",self._W_BA_set,self._W_AB_set,self._F_B_set,self._F_A_set)
           #
+          print(" * Computing Hessian (0,1) (1,1)...")
           H_01_11 = numpy.einsum("bd,nac,njw->abcdjw",I,self._A_AB_set,self._F_A_set)
           H_01_11+= numpy.einsum("bd,nac,njw->abcdjw",I,self._A_BA_set,self._F_B_set)
           H_01_11+= numpy.einsum("nda,nbc,njw->abcdjw",self._W_AB_set,self._W_BA_set,self._F_B_set)
@@ -669,15 +727,80 @@ class Translation_DMSFit(DMSFit):
           L = END - START
           M = START - PREV
           N = PREV - DPREV
-          pass #TODO
+          #
+          print(" * Computing Hessian (2,1) (2,1)...")
+          H_21_21 = numpy.einsum("bd,nac,niu,nix,njw,njy->abiuxcdjwy", self._A_AB_set,self._F_A_set,self._F_A_set,
+                                                                                      self._F_A_set,self._F_A_set)
+
+          H_21_21+= numpy.einsum("bd,nac,niu,nix,njw,njy->abiuxcdjwy", self._A_BA_set,self._F_B_set,self._F_B_set,
+                                                                                      self._F_B_set,self._F_B_set)
+
+          H_21_21+= numpy.einsum("nda,nbc,niu,nix,njw,njy->abiuxcdjwy", self._W_AB_set,self._W_BA_set,
+                                                                                      self._F_A_set,self._F_A_set,
+                                                                                      self._F_B_set,self._F_B_set)
+
+          H_21_21+= numpy.einsum("nda,nbc,niu,nix,njw,njy->abiuxcdjwy", self._W_BA_set,self._W_AB_set,
+                                                                                      self._F_B_set,self._F_B_set,
+                                                                                      self._F_A_set,self._F_A_set)
+
+          H[START:END,START:END][:,:,:,0,:,:,:,0] = H_21_21[:,:,:,0,0,:,:,:,0,0]       # xx,xx
+          H[START:END,START:END][:,:,:,0,:,:,:,1] = H_21_21[:,:,:,0,0,:,:,:,0,1] * 2.0 # xx,xy
+          H[START:END,START:END][:,:,:,0,:,:,:,2] = H_21_21[:,:,:,0,0,:,:,:,0,2] * 2.0 # xx,xz
+          H[START:END,START:END][:,:,:,0,:,:,:,3] = H_21_21[:,:,:,0,0,:,:,:,1,1]       # xx,yy
+          H[START:END,START:END][:,:,:,0,:,:,:,4] = H_21_21[:,:,:,0,0,:,:,:,1,2] * 2.0 # xx,yz
+          H[START:END,START:END][:,:,:,0,:,:,:,5] = H_21_21[:,:,:,0,0,:,:,:,2,2]       # xx,zz
+          #
+          H[START:END,START:END][:,:,:,1,:,:,:,0] = H_21_21[:,:,:,0,1,:,:,:,0,0] * 2.0 # xy,xx
+          H[START:END,START:END][:,:,:,1,:,:,:,1] = H_21_21[:,:,:,0,1,:,:,:,0,1] * 4.0 # xy,xy
+          H[START:END,START:END][:,:,:,1,:,:,:,2] = H_21_21[:,:,:,0,1,:,:,:,0,2] * 4.0 # xy,xz
+          H[START:END,START:END][:,:,:,1,:,:,:,3] = H_21_21[:,:,:,0,1,:,:,:,1,1] * 2.0 # xy,yy
+          H[START:END,START:END][:,:,:,1,:,:,:,4] = H_21_21[:,:,:,0,1,:,:,:,1,2] * 4.0 # xy,yz
+          H[START:END,START:END][:,:,:,1,:,:,:,5] = H_21_21[:,:,:,0,1,:,:,:,2,2] * 2.0 # xy,zz
+          #
+          H[START:END,START:END][:,:,:,2,:,:,:,0] = H_21_21[:,:,:,0,2,:,:,:,0,0] * 2.0 # xz,xx
+          H[START:END,START:END][:,:,:,2,:,:,:,1] = H_21_21[:,:,:,0,2,:,:,:,0,1] * 4.0 # xz,xy
+          H[START:END,START:END][:,:,:,2,:,:,:,2] = H_21_21[:,:,:,0,2,:,:,:,0,2] * 4.0 # xz,xz
+          H[START:END,START:END][:,:,:,2,:,:,:,3] = H_21_21[:,:,:,0,2,:,:,:,1,1] * 2.0 # xz,yy
+          H[START:END,START:END][:,:,:,2,:,:,:,4] = H_21_21[:,:,:,0,2,:,:,:,1,2] * 4.0 # xz,yz
+          H[START:END,START:END][:,:,:,2,:,:,:,5] = H_21_21[:,:,:,0,2,:,:,:,2,2] * 2.0 # xz,zz
+          #
+          H[START:END,START:END][:,:,:,3,:,:,:,0] = H_21_21[:,:,:,1,1,:,:,:,0,0]       # yy,xx
+          H[START:END,START:END][:,:,:,3,:,:,:,1] = H_21_21[:,:,:,1,1,:,:,:,0,1] * 2.0 # yy,xy
+          H[START:END,START:END][:,:,:,3,:,:,:,2] = H_21_21[:,:,:,1,1,:,:,:,0,2] * 2.0 # yy,xz
+          H[START:END,START:END][:,:,:,3,:,:,:,3] = H_21_21[:,:,:,1,1,:,:,:,1,1]       # yy,yy
+          H[START:END,START:END][:,:,:,3,:,:,:,4] = H_21_21[:,:,:,1,1,:,:,:,1,2] * 2.0 # yy,yz
+          H[START:END,START:END][:,:,:,3,:,:,:,5] = H_21_21[:,:,:,1,1,:,:,:,2,2]       # yy,zz
+          #
+          H[START:END,START:END][:,:,:,4,:,:,:,0] = H_21_21[:,:,:,1,2,:,:,:,0,0] * 2.0 # yz,xx
+          H[START:END,START:END][:,:,:,4,:,:,:,1] = H_21_21[:,:,:,1,2,:,:,:,0,1] * 4.0 # yz,xy
+          H[START:END,START:END][:,:,:,4,:,:,:,2] = H_21_21[:,:,:,1,2,:,:,:,0,2] * 4.0 # yz,xz
+          H[START:END,START:END][:,:,:,4,:,:,:,3] = H_21_21[:,:,:,1,2,:,:,:,1,1] * 2.0 # yz,yy
+          H[START:END,START:END][:,:,:,4,:,:,:,4] = H_21_21[:,:,:,1,2,:,:,:,1,2] * 4.0 # yz,yz
+          H[START:END,START:END][:,:,:,4,:,:,:,5] = H_21_21[:,:,:,1,2,:,:,:,2,2] * 2.0 # yz,zz
+          #
+          H[START:END,START:END][:,:,:,5,:,:,:,0] = H_21_21[:,:,:,2,2,:,:,:,0,0]       # zz,xx
+          H[START:END,START:END][:,:,:,5,:,:,:,1] = H_21_21[:,:,:,2,2,:,:,:,0,1] * 2.0 # zz,xy
+          H[START:END,START:END][:,:,:,5,:,:,:,2] = H_21_21[:,:,:,2,2,:,:,:,0,2] * 2.0 # zz,xz
+          H[START:END,START:END][:,:,:,5,:,:,:,3] = H_21_21[:,:,:,2,2,:,:,:,1,1]       # zz,yy
+          H[START:END,START:END][:,:,:,5,:,:,:,4] = H_21_21[:,:,:,2,2,:,:,:,1,2] * 2.0 # zz,yz
+          H[START:END,START:END][:,:,:,5,:,:,:,5] = H_21_21[:,:,:,2,2,:,:,:,2,2]       # zz,zz
+          # 
+          del H_21_21
+
+
+
 
       H *= 2.0
 
       # fit
+      print(" * Computing Hessian Inverse...")
       Hi = self._invert_hessian(H)
+
+      print(" * Computing the DMS tensors...")
       s = - g @ Hi
 
       # extract susceptibilities
+      print(" * Setting the DMS tensors...")
       self._dms.set_s2(s)
       for order in [(0,1),(1,1),]:
           if order in self._dms.available_orders():
