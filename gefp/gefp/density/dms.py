@@ -86,10 +86,11 @@ class DMS(ABC):
 
   def _init(self, t):#OK
       "Initialize information"
-      u = {"d": "Density", "f": "Fock", "a": "Alpha", "b": "Beta"}
-      m, s = [x for x in t.lower()]
+      u = {"d": "Density", "g": "Fock", "a": "Alpha", "b": "Beta"}
+      m = [x for x in t.lower()]
       self._type      = t.lower()
-      self._type_long = u[m] + '-' + u[s]
+      self._type_long = u[m[0]] 
+      if len(m)>1: self._type_long+= '-' + u[m[1]]
 
   def B(self, m, n):#OK
       "Retrieve DMS tensor from parameter vector"
@@ -285,14 +286,17 @@ class DMSFit(ABC):
   minimum_atom_atom_distance = 1.2 / psi4.constants.bohr2angstroms
 
   def __init__(self, mol, method, 
-                     nsamples, dms_type, order_type, use_non_iterative_model):#OK
+                     nsamples, dms_types, order_type, use_non_iterative_model):#OK
       ABC.__init__(self)
+
+      if mol.multiplicity() > 1:
+         raise NotImplementedError(" DMSFit Error: Open-shell systems are not implemented yet.")
 
       self._mol       = mol
       self._method    = method
       self._natoms    = mol.natom()
       self._nsamples  = nsamples
-      self._dms_type  = dms_type
+      self._dms_types = dms_types
       self._order_type= order_type
       psi4.set_options({"DMATPOL_TRAINING_MODE":"CHARGES",
                         "DMATPOL_FIELD_RANK"   : 2,
@@ -306,48 +310,85 @@ class DMSFit(ABC):
       self._nbf = None
       self._dms = None
       self._D0  = None
+      self._G0  = None
+
 
   @classmethod
-  def create(cls, mol, fit_type="transl", dms_type="da", order_type='basic',
+  def create(cls, mol, fit_type="transl", dms_types="all", order_type='basic',
                   nsamples=100, method='scf', 
                   use_non_iterative_model=True):#OK
       if fit_type.lower().startswith("tran"): 
-         return Translation_DMSFit(mol, method, nsamples, dms_type, order_type, use_non_iterative_model)
+         return Translation_DMSFit(mol, method, nsamples, dms_types, order_type, use_non_iterative_model)
       else: 
          raise NotImplementedError("This type of DMS fitting is not implemented yet")
 
   def run(self):#TODO
       "Run the fitting procedure"
-      self._compute_wfn()
+
+      # compute quantities for isolated molecule
+      self._compute_isolated_molecule()
+
+      # compute DMS for isolated molecule in external electric field
      #self._compute_dms_external_field()
+
+      # prepare for the DMS fittings
       self._compute_samples()
+
+      # fit DMS: (1,0), (2,0), (0,2), (1,2) and (2,2)
      #self._compute_group_1()
-      self._compute_group_2()
+
+      # fit DMS: (0,1), (1,1) and (2,1)
+      self._compute_group_2(self._dms_da, self._K_set, self._L_set, self._F_A_set, self._F_B_set,
+                                          self._W_AB_set, self._W_BA_set, self._A_AB_set, self._A_BA_set)
+
+      self._compute_group_2(self._dms_g , self._k_set, self._l_set, self._F_A_set, self._F_B_set,
+                                          self._w_AB_set, self._w_BA_set, self._a_AB_set, self._a_BA_set)
+
+      # test the DMS fittings
       self._check()
 
-  def B(self, m, n):
+  def B(self, m, n, dtype='da'):
       "Get the susceptibilities"
-      return self._dms.B(m,n)
+      if   dtype.lower() == 'da': return self._dms_da.B(m,n)
+      elif dtype.lower() == 'g' : return self._dms_g .B(m,n)
+      else: raise NotImplementedError("DMSFit Error: Only 'da' and 'g' available now.")
+
 
   # --- protected --- #
 
-  def _compute_wfn(self):#OK
+  def _compute_isolated_molecule(self):#OK
       print(" * Computing Unperturbed Wavefunction")
+
+      # Compute HF or DFT wavefunction of molecule of interest
       g, self._wfn_0 = PSI4_DRIVER(self._method, molecule=self._mol, return_wfn=True)
-      self._nbf = self._wfn_0.basisset().nbf()
-      self._dms = DMS.create(self._dms_type, self._order_type)
-      self._dms.set_bfs(self._wfn_0.basisset())
 
-      if   self._dms_type.lower() == 'da': M = self._wfn_0.Da().to_array(dense=True)
-      elif self._dms_type.lower() == 'db': M = self._wfn_0.Db().to_array(dense=True)
-      elif self._dms_type.lower() == 'fa': M = self._wfn_0.Fa().to_array(dense=True)
-      elif self._dms_type.lower() == 'fb': M = self._wfn_0.Fb().to_array(dense=True)
-      else:
-          raise valueerror(" DMSFit Error: Incorrect type of dms tensors. Available: da, db, fa, fb.")
-
-      self._dms.set_M(M)
-      self._D0 = self._wfn_0.Da().to_array(dense=True)
+      # Set the AO basis set
       self._bfs_0 = self._wfn_0.basisset()
+      self._nbf = self._wfn_0.basisset().nbf()
+
+      Da = self._wfn_0.Da().to_array(dense=True)
+      G  = self._wfn_0.Fa().to_array(dense=True) - self._wfn_0.H().to_array(dense=True)
+
+      # Initialize DMS tensors
+      self._dms_da= DMS.create('da', self._order_type)
+      self._dms_g = DMS.create('g' , self._order_type)
+
+      self._dms_da.set_bfs(self._bfs_0)
+      self._dms_g .set_bfs(self._bfs_0)
+
+      self._dms_da.set_M(Da)
+      self._dms_g .set_M(G )
+
+      self._D0 = Da.copy()
+      self._G0 = G .copy()
+
+      #if   self._dms_type.lower() == 'da': M = self._wfn_0.Da().to_array(dense=True)
+      #elif self._dms_type.lower() == 'db': M = self._wfn_0.Db().to_array(dense=True)
+      #elif self._dms_type.lower() == 'fa': M = self._wfn_0.Fa().to_array(dense=True)
+      #elif self._dms_type.lower() == 'fb': M = self._wfn_0.Fb().to_array(dense=True)
+      #else:
+      #    raise valueerror(" DMSFit Error: Incorrect type of dms tensors. Available: da, db, fa, fb.")
+
 
   def _compute_dms_external_field(self):#OK
       "DMS for external electric field only (without other molecules)"
@@ -357,7 +398,7 @@ class DMSFit(ABC):
   def _invert_hessian(self, h):#OK
      "Invert Hessian matrix"
      det= numpy.linalg.det(h)
-     print(" * Hessian Determinant= %14.6E" % det)
+     print(" ** Hessian Determinant= %14.6E" % det)
      hi = numpy.linalg.inv(h)
      I = numpy.dot(hi, h).diagonal().sum()
      d = I - len(hi)
@@ -414,9 +455,9 @@ class Translation_DMSFit(DMSFit):
   """
  Translation method to fit DMS tensors.
 """
-  def __init__(self, mol, method, nsamples, dms_type, order_type, use_non_iterative_model,
+  def __init__(self, mol, method, nsamples, dms_types, order_type, use_non_iterative_model,
                      start=1.5, srange=2.0):
-      DMSFit.__init__(self, mol, method, nsamples, dms_type, order_type, use_non_iterative_model)
+      DMSFit.__init__(self, mol, method, nsamples, dms_types, order_type, use_non_iterative_model)
 
       # translation parameters
       self._i = 0
@@ -425,40 +466,37 @@ class Translation_DMSFit(DMSFit):
 
       self._dimer_wfn = None
       self._dimer_mol = None
-      self._mints_dimer = None
-
-      self._g_ind = None
-      self._h_ind = None
-      self._g_ct  = None
-      self._h_ct  = None
+      self._dimer_mints = None
 
       self._dD_AA_set_ref = []
       self._dD_BB_set_ref = []
       self._dD_AB_set_ref = []
+      #
+      self._dG_AA_set_ref = []
+      self._dG_BB_set_ref = []
+      self._dG_AB_set_ref = []
+      #
       self._S_AB_set = []
-      self._T_set = []
+      self._H_AB_set_ref = []
+      self._DIP_set = []      
+      #
       self._F_A_set = []
       self._F_B_set = []
+      #
       self._W_AB_set= []
       self._W_BA_set= []
       self._w_AB_set= []
       self._w_BA_set= []
-     #self._Wf_AB_set= []
-     #self._Wf_BA_set= []
+      #
       self._A_AB_set= []
       self._A_BA_set= []
       self._a_AB_set= []
       self._a_BA_set= []
-      self._k_set   = []
-      self._l_set   = []
-     #self._Af_AB_set= []
-     #self._Af_BA_set= []
-     #self._Aff_AB_set= []
-     #self._Aff_BA_set= []
+      #
       self._K_set   = []
       self._L_set   = []
-      self._DIP_set = []      
-      self._H_AB_set_ref = []
+      self._k_set   = []
+      self._l_set   = []
 
 
   # ---> Implementation <--- #
@@ -520,124 +558,146 @@ class Translation_DMSFit(DMSFit):
       return mol
 
   def _compute_samples(self):#OK
-      "Compute electric fields, CT kernels and reference deformation density matrices"
+      "Compute electric fields, CT channels and reference deformation matrices"
 
-      print(" * Computing WFN for Each Sample")
+      print(" ---> Computing wavefunction for each sample <---")
       for n in range(self._nsamples):
           print(" * - Sample %d" % (self._i+1))
+
+          # Dimer system
           aggr= self._construct_aggregate()
 
+          # Set sources of perturbation
           self._determine_perturbing_densities()
 
+          # Overlap integrals
           S_AB = self._dimer_wfn.S().to_array(dense=True)[:self._nbf,self._nbf:]
-          H_AB = self._dimer_wfn.H().to_array(dense=True)[:self._nbf,self._nbf:]
-                                                                                                        
+
+          # Core Hamiltonian
+          H = self._dimer_wfn.H().to_array(dense=True)
+          H_AB = H[:self._nbf,self._nbf:]
+
+          # OPDM
           dD     = self._dimer_wfn.Da().to_array(dense=True)
           dD[:self._nbf,:self._nbf]-= self._D0
           dD[self._nbf:,self._nbf:]-= self._D0
-          self._save_dD(dD)
-
-          F_A, F_B, F_A_mat, F_B_mat = self._compute_efield()
-
 
           dD_AA = dD[:self._nbf,:self._nbf].copy()
           dD_BB = dD[self._nbf:,self._nbf:].copy()
           dD_AB = dD[:self._nbf,self._nbf:].copy()
 
+          self._save_dD(dD, prefix='dd')
+
+          # G tensor
+          dG   = self._dimer_wfn.Fa().to_array(dense=True) - H
+          dG[:self._nbf,:self._nbf]-= self._G0
+          dG[self._nbf:,self._nbf:]-= self._G0
+
+          dG_AA = dG[:self._nbf,:self._nbf].copy()
+          dG_BB = dG[self._nbf:,self._nbf:].copy()
+          dG_AB = dG[:self._nbf,self._nbf:].copy()
+
+          self._save_dD(dG, prefix='gg')
+
+          # Electric field
+          F_A, F_B, F_A_mat, F_B_mat = self._compute_efield()
+
+          # Dipole integrals
+          DIP = self._dimer_mints.ao_dipole()
+          self._DIP_set.append(DIP)
+
+          # Auxiliary matrices
           W_AB = self._DA @ S_AB
           W_BA = self._DB @ S_AB.T
-
-         #w_AB = self._DA @ S_AB    @ S_AB.T @ S_AB
-         #w_BA = self._DB @ S_AB.T  @ S_AB   @ S_AB.T
-
-         #Wf_AB= numpy.einsum("ixab,bc->acix",F_A_mat, W_AB) # i.e. F_A_mat[:,:,i,x] @ W_AB 
-         #Wf_BA= numpy.einsum("ixab,bc->acix",F_B_mat, W_BA) # i.e. F_B_mat[:,:,i,x] @ W_BA 
 
           A_AB = W_AB.T @ W_AB
           A_BA = W_BA.T @ W_BA
 
-         #a_AB = w_AB.T @ w_AB
-         #a_BA = w_BA.T @ w_BA
-
-         #Af_AB= numpy.einsum("acix,ad->cdix",Wf_AB, W_AB)
-         #Af_BA= numpy.einsum("acix,ad->cdix",Wf_BA, W_BA)
-
-         #Aff_AB= numpy.einsum("acix,adjy->cdixjy",Wf_AB, Wf_AB)
-         #Aff_BA= numpy.einsum("acix,adjy->cdixjy",Wf_BA, Wf_BA)
-
           K    = W_AB.T @ dD_AB
           L    = W_BA.T @ dD_AB.T
 
-         #k    = w_AB.T @ dD_AB
-         #l    = w_BA.T @ dD_AB.T
+          w_AB = self._GA @ S_AB
+          w_BA = self._GB @ S_AB.T
 
-          self._S_AB_set.append(S_AB.copy())
-          self._H_AB_set_ref.append(H_AB.copy())
-          self._W_AB_set.append(W_AB)
-          self._W_BA_set.append(W_BA)
-          self._A_AB_set.append(A_AB)
-          self._A_BA_set.append(A_BA)
+          a_AB = w_AB.T @ w_AB
+          a_BA = w_BA.T @ w_BA
 
-         #self._Wf_AB_set.append(Wf_AB)
-         #self._Wf_BA_set.append(Wf_BA)
+          k    = w_AB.T @ dG_AB
+          l    = w_BA.T @ dG_AB.T
 
-         #self._Af_AB_set.append(Af_AB)
-         #self._Af_BA_set.append(Af_BA)
-
-         #self._Aff_AB_set.append(Aff_AB)
-         #self._Aff_BA_set.append(Aff_BA)
-
-
-          self._K_set.append(K)
-          self._L_set.append(L)
-
-         #self._k_set.append(k)
-         #self._l_set.append(l)
-         #self._w_AB_set.append(w_AB)
-         #self._w_BA_set.append(w_BA)
-         #self._a_AB_set.append(a_AB)
-         #self._a_BA_set.append(a_BA)
-
+          # Accumulate
+          self._S_AB_set.append(S_AB)
+          self._H_AB_set_ref.append(H_AB)
 
           self._dD_AA_set_ref.append(dD_AA)
           self._dD_BB_set_ref.append(dD_BB)
           self._dD_AB_set_ref.append(dD_AB)
 
+          self._dG_AA_set_ref.append(dG_AA)
+          self._dG_BB_set_ref.append(dG_BB)
+          self._dG_AB_set_ref.append(dG_AB)
+
           self._F_A_set.append(F_A)
           self._F_B_set.append(F_B)
 
-          #DIP = mints.ao_dipole()
-          #self._DIP_set.append(DIP)
+          self._W_AB_set.append(W_AB)
+          self._W_BA_set.append(W_BA)
 
+          self._A_AB_set.append(A_AB)
+          self._A_BA_set.append(A_BA)
+
+          self._K_set.append(K)
+          self._L_set.append(L)
+
+          self._w_AB_set.append(w_AB)
+          self._w_BA_set.append(w_BA)
+
+          self._a_AB_set.append(a_AB)
+          self._a_BA_set.append(a_BA)
+
+          self._k_set.append(k)
+          self._l_set.append(l)
+          #
+
+
+      #
+      self._S_AB_set= numpy.array(self._S_AB_set)
+      self._H_AB_set_ref = numpy.array(self._H_AB_set_ref)
+      #
+      self._dD_AA_set_ref= numpy.array(self._dD_AA_set_ref)
+      self._dD_BB_set_ref= numpy.array(self._dD_BB_set_ref)
+      self._dD_AB_set_ref= numpy.array(self._dD_AB_set_ref)
+      #
+      self._dG_AA_set_ref= numpy.array(self._dG_AA_set_ref)
+      self._dG_BB_set_ref= numpy.array(self._dG_BB_set_ref)
+      self._dG_AB_set_ref= numpy.array(self._dG_AB_set_ref)
+      #
       self._F_A_set = numpy.array(self._F_A_set)
       self._F_B_set = numpy.array(self._F_B_set)
-      self._S_AB_set= numpy.array(self._S_AB_set)
+      #
       self._W_AB_set= numpy.array(self._W_AB_set)
       self._W_BA_set= numpy.array(self._W_BA_set)
+      #
       self._A_AB_set= numpy.array(self._A_AB_set)
       self._A_BA_set= numpy.array(self._A_BA_set)
-     #self._Wf_AB_set= numpy.array(self._Wf_AB_set)
-     #self._Wf_BA_set= numpy.array(self._Wf_BA_set)
-     #self._Af_AB_set= numpy.array(self._Af_AB_set)
-     #self._Af_BA_set= numpy.array(self._Af_BA_set)
-     #self._Aff_AB_set= numpy.array(self._Aff_AB_set)
-     #self._Aff_BA_set= numpy.array(self._Aff_BA_set)
+      #
       self._K_set   = numpy.array(self._K_set)
       self._L_set   = numpy.array(self._L_set)
+      #
+      self._w_AB_set= numpy.array(self._w_AB_set)
+      self._w_BA_set= numpy.array(self._w_BA_set)
+      #
+      self._a_AB_set= numpy.array(self._a_AB_set)
+      self._a_BA_set= numpy.array(self._a_BA_set)
+      #
+      self._k_set   = numpy.array(self._k_set)
+      self._l_set   = numpy.array(self._l_set)
 
+     
 
-     #self._w_AB_set= numpy.array(self._w_AB_set)
-     #self._w_BA_set= numpy.array(self._w_BA_set)
-     #self._a_AB_set= numpy.array(self._a_AB_set)
-     #self._a_BA_set= numpy.array(self._a_BA_set)
-     #self._k_set   = numpy.array(self._k_set)
-     #self._l_set   = numpy.array(self._l_set)
-
-      self._H_AB_set_ref = numpy.array(self._H_AB_set_ref)
-      pass
-
-  def _compute_group_1(self):#OK
+  def _compute_group_1(self):#TODO
       "Compute 1st group of parameters"
+      print(" ---> Computing DMS for Z1 group of type %s<---" % dms._type)
 
       # Only (1,0) and (2,0) susceptibilities: fitting for each target matrix element separately
       if (0,2) not in self._dms.available_orders():
@@ -660,20 +720,23 @@ class Translation_DMSFit(DMSFit):
 
       self._dms.set_s1(s)
 
-  def _compute_group_2(self):#TODO
+  def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):#TODO
       "Compute 2nd group of parameters"
-
+      print(" ---> Computing DMS for Z2 group of type %s<---" % dms._type)
+      n = dms.n
+      N = dms.N
+      #
       OFFs= [0,]
       # (0,1)
-      DIM = self._dms.n**2
+      DIM = n*n
       OFFs.append(DIM)
       # (1,1)
-      if (1,1) in self._dms.available_orders():
-          DIM +=  3*self._dms.N*self._dms.n**2
+      if (1,1) in dms.available_orders():
+          DIM += n*n*N*3
           OFFs.append(DIM)
       # (2,1)
-      if (2,1) in self._dms.available_orders():
-          DIM +=  6*self._dms.N*self._dms.n**2
+      if (2,1) in dms.available_orders():
+          DIM += n*n*N*6
           OFFs.append(DIM)
     
       # allocate 
@@ -685,28 +748,28 @@ class Translation_DMSFit(DMSFit):
       print(" * Computing Gradient (0,1)...")
       START = OFFs[0]
       END   = OFFs[1]
-      KL = self._K_set + self._L_set
+      KL = K_set + L_set
       g[START:END] = KL.sum(axis=0).ravel()
 
       # (11) block
-      if (1,1) in self._dms.available_orders():
+      if (1,1) in dms.available_orders():
           print(" * Computing Gradient (1,1)...")
           START = OFFs[1]
           END   = OFFs[2]
           #
-          g[START:END] = numpy.einsum("nab,niu->abiu", self._K_set, self._F_A_set).ravel()
-          g[START:END]+= numpy.einsum("nab,niu->abiu", self._L_set, self._F_B_set).ravel()
+          g[START:END] = numpy.einsum("nab,niu->abiu", K_set, F_A_set).ravel()
+          g[START:END]+= numpy.einsum("nab,niu->abiu", L_set, F_B_set).ravel()
 
       # (21) block
-      if (2,1) in self._dms.available_orders():
+      if (2,1) in dms.available_orders():
           print(" * Computing Gradient (2,1)...")
           START = OFFs[2]
           END   = OFFs[3]
           #
-          gw = numpy.einsum("nab,niu,niw->abiuw",self._K_set, self._F_A_set, self._F_A_set)
-          gw+= numpy.einsum("nab,niu,niw->abiuw",self._L_set, self._F_B_set, self._F_B_set)
+          gw = numpy.einsum("nab,niu,niw->abiuw",K_set, F_A_set, F_A_set)
+          gw+= numpy.einsum("nab,niu,niw->abiuw",L_set, F_B_set, F_B_set)
           #
-          u = numpy.zeros((self._dms.n,self._dms.n,self._dms.N,6))
+          u = numpy.zeros((n,n,N,6))
           #
           u[:,:,:,0] = gw[:,:,:,0,0].copy()       # xx
           u[:,:,:,1] = gw[:,:,:,0,1].copy() * 2.0 # xy
@@ -718,89 +781,80 @@ class Translation_DMSFit(DMSFit):
           g[START:END] = u.ravel().copy()
           del gw, u
 
-          #g_xx = gw[:,:,:,0,0].ravel().copy()
-          #g_xy = gw[:,:,:,0,1].ravel().copy() * 2.0 
-          #g_xz = gw[:,:,:,0,2].ravel().copy() * 2.0
-          #g_yy = gw[:,:,:,1,1].ravel().copy()
-          #g_yz = gw[:,:,:,1,2].ravel().copy() * 2.0
-          #g_zz = gw[:,:,:,2,2].ravel().copy()
-
-          #g[START:END] = numpy.hstack([g_xx, g_xy, g_xz, g_yy, g_yz, g_zz])
-          #g[START:END][:,:,:,0] = g_xx.ravel()  # xx
-          #g[START:END][:,:,:,1] = g_xy.ravel()  # xy
-          #g[START:END][:,:,:,2] = g_xz.ravel()  # xz
-          #g[START:END][:,:,:,3] = g_yy.ravel()  # yy
-          #g[START:END][:,:,:,4] = g_yz.ravel()  # yz
-          #g[START:END][:,:,:,5] = g_zz.ravel()  # zz
-
       g *= -2.0
 
       # Hessian
-      I = numpy.identity(self._nbf)
-      A = self._A_AB_set + self._A_BA_set
+      I = numpy.identity(n)
+      A = A_AB_set + A_BA_set
      #Af= self._Af_AB_set + self._Af_BA_set
      #Aff= self._Aff_AB_set + self._Aff_BA_set
 
       # (01) susceptibility
-      print(" * Computing Hessian (0,1) (0,1)...")
       START = OFFs[0]
       END   = OFFs[1]
+      #
       L = END - START
-      H_01_01 = numpy.einsum("bd,ac->abcd",I,A.sum(axis=0))
-      H_01_01+= numpy.einsum("nda,nbc->abcd",self._W_AB_set,self._W_BA_set)
-      H_01_01+= numpy.einsum("nda,nbc->abcd",self._W_BA_set,self._W_AB_set)
-      H[START:END,START:END] = H_01_01.reshape(L,L).copy() ; del H_01_01
+      #
+      print(" * Computing Hessian (0,1) (0,1)...")
+      H_01_01 = numpy.einsum("bd,ac->abcd", I, A.sum(axis=0))
+      H_01_01+= numpy.einsum("nda,nbc->abcd", W_AB_set, W_BA_set)
+      H_01_01+= numpy.einsum("nda,nbc->abcd", W_BA_set, W_AB_set)
+      #
+      H[START:END,START:END] = H_01_01.reshape(L,L).copy()
+      del H_01_01
 
       # (11) susceptibility
-      if (1,1) in self._dms.available_orders():
+      if (1,1) in dms.available_orders():
           PREV  = OFFs[0]
           START = OFFs[1]
           END   = OFFs[2]
+          #
           L = END - START
           M = START - PREV
           #
           print(" * Computing Hessian (1,1) (1,1)...")
-          H_11_11 = numpy.einsum("bd,nac,niu,njw->abiucdjw",I,self._A_AB_set,self._F_A_set,self._F_A_set)               
-          H_11_11+= numpy.einsum("bd,nac,niu,njw->abiucdjw",I,self._A_BA_set,self._F_B_set,self._F_B_set)
-          H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw",self._W_AB_set,self._W_BA_set,self._F_A_set,self._F_B_set)
-          H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw",self._W_BA_set,self._W_AB_set,self._F_B_set,self._F_A_set)
+          H_11_11 = numpy.einsum("bd,nac,niu,njw->abiucdjw", I, A_AB_set, F_A_set, F_A_set)               
+          H_11_11+= numpy.einsum("bd,nac,niu,njw->abiucdjw", I, A_BA_set, F_B_set, F_B_set)
+          H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_AB_set, W_BA_set, F_A_set, F_B_set)
+          H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_BA_set, W_AB_set, F_B_set, F_A_set)
           #
           print(" * Computing Hessian (0,1) (1,1)...")
-          H_01_11 = numpy.einsum("bd,nac,njw->abcdjw",I,self._A_AB_set,self._F_A_set)
-          H_01_11+= numpy.einsum("bd,nac,njw->abcdjw",I,self._A_BA_set,self._F_B_set)
-          H_01_11+= numpy.einsum("nda,nbc,njw->abcdjw",self._W_AB_set,self._W_BA_set,self._F_B_set)
-          H_01_11+= numpy.einsum("nda,nbc,njw->abcdjw",self._W_BA_set,self._W_AB_set,self._F_A_set)
+          H_01_11 = numpy.einsum("bd,nac,njw->abcdjw", I, A_AB_set, F_A_set)
+          H_01_11+= numpy.einsum("bd,nac,njw->abcdjw", I, A_BA_set, F_B_set)
+          H_01_11+= numpy.einsum("nda,nbc,njw->abcdjw", W_AB_set, W_BA_set, F_B_set)
+          H_01_11+= numpy.einsum("nda,nbc,njw->abcdjw", W_BA_set, W_AB_set, F_A_set)
           #                                                                                                              
           H[START:  END,START:  END] = H_11_11.reshape(L,L).copy() ; del H_11_11
           H[PREV :START,START:  END] = H_01_11.reshape(M,L).copy()
           H[START:  END, PREV:START] = H_01_11.reshape(M,L).T.copy() ; del H_01_11
 
       # (21) susceptibility
-      if (2,1) in self._dms.available_orders():
+      if (2,1) in dms.available_orders():
           DPREV = OFFs[0]  
           PREV  = OFFs[1]
           START = OFFs[2]
           END   = OFFs[3]
+          #
           L = END - START
           M = START - PREV
           N = PREV - DPREV
           #
           print(" * Computing Hessian (2,1) (2,1)...")
-          H_21_21 = numpy.einsum("bd,nac,niu,nix,njw,njy->abiuxcdjwy", I,self._A_AB_set,self._F_A_set,self._F_A_set,
-                                                                                      self._F_A_set,self._F_A_set)
+          H_21_21 = numpy.einsum("bd,nac,niu,nix,njw,njy->abiuxcdjwy", I, A_AB_set, F_A_set, F_A_set,
+                                                                                    F_A_set, F_A_set)
 
-          H_21_21+= numpy.einsum("bd,nac,niu,nix,njw,njy->abiuxcdjwy", I,self._A_BA_set,self._F_B_set,self._F_B_set,
-                                                                                      self._F_B_set,self._F_B_set)
+          H_21_21+= numpy.einsum("bd,nac,niu,nix,njw,njy->abiuxcdjwy", I, A_BA_set, F_B_set, F_B_set,
+                                                                                    F_B_set, F_B_set)
 
-          H_21_21+= numpy.einsum("nda,nbc,niu,nix,njw,njy->abiuxcdjwy", self._W_AB_set,self._W_BA_set,
-                                                                                      self._F_A_set,self._F_A_set,
-                                                                                      self._F_B_set,self._F_B_set)
+          H_21_21+= numpy.einsum("nda,nbc,niu,nix,njw,njy->abiuxcdjwy", W_AB_set, W_BA_set,
+                                                                                    F_A_set, F_A_set,
+                                                                                    F_B_set, F_B_set)
 
-          H_21_21+= numpy.einsum("nda,nbc,niu,nix,njw,njy->abiuxcdjwy", self._W_BA_set,self._W_AB_set,
-                                                                                      self._F_B_set,self._F_B_set,
-                                                                                      self._F_A_set,self._F_A_set)
+          H_21_21+= numpy.einsum("nda,nbc,niu,nix,njw,njy->abiuxcdjwy", W_BA_set, W_AB_set,
+                                                                                    F_B_set, F_B_set,
+                                                                                    F_A_set, F_A_set)
 
-          U=numpy.zeros((self._dms.n,self._dms.n,self._dms.N,6,self._dms.n,self._dms.n,self._dms.N,6))
+          U = numpy.zeros((n,n,N,6,n,n,N,6))
           #
           U[:,:,:,0,:,:,:,0] = H_21_21[:,:,:,0,0,:,:,:,0,0].copy()       # xx,xx
           U[:,:,:,0,:,:,:,1] = H_21_21[:,:,:,0,0,:,:,:,0,1].copy() * 2.0 # xx,xy
@@ -849,12 +903,12 @@ class Translation_DMSFit(DMSFit):
 
           # (01,21)
           print(" * Computing Hessian (0,1) (2,1)...")
-          H_01_21 = numpy.einsum("bd,nac,njw,njx->abcdjwx", I,self._A_AB_set,self._F_A_set,self._F_A_set)
-          H_01_21+= numpy.einsum("bd,nac,njw,njx->abcdjwx", I,self._A_BA_set,self._F_B_set,self._F_B_set)
-          H_01_21+= numpy.einsum("nda,nbc,njw,njx->abcdjwx", self._W_AB_set,self._W_BA_set,self._F_B_set,self._F_B_set)
-          H_01_21+= numpy.einsum("nda,nbc,njw,njx->abcdjwx", self._W_BA_set,self._W_AB_set,self._F_A_set,self._F_A_set)
+          H_01_21 = numpy.einsum("bd,nac,njw,njx->abcdjwx", I, A_AB_set, F_A_set, F_A_set)
+          H_01_21+= numpy.einsum("bd,nac,njw,njx->abcdjwx", I, A_BA_set, F_B_set, F_B_set)
+          H_01_21+= numpy.einsum("nda,nbc,njw,njx->abcdjwx", W_AB_set, W_BA_set, F_B_set, F_B_set)
+          H_01_21+= numpy.einsum("nda,nbc,njw,njx->abcdjwx", W_BA_set, W_AB_set, F_A_set, F_A_set)
           #
-          U = numpy.zeros((self._dms.n,self._dms.n,self._dms.n,self._dms.n,self._dms.N,6))
+          U = numpy.zeros((n,n,n,n,N,6))
           #
           U[:,:,:,:,:,0] = H_01_21[:,:,:,:,:,0,0].copy()       # xx
           U[:,:,:,:,:,1] = H_01_21[:,:,:,:,:,0,1].copy() * 2.0 # xy
@@ -869,14 +923,14 @@ class Translation_DMSFit(DMSFit):
 
           # (11,21)
           print(" * Computing Hessian (1,1) (2,1)...")
-          H_11_21 = numpy.einsum("bd,nac,nix,nju,njw->abixcdjuw", I,self._A_AB_set,self._F_A_set,self._F_A_set,self._F_A_set)
-          H_11_21+= numpy.einsum("bd,nac,nix,nju,njw->abixcdjuw", I,self._A_BA_set,self._F_B_set,self._F_B_set,self._F_B_set)
-          H_11_21+= numpy.einsum("nda,nbc,nix,nju,njw->abixcdjuw",self._W_AB_set,self._W_BA_set,
-                                                                  self._F_A_set,self._F_B_set,self._F_B_set)
-          H_11_21+= numpy.einsum("nda,nbc,nix,nju,njw->abixcdjuw",self._W_BA_set,self._W_AB_set,
-                                                                  self._F_B_set,self._F_A_set,self._F_A_set)
+          H_11_21 = numpy.einsum("bd,nac,nix,nju,njw->abixcdjuw", I, A_AB_set, F_A_set, F_A_set, F_A_set)
+          H_11_21+= numpy.einsum("bd,nac,nix,nju,njw->abixcdjuw", I, A_BA_set, F_B_set, F_B_set, F_B_set)
+          H_11_21+= numpy.einsum("nda,nbc,nix,nju,njw->abixcdjuw", W_AB_set, W_BA_set,
+                                                                               F_A_set, F_B_set, F_B_set)
+          H_11_21+= numpy.einsum("nda,nbc,nix,nju,njw->abixcdjuw", W_BA_set, W_AB_set,
+                                                                               F_B_set, F_A_set, F_A_set)
           #
-          U = numpy.zeros((self._dms.n,self._dms.n,self._dms.N,3,self._dms.n,self._dms.n,self._dms.N,6))
+          U = numpy.zeros((n,n,N,3,n,n,N,6))
           #
           U[:,:,:,:,:,:,:,0] = H_11_21[:,:,:,:,:,:,:,0,0].copy()       # xx
           U[:,:,:,:,:,:,:,1] = H_11_21[:,:,:,:,:,:,:,0,1].copy() * 2.0 # xy
@@ -889,54 +943,56 @@ class Translation_DMSFit(DMSFit):
           del H_11_21, U
           H[START:END,PREV:START] = H[PREV:START,START:END].T.copy()
 
-
       H *= 2.0
 
-      # fit
+      # Fit
       print(" * Computing Hessian Inverse...")
       Hi = self._invert_hessian(H)
 
       print(" * Computing the DMS tensors...")
       s = - g @ Hi
 
-      # extract susceptibilities
+      # Extract susceptibilities
       print(" * Setting the DMS tensors...")
-      self._dms.set_s2(s)
+      dms.set_s2(s)
       for order in [(0,1),(1,1),(2,1)]:
-          if order in self._dms.available_orders():
-             self._dms._generate_B_from_s(order)
+          if order in dms.available_orders(): dms._generate_B_from_s(order)
+
+
 
   def _compute_dms_induction_ij(self, i, j):#TODO
       #TODO build up gradient and hessian
-      self._g_ind.fill(0.0)
-      self._H_ind.fill(0.0)
+      #self._g_ind.fill(0.0)
+      #self._H_ind.fill(0.0)
       # fit
-      Hi = self._invert_hessian(self._h_ind)
-      par = - self._g_ind @ Hi
+      #Hi = self._invert_hessian(self._h_ind)
+      #par = - self._g_ind @ Hi
       # extract
-      b_1 = numpy.zeros((self._natoms, 3))
-      b_2 = numpy.zeros((self._natoms, 3, 3))
+      #b_1 = numpy.zeros((self._natoms, 3))
+      #b_2 = numpy.zeros((self._natoms, 3, 3))
       #TODO fill up b_1 and b_2
-      return b_1, b_2
+      #return b_1, b_2
+      pass
 
   def _check(self):
       "Check the quality of fitting on training set"
 
-      B_01 = self.B(0,1)
-      if (1,1) in self._dms.available_orders(): 
-          B_11 = self.B(1,1)
-      if (2,1) in self._dms.available_orders(): 
-          B_21 = self.B(2,1)
+      B_01 = self.B(0,1,'da')
+      b_01 = self.B(0,1,'g')
+      if (1,1) in self._dms_da.available_orders(): 
+          B_11 = self.B(1,1,'da')
+          b_11 = self.B(1,1,'g')
+      if (2,1) in self._dms_da.available_orders(): 
+          B_21 = self.B(2,1,'da')
+          b_21 = self.B(2,1,'g')
 
       print(" DMSFit: Check - training set")
       for s in range(self._nsamples):
           
           W_AB = self._W_AB_set[s]
           W_BA = self._W_BA_set[s]
-         #w_AB = self._w_AB_set[s]
-         #w_BA = self._w_BA_set[s]
-         #Wf_AB= self._Wf_AB_set[s]
-         #Wf_BA= self._Wf_BA_set[s]
+          w_AB = self._w_AB_set[s]
+          w_BA = self._w_BA_set[s]
           F_A  = self._F_A_set[s]
           F_B  = self._F_B_set[s]
 
@@ -944,28 +1000,42 @@ class Translation_DMSFit(DMSFit):
 
           dD_AB_ref = self._dD_AB_set_ref[s]
           dD_AB_com = W_AB @ B_01 + B_01.T @ W_BA.T
-         #dD_AB_com+= numpy.einsum("acix,cbix->ab",Wf_AB, B_11)
-         #dD_AB_com+= numpy.einsum("acix,cbix->ab",Wf_BA, B_11).T
-          if (1,1) in self._dms.available_orders():
+
+          dG_AB_ref = self._dG_AB_set_ref[s]
+          dG_AB_com = w_AB @ b_01 + b_01.T @ w_BA.T
+
+          if (1,1) in self._dms_da.available_orders():
               dD_AB_com+= numpy.einsum("ac,ix,cbix->ab",W_AB, F_A, B_11)
               dD_AB_com+= numpy.einsum("ac,ix,cbix->ab",W_BA, F_B, B_11).T
-          if (2,1) in self._dms.available_orders():
+
+              dG_AB_com+= numpy.einsum("ac,ix,cbix->ab",w_AB, F_A, b_11)
+              dG_AB_com+= numpy.einsum("ac,ix,cbix->ab",w_BA, F_B, b_11).T
+
+          if (2,1) in self._dms_da.available_orders():
               dD_AB_com+= numpy.einsum("ac,ix,iy,cbixy->ab",W_AB, F_A, F_A, B_21)
               dD_AB_com+= numpy.einsum("ac,ix,iy,cbixy->ab",W_BA, F_B, F_B, B_21).T
 
-          rms = self._rms(dD_AB_ref, dD_AB_com)
+              dG_AB_com+= numpy.einsum("ac,ix,iy,cbixy->ab",w_AB, F_A, F_A, b_21)
+              dG_AB_com+= numpy.einsum("ac,ix,iy,cbixy->ab",w_BA, F_B, F_B, b_21).T
 
-          r = (dD_AB_ref @ H_AB_ref).trace()
-          c = (dD_AB_com @ H_AB_ref).trace()
+          rms_da = self._rms(dD_AB_ref, dD_AB_com)
+          rms_g  = self._rms(dG_AB_ref, dG_AB_com)
 
-          print(" Sample=%03d  RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f" \
-                   % (s+1, rms, dD_AB_ref[0,0], dD_AB_com[0,0], r, c))
+          t1_da = (dD_AB_ref @ H_AB_ref).trace()
+          t2_da = (dD_AB_com @ H_AB_ref).trace()
+          t1_g  = (dG_AB_ref @ H_AB_ref).trace()
+          t2_g  = (dG_AB_com @ H_AB_ref).trace()
+
+          print(" Sample=%03d Da RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f" \
+                   % (s+1, rms_da, dD_AB_ref[0,0], dD_AB_com[0,0], t1_da, t2_da))
+          print(" Sample=%03d G  RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f" \
+                   % (s+1, rms_g , dG_AB_ref[0,0], dG_AB_com[0,0], t1_g , t2_g ))
 
           self._i = s
-          self._save_dD(dD_AB_ref, prefix='ref')
-          self._save_dD(dD_AB_com, prefix='com')
-
-
+          self._save_dD(dD_AB_ref, prefix='d_ref')
+          self._save_dD(dD_AB_com, prefix='d_com')
+          self._save_dD(dG_AB_ref, prefix='g_ref')
+          self._save_dD(dG_AB_com, prefix='g_com')
 
 
 
@@ -1038,6 +1108,7 @@ class Translation_DMSFit(DMSFit):
       return t
 
   def _save_dD(self, D, prefix='dd'):#OK
+      "Save matrix to a file"
       name= prefix + '_%03d.dat' 
       out = open(name % self._i, 'w')
       log = ''
@@ -1048,16 +1119,24 @@ class Translation_DMSFit(DMSFit):
       out.close() 
 
   def _determine_perturbing_densities(self):
+      ""
       if self._use_non_iterative_model:
-         DA = self._D0.copy()
+         DA = self._dms_da._M.copy()
          DB = DA.copy()
+         #
+         GA = self._dms_g ._M.copy()
+         GB = GA.copy()
       else:
          D = self._dimer_wfn.Da().to_array(dense=True)
          DA= D[:self._nbf,:self._nbf]
          DB= D[self._nbf:,self._nbf:]
-
+         #
+         G = self._dimer_wfn.Fa().to_array(dense=True) - self._dimer_wfn.H().to_array(dense=True)
+         GA= G[:self._nbf,:self._nbf]
+         GB= G[self._nbf:,self._nbf:]
+      #
       self._DA = DA
       self._DB = DB
-
-
-
+      #
+      self._GA = GA
+      self._GB = GB
