@@ -478,7 +478,7 @@ class Translation_DMSFit(DMSFit):
  Translation method to fit DMS tensors.
 """
   def __init__(self, mol, method, nsamples, dms_types, order_type, use_non_iterative_model,
-                     start=1.5, srange=2.0):
+                     start=1.0, srange=2.0):
       DMSFit.__init__(self, mol, method, nsamples, dms_types, order_type, use_non_iterative_model)
 
       # translation parameters
@@ -575,7 +575,7 @@ class Translation_DMSFit(DMSFit):
       self._bfs_B = wfn_B.basisset()
 
       e_int = e_dimer - 2.0 * e_monomer # MCBS
-      print(" Interaction energy= %13.6f [a.u.]" % e_int)
+      print(" Interaction energy= %13.6f [a.u.]   %13.6f [kcal/mol]" % (e_int, e_int*627.5 ))
       #
       return mol
 
@@ -895,16 +895,38 @@ class Translation_DMSFit(DMSFit):
           M = START - PREV
           #
           print(" * Computing Hessian (1,1) (1,1)...")
-          H_11_11 = numpy.einsum("bd,nac,niu,njw->abiucdjw", I, A_AB_set, F_A_set, F_A_set)               
-          H_11_11+= numpy.einsum("bd,nac,niu,njw->abiucdjw", I, A_BA_set, F_B_set, F_B_set)
-          H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_AB_set, W_BA_set, F_A_set, F_B_set)
-          H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_BA_set, W_AB_set, F_B_set, F_A_set)
+          F_A_A = numpy.einsum("niu,njw->niujw", F_A_set, F_A_set)
+          F_B_B = numpy.einsum("niu,njw->niujw", F_B_set, F_B_set)
+          F_A_B = numpy.einsum("niu,njw->niujw", F_A_set, F_B_set)
+          F_B_A = numpy.einsum("niu,njw->niujw", F_B_set, F_A_set)
+
+          T_AB = numpy.einsum("nac,niujw->aciujw", A_AB_set, F_A_A)
+          T_AB+= numpy.einsum("nac,niujw->aciujw", A_BA_set, F_B_B)
+
+          W_ABBA = numpy.einsum("nda,nbc->ndabc", W_AB_set, W_BA_set)
+          W_BAAB = numpy.einsum("nda,nbc->ndabc", W_BA_set, W_AB_set)
+
+          H_11_11 = numpy.einsum("bd,aciujw->abiucdjw", I, T_AB)
+          H_11_11+= numpy.einsum("ndabc,niujw->abiucdjw", W_ABBA, F_A_B)
+          H_11_11+= numpy.einsum("ndabc,niujw->abiucdjw", W_BAAB, F_B_A)
+
+         #H_11_11 = numpy.einsum("bd,nac,niu,njw->abiucdjw", I, A_AB_set, F_A_set, F_A_set)               
+         #H_11_11+= numpy.einsum("bd,nac,niu,njw->abiucdjw", I, A_BA_set, F_B_set, F_B_set)
+         #H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_AB_set, W_BA_set, F_A_set, F_B_set)
+         #H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_BA_set, W_AB_set, F_B_set, F_A_set)
           #
           print(" * Computing Hessian (0,1) (1,1)...")
-          H_01_11 = numpy.einsum("bd,nac,njw->abcdjw", I, A_AB_set, F_A_set)
-          H_01_11+= numpy.einsum("bd,nac,njw->abcdjw", I, A_BA_set, F_B_set)
-          H_01_11+= numpy.einsum("nda,nbc,njw->abcdjw", W_AB_set, W_BA_set, F_B_set)
-          H_01_11+= numpy.einsum("nda,nbc,njw->abcdjw", W_BA_set, W_AB_set, F_A_set)
+          T_AB = numpy.einsum("nac,njw->acjw", A_AB_set, F_A_set)
+          T_AB+= numpy.einsum("nac,njw->acjw", A_BA_set, F_B_set)
+
+          H_01_11 = numpy.einsum("bd,acjw->abcdjw", I, T_AB)
+          H_01_11+= numpy.einsum("ndabc,njw->abcdjw", W_ABBA, F_B_set)
+          H_01_11+= numpy.einsum("ndabc,njw->abcdjw", W_BAAB, F_A_set)
+
+         #H_01_11 = numpy.einsum("bd,nac,njw->abcdjw", I, A_AB_set, F_A_set)
+         #H_01_11+= numpy.einsum("bd,nac,njw->abcdjw", I, A_BA_set, F_B_set)
+         #H_01_11+= numpy.einsum("nda,nbc,njw->abcdjw", W_AB_set, W_BA_set, F_B_set)
+         #H_01_11+= numpy.einsum("nda,nbc,njw->abcdjw", W_BA_set, W_AB_set, F_A_set)
           #                                                                                                              
           H[START:  END,START:  END] = H_11_11.reshape(L,L).copy() ; del H_11_11
           H[PREV :START,START:  END] = H_01_11.reshape(M,L).copy()
@@ -922,19 +944,32 @@ class Translation_DMSFit(DMSFit):
           O = PREV - DPREV
           #
           print(" * Computing Hessian (2,1) (2,1)...")
-          H_21_21 = numpy.einsum("bd,nac,niu,nix,njw,njy->abiuxcdjwy", I, A_AB_set, F_A_set, F_A_set,
-                                                                                    F_A_set, F_A_set)
+          F_AA = numpy.einsum("niu,nix->niux", F_A_set, F_A_set)
+          F_BB = numpy.einsum("niu,nix->niux", F_B_set, F_B_set)
+          F_AABB = numpy.einsum("niux,njwy->niuxjwy", F_AA, F_BB)
+          T_AB = numpy.einsum("nac,niux,njwy->aciuxjwy", A_AB_set, F_AA, F_AA)
+          T_BA = numpy.einsum("nac,niux,njwy->aciuxjwy", A_BA_set, F_BB, F_BB)
 
-          H_21_21+= numpy.einsum("bd,nac,niu,nix,njw,njy->abiuxcdjwy", I, A_BA_set, F_B_set, F_B_set,
-                                                                                    F_B_set, F_B_set)
+          H_21_21 = numpy.einsum("bd,aciuxjwy->abiuxcdjwy", I, T_AB + T_BA)
+          H_21_21+= numpy.einsum("ndabc,niuxjwy->abiuxcdjwy", W_ABBA, F_AABB)
+          H_21_21+= numpy.einsum("ndabc,njwyiux->abiuxcdjwy", W_BAAB, F_AABB)
 
-          H_21_21+= numpy.einsum("nda,nbc,niu,nix,njw,njy->abiuxcdjwy", W_AB_set, W_BA_set,
-                                                                                    F_A_set, F_A_set,
-                                                                                    F_B_set, F_B_set)
+         #H_21_21+= numpy.einsum("ndabc,niux,njwy->abiuxcdjwy", W_ABBA, F_AA, F_BB)
+         #H_21_21+= numpy.einsum("ndabc,niux,njwy->abiuxcdjwy", W_BAAB, F_BB, F_AA)
 
-          H_21_21+= numpy.einsum("nda,nbc,niu,nix,njw,njy->abiuxcdjwy", W_BA_set, W_AB_set,
-                                                                                    F_B_set, F_B_set,
-                                                                                    F_A_set, F_A_set)
+         #H_21_21 = numpy.einsum("bd,nac,niu,nix,njw,njy->abiuxcdjwy", I, A_AB_set, F_A_set, F_A_set,
+         #                                                                          F_A_set, F_A_set)
+          
+         #H_21_21+= numpy.einsum("bd,nac,niu,nix,njw,njy->abiuxcdjwy", I, A_BA_set, F_B_set, F_B_set,
+         #                                                                          F_B_set, F_B_set)
+
+         #H_21_21+= numpy.einsum("nda,nbc,niu,nix,njw,njy->abiuxcdjwy", W_AB_set, W_BA_set,
+         #                                                                          F_A_set, F_A_set,
+         #                                                                          F_B_set, F_B_set)
+
+         #H_21_21+= numpy.einsum("nda,nbc,niu,nix,njw,njy->abiuxcdjwy", W_BA_set, W_AB_set,
+         #                                                                          F_B_set, F_B_set,
+         #                                                                          F_A_set, F_A_set)
 
           U = numpy.zeros((n,n,N,6,n,n,N,6))
           #
@@ -985,10 +1020,16 @@ class Translation_DMSFit(DMSFit):
 
           # (01,21)
           print(" * Computing Hessian (0,1) (2,1)...")
-          H_01_21 = numpy.einsum("bd,nac,njw,njx->abcdjwx", I, A_AB_set, F_A_set, F_A_set)
-          H_01_21+= numpy.einsum("bd,nac,njw,njx->abcdjwx", I, A_BA_set, F_B_set, F_B_set)
-          H_01_21+= numpy.einsum("nda,nbc,njw,njx->abcdjwx", W_AB_set, W_BA_set, F_B_set, F_B_set)
-          H_01_21+= numpy.einsum("nda,nbc,njw,njx->abcdjwx", W_BA_set, W_AB_set, F_A_set, F_A_set)
+          T_AB = numpy.einsum("nac,njwx->acjwx", A_AB_set, F_AA)
+          T_AB+= numpy.einsum("nac,njwx->acjwx", A_BA_set, F_BB)
+          H_01_21 = numpy.einsum("bd,acjwx->abcdjwx", I, T_AB)
+          H_01_21+= numpy.einsum("ndabc,njwx->abcdjwx", W_ABBA, F_BB)
+          H_01_21+= numpy.einsum("ndabc,njwx->abcdjwx", W_BAAB, F_AA)
+
+         #H_01_21 = numpy.einsum("bd,nac,njw,njx->abcdjwx", I, A_AB_set, F_A_set, F_A_set)
+         #H_01_21+= numpy.einsum("bd,nac,njw,njx->abcdjwx", I, A_BA_set, F_B_set, F_B_set)
+         #H_01_21+= numpy.einsum("nda,nbc,njw,njx->abcdjwx", W_AB_set, W_BA_set, F_B_set, F_B_set)
+         #H_01_21+= numpy.einsum("nda,nbc,njw,njx->abcdjwx", W_BA_set, W_AB_set, F_A_set, F_A_set)
           #
           U = numpy.zeros((n,n,n,n,N,6))
           #
@@ -1005,12 +1046,23 @@ class Translation_DMSFit(DMSFit):
 
           # (11,21)
           print(" * Computing Hessian (1,1) (2,1)...")
-          H_11_21 = numpy.einsum("bd,nac,nix,nju,njw->abixcdjuw", I, A_AB_set, F_A_set, F_A_set, F_A_set)
-          H_11_21+= numpy.einsum("bd,nac,nix,nju,njw->abixcdjuw", I, A_BA_set, F_B_set, F_B_set, F_B_set)
-          H_11_21+= numpy.einsum("nda,nbc,nix,nju,njw->abixcdjuw", W_AB_set, W_BA_set,
-                                                                               F_A_set, F_B_set, F_B_set)
-          H_11_21+= numpy.einsum("nda,nbc,nix,nju,njw->abixcdjuw", W_BA_set, W_AB_set,
-                                                                               F_B_set, F_A_set, F_A_set)
+          F_AAA = numpy.einsum("nix,njuw->nixjuw", F_A_set, F_AA)
+          F_BBB = numpy.einsum("nix,njuw->nixjuw", F_B_set, F_BB)
+          F_ABB = numpy.einsum("nix,njuw->nixjuw", F_A_set, F_BB)
+          F_BAA = numpy.einsum("nix,njuw->nixjuw", F_B_set, F_AA)
+          T_AB  = numpy.einsum("nac,nixjuw->acixjuw", A_AB_set, F_AAA)
+          T_AB += numpy.einsum("nac,nixjuw->acixjuw", A_BA_set, F_BBB)
+
+          H_11_21 = numpy.einsum("bd,acixjuw->abixcdjuw", I, T_AB)
+          H_11_21+= numpy.einsum("ndabc,nixjuw->abixcdjuw", W_ABBA, F_ABB)
+          H_11_21+= numpy.einsum("ndabc,nixjuw->abixcdjuw", W_BAAB, F_BAA)
+
+         #H_11_21 = numpy.einsum("bd,nac,nix,nju,njw->abixcdjuw", I, A_AB_set, F_A_set, F_A_set, F_A_set)
+         #H_11_21+= numpy.einsum("bd,nac,nix,nju,njw->abixcdjuw", I, A_BA_set, F_B_set, F_B_set, F_B_set)
+         #H_11_21+= numpy.einsum("nda,nbc,nix,nju,njw->abixcdjuw", W_AB_set, W_BA_set,
+         #                                                                     F_A_set, F_B_set, F_B_set)
+         #H_11_21+= numpy.einsum("nda,nbc,nix,nju,njw->abixcdjuw", W_BA_set, W_AB_set,
+         #                                                                     F_B_set, F_A_set, F_A_set)
           #
           U = numpy.zeros((n,n,N,3,n,n,N,6))
           #
