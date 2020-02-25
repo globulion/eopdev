@@ -65,9 +65,7 @@ class DMS(ABC):
 
   def available_orders(self): return self._available_orders #OK
 
-  @property
   def N(self): return self._N
-  @property
   def n(self): return self._n
   def B(self, m, n): 
       if (m,n) in self._available_orders:
@@ -308,7 +306,8 @@ class DMSFit(ABC):
       self._wfn_0= None
       self._bfs_0= None
       self._nbf = None
-      self._dms = None
+      self._dms_da = None
+      self._dms_g  = None
       self._D0  = None
       self._G0  = None
 
@@ -324,9 +323,12 @@ class DMSFit(ABC):
 
   def run(self):#TODO
       "Run the fitting procedure"
-
       # compute quantities for isolated molecule
       self._compute_isolated_molecule()
+
+      s = self._nsamples
+      n = self._dms_da.n()
+      N = self._dms_da.N()
 
       # compute DMS for isolated molecule in external electric field
      #self._compute_dms_external_field()
@@ -338,11 +340,30 @@ class DMSFit(ABC):
      #self._compute_group_1()
 
       # fit DMS: (0,1), (1,1) and (2,1)
-      self._compute_group_2(self._dms_da, self._K_set, self._L_set, self._F_A_set, self._F_B_set,
-                                          self._W_AB_set, self._W_BA_set, self._A_AB_set, self._A_BA_set)
 
-      self._compute_group_2(self._dms_g , self._k_set, self._l_set, self._F_A_set, self._F_B_set,
-                                          self._w_AB_set, self._w_BA_set, self._a_AB_set, self._a_BA_set)
+      K_set    = numpy.fromfile('temp_K_set.dat').reshape(s,n,n)
+      L_set    = numpy.fromfile('temp_L_set.dat').reshape(s,n,n)
+      F_A_set  = numpy.fromfile('temp_F_A_set.dat').reshape(s,N,3)
+      F_B_set  = numpy.fromfile('temp_F_B_set.dat').reshape(s,N,3)
+      W_AB_set = numpy.fromfile('temp_W_AB_set.dat').reshape(s,n,n)
+      W_BA_set = numpy.fromfile('temp_W_BA_set.dat').reshape(s,n,n)
+      A_AB_set = numpy.fromfile('temp_A_AB_set.dat').reshape(s,n,n)
+      A_BA_set = numpy.fromfile('temp_A_BA_set.dat').reshape(s,n,n)
+
+      self._compute_group_2(self._dms_da, K_set, L_set, F_A_set, F_B_set,
+                                          W_AB_set, W_BA_set, A_AB_set, A_BA_set)
+      del K_set, L_set,                   W_AB_set, W_BA_set, A_AB_set, A_BA_set
+
+      k_set    = numpy.fromfile('temp_k_set.dat').reshape(s,n,n)
+      l_set    = numpy.fromfile('temp_l_set.dat').reshape(s,n,n)
+      w_AB_set = numpy.fromfile('temp_w_AB_set.dat').reshape(s,n,n)
+      w_BA_set = numpy.fromfile('temp_w_BA_set.dat').reshape(s,n,n)
+      a_AB_set = numpy.fromfile('temp_a_AB_set.dat').reshape(s,n,n)
+      a_BA_set = numpy.fromfile('temp_a_BA_set.dat').reshape(s,n,n)
+
+      self._compute_group_2(self._dms_g , k_set, l_set, F_A_set, F_B_set,
+                                          w_AB_set, w_BA_set, a_AB_set, a_BA_set)
+      del k_set, l_set, F_A_set, F_B_set, w_AB_set, w_BA_set, a_AB_set, a_BA_set
 
       # test the DMS fittings
       self._check()
@@ -396,14 +417,15 @@ class DMSFit(ABC):
       self._dms_ind_0 = solver.compute()
 
   def _invert_hessian(self, h):#OK
-     "Invert Hessian matrix"
-     det= numpy.linalg.det(h)
-     print(" ** Hessian Determinant= %14.6E" % det)
-     hi = numpy.linalg.inv(h)
-     I = numpy.dot(hi, h).diagonal().sum()
-     d = I - len(hi)
-     if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic! d=%f I= %f DIM=%f" % (d,I,h.shape[0]))
-     return hi      
+      "Invert Hessian matrix"                                                                               
+      det= numpy.linalg.det(h)
+      print(" ** Hessian Determinant= %14.6E" % det)
+      hi = numpy.linalg.inv(h)
+      I = numpy.dot(hi, h).diagonal().sum()
+      d = I - len(hi)
+      print(" ** d=%14.6f %14.2f %d" % (d,I,h.shape[0]))
+     #if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic! d=%f I= %f DIM=%f" % (d,I,h.shape[0]))
+      return hi      
 
   def _compute_efield_due_to_fragment(self, mol_j, D_j, ints_j, ri):#OK
       "Compute electric field at ri due to mol_j with D_j and field integrals ints_j"
@@ -468,35 +490,35 @@ class Translation_DMSFit(DMSFit):
       self._dimer_mol = None
       self._dimer_mints = None
 
-      self._dD_AA_set_ref = []
-      self._dD_BB_set_ref = []
-      self._dD_AB_set_ref = []
-      #
-      self._dG_AA_set_ref = []
-      self._dG_BB_set_ref = []
-      self._dG_AB_set_ref = []
-      #
-      self._S_AB_set = []
-      self._H_AB_set_ref = []
-      self._DIP_set = []      
-      #
-      self._F_A_set = []
-      self._F_B_set = []
-      #
-      self._W_AB_set= []
-      self._W_BA_set= []
-      self._w_AB_set= []
-      self._w_BA_set= []
-      #
-      self._A_AB_set= []
-      self._A_BA_set= []
-      self._a_AB_set= []
-      self._a_BA_set= []
-      #
-      self._K_set   = []
-      self._L_set   = []
-      self._k_set   = []
-      self._l_set   = []
+     # self._dD_AA_set_ref = []
+     # self._dD_BB_set_ref = []
+     # self._dD_AB_set_ref = []
+     # #
+     # self._dG_AA_set_ref = []
+     # self._dG_BB_set_ref = []
+     # self._dG_AB_set_ref = []
+     # #
+     # self._S_AB_set = []
+     # self._H_AB_set_ref = []
+     # self._DIP_set = []      
+     # #
+     # self._F_A_set = []
+     # self._F_B_set = []
+     # #
+     # self._W_AB_set= []
+     # self._W_BA_set= []
+     # self._w_AB_set= []
+     # self._w_BA_set= []
+     # #
+     # self._A_AB_set= []
+     # self._A_BA_set= []
+     # self._a_AB_set= []
+     # self._a_BA_set= []
+     # #
+     # self._K_set   = []
+     # self._L_set   = []
+     # self._k_set   = []
+     # self._l_set   = []
 
 
   # ---> Implementation <--- #
@@ -560,6 +582,36 @@ class Translation_DMSFit(DMSFit):
   def _compute_samples(self):#OK
       "Compute electric fields, CT channels and reference deformation matrices"
 
+      dD_AA_set_ref = []
+      dD_BB_set_ref = []
+      dD_AB_set_ref = []
+      
+      dG_AA_set_ref = []
+      dG_BB_set_ref = []
+      dG_AB_set_ref = []
+      
+      S_AB_set = []
+      H_AB_set = []
+      DIP_set = []      
+      
+      F_A_set = []
+      F_B_set = []
+      
+      W_AB_set= []
+      W_BA_set= []
+      w_AB_set= []
+      w_BA_set= []
+      
+      A_AB_set= []
+      A_BA_set= []
+      a_AB_set= []
+      a_BA_set= []
+      
+      K_set   = []
+      L_set   = []
+      k_set   = []
+      l_set   = []
+
       print(" ---> Computing wavefunction for each sample <---")
       for n in range(self._nsamples):
           print(" * - Sample %d" % (self._i+1))
@@ -604,7 +656,7 @@ class Translation_DMSFit(DMSFit):
 
           # Dipole integrals
           DIP = self._dimer_mints.ao_dipole()
-          self._DIP_set.append(DIP)
+          DIP_set.append(DIP)
 
           # Auxiliary matrices
           W_AB = self._DA @ S_AB
@@ -626,78 +678,110 @@ class Translation_DMSFit(DMSFit):
           l    = w_BA.T @ dG_AB.T
 
           # Accumulate
-          self._S_AB_set.append(S_AB)
-          self._H_AB_set_ref.append(H_AB)
+          S_AB_set.append(S_AB)
+          H_AB_set.append(H_AB)
 
-          self._dD_AA_set_ref.append(dD_AA)
-          self._dD_BB_set_ref.append(dD_BB)
-          self._dD_AB_set_ref.append(dD_AB)
+          dD_AA_set_ref.append(dD_AA)
+          dD_BB_set_ref.append(dD_BB)
+          dD_AB_set_ref.append(dD_AB)
 
-          self._dG_AA_set_ref.append(dG_AA)
-          self._dG_BB_set_ref.append(dG_BB)
-          self._dG_AB_set_ref.append(dG_AB)
+          dG_AA_set_ref.append(dG_AA)
+          dG_BB_set_ref.append(dG_BB)
+          dG_AB_set_ref.append(dG_AB)
 
-          self._F_A_set.append(F_A)
-          self._F_B_set.append(F_B)
+          F_A_set.append(F_A)
+          F_B_set.append(F_B)
 
-          self._W_AB_set.append(W_AB)
-          self._W_BA_set.append(W_BA)
+          W_AB_set.append(W_AB)
+          W_BA_set.append(W_BA)
 
-          self._A_AB_set.append(A_AB)
-          self._A_BA_set.append(A_BA)
+          A_AB_set.append(A_AB)
+          A_BA_set.append(A_BA)
 
-          self._K_set.append(K)
-          self._L_set.append(L)
+          K_set.append(K)
+          L_set.append(L)
 
-          self._w_AB_set.append(w_AB)
-          self._w_BA_set.append(w_BA)
+          w_AB_set.append(w_AB)
+          w_BA_set.append(w_BA)
 
-          self._a_AB_set.append(a_AB)
-          self._a_BA_set.append(a_BA)
+          a_AB_set.append(a_AB)
+          a_BA_set.append(a_BA)
 
-          self._k_set.append(k)
-          self._l_set.append(l)
+          k_set.append(k)
+          l_set.append(l)
           #
 
 
       #
-      self._S_AB_set= numpy.array(self._S_AB_set)
-      self._H_AB_set_ref = numpy.array(self._H_AB_set_ref)
+      S_AB_set= numpy.array(S_AB_set)
+      H_AB_set= numpy.array(H_AB_set)
       #
-      self._dD_AA_set_ref= numpy.array(self._dD_AA_set_ref)
-      self._dD_BB_set_ref= numpy.array(self._dD_BB_set_ref)
-      self._dD_AB_set_ref= numpy.array(self._dD_AB_set_ref)
+      dD_AA_set_ref= numpy.array(dD_AA_set_ref)
+      dD_BB_set_ref= numpy.array(dD_BB_set_ref)
+      dD_AB_set_ref= numpy.array(dD_AB_set_ref)
       #
-      self._dG_AA_set_ref= numpy.array(self._dG_AA_set_ref)
-      self._dG_BB_set_ref= numpy.array(self._dG_BB_set_ref)
-      self._dG_AB_set_ref= numpy.array(self._dG_AB_set_ref)
+      dG_AA_set_ref= numpy.array(dG_AA_set_ref)
+      dG_BB_set_ref= numpy.array(dG_BB_set_ref)
+      dG_AB_set_ref= numpy.array(dG_AB_set_ref)
       #
-      self._F_A_set = numpy.array(self._F_A_set)
-      self._F_B_set = numpy.array(self._F_B_set)
+      F_A_set = numpy.array(F_A_set)
+      F_B_set = numpy.array(F_B_set)
       #
-      self._W_AB_set= numpy.array(self._W_AB_set)
-      self._W_BA_set= numpy.array(self._W_BA_set)
+      W_AB_set= numpy.array(W_AB_set)
+      W_BA_set= numpy.array(W_BA_set)
       #
-      self._A_AB_set= numpy.array(self._A_AB_set)
-      self._A_BA_set= numpy.array(self._A_BA_set)
+      A_AB_set= numpy.array(A_AB_set)
+      A_BA_set= numpy.array(A_BA_set)
       #
-      self._K_set   = numpy.array(self._K_set)
-      self._L_set   = numpy.array(self._L_set)
+      K_set   = numpy.array(K_set)
+      L_set   = numpy.array(L_set)
       #
-      self._w_AB_set= numpy.array(self._w_AB_set)
-      self._w_BA_set= numpy.array(self._w_BA_set)
+      w_AB_set= numpy.array(w_AB_set)
+      w_BA_set= numpy.array(w_BA_set)
       #
-      self._a_AB_set= numpy.array(self._a_AB_set)
-      self._a_BA_set= numpy.array(self._a_BA_set)
+      a_AB_set= numpy.array(a_AB_set)
+      a_BA_set= numpy.array(a_BA_set)
       #
-      self._k_set   = numpy.array(self._k_set)
-      self._l_set   = numpy.array(self._l_set)
+      k_set   = numpy.array(k_set)
+      l_set   = numpy.array(l_set)
 
+      # Save on disk
+      S_AB_set.tofile('temp_S_AB_set.dat')
+      H_AB_set.tofile('temp_H_AB_set.dat')
+      #
+      dD_AA_set_ref.tofile('temp_dD_AA_set_ref.dat')
+      dD_BB_set_ref.tofile('temp_dD_BB_set_ref.dat')
+      dD_AB_set_ref.tofile('temp_dD_AB_set_ref.dat')
+      #
+      dG_AA_set_ref.tofile('temp_dG_AA_set_ref.dat')
+      dG_BB_set_ref.tofile('temp_dG_BB_set_ref.dat')
+      dG_AB_set_ref.tofile('temp_dG_AB_set_ref.dat')
+      #
+      F_A_set .tofile('temp_F_A_set.dat')
+      F_B_set .tofile('temp_F_B_set.dat')
+      #
+      W_AB_set.tofile('temp_W_AB_set.dat')
+      W_BA_set.tofile('temp_W_BA_set.dat')
+      #
+      A_AB_set.tofile('temp_A_AB_set.dat')
+      A_BA_set.tofile('temp_A_BA_set.dat')
+      #
+      K_set   .tofile('temp_K_set.dat')
+      L_set   .tofile('temp_L_set.dat')
+      #
+      w_AB_set.tofile('temp_w_AB_set.dat')
+      w_BA_set.tofile('temp_w_BA_set.dat')
+      #
+      a_AB_set.tofile('temp_a_AB_set.dat')
+      a_BA_set.tofile('temp_a_BA_set.dat')
+      #
+      k_set   .tofile('temp_k_set.dat')
+      l_set   .tofile('temp_l_set.dat')
      
 
   def _compute_group_1(self):#TODO
       "Compute 1st group of parameters"
-      print(" ---> Computing DMS for Z1 group of type %s<---" % dms._type)
+      print(" ---> Computing DMS for Z1 group of type %s <---" % dms._type_long)
 
       # Only (1,0) and (2,0) susceptibilities: fitting for each target matrix element separately
       if (0,2) not in self._dms.available_orders():
@@ -722,9 +806,9 @@ class Translation_DMSFit(DMSFit):
 
   def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):#TODO
       "Compute 2nd group of parameters"
-      print(" ---> Computing DMS for Z2 group of type %s<---" % dms._type)
-      n = dms.n
-      N = dms.N
+      print(" ---> Computing DMS for Z2 group of type %s <---" % dms._type_long)
+      n = dms.n()
+      N = dms.N()
       #
       OFFs= [0,]
       # (0,1)
@@ -786,8 +870,6 @@ class Translation_DMSFit(DMSFit):
       # Hessian
       I = numpy.identity(n)
       A = A_AB_set + A_BA_set
-     #Af= self._Af_AB_set + self._Af_BA_set
-     #Aff= self._Aff_AB_set + self._Aff_BA_set
 
       # (01) susceptibility
       START = OFFs[0]
@@ -796,7 +878,7 @@ class Translation_DMSFit(DMSFit):
       L = END - START
       #
       print(" * Computing Hessian (0,1) (0,1)...")
-      H_01_01 = numpy.einsum("bd,ac->abcd", I, A.sum(axis=0))
+      H_01_01 = numpy.einsum("bd,ac->abcd", I, A.sum(axis=0)); del A
       H_01_01+= numpy.einsum("nda,nbc->abcd", W_AB_set, W_BA_set)
       H_01_01+= numpy.einsum("nda,nbc->abcd", W_BA_set, W_AB_set)
       #
@@ -837,7 +919,7 @@ class Translation_DMSFit(DMSFit):
           #
           L = END - START
           M = START - PREV
-          N = PREV - DPREV
+          O = PREV - DPREV
           #
           print(" * Computing Hessian (2,1) (2,1)...")
           H_21_21 = numpy.einsum("bd,nac,niu,nix,njw,njy->abiuxcdjwy", I, A_AB_set, F_A_set, F_A_set,
@@ -917,7 +999,7 @@ class Translation_DMSFit(DMSFit):
           U[:,:,:,:,:,4] = H_01_21[:,:,:,:,:,1,2].copy() * 2.0 # yz
           U[:,:,:,:,:,5] = H_01_21[:,:,:,:,:,2,2].copy()       # zz
           #
-          H[DPREV:PREV,START:END] = U.reshape(N,L).copy()
+          H[DPREV:PREV,START:END] = U.reshape(O,L).copy()
           del H_01_21, U
           H[START:END,DPREV:PREV] = H[DPREV:PREV,START:END].T.copy()
 
@@ -976,6 +1058,9 @@ class Translation_DMSFit(DMSFit):
 
   def _check(self):
       "Check the quality of fitting on training set"
+      s = self._nsamples
+      n = self._dms_da.n()
+      N = self._dms_da.N()
 
       B_01 = self.B(0,1,'da')
       b_01 = self.B(0,1,'g')
@@ -986,22 +1071,39 @@ class Translation_DMSFit(DMSFit):
           B_21 = self.B(2,1,'da')
           b_21 = self.B(2,1,'g')
 
+      W_AB_set = numpy.fromfile('temp_W_AB_set.dat').reshape(s,n,n)
+      W_BA_set = numpy.fromfile('temp_W_BA_set.dat').reshape(s,n,n)
+      w_AB_set = numpy.fromfile('temp_w_AB_set.dat').reshape(s,n,n)
+      w_BA_set = numpy.fromfile('temp_w_BA_set.dat').reshape(s,n,n)
+      F_A_set = numpy.fromfile('temp_F_A_set.dat').reshape(s,N,3)
+      F_B_set = numpy.fromfile('temp_F_B_set.dat').reshape(s,N,3)
+      
+      H_AB_set = numpy.fromfile('temp_H_AB_set.dat').reshape(s,n,n)
+
+      dD_AA_set_ref = numpy.fromfile('temp_dD_AA_set_ref.dat').reshape(s,n,n)
+      dD_BB_set_ref = numpy.fromfile('temp_dD_BB_set_ref.dat').reshape(s,n,n)
+      dD_AB_set_ref = numpy.fromfile('temp_dD_AB_set_ref.dat').reshape(s,n,n)
+
+      dG_AA_set_ref = numpy.fromfile('temp_dG_AA_set_ref.dat').reshape(s,n,n)
+      dG_BB_set_ref = numpy.fromfile('temp_dG_BB_set_ref.dat').reshape(s,n,n)
+      dG_AB_set_ref = numpy.fromfile('temp_dG_AB_set_ref.dat').reshape(s,n,n)
+
       print(" DMSFit: Check - training set")
       for s in range(self._nsamples):
-          
-          W_AB = self._W_AB_set[s]
-          W_BA = self._W_BA_set[s]
-          w_AB = self._w_AB_set[s]
-          w_BA = self._w_BA_set[s]
-          F_A  = self._F_A_set[s]
-          F_B  = self._F_B_set[s]
+         
+          W_AB = W_AB_set[s]
+          W_BA = W_BA_set[s]
+          w_AB = w_AB_set[s]
+          w_BA = w_BA_set[s]
+          F_A  = F_A_set[s]
+          F_B  = F_B_set[s]
 
-          H_AB_ref = self._H_AB_set_ref[s]
+          H_AB = H_AB_set[s]
 
-          dD_AB_ref = self._dD_AB_set_ref[s]
+          dD_AB_ref = dD_AB_set_ref[s]
           dD_AB_com = W_AB @ B_01 + B_01.T @ W_BA.T
 
-          dG_AB_ref = self._dG_AB_set_ref[s]
+          dG_AB_ref = dG_AB_set_ref[s]
           dG_AB_com = w_AB @ b_01 + b_01.T @ w_BA.T
 
           if (1,1) in self._dms_da.available_orders():
@@ -1021,10 +1123,10 @@ class Translation_DMSFit(DMSFit):
           rms_da = self._rms(dD_AB_ref, dD_AB_com)
           rms_g  = self._rms(dG_AB_ref, dG_AB_com)
 
-          t1_da = (dD_AB_ref @ H_AB_ref).trace()
-          t2_da = (dD_AB_com @ H_AB_ref).trace()
-          t1_g  = (dG_AB_ref @ H_AB_ref).trace()
-          t2_g  = (dG_AB_com @ H_AB_ref).trace()
+          t1_da = (dD_AB_ref @ H_AB).trace()
+          t2_da = (dD_AB_com @ H_AB).trace()
+          t1_g  = (dG_AB_ref @ H_AB).trace()
+          t2_g  = (dG_AB_com @ H_AB).trace()
 
           print(" Sample=%03d Da RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f" \
                    % (s+1, rms_da, dD_AB_ref[0,0], dD_AB_com[0,0], t1_da, t2_da))
