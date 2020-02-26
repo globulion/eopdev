@@ -144,26 +144,55 @@ class DMS(ABC):
 
       # ---> Group Z(1) <--- #
       # (1,0)
+      if (1,0) in self._available_orders and order == (1,0):
+          START = 0
+          END   = START + n2*N*3
+          self._B[(1,0)] = self._s1[START:END].reshape(n,n,N,3)
+
       # (2,0)
+      if (2,0) in self._available_orders and order == (2,0):
+          START = n2*N*3
+          END   = START + n2*N*6
+          b     = self._s1[START:END].reshape(n,n,N,6)
+          B     = numpy.zeros((n,n,N,3,3))
+          xx = b[:,:,:,0]
+          xy = b[:,:,:,1]
+          xz = b[:,:,:,2]
+          yy = b[:,:,:,3]
+          yz = b[:,:,:,4]
+          zz = b[:,:,:,5]
+          B[:,:,:,0,0] = xx
+          B[:,:,:,0,1] = xy
+          B[:,:,:,0,2] = xz
+          B[:,:,:,1,1] = yy
+          B[:,:,:,1,2] = yz
+          B[:,:,:,2,2] = zz
+          B[:,:,:,1,0] = xy.copy()
+          B[:,:,:,2,0] = xz.copy()
+          B[:,:,:,2,1] = yz.copy()
+          self._B[(2,0)] = B
+          
       # (0,2)
+      if (0,2) in self._available_orders and order == (0,2):
+          raise NotImplementedError
       #TODO
 
       # ---> Group Z(2) <--- #
       # (0,1)
-      if (0,1) in self._available_orders:
+      if (0,1) in self._available_orders and order == (0,1):
           START = 0
           END   = START + n2
           self._B[(0,1)] = self._s2[START:END].reshape(n,n)
 
       # (1,1)
-      if (1,1) in self._available_orders:
+      if (1,1) in self._available_orders and order == (1,1):
           START = n2
           END   = START + n2*N*3
           self._B[(1,1)] = self._s2[START:END].reshape(n,n,N,3)
 
       # (2,1)
-      if (2,1) in self._available_orders:
-          START = END
+      if (2,1) in self._available_orders and order == (2,1):
+          START = n2 + n2*N*3
           END   = START + n2*N*6
           b     = self._s2[START:END].reshape(n,n,N,6)
           B     = numpy.zeros((n,n,N,3,3))
@@ -338,14 +367,24 @@ class DMSFit(ABC):
       self._compute_samples()
 
       # fit DMS: (1,0), (2,0), (0,2), (1,2) and (2,2)
-     #self._compute_group_1()
-
-      # fit DMS: (0,1), (1,1) and (2,1)
-
-      K_set    = numpy.fromfile('temp_K_set.dat').reshape(s,n,n)
-      L_set    = numpy.fromfile('temp_L_set.dat').reshape(s,n,n)
       F_A_set  = numpy.fromfile('temp_F_A_set.dat').reshape(s,N,3)
       F_B_set  = numpy.fromfile('temp_F_B_set.dat').reshape(s,N,3)
+      dD_AA_ref_set = numpy.fromfile('temp_dD_AA_ref_set.dat').reshape(s,n,n)
+      dD_BB_ref_set = numpy.fromfile('temp_dD_BB_ref_set.dat').reshape(s,n,n)
+
+      self._compute_group_1(self._dms_da, F_A_set, F_B_set, dD_AA_ref_set, dD_BB_ref_set)
+      del dD_AA_ref_set, dD_BB_ref_set
+
+      dG_AA_ref_set = numpy.fromfile('temp_dG_AA_ref_set.dat').reshape(s,n,n)
+      dG_BB_ref_set = numpy.fromfile('temp_dG_BB_ref_set.dat').reshape(s,n,n)
+
+      self._compute_group_1(self._dms_g , F_A_set, F_B_set, dG_AA_ref_set, dG_BB_ref_set)
+      del dG_AA_ref_set, dG_BB_ref_set
+
+
+      # fit DMS: (0,1), (1,1) and (2,1)
+      K_set    = numpy.fromfile('temp_K_set.dat').reshape(s,n,n)
+      L_set    = numpy.fromfile('temp_L_set.dat').reshape(s,n,n)
       W_AB_set = numpy.fromfile('temp_W_AB_set.dat').reshape(s,n,n)
       W_BA_set = numpy.fromfile('temp_W_BA_set.dat').reshape(s,n,n)
       A_AB_set = numpy.fromfile('temp_A_AB_set.dat').reshape(s,n,n)
@@ -504,6 +543,8 @@ class Translation_DMSFit(DMSFit):
       self._dimer_mol = None
       self._dimer_mints = None
 
+      self._E_nuc_set = []
+
      # self._dD_AA_set_ref = []
      # self._dD_BB_set_ref = []
      # self._dD_AB_set_ref = []
@@ -569,7 +610,7 @@ class Translation_DMSFit(DMSFit):
       log += "symmetry c1\n"
       log += "no_reorient\n"
       log += "no_com\n"
-      #print(log)
+     #print(log)
 
       mol = psi4.geometry(log)
       mol.update_geometry()
@@ -579,6 +620,8 @@ class Translation_DMSFit(DMSFit):
       self._dimer_mol = mol
       self._dimer_bfs = wfn_dimer.basisset()
       self._dimer_mints = psi4.core.MintsHelper(self._dimer_bfs)
+
+      self._E_nuc_set.append(self._dimer_mol.nuclear_repulsion_energy())
 
       self._mol_A = self._mol
       self._mol_B = mol.extract_subsets(2)
@@ -609,7 +652,7 @@ class Translation_DMSFit(DMSFit):
       dG_AB_set_ref = []
       
       S_AB_set = []
-      H_AB_set = []
+      H_set = []
       DIP_set = []      
       
       F_A_set = []
@@ -644,7 +687,6 @@ class Translation_DMSFit(DMSFit):
 
           # Core Hamiltonian
           H = self._dimer_wfn.H().to_array(dense=True)
-          H_AB = H[:self._nbf,self._nbf:]
 
           # OPDM
           dD     = self._dimer_wfn.Da().to_array(dense=True)
@@ -699,7 +741,7 @@ class Translation_DMSFit(DMSFit):
 
           # Accumulate
           S_AB_set.append(S_AB)
-          H_AB_set.append(H_AB)
+          H_set.append(H)
 
           dD_AA_set_ref.append(dD_AA)
           dD_BB_set_ref.append(dD_BB)
@@ -734,7 +776,7 @@ class Translation_DMSFit(DMSFit):
 
       #
       S_AB_set= numpy.array(S_AB_set)
-      H_AB_set= numpy.array(H_AB_set)
+      H_set= numpy.array(H_set)
       #
       dD_AA_set_ref= numpy.array(dD_AA_set_ref)
       dD_BB_set_ref= numpy.array(dD_BB_set_ref)
@@ -767,15 +809,15 @@ class Translation_DMSFit(DMSFit):
 
       # Save on disk
       S_AB_set.tofile('temp_S_AB_set.dat')
-      H_AB_set.tofile('temp_H_AB_set.dat')
+      H_set.tofile('temp_H_set.dat')
       #
-      dD_AA_set_ref.tofile('temp_dD_AA_set_ref.dat')
-      dD_BB_set_ref.tofile('temp_dD_BB_set_ref.dat')
-      dD_AB_set_ref.tofile('temp_dD_AB_set_ref.dat')
+      dD_AA_set_ref.tofile('temp_dD_AA_ref_set.dat')
+      dD_BB_set_ref.tofile('temp_dD_BB_ref_set.dat')
+      dD_AB_set_ref.tofile('temp_dD_AB_ref_set.dat')
       #
-      dG_AA_set_ref.tofile('temp_dG_AA_set_ref.dat')
-      dG_BB_set_ref.tofile('temp_dG_BB_set_ref.dat')
-      dG_AB_set_ref.tofile('temp_dG_AB_set_ref.dat')
+      dG_AA_set_ref.tofile('temp_dG_AA_ref_set.dat')
+      dG_BB_set_ref.tofile('temp_dG_BB_ref_set.dat')
+      dG_AB_set_ref.tofile('temp_dG_AB_ref_set.dat')
       #
       F_A_set .tofile('temp_F_A_set.dat')
       F_B_set .tofile('temp_F_B_set.dat')
@@ -799,30 +841,158 @@ class Translation_DMSFit(DMSFit):
       l_set   .tofile('temp_l_set.dat')
      
 
-  def _compute_group_1(self):#TODO
+  def _compute_group_1(self, dms, F_A_set, F_B_set, dM_AA_ref_set, dM_BB_ref_set):#TODO
       "Compute 1st group of parameters"
       psi4.core.print_out(" ---> Computing DMS for Z1 group of type %s <---\n\n" % dms._type_long)
 
-      # Only (1,0) and (2,0) susceptibilities: fitting for each target matrix element separately
-      if (0,2) not in self._dms.available_orders():
+      n = dms.n()
+      N = dms.N()
 
-          dms_ind1 = numpy.zeros((self._nbf, self._nbf, self._natoms, 3))
-          dms_ind2 = numpy.zeros((self._nbf, self._nbf, self._natoms, 3, 3))
+      # Hessian
+      dim_1 = N*3
+      dim_2 = N*6
+      H = numpy.zeros((dim_1 + dim_2, dim_1 + dim_2))
 
-          for i in range(self._nbf):                              
-              for j in range(self._nbf):
-                  b_1, b_2 = self._compute_dms_induction_ij(i, j)
-                  dms_ind1[i,j] = b1
-                  dms_ind2[i,j] = b2
+      H_10_10 = numpy.einsum("niu,njw->iujw", F_B_set, F_B_set) 
+      H_10_10+= numpy.einsum("niu,njw->iujw", F_A_set, F_A_set) 
 
-          par = [ dms_ind1.ravel(), dms_ind2.ravel() ]
-          s = numpy.hstack( par )
+      H[:dim_1,:dim_1] = H_10_10.copy().reshape(dim_1, dim_1)
+      del H_10_10
+
+      H_20_20 = numpy.einsum("niu,nix,njw,njy->iuxjwy", F_B_set, F_B_set, F_B_set, F_B_set)
+      H_20_20+= numpy.einsum("niu,nix,njw,njy->iuxjwy", F_A_set, F_A_set, F_A_set, F_A_set)
+
+      u = numpy.zeros((N,6,N,6))
+      u[:,0,:,0] = H_20_20[:,0,0,:,0,0].copy() * 1.0
+      u[:,0,:,1] = H_20_20[:,0,0,:,0,1].copy() * 2.0
+      u[:,0,:,2] = H_20_20[:,0,0,:,0,2].copy() * 2.0
+      u[:,0,:,3] = H_20_20[:,0,0,:,1,1].copy() * 1.0
+      u[:,0,:,4] = H_20_20[:,0,0,:,1,2].copy() * 2.0
+      u[:,0,:,5] = H_20_20[:,0,0,:,2,2].copy() * 1.0
+
+      u[:,1,:,0] = H_20_20[:,0,1,:,0,0].copy() * 2.0
+      u[:,1,:,1] = H_20_20[:,0,1,:,0,1].copy() * 4.0
+      u[:,1,:,2] = H_20_20[:,0,1,:,0,2].copy() * 4.0
+      u[:,1,:,3] = H_20_20[:,0,1,:,1,1].copy() * 2.0
+      u[:,1,:,4] = H_20_20[:,0,1,:,1,2].copy() * 4.0
+      u[:,1,:,5] = H_20_20[:,0,1,:,2,2].copy() * 2.0
+
+      u[:,2,:,0] = H_20_20[:,0,2,:,0,0].copy() * 2.0
+      u[:,2,:,1] = H_20_20[:,0,2,:,0,1].copy() * 4.0
+      u[:,2,:,2] = H_20_20[:,0,2,:,0,2].copy() * 4.0
+      u[:,2,:,3] = H_20_20[:,0,2,:,1,1].copy() * 2.0
+      u[:,2,:,4] = H_20_20[:,0,2,:,1,2].copy() * 4.0
+      u[:,2,:,5] = H_20_20[:,0,2,:,2,2].copy() * 2.0
+
+      u[:,3,:,0] = H_20_20[:,1,1,:,0,0].copy() * 1.0
+      u[:,3,:,1] = H_20_20[:,1,1,:,0,1].copy() * 2.0
+      u[:,3,:,2] = H_20_20[:,1,1,:,0,2].copy() * 2.0
+      u[:,3,:,3] = H_20_20[:,1,1,:,1,1].copy() * 1.0
+      u[:,3,:,4] = H_20_20[:,1,1,:,1,2].copy() * 2.0
+      u[:,3,:,5] = H_20_20[:,1,1,:,2,2].copy() * 1.0
+
+      u[:,4,:,0] = H_20_20[:,1,2,:,0,0].copy() * 2.0
+      u[:,4,:,1] = H_20_20[:,1,2,:,0,1].copy() * 4.0
+      u[:,4,:,2] = H_20_20[:,1,2,:,0,2].copy() * 4.0
+      u[:,4,:,3] = H_20_20[:,1,2,:,1,1].copy() * 2.0
+      u[:,4,:,4] = H_20_20[:,1,2,:,1,2].copy() * 4.0
+      u[:,4,:,5] = H_20_20[:,1,2,:,2,2].copy() * 2.0
+
+      u[:,5,:,0] = H_20_20[:,2,2,:,0,0].copy() * 1.0
+      u[:,5,:,1] = H_20_20[:,2,2,:,0,1].copy() * 2.0
+      u[:,5,:,2] = H_20_20[:,2,2,:,0,2].copy() * 2.0
+      u[:,5,:,3] = H_20_20[:,2,2,:,1,1].copy() * 1.0
+      u[:,5,:,4] = H_20_20[:,2,2,:,1,2].copy() * 2.0
+      u[:,5,:,5] = H_20_20[:,2,2,:,2,2].copy() * 1.0
+
+      H[dim_1:,dim_1:] = u.copy().reshape(dim_2, dim_2)
+      del u, H_20_20
+
+      H_10_20 = numpy.einsum("niu,njw,njy->iujwy", F_B_set, F_B_set, F_B_set)
+      H_10_20+= numpy.einsum("niu,njw,njy->iujwy", F_A_set, F_A_set, F_A_set)
+
+      u = numpy.zeros((N,3,N,6))
+      u[:,:,:,0] = H_10_20[:,:,:,0,0].copy() * 1.0
+      u[:,:,:,1] = H_10_20[:,:,:,0,1].copy() * 2.0
+      u[:,:,:,2] = H_10_20[:,:,:,0,2].copy() * 2.0
+      u[:,:,:,3] = H_10_20[:,:,:,1,1].copy() * 1.0
+      u[:,:,:,4] = H_10_20[:,:,:,1,2].copy() * 2.0
+      u[:,:,:,5] = H_10_20[:,:,:,2,2].copy() * 1.0
+
+      H[:dim_1,dim_1:] = u.copy().reshape(dim_1, dim_2)
+      H[dim_1:,:dim_1] = H[:dim_1,dim_1:].copy().T
+      del u, H_10_20
+
+      H *= 2.0
+
+      # Fit
+      psi4.core.print_out(" * Computing Hessian Inverse...\n")
+      Hi = self._invert_hessian(H)
+
+      S_1 = numpy.zeros((n,n,N,3))
+      S_2 = numpy.zeros((n,n,N,6))
+
+      for i in range(n):
+          for j in range(n):
+             #psi4.core.print_out(" * Computing the DMS tensors for (%i %i)...\n" % (i,j))
+
+              # gradient                                                           
+              DIM_1 = N*3
+              DIM_2 = N*6
+                                                                                   
+              g_10 = numpy.einsum("n,niu->iu", dM_AA_ref_set[:,i,j], F_B_set)
+              g_10+= numpy.einsum("n,niu->iu", dM_BB_ref_set[:,i,j], F_A_set)
+                                                                                   
+              u = numpy.zeros((N,6))
+              g_20 = numpy.einsum("n,niu,niw->iuw", dM_AA_ref_set[:,i,j], F_B_set, F_B_set)
+              g_20+= numpy.einsum("n,niu,niw->iuw", dM_BB_ref_set[:,i,j], F_A_set, F_A_set)
+              u[:,0] = g_20[:,0,0].copy()
+              u[:,1] = g_20[:,0,1].copy() * 2.0
+              u[:,2] = g_20[:,0,2].copy() * 2.0
+              u[:,3] = g_20[:,1,1].copy()
+              u[:,4] = g_20[:,1,2].copy() * 2.0
+              u[:,5] = g_20[:,2,2].copy()
+                                                                                   
+              g = numpy.zeros(dim_1 + dim_2)
+                                                                                   
+              g[:dim_1] = g_10.ravel().copy()
+              g[dim_1:] = u.ravel()
+              del u, g_10, g_20
+              g *= -2.0
+                                                                                   
+              s = - g @ Hi
+
+              S_1[i,j] = s[:dim_1].copy().reshape(N,3)
+              S_2[i,j] = s[dim_1:].copy().reshape(N,6)
+
+      s = numpy.hstack([S_1.ravel(), S_2.ravel()])
+
+      # Extract susceptibilities
+      psi4.core.print_out(" * Setting the DMS tensors...\n")
+      dms.set_s1(s)
+      for order in [(1,0),(2,0)]:
+          if order in dms.available_orders(): dms._generate_B_from_s(order)
+
+
+      ## Only (1,0) and (2,0) susceptibilities: fitting for each target matrix element separately
+      #if (0,2) not in self._dms_da.available_orders():
+
+      #    dms_ind1 = numpy.zeros((self._nbf, self._nbf, self._natoms, 3))
+      #    dms_ind2 = numpy.zeros((self._nbf, self._nbf, self._natoms, 3, 3))
+
+      #    for i in range(self._nbf):                              
+      #        for j in range(self._nbf):
+      #            b_1, b_2 = self._compute_dms_induction_ij(i, j)
+      #            dms_ind1[i,j] = b1
+      #            dms_ind2[i,j] = b2
+
+      #    par = [ dms_ind1.ravel(), dms_ind2.ravel() ]
+      #    s = numpy.hstack( par )
  
-      # higher-order susceptibilities included: need to evaluate full Hessian in S1 subspace
-      else:
-          raise NotImplementedError
+      ## higher-order susceptibilities included: need to evaluate full Hessian in S1 subspace
+      #else:
+      #    raise NotImplementedError
 
-      self._dms.set_s1(s)
 
   def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):#TODO
       "Compute 2nd group of parameters"
@@ -1134,6 +1304,11 @@ class Translation_DMSFit(DMSFit):
       n = self._dms_da.n()
       N = self._dms_da.N()
 
+      B_10 = self.B(1,0,'da')
+      B_20 = self.B(2,0,'da')
+      b_10 = self.B(1,0,'g')
+      b_20 = self.B(2,0,'g')
+
       B_01 = self.B(0,1,'da')
       b_01 = self.B(0,1,'g')
       if (1,1) in self._dms_da.available_orders(): 
@@ -1150,15 +1325,15 @@ class Translation_DMSFit(DMSFit):
       F_A_set = numpy.fromfile('temp_F_A_set.dat').reshape(s,N,3)
       F_B_set = numpy.fromfile('temp_F_B_set.dat').reshape(s,N,3)
       
-      H_AB_set = numpy.fromfile('temp_H_AB_set.dat').reshape(s,n,n)
+      H_set = numpy.fromfile('temp_H_set.dat').reshape(s,n*2,n*2)
 
-      dD_AA_set_ref = numpy.fromfile('temp_dD_AA_set_ref.dat').reshape(s,n,n)
-      dD_BB_set_ref = numpy.fromfile('temp_dD_BB_set_ref.dat').reshape(s,n,n)
-      dD_AB_set_ref = numpy.fromfile('temp_dD_AB_set_ref.dat').reshape(s,n,n)
+      dD_AA_set_ref = numpy.fromfile('temp_dD_AA_ref_set.dat').reshape(s,n,n)
+      dD_BB_set_ref = numpy.fromfile('temp_dD_BB_ref_set.dat').reshape(s,n,n)
+      dD_AB_set_ref = numpy.fromfile('temp_dD_AB_ref_set.dat').reshape(s,n,n)
 
-      dG_AA_set_ref = numpy.fromfile('temp_dG_AA_set_ref.dat').reshape(s,n,n)
-      dG_BB_set_ref = numpy.fromfile('temp_dG_BB_set_ref.dat').reshape(s,n,n)
-      dG_AB_set_ref = numpy.fromfile('temp_dG_AB_set_ref.dat').reshape(s,n,n)
+      dG_AA_set_ref = numpy.fromfile('temp_dG_AA_ref_set.dat').reshape(s,n,n)
+      dG_BB_set_ref = numpy.fromfile('temp_dG_BB_ref_set.dat').reshape(s,n,n)
+      dG_AB_set_ref = numpy.fromfile('temp_dG_AB_ref_set.dat').reshape(s,n,n)
 
       psi4.core.print_out(" ---> DMSFit: Check - training set <---\n\n")
       for s in range(self._nsamples):
@@ -1170,12 +1345,32 @@ class Translation_DMSFit(DMSFit):
           F_A  = F_A_set[s]
           F_B  = F_B_set[s]
 
-          H_AB = H_AB_set[s]
+          H_AA = H_set[s][:n,:n]
+          H_BB = H_set[s][n:,n:]
+          H_AB = H_set[s][:n,n:]
 
+          dD_AA_ref = dD_AA_set_ref[s]
+          dD_BB_ref = dD_BB_set_ref[s]
           dD_AB_ref = dD_AB_set_ref[s]
+          #
+          dD_AA_com = numpy.einsum("acix,ix->ac", B_10, F_B)
+          dD_AA_com+= numpy.einsum("acixy,ix,iy->ac", B_20, F_B, F_B)
+
+          dD_BB_com = numpy.einsum("acix,ix->ac", B_10, F_A)
+          dD_BB_com+= numpy.einsum("acixy,ix,iy->ac", B_20, F_A, F_A)
+          #
           dD_AB_com = W_AB @ B_01 + B_01.T @ W_BA.T
 
+          dG_AA_ref = dG_AA_set_ref[s]
+          dG_BB_ref = dG_BB_set_ref[s]
           dG_AB_ref = dG_AB_set_ref[s]
+          #
+          dG_AA_com = numpy.einsum("acix,ix->ac", b_10, F_B)
+          dG_AA_com+= numpy.einsum("acixy,ix,iy->ac", b_20, F_B, F_B)
+
+          dG_BB_com = numpy.einsum("acix,ix->ac", b_10, F_A)
+          dG_BB_com+= numpy.einsum("acixy,ix,iy->ac", b_20, F_A, F_A)
+          #
           dG_AB_com = w_AB @ b_01 + b_01.T @ w_BA.T
 
           if (1,1) in self._dms_da.available_orders():
@@ -1192,6 +1387,37 @@ class Translation_DMSFit(DMSFit):
               dG_AB_com+= numpy.einsum("ac,ix,iy,cbixy->ab",w_AB, F_A, F_A, b_21)
               dG_AB_com+= numpy.einsum("ac,ix,iy,cbixy->ab",w_BA, F_B, F_B, b_21).T
 
+          # block AA
+          rms_da = self._rms(dD_AA_ref, dD_AA_com)
+          rms_g  = self._rms(dG_AA_ref, dG_AA_com)
+
+          t1_da = (dD_AA_ref @ H_AA).trace()
+          t2_da = (dD_AA_com @ H_AA).trace()
+          t1_g  = (dG_AA_ref @ H_AA).trace()
+          t2_g  = (dG_AA_com @ H_AA).trace()
+
+          psi4.core.print_out(" Sample=%03d AA Da RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f\n" \
+                   % (s+1, rms_da, dD_AA_ref[0,0], dD_AA_com[0,0], t1_da, t2_da))
+          psi4.core.print_out(" Sample=%03d AA G  RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f\n" \
+                   % (s+1, rms_g , dG_AA_ref[0,0], dG_AA_com[0,0], t1_g , t2_g ))
+
+
+          # block BB
+          rms_da = self._rms(dD_BB_ref, dD_BB_com)
+          rms_g  = self._rms(dG_BB_ref, dG_BB_com)
+
+          t1_da = (dD_BB_ref @ H_BB).trace()
+          t2_da = (dD_BB_com @ H_BB).trace()
+          t1_g  = (dG_BB_ref @ H_BB).trace()
+          t2_g  = (dG_BB_com @ H_BB).trace()
+
+          psi4.core.print_out(" Sample=%03d BB Da RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f\n" \
+                   % (s+1, rms_da, dD_BB_ref[0,0], dD_BB_com[0,0], t1_da, t2_da))
+          psi4.core.print_out(" Sample=%03d BB G  RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f\n" \
+                   % (s+1, rms_g , dG_BB_ref[0,0], dG_BB_com[0,0], t1_g , t2_g ))
+
+
+          # block AB
           rms_da = self._rms(dD_AB_ref, dD_AB_com)
           rms_g  = self._rms(dG_AB_ref, dG_AB_com)
 
@@ -1200,16 +1426,81 @@ class Translation_DMSFit(DMSFit):
           t1_g  = (dG_AB_ref @ H_AB).trace()
           t2_g  = (dG_AB_com @ H_AB).trace()
 
-          psi4.core.print_out(" Sample=%03d Da RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f\n" \
+          psi4.core.print_out(" Sample=%03d AB Da RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f\n" \
                    % (s+1, rms_da, dD_AB_ref[0,0], dD_AB_com[0,0], t1_da, t2_da))
-          psi4.core.print_out(" Sample=%03d G  RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f\n" \
+          psi4.core.print_out(" Sample=%03d AB G  RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f\n" \
                    % (s+1, rms_g , dG_AB_ref[0,0], dG_AB_com[0,0], t1_g , t2_g ))
 
           self._i = s+1
-          self._save_dD(dD_AB_ref, prefix='d_ref')
-          self._save_dD(dD_AB_com, prefix='d_com')
-          self._save_dD(dG_AB_ref, prefix='g_ref')
-          self._save_dD(dG_AB_com, prefix='g_com')
+
+          self._save_dD(dD_AA_ref, prefix='d_aa_ref')
+          self._save_dD(dD_AA_com, prefix='d_aa_com')
+          self._save_dD(dG_AA_ref, prefix='g_aa_ref')
+          self._save_dD(dG_AA_com, prefix='g_aa_com')
+
+          self._save_dD(dD_BB_ref, prefix='d_bb_ref')
+          self._save_dD(dD_BB_com, prefix='d_bb_com')
+          self._save_dD(dG_BB_ref, prefix='g_bb_ref')
+          self._save_dD(dG_BB_com, prefix='g_bb_com')
+
+          self._save_dD(dD_AB_ref, prefix='d_ab_ref')
+          self._save_dD(dD_AB_com, prefix='d_ab_com')
+          self._save_dD(dG_AB_ref, prefix='g_ab_ref')
+          self._save_dD(dG_AB_com, prefix='g_ab_com')
+
+          # reconstruct whole matrices
+          dD_com = numpy.zeros((n+n,n+n))
+          dG_com = numpy.zeros((n+n,n+n))
+          dD_ref = numpy.zeros((n+n,n+n))
+          dG_ref = numpy.zeros((n+n,n+n))
+
+          dD_com[:n,:n] = dD_AA_com
+          dD_com[n:,n:] = dD_BB_com
+          dD_com[:n,n:] = dD_AB_com
+          dD_com[n:,:n] = dD_AB_com.T
+
+          dD_ref[:n,:n] = dD_AA_ref
+          dD_ref[n:,n:] = dD_BB_ref
+          dD_ref[:n,n:] = dD_AB_ref
+          dD_ref[n:,:n] = dD_AB_ref.T
+
+          dG_com[:n,:n] = dD_AA_com
+          dG_com[n:,n:] = dD_BB_com
+          dG_com[:n,n:] = dD_AB_com
+          dG_com[n:,:n] = dD_AB_com.T
+
+          dG_ref[:n,:n] = dG_AA_ref
+          dG_ref[n:,n:] = dG_BB_ref
+          dG_ref[:n,n:] = dG_AB_ref
+          dG_ref[n:,:n] = dG_AB_ref.T
+
+          #
+          D_com = dD_com.copy()
+          D_com[:n,:n]+= self._D0
+          D_com[n:,n:]+= self._D0
+
+          G_com = dG_com.copy()
+          G_com[:n,:n]+= self._G0
+          G_com[n:,n:]+= self._G0
+
+          D_ref = dD_ref.copy()
+          D_ref[:n,:n]+= self._D0
+          D_ref[n:,n:]+= self._D0
+
+          G_ref = dG_ref.copy()
+          G_ref[:n,:n]+= self._G0
+          G_ref[n:,n:]+= self._G0
+
+
+          H = H_set[s]
+          F_com = G_com + H
+          F_ref = G_ref + H
+
+          E_com = (D_com @ (H + F_com)).trace() + self._E_nuc_set[s]
+          E_ref = (D_ref @ (H + F_ref)).trace() + self._E_nuc_set[s]
+
+          psi4.core.print_out(" Sample=%03d Energy %14.5f  %14.5f\n" \
+                   % (s+1, E_com, E_ref))
 
 
 
@@ -1295,7 +1586,7 @@ class Translation_DMSFit(DMSFit):
 
   def _determine_perturbing_densities(self):
       ""
-      if self._use_iterative_model:
+      if not self._use_iterative_model:
          DA = self._dms_da._M.copy()
          DB = DA.copy()
          #
