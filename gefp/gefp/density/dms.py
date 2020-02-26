@@ -544,6 +544,7 @@ class Translation_DMSFit(DMSFit):
       self._dimer_mints = None
 
       self._E_nuc_set = []
+      self._DIP_nuc_set = []
 
      # self._dD_AA_set_ref = []
      # self._dD_BB_set_ref = []
@@ -622,6 +623,7 @@ class Translation_DMSFit(DMSFit):
       self._dimer_mints = psi4.core.MintsHelper(self._dimer_bfs)
 
       self._E_nuc_set.append(self._dimer_mol.nuclear_repulsion_energy())
+      self._DIP_nuc_set.append(self._dimer_mol.nuclear_dipole())
 
       self._mol_A = self._mol
       self._mol_B = mol.extract_subsets(2)
@@ -714,7 +716,7 @@ class Translation_DMSFit(DMSFit):
           F_A, F_B, F_A_mat, F_B_mat = self._compute_efield()
 
           # Dipole integrals
-          DIP = self._dimer_mints.ao_dipole()
+          DIP = [x.to_array(dense=True) for x in self._dimer_mints.ao_dipole()]
           DIP_set.append(DIP)
 
           # Auxiliary matrices
@@ -777,6 +779,7 @@ class Translation_DMSFit(DMSFit):
       #
       S_AB_set= numpy.array(S_AB_set)
       H_set= numpy.array(H_set)
+      DIP_set= numpy.array(DIP_set)
       #
       dD_AA_set_ref= numpy.array(dD_AA_set_ref)
       dD_BB_set_ref= numpy.array(dD_BB_set_ref)
@@ -810,6 +813,7 @@ class Translation_DMSFit(DMSFit):
       # Save on disk
       S_AB_set.tofile('temp_S_AB_set.dat')
       H_set.tofile('temp_H_set.dat')
+      DIP_set.tofile('temp_DIP_set.dat')
       #
       dD_AA_set_ref.tofile('temp_dD_AA_ref_set.dat')
       dD_BB_set_ref.tofile('temp_dD_BB_ref_set.dat')
@@ -1326,6 +1330,7 @@ class Translation_DMSFit(DMSFit):
       F_B_set = numpy.fromfile('temp_F_B_set.dat').reshape(s,N,3)
       
       H_set = numpy.fromfile('temp_H_set.dat').reshape(s,n*2,n*2)
+      DIP_set = numpy.fromfile('temp_DIP_set.dat').reshape(s,3,n*2,n*2)
 
       dD_AA_set_ref = numpy.fromfile('temp_dD_AA_ref_set.dat').reshape(s,n,n)
       dD_BB_set_ref = numpy.fromfile('temp_dD_BB_ref_set.dat').reshape(s,n,n)
@@ -1464,10 +1469,10 @@ class Translation_DMSFit(DMSFit):
           dD_ref[:n,n:] = dD_AB_ref
           dD_ref[n:,:n] = dD_AB_ref.T
 
-          dG_com[:n,:n] = dD_AA_com
-          dG_com[n:,n:] = dD_BB_com
-          dG_com[:n,n:] = dD_AB_com
-          dG_com[n:,:n] = dD_AB_com.T
+          dG_com[:n,:n] = dG_AA_com
+          dG_com[n:,n:] = dG_BB_com
+          dG_com[:n,n:] = dG_AB_com
+          dG_com[n:,:n] = dG_AB_com.T
 
           dG_ref[:n,:n] = dG_AA_ref
           dG_ref[n:,n:] = dG_BB_ref
@@ -1491,6 +1496,19 @@ class Translation_DMSFit(DMSFit):
           G_ref[:n,:n]+= self._G0
           G_ref[n:,n:]+= self._G0
 
+          # test only off-diagonals
+          if 0:
+             D_com[:n,:n].fill(0.0) 
+             D_com[n:,n:].fill(0.0)
+             D_ref[:n,:n].fill(0.0)
+             D_ref[n:,n:].fill(0.0)
+                                    
+             G_com[:n,:n].fill(0.0)
+             G_com[n:,n:].fill(0.0)
+             G_ref[:n,:n].fill(0.0)
+             G_ref[n:,n:].fill(0.0)
+
+
 
           H = H_set[s]
           F_com = G_com + H
@@ -1499,8 +1517,31 @@ class Translation_DMSFit(DMSFit):
           E_com = (D_com @ (H + F_com)).trace() + self._E_nuc_set[s]
           E_ref = (D_ref @ (H + F_ref)).trace() + self._E_nuc_set[s]
 
-          psi4.core.print_out(" Sample=%03d Energy %14.5f  %14.5f\n" \
+          psi4.core.print_out(" Sample=%03d Dimer Energy %14.5f  %14.5f\n" \
                    % (s+1, E_com, E_ref))
+
+          self._save_dD(dD_com, prefix='dd_com')
+          self._save_dD(dD_ref, prefix='dd_ref')
+          self._save_dD(dG_com, prefix='dg_com')
+          self._save_dD(dG_ref, prefix='dg_ref')
+
+          # compute dipole moments
+          DIP = DIP_set[s]
+          DIP_nuc = self._DIP_nuc_set[s]
+          mu_x_ref = 2.0 * (DIP[0] @ D_ref).trace() + DIP_nuc[0]
+          mu_y_ref = 2.0 * (DIP[1] @ D_ref).trace() + DIP_nuc[1]
+          mu_z_ref = 2.0 * (DIP[2] @ D_ref).trace() + DIP_nuc[2]
+          mu_x_com = 2.0 * (DIP[0] @ D_com).trace() + DIP_nuc[0]
+          mu_y_com = 2.0 * (DIP[1] @ D_com).trace() + DIP_nuc[1]
+          mu_z_com = 2.0 * (DIP[2] @ D_com).trace() + DIP_nuc[2]
+
+          psi4.core.print_out(" Sample=%03d Dipole Moment X %14.5f  %14.5f\n" \
+                   % (s+1, mu_x_com, mu_x_ref))
+          psi4.core.print_out(" Sample=%03d Dipole Moment Y %14.5f  %14.5f\n" \
+                   % (s+1, mu_y_com, mu_y_ref))
+          psi4.core.print_out(" Sample=%03d Dipole Moment Z %14.5f  %14.5f\n" \
+                   % (s+1, mu_z_com, mu_z_ref))
+
 
 
 
