@@ -282,9 +282,10 @@ class DMSFit(ABC):
  Method to fit DMS tensors.
 """
   minimum_atom_atom_distance = 1.2 / psi4.constants.bohr2angstroms
+  stop_when_error_hessian    = True
 
   def __init__(self, mol, method, 
-                     nsamples, dms_types, order_type, use_non_iterative_model):#OK
+                     nsamples, dms_types, order_type, use_iterative_model):#OK
       ABC.__init__(self)
 
       if mol.multiplicity() > 1:
@@ -302,7 +303,7 @@ class DMSFit(ABC):
                         "DMATPOL_NSAMPLES"     : nsamples,
                         "DMATPOL_NTEST_CHARGE" : 10,
                         "DMATPOL_TEST_CHARGE"  : 0.001})
-      self._use_non_iterative_model = use_non_iterative_model
+      self._use_iterative_model = use_iterative_model
       self._wfn_0= None
       self._bfs_0= None
       self._nbf = None
@@ -315,9 +316,9 @@ class DMSFit(ABC):
   @classmethod
   def create(cls, mol, fit_type="transl", dms_types="all", order_type='basic',
                   nsamples=100, method='scf', 
-                  use_non_iterative_model=True):#OK
+                  use_iterative_model=True):#OK
       if fit_type.lower().startswith("tran"): 
-         return Translation_DMSFit(mol, method, nsamples, dms_types, order_type, use_non_iterative_model)
+         return Translation_DMSFit(mol, method, nsamples, dms_types, order_type, use_iterative_model)
       else: 
          raise NotImplementedError("This type of DMS fitting is not implemented yet")
 
@@ -378,7 +379,7 @@ class DMSFit(ABC):
   # --- protected --- #
 
   def _compute_isolated_molecule(self):#OK
-      print(" * Computing Unperturbed Wavefunction")
+      psi4.core.print_out(" ---> Computing Unperturbed Wavefunction <---\n\n")
 
       # Compute HF or DFT wavefunction of molecule of interest
       g, self._wfn_0 = PSI4_DRIVER(self._method, molecule=self._mol, return_wfn=True)
@@ -419,12 +420,13 @@ class DMSFit(ABC):
   def _invert_hessian(self, h):#OK
       "Invert Hessian matrix"                                                                               
       det= numpy.linalg.det(h)
-      print(" ** Hessian Determinant= %14.6E" % det)
+      psi4.core.print_out(" ** Hessian Determinant= %14.6E\n" % det)
       hi = numpy.linalg.inv(h)
       I = numpy.dot(hi, h).diagonal().sum()
       d = I - len(hi)
-      print(" ** d=%14.6f %14.2f %d" % (d,I,h.shape[0]))
-     #if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic! d=%f I= %f DIM=%f" % (d,I,h.shape[0]))
+      psi4.core.print_out(" ** d=%14.6f %14.2f %d\n" % (d,I,h.shape[0]))
+      if DMSFit.stop_when_error_hessian:
+         if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic! d=%f I= %f DIM=%f" % (d,I,h.shape[0]))
       return hi      
 
   def _compute_efield_due_to_fragment(self, mol_j, D_j, ints_j, ri):#OK
@@ -456,6 +458,17 @@ class DMSFit(ABC):
                  break
       return clash
 
+  def _save_xyz(self, mol, out_name, misc=None):
+      "Save molecule to xyz file"
+      out=open(out_name,'w')
+      log = mol.to_string('xyz', units='Angstrom')
+      if misc is not None:
+         log = log.split('\n')
+         log[1] = "%s" % misc
+         log = '\n'.join(log)
+      out.write(log+"\n"); out.close()
+
+
   # ---> Abstract methods <--- #
 
   @abstractmethod
@@ -473,13 +486,14 @@ class DMSFit(ABC):
   @abstractmethod
   def _check(self): pass
 
+
 class Translation_DMSFit(DMSFit):
   """
  Translation method to fit DMS tensors.
 """
-  def __init__(self, mol, method, nsamples, dms_types, order_type, use_non_iterative_model,
+  def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model,
                      start=1.0, srange=2.0):
-      DMSFit.__init__(self, mol, method, nsamples, dms_types, order_type, use_non_iterative_model)
+      DMSFit.__init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model)
 
       # translation parameters
       self._i = 0
@@ -555,7 +569,7 @@ class Translation_DMSFit(DMSFit):
       log += "symmetry c1\n"
       log += "no_reorient\n"
       log += "no_com\n"
-      print(log)
+      #print(log)
 
       mol = psi4.geometry(log)
       mol.update_geometry()
@@ -575,7 +589,11 @@ class Translation_DMSFit(DMSFit):
       self._bfs_B = wfn_B.basisset()
 
       e_int = e_dimer - 2.0 * e_monomer # MCBS
-      print(" Interaction energy= %13.6f [a.u.]   %13.6f [kcal/mol]" % (e_int, e_int*627.5 ))
+      message = " Sample %3d. Interaction energy= %13.6f [a.u.]   %13.6f [kcal/mol]" % (self._i, e_int, e_int*627.5 )
+      psi4.core.print_out(message+'\n'); print(message)
+      # 
+      out = "geom_%03d.xyz" % self._i
+      self._save_xyz(mol, out, misc="Eint(MCBS)=%13.3f [kcal/mol]" % (e_int*627.5))
       #
       return mol
 
@@ -612,9 +630,8 @@ class Translation_DMSFit(DMSFit):
       k_set   = []
       l_set   = []
 
-      print(" ---> Computing wavefunction for each sample <---")
+      psi4.core.print_out(" ---> Computing wavefunction for each sample <---\n\n")
       for n in range(self._nsamples):
-          print(" * - Sample %d" % (self._i+1))
 
           # Dimer system
           aggr= self._construct_aggregate()
@@ -661,6 +678,9 @@ class Translation_DMSFit(DMSFit):
           # Auxiliary matrices
           W_AB = self._DA @ S_AB
           W_BA = self._DB @ S_AB.T
+
+         #W_AB*= s
+         #W_BA*= s
 
           A_AB = W_AB.T @ W_AB
           A_BA = W_BA.T @ W_BA
@@ -781,7 +801,7 @@ class Translation_DMSFit(DMSFit):
 
   def _compute_group_1(self):#TODO
       "Compute 1st group of parameters"
-      print(" ---> Computing DMS for Z1 group of type %s <---" % dms._type_long)
+      psi4.core.print_out(" ---> Computing DMS for Z1 group of type %s <---\n\n" % dms._type_long)
 
       # Only (1,0) and (2,0) susceptibilities: fitting for each target matrix element separately
       if (0,2) not in self._dms.available_orders():
@@ -806,7 +826,7 @@ class Translation_DMSFit(DMSFit):
 
   def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):#TODO
       "Compute 2nd group of parameters"
-      print(" ---> Computing DMS for Z2 group of type %s <---" % dms._type_long)
+      psi4.core.print_out(" ---> Computing DMS for Z2 group of type %s <---\n\n" % dms._type_long)
       n = dms.n()
       N = dms.N()
       #
@@ -829,7 +849,7 @@ class Translation_DMSFit(DMSFit):
 
       # gradient
       # (01) block
-      print(" * Computing Gradient (0,1)...")
+      psi4.core.print_out(" * Computing Gradient (0,1)...\n")
       START = OFFs[0]
       END   = OFFs[1]
       KL = K_set + L_set
@@ -837,7 +857,7 @@ class Translation_DMSFit(DMSFit):
 
       # (11) block
       if (1,1) in dms.available_orders():
-          print(" * Computing Gradient (1,1)...")
+          psi4.core.print_out(" * Computing Gradient (1,1)...\n")
           START = OFFs[1]
           END   = OFFs[2]
           #
@@ -846,7 +866,7 @@ class Translation_DMSFit(DMSFit):
 
       # (21) block
       if (2,1) in dms.available_orders():
-          print(" * Computing Gradient (2,1)...")
+          psi4.core.print_out(" * Computing Gradient (2,1)...\n")
           START = OFFs[2]
           END   = OFFs[3]
           #
@@ -877,7 +897,7 @@ class Translation_DMSFit(DMSFit):
       #
       L = END - START
       #
-      print(" * Computing Hessian (0,1) (0,1)...")
+      psi4.core.print_out(" * Computing Hessian (0,1) (0,1)...\n")
       H_01_01 = numpy.einsum("bd,ac->abcd", I, A.sum(axis=0)); del A
       H_01_01+= numpy.einsum("nda,nbc->abcd", W_AB_set, W_BA_set)
       H_01_01+= numpy.einsum("nda,nbc->abcd", W_BA_set, W_AB_set)
@@ -894,7 +914,7 @@ class Translation_DMSFit(DMSFit):
           L = END - START
           M = START - PREV
           #
-          print(" * Computing Hessian (1,1) (1,1)...")
+          psi4.core.print_out(" * Computing Hessian (1,1) (1,1)...\n")
           F_A_A = numpy.einsum("niu,njw->niujw", F_A_set, F_A_set)
           F_B_B = numpy.einsum("niu,njw->niujw", F_B_set, F_B_set)
           F_A_B = numpy.einsum("niu,njw->niujw", F_A_set, F_B_set)
@@ -915,7 +935,7 @@ class Translation_DMSFit(DMSFit):
          #H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_AB_set, W_BA_set, F_A_set, F_B_set)
          #H_11_11+= numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_BA_set, W_AB_set, F_B_set, F_A_set)
           #
-          print(" * Computing Hessian (0,1) (1,1)...")
+          psi4.core.print_out(" * Computing Hessian (0,1) (1,1)...\n")
           T_AB = numpy.einsum("nac,njw->acjw", A_AB_set, F_A_set)
           T_AB+= numpy.einsum("nac,njw->acjw", A_BA_set, F_B_set)
 
@@ -943,7 +963,7 @@ class Translation_DMSFit(DMSFit):
           M = START - PREV
           O = PREV - DPREV
           #
-          print(" * Computing Hessian (2,1) (2,1)...")
+          psi4.core.print_out(" * Computing Hessian (2,1) (2,1)...\n")
           F_AA = numpy.einsum("niu,nix->niux", F_A_set, F_A_set)
           F_BB = numpy.einsum("niu,nix->niux", F_B_set, F_B_set)
           F_AABB = numpy.einsum("niux,njwy->niuxjwy", F_AA, F_BB)
@@ -1019,7 +1039,7 @@ class Translation_DMSFit(DMSFit):
           del H_21_21, U
 
           # (01,21)
-          print(" * Computing Hessian (0,1) (2,1)...")
+          psi4.core.print_out(" * Computing Hessian (0,1) (2,1)...\n")
           T_AB = numpy.einsum("nac,njwx->acjwx", A_AB_set, F_AA)
           T_AB+= numpy.einsum("nac,njwx->acjwx", A_BA_set, F_BB)
           H_01_21 = numpy.einsum("bd,acjwx->abcdjwx", I, T_AB)
@@ -1045,7 +1065,7 @@ class Translation_DMSFit(DMSFit):
           H[START:END,DPREV:PREV] = H[DPREV:PREV,START:END].T.copy()
 
           # (11,21)
-          print(" * Computing Hessian (1,1) (2,1)...")
+          psi4.core.print_out(" * Computing Hessian (1,1) (2,1)...\n")
           F_AAA = numpy.einsum("nix,njuw->nixjuw", F_A_set, F_AA)
           F_BBB = numpy.einsum("nix,njuw->nixjuw", F_B_set, F_BB)
           F_ABB = numpy.einsum("nix,njuw->nixjuw", F_A_set, F_BB)
@@ -1080,14 +1100,14 @@ class Translation_DMSFit(DMSFit):
       H *= 2.0
 
       # Fit
-      print(" * Computing Hessian Inverse...")
+      psi4.core.print_out(" * Computing Hessian Inverse...\n")
       Hi = self._invert_hessian(H)
 
-      print(" * Computing the DMS tensors...")
+      psi4.core.print_out(" * Computing the DMS tensors...\n")
       s = - g @ Hi
 
       # Extract susceptibilities
-      print(" * Setting the DMS tensors...")
+      psi4.core.print_out(" * Setting the DMS tensors...\n")
       dms.set_s2(s)
       for order in [(0,1),(1,1),(2,1)]:
           if order in dms.available_orders(): dms._generate_B_from_s(order)
@@ -1140,7 +1160,7 @@ class Translation_DMSFit(DMSFit):
       dG_BB_set_ref = numpy.fromfile('temp_dG_BB_set_ref.dat').reshape(s,n,n)
       dG_AB_set_ref = numpy.fromfile('temp_dG_AB_set_ref.dat').reshape(s,n,n)
 
-      print(" DMSFit: Check - training set")
+      psi4.core.print_out(" ---> DMSFit: Check - training set <---\n\n")
       for s in range(self._nsamples):
          
           W_AB = W_AB_set[s]
@@ -1180,12 +1200,12 @@ class Translation_DMSFit(DMSFit):
           t1_g  = (dG_AB_ref @ H_AB).trace()
           t2_g  = (dG_AB_com @ H_AB).trace()
 
-          print(" Sample=%03d Da RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f" \
+          psi4.core.print_out(" Sample=%03d Da RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f\n" \
                    % (s+1, rms_da, dD_AB_ref[0,0], dD_AB_com[0,0], t1_da, t2_da))
-          print(" Sample=%03d G  RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f" \
+          psi4.core.print_out(" Sample=%03d G  RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f\n" \
                    % (s+1, rms_g , dG_AB_ref[0,0], dG_AB_com[0,0], t1_g , t2_g ))
 
-          self._i = s
+          self._i = s+1
           self._save_dD(dD_AB_ref, prefix='d_ref')
           self._save_dD(dD_AB_com, prefix='d_com')
           self._save_dD(dG_AB_ref, prefix='g_ref')
@@ -1234,7 +1254,8 @@ class Translation_DMSFit(DMSFit):
       F_A_set = numpy.array(F_A_set)
       F_A_mat_set = numpy.array(F_A_mat_set)
 
-      return F_A_set, F_B_set, F_A_mat_set, F_B_mat_set
+      s = 1.0
+      return F_A_set*s, F_B_set*s, F_A_mat_set, F_B_mat_set
    
 
 
@@ -1274,7 +1295,7 @@ class Translation_DMSFit(DMSFit):
 
   def _determine_perturbing_densities(self):
       ""
-      if self._use_non_iterative_model:
+      if self._use_iterative_model:
          DA = self._dms_da._M.copy()
          DB = DA.copy()
          #
