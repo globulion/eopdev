@@ -18,10 +18,12 @@ from gefp.math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix
 from gefp.math import composite
 
 
-__all__ = ["DMSFit", "DMS"]
+__all__ = ["DMSFit", "DMS", "Computer"]
 
 PSI4_DRIVER = psi4.energy
 numpy.random.seed(0)
+
+class Computer(ABC): pass
 
 class DMS(ABC):
   """
@@ -58,10 +60,12 @@ class DMS(ABC):
 
   @classmethod
   def create(cls, dms_type='da', order_type='basic'):#OK
-      if   order_type.lower() == 'basic': return       Basic_DMS(dms_type)
-      elif order_type.lower() == 'ct-1' : return    LinearCT_DMS(dms_type)
-      elif order_type.lower() == 'ct-2' : return QuadraticCT_DMS(dms_type)
-      elif order_type.lower() == 'bd'   : return      BasicD_DMS(dms_type)
+      if   order_type.lower() == 'basic' : return         Basic_DMS(dms_type)
+      elif order_type.lower() == 'bd'    : return        BasicD_DMS(dms_type)
+      elif order_type.lower() == 'ct-1'  : return      LinearCT_DMS(dms_type)
+      elif order_type.lower() == 'ct-1-d': return    LinearCT_D_DMS(dms_type)
+      elif order_type.lower() == 'ct-2'  : return   QuadraticCT_DMS(dms_type)
+      elif order_type.lower() == 'ct-2-d': return QuadraticCT_D_DMS(dms_type)
       else:
          raise NotImplementedError
       
@@ -144,19 +148,22 @@ class DMS(ABC):
       n  = self._n
       n2 = self._n**2 
       N  = self._N
+      n_ = composite.composite_index_number(n)
 
       # ---> Group Z(1) <--- #
       # (1,0)
       if (1,0) in self._available_orders and order == (1,0):
           START = 0
-          END   = START + n2*N*3
-          self._B[(1,0)] = self._s1[START:END].reshape(n,n,N,3)
+          END   = START + n_*N*3
+          b = self._s1[START:END].reshape(n_,N,3)
+          self._B[(1,0)] = composite.retrieve_tensor(b)
 
       # (2,0)
       if (2,0) in self._available_orders and order == (2,0):
-          START = n2*N*3
-          END   = START + n2*N*6
-          b     = self._s1[START:END].reshape(n,n,N,6)
+          START = n_*N*3
+          END   = START + n_*N*6
+          b     = self._s1[START:END].reshape(n_,N,6)
+          b     = composite.retrieve_tensor(b)
           B     = numpy.zeros((n,n,N,3,3))
           xx = b[:,:,:,0]
           xy = b[:,:,:,1]
@@ -177,8 +184,10 @@ class DMS(ABC):
           
       # (0,2)
       if (0,2) in self._available_orders and order == (0,2):
-          raise NotImplementedError
-      #TODO
+          START = n_*(N*3  + N*6)
+          END   = START + n_
+          b     = self._s1[START:END]
+          self._B[(0,2)] = composite.retrieve_tensor(b)
 
       # ---> Group Z(2) <--- #
       # (0,1)
@@ -263,7 +272,7 @@ class Basic_DMS(DMS):
 class BasicD_DMS(DMS):
   """
  Basic model of DMS that handles induction up to second-order and
- first-order pure Pauli effects.
+ Pauli effects up to secod-order.
 
  The order of DMS blocks:
 
@@ -271,12 +280,13 @@ class BasicD_DMS(DMS):
  -----         ---------      -----------    ------------  -----------   -------
   1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
   2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
-  3.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
+  3.            (0,2)          Pauli          Symmetric     (n,n)         Z(1)
+  4.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
 """
   def __init__(self, type='da'):#OK
       DMS.__init__(self, type)
 
-      self._available_orders = [(1,0), (2,0), (0,1), (0,2)]
+      self._available_orders = [(1,0), (2,0), (0,2), (0,1)]
 
 
 
@@ -303,6 +313,31 @@ class LinearCT_DMS(DMS):
 
   # --> Implementation <-- #
 
+class LinearCT_D_DMS(DMS):
+  """
+ Basic model of DMS that handles induction up to second-order,
+ pure Pauli effects up to second-order and first-order pure CT effects.
+
+ The order of DMS blocks:
+
+ Block         DMS order      Interaction    Symmetry       Dimension     Group
+ -----         ---------      -----------    ------------  -----------   -------
+  1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
+  2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
+  3.            (0,2)          Pauli          Symmetric     (n,n)         Z(1)
+  4.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
+  5.            (1,1)          CT             Asymmetric    (n,n,N,3)     Z(2)
+"""
+  def __init__(self, type='da'):#OK
+      DMS.__init__(self, type)
+
+      self._available_orders = [(1,0), (2,0), (0,2), (0,1), (1,1)]
+
+
+  # --> Implementation <-- #
+
+
+
 class QuadraticCT_DMS(DMS):
   """
  Basic model of DMS that handles induction up to second-order,
@@ -327,6 +362,30 @@ class QuadraticCT_DMS(DMS):
   # --> Implementation <-- #
 
 
+
+class QuadraticCT_D_DMS(DMS):
+  """
+ Model of DMS that handles induction up to second-order,
+ pure Pauli effects up to second order and second-order pure CT effects.
+
+ The order of DMS blocks:
+
+ Block         DMS order      Interaction    Symmetry       Dimension     Group
+ -----         ---------      -----------    ------------  -----------   -------
+  1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
+  2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
+  3.            (0,2)          Pauli          Symmetric     (n,n)         Z(1)
+  4.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
+  5.            (1,1)          CT             Asymmetric    (n,n,N,3)     Z(2)
+  6.            (2,1)          CT             Asymmetric    (n,n,N,3,3)   Z(2)
+"""
+  def __init__(self, type='da'):#OK
+      DMS.__init__(self, type)
+
+      self._available_orders = [(1,0), (2,0), (0,2), (0,1), (1,1), (2,1)]
+
+
+  # --> Implementation <-- #
 
 
 class DMSFit(ABC):
@@ -371,6 +430,8 @@ class DMSFit(ABC):
                   use_iterative_model=True):#OK
       if fit_type.lower().startswith("tran"): 
          return Translation_DMSFit(mol, method, nsamples, dms_types, order_type, use_iterative_model)
+      elif fit_type.lower().startswith("rot"): 
+         return Rotation_DMSFit(mol, method, nsamples, dms_types, order_type, use_iterative_model)
       else: 
          raise NotImplementedError("This type of DMS fitting is not implemented yet")
 
@@ -389,7 +450,7 @@ class DMSFit(ABC):
       # prepare for the DMS fittings
       self._compute_samples()
 
-      # fit DMS: (1,0), (2,0), (0,2), (1,2) and (2,2)
+      # fit DMS Z-1: (1,0), (2,0), (0,2), (1,2) and (2,2)
       F_A_set  = numpy.fromfile('temp_F_A_set.dat').reshape(s,N,3)
       F_B_set  = numpy.fromfile('temp_F_B_set.dat').reshape(s,N,3)
 
@@ -417,7 +478,7 @@ class DMSFit(ABC):
       del dG_AA_ref_set, dG_BB_ref_set
 
 
-      # fit DMS: (0,1), (1,1) and (2,1)
+      # fit DMS Z-2: (0,1), (1,1) and (2,1)
       K_set    = numpy.fromfile('temp_K_set.dat').reshape(s,n,n)
       L_set    = numpy.fromfile('temp_L_set.dat').reshape(s,n,n)
 
@@ -554,6 +615,7 @@ class DMSFit(ABC):
   def _check(self): pass
 
 
+
 class Translation_DMSFit(DMSFit):
   """
  Translation method to fit DMS tensors.
@@ -573,37 +635,6 @@ class Translation_DMSFit(DMSFit):
 
       self._E_nuc_set = []
       self._DIP_nuc_set = []
-
-     # self._dD_AA_set_ref = []
-     # self._dD_BB_set_ref = []
-     # self._dD_AB_set_ref = []
-     # #
-     # self._dG_AA_set_ref = []
-     # self._dG_BB_set_ref = []
-     # self._dG_AB_set_ref = []
-     # #
-     # self._S_AB_set = []
-     # self._H_AB_set_ref = []
-     # self._DIP_set = []      
-     # #
-     # self._F_A_set = []
-     # self._F_B_set = []
-     # #
-     # self._W_AB_set= []
-     # self._W_BA_set= []
-     # self._w_AB_set= []
-     # self._w_BA_set= []
-     # #
-     # self._A_AB_set= []
-     # self._A_BA_set= []
-     # self._a_AB_set= []
-     # self._a_BA_set= []
-     # #
-     # self._K_set   = []
-     # self._L_set   = []
-     # self._k_set   = []
-     # self._l_set   = []
-
 
   # ---> Implementation <--- #
 
@@ -1001,6 +1032,9 @@ class Translation_DMSFit(DMSFit):
                                                                                                 
                   S_1[i,j] = s[:dim_1].copy().reshape(N,3)
                   S_2[i,j] = s[dim_1:].copy().reshape(N,6)
+
+          S_1 = composite.form_futf(S_1)
+          S_2 = composite.form_futf(S_2)
                                                                                                 
           s = numpy.hstack([S_1.ravel(), S_2.ravel()])
 
@@ -1036,7 +1070,7 @@ class Translation_DMSFit(DMSFit):
          # (10)
          g_10 = numpy.einsum("nab,niu->abiu", dM_AA_ref_set, F_B_set)
          g_10+= numpy.einsum("nab,niu->abiu", dM_BB_ref_set, F_A_set)
-         g_10 = numpy.einsum("ab,abiu->abiu",r,g_10)
+         g_10 = numpy.einsum("ab,abiu->abiu", r, g_10)
          g[:DIM_1] = composite.form_futf(g_10).reshape(DIM_1).copy()
          del g_10
 
@@ -1095,41 +1129,18 @@ class Translation_DMSFit(DMSFit):
          del H_20_02
          H[O1:O2,DIM_1:O1] = H[DIM_1:O1,O1:O2].T.copy()
 
-         H*= 2.0
+         H *= 2.0
          Hi = self._invert_hessian(H)
 
          # Fit
          s = - g @ Hi
-         print(s)
-         raise NotImplementedError
 
-      print(s)
 
       # Extract susceptibilities
       psi4.core.print_out(" * Setting the DMS tensors...\n")
       dms.set_s1(s)
-      for order in [(1,0),(2,0)]:
+      for order in [(1,0),(2,0),(0,2)]:
           if order in dms.available_orders(): dms._generate_B_from_s(order)
-
-
-      ## Only (1,0) and (2,0) susceptibilities: fitting for each target matrix element separately
-      #if (0,2) not in self._dms_da.available_orders():
-
-      #    dms_ind1 = numpy.zeros((self._nbf, self._nbf, self._natoms, 3))
-      #    dms_ind2 = numpy.zeros((self._nbf, self._nbf, self._natoms, 3, 3))
-
-      #    for i in range(self._nbf):                              
-      #        for j in range(self._nbf):
-      #            b_1, b_2 = self._compute_dms_induction_ij(i, j)
-      #            dms_ind1[i,j] = b1
-      #            dms_ind2[i,j] = b2
-
-      #    par = [ dms_ind1.ravel(), dms_ind2.ravel() ]
-      #    s = numpy.hstack( par )
- 
-      ## higher-order susceptibilities included: need to evaluate full Hessian in S1 subspace
-      #else:
-      #    raise NotImplementedError
 
 
   def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):#TODO
@@ -1421,27 +1432,13 @@ class Translation_DMSFit(DMSFit):
           if order in dms.available_orders(): dms._generate_B_from_s(order)
 
 
-
-  def _compute_dms_induction_ij(self, i, j):#TODO
-      #TODO build up gradient and hessian
-      #self._g_ind.fill(0.0)
-      #self._H_ind.fill(0.0)
-      # fit
-      #Hi = self._invert_hessian(self._h_ind)
-      #par = - self._g_ind @ Hi
-      # extract
-      #b_1 = numpy.zeros((self._natoms, 3))
-      #b_2 = numpy.zeros((self._natoms, 3, 3))
-      #TODO fill up b_1 and b_2
-      #return b_1, b_2
-      pass
-
   def _check(self):
       "Check the quality of fitting on training set"
       s = self._nsamples
       n = self._dms_da.n()
       N = self._dms_da.N()
 
+      # compulsory DMS tensors
       B_10 = self.B(1,0,'da')
       B_20 = self.B(2,0,'da')
       b_10 = self.B(1,0,'g')
@@ -1449,13 +1446,20 @@ class Translation_DMSFit(DMSFit):
 
       B_01 = self.B(0,1,'da')
       b_01 = self.B(0,1,'g')
+
+      # additional DMS tensors
       if (1,1) in self._dms_da.available_orders(): 
           B_11 = self.B(1,1,'da')
           b_11 = self.B(1,1,'g')
       if (2,1) in self._dms_da.available_orders(): 
           B_21 = self.B(2,1,'da')
           b_21 = self.B(2,1,'g')
+      if (0,2) in self._dms_da.available_orders():
+          B_02 = self.B(0,2,'da')
+          b_02 = self.B(0,2,'g')
 
+
+      # read perturbations
       W_AB_set = numpy.fromfile('temp_W_AB_set.dat').reshape(s,n,n)
       W_BA_set = numpy.fromfile('temp_W_BA_set.dat').reshape(s,n,n)
       w_AB_set = numpy.fromfile('temp_w_AB_set.dat').reshape(s,n,n)
@@ -1494,9 +1498,13 @@ class Translation_DMSFit(DMSFit):
           #
           dD_AA_com = numpy.einsum("acix,ix->ac", B_10, F_B)
           dD_AA_com+= numpy.einsum("acixy,ix,iy->ac", B_20, F_B, F_B)
+          if (0,2) in self._dms_da.available_orders():
+              dD_AA_com+= numpy.einsum("cd,ac,bd->ab", B_02, W_AB, W_AB)
 
           dD_BB_com = numpy.einsum("acix,ix->ac", B_10, F_A)
           dD_BB_com+= numpy.einsum("acixy,ix,iy->ac", B_20, F_A, F_A)
+          if (0,2) in self._dms_da.available_orders():
+              dD_BB_com+= numpy.einsum("cd,ac,bd->ab", B_02, W_BA, W_BA)
           #
           dD_AB_com = W_AB @ B_01 + B_01.T @ W_BA.T
 
@@ -1506,9 +1514,14 @@ class Translation_DMSFit(DMSFit):
           #
           dG_AA_com = numpy.einsum("acix,ix->ac", b_10, F_B)
           dG_AA_com+= numpy.einsum("acixy,ix,iy->ac", b_20, F_B, F_B)
+          if (0,2) in self._dms_da.available_orders():
+              dG_AA_com+= numpy.einsum("cd,ac,bd->ab", b_02, w_AB, w_AB)
 
           dG_BB_com = numpy.einsum("acix,ix->ac", b_10, F_A)
           dG_BB_com+= numpy.einsum("acixy,ix,iy->ac", b_20, F_A, F_A)
+          if (0,2) in self._dms_da.available_orders():
+              dG_BB_com+= numpy.einsum("cd,ac,bd->ab", b_02, w_BA, w_BA)
+
           #
           dG_AB_com = w_AB @ b_01 + b_01.T @ w_BA.T
 
@@ -1791,3 +1804,19 @@ class Translation_DMSFit(DMSFit):
       #
       self._GA = GA
       self._GB = GB
+
+
+class Rotation_DMSFit(DMSFit):
+  """
+ Rotation method to fit DMS tensors.
+"""
+  def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model,
+                     start=1.0, srange=2.0):
+      DMSFit.__init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model)
+
+      # translation parameters
+      self._i = 0
+      self._start = start
+      self._range = srange
+
+      raise NotImplementedError("Rotation DMSFit method is not developed yet")
