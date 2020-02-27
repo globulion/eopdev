@@ -401,7 +401,7 @@ class DMSFit(ABC):
       A_AB_set = numpy.fromfile('temp_A_AB_set.dat').reshape(s,n,n)
       A_BA_set = numpy.fromfile('temp_A_BA_set.dat').reshape(s,n,n)
       
-      self._compute_group_1(self._dms_da, F_A_set, F_B_set, dD_AA_ref_set, dD_BB_ref_set, A_AB_set, A_BA_set)
+      self._compute_group_1(self._dms_da, F_A_set, F_B_set, dD_AA_ref_set, dD_BB_ref_set, A_AB_set, A_BA_set, W_AB_set, W_BA_set)
       del dD_AA_ref_set, dD_BB_ref_set
 
       dG_AA_ref_set = numpy.fromfile('temp_dG_AA_ref_set.dat').reshape(s,n,n)
@@ -413,7 +413,7 @@ class DMSFit(ABC):
       a_BA_set = numpy.fromfile('temp_a_BA_set.dat').reshape(s,n,n)
 
 
-      self._compute_group_1(self._dms_g , F_A_set, F_B_set, dG_AA_ref_set, dG_BB_ref_set, a_AB_set, a_BA_set)
+      self._compute_group_1(self._dms_g , F_A_set, F_B_set, dG_AA_ref_set, dG_BB_ref_set, a_AB_set, a_BA_set, w_AB_set, w_BA_set)
       del dG_AA_ref_set, dG_BB_ref_set
 
 
@@ -873,7 +873,8 @@ class Translation_DMSFit(DMSFit):
       l_set   .tofile('temp_l_set.dat')
      
 
-  def _compute_group_1(self, dms, F_A_set, F_B_set, dM_AA_ref_set, dM_BB_ref_set, A_AB_set, A_BA_set):#TODO
+  def _compute_group_1(self, dms, F_A_set, F_B_set, dM_AA_ref_set, dM_BB_ref_set, A_AB_set, A_BA_set,
+                                  W_AB_set, W_BA_set):#TODO
       "Compute 1st group of parameters"
       psi4.core.print_out(" ---> Computing DMS for Z1 group of type %s <---\n\n" % dms._type_long)
 
@@ -1005,24 +1006,57 @@ class Translation_DMSFit(DMSFit):
 
       # (0,2) and higher order susceptibilities present
       else:
-
-         # construct Hessian
          h_10_10 = H[:dim_1,:dim_1].copy()
          h_10_20 = H[:dim_1,dim_1:].copy()
          h_20_20 = H[dim_1:,dim_1:].copy()
 
+         FF_A_set = numpy.einsum("niu,niw->uwni",F_A_set,F_A_set)
+         FF_B_set = numpy.einsum("niu,niw->uwni",F_B_set,F_B_set)
+         FF_A_set = numpy.einsum("uw,uwni->uwni", composite.symmetry_matrix(3), FF_A_set)
+         FF_B_set = numpy.einsum("uw,uwni->uwni", composite.symmetry_matrix(3), FF_B_set)
+         FF_A_set = composite.form_futf(FF_A_set).transpose(1,2,0)
+         FF_B_set = composite.form_futf(FF_B_set).transpose(1,2,0)
+
          r = composite.symmetry_matrix(n)
          I = numpy.identity(n)
 
-         del H
+         del H # --> move it above!
+
          n_ = composite.composite_index_number(n)
          DIM_1 = n_ * dim_1
          DIM_2 = n_ * dim_2
          DIM_3 = n_ 
          DIM = DIM_1 + DIM_2 + DIM_3
+         g = numpy.zeros(DIM)
          H = numpy.zeros((DIM, DIM))
          O1 = DIM_1 + DIM_2
          O2 = O1 + DIM_3
+
+         # Construct gradient
+         # (10)
+         g_10 = numpy.einsum("nab,niu->abiu", dM_AA_ref_set, F_B_set)
+         g_10+= numpy.einsum("nab,niu->abiu", dM_BB_ref_set, F_A_set)
+         g_10 = numpy.einsum("ab,abiu->abiu",r,g_10)
+         g[:DIM_1] = composite.form_futf(g_10).reshape(DIM_1).copy()
+         del g_10
+
+         # (20)
+         g_20 = numpy.einsum("nab,niu->abiu", dM_AA_ref_set, FF_B_set)
+         g_20+= numpy.einsum("nab,niu->abiu", dM_BB_ref_set, FF_A_set)
+         g_20 = numpy.einsum("ab,abiu->abiu", r, g_20)
+         g[DIM_1:O1] = composite.form_futf(g_20).reshape(DIM_2).copy()
+         del g_20
+
+         # (02)
+         R = numpy.einsum("nac,nbd,nab->cd", W_AB_set, W_AB_set, dM_AA_ref_set)
+         T = numpy.einsum("nac,nbd,nab->cd", W_BA_set, W_BA_set, dM_BB_ref_set)
+         g_02 = r*(R+T)
+         g[O1:O2] = composite.form_futf(g_02).reshape(DIM_3).copy()
+         del g_02
+
+         g *= -2.0
+
+         # Construct Hessian
 
          # (10,10)
          H_10_10 = numpy.einsum("ac,bd,ab,cd,iujw->abiucdjw",I,I,r,r,h_10_10.reshape(N,3,N,3))
@@ -1034,20 +1068,42 @@ class Translation_DMSFit(DMSFit):
          H[DIM_1:O1   ,DIM_1:O1   ] = composite.form_superfutf(H_20_20, m1=4).reshape(DIM_2, DIM_2).copy()
          del H_20_20
 
+         # (10,20)
+         H_10_20 = numpy.einsum("ac,bd,ab,cd,iujw->abiucdjw",I,I,r,r,h_10_20.reshape(N,3,N,6))
+         H[:DIM_1, DIM_1:O1] = composite.form_superfutf(H_10_20, m1=4).reshape(DIM_1, DIM_2).copy()
+         del H_10_20
+         H[DIM_1:O1, :DIM_1] = H[:DIM_1, DIM_1:O1].T.copy()
+
          # (02,02)
          X = numpy.einsum("nac,nbd->abcd", A_AB_set, A_AB_set)
          X+= numpy.einsum("nac,nbd->abcd", A_BA_set, A_BA_set)
          H_02_02 = numpy.einsum("ab,cd,abcd->abcd", r, r, X)
          H[O1:O2   ,O1:O2   ] = composite.form_superfutf(H_02_02, m1=2).reshape(DIM_3, DIM_3).copy()
-         del H_02_02
+         del H_02_02, X
+
+         # (10,02)
+         H_10_02 = numpy.einsum("ab,cd,nac,nbd,nq->abqcd",r,r,W_AB_set,W_AB_set,F_B_set.reshape(self._nsamples, N*3))
+         H_10_02+= numpy.einsum("ab,cd,nac,nbd,nq->abqcd",r,r,W_BA_set,W_BA_set,F_A_set.reshape(self._nsamples, N*3))
+         H[:DIM_1,O1:O2] = composite.form_superfutf(H_10_02, m1=3).reshape(DIM_1, DIM_3).copy()
+         del H_10_02
+         H[O1:O2,:DIM_1] = H[:DIM_1,O1:O2].T.copy()
+
+         # (20,02)
+         H_20_02 = numpy.einsum("ab,cd,nac,nbd,nq->abqcd",r,r,W_AB_set,W_AB_set,FF_B_set.reshape(self._nsamples, N*6))
+         H_20_02+= numpy.einsum("ab,cd,nac,nbd,nq->abqcd",r,r,W_BA_set,W_BA_set,FF_A_set.reshape(self._nsamples, N*6))
+         H[DIM_1:O1,O1:O2] = composite.form_superfutf(H_20_02, m1=3).reshape(DIM_2, DIM_3).copy()
+         del H_20_02
+         H[O1:O2,DIM_1:O1] = H[DIM_1:O1,O1:O2].T.copy()
 
          H*= 2.0
-
-         print(H)
          Hi = self._invert_hessian(H)
 
-        
+         # Fit
+         s = - g @ Hi
+         print(s)
          raise NotImplementedError
+
+      print(s)
 
       # Extract susceptibilities
       psi4.core.print_out(" * Setting the DMS tensors...\n")

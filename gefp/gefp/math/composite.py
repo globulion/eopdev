@@ -17,7 +17,7 @@ import numpy
 
 def symmetry_matrix(n):
     "2D Cartesian symmetry numbers r_ij such that 1 if i==j, 2 otherwise."
-    r = numpy.ones((n,n))
+    r = numpy.ones((n,n)) * 2.0
     for i in range(n): r[i,i] = 1.0
     return r
 
