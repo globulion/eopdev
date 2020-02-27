@@ -13,7 +13,9 @@ import scipy.optimize
 import scipy.spatial.transform
 from abc import ABC, abstractmethod
 #from ..math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix_power
+#from ..math import composite
 from gefp.math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix_power
+from gefp.math import composite
 
 
 __all__ = ["DMSFit", "DMS"]
@@ -59,6 +61,7 @@ class DMS(ABC):
       if   order_type.lower() == 'basic': return       Basic_DMS(dms_type)
       elif order_type.lower() == 'ct-1' : return    LinearCT_DMS(dms_type)
       elif order_type.lower() == 'ct-2' : return QuadraticCT_DMS(dms_type)
+      elif order_type.lower() == 'bd'   : return      BasicD_DMS(dms_type)
       else:
          raise NotImplementedError
       
@@ -257,6 +260,26 @@ class Basic_DMS(DMS):
 
       self._available_orders = [(1,0), (2,0), (0,1)]
 
+class BasicD_DMS(DMS):
+  """
+ Basic model of DMS that handles induction up to second-order and
+ first-order pure Pauli effects.
+
+ The order of DMS blocks:
+
+ Block         DMS order      Interaction    Symmetry       Dimension     Group
+ -----         ---------      -----------    ------------  -----------   -------
+  1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
+  2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
+  3.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
+"""
+  def __init__(self, type='da'):#OK
+      DMS.__init__(self, type)
+
+      self._available_orders = [(1,0), (2,0), (0,1), (0,2)]
+
+
+
 
 class LinearCT_DMS(DMS):
   """
@@ -369,26 +392,34 @@ class DMSFit(ABC):
       # fit DMS: (1,0), (2,0), (0,2), (1,2) and (2,2)
       F_A_set  = numpy.fromfile('temp_F_A_set.dat').reshape(s,N,3)
       F_B_set  = numpy.fromfile('temp_F_B_set.dat').reshape(s,N,3)
+
       dD_AA_ref_set = numpy.fromfile('temp_dD_AA_ref_set.dat').reshape(s,n,n)
       dD_BB_ref_set = numpy.fromfile('temp_dD_BB_ref_set.dat').reshape(s,n,n)
 
-      self._compute_group_1(self._dms_da, F_A_set, F_B_set, dD_AA_ref_set, dD_BB_ref_set)
+      W_AB_set = numpy.fromfile('temp_W_AB_set.dat').reshape(s,n,n)
+      W_BA_set = numpy.fromfile('temp_W_BA_set.dat').reshape(s,n,n)
+      A_AB_set = numpy.fromfile('temp_A_AB_set.dat').reshape(s,n,n)
+      A_BA_set = numpy.fromfile('temp_A_BA_set.dat').reshape(s,n,n)
+      
+      self._compute_group_1(self._dms_da, F_A_set, F_B_set, dD_AA_ref_set, dD_BB_ref_set, A_AB_set, A_BA_set)
       del dD_AA_ref_set, dD_BB_ref_set
 
       dG_AA_ref_set = numpy.fromfile('temp_dG_AA_ref_set.dat').reshape(s,n,n)
       dG_BB_ref_set = numpy.fromfile('temp_dG_BB_ref_set.dat').reshape(s,n,n)
 
-      self._compute_group_1(self._dms_g , F_A_set, F_B_set, dG_AA_ref_set, dG_BB_ref_set)
+      w_AB_set = numpy.fromfile('temp_w_AB_set.dat').reshape(s,n,n)
+      w_BA_set = numpy.fromfile('temp_w_BA_set.dat').reshape(s,n,n)
+      a_AB_set = numpy.fromfile('temp_a_AB_set.dat').reshape(s,n,n)
+      a_BA_set = numpy.fromfile('temp_a_BA_set.dat').reshape(s,n,n)
+
+
+      self._compute_group_1(self._dms_g , F_A_set, F_B_set, dG_AA_ref_set, dG_BB_ref_set, a_AB_set, a_BA_set)
       del dG_AA_ref_set, dG_BB_ref_set
 
 
       # fit DMS: (0,1), (1,1) and (2,1)
       K_set    = numpy.fromfile('temp_K_set.dat').reshape(s,n,n)
       L_set    = numpy.fromfile('temp_L_set.dat').reshape(s,n,n)
-      W_AB_set = numpy.fromfile('temp_W_AB_set.dat').reshape(s,n,n)
-      W_BA_set = numpy.fromfile('temp_W_BA_set.dat').reshape(s,n,n)
-      A_AB_set = numpy.fromfile('temp_A_AB_set.dat').reshape(s,n,n)
-      A_BA_set = numpy.fromfile('temp_A_BA_set.dat').reshape(s,n,n)
 
       self._compute_group_2(self._dms_da, K_set, L_set, F_A_set, F_B_set,
                                           W_AB_set, W_BA_set, A_AB_set, A_BA_set)
@@ -396,10 +427,6 @@ class DMSFit(ABC):
 
       k_set    = numpy.fromfile('temp_k_set.dat').reshape(s,n,n)
       l_set    = numpy.fromfile('temp_l_set.dat').reshape(s,n,n)
-      w_AB_set = numpy.fromfile('temp_w_AB_set.dat').reshape(s,n,n)
-      w_BA_set = numpy.fromfile('temp_w_BA_set.dat').reshape(s,n,n)
-      a_AB_set = numpy.fromfile('temp_a_AB_set.dat').reshape(s,n,n)
-      a_BA_set = numpy.fromfile('temp_a_BA_set.dat').reshape(s,n,n)
 
       self._compute_group_2(self._dms_g , k_set, l_set, F_A_set, F_B_set,
                                           w_AB_set, w_BA_set, a_AB_set, a_BA_set)
@@ -463,7 +490,8 @@ class DMSFit(ABC):
       hi = numpy.linalg.inv(h)
       I = numpy.dot(hi, h).diagonal().sum()
       d = I - len(hi)
-      psi4.core.print_out(" ** d=%14.6f %14.2f %d\n" % (d,I,h.shape[0]))
+      psi4.core.print_out(" ** Hessian Dimension= (%8d) x (%8d)\n" % h.shape)
+      psi4.core.print_out(" ** delta=%14.6f %14.2f %d\n" % (d,I,h.shape[0]))
       if DMSFit.stop_when_error_hessian:
          if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic! d=%f I= %f DIM=%f" % (d,I,h.shape[0]))
       return hi      
@@ -845,27 +873,27 @@ class Translation_DMSFit(DMSFit):
       l_set   .tofile('temp_l_set.dat')
      
 
-  def _compute_group_1(self, dms, F_A_set, F_B_set, dM_AA_ref_set, dM_BB_ref_set):#TODO
+  def _compute_group_1(self, dms, F_A_set, F_B_set, dM_AA_ref_set, dM_BB_ref_set, A_AB_set, A_BA_set):#TODO
       "Compute 1st group of parameters"
       psi4.core.print_out(" ---> Computing DMS for Z1 group of type %s <---\n\n" % dms._type_long)
 
       n = dms.n()
       N = dms.N()
 
-      # Hessian
+      # Hessian                                                                             
       dim_1 = N*3
       dim_2 = N*6
       H = numpy.zeros((dim_1 + dim_2, dim_1 + dim_2))
-
+                                                                                            
       H_10_10 = numpy.einsum("niu,njw->iujw", F_B_set, F_B_set) 
       H_10_10+= numpy.einsum("niu,njw->iujw", F_A_set, F_A_set) 
-
+                                                                                            
       H[:dim_1,:dim_1] = H_10_10.copy().reshape(dim_1, dim_1)
       del H_10_10
-
+                                                                                            
       H_20_20 = numpy.einsum("niu,nix,njw,njy->iuxjwy", F_B_set, F_B_set, F_B_set, F_B_set)
       H_20_20+= numpy.einsum("niu,nix,njw,njy->iuxjwy", F_A_set, F_A_set, F_A_set, F_A_set)
-
+                                                                                            
       u = numpy.zeros((N,6,N,6))
       u[:,0,:,0] = H_20_20[:,0,0,:,0,0].copy() * 1.0
       u[:,0,:,1] = H_20_20[:,0,0,:,0,1].copy() * 2.0
@@ -873,48 +901,48 @@ class Translation_DMSFit(DMSFit):
       u[:,0,:,3] = H_20_20[:,0,0,:,1,1].copy() * 1.0
       u[:,0,:,4] = H_20_20[:,0,0,:,1,2].copy() * 2.0
       u[:,0,:,5] = H_20_20[:,0,0,:,2,2].copy() * 1.0
-
+                                                                                            
       u[:,1,:,0] = H_20_20[:,0,1,:,0,0].copy() * 2.0
       u[:,1,:,1] = H_20_20[:,0,1,:,0,1].copy() * 4.0
       u[:,1,:,2] = H_20_20[:,0,1,:,0,2].copy() * 4.0
       u[:,1,:,3] = H_20_20[:,0,1,:,1,1].copy() * 2.0
       u[:,1,:,4] = H_20_20[:,0,1,:,1,2].copy() * 4.0
       u[:,1,:,5] = H_20_20[:,0,1,:,2,2].copy() * 2.0
-
+                                                                                            
       u[:,2,:,0] = H_20_20[:,0,2,:,0,0].copy() * 2.0
       u[:,2,:,1] = H_20_20[:,0,2,:,0,1].copy() * 4.0
       u[:,2,:,2] = H_20_20[:,0,2,:,0,2].copy() * 4.0
       u[:,2,:,3] = H_20_20[:,0,2,:,1,1].copy() * 2.0
       u[:,2,:,4] = H_20_20[:,0,2,:,1,2].copy() * 4.0
       u[:,2,:,5] = H_20_20[:,0,2,:,2,2].copy() * 2.0
-
+                                                                                            
       u[:,3,:,0] = H_20_20[:,1,1,:,0,0].copy() * 1.0
       u[:,3,:,1] = H_20_20[:,1,1,:,0,1].copy() * 2.0
       u[:,3,:,2] = H_20_20[:,1,1,:,0,2].copy() * 2.0
       u[:,3,:,3] = H_20_20[:,1,1,:,1,1].copy() * 1.0
       u[:,3,:,4] = H_20_20[:,1,1,:,1,2].copy() * 2.0
       u[:,3,:,5] = H_20_20[:,1,1,:,2,2].copy() * 1.0
-
+                                                                                            
       u[:,4,:,0] = H_20_20[:,1,2,:,0,0].copy() * 2.0
       u[:,4,:,1] = H_20_20[:,1,2,:,0,1].copy() * 4.0
       u[:,4,:,2] = H_20_20[:,1,2,:,0,2].copy() * 4.0
       u[:,4,:,3] = H_20_20[:,1,2,:,1,1].copy() * 2.0
       u[:,4,:,4] = H_20_20[:,1,2,:,1,2].copy() * 4.0
       u[:,4,:,5] = H_20_20[:,1,2,:,2,2].copy() * 2.0
-
+                                                                                            
       u[:,5,:,0] = H_20_20[:,2,2,:,0,0].copy() * 1.0
       u[:,5,:,1] = H_20_20[:,2,2,:,0,1].copy() * 2.0
       u[:,5,:,2] = H_20_20[:,2,2,:,0,2].copy() * 2.0
       u[:,5,:,3] = H_20_20[:,2,2,:,1,1].copy() * 1.0
       u[:,5,:,4] = H_20_20[:,2,2,:,1,2].copy() * 2.0
       u[:,5,:,5] = H_20_20[:,2,2,:,2,2].copy() * 1.0
-
+                                                                                            
       H[dim_1:,dim_1:] = u.copy().reshape(dim_2, dim_2)
       del u, H_20_20
-
+                                                                                            
       H_10_20 = numpy.einsum("niu,njw,njy->iujwy", F_B_set, F_B_set, F_B_set)
       H_10_20+= numpy.einsum("niu,njw,njy->iujwy", F_A_set, F_A_set, F_A_set)
-
+                                                                                            
       u = numpy.zeros((N,3,N,6))
       u[:,:,:,0] = H_10_20[:,:,:,0,0].copy() * 1.0
       u[:,:,:,1] = H_10_20[:,:,:,0,1].copy() * 2.0
@@ -922,54 +950,104 @@ class Translation_DMSFit(DMSFit):
       u[:,:,:,3] = H_10_20[:,:,:,1,1].copy() * 1.0
       u[:,:,:,4] = H_10_20[:,:,:,1,2].copy() * 2.0
       u[:,:,:,5] = H_10_20[:,:,:,2,2].copy() * 1.0
-
+                                                                                            
       H[:dim_1,dim_1:] = u.copy().reshape(dim_1, dim_2)
       H[dim_1:,:dim_1] = H[:dim_1,dim_1:].copy().T
       del u, H_10_20
-
+                                                                                            
       H *= 2.0
 
-      # Fit
-      psi4.core.print_out(" * Computing Hessian Inverse...\n")
-      Hi = self._invert_hessian(H)
 
-      S_1 = numpy.zeros((n,n,N,3))
-      S_2 = numpy.zeros((n,n,N,6))
+      # Only (1,0) and (2,0) susceptibilities: fitting for each target matrix element separately
+      if (0,2) not in self._dms_da.available_orders():
 
-      for i in range(n):
-          for j in range(n):
-             #psi4.core.print_out(" * Computing the DMS tensors for (%i %i)...\n" % (i,j))
+          # Fit
+          psi4.core.print_out(" * Computing Hessian Inverse...\n")
+          Hi = self._invert_hessian(H)
+                                                                                                
+          S_1 = numpy.zeros((n,n,N,3))
+          S_2 = numpy.zeros((n,n,N,6))
+                                                                                                
+          for i in range(n):
+              for j in range(n):
+                 #psi4.core.print_out(" * Computing the DMS tensors for (%i %i)...\n" % (i,j))
+                                                                                                
+                  # gradient                                                           
+                  DIM_1 = N*3
+                  DIM_2 = N*6
+                                                                                       
+                  g_10 = numpy.einsum("n,niu->iu", dM_AA_ref_set[:,i,j], F_B_set)
+                  g_10+= numpy.einsum("n,niu->iu", dM_BB_ref_set[:,i,j], F_A_set)
+                                                                                       
+                  u = numpy.zeros((N,6))
+                  g_20 = numpy.einsum("n,niu,niw->iuw", dM_AA_ref_set[:,i,j], F_B_set, F_B_set)
+                  g_20+= numpy.einsum("n,niu,niw->iuw", dM_BB_ref_set[:,i,j], F_A_set, F_A_set)
+                  u[:,0] = g_20[:,0,0].copy()
+                  u[:,1] = g_20[:,0,1].copy() * 2.0
+                  u[:,2] = g_20[:,0,2].copy() * 2.0
+                  u[:,3] = g_20[:,1,1].copy()
+                  u[:,4] = g_20[:,1,2].copy() * 2.0
+                  u[:,5] = g_20[:,2,2].copy()
+                                                                                       
+                  g = numpy.zeros(dim_1 + dim_2)
+                                                                                       
+                  g[:dim_1] = g_10.ravel().copy()
+                  g[dim_1:] = u.ravel()
+                  del u, g_10, g_20
+                  g *= -2.0
+                                                                                       
+                  s = - g @ Hi
+                                                                                                
+                  S_1[i,j] = s[:dim_1].copy().reshape(N,3)
+                  S_2[i,j] = s[dim_1:].copy().reshape(N,6)
+                                                                                                
+          s = numpy.hstack([S_1.ravel(), S_2.ravel()])
 
-              # gradient                                                           
-              DIM_1 = N*3
-              DIM_2 = N*6
-                                                                                   
-              g_10 = numpy.einsum("n,niu->iu", dM_AA_ref_set[:,i,j], F_B_set)
-              g_10+= numpy.einsum("n,niu->iu", dM_BB_ref_set[:,i,j], F_A_set)
-                                                                                   
-              u = numpy.zeros((N,6))
-              g_20 = numpy.einsum("n,niu,niw->iuw", dM_AA_ref_set[:,i,j], F_B_set, F_B_set)
-              g_20+= numpy.einsum("n,niu,niw->iuw", dM_BB_ref_set[:,i,j], F_A_set, F_A_set)
-              u[:,0] = g_20[:,0,0].copy()
-              u[:,1] = g_20[:,0,1].copy() * 2.0
-              u[:,2] = g_20[:,0,2].copy() * 2.0
-              u[:,3] = g_20[:,1,1].copy()
-              u[:,4] = g_20[:,1,2].copy() * 2.0
-              u[:,5] = g_20[:,2,2].copy()
-                                                                                   
-              g = numpy.zeros(dim_1 + dim_2)
-                                                                                   
-              g[:dim_1] = g_10.ravel().copy()
-              g[dim_1:] = u.ravel()
-              del u, g_10, g_20
-              g *= -2.0
-                                                                                   
-              s = - g @ Hi
+      # (0,2) and higher order susceptibilities present
+      else:
 
-              S_1[i,j] = s[:dim_1].copy().reshape(N,3)
-              S_2[i,j] = s[dim_1:].copy().reshape(N,6)
+         # construct Hessian
+         h_10_10 = H[:dim_1,:dim_1].copy()
+         h_10_20 = H[:dim_1,dim_1:].copy()
+         h_20_20 = H[dim_1:,dim_1:].copy()
 
-      s = numpy.hstack([S_1.ravel(), S_2.ravel()])
+         r = composite.symmetry_matrix(n)
+         I = numpy.identity(n)
+
+         del H
+         n_ = composite.composite_index_number(n)
+         DIM_1 = n_ * dim_1
+         DIM_2 = n_ * dim_2
+         DIM_3 = n_ 
+         DIM = DIM_1 + DIM_2 + DIM_3
+         H = numpy.zeros((DIM, DIM))
+         O1 = DIM_1 + DIM_2
+         O2 = O1 + DIM_3
+
+         # (10,10)
+         H_10_10 = numpy.einsum("ac,bd,ab,cd,iujw->abiucdjw",I,I,r,r,h_10_10.reshape(N,3,N,3))
+         H[     :DIM_1,     :DIM_1] = composite.form_superfutf(H_10_10, m1=4).reshape(DIM_1, DIM_1).copy()
+         del H_10_10
+
+         # (20,20)
+         H_20_20 = numpy.einsum("ac,bd,ab,cd,iujw->abiucdjw",I,I,r,r,h_20_20.reshape(N,6,N,6))
+         H[DIM_1:O1   ,DIM_1:O1   ] = composite.form_superfutf(H_20_20, m1=4).reshape(DIM_2, DIM_2).copy()
+         del H_20_20
+
+         # (02,02)
+         X = numpy.einsum("nac,nbd->abcd", A_AB_set, A_AB_set)
+         X+= numpy.einsum("nac,nbd->abcd", A_BA_set, A_BA_set)
+         H_02_02 = numpy.einsum("ab,cd,abcd->abcd", r, r, X)
+         H[O1:O2   ,O1:O2   ] = composite.form_superfutf(H_02_02, m1=2).reshape(DIM_3, DIM_3).copy()
+         del H_02_02
+
+         H*= 2.0
+
+         print(H)
+         Hi = self._invert_hessian(H)
+
+        
+         raise NotImplementedError
 
       # Extract susceptibilities
       psi4.core.print_out(" * Setting the DMS tensors...\n")
@@ -1508,6 +1586,16 @@ class Translation_DMSFit(DMSFit):
              G_ref[:n,:n].fill(0.0)
              G_ref[n:,n:].fill(0.0)
 
+             if 1:
+                D_com[:n,:n] = self._D0 
+                D_com[n:,n:] = self._D0
+                D_ref[:n,:n] = self._D0
+                D_ref[n:,n:] = self._D0
+                                       
+                G_com[:n,:n] = self._G0
+                G_com[n:,n:] = self._G0
+                G_ref[:n,:n] = self._G0
+                G_ref[n:,n:] = self._G0
 
 
           H = H_set[s]

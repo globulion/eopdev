@@ -5,7 +5,7 @@
  Bartosz Błasiak, Gundelfingen, Feb 2020
 """
 
-__all__ = ["symmetry_matrix",
+__all__ = ["symmetry_matrix", "composite_index_number",
            "retrieve_matrix",
            "retrieve_tensor",
            "retrieve_supertensor",
@@ -15,11 +15,13 @@ __all__ = ["symmetry_matrix",
 import math
 import numpy
 
-def summetry_matrix(n):
+def symmetry_matrix(n):
     "2D Cartesian symmetry numbers r_ij such that 1 if i==j, 2 otherwise."
-    r = numpy.ones(n)
+    r = numpy.ones((n,n))
     for i in range(n): r[i,i] = 1.0
     return r
+
+composite_index_number = lambda n: int(n*(n+1)/2)
     
 def retrieve_matrix(g_triu):
     "For preliminary test and design to extend to tensor version"
