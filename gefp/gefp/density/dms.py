@@ -269,6 +269,7 @@ class Basic_DMS(DMS):
 
       self._available_orders = [(1,0), (2,0), (0,1)]
 
+
 class BasicD_DMS(DMS):
   """
  Basic model of DMS that handles induction up to second-order and
@@ -287,8 +288,6 @@ class BasicD_DMS(DMS):
       DMS.__init__(self, type)
 
       self._available_orders = [(1,0), (2,0), (0,2), (0,1)]
-
-
 
 
 class LinearCT_DMS(DMS):
@@ -311,8 +310,6 @@ class LinearCT_DMS(DMS):
       self._available_orders = [(1,0), (2,0), (0,1), (1,1)]
 
 
-  # --> Implementation <-- #
-
 class LinearCT_D_DMS(DMS):
   """
  Basic model of DMS that handles induction up to second-order,
@@ -332,10 +329,6 @@ class LinearCT_D_DMS(DMS):
       DMS.__init__(self, type)
 
       self._available_orders = [(1,0), (2,0), (0,2), (0,1), (1,1)]
-
-
-  # --> Implementation <-- #
-
 
 
 class QuadraticCT_DMS(DMS):
@@ -359,10 +352,6 @@ class QuadraticCT_DMS(DMS):
       self._available_orders = [(1,0), (2,0), (0,1), (1,1), (2,1)]
 
 
-  # --> Implementation <-- #
-
-
-
 class QuadraticCT_D_DMS(DMS):
   """
  Model of DMS that handles induction up to second-order,
@@ -384,8 +373,6 @@ class QuadraticCT_D_DMS(DMS):
 
       self._available_orders = [(1,0), (2,0), (0,2), (0,1), (1,1), (2,1)]
 
-
-  # --> Implementation <-- #
 
 
 class DMSFit(ABC):
@@ -415,6 +402,7 @@ class DMSFit(ABC):
                         "DMATPOL_NTEST_CHARGE" : 10,
                         "DMATPOL_TEST_CHARGE"  : 0.001})
       self._use_iterative_model = use_iterative_model
+      self._e0 = None
       self._wfn_0= None
       self._bfs_0= None
       self._nbf = None
@@ -509,7 +497,7 @@ class DMSFit(ABC):
       psi4.core.print_out(" ---> Computing Unperturbed Wavefunction <---\n\n")
 
       # Compute HF or DFT wavefunction of molecule of interest
-      g, self._wfn_0 = PSI4_DRIVER(self._method, molecule=self._mol, return_wfn=True)
+      self._e0, self._wfn_0 = PSI4_DRIVER(self._method, molecule=self._mol, return_wfn=True)
 
       # Set the AO basis set
       self._bfs_0 = self._wfn_0.basisset()
@@ -1143,7 +1131,7 @@ class Translation_DMSFit(DMSFit):
           if order in dms.available_orders(): dms._generate_B_from_s(order)
 
 
-  def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):#TODO
+  def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):#OK
       "Compute 2nd group of parameters"
       psi4.core.print_out(" ---> Computing DMS for Z2 group of type %s <---\n\n" % dms._type_long)
       n = dms.n()
@@ -1432,7 +1420,7 @@ class Translation_DMSFit(DMSFit):
           if order in dms.available_orders(): dms._generate_B_from_s(order)
 
 
-  def _check(self):
+  def _check(self):#OK
       "Check the quality of fitting on training set"
       s = self._nsamples
       n = self._dms_da.n()
@@ -1539,6 +1527,15 @@ class Translation_DMSFit(DMSFit):
               dG_AB_com+= numpy.einsum("ac,ix,iy,cbixy->ab",w_AB, F_A, F_A, b_21)
               dG_AB_com+= numpy.einsum("ac,ix,iy,cbixy->ab",w_BA, F_B, F_B, b_21).T
 
+          if 0:
+           dD_AA_com = dD_AA_ref.copy()
+           dD_BB_com = dD_BB_ref.copy()
+           dG_AA_com = dG_AA_ref.copy()
+           dG_BB_com = dG_BB_ref.copy()
+          #dD_AB_com.fill(0.0)
+          #dG_AB_com.fill(0.0)
+
+
           # block AA
           rms_da = self._rms(dD_AA_ref, dD_AA_com)
           rms_g  = self._rms(dG_AA_ref, dG_AA_com)
@@ -1606,25 +1603,25 @@ class Translation_DMSFit(DMSFit):
           dD_ref = numpy.zeros((n+n,n+n))
           dG_ref = numpy.zeros((n+n,n+n))
 
-          dD_com[:n,:n] = dD_AA_com
-          dD_com[n:,n:] = dD_BB_com
-          dD_com[:n,n:] = dD_AB_com
-          dD_com[n:,:n] = dD_AB_com.T
+          dD_com[:n,:n] = dD_AA_com.copy() 
+          dD_com[n:,n:] = dD_BB_com.copy()
+          dD_com[:n,n:] = dD_AB_com.copy()
+          dD_com[n:,:n] = dD_AB_com.copy().T
 
-          dD_ref[:n,:n] = dD_AA_ref
-          dD_ref[n:,n:] = dD_BB_ref
-          dD_ref[:n,n:] = dD_AB_ref
-          dD_ref[n:,:n] = dD_AB_ref.T
+          dD_ref[:n,:n] = dD_AA_ref.copy()
+          dD_ref[n:,n:] = dD_BB_ref.copy()
+          dD_ref[:n,n:] = dD_AB_ref.copy()
+          dD_ref[n:,:n] = dD_AB_ref.copy().T
 
-          dG_com[:n,:n] = dG_AA_com
-          dG_com[n:,n:] = dG_BB_com
-          dG_com[:n,n:] = dG_AB_com
-          dG_com[n:,:n] = dG_AB_com.T
+          dG_com[:n,:n] = dG_AA_com.copy()
+          dG_com[n:,n:] = dG_BB_com.copy()
+          dG_com[:n,n:] = dG_AB_com.copy()
+          dG_com[n:,:n] = dG_AB_com.copy().T
 
-          dG_ref[:n,:n] = dG_AA_ref
-          dG_ref[n:,n:] = dG_BB_ref
-          dG_ref[:n,n:] = dG_AB_ref
-          dG_ref[n:,:n] = dG_AB_ref.T
+          dG_ref[:n,:n] = dG_AA_ref.copy()
+          dG_ref[n:,n:] = dG_BB_ref.copy()
+          dG_ref[:n,n:] = dG_AB_ref.copy()
+          dG_ref[n:,:n] = dG_AB_ref.copy().T
 
           #
           D_com = dD_com.copy()
@@ -1671,8 +1668,8 @@ class Translation_DMSFit(DMSFit):
           F_com = G_com + H
           F_ref = G_ref + H
 
-          E_com = (D_com @ (H + F_com)).trace() + self._E_nuc_set[s]
-          E_ref = (D_ref @ (H + F_ref)).trace() + self._E_nuc_set[s]
+          E_com = (D_com @ (H + F_com)).trace() + self._E_nuc_set[s] - 2.0 * self._e0
+          E_ref = (D_ref @ (H + F_ref)).trace() + self._E_nuc_set[s] - 2.0 * self._e0
 
           psi4.core.print_out(" Sample=%03d Dimer Energy %14.5f  %14.5f\n" \
                    % (s+1, E_com, E_ref))
@@ -1782,7 +1779,7 @@ class Translation_DMSFit(DMSFit):
       out.write(log)
       out.close() 
 
-  def _determine_perturbing_densities(self):
+  def _determine_perturbing_densities(self):#OK
       ""
       if not self._use_iterative_model:
          DA = self._dms_da._M.copy()
