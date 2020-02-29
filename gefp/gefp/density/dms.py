@@ -41,7 +41,7 @@ class DMS(ABC):
   - rotation, translation and superimposition
   - read/write capabilities based on FRG format (Solvshift)
 """
-  def __init__(self, typ):#OK
+  def __init__(self, typ):
       ABC.__init__(self)
 
       self._bfs      = None           # BasisSet
@@ -59,7 +59,7 @@ class DMS(ABC):
       self._available_orders = None   # Implemented orders of DMS tensors
 
   @classmethod
-  def create(cls, dms_type='da', order_type='basic'):#OK
+  def create(cls, dms_type='da', order_type='basic'):
       if   order_type.lower() == 'basic' : return         Basic_DMS(dms_type)
       elif order_type.lower() == 'bd'    : return        BasicD_DMS(dms_type)
       elif order_type.lower() == 'ct-1'  : return      LinearCT_DMS(dms_type)
@@ -70,7 +70,7 @@ class DMS(ABC):
          raise NotImplementedError
       
 
-  def available_orders(self): return self._available_orders #OK
+  def available_orders(self): return self._available_orders
 
   def N(self): return self._N
   def n(self): return self._n
@@ -80,7 +80,7 @@ class DMS(ABC):
       else:
           raise ValueError("DMS Error: B(%i,%i) is not available" % (m,n))
 
-  def set_bfs(self, bfs):#OK
+  def set_bfs(self, bfs):
       self._bfs = bfs
       self._mol = bfs.molecule()
       self._n   = bfs.nbf()
@@ -89,15 +89,7 @@ class DMS(ABC):
   def set_s1(self, s): self._s1 = s.copy()
   def set_s2(self, s): self._s2 = s.copy()
 
-  def _init(self, t):#OK
-      "Initialize information"
-      u = {"d": "Density", "g": "Fock", "a": "Alpha", "b": "Beta"}
-      m = [x for x in t.lower()]
-      self._type      = t.lower()
-      self._type_long = u[m[0]] 
-      if len(m)>1: self._type_long+= '-' + u[m[1]]
-
-  def B(self, m, n):#OK
+  def B(self, m, n):
       "Retrieve DMS tensor from parameter vector"
       order = (m, n)
       if order in self._available_orders:
@@ -108,7 +100,7 @@ class DMS(ABC):
       else:
          raise ValueError("This DMS object does not include order (%i,%i)" %(m,n))
 
-  def rotate(self, rot):#OK
+  def rotate(self, rot):
       "Rotate DMS tensor. Warning: bfs is not rotated. Only DMS and molecule."
       # rotate OPDM
       self._M, R = rotate_ao_matrix(self._M, rot, self._bfs, return_rot=True, aomo=False)
@@ -121,7 +113,7 @@ class DMS(ABC):
       for order in self._available_orders:
           self._rotate(rot, R, order)
 
-  def translate(self, t):#OK
+  def translate(self, t):
       "Translate DMS object"
       # translate molecule
       xyz = self._mol.geometry().to_array(dense=True)
@@ -251,6 +243,15 @@ class DMS(ABC):
           raise ValueError(" DMS Error: Wrong order for rotation chosen")
 
 
+  def _init(self, t):
+      "Initialize information"
+      u = {"d": "Density", "g": "Fock", "a": "Alpha", "b": "Beta"}
+      m = [x for x in t.lower()]
+      self._type      = t.lower()
+      self._type_long = u[m[0]] 
+      if len(m)>1: self._type_long+= '-' + u[m[1]]
+
+
 class Basic_DMS(DMS):
   """
  Basic model of DMS that handles induction up to second-order and
@@ -264,7 +265,7 @@ class Basic_DMS(DMS):
   2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
   3.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
 """
-  def __init__(self, type='da'):#OK
+  def __init__(self, type='da'):
       DMS.__init__(self, type)
 
       self._available_orders = [(1,0), (2,0), (0,1)]
@@ -284,7 +285,7 @@ class BasicD_DMS(DMS):
   3.            (0,2)          Pauli          Symmetric     (n,n)         Z(1)
   4.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
 """
-  def __init__(self, type='da'):#OK
+  def __init__(self, type='da'):
       DMS.__init__(self, type)
 
       self._available_orders = [(1,0), (2,0), (0,2), (0,1)]
@@ -304,7 +305,7 @@ class LinearCT_DMS(DMS):
   3.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
   4.            (1,1)          CT             Asymmetric    (n,n,N,3)     Z(2)
 """
-  def __init__(self, type='da'):#OK
+  def __init__(self, type='da'):
       DMS.__init__(self, type)
 
       self._available_orders = [(1,0), (2,0), (0,1), (1,1)]
@@ -325,7 +326,7 @@ class LinearCT_D_DMS(DMS):
   4.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
   5.            (1,1)          CT             Asymmetric    (n,n,N,3)     Z(2)
 """
-  def __init__(self, type='da'):#OK
+  def __init__(self, type='da'):
       DMS.__init__(self, type)
 
       self._available_orders = [(1,0), (2,0), (0,2), (0,1), (1,1)]
@@ -346,7 +347,7 @@ class QuadraticCT_DMS(DMS):
   4.            (1,1)          CT             Asymmetric    (n,n,N,3)     Z(2)
   5.            (2,1)          CT             Asymmetric    (n,n,N,3,3)   Z(2)
 """
-  def __init__(self, type='da'):#OK
+  def __init__(self, type='da'):
       DMS.__init__(self, type)
 
       self._available_orders = [(1,0), (2,0), (0,1), (1,1), (2,1)]
@@ -368,7 +369,7 @@ class QuadraticCT_D_DMS(DMS):
   5.            (1,1)          CT             Asymmetric    (n,n,N,3)     Z(2)
   6.            (2,1)          CT             Asymmetric    (n,n,N,3,3)   Z(2)
 """
-  def __init__(self, type='da'):#OK
+  def __init__(self, type='da'):
       DMS.__init__(self, type)
 
       self._available_orders = [(1,0), (2,0), (0,2), (0,1), (1,1), (2,1)]
@@ -376,32 +377,167 @@ class QuadraticCT_D_DMS(DMS):
 
 
 class DMSFit(ABC):
-  """
+   """
  Method to fit DMS tensors.
 """
-  minimum_atom_atom_distance = 1.2 / psi4.constants.bohr2angstroms
-  stop_when_error_hessian    = True
+
+   # ---> Global defaults <--- #
+                                                                                                       
+   minimum_atom_atom_distance = 1.2 / psi4.constants.bohr2angstroms
+   stop_when_error_hessian    = True
+                                                                                                       
+   def __init__(self, mol, method, 
+                      nsamples, dms_types, order_type, use_iterative_model):
+       ABC.__init__(self)
+                                                                                                       
+       if mol.multiplicity() > 1:
+          raise NotImplementedError(" DMSFit Error: Open-shell systems are not implemented yet.")
+                                                                                                       
+       # Molecule
+       self._mol       = mol
+       # QM Method
+       self._method    = method
+       # Number of Fitting Samples
+       self._nsamples  = nsamples
+       # Types of DMS to Fit
+       self._dms_types = dms_types
+       # DMS Model
+       self._order_type= order_type
+       # Iterative Model
+       self._use_iterative_model = use_iterative_model
+                                                                                                       
+                                                                                                       
+   @classmethod
+   def create(cls, mol, fit_type="transl", dms_types="all", order_type='basic',
+                   nsamples=100, method='scf', 
+                   use_iterative_model=True):
+       if fit_type.lower().startswith("tran"): 
+          return Translation_DMSFit(mol, method, nsamples, dms_types, order_type, use_iterative_model)
+       elif fit_type.lower().startswith("rot"): 
+          return Rotation_DMSFit(mol, method, nsamples, dms_types, order_type, use_iterative_model)
+       else: 
+          raise NotImplementedError("This type of DMS fitting is not implemented yet")
+
+
+   # ---> Abstract methods <--- #
+
+   @abstractmethod
+   def run(self): pass
+
+   @abstractmethod
+   def B(self): pass
+
+   @abstractmethod
+   def _compute_samples(self): pass
+
+   @abstractmethod
+   def _check(self): pass
+
+
+class _Global_Settings_DMSFit(DMSFit):
+   """
+ Global settings and utilities to fit DMS tensors.
+"""
+   def __init__(self, mol, method,                                                         
+                      nsamples, dms_types, order_type, use_iterative_model):
+       super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model)
+                                                                                           
+       # Number of atoms under DMS fitting
+       self._natoms    = self._mol.natom()
+                                                                                           
+       # Current ID of statistical sample
+       self._i         = 0
+
+
+   # ---> Protected Utilities <--- #
+
+   def _invert_hessian(self, h):                                                                                
+       "Invert Hessian matrix"                                                                               
+       det= numpy.linalg.det(h)
+       psi4.core.print_out(" ** Hessian Determinant= %14.6E\n" % det)
+       hi = numpy.linalg.inv(h)
+       I = numpy.dot(hi, h).diagonal().sum()
+       d = I - len(hi)
+       psi4.core.print_out(" ** Hessian Dimension= (%8d) x (%8d)\n" % h.shape)
+       psi4.core.print_out(" ** delta=%14.6f %14.2f %d\n" % (d,I,h.shape[0]))
+       if DMSFit.stop_when_error_hessian:
+          if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic! d=%f I= %f DIM=%f" % (d,I,h.shape[0]))
+       return hi      
+                                                                                                                
+   def _compute_efield_due_to_fragment(self, mol_j, D_j, ints_j, ri):#OK
+       "Compute electric field at ri due to mol_j with D_j and field integrals ints_j"
+       fi= numpy.zeros(3)
+       for j in range(mol_j.natom()):
+           xj= mol_j.x(j)
+           yj= mol_j.y(j)
+           zj= mol_j.z(j)
+           Zj= numpy.float(mol_j.Z(j))
+                                                                                                                
+           rij = numpy.array([ri[0]-xj, ri[1]-yj, ri[2]-zj])
+           rij_norm = numpy.linalg.norm(rij)
+           fi += Zj * rij / rij_norm**3
+                                                                                                                
+       fi[0] += (D_j @ ints_j[0]).trace() 
+       fi[1] += (D_j @ ints_j[1]).trace() 
+       fi[2] += (D_j @ ints_j[2]).trace() 
+       return fi
+                                                                                                                
+   def _clash(self, geom_1, geom_2):#OK
+       "Determine if two geometries clash or not"
+       clash = False
+       for a in geom_1:
+           for b in geom_2:
+               r_ab = numpy.sqrt(sum((a-b)**2))
+               if r_ab < DMSFit.minimum_atom_atom_distance:
+                  clash = True
+                  break
+       return clash
+                                                                                                                
+   def _save_xyz(self, mol, out_name, misc=None):
+       "Save molecule mol to xyz file out_name with additional information misc"
+       out=open(out_name,'w')
+       log = mol.to_string('xyz', units='Angstrom')
+       if misc is not None:
+          log = log.split('\n')
+          log[1] = "%s" % misc
+          log = '\n'.join(log)
+       out.write(log+"\n"); out.close()
+
+   def _save_dD(self, D, prefix='dd'):          
+       "Save matrix to a file"
+       name= prefix + '_%03d.dat' 
+       out = open(name % self._i, 'w')
+       log = ''
+       n = len(D)
+       for row in D:
+           log+= n*"%13.5E" % tuple(row) + "\n"
+       out.write(log)
+       out.close() 
+
+   def _rms(self, a, b): 
+       "RMS between arrays a and b"
+       return numpy.sqrt(((a-b)**2).sum()/a.size)
+
+
+
+
+
+class EFP_DMSFit(_Global_Settings_DMSFit):
+  """
+ DMS Fitting for EFP-like Molecular Fragments
+"""
 
   def __init__(self, mol, method, 
-                     nsamples, dms_types, order_type, use_iterative_model):#OK
-      ABC.__init__(self)
+                     nsamples, dms_types, order_type, use_iterative_model):
+      super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model)
 
-      if mol.multiplicity() > 1:
-         raise NotImplementedError(" DMSFit Error: Open-shell systems are not implemented yet.")
-
-      self._mol       = mol
-      self._method    = method
-      self._natoms    = mol.natom()
-      self._nsamples  = nsamples
-      self._dms_types = dms_types
-      self._order_type= order_type
       psi4.set_options({"DMATPOL_TRAINING_MODE":"CHARGES",
                         "DMATPOL_FIELD_RANK"   : 2,
                         "DMATPOL_GRADIENT_RANK": 0,
                         "DMATPOL_NSAMPLES"     : nsamples,
                         "DMATPOL_NTEST_CHARGE" : 10,
                         "DMATPOL_TEST_CHARGE"  : 0.001})
-      self._use_iterative_model = use_iterative_model
+
       self._e0 = None
       self._wfn_0= None
       self._bfs_0= None
@@ -411,29 +547,27 @@ class DMSFit(ABC):
       self._D0  = None
       self._G0  = None
 
+      self._dimer_wfn = None
+      self._dimer_mol = None
+      self._dimer_mints = None
 
-  @classmethod
-  def create(cls, mol, fit_type="transl", dms_types="all", order_type='basic',
-                  nsamples=100, method='scf', 
-                  use_iterative_model=True):#OK
-      if fit_type.lower().startswith("tran"): 
-         return Translation_DMSFit(mol, method, nsamples, dms_types, order_type, use_iterative_model)
-      elif fit_type.lower().startswith("rot"): 
-         return Rotation_DMSFit(mol, method, nsamples, dms_types, order_type, use_iterative_model)
-      else: 
-         raise NotImplementedError("This type of DMS fitting is not implemented yet")
+      self._E_nuc_set = []
+      self._DIP_nuc_set = []
+
+
+  # ---> Implementation <--- #
 
   def run(self):#TODO
       "Run the fitting procedure"
       # compute quantities for isolated molecule
-      self._compute_isolated_molecule()
+      self.__compute_isolated_molecule()
 
       s = self._nsamples
       n = self._dms_da.n()
       N = self._dms_da.N()
 
       # compute DMS for isolated molecule in external electric field
-     #self._compute_dms_external_field()
+     #self.__compute_dms_external_field()
 
       # prepare for the DMS fittings
       self._compute_samples()
@@ -491,9 +625,80 @@ class DMSFit(ABC):
       else: raise NotImplementedError("DMSFit Error: Only 'da' and 'g' available now.")
 
 
-  # --- protected --- #
 
-  def _compute_isolated_molecule(self):#OK
+  # ---> Protected Interface <--- #
+  
+  def _determine_perturbing_densities(self):                                                       
+      "Determine the perturbations depending on the type of DMS model"
+      if not self._use_iterative_model:
+         DA = self._dms_da._M.copy()
+         DB = DA.copy()
+         #
+         GA = self._dms_g ._M.copy()
+         GB = GA.copy()
+      else:
+         D = self._dimer_wfn.Da().to_array(dense=True)
+         DA= D[:self._nbf,:self._nbf]
+         DB= D[self._nbf:,self._nbf:]
+         #
+         G = self._dimer_wfn.Fa().to_array(dense=True) - self._dimer_wfn.H().to_array(dense=True)
+         GA= G[:self._nbf,:self._nbf]
+         GB= G[self._nbf:,self._nbf:]
+      #
+      self._DA = DA
+      self._DB = DB
+      #
+      self._GA = GA
+      self._GB = GB
+
+
+
+  def _compute_efield(self):
+      "Compute instantaneous electric field on fragment due to other fragment"
+
+      # field due to B evaluated on A atoms
+      F_B_set = []
+      F_B_mat_set = []
+      for i in range(self._mol_A.natom()):
+          xi= self._mol_A.x(i)
+          yi= self._mol_A.y(i)
+          zi= self._mol_A.z(i)
+
+          ri = numpy.array([xi,yi,zi])
+          ints = [x.to_array(dense=True)[self._nbf:,self._nbf:] for x in self._dimer_mints.electric_field(origin=ri)]
+
+          f = self._compute_efield_due_to_fragment(self._mol_B, self._DB, ints, ri)
+          F_B_set.append(f)
+          F_B_mat_set.append(numpy.array(ints))
+
+      F_B_set = numpy.array(F_B_set)
+      F_B_mat_set = numpy.array(F_B_mat_set)
+
+      # field due to A evaluated on B atoms
+      F_A_set = []
+      F_A_mat_set = []
+      for i in range(self._mol_B.natom()):
+          xi= self._mol_B.x(i)
+          yi= self._mol_B.y(i)
+          zi= self._mol_B.z(i)
+
+          ri = numpy.array([xi,yi,zi])
+          ints = [x.to_array(dense=True)[:self._nbf,:self._nbf] for x in self._dimer_mints.electric_field(origin=ri)]
+
+          f = self._compute_efield_due_to_fragment(self._mol_A, self._DA, ints, ri)
+          F_A_set.append(f)
+          F_A_mat_set.append(numpy.array(ints))
+
+      F_A_set = numpy.array(F_A_set)
+      F_A_mat_set = numpy.array(F_A_mat_set)
+
+      s = 1.0
+      return F_A_set*s, F_B_set*s, F_A_mat_set, F_B_mat_set
+
+   
+  # ---> Private Interface <--- #
+
+  def __compute_isolated_molecule(self):
       psi4.core.print_out(" ---> Computing Unperturbed Wavefunction <---\n\n")
 
       # Compute HF or DFT wavefunction of molecule of interest
@@ -527,71 +732,15 @@ class DMSFit(ABC):
       #    raise valueerror(" DMSFit Error: Incorrect type of dms tensors. Available: da, db, fa, fb.")
 
 
-  def _compute_dms_external_field(self):#OK
+  def __compute_dms_external_field(self):
       "DMS for external electric field only (without other molecules)"
       solver = oepdev.GenEffParFactory.build("POLARIZATION", self._wfn_0, self._wfn.options())
       self._dms_ind_0 = solver.compute()
 
-  def _invert_hessian(self, h):#OK
-      "Invert Hessian matrix"                                                                               
-      det= numpy.linalg.det(h)
-      psi4.core.print_out(" ** Hessian Determinant= %14.6E\n" % det)
-      hi = numpy.linalg.inv(h)
-      I = numpy.dot(hi, h).diagonal().sum()
-      d = I - len(hi)
-      psi4.core.print_out(" ** Hessian Dimension= (%8d) x (%8d)\n" % h.shape)
-      psi4.core.print_out(" ** delta=%14.6f %14.2f %d\n" % (d,I,h.shape[0]))
-      if DMSFit.stop_when_error_hessian:
-         if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic! d=%f I= %f DIM=%f" % (d,I,h.shape[0]))
-      return hi      
 
-  def _compute_efield_due_to_fragment(self, mol_j, D_j, ints_j, ri):#OK
-      "Compute electric field at ri due to mol_j with D_j and field integrals ints_j"
-      fi= numpy.zeros(3)
-      for j in range(mol_j.natom()):
-          xj= mol_j.x(j)
-          yj= mol_j.y(j)
-          zj= mol_j.z(j)
-          Zj= numpy.float(mol_j.Z(j))
-
-          rij = numpy.array([ri[0]-xj, ri[1]-yj, ri[2]-zj])
-          rij_norm = numpy.linalg.norm(rij)
-          fi += Zj * rij / rij_norm**3
-
-      fi[0] += (D_j @ ints_j[0]).trace() 
-      fi[1] += (D_j @ ints_j[1]).trace() 
-      fi[2] += (D_j @ ints_j[2]).trace() 
-      return fi
-
-  def _clash(self, geom_1, geom_2):#OK
-      "Determine if two geometries clash or not"
-      clash = False
-      for a in geom_1:
-          for b in geom_2:
-              r_ab = numpy.sqrt(sum((a-b)**2))
-              if r_ab < DMSFit.minimum_atom_atom_distance:
-                 clash = True
-                 break
-      return clash
-
-  def _save_xyz(self, mol, out_name, misc=None):
-      "Save molecule to xyz file"
-      out=open(out_name,'w')
-      log = mol.to_string('xyz', units='Angstrom')
-      if misc is not None:
-         log = log.split('\n')
-         log[1] = "%s" % misc
-         log = '\n'.join(log)
-      out.write(log+"\n"); out.close()
 
 
   # ---> Abstract methods <--- #
-
-  @abstractmethod
-  def _construct_aggregate(self): pass
-
-  @abstractmethod
-  def _compute_samples(self): pass
 
   @abstractmethod
   def _compute_group_1(self): pass
@@ -600,33 +749,27 @@ class DMSFit(ABC):
   def _compute_group_2(self): pass
 
   @abstractmethod
-  def _check(self): pass
+  def _construct_aggregate(self): pass
 
 
 
-class Translation_DMSFit(DMSFit):
+
+class Translation_DMSFit(EFP_DMSFit):
   """
  Translation method to fit DMS tensors.
 """
   def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model,
                      start=1.0, srange=2.0):
-      DMSFit.__init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model)
+      super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model)
 
       # translation parameters
-      self._i = 0
       self._start = start
       self._range = srange
 
-      self._dimer_wfn = None
-      self._dimer_mol = None
-      self._dimer_mints = None
-
-      self._E_nuc_set = []
-      self._DIP_nuc_set = []
 
   # ---> Implementation <--- #
 
-  def _construct_aggregate(self):#OK
+  def _construct_aggregate(self):
       "Create next dimer by translating a molecule"
       psi4.core.clean()
 
@@ -646,7 +789,7 @@ class Translation_DMSFit(DMSFit):
       log += "--\n"
       log += "0 1\n"
 
-      t = self._new_translation()
+      t = self.__new_translation()
 
       for i in range(self._natoms):
           log += "%s" % self._mol.symbol(i)
@@ -689,7 +832,7 @@ class Translation_DMSFit(DMSFit):
       #
       return mol
 
-  def _compute_samples(self):#OK
+  def _compute_samples(self):
       "Compute electric fields, CT channels and reference deformation matrices"
 
       dD_AA_set_ref = []
@@ -1131,7 +1274,7 @@ class Translation_DMSFit(DMSFit):
           if order in dms.available_orders(): dms._generate_B_from_s(order)
 
 
-  def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):#OK
+  def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):
       "Compute 2nd group of parameters"
       psi4.core.print_out(" ---> Computing DMS for Z2 group of type %s <---\n\n" % dms._type_long)
       n = dms.n()
@@ -1420,7 +1563,7 @@ class Translation_DMSFit(DMSFit):
           if order in dms.available_orders(): dms._generate_B_from_s(order)
 
 
-  def _check(self):#OK
+  def _check(self):
       "Check the quality of fitting on training set"
       s = self._nsamples
       n = self._dms_da.n()
@@ -1699,55 +1842,9 @@ class Translation_DMSFit(DMSFit):
 
 
 
-  # -----> Utility methods <----- #
+  # -----> Private Utility methods <----- #
 
-  def _compute_efield(self):#OK
-      "Compute instantaneous electric field on fragment due to other fragment"
-
-      # field due to B evaluated on A atoms
-      F_B_set = []
-      F_B_mat_set = []
-      for i in range(self._mol_A.natom()):
-          xi= self._mol_A.x(i)
-          yi= self._mol_A.y(i)
-          zi= self._mol_A.z(i)
-
-          ri = numpy.array([xi,yi,zi])
-          ints = [x.to_array(dense=True)[self._nbf:,self._nbf:] for x in self._dimer_mints.electric_field(origin=ri)]
-
-          f = self._compute_efield_due_to_fragment(self._mol_B, self._DB, ints, ri)
-          F_B_set.append(f)
-          F_B_mat_set.append(numpy.array(ints))
-
-      F_B_set = numpy.array(F_B_set)
-      F_B_mat_set = numpy.array(F_B_mat_set)
-
-      # field due to A evaluated on B atoms
-      F_A_set = []
-      F_A_mat_set = []
-      for i in range(self._mol_B.natom()):
-          xi= self._mol_B.x(i)
-          yi= self._mol_B.y(i)
-          zi= self._mol_B.z(i)
-
-          ri = numpy.array([xi,yi,zi])
-          ints = [x.to_array(dense=True)[:self._nbf,:self._nbf] for x in self._dimer_mints.electric_field(origin=ri)]
-
-          f = self._compute_efield_due_to_fragment(self._mol_A, self._DA, ints, ri)
-          F_A_set.append(f)
-          F_A_mat_set.append(numpy.array(ints))
-
-      F_A_set = numpy.array(F_A_set)
-      F_A_mat_set = numpy.array(F_A_mat_set)
-
-      s = 1.0
-      return F_A_set*s, F_B_set*s, F_A_mat_set, F_B_mat_set
-   
-
-
-  def _rms(self, a, b): return numpy.sqrt(((a-b)**2).sum()/a.size)
-
-  def _draw_translation(self):#OK
+  def __draw_translation(self):
       theta = numpy.arccos(numpy.random.random())
       phi   = 2.0 * numpy.pi * numpy.random.random()
       r     = self._start + self._range * numpy.sqrt(numpy.random.random())
@@ -1758,61 +1855,27 @@ class Translation_DMSFit(DMSFit):
       t     = numpy.array([x,y,z])
       return t
 
-  def _new_translation(self):#OK
+  def __new_translation(self):
       "Select new random translation"
       done = False
       geom = self._mol.geometry().to_array(dense=True) 
       while not done:
-         t = self._draw_translation()
+         t = self.__draw_translation()
          if not self._clash(geom, geom+t):
             done = True 
       return t
 
-  def _save_dD(self, D, prefix='dd'):#OK
-      "Save matrix to a file"
-      name= prefix + '_%03d.dat' 
-      out = open(name % self._i, 'w')
-      log = ''
-      n = len(D)
-      for row in D:
-          log+= n*"%13.5E" % tuple(row) + "\n"
-      out.write(log)
-      out.close() 
-
-  def _determine_perturbing_densities(self):#OK
-      ""
-      if not self._use_iterative_model:
-         DA = self._dms_da._M.copy()
-         DB = DA.copy()
-         #
-         GA = self._dms_g ._M.copy()
-         GB = GA.copy()
-      else:
-         D = self._dimer_wfn.Da().to_array(dense=True)
-         DA= D[:self._nbf,:self._nbf]
-         DB= D[self._nbf:,self._nbf:]
-         #
-         G = self._dimer_wfn.Fa().to_array(dense=True) - self._dimer_wfn.H().to_array(dense=True)
-         GA= G[:self._nbf,:self._nbf]
-         GB= G[self._nbf:,self._nbf:]
-      #
-      self._DA = DA
-      self._DB = DB
-      #
-      self._GA = GA
-      self._GB = GB
 
 
-class Rotation_DMSFit(DMSFit):
+class Rotation_DMSFit(EFP_DMSFit):
   """
  Rotation method to fit DMS tensors.
 """
   def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model,
                      start=1.0, srange=2.0):
-      DMSFit.__init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model)
+      super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model)
 
       # translation parameters
-      self._i = 0
       self._start = start
       self._range = srange
 
