@@ -5,12 +5,14 @@
  Bartosz Błasiak, Gundelfingen, Feb 2020
 """
 
-__all__ = ["symmetry_matrix", "composite_index_number",
+__all__ = ["symmetry_matrix", "number_of_elements",
            "retrieve_matrix",
            "retrieve_tensor",
            "retrieve_supertensor",
            "form_futf",
-           "form_superfutf"]
+           "form_superfutf",
+           "partial_contraction",
+           "partial_contraction_with_trace"]
 
 import math
 import numpy
@@ -21,7 +23,8 @@ def symmetry_matrix(n):
     for i in range(n): r[i,i] = 1.0
     return r
 
-composite_index_number = lambda n: int(n*(n+1)/2)
+# number of composite elements {uw}
+number_of_elements = lambda n: int(n*(n+1)/2)
     
 def retrieve_matrix(g_triu):
     "For preliminary test and design to extend to tensor version"
@@ -245,3 +248,47 @@ def form_superfutf(H, m1=2):
   
     H_1 = H_1.transpose(s)            #  n_   (d1,...,dk) |  m_   (d1,...,dl)
     return H_1
+
+
+def partial_contraction(W, X):
+    """
+ -----------------------------------------------------------------------
+
+ Partial contraction of two 2-rank tensors Y = W · X
+
+ -----------------------------------------------------------------------
+
+ From two matrices W and X generate a 3-rank tensor Y such that:
+
+ Y_{a|bc} [W,X] = \sum_{p ≤ a}  W_{pb} X_{pc}
+
+ -----------------------------------------------------------------------
+                                Bartosz Błasiak, Gundelfingen 2 Mar 2020
+"""
+    n = W.shape[0]
+    Y = numpy.zeros((n,n,n))
+
+    v = numpy.zeros((n,n))
+    for a in range(n):
+        v+= numpy.outer(W[a,:], X[a,:])
+        Y[a] = v.copy()
+
+    return Y
+
+def partial_contraction_with_trace(W, X): 
+    """
+ -----------------------------------------------------------------------
+
+ Partial contraction of two 2-rank tensors with trace Y = Tr[ W · X ]
+
+ -----------------------------------------------------------------------
+
+ From two matrices W and X generate a 2-rank tensor Y such that:
+
+ Y_{a|b} [W,X] = \sum_{p ≤ a}  W_{pb} X_{pa}
+
+ -----------------------------------------------------------------------
+                                Bartosz Błasiak, Gundelfingen 2 Mar 2020
+"""
+    Y = W.T @ numpy.triu(X)
+    return Y.T
