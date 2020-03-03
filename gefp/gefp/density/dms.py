@@ -140,7 +140,7 @@ class DMS(ABC):
       n  = self._n
       n2 = self._n**2 
       N  = self._N
-      n_ = composite.composite_index_number(n)
+      n_ = composite.number_of_elements(n)
 
       # ---> Group Z(1) <--- #
       # (1,0)
@@ -173,6 +173,7 @@ class DMS(ABC):
           B[:,:,:,2,0] = xz.copy()
           B[:,:,:,2,1] = yz.copy()
           self._B[(2,0)] = B
+
           
       # (0,2)
       if (0,2) in self._available_orders and order == (0,2):
@@ -459,7 +460,7 @@ class _Global_Settings_DMSFit(DMSFit):
        I = numpy.dot(hi, h).diagonal().sum()
        d = I - len(hi)
        psi4.core.print_out(" ** Hessian Dimension= (%8d) x (%8d)\n" % h.shape)
-       psi4.core.print_out(" ** delta=%14.6f %14.2f %d\n" % (d,I,h.shape[0]))
+       psi4.core.print_out(" ** delta=%14.6E %14.2f %d\n" % (d,I,h.shape[0]))
        if DMSFit.stop_when_error_hessian:
           if abs(d) > 0.0001: raise ValueError("Hessian is problemmatic! d=%f I= %f DIM=%f" % (d,I,h.shape[0]))
        return hi      
@@ -554,6 +555,11 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       self._E_nuc_set = []
       self._DIP_nuc_set = []
 
+      # DMS for external electric field (JCP 2018)
+      self._dms_ind_10 = None
+      self._dms_ind_20 = None
+
+
 
   # ---> Implementation <--- #
 
@@ -622,7 +628,15 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       "Get the susceptibilities"
       if   dtype.lower() == 'da': return self._dms_da.B(m,n)
       elif dtype.lower() == 'g' : return self._dms_g .B(m,n)
-      else: raise NotImplementedError("DMSFit Error: Only 'da' and 'g' available now.")
+      elif dtype.lower() == 'fa': 
+           if (m,n) == (1,0):
+               return self._dms_ind_10
+           elif (m,n) == (2,0):
+               return self._dms_ind_20
+           else: 
+               raise ValueError("DMSFit Error: Only 10 and 20 electric field susceptibilities are available")
+
+      else: raise NotImplementedError("DMSFit Error: Only 'da', 'g' and 'fa' available now.")
 
 
 
@@ -735,7 +749,9 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
   def __compute_dms_external_field(self):
       "DMS for external electric field only (without other molecules)"
       solver = oepdev.GenEffParFactory.build("POLARIZATION", self._wfn_0, self._wfn.options())
-      self._dms_ind_0 = solver.compute()
+      susc = solver.compute()
+      self._dms_ind_10 = ...
+      self._dms_ind_20 = ...
 
 
 
@@ -1171,23 +1187,24 @@ class Translation_DMSFit(EFP_DMSFit):
 
       # (0,2) and higher order susceptibilities present
       else:
-         h_10_10 = H[:dim_1,:dim_1].copy()
-         h_10_20 = H[:dim_1,dim_1:].copy()
-         h_20_20 = H[dim_1:,dim_1:].copy()
+         h_10_10 = H[:dim_1,:dim_1].copy() / 2.0
+         h_10_20 = H[:dim_1,dim_1:].copy() / 2.0
+         h_20_20 = H[dim_1:,dim_1:].copy() / 2.0
 
-         FF_A_set = numpy.einsum("niu,niw->uwni",F_A_set,F_A_set)
-         FF_B_set = numpy.einsum("niu,niw->uwni",F_B_set,F_B_set)
+         FF_A_set = numpy.einsum("niu,niw->uwni", F_A_set, F_A_set)
+         FF_B_set = numpy.einsum("niu,niw->uwni", F_B_set, F_B_set)
          FF_A_set = numpy.einsum("uw,uwni->uwni", composite.symmetry_matrix(3), FF_A_set)
          FF_B_set = numpy.einsum("uw,uwni->uwni", composite.symmetry_matrix(3), FF_B_set)
          FF_A_set = composite.form_futf(FF_A_set).transpose(1,2,0)
          FF_B_set = composite.form_futf(FF_B_set).transpose(1,2,0)
 
-         r = composite.symmetry_matrix(n)
          I = numpy.identity(n)
+         r = composite.symmetry_matrix(n)
+         t = numpy.triu(numpy.ones(n))
 
          del H # --> move it above!
 
-         n_ = composite.composite_index_number(n)
+         n_ = composite.number_of_elements(n)
          DIM_1 = n_ * dim_1
          DIM_2 = n_ * dim_2
          DIM_3 = n_ 
@@ -1199,63 +1216,116 @@ class Translation_DMSFit(EFP_DMSFit):
 
          # Construct gradient
          # (10)
-         g_10 = numpy.einsum("nab,niu->abiu", dM_AA_ref_set, F_B_set)
-         g_10+= numpy.einsum("nab,niu->abiu", dM_BB_ref_set, F_A_set)
-         g_10 = numpy.einsum("ab,abiu->abiu", r, g_10)
+         g_10 = numpy.zeros((n,n,N,3))
+         for s in range(self._nsamples):
+             dM_AA_ref = dM_AA_ref_set[s]
+             dM_BB_ref = dM_BB_ref_set[s]
+             F_A = F_A_set[s]
+             F_B = F_B_set[s]
+             X_AA = composite.partial_contraction_with_trace(I, dM_AA_ref)
+             X_BB = composite.partial_contraction_with_trace(I, dM_BB_ref)
+             g_10+= numpy.einsum("ab,iu->abiu", X_AA, F_B)
+             g_10+= numpy.einsum("ab,iu->abiu", X_BB, F_A)
+        #g_10 = numpy.einsum("nab,niu->abiu", dM_AA_ref_set, F_B_set)
+        #g_10+= numpy.einsum("nab,niu->abiu", dM_BB_ref_set, F_A_set)
          g[:DIM_1] = composite.form_futf(g_10).reshape(DIM_1).copy()
          del g_10
 
          # (20)
-         g_20 = numpy.einsum("nab,niu->abiu", dM_AA_ref_set, FF_B_set)
-         g_20+= numpy.einsum("nab,niu->abiu", dM_BB_ref_set, FF_A_set)
-         g_20 = numpy.einsum("ab,abiu->abiu", r, g_20)
+         g_20 = numpy.zeros((n,n,N,6))
+         for s in range(self._nsamples):
+             dM_AA_ref = dM_AA_ref_set[s]
+             dM_BB_ref = dM_BB_ref_set[s]
+             FF_A = FF_A_set[s]
+             FF_B = FF_B_set[s]
+             X_AA = composite.partial_contraction_with_trace(I, dM_AA_ref)
+             X_BB = composite.partial_contraction_with_trace(I, dM_BB_ref)
+             g_20+= numpy.einsum("ab,iu->abiu", X_AA, FF_B)
+             g_20+= numpy.einsum("ab,iu->abiu", X_BB, FF_A)
+        #g_20 = numpy.einsum("nab,niu->abiu", dM_AA_ref_set, FF_B_set)
+        #g_20+= numpy.einsum("nab,niu->abiu", dM_BB_ref_set, FF_A_set)
          g[DIM_1:O1] = composite.form_futf(g_20).reshape(DIM_2).copy()
          del g_20
 
          # (02)
-         R = numpy.einsum("nac,nbd,nab->cd", W_AB_set, W_AB_set, dM_AA_ref_set)
-         T = numpy.einsum("nac,nbd,nab->cd", W_BA_set, W_BA_set, dM_BB_ref_set)
-         g_02 = r*(R+T)
+         g_02 = numpy.zeros((n,n))
+         for s in range(self._nsamples):
+             W_AB = W_AB_set[s]
+             W_BA = W_BA_set[s]
+             dM_AA_ref = dM_AA_ref_set[s]
+             dM_BB_ref = dM_BB_ref_set[s]
+             X_AB = composite.partial_contraction_with_trace(W_AB, dM_AA_ref)
+             X_BA = composite.partial_contraction_with_trace(W_BA, dM_BB_ref)
+             R = W_AB.T @ X_AB
+             T = W_BA.T @ X_BA
+             g_02 += R + T
+         g_02*= r
+        #g_02 = numpy.einsum("nac,nbd,nab->cd", W_AB_set, W_AB_set, dM_AA_ref_set)
+        #g_02+= numpy.einsum("nac,nbd,nab->cd", W_BA_set, W_BA_set, dM_BB_ref_set)
          g[O1:O2] = composite.form_futf(g_02).reshape(DIM_3).copy()
          del g_02
 
          g *= -2.0
 
          # Construct Hessian
+         H_4 = numpy.einsum("ac,abd->abcd",I,composite.partial_contraction(I,I))
 
          # (10,10)
-         H_10_10 = numpy.einsum("ac,bd,ab,cd,iujw->abiucdjw",I,I,r,r,h_10_10.reshape(N,3,N,3))
+         H_10_10 = numpy.einsum("abcd,iujw->abiucdjw", H_4, h_10_10.reshape(N,3,N,3))
+        #H_10_10 = numpy.einsum("ac,bd,iujw->abiucdjw",I,I,h_10_10.reshape(N,3,N,3))
          H[     :DIM_1,     :DIM_1] = composite.form_superfutf(H_10_10, m1=4).reshape(DIM_1, DIM_1).copy()
          del H_10_10
 
          # (20,20)
-         H_20_20 = numpy.einsum("ac,bd,ab,cd,iujw->abiucdjw",I,I,r,r,h_20_20.reshape(N,6,N,6))
+         H_20_20 = numpy.einsum("abcd,iujw->abiucdjw", H_4, h_20_20.reshape(N,6,N,6))
+        #H_20_20 = numpy.einsum("ac,bd,iujw->abiucdjw",I,I,h_20_20.reshape(N,6,N,6))
          H[DIM_1:O1   ,DIM_1:O1   ] = composite.form_superfutf(H_20_20, m1=4).reshape(DIM_2, DIM_2).copy()
          del H_20_20
 
          # (10,20)
-         H_10_20 = numpy.einsum("ac,bd,ab,cd,iujw->abiucdjw",I,I,r,r,h_10_20.reshape(N,3,N,6))
+         H_10_20 = numpy.einsum("abcd,iujw->abiucdjw", H_4, h_10_20.reshape(N,3,N,6))
+        #H_10_20 = numpy.einsum("ac,bd,iujw->abiucdjw",I,I,h_10_20.reshape(N,3,N,6))
          H[:DIM_1, DIM_1:O1] = composite.form_superfutf(H_10_20, m1=4).reshape(DIM_1, DIM_2).copy()
-         del H_10_20
+         del H_10_20, H_4
          H[DIM_1:O1, :DIM_1] = H[:DIM_1, DIM_1:O1].T.copy()
 
          # (02,02)
-         X = numpy.einsum("nac,nbd->abcd", A_AB_set, A_AB_set)
-         X+= numpy.einsum("nac,nbd->abcd", A_BA_set, A_BA_set)
-         H_02_02 = numpy.einsum("ab,cd,abcd->abcd", r, r, X)
+         H_02_02 = numpy.zeros((n,n,n,n))
+         for s in range(self._nsamples):
+             W_AB = W_AB_set[s]
+             W_BA = W_BA_set[s]
+             H_02_02 += numpy.einsum("pa,pc,pbd->abcd", W_AB, W_AB, composite.partial_contraction(W_AB, W_AB))
+             H_02_02 += numpy.einsum("pa,pc,pbd->abcd", W_BA, W_BA, composite.partial_contraction(W_BA, W_BA))
+         H_02_02 = numpy.einsum("ab,cd,abcd->abcd", r, r, H_02_02)
+        #H_02_02 = numpy.einsum("nac,nbd->abcd", A_AB_set, A_AB_set)
+        #H_02_02+= numpy.einsum("nac,nbd->abcd", A_BA_set, A_BA_set)
          H[O1:O2   ,O1:O2   ] = composite.form_superfutf(H_02_02, m1=2).reshape(DIM_3, DIM_3).copy()
-         del H_02_02, X
+         del H_02_02
 
          # (10,02)
-         H_10_02 = numpy.einsum("ab,cd,nac,nbd,nq->abqcd",r,r,W_AB_set,W_AB_set,F_B_set.reshape(self._nsamples, N*3))
-         H_10_02+= numpy.einsum("ab,cd,nac,nbd,nq->abqcd",r,r,W_BA_set,W_BA_set,F_A_set.reshape(self._nsamples, N*3))
+         H_10_02 = numpy.zeros((n,n,N*3,n,n))
+         for s in range(self._nsamples):
+             W_AB = W_AB_set[s] ; F_A = F_A_set[s].reshape(3*N)
+             W_BA = W_BA_set[s] ; F_B = F_B_set[s].reshape(3*N)
+             H_10_02 += numpy.einsum("ac,abd,q->abqcd", W_AB, composite.partial_contraction(I, W_AB), F_B)
+             H_10_02 += numpy.einsum("ac,abd,q->abqcd", W_BA, composite.partial_contraction(I, W_BA), F_A)
+        #H_10_02 = numpy.einsum("nac,nbd,nq->abqcd",W_AB_set,W_AB_set,F_B_set.reshape(self._nsamples, N*3))
+        #H_10_02+= numpy.einsum("nac,nbd,nq->abqcd",W_BA_set,W_BA_set,F_A_set.reshape(self._nsamples, N*3))
+         H_10_02 = numpy.einsum("cd,abqcd->abqcd", r, H_10_02)
          H[:DIM_1,O1:O2] = composite.form_superfutf(H_10_02, m1=3).reshape(DIM_1, DIM_3).copy()
          del H_10_02
          H[O1:O2,:DIM_1] = H[:DIM_1,O1:O2].T.copy()
 
          # (20,02)
-         H_20_02 = numpy.einsum("ab,cd,nac,nbd,nq->abqcd",r,r,W_AB_set,W_AB_set,FF_B_set.reshape(self._nsamples, N*6))
-         H_20_02+= numpy.einsum("ab,cd,nac,nbd,nq->abqcd",r,r,W_BA_set,W_BA_set,FF_A_set.reshape(self._nsamples, N*6))
+         H_20_02 = numpy.zeros((n,n,N*6,n,n))
+         for s in range(self._nsamples):
+             W_AB = W_AB_set[s] ; FF_A = FF_A_set[s].reshape(6*N)
+             W_BA = W_BA_set[s] ; FF_B = FF_B_set[s].reshape(6*N)
+             H_20_02 += numpy.einsum("ac,abd,q->abqcd", W_AB, composite.partial_contraction(I, W_AB), FF_B)
+             H_20_02 += numpy.einsum("ac,abd,q->abqcd", W_BA, composite.partial_contraction(I, W_BA), FF_A)
+        #H_20_02 = numpy.einsum("nac,nbd,nq->abqcd",W_AB_set,W_AB_set,FF_B_set.reshape(self._nsamples, N*6))
+        #H_20_02+= numpy.einsum("nac,nbd,nq->abqcd",W_BA_set,W_BA_set,FF_A_set.reshape(self._nsamples, N*6))
+         H_20_02 = numpy.einsum("cd,abqcd->abqcd", r, H_20_02)
          H[DIM_1:O1,O1:O2] = composite.form_superfutf(H_20_02, m1=3).reshape(DIM_2, DIM_3).copy()
          del H_20_02
          H[O1:O2,DIM_1:O1] = H[DIM_1:O1,O1:O2].T.copy()
@@ -1569,6 +1639,9 @@ class Translation_DMSFit(EFP_DMSFit):
       n = self._dms_da.n()
       N = self._dms_da.N()
 
+      t = numpy.triu(numpy.ones(n))
+      r = composite.symmetry_matrix(n)
+
       # compulsory DMS tensors
       B_10 = self.B(1,0,'da')
       B_20 = self.B(2,0,'da')
@@ -1586,8 +1659,8 @@ class Translation_DMSFit(EFP_DMSFit):
           B_21 = self.B(2,1,'da')
           b_21 = self.B(2,1,'g')
       if (0,2) in self._dms_da.available_orders():
-          B_02 = self.B(0,2,'da')
-          b_02 = self.B(0,2,'g')
+          B_02 = self.B(0,2,'da') # *t*r
+          b_02 = self.B(0,2,'g')  # *t*r
 
 
       # read perturbations

@@ -260,7 +260,7 @@ def partial_contraction(W, X):
 
  From two matrices W and X generate a 3-rank tensor Y such that:
 
- Y_{a|bc} [W,X] = \sum_{p ≤ a}  W_{pb} X_{pc}
+ Y_{a|bc} [W,X] = \sum_{p ≥ a}  W_{pb} X_{pc}
 
  -----------------------------------------------------------------------
                                 Bartosz Błasiak, Gundelfingen 2 Mar 2020
@@ -270,8 +270,9 @@ def partial_contraction(W, X):
 
     v = numpy.zeros((n,n))
     for a in range(n):
-        v+= numpy.outer(W[a,:], X[a,:])
-        Y[a] = v.copy()
+        i = n-1-a
+        v+= numpy.outer(W[i,:], X[i,:])
+        Y[i] = v.copy()
 
     return Y
 
@@ -285,10 +286,10 @@ def partial_contraction_with_trace(W, X):
 
  From two matrices W and X generate a 2-rank tensor Y such that:
 
- Y_{a|b} [W,X] = \sum_{p ≤ a}  W_{pb} X_{pa}
+ Y_{a|b} [W,X] = \sum_{p ≥ a}  W_{pb} X_{pa}
 
  -----------------------------------------------------------------------
                                 Bartosz Błasiak, Gundelfingen 2 Mar 2020
 """
-    Y = W.T @ numpy.triu(X)
+    Y = W.T @ numpy.tril(X)
     return Y.T
