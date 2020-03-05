@@ -388,7 +388,7 @@ class DMSFit(ABC):
    stop_when_error_hessian    = True
                                                                                                        
    def __init__(self, mol, method, 
-                      nsamples, dms_types, order_type, use_iterative_model):
+                      nsamples, dms_types, order_type, use_iterative_model, use_external_field_model):
        ABC.__init__(self)
                                                                                                        
        if mol.multiplicity() > 1:
@@ -406,16 +406,18 @@ class DMSFit(ABC):
        self._order_type= order_type
        # Iterative Model
        self._use_iterative_model = use_iterative_model
+       # External Field Model
+       self._use_external_field_model = use_external_field_model
                                                                                                        
                                                                                                        
    @classmethod
    def create(cls, mol, fit_type="transl", dms_types="all", order_type='basic',
                    nsamples=100, method='scf', 
-                   use_iterative_model=True):
+                   use_iterative_model=True, use_external_field_model=False):
        if fit_type.lower().startswith("tran"): 
-          return Translation_DMSFit(mol, method, nsamples, dms_types, order_type, use_iterative_model)
+          return Translation_DMSFit(mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model)
        elif fit_type.lower().startswith("rot"): 
-          return Rotation_DMSFit(mol, method, nsamples, dms_types, order_type, use_iterative_model)
+          return Rotation_DMSFit(mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model)
        else: 
           raise NotImplementedError("This type of DMS fitting is not implemented yet")
 
@@ -440,8 +442,8 @@ class _Global_Settings_DMSFit(DMSFit):
  Global settings and utilities to fit DMS tensors.
 """
    def __init__(self, mol, method,                                                         
-                      nsamples, dms_types, order_type, use_iterative_model):
-       super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model)
+                      nsamples, dms_types, order_type, use_iterative_model, use_external_field_model):
+       super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model)
                                                                                            
        # Number of atoms under DMS fitting
        self._natoms    = self._mol.natom()
@@ -529,14 +531,20 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
 """
 
   def __init__(self, mol, method, 
-                     nsamples, dms_types, order_type, use_iterative_model):
-      super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model)
+                     nsamples, dms_types, order_type, use_iterative_model, use_external_field_model):
+      super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model)
 
       psi4.set_options({"DMATPOL_TRAINING_MODE":"CHARGES",
                         "DMATPOL_FIELD_RANK"   : 2,
                         "DMATPOL_GRADIENT_RANK": 0,
                         "DMATPOL_NSAMPLES"     : nsamples,
-                        "DMATPOL_NTEST_CHARGE" : 10,
+                        "DMATPOL_NTEST_CHARGE" : 40,
+    "cphf_diis"                    : True,
+    "cphf_diis_dim"                : 8,
+    "cphf_maxiter"                 : 200,
+    "cphf_conver"                  : 1e-8,
+    "cphf_localize"                : True,
+    "cphf_localizer"               : "PIPEK_MEZEY",
                         "DMATPOL_TEST_CHARGE"  : 0.001})
 
       self._e0 = None
@@ -573,7 +581,8 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       N = self._dms_da.N()
 
       # compute DMS for isolated molecule in external electric field
-     #self.__compute_dms_external_field()
+      if self._use_external_field_model:
+         self.__compute_dms_external_field()
 
       # prepare for the DMS fittings
       self._compute_samples()
@@ -748,12 +757,44 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
 
   def __compute_dms_external_field(self):
       "DMS for external electric field only (without other molecules)"
-      solver = oepdev.GenEffParFactory.build("POLARIZATION", self._wfn_0, self._wfn.options())
-      susc = solver.compute()
-      self._dms_ind_10 = ...
-      self._dms_ind_20 = ...
+      solver = oepdev.GenEffParFactory.build("POLARIZATION", self._wfn_0, psi4.core.get_options())
+      genEffPar = solver.compute()
+
+      n = self._dms_da.n()
+      N = self._dms_da.N()
+
+      dms_ind_10 = numpy.zeros((n,n,N,3))
+      dms_ind_20 = numpy.zeros((n,n,N,3,3))
+
+      for i in range(N):
+          B_10_ix = genEffPar.susceptibility(1,0,i,0).to_array(dense=True) 
+          B_10_iy = genEffPar.susceptibility(1,0,i,1).to_array(dense=True) 
+          B_10_iz = genEffPar.susceptibility(1,0,i,2).to_array(dense=True) 
+
+          B_20_ixx= genEffPar.susceptibility(2,0,i,0).to_array(dense=True)
+          B_20_ixy= genEffPar.susceptibility(2,0,i,1).to_array(dense=True)
+          B_20_ixz= genEffPar.susceptibility(2,0,i,2).to_array(dense=True)
+          B_20_iyy= genEffPar.susceptibility(2,0,i,3).to_array(dense=True)
+          B_20_iyz= genEffPar.susceptibility(2,0,i,4).to_array(dense=True)
+          B_20_izz= genEffPar.susceptibility(2,0,i,5).to_array(dense=True)
+
+          dms_ind_10[:,:,i,0] = B_10_ix.copy()
+          dms_ind_10[:,:,i,1] = B_10_iy.copy()
+          dms_ind_10[:,:,i,2] = B_10_iz.copy()
+
+          dms_ind_20[:,:,i,0,0] = B_20_ixx.copy()
+          dms_ind_20[:,:,i,0,1] = B_20_ixy.copy()
+          dms_ind_20[:,:,i,0,2] = B_20_ixz.copy()
+          dms_ind_20[:,:,i,1,1] = B_20_iyy.copy()
+          dms_ind_20[:,:,i,1,2] = B_20_iyz.copy()
+          dms_ind_20[:,:,i,2,2] = B_20_izz.copy()
+          dms_ind_20[:,:,i,1,0] = B_20_ixy.copy()
+          dms_ind_20[:,:,i,2,0] = B_20_ixz.copy()
+          dms_ind_20[:,:,i,2,1] = B_20_iyz.copy()
 
 
+      self._dms_ind_10 = dms_ind_10 
+      self._dms_ind_20 = dms_ind_20 
 
 
   # ---> Abstract methods <--- #
@@ -774,9 +815,9 @@ class Translation_DMSFit(EFP_DMSFit):
   """
  Translation method to fit DMS tensors.
 """
-  def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model,
+  def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model,
                      start=1.0, srange=2.0):
-      super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model)
+      super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model)
 
       # translation parameters
       self._start = start
@@ -1059,289 +1100,313 @@ class Translation_DMSFit(EFP_DMSFit):
       n = dms.n()
       N = dms.N()
 
-      # Hessian                                                                             
-      dim_1 = N*3
-      dim_2 = N*6
-      H = numpy.zeros((dim_1 + dim_2, dim_1 + dim_2))
-                                                                                            
-      H_10_10 = numpy.einsum("niu,njw->iujw", F_B_set, F_B_set) 
-      H_10_10+= numpy.einsum("niu,njw->iujw", F_A_set, F_A_set) 
-                                                                                            
-      H[:dim_1,:dim_1] = H_10_10.copy().reshape(dim_1, dim_1)
-      del H_10_10
-                                                                                            
-      H_20_20 = numpy.einsum("niu,nix,njw,njy->iuxjwy", F_B_set, F_B_set, F_B_set, F_B_set)
-      H_20_20+= numpy.einsum("niu,nix,njw,njy->iuxjwy", F_A_set, F_A_set, F_A_set, F_A_set)
-                                                                                            
-      u = numpy.zeros((N,6,N,6))
-      u[:,0,:,0] = H_20_20[:,0,0,:,0,0].copy() * 1.0
-      u[:,0,:,1] = H_20_20[:,0,0,:,0,1].copy() * 2.0
-      u[:,0,:,2] = H_20_20[:,0,0,:,0,2].copy() * 2.0
-      u[:,0,:,3] = H_20_20[:,0,0,:,1,1].copy() * 1.0
-      u[:,0,:,4] = H_20_20[:,0,0,:,1,2].copy() * 2.0
-      u[:,0,:,5] = H_20_20[:,0,0,:,2,2].copy() * 1.0
-                                                                                            
-      u[:,1,:,0] = H_20_20[:,0,1,:,0,0].copy() * 2.0
-      u[:,1,:,1] = H_20_20[:,0,1,:,0,1].copy() * 4.0
-      u[:,1,:,2] = H_20_20[:,0,1,:,0,2].copy() * 4.0
-      u[:,1,:,3] = H_20_20[:,0,1,:,1,1].copy() * 2.0
-      u[:,1,:,4] = H_20_20[:,0,1,:,1,2].copy() * 4.0
-      u[:,1,:,5] = H_20_20[:,0,1,:,2,2].copy() * 2.0
-                                                                                            
-      u[:,2,:,0] = H_20_20[:,0,2,:,0,0].copy() * 2.0
-      u[:,2,:,1] = H_20_20[:,0,2,:,0,1].copy() * 4.0
-      u[:,2,:,2] = H_20_20[:,0,2,:,0,2].copy() * 4.0
-      u[:,2,:,3] = H_20_20[:,0,2,:,1,1].copy() * 2.0
-      u[:,2,:,4] = H_20_20[:,0,2,:,1,2].copy() * 4.0
-      u[:,2,:,5] = H_20_20[:,0,2,:,2,2].copy() * 2.0
-                                                                                            
-      u[:,3,:,0] = H_20_20[:,1,1,:,0,0].copy() * 1.0
-      u[:,3,:,1] = H_20_20[:,1,1,:,0,1].copy() * 2.0
-      u[:,3,:,2] = H_20_20[:,1,1,:,0,2].copy() * 2.0
-      u[:,3,:,3] = H_20_20[:,1,1,:,1,1].copy() * 1.0
-      u[:,3,:,4] = H_20_20[:,1,1,:,1,2].copy() * 2.0
-      u[:,3,:,5] = H_20_20[:,1,1,:,2,2].copy() * 1.0
-                                                                                            
-      u[:,4,:,0] = H_20_20[:,1,2,:,0,0].copy() * 2.0
-      u[:,4,:,1] = H_20_20[:,1,2,:,0,1].copy() * 4.0
-      u[:,4,:,2] = H_20_20[:,1,2,:,0,2].copy() * 4.0
-      u[:,4,:,3] = H_20_20[:,1,2,:,1,1].copy() * 2.0
-      u[:,4,:,4] = H_20_20[:,1,2,:,1,2].copy() * 4.0
-      u[:,4,:,5] = H_20_20[:,1,2,:,2,2].copy() * 2.0
-                                                                                            
-      u[:,5,:,0] = H_20_20[:,2,2,:,0,0].copy() * 1.0
-      u[:,5,:,1] = H_20_20[:,2,2,:,0,1].copy() * 2.0
-      u[:,5,:,2] = H_20_20[:,2,2,:,0,2].copy() * 2.0
-      u[:,5,:,3] = H_20_20[:,2,2,:,1,1].copy() * 1.0
-      u[:,5,:,4] = H_20_20[:,2,2,:,1,2].copy() * 2.0
-      u[:,5,:,5] = H_20_20[:,2,2,:,2,2].copy() * 1.0
-                                                                                            
-      H[dim_1:,dim_1:] = u.copy().reshape(dim_2, dim_2)
-      del u, H_20_20
-                                                                                            
-      H_10_20 = numpy.einsum("niu,njw,njy->iujwy", F_B_set, F_B_set, F_B_set)
-      H_10_20+= numpy.einsum("niu,njw,njy->iujwy", F_A_set, F_A_set, F_A_set)
-                                                                                            
-      u = numpy.zeros((N,3,N,6))
-      u[:,:,:,0] = H_10_20[:,:,:,0,0].copy() * 1.0
-      u[:,:,:,1] = H_10_20[:,:,:,0,1].copy() * 2.0
-      u[:,:,:,2] = H_10_20[:,:,:,0,2].copy() * 2.0
-      u[:,:,:,3] = H_10_20[:,:,:,1,1].copy() * 1.0
-      u[:,:,:,4] = H_10_20[:,:,:,1,2].copy() * 2.0
-      u[:,:,:,5] = H_10_20[:,:,:,2,2].copy() * 1.0
-                                                                                            
-      H[:dim_1,dim_1:] = u.copy().reshape(dim_1, dim_2)
-      H[dim_1:,:dim_1] = H[:dim_1,dim_1:].copy().T
-      del u, H_10_20
-                                                                                            
-      H *= 2.0
+      # ---> Fit 10 and 20 susceptibilities intrinsically <--- #
+      if 1: #not self._use_external_field_model:
 
-
-      # Only (1,0) and (2,0) susceptibilities: fitting for each target matrix element separately
-      if (0,2) not in self._dms_da.available_orders():
-
-          # Fit
-          psi4.core.print_out(" * Computing Hessian Inverse...\n")
-          Hi = self._invert_hessian(H)
-                                                                                                
-          S_1 = numpy.zeros((n,n,N,3))
-          S_2 = numpy.zeros((n,n,N,6))
-                                                                                                
-          for i in range(n):
-              for j in range(n):
-                 #psi4.core.print_out(" * Computing the DMS tensors for (%i %i)...\n" % (i,j))
-                                                                                                
-                  # gradient                                                           
-                  DIM_1 = N*3
-                  DIM_2 = N*6
-                                                                                       
-                  g_10 = numpy.einsum("n,niu->iu", dM_AA_ref_set[:,i,j], F_B_set)
-                  g_10+= numpy.einsum("n,niu->iu", dM_BB_ref_set[:,i,j], F_A_set)
-                                                                                       
-                  u = numpy.zeros((N,6))
-                  g_20 = numpy.einsum("n,niu,niw->iuw", dM_AA_ref_set[:,i,j], F_B_set, F_B_set)
-                  g_20+= numpy.einsum("n,niu,niw->iuw", dM_BB_ref_set[:,i,j], F_A_set, F_A_set)
-                  u[:,0] = g_20[:,0,0].copy()
-                  u[:,1] = g_20[:,0,1].copy() * 2.0
-                  u[:,2] = g_20[:,0,2].copy() * 2.0
-                  u[:,3] = g_20[:,1,1].copy()
-                  u[:,4] = g_20[:,1,2].copy() * 2.0
-                  u[:,5] = g_20[:,2,2].copy()
-                                                                                       
-                  g = numpy.zeros(dim_1 + dim_2)
-                                                                                       
-                  g[:dim_1] = g_10.ravel().copy()
-                  g[dim_1:] = u.ravel()
-                  del u, g_10, g_20
-                  g *= -2.0
-                                                                                       
-                  s = - g @ Hi
-                                                                                                
-                  S_1[i,j] = s[:dim_1].copy().reshape(N,3)
-                  S_2[i,j] = s[dim_1:].copy().reshape(N,6)
-
-          S_1 = composite.form_futf(S_1)
-          S_2 = composite.form_futf(S_2)
-                                                                                                
-          s = numpy.hstack([S_1.ravel(), S_2.ravel()])
-
-      # (0,2) and higher order susceptibilities present
-      else:
-         h_10_10 = H[:dim_1,:dim_1].copy() / 2.0
-         h_10_20 = H[:dim_1,dim_1:].copy() / 2.0
-         h_20_20 = H[dim_1:,dim_1:].copy() / 2.0
-
-         FF_A_set = numpy.einsum("niu,niw->uwni", F_A_set, F_A_set)
-         FF_B_set = numpy.einsum("niu,niw->uwni", F_B_set, F_B_set)
-         FF_A_set = numpy.einsum("uw,uwni->uwni", composite.symmetry_matrix(3), FF_A_set)
-         FF_B_set = numpy.einsum("uw,uwni->uwni", composite.symmetry_matrix(3), FF_B_set)
-         FF_A_set = composite.form_futf(FF_A_set).transpose(1,2,0)
-         FF_B_set = composite.form_futf(FF_B_set).transpose(1,2,0)
-
-         I = numpy.identity(n)
-         r = composite.symmetry_matrix(n)
-         t = numpy.triu(numpy.ones(n))
-
-         del H # --> move it above!
-
-         n_ = composite.number_of_elements(n)
-         DIM_1 = n_ * dim_1
-         DIM_2 = n_ * dim_2
-         DIM_3 = n_ 
-         DIM = DIM_1 + DIM_2 + DIM_3
-         g = numpy.zeros(DIM)
-         H = numpy.zeros((DIM, DIM))
-         O1 = DIM_1 + DIM_2
-         O2 = O1 + DIM_3
-
-         # Construct gradient
-         # (10)
-         g_10 = numpy.zeros((n,n,N,3))
-         for s in range(self._nsamples):
-             dM_AA_ref = dM_AA_ref_set[s]
-             dM_BB_ref = dM_BB_ref_set[s]
-             F_A = F_A_set[s]
-             F_B = F_B_set[s]
-             X_AA = composite.partial_contraction_with_trace(I, dM_AA_ref)
-             X_BB = composite.partial_contraction_with_trace(I, dM_BB_ref)
-             g_10+= numpy.einsum("ab,iu->abiu", X_AA, F_B)
-             g_10+= numpy.einsum("ab,iu->abiu", X_BB, F_A)
-        #g_10 = numpy.einsum("nab,niu->abiu", dM_AA_ref_set, F_B_set)
-        #g_10+= numpy.einsum("nab,niu->abiu", dM_BB_ref_set, F_A_set)
-         g[:DIM_1] = composite.form_futf(g_10).reshape(DIM_1).copy()
-         del g_10
-
-         # (20)
-         g_20 = numpy.zeros((n,n,N,6))
-         for s in range(self._nsamples):
-             dM_AA_ref = dM_AA_ref_set[s]
-             dM_BB_ref = dM_BB_ref_set[s]
-             FF_A = FF_A_set[s]
-             FF_B = FF_B_set[s]
-             X_AA = composite.partial_contraction_with_trace(I, dM_AA_ref)
-             X_BB = composite.partial_contraction_with_trace(I, dM_BB_ref)
-             g_20+= numpy.einsum("ab,iu->abiu", X_AA, FF_B)
-             g_20+= numpy.einsum("ab,iu->abiu", X_BB, FF_A)
-        #g_20 = numpy.einsum("nab,niu->abiu", dM_AA_ref_set, FF_B_set)
-        #g_20+= numpy.einsum("nab,niu->abiu", dM_BB_ref_set, FF_A_set)
-         g[DIM_1:O1] = composite.form_futf(g_20).reshape(DIM_2).copy()
-         del g_20
-
-         # (02)
-         g_02 = numpy.zeros((n,n))
-         for s in range(self._nsamples):
-             W_AB = W_AB_set[s]
-             W_BA = W_BA_set[s]
-             dM_AA_ref = dM_AA_ref_set[s]
-             dM_BB_ref = dM_BB_ref_set[s]
-             X_AB = composite.partial_contraction_with_trace(W_AB, dM_AA_ref)
-             X_BA = composite.partial_contraction_with_trace(W_BA, dM_BB_ref)
-             R = W_AB.T @ X_AB
-             T = W_BA.T @ X_BA
-             g_02 += R + T
-         g_02*= r
-        #g_02 = numpy.einsum("nac,nbd,nab->cd", W_AB_set, W_AB_set, dM_AA_ref_set)
-        #g_02+= numpy.einsum("nac,nbd,nab->cd", W_BA_set, W_BA_set, dM_BB_ref_set)
-         g[O1:O2] = composite.form_futf(g_02).reshape(DIM_3).copy()
-         del g_02
-
-         g *= -2.0
-
-         # Construct Hessian
-         H_4 = numpy.einsum("ac,abd->abcd",I,composite.partial_contraction(I,I))
-
-         # (10,10)
-         H_10_10 = numpy.einsum("abcd,iujw->abiucdjw", H_4, h_10_10.reshape(N,3,N,3))
-        #H_10_10 = numpy.einsum("ac,bd,iujw->abiucdjw",I,I,h_10_10.reshape(N,3,N,3))
-         H[     :DIM_1,     :DIM_1] = composite.form_superfutf(H_10_10, m1=4).reshape(DIM_1, DIM_1).copy()
+         # Hessian                                                                                                
+         dim_1 = N*3
+         dim_2 = N*6
+         H = numpy.zeros((dim_1 + dim_2, dim_1 + dim_2))
+                                                                                               
+         H_10_10 = numpy.einsum("niu,njw->iujw", F_B_set, F_B_set) 
+         H_10_10+= numpy.einsum("niu,njw->iujw", F_A_set, F_A_set) 
+                                                                                               
+         H[:dim_1,:dim_1] = H_10_10.copy().reshape(dim_1, dim_1)
          del H_10_10
-
-         # (20,20)
-         H_20_20 = numpy.einsum("abcd,iujw->abiucdjw", H_4, h_20_20.reshape(N,6,N,6))
-        #H_20_20 = numpy.einsum("ac,bd,iujw->abiucdjw",I,I,h_20_20.reshape(N,6,N,6))
-         H[DIM_1:O1   ,DIM_1:O1   ] = composite.form_superfutf(H_20_20, m1=4).reshape(DIM_2, DIM_2).copy()
-         del H_20_20
-
-         # (10,20)
-         H_10_20 = numpy.einsum("abcd,iujw->abiucdjw", H_4, h_10_20.reshape(N,3,N,6))
-        #H_10_20 = numpy.einsum("ac,bd,iujw->abiucdjw",I,I,h_10_20.reshape(N,3,N,6))
-         H[:DIM_1, DIM_1:O1] = composite.form_superfutf(H_10_20, m1=4).reshape(DIM_1, DIM_2).copy()
-         del H_10_20, H_4
-         H[DIM_1:O1, :DIM_1] = H[:DIM_1, DIM_1:O1].T.copy()
-
-         # (02,02)
-         H_02_02 = numpy.zeros((n,n,n,n))
-         for s in range(self._nsamples):
-             W_AB = W_AB_set[s]
-             W_BA = W_BA_set[s]
-             H_02_02 += numpy.einsum("pa,pc,pbd->abcd", W_AB, W_AB, composite.partial_contraction(W_AB, W_AB))
-             H_02_02 += numpy.einsum("pa,pc,pbd->abcd", W_BA, W_BA, composite.partial_contraction(W_BA, W_BA))
-         H_02_02 = numpy.einsum("ab,cd,abcd->abcd", r, r, H_02_02)
-        #H_02_02 = numpy.einsum("nac,nbd->abcd", A_AB_set, A_AB_set)
-        #H_02_02+= numpy.einsum("nac,nbd->abcd", A_BA_set, A_BA_set)
-         H[O1:O2   ,O1:O2   ] = composite.form_superfutf(H_02_02, m1=2).reshape(DIM_3, DIM_3).copy()
-         del H_02_02
-
-         # (10,02)
-         H_10_02 = numpy.zeros((n,n,N*3,n,n))
-         for s in range(self._nsamples):
-             W_AB = W_AB_set[s] ; F_A = F_A_set[s].reshape(3*N)
-             W_BA = W_BA_set[s] ; F_B = F_B_set[s].reshape(3*N)
-             H_10_02 += numpy.einsum("ac,abd,q->abqcd", W_AB, composite.partial_contraction(I, W_AB), F_B)
-             H_10_02 += numpy.einsum("ac,abd,q->abqcd", W_BA, composite.partial_contraction(I, W_BA), F_A)
-        #H_10_02 = numpy.einsum("nac,nbd,nq->abqcd",W_AB_set,W_AB_set,F_B_set.reshape(self._nsamples, N*3))
-        #H_10_02+= numpy.einsum("nac,nbd,nq->abqcd",W_BA_set,W_BA_set,F_A_set.reshape(self._nsamples, N*3))
-         H_10_02 = numpy.einsum("cd,abqcd->abqcd", r, H_10_02)
-         H[:DIM_1,O1:O2] = composite.form_superfutf(H_10_02, m1=3).reshape(DIM_1, DIM_3).copy()
-         del H_10_02
-         H[O1:O2,:DIM_1] = H[:DIM_1,O1:O2].T.copy()
-
-         # (20,02)
-         H_20_02 = numpy.zeros((n,n,N*6,n,n))
-         for s in range(self._nsamples):
-             W_AB = W_AB_set[s] ; FF_A = FF_A_set[s].reshape(6*N)
-             W_BA = W_BA_set[s] ; FF_B = FF_B_set[s].reshape(6*N)
-             H_20_02 += numpy.einsum("ac,abd,q->abqcd", W_AB, composite.partial_contraction(I, W_AB), FF_B)
-             H_20_02 += numpy.einsum("ac,abd,q->abqcd", W_BA, composite.partial_contraction(I, W_BA), FF_A)
-        #H_20_02 = numpy.einsum("nac,nbd,nq->abqcd",W_AB_set,W_AB_set,FF_B_set.reshape(self._nsamples, N*6))
-        #H_20_02+= numpy.einsum("nac,nbd,nq->abqcd",W_BA_set,W_BA_set,FF_A_set.reshape(self._nsamples, N*6))
-         H_20_02 = numpy.einsum("cd,abqcd->abqcd", r, H_20_02)
-         H[DIM_1:O1,O1:O2] = composite.form_superfutf(H_20_02, m1=3).reshape(DIM_2, DIM_3).copy()
-         del H_20_02
-         H[O1:O2,DIM_1:O1] = H[DIM_1:O1,O1:O2].T.copy()
-
+                                                                                               
+         H_20_20 = numpy.einsum("niu,nix,njw,njy->iuxjwy", F_B_set, F_B_set, F_B_set, F_B_set)
+         H_20_20+= numpy.einsum("niu,nix,njw,njy->iuxjwy", F_A_set, F_A_set, F_A_set, F_A_set)
+                                                                                               
+         u = numpy.zeros((N,6,N,6))
+         u[:,0,:,0] = H_20_20[:,0,0,:,0,0].copy() * 1.0
+         u[:,0,:,1] = H_20_20[:,0,0,:,0,1].copy() * 2.0
+         u[:,0,:,2] = H_20_20[:,0,0,:,0,2].copy() * 2.0
+         u[:,0,:,3] = H_20_20[:,0,0,:,1,1].copy() * 1.0
+         u[:,0,:,4] = H_20_20[:,0,0,:,1,2].copy() * 2.0
+         u[:,0,:,5] = H_20_20[:,0,0,:,2,2].copy() * 1.0
+                                                                                               
+         u[:,1,:,0] = H_20_20[:,0,1,:,0,0].copy() * 2.0
+         u[:,1,:,1] = H_20_20[:,0,1,:,0,1].copy() * 4.0
+         u[:,1,:,2] = H_20_20[:,0,1,:,0,2].copy() * 4.0
+         u[:,1,:,3] = H_20_20[:,0,1,:,1,1].copy() * 2.0
+         u[:,1,:,4] = H_20_20[:,0,1,:,1,2].copy() * 4.0
+         u[:,1,:,5] = H_20_20[:,0,1,:,2,2].copy() * 2.0
+                                                                                               
+         u[:,2,:,0] = H_20_20[:,0,2,:,0,0].copy() * 2.0
+         u[:,2,:,1] = H_20_20[:,0,2,:,0,1].copy() * 4.0
+         u[:,2,:,2] = H_20_20[:,0,2,:,0,2].copy() * 4.0
+         u[:,2,:,3] = H_20_20[:,0,2,:,1,1].copy() * 2.0
+         u[:,2,:,4] = H_20_20[:,0,2,:,1,2].copy() * 4.0
+         u[:,2,:,5] = H_20_20[:,0,2,:,2,2].copy() * 2.0
+                                                                                               
+         u[:,3,:,0] = H_20_20[:,1,1,:,0,0].copy() * 1.0
+         u[:,3,:,1] = H_20_20[:,1,1,:,0,1].copy() * 2.0
+         u[:,3,:,2] = H_20_20[:,1,1,:,0,2].copy() * 2.0
+         u[:,3,:,3] = H_20_20[:,1,1,:,1,1].copy() * 1.0
+         u[:,3,:,4] = H_20_20[:,1,1,:,1,2].copy() * 2.0
+         u[:,3,:,5] = H_20_20[:,1,1,:,2,2].copy() * 1.0
+                                                                                               
+         u[:,4,:,0] = H_20_20[:,1,2,:,0,0].copy() * 2.0
+         u[:,4,:,1] = H_20_20[:,1,2,:,0,1].copy() * 4.0
+         u[:,4,:,2] = H_20_20[:,1,2,:,0,2].copy() * 4.0
+         u[:,4,:,3] = H_20_20[:,1,2,:,1,1].copy() * 2.0
+         u[:,4,:,4] = H_20_20[:,1,2,:,1,2].copy() * 4.0
+         u[:,4,:,5] = H_20_20[:,1,2,:,2,2].copy() * 2.0
+                                                                                               
+         u[:,5,:,0] = H_20_20[:,2,2,:,0,0].copy() * 1.0
+         u[:,5,:,1] = H_20_20[:,2,2,:,0,1].copy() * 2.0
+         u[:,5,:,2] = H_20_20[:,2,2,:,0,2].copy() * 2.0
+         u[:,5,:,3] = H_20_20[:,2,2,:,1,1].copy() * 1.0
+         u[:,5,:,4] = H_20_20[:,2,2,:,1,2].copy() * 2.0
+         u[:,5,:,5] = H_20_20[:,2,2,:,2,2].copy() * 1.0
+                                                                                               
+         H[dim_1:,dim_1:] = u.copy().reshape(dim_2, dim_2)
+         del u, H_20_20
+                                                                                               
+         H_10_20 = numpy.einsum("niu,njw,njy->iujwy", F_B_set, F_B_set, F_B_set)
+         H_10_20+= numpy.einsum("niu,njw,njy->iujwy", F_A_set, F_A_set, F_A_set)
+                                                                                               
+         u = numpy.zeros((N,3,N,6))
+         u[:,:,:,0] = H_10_20[:,:,:,0,0].copy() * 1.0
+         u[:,:,:,1] = H_10_20[:,:,:,0,1].copy() * 2.0
+         u[:,:,:,2] = H_10_20[:,:,:,0,2].copy() * 2.0
+         u[:,:,:,3] = H_10_20[:,:,:,1,1].copy() * 1.0
+         u[:,:,:,4] = H_10_20[:,:,:,1,2].copy() * 2.0
+         u[:,:,:,5] = H_10_20[:,:,:,2,2].copy() * 1.0
+                                                                                               
+         H[:dim_1,dim_1:] = u.copy().reshape(dim_1, dim_2)
+         H[dim_1:,:dim_1] = H[:dim_1,dim_1:].copy().T
+         del u, H_10_20
+                                                                                               
          H *= 2.0
-         Hi = self._invert_hessian(H)
+                                                                                                                  
+                                                                                                                  
+         # Only (1,0) and (2,0) susceptibilities: fitting for each target matrix element separately
+         if (0,2) not in self._dms_da.available_orders():
+                                                                                                                  
+             # Fit
+             psi4.core.print_out(" * Computing Hessian Inverse...\n")
+             Hi = self._invert_hessian(H)
+                                                                                                   
+             S_1 = numpy.zeros((n,n,N,3))
+             S_2 = numpy.zeros((n,n,N,6))
+                                                                                                   
+             for i in range(n):
+                 for j in range(n):
+                    #psi4.core.print_out(" * Computing the DMS tensors for (%i %i)...\n" % (i,j))
+                                                                                                   
+                     # gradient                                                           
+                     DIM_1 = N*3
+                     DIM_2 = N*6
+                                                                                          
+                     g_10 = numpy.einsum("n,niu->iu", dM_AA_ref_set[:,i,j], F_B_set)
+                     g_10+= numpy.einsum("n,niu->iu", dM_BB_ref_set[:,i,j], F_A_set)
+                                                                                          
+                     u = numpy.zeros((N,6))
+                     g_20 = numpy.einsum("n,niu,niw->iuw", dM_AA_ref_set[:,i,j], F_B_set, F_B_set)
+                     g_20+= numpy.einsum("n,niu,niw->iuw", dM_BB_ref_set[:,i,j], F_A_set, F_A_set)
+                     u[:,0] = g_20[:,0,0].copy()
+                     u[:,1] = g_20[:,0,1].copy() * 2.0
+                     u[:,2] = g_20[:,0,2].copy() * 2.0
+                     u[:,3] = g_20[:,1,1].copy()
+                     u[:,4] = g_20[:,1,2].copy() * 2.0
+                     u[:,5] = g_20[:,2,2].copy()
+                                                                                          
+                     g = numpy.zeros(dim_1 + dim_2)
+                                                                                          
+                     g[:dim_1] = g_10.ravel().copy()
+                     g[dim_1:] = u.ravel()
+                     del u, g_10, g_20
+                     g *= -2.0
+                                                                                          
+                     s = - g @ Hi
+                                                                                                   
+                     S_1[i,j] = s[:dim_1].copy().reshape(N,3)
+                     S_2[i,j] = s[dim_1:].copy().reshape(N,6)
+                                                                                                                  
+             S_1 = composite.form_futf(S_1)
+             S_2 = composite.form_futf(S_2)
+                                                                                                   
+             s = numpy.hstack([S_1.ravel(), S_2.ravel()])
+                                                                                                                  
+         # (0,2) and higher order susceptibilities present
+         else:
+            h_10_10 = H[:dim_1,:dim_1].copy() / 2.0
+            h_10_20 = H[:dim_1,dim_1:].copy() / 2.0
+            h_20_20 = H[dim_1:,dim_1:].copy() / 2.0
+                                                                                                                  
+            FF_A_set = numpy.einsum("niu,niw->uwni", F_A_set, F_A_set)
+            FF_B_set = numpy.einsum("niu,niw->uwni", F_B_set, F_B_set)
+            FF_A_set = numpy.einsum("uw,uwni->uwni", composite.symmetry_matrix(3), FF_A_set)
+            FF_B_set = numpy.einsum("uw,uwni->uwni", composite.symmetry_matrix(3), FF_B_set)
+            FF_A_set = composite.form_futf(FF_A_set).transpose(1,2,0)
+            FF_B_set = composite.form_futf(FF_B_set).transpose(1,2,0)
+                                                                                                                  
+            I = numpy.identity(n)
+            r = composite.symmetry_matrix(n)
+            t = numpy.triu(numpy.ones(n))
+                                                                                                                  
+            del H # --> move it above!
+                                                                                                                  
+            n_ = composite.number_of_elements(n)
+            DIM_1 = n_ * dim_1
+            DIM_2 = n_ * dim_2
+            DIM_3 = n_ 
+            DIM = DIM_1 + DIM_2 + DIM_3
+            g = numpy.zeros(DIM)
+            H = numpy.zeros((DIM, DIM))
+            O1 = DIM_1 + DIM_2
+            O2 = O1 + DIM_3
+                                                                                                                  
+            # Construct gradient
+            # (10)
+            g_10 = numpy.zeros((n,n,N,3))
+            for s in range(self._nsamples):
+                dM_AA_ref = dM_AA_ref_set[s]
+                dM_BB_ref = dM_BB_ref_set[s]
+                F_A = F_A_set[s]
+                F_B = F_B_set[s]
+                X_AA = numpy.triu(dM_AA_ref) #composite.partial_contraction_with_trace(I, dM_AA_ref)
+                X_BB = numpy.triu(dM_BB_ref) #composite.partial_contraction_with_trace(I, dM_BB_ref)
+                g_10+= numpy.einsum("ab,iu->abiu", X_AA, F_B)
+                g_10+= numpy.einsum("ab,iu->abiu", X_BB, F_A)
+            g[:DIM_1] = composite.form_futf(g_10).reshape(DIM_1).copy()
+           #g_10 = numpy.einsum("nab,niu->abiu", dM_AA_ref_set, F_B_set)
+           #g_10+= numpy.einsum("nab,niu->abiu", dM_BB_ref_set, F_A_set)
+            del g_10
+                                                                                                                  
+            # (20)
+            g_20 = numpy.zeros((n,n,N,6))
+            for s in range(self._nsamples):
+                dM_AA_ref = dM_AA_ref_set[s]
+                dM_BB_ref = dM_BB_ref_set[s]
+                FF_A = FF_A_set[s]
+                FF_B = FF_B_set[s]
+                X_AA = numpy.triu(dM_AA_ref) #composite.partial_contraction_with_trace(I, dM_AA_ref)
+                X_BB = numpy.triu(dM_BB_ref) #composite.partial_contraction_with_trace(I, dM_BB_ref)
+                g_20+= numpy.einsum("ab,iu->abiu", X_AA, FF_B)
+                g_20+= numpy.einsum("ab,iu->abiu", X_BB, FF_A)
+            g[DIM_1:O1] = composite.form_futf(g_20).reshape(DIM_2).copy()
+            del g_20
+                                                                                                                  
+            # (02)
+            g_02 = numpy.zeros((n,n))
+            tau = numpy.ones((n,n)) - I
+            t   = numpy.triu(numpy.ones(n))
+            for s in range(self._nsamples):
+                W_AB = W_AB_set[s]
+                W_BA = W_BA_set[s]
+                dM_AA_ref = dM_AA_ref_set[s]
+                dM_BB_ref = dM_BB_ref_set[s]
+                X_AB = composite.partial_contraction_with_trace(W_AB, dM_AA_ref)
+                X_BA = composite.partial_contraction_with_trace(W_BA, dM_BB_ref)
+                R_AB = W_AB.T @ X_AB
+                R_AB+= tau * R_AB.T
+                R_BA = W_BA.T @ X_BA
+                R_BA+= tau * R_BA.T
+                g_02 += R_AB + R_BA
+           #g_02 = numpy.einsum("nac,nbd,nab->cd", W_AB_set, W_AB_set, dM_AA_ref_set)
+           #g_02+= numpy.einsum("nac,nbd,nab->cd", W_BA_set, W_BA_set, dM_BB_ref_set)
+            g[O1:O2] = composite.form_futf(g_02).reshape(DIM_3).copy()
+            del g_02
+                                                                                                                  
+            g *= -2.0
+                                                                                                                  
+            # Construct Hessian
+            H_4 = numpy.einsum("ac,abd->abcd",I,composite.partial_contraction(I,I))
+                                                                                                                  
+            # (10,10)
+            H_10_10 = numpy.einsum("abcd,iujw->abiucdjw", H_4, h_10_10.reshape(N,3,N,3))
+           #H_10_10 = numpy.einsum("ac,bd,iujw->abiucdjw",I,I,h_10_10.reshape(N,3,N,3))
+            H[     :DIM_1,     :DIM_1] = composite.form_superfutf(H_10_10, m1=4).reshape(DIM_1, DIM_1).copy()
+            del H_10_10
+                                                                                                                  
+            # (20,20)
+            H_20_20 = numpy.einsum("abcd,iujw->abiucdjw", H_4, h_20_20.reshape(N,6,N,6))
+           #H_20_20 = numpy.einsum("ac,bd,iujw->abiucdjw",I,I,h_20_20.reshape(N,6,N,6))
+            H[DIM_1:O1   ,DIM_1:O1   ] = composite.form_superfutf(H_20_20, m1=4).reshape(DIM_2, DIM_2).copy()
+            del H_20_20
+                                                                                                                  
+            # (10,20)
+            H_10_20 = numpy.einsum("abcd,iujw->abiucdjw", H_4, h_10_20.reshape(N,3,N,6))
+           #H_10_20 = numpy.einsum("ac,bd,iujw->abiucdjw",I,I,h_10_20.reshape(N,3,N,6))
+            H[:DIM_1, DIM_1:O1] = composite.form_superfutf(H_10_20, m1=4).reshape(DIM_1, DIM_2).copy()
+            del H_10_20, H_4
+            H[DIM_1:O1, :DIM_1] = H[:DIM_1, DIM_1:O1].T.copy()
+                                                                                                                  
+            # (02,02)
+            H_02_02 = numpy.zeros((n,n,n,n))
+            for s in range(self._nsamples):
+                W_AB = W_AB_set[s]
+                W_BA = W_BA_set[s]
+                Y_AB = composite.partial_contraction(W_AB, W_AB)
+                Y_BA = composite.partial_contraction(W_BA, W_BA)
+                H_02_02 += numpy.einsum("pa,pc,pbd->abcd", W_AB, W_AB, Y_AB)
+                H_02_02 += numpy.einsum("pa,pd,pbc,cd->abcd", W_AB, W_AB, Y_AB, tau)
+                H_02_02 += numpy.einsum("pb,pc,pad,ab->abcd", W_AB, W_AB, Y_AB, tau)
+                H_02_02 += numpy.einsum("pb,pd,pac,ab,cd->abcd", W_AB, W_AB, Y_AB, tau, tau)
+                #
+                H_02_02 += numpy.einsum("pa,pc,pbd->abcd", W_BA, W_BA, Y_BA)
+                H_02_02 += numpy.einsum("pa,pd,pbc,cd->abcd", W_BA, W_BA, Y_BA, tau)
+                H_02_02 += numpy.einsum("pb,pc,pad,ab->abcd", W_BA, W_BA, Y_BA, tau)
+                H_02_02 += numpy.einsum("pb,pd,pac,ab,cd->abcd", W_BA, W_BA, Y_BA, tau, tau)
+           #H_02_02 = numpy.einsum("nac,nbd->abcd", A_AB_set, A_AB_set)
+           #H_02_02+= numpy.einsum("nac,nbd->abcd", A_BA_set, A_BA_set)
+            H[O1:O2   ,O1:O2   ] = composite.form_superfutf(H_02_02, m1=2).reshape(DIM_3, DIM_3).copy()
+            del H_02_02
+                                                                                                                  
+            # (10,02)
+            H_10_02 = numpy.zeros((n,n,N*3,n,n))
+            for s in range(self._nsamples):
+                W_AB = W_AB_set[s] ; F_A = F_A_set[s].reshape(3*N)
+                W_BA = W_BA_set[s] ; F_B = F_B_set[s].reshape(3*N)
+                Z_AB = composite.partial_contraction(I, W_AB)
+                Z_BA = composite.partial_contraction(I, W_BA)
+                H_10_02 += numpy.einsum("ac,abd,q->abqcd", W_AB, Z_AB, F_B)
+                H_10_02 += numpy.einsum("ad,abc,q,cd->abqcd", W_AB, Z_AB, F_B, tau)
+                #
+                H_10_02 += numpy.einsum("ac,abd,q->abqcd", W_BA, Z_BA, F_A)
+                H_10_02 += numpy.einsum("ad,abc,q,cd->abqcd", W_BA, Z_BA, F_A, tau)
+           #H_10_02 = numpy.einsum("nac,nbd,nq->abqcd",W_AB_set,W_AB_set,F_B_set.reshape(self._nsamples, N*3))
+           #H_10_02+= numpy.einsum("nac,nbd,nq->abqcd",W_BA_set,W_BA_set,F_A_set.reshape(self._nsamples, N*3))
+            H[:DIM_1,O1:O2] = composite.form_superfutf(H_10_02, m1=3).reshape(DIM_1, DIM_3).copy()
+            del H_10_02
+            H[O1:O2,:DIM_1] = H[:DIM_1,O1:O2].T.copy()
+                                                                                                                  
+            # (20,02)
+            H_20_02 = numpy.zeros((n,n,N*6,n,n))
+            for s in range(self._nsamples):
+                W_AB = W_AB_set[s] ; FF_A = FF_A_set[s].reshape(6*N)
+                W_BA = W_BA_set[s] ; FF_B = FF_B_set[s].reshape(6*N)
+                Z_AB = composite.partial_contraction(I, W_AB)
+                Z_BA = composite.partial_contraction(I, W_BA)
+                H_20_02 += numpy.einsum("ac,abd,q->abqcd", W_AB, Z_AB, FF_B)
+                H_20_02 += numpy.einsum("ad,abc,q,cd->abqcd", W_AB, Z_AB, FF_B, tau)
+                #
+                H_20_02 += numpy.einsum("ac,abd,q->abqcd", W_BA, Z_BA, FF_A)
+                H_20_02 += numpy.einsum("ad,abc,q,cd->abqcd", W_BA, Z_BA, FF_A, tau)
+           #H_20_02 = numpy.einsum("nac,nbd,nq->abqcd",W_AB_set,W_AB_set,FF_B_set.reshape(self._nsamples, N*6))
+           #H_20_02+= numpy.einsum("nac,nbd,nq->abqcd",W_BA_set,W_BA_set,FF_A_set.reshape(self._nsamples, N*6))
+            H[DIM_1:O1,O1:O2] = composite.form_superfutf(H_20_02, m1=3).reshape(DIM_2, DIM_3).copy()
+            del H_20_02
+            H[O1:O2,DIM_1:O1] = H[DIM_1:O1,O1:O2].T.copy()
+                                                                                                                  
+            H *= 2.0
+            Hi = self._invert_hessian(H)
+                                                                                                                  
+            # Fit
+            s = - g @ Hi
+                                                                                                                  
+                                                                                                                  
+         # Extract susceptibilities
+         psi4.core.print_out(" * Setting the DMS tensors...\n")
+         dms.set_s1(s)
+         for order in [(1,0),(2,0),(0,2)]:
+             if order in dms.available_orders(): dms._generate_B_from_s(order)
 
-         # Fit
-         s = - g @ Hi
-
-
-      # Extract susceptibilities
-      psi4.core.print_out(" * Setting the DMS tensors...\n")
-      dms.set_s1(s)
-      for order in [(1,0),(2,0),(0,2)]:
-          if order in dms.available_orders(): dms._generate_B_from_s(order)
+      # ---> External Field Model <--- #
+      else:
+         print("Nothing to do here")
 
 
   def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):
@@ -1659,8 +1724,8 @@ class Translation_DMSFit(EFP_DMSFit):
           B_21 = self.B(2,1,'da')
           b_21 = self.B(2,1,'g')
       if (0,2) in self._dms_da.available_orders():
-          B_02 = self.B(0,2,'da') # *t*r
-          b_02 = self.B(0,2,'g')  # *t*r
+          B_02 = self.B(0,2,'da')
+          b_02 = self.B(0,2,'g')
 
 
       # read perturbations
@@ -1944,9 +2009,9 @@ class Rotation_DMSFit(EFP_DMSFit):
   """
  Rotation method to fit DMS tensors.
 """
-  def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model,
+  def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model,
                      start=1.0, srange=2.0):
-      super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model)
+      super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model)
 
       # translation parameters
       self._start = start
