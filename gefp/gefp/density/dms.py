@@ -401,7 +401,7 @@ class DMSFit(ABC):
        # Number of Fitting Samples
        self._nsamples  = nsamples
        # Types of DMS to Fit
-       self._dms_types = dms_types
+       self._dms_types = dms_types.split(',')
        # DMS Model
        self._order_type= order_type
        # Iterative Model
@@ -411,7 +411,7 @@ class DMSFit(ABC):
                                                                                                        
                                                                                                        
    @classmethod
-   def create(cls, mol, fit_type="transl", dms_types="all", order_type='basic',
+   def create(cls, mol, fit_type="transl", dms_types="da,g", order_type='basic',
                    nsamples=100, method='scf', 
                    use_iterative_model=True, use_external_field_model=False):
        if fit_type.lower().startswith("tran"): 
@@ -664,7 +664,20 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
          DA= D[:self._nbf,:self._nbf]
          DB= D[self._nbf:,self._nbf:]
          #
-         G = self._dimer_wfn.Fa().to_array(dense=True) - self._dimer_wfn.H().to_array(dense=True)
+         if   'e' in self._dms_types: # G = 2J - K
+               G = self._dimer_wfn.Fa().to_array(dense=True) - self._dimer_wfn.H().to_array(dense=True)
+         elif 'g' in self._dms_types: # G = V + 2J - K
+               T = self._dimer_mints.ao_kinetic().to_array(dense=True)
+               G = self._dimer_wfn.Fa().to_array(dense=True) - T
+         elif 'f' in self._dms_types: # G = T + V + 2J - K = F
+               G = self._dimer_wfn.Fa().to_array(dense=True).copy()
+         elif 'g1' in self._dms_types: # G = 2V + 2J - K 
+               T = self._dimer_mints.ao_kinetic().to_array(dense=True)
+               V = self._dimer_mints.ao_potential().to_array(dense=True)
+               G = self._dimer_wfn.Fa().to_array(dense=True) - T + V
+         else:
+               raise ValueError(" Only g or e or f or g1 types for Fock DMS are available.")
+            
          GA= G[:self._nbf,:self._nbf]
          GB= G[self._nbf:,self._nbf:]
       #
@@ -732,7 +745,21 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       self._nbf = self._wfn_0.basisset().nbf()
 
       Da = self._wfn_0.Da().to_array(dense=True)
-      G  = self._wfn_0.Fa().to_array(dense=True) - self._wfn_0.H().to_array(dense=True)
+      #
+      if   'e' in self._dms_types: # G = 2J - K
+            G = self._wfn_0.Fa().to_array(dense=True) - self._wfn_0.H().to_array(dense=True)
+      elif 'g' in self._dms_types: # G = V + 2J - K
+            mints = psi4.core.MintsHelper(self._bfs_0)
+            T = mints.ao_kinetic().to_array(dense=True)
+            G = self._wfn_0.Fa().to_array(dense=True) - T
+      elif 'f' in self._dms_types: # G = T + V + 2J - K = F
+            G = self._wfn_0.Fa().to_array(dense=True).copy()
+      elif 'g1' in self._dms_types: # G = 2V + 2J - K
+            mints = psi4.core.MintsHelper(self._bfs_0)
+            T = mints.ao_kinetic().to_array(dense=True)
+            V = mints.ao_potential().to_array(dense=True)
+            G = self._wfn_0.Fa().to_array(dense=True) - T + V
+
 
       # Initialize DMS tensors
       self._dms_da= DMS.create('da', self._order_type)
@@ -902,6 +929,8 @@ class Translation_DMSFit(EFP_DMSFit):
       
       S_AB_set = []
       H_set = []
+      T_set = []
+      V_set = []
       DIP_set = []      
       
       F_A_set = []
@@ -936,6 +965,8 @@ class Translation_DMSFit(EFP_DMSFit):
 
           # Core Hamiltonian
           H = self._dimer_wfn.H().to_array(dense=True)
+          T = self._dimer_mints.ao_kinetic().to_array(dense=True)
+          V = self._dimer_mints.ao_potential().to_array(dense=True)
 
           # OPDM
           dD     = self._dimer_wfn.Da().to_array(dense=True)
@@ -949,7 +980,20 @@ class Translation_DMSFit(EFP_DMSFit):
           self._save_dD(dD, prefix='dd')
 
           # G tensor
-          dG   = self._dimer_wfn.Fa().to_array(dense=True) - H
+          if   'e' in self._dms_types: # G = 2J - K
+                dG   = self._dimer_wfn.Fa().to_array(dense=True) - H
+          elif 'g' in self._dms_types: # G = V + 2J - K
+               #TT = numpy.zeros((self._nbf*2,self._nbf*2))
+               #T_AB = T[:self._nbf,self._nbf:]
+               #T_BA = T[self._nbf:,:self._nbf]
+               #TT[:self._nbf,self._nbf:] = T_AB.copy()
+               #TT[self._nbf:,:self._nbf] = T_BA.copy()
+                dG   = self._dimer_wfn.Fa().to_array(dense=True) - T
+          elif 'f' in self._dms_types: # G = F
+                dG   = self._dimer_wfn.Fa().to_array(dense=True)
+          elif 'g1' in self._dms_types: # G = 2V + 2J - K
+                dG   = self._dimer_wfn.Fa().to_array(dense=True) - T + V
+
           dG[:self._nbf,:self._nbf]-= self._G0
           dG[self._nbf:,self._nbf:]-= self._G0
 
@@ -991,6 +1035,8 @@ class Translation_DMSFit(EFP_DMSFit):
           # Accumulate
           S_AB_set.append(S_AB)
           H_set.append(H)
+          T_set.append(T)
+          V_set.append(V)
 
           dD_AA_set_ref.append(dD_AA)
           dD_BB_set_ref.append(dD_BB)
@@ -1026,6 +1072,8 @@ class Translation_DMSFit(EFP_DMSFit):
       #
       S_AB_set= numpy.array(S_AB_set)
       H_set= numpy.array(H_set)
+      T_set= numpy.array(T_set)
+      V_set= numpy.array(V_set)
       DIP_set= numpy.array(DIP_set)
       #
       dD_AA_set_ref= numpy.array(dD_AA_set_ref)
@@ -1060,6 +1108,8 @@ class Translation_DMSFit(EFP_DMSFit):
       # Save on disk
       S_AB_set.tofile('temp_S_AB_set.dat')
       H_set.tofile('temp_H_set.dat')
+      T_set.tofile('temp_T_set.dat')
+      V_set.tofile('temp_V_set.dat')
       DIP_set.tofile('temp_DIP_set.dat')
       #
       dD_AA_set_ref.tofile('temp_dD_AA_ref_set.dat')
@@ -1737,6 +1787,8 @@ class Translation_DMSFit(EFP_DMSFit):
       F_B_set = numpy.fromfile('temp_F_B_set.dat').reshape(s,N,3)
       
       H_set = numpy.fromfile('temp_H_set.dat').reshape(s,n*2,n*2)
+      T_set = numpy.fromfile('temp_T_set.dat').reshape(s,n*2,n*2)
+      V_set = numpy.fromfile('temp_V_set.dat').reshape(s,n*2,n*2)
       DIP_set = numpy.fromfile('temp_DIP_set.dat').reshape(s,3,n*2,n*2)
 
       dD_AA_set_ref = numpy.fromfile('temp_dD_AA_ref_set.dat').reshape(s,n,n)
@@ -1945,10 +1997,25 @@ class Translation_DMSFit(EFP_DMSFit):
                 G_ref[n:,n:] = self._G0
 
 
-          H = H_set[s]
-          F_com = G_com + H
-          F_ref = G_ref + H
+          # determine Fock matrix
+          H = H_set[s].copy()
+          T = T_set[s].copy()
+          V = V_set[s].copy()
+          if 'e' in self._dms_types:
+              F_com = G_com + H
+              F_ref = G_ref + H
+          elif 'g' in self._dms_types:
+              F_com = G_com + T
+              F_ref = G_ref + T 
+          elif 'f' in self._dms_types:
+              F_com = G_com  
+              F_ref = G_ref  
+          elif 'g1' in self._dms_types:
+              F_com = G_com - V + T
+              F_ref = G_ref - V + T
 
+
+          # compute total energy
           E_com = (D_com @ (H + F_com)).trace() + self._E_nuc_set[s] - 2.0 * self._e0
           E_ref = (D_ref @ (H + F_ref)).trace() + self._E_nuc_set[s] - 2.0 * self._e0
 
@@ -1960,7 +2027,7 @@ class Translation_DMSFit(EFP_DMSFit):
           self._save_dD(dG_com, prefix='dg_com')
           self._save_dD(dG_ref, prefix='dg_ref')
 
-          # compute dipole moments
+          # compute dipole moment
           DIP = DIP_set[s]
           DIP_nuc = self._DIP_nuc_set[s]
           mu_x_ref = 2.0 * (DIP[0] @ D_ref).trace() + DIP_nuc[0]
