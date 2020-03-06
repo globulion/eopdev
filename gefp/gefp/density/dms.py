@@ -540,6 +540,10 @@ class _Global_Settings_DMSFit(DMSFit):
        "RMS between arrays a and b"
        return numpy.sqrt(((a-b)**2).sum()/a.size)
 
+   def _random_double(self):
+       "Random double between -1 and 1"
+       return 2.0*numpy.random.random() - 1.0
+
 
 
 
@@ -558,13 +562,14 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
                         "DMATPOL_GRADIENT_RANK": 0,
                         "DMATPOL_NSAMPLES"     : nsamples,
                         "DMATPOL_NTEST_CHARGE" : 40,
+                        "ESP_PAD_SPHERE"       : 6.0,
     "cphf_diis"                    : True,
     "cphf_diis_dim"                : 8,
     "cphf_maxiter"                 : 200,
     "cphf_conver"                  : 1e-8,
     "cphf_localize"                : True,
     "cphf_localizer"               : "PIPEK_MEZEY",
-                        "DMATPOL_TEST_CHARGE"  : 0.001})
+                        "DMATPOL_TEST_CHARGE"  : 0.05})
 
       self._e0 = None
       self._wfn_0= None
@@ -778,8 +783,9 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
 
       Da = self._wfn_0.Da().to_array(dense=True)
       #
+      G_extField = self._wfn_0.Fa().to_array(dense=True) - self._wfn_0.H().to_array(dense=True) # G = 2J - K
       if   'e' in self._dms_types: # G = 2J - K
-            G = self._wfn_0.Fa().to_array(dense=True) - self._wfn_0.H().to_array(dense=True)
+            G = G_extField.copy()
       elif 'g' in self._dms_types: # G = V + 2J - K
             mints = psi4.core.MintsHelper(self._bfs_0)
             T = mints.ao_kinetic().to_array(dense=True)
@@ -811,7 +817,7 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       self._dms_extField_da.set_bfs(self._bfs_0)
       self._dms_extField_g .set_bfs(self._bfs_0)
       self._dms_extField_da.set_M(Da.copy())
-      self._dms_extField_g .set_M( G.copy())
+      self._dms_extField_g .set_M(G_extField.copy())
 
 
       #if   self._dms_type.lower() == 'da': M = self._wfn_0.Da().to_array(dense=True)
@@ -820,6 +826,7 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       #elif self._dms_type.lower() == 'fb': M = self._wfn_0.Fb().to_array(dense=True)
       #else:
       #    raise valueerror(" DMSFit Error: Incorrect type of dms tensors. Available: da, db, fa, fb.")
+      psi4.core.clean()
 
 
   def __compute_dms_external_field(self):
@@ -838,12 +845,12 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
           B_10_iy = genEffPar.susceptibility(1,0,i,1).to_array(dense=True) 
           B_10_iz = genEffPar.susceptibility(1,0,i,2).to_array(dense=True) 
 
-          B_20_ixx= genEffPar.susceptibility(2,0,i,0).to_array(dense=True)
-          B_20_ixy= genEffPar.susceptibility(2,0,i,1).to_array(dense=True)
-          B_20_ixz= genEffPar.susceptibility(2,0,i,2).to_array(dense=True)
-          B_20_iyy= genEffPar.susceptibility(2,0,i,3).to_array(dense=True)
-          B_20_iyz= genEffPar.susceptibility(2,0,i,4).to_array(dense=True)
-          B_20_izz= genEffPar.susceptibility(2,0,i,5).to_array(dense=True)
+          B_20_ixx= genEffPar.susceptibility(2,0,i,0).to_array(dense=True) # xx 0
+          B_20_ixy= genEffPar.susceptibility(2,0,i,1).to_array(dense=True) # xy 1
+          B_20_ixz= genEffPar.susceptibility(2,0,i,2).to_array(dense=True) # xz 2
+          B_20_iyy= genEffPar.susceptibility(2,0,i,4).to_array(dense=True) # yx 3
+          B_20_iyz= genEffPar.susceptibility(2,0,i,5).to_array(dense=True) # yy 4 
+          B_20_izz= genEffPar.susceptibility(2,0,i,8).to_array(dense=True) # yz 5 zx 6 zy 7 zz 8
 
           B_ind_10[:,:,i,0] = B_10_ix.copy()
           B_ind_10[:,:,i,1] = B_10_iy.copy()
@@ -862,6 +869,8 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
 
       self._B_ind_10 = B_ind_10 
       self._B_ind_20 = B_ind_20 
+
+      psi4.core.clean()
 
 
   # ---> Abstract methods <--- #
@@ -883,427 +892,14 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
 
 
 
+class ExternalField_EFP_DMSFit(EFP_DMSFit):
 
-class Translation_DMSFit(EFP_DMSFit):
-  """
- Translation method to fit DMS tensors.
-"""
-  def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model,
-                     start=1.0, srange=2.0):
+  def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model):
       super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model)
-
-      # translation parameters
-      self._start = start
-      self._range = srange
-
 
   # ---> Implementation <--- #
 
-  def _construct_aggregate(self):
-      "Create next dimer by translating a molecule"
-      psi4.core.clean()
-
-      self._i += 1
-      log = "\n0 1\n"
-      for i in range(self._natoms):
-          log += "%s" % self._mol.symbol(i)
-          log += "%16.6f" % (self._mol.x(i) * psi4.constants.bohr2angstroms)
-          log += "%16.6f" % (self._mol.y(i) * psi4.constants.bohr2angstroms)
-          log += "%16.6f" % (self._mol.z(i) * psi4.constants.bohr2angstroms)
-          log += "\n"
-      log += "units angstrom\n"
-      log += "symmetry c1\n"
-      log += "no_reorient\n"
-      log += "no_com\n"
-
-      log += "--\n"
-      log += "0 1\n"
-
-      t = self.__new_translation()
-
-      for i in range(self._natoms):
-          log += "%s" % self._mol.symbol(i)
-          log += "%16.6f" % (self._mol.x(i) * psi4.constants.bohr2angstroms + t[0])
-          log += "%16.6f" % (self._mol.y(i) * psi4.constants.bohr2angstroms + t[1])
-          log += "%16.6f" % (self._mol.z(i) * psi4.constants.bohr2angstroms + t[2])
-          log += "\n"
-      log += "units angstrom\n"
-      log += "symmetry c1\n"
-      log += "no_reorient\n"
-      log += "no_com\n"
-     #print(log)
-
-      mol = psi4.geometry(log)
-      mol.update_geometry()
-
-      e_dimer, wfn_dimer = PSI4_DRIVER(self._method, molecule=mol, return_wfn=True)
-      self._dimer_wfn = wfn_dimer
-      self._dimer_mol = mol
-      self._dimer_bfs = wfn_dimer.basisset()
-      self._dimer_mints = psi4.core.MintsHelper(self._dimer_bfs)
-
-      self._E_nuc_set.append(self._dimer_mol.nuclear_repulsion_energy())
-      self._DIP_nuc_set.append(self._dimer_mol.nuclear_dipole())
-
-      self._mol_A = self._mol
-      self._mol_B = mol.extract_subsets(2)
-      e_monomer, wfn_B = PSI4_DRIVER(self._method, molecule=self._mol_B, return_wfn=True)
-      self._wfn_A = self._wfn_0
-      self._wfn_B = wfn_B
-      self._bfs_A = self._bfs_0
-      self._bfs_B = wfn_B.basisset()
-
-      e_int = e_dimer - 2.0 * e_monomer # MCBS
-      message = " Sample %3d. Interaction energy= %13.6f [a.u.]   %13.6f [kcal/mol]" % (self._i, e_int, e_int*627.5 )
-      psi4.core.print_out(message+'\n'); print(message)
-      # 
-      out = "geom_%03d.xyz" % self._i
-      self._save_xyz(mol, out, misc="Eint(MCBS)=%13.3f [kcal/mol]" % (e_int*627.5))
-      #
-      return mol
-
-
-  def __generate_field_from_charges(self, charges, mol):
-      fields = numpy.zeros((mol.natom(), 3))
-      geom = mol.geometry().to_array(dense=True)
-      for i,r in enumerate(geom):
-          fields[i] = self.__field_due_to_charges(charges, r)
-      return fields #* -1.0
-
-  def __field_due_to_charges(self, charges, r):
-      x,y,z = r
-      fx = 0.0; fy = 0.0; fz = 0.0
-      for charge in charges:
-          q,X,Y,Z = charge
-          dx = x-X; dy = y-Y; dz = z-Z
-          R = math.sqrt(dx*dx+dy*dy+dz*dz)
-          R = q/R**3
-          fx+= R * dx; fy+= R * dy; fz+= R * dz
-      f = numpy.array([fx,fy,fz])
-      return f
-
-  def __draw_random_point(self):
-      geom = self._mol.geometry().to_array(dense=True)
-      com = self._mol.center_of_mass()
-      cx_ = com[0]; cy_=com[1]; cz_ = com[2]
-      pad = psi4.core.get_options().get_double("ESP_PAD_SPHERE")
-      minval = geom[0,0] - cx_; maxval = minval
-      for i in range(self._mol.natom()):
-          for j in range(3):
-              val = geom[i,j] - com[j]
-              if val > maxval: maxval = val
-              if val < minval: minval = val
-      rad = max(abs(maxval), abs(minval))
-      radius_ = rad + pad
-
-      theta = numpy.arccos(numpy.random.random())
-      phi   = 2.0 * numpy.pi * numpy.random.random()
-      r     = radius_ * numpy.sqrt(numpy.random.random())
-      x     = cx_ + r * numpy.sin(theta) * numpy.cos(phi)
-      y     = cy_ + r * numpy.sin(theta) * numpy.sin(phi)
-      z     = cz_ + r * numpy.cos(theta)                 
-
-      point = numpy.array([x,y,z])
-      return point
-
-  def __generate_random_charges(self):
-      geom = self._mol.geometry().to_array(dense=True)
-      nc = psi4.core.get_options().get_int("DMATPOL_NTEST_CHARGE")
-      charges = numpy.zeros((nc,4))
-
-      for i in range(nc):
-          done = False
-          while not done:
-              point = self.__draw_random_point()
-              if not self._clash(geom, point):
-                 done = True 
-                 q = self.__draw_random_charge()
-                 x,y,z = point
-                 charges[i] = numpy.array([q,x,y,z])
-      return charges
-
-
-
-
-  def __draw_random_charge(self):
-      scale = psi4.core.get_options().get_double("DMATPOL_TEST_CHARGE")
-      q = 2.0*(numpy.random.random() - 0.5) * scale
-      return q
-
-  def _extField(self):
-      "Compute electric field and wavefunction in the presence of point charges"
-
-      charges = self.__generate_random_charges()
-      F = self.__generate_field_from_charges(charges, self._mol)
-
-      MM_charges = psi4.QMMM()
-      BohrToAngstrom = 0.5291772086
-      for charge in charges:
-          q = charge[0]
-          x = charge[1] * BohrToAngstrom
-          y = charge[2] * BohrToAngstrom
-          z = charge[3] * BohrToAngstrom
-          MM_charges.extern.addCharge(q,x,y,z)
-      psi4.core.set_global_option_python('EXTERN', MM_charges.extern)
-
-      e, wfn = psi4.energy(self._method, molecule=self._mol, return_wfn=True)
-
-      psi4.core.set_global_option_python('EXTERN', None)
-      return F, wfn
-
-  def _compute_samples(self):
-      "Compute electric fields, CT channels and reference deformation matrices"
-
-      dD_AA_set_ref = []
-      dD_BB_set_ref = []
-      dD_AB_set_ref = []
-      dD_extField_set_ref = []
-      
-      dG_AA_set_ref = []
-      dG_BB_set_ref = []
-      dG_AB_set_ref = []
-      dG_extField_set_ref = []
-      
-      S_AB_set = []
-      H_set = []
-      T_set = []
-      V_set = []
-      DIP_set = []      
-      
-      F_A_set = []
-      F_B_set = []
-      F_extField_set = []
-      
-      W_AB_set= []
-      W_BA_set= []
-      w_AB_set= []
-      w_BA_set= []
-      
-      A_AB_set= []
-      A_BA_set= []
-      a_AB_set= []
-      a_BA_set= []
-      
-      K_set   = []
-      L_set   = []
-      k_set   = []
-      l_set   = []
-
-      psi4.core.print_out(" ---> Computing wavefunction for each sample <---\n\n")
-      for s in range(self._nsamples):
-
-          # Dimer system
-          aggr= self._construct_aggregate()
-
-          # Monomer with point charges
-          F_extField, wfn_extField = self._extField()
-
-          # Set sources of perturbation
-          self._determine_perturbing_densities()
-
-          # Overlap integrals
-          S_AB = self._dimer_wfn.S().to_array(dense=True)[:self._nbf,self._nbf:]
-
-          # Core Hamiltonian
-          H = self._dimer_wfn.H().to_array(dense=True)
-          T = self._dimer_mints.ao_kinetic().to_array(dense=True)
-          V = self._dimer_mints.ao_potential().to_array(dense=True)
-
-          # OPDM (dimer)
-          dD     = self._dimer_wfn.Da().to_array(dense=True)
-          dD[:self._nbf,:self._nbf]-= self._D0
-          dD[self._nbf:,self._nbf:]-= self._D0
-
-          dD_AA = dD[:self._nbf,:self._nbf].copy()
-          dD_BB = dD[self._nbf:,self._nbf:].copy()
-          dD_AB = dD[:self._nbf,self._nbf:].copy()
-
-          self._save_dD(dD, prefix='dd')
-
-          dD_extField = wfn_extField.Da().to_array(dense=True).copy()
-          dD_extField-= self._D0
-
-          # G tensor
-          if   'e' in self._dms_types: # G = 2J - K
-                dG   = self._dimer_wfn.Fa().to_array(dense=True) - H
-                dG_extField   = wfn_extField.Fa().to_array(dense=True) - wfn_extField.H().to_array(dense=True)
-          elif 'g' in self._dms_types: # G = V + 2J - K
-               #TT = numpy.zeros((self._nbf*2,self._nbf*2))
-               #T_AB = T[:self._nbf,self._nbf:]
-               #T_BA = T[self._nbf:,:self._nbf]
-               #TT[:self._nbf,self._nbf:] = T_AB.copy()
-               #TT[self._nbf:,:self._nbf] = T_BA.copy()
-                T_mon = T[:self._nbf,:self._nbf].copy()
-                dG   = self._dimer_wfn.Fa().to_array(dense=True) - T
-                dG_extField   = wfn_extField.Fa().to_array(dense=True) - T_mon
-          elif 'f' in self._dms_types: # G = F
-                dG   = self._dimer_wfn.Fa().to_array(dense=True)
-                dG_extField   = wfn_extField.Fa().to_array(dense=True)
-          elif 'g1' in self._dms_types: # G = 2V + 2J - K
-                dG   = self._dimer_wfn.Fa().to_array(dense=True) - T + V
-                raise NotImplementedError # add V for dG_extField
-
-          dG[:self._nbf,:self._nbf]-= self._G0
-          dG[self._nbf:,self._nbf:]-= self._G0
-
-          dG_extField -= self._G0
-
-          dG_AA = dG[:self._nbf,:self._nbf].copy()
-          dG_BB = dG[self._nbf:,self._nbf:].copy()
-          dG_AB = dG[:self._nbf,self._nbf:].copy()
-
-          self._save_dD(dG, prefix='gg')
-
-          # Electric field
-          F_A, F_B, F_A_mat, F_B_mat = self._compute_efield()
-
-          # Dipole integrals
-          DIP = [x.to_array(dense=True) for x in self._dimer_mints.ao_dipole()]
-          DIP_set.append(DIP)
-
-          # Auxiliary matrices
-          W_AB = self._DA @ S_AB
-          W_BA = self._DB @ S_AB.T
-
-         #W_AB*= s
-         #W_BA*= s
-
-          A_AB = W_AB.T @ W_AB
-          A_BA = W_BA.T @ W_BA
-
-          K    = W_AB.T @ dD_AB
-          L    = W_BA.T @ dD_AB.T
-
-          w_AB = self._GA @ S_AB
-          w_BA = self._GB @ S_AB.T
-
-          a_AB = w_AB.T @ w_AB
-          a_BA = w_BA.T @ w_BA
-
-          k    = w_AB.T @ dG_AB
-          l    = w_BA.T @ dG_AB.T
-
-          # Accumulate
-          S_AB_set.append(S_AB)
-          H_set.append(H)
-          T_set.append(T)
-          V_set.append(V)
-
-          dD_AA_set_ref.append(dD_AA)
-          dD_BB_set_ref.append(dD_BB)
-          dD_AB_set_ref.append(dD_AB)
-
-          dG_AA_set_ref.append(dG_AA)
-          dG_BB_set_ref.append(dG_BB)
-          dG_AB_set_ref.append(dG_AB)
-
-          dD_extField_set_ref.append(dD_extField)
-          dG_extField_set_ref.append(dG_extField)
-
-          F_A_set.append(F_A)
-          F_B_set.append(F_B)
-          F_extField_set.append(F_extField)
-
-          W_AB_set.append(W_AB)
-          W_BA_set.append(W_BA)
-
-          A_AB_set.append(A_AB)
-          A_BA_set.append(A_BA)
-
-          K_set.append(K)
-          L_set.append(L)
-
-          w_AB_set.append(w_AB)
-          w_BA_set.append(w_BA)
-
-          a_AB_set.append(a_AB)
-          a_BA_set.append(a_BA)
-
-          k_set.append(k)
-          l_set.append(l)
-          #
-
-
-      #
-      S_AB_set= numpy.array(S_AB_set)
-      H_set= numpy.array(H_set)
-      T_set= numpy.array(T_set)
-      V_set= numpy.array(V_set)
-      DIP_set= numpy.array(DIP_set)
-      #
-      dD_AA_set_ref= numpy.array(dD_AA_set_ref)
-      dD_BB_set_ref= numpy.array(dD_BB_set_ref)
-      dD_AB_set_ref= numpy.array(dD_AB_set_ref)
-      dD_extField_set_ref = numpy.array(dD_extField_set_ref)
-      #
-      dG_AA_set_ref= numpy.array(dG_AA_set_ref)
-      dG_BB_set_ref= numpy.array(dG_BB_set_ref)
-      dG_AB_set_ref= numpy.array(dG_AB_set_ref)
-      dG_extField_set_ref = numpy.array(dG_extField_set_ref)
-      #
-      F_A_set = numpy.array(F_A_set)
-      F_B_set = numpy.array(F_B_set)
-      F_extField_set = numpy.array(F_extField_set)
-      #
-      W_AB_set= numpy.array(W_AB_set)
-      W_BA_set= numpy.array(W_BA_set)
-      #
-      A_AB_set= numpy.array(A_AB_set)
-      A_BA_set= numpy.array(A_BA_set)
-      #
-      K_set   = numpy.array(K_set)
-      L_set   = numpy.array(L_set)
-      #
-      w_AB_set= numpy.array(w_AB_set)
-      w_BA_set= numpy.array(w_BA_set)
-      #
-      a_AB_set= numpy.array(a_AB_set)
-      a_BA_set= numpy.array(a_BA_set)
-      #
-      k_set   = numpy.array(k_set)
-      l_set   = numpy.array(l_set)
-
-      # Save on disk
-      S_AB_set.tofile('temp_S_AB_set.dat')
-      H_set.tofile('temp_H_set.dat')
-      T_set.tofile('temp_T_set.dat')
-      V_set.tofile('temp_V_set.dat')
-      DIP_set.tofile('temp_DIP_set.dat')
-      #
-      dD_AA_set_ref.tofile('temp_dD_AA_ref_set.dat')
-      dD_BB_set_ref.tofile('temp_dD_BB_ref_set.dat')
-      dD_AB_set_ref.tofile('temp_dD_AB_ref_set.dat')
-      dD_extField_set_ref.tofile('temp_dD_extField_ref_set.dat')
-      #
-      dG_AA_set_ref.tofile('temp_dG_AA_ref_set.dat')
-      dG_BB_set_ref.tofile('temp_dG_BB_ref_set.dat')
-      dG_AB_set_ref.tofile('temp_dG_AB_ref_set.dat')
-      dG_extField_set_ref.tofile('temp_dG_extField_ref_set.dat')
-      #
-      F_A_set .tofile('temp_F_A_set.dat')
-      F_B_set .tofile('temp_F_B_set.dat')
-      F_extField_set .tofile('temp_F_extField_set.dat')
-      #
-      W_AB_set.tofile('temp_W_AB_set.dat')
-      W_BA_set.tofile('temp_W_BA_set.dat')
-      #
-      A_AB_set.tofile('temp_A_AB_set.dat')
-      A_BA_set.tofile('temp_A_BA_set.dat')
-      #
-      K_set   .tofile('temp_K_set.dat')
-      L_set   .tofile('temp_L_set.dat')
-      #
-      w_AB_set.tofile('temp_w_AB_set.dat')
-      w_BA_set.tofile('temp_w_BA_set.dat')
-      #
-      a_AB_set.tofile('temp_a_AB_set.dat')
-      a_BA_set.tofile('temp_a_BA_set.dat')
-      #
-      k_set   .tofile('temp_k_set.dat')
-      l_set   .tofile('temp_l_set.dat')
-     
-
-  def _compute_group_extField(self, dms, F_set, dM_ref_set):#OK
+  def _compute_group_extField(self, dms, F_set, dM_ref_set):
       "Compute B(10) and B(20) in external electric field"
       psi4.core.print_out(" ---> Computing DMS for Ext-Field group of type %s <---\n\n" % dms._type_long)
 
@@ -1313,7 +909,7 @@ class Translation_DMSFit(EFP_DMSFit):
       # First compute Hessian                                                                                                
       dim_1 = N*3
       dim_2 = N*6
-      H = numpy.zeros((dim_1 + dim_2, dim_1 + dim_2))
+      H = numpy.zeros((dim_1 + dim_2, dim_1 + dim_2), numpy.float64)
                                                                                             
       H_10_10 = numpy.einsum("niu,njw->iujw", F_set, F_set) 
                                                                                             
@@ -1410,7 +1006,7 @@ class Translation_DMSFit(EFP_DMSFit):
               g = numpy.zeros(dim_1 + dim_2)
                                                                                    
               g[:dim_1] = g_10.ravel().copy()
-              g[dim_1:] = u.ravel()
+              g[dim_1:] = u.ravel().copy()
               del u, g_10, g_20
               g *= -2.0
                                                                                    
@@ -1432,6 +1028,464 @@ class Translation_DMSFit(EFP_DMSFit):
           if order in dms.available_orders(): dms._generate_B_from_s(order)
 
 
+  def _extField(self):
+      "Compute electric field and wavefunction in the presence of point charges"
+      psi4.core.clean()
+      psi4.core.print_out(" ===> ExtField Run For Sample %i <===\n" % self._i)
+
+      charges = self.__generate_random_charges()
+      F = self.__generate_field_from_charges(charges, self._mol)
+      F_aver = numpy.linalg.norm(F, axis=1)
+      for i in range(self._mol.natom()):
+          psi4.core.print_out(" Sample %3d Field on Atom %2i = %14.8f [a.u.]\n" % (self._i, i+1, F_aver[i]))
+
+      MM_charges = psi4.QMMM()
+      BohrToAngstrom = 0.5291772086
+      for charge in charges:
+          q = charge[0]
+          x = charge[1] * BohrToAngstrom
+          y = charge[2] * BohrToAngstrom
+          z = charge[3] * BohrToAngstrom
+          MM_charges.extern.addCharge(q,x,y,z)
+      psi4.core.set_global_option_python('EXTERN', MM_charges.extern)
+
+      e, wfn = psi4.energy(self._method, molecule=self._mol, return_wfn=True)
+      psi4.core.print_out(" Sample %3d ExtField Total Energy= %16.6f\n" % (self._i, e))
+
+      V = MM_charges.extern.computePotentialMatrix(self._bfs_0).to_array(dense=True)
+      E_nuc_field = self.__compute_nuclear_field_interaction_energy(self._mol, charges)
+
+      MM_charges.extern.clear()
+
+      psi4.core.set_global_option_python('EXTERN', None)
+      return F, V, wfn, E_nuc_field
+
+
+  # ---> Private interface <--- #
+
+  def __generate_field_from_charges(self, charges, mol):
+      fields = numpy.zeros((mol.natom(), 3))
+      geom = mol.geometry().to_array(dense=True)
+      for i in range(len(geom)):
+          fields[i] = self.__field_due_to_charges(charges, geom[i])
+      return fields #* -1.0
+
+  def __field_due_to_charges(self, charges, r):#OK
+      x,y,z = r
+      fx = 0.0; fy = 0.0; fz = 0.0
+      for charge in charges:
+          q,X,Y,Z = charge
+          dx = x-X; dy = y-Y; dz = z-Z
+          R = math.sqrt(dx*dx+dy*dy+dz*dz)
+          R = q/(R*R*R)
+          fx+= R * dx; fy+= R * dy; fz+= R * dz
+      f = numpy.array([fx,fy,fz])
+      return f
+
+  def __draw_random_point(self):
+      geom = self._mol.geometry().to_array(dense=True)
+      com = self._mol.center_of_mass()
+      cx_ = com[0]; cy_=com[1]; cz_ = com[2]
+      pad = psi4.core.get_options().get_double("ESP_PAD_SPHERE")
+      minval = geom[0,0] - cx_; maxval = minval
+      for i in range(self._mol.natom()):
+          for j in range(3):
+              val = geom[i,j] - com[j]
+              if val > maxval: maxval = val
+              if val < minval: minval = val
+      rad = max(abs(maxval), abs(minval))
+      radius_ = rad + pad
+
+      theta = numpy.arccos(self._random_double())
+      phi   = 2.0 * numpy.pi * self._random_double()
+      r     = radius_ * numpy.cbrt(self._random_double())
+      x     = cx_ + r * numpy.sin(theta) * numpy.cos(phi)
+      y     = cy_ + r * numpy.sin(theta) * numpy.sin(phi)
+      z     = cz_ + r * numpy.cos(theta)                 
+
+      point = numpy.array([x,y,z])
+      return point
+
+  def __generate_random_charges(self):
+      geom = self._mol.geometry().to_array(dense=True)
+      nc = psi4.core.get_options().get_int("DMATPOL_NTEST_CHARGE")
+      charges = numpy.zeros((nc,4))
+
+     #print(geom * 0.5291772086)
+      for i in range(nc):
+          done = False
+          while not done:
+              point = self.__draw_random_point()
+              if not self._clash(geom, [point,]):
+                 done = True 
+                 q = self.__draw_random_charge()
+                 x,y,z = point
+                 charges[i] = numpy.array([q,x,y,z])
+         #print("X %14.6f %14.6f %14.6f" % tuple(charges[i,1:] * 0.5291772086))
+      return charges
+
+  def __draw_random_charge(self):
+      scale = psi4.core.get_options().get_double("DMATPOL_TEST_CHARGE")
+      q = self._random_double() * scale
+      return q
+
+  def __compute_nuclear_field_interaction_energy(self, mol, charges):
+      E = 0.0
+      for i in range(self._mol.natom()):
+          Zi = self._mol.Z(i)
+          xi = self._mol.x(i)
+          yi = self._mol.y(i)
+          zi = self._mol.z(i)
+          for j in range(len(charges)):
+              qj, xj, yj, zj = charges[j]
+              rij = math.sqrt((xi-xj)**2 + (yi-yj)**2 + (zi-zj)**2)
+              E += Zi * qj / rij
+      return E
+
+
+class Translation_DMSFit(ExternalField_EFP_DMSFit):
+  """
+ Translation method to fit DMS tensors.
+"""
+  def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model,
+                     start=1.0, srange=6.0):
+      super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model)
+
+      # translation parameters
+      self._start = start
+      self._range = srange
+
+
+  # ---> Implementation <--- #
+
+  def _construct_aggregate(self):
+      "Create next dimer by translating a molecule"
+      psi4.core.clean()
+
+      self._i += 1
+      log = "\n0 1\n"
+      for i in range(self._natoms):
+          log += "%s" % self._mol.symbol(i)
+          log += "%16.6f" % (self._mol.x(i) * psi4.constants.bohr2angstroms)
+          log += "%16.6f" % (self._mol.y(i) * psi4.constants.bohr2angstroms)
+          log += "%16.6f" % (self._mol.z(i) * psi4.constants.bohr2angstroms)
+          log += "\n"
+      log += "units angstrom\n"
+      log += "symmetry c1\n"
+      log += "no_reorient\n"
+      log += "no_com\n"
+
+      log += "--\n"
+      log += "0 1\n"
+
+      t = self.__new_translation()
+
+      for i in range(self._natoms):
+          log += "%s" % self._mol.symbol(i)
+          log += "%16.6f" % (self._mol.x(i) * psi4.constants.bohr2angstroms + t[0])
+          log += "%16.6f" % (self._mol.y(i) * psi4.constants.bohr2angstroms + t[1])
+          log += "%16.6f" % (self._mol.z(i) * psi4.constants.bohr2angstroms + t[2])
+          log += "\n"
+      log += "units angstrom\n"
+      log += "symmetry c1\n"
+      log += "no_reorient\n"
+      log += "no_com\n"
+     #print(log)
+
+      mol = psi4.geometry(log)
+      mol.update_geometry()
+
+      e_dimer, wfn_dimer = PSI4_DRIVER(self._method, molecule=mol, return_wfn=True)
+      self._dimer_wfn = wfn_dimer
+      self._dimer_mol = mol
+      self._dimer_bfs = wfn_dimer.basisset()
+      self._dimer_mints = psi4.core.MintsHelper(self._dimer_bfs)
+
+      self._E_nuc_set.append(self._dimer_mol.nuclear_repulsion_energy())
+      self._DIP_nuc_set.append(self._dimer_mol.nuclear_dipole())
+
+      self._mol_A = self._mol
+      self._mol_B = mol.extract_subsets(2)
+      e_monomer, wfn_B = PSI4_DRIVER(self._method, molecule=self._mol_B, return_wfn=True)
+      self._wfn_A = self._wfn_0
+      self._wfn_B = wfn_B
+      self._bfs_A = self._bfs_0
+      self._bfs_B = wfn_B.basisset()
+
+      e_int = e_dimer - 2.0 * e_monomer # MCBS
+      message = " Sample %3d. Interaction energy= %13.6f [a.u.]   %13.6f [kcal/mol]" % (self._i, e_int, e_int*627.5 )
+      psi4.core.print_out(message+'\n'); print(message)
+      # 
+      out = "geom_%03d.xyz" % self._i
+      self._save_xyz(mol, out, misc="Eint(MCBS)=%13.3f [kcal/mol]" % (e_int*627.5))
+      #
+      psi4.core.clean()
+      return mol
+
+
+
+  def _compute_samples(self):
+      "Compute electric fields, CT channels and reference deformation matrices"
+
+      dD_AA_set_ref = []
+      dD_BB_set_ref = []
+      dD_AB_set_ref = []
+      dD_extField_set_ref = []
+      
+      dG_AA_set_ref = []
+      dG_BB_set_ref = []
+      dG_AB_set_ref = []
+      dG_extField_set_ref = []
+      
+      S_AB_set = []
+      H_set = []
+      T_set = []
+      V_set = []
+      DIP_set = []      
+      
+      F_A_set = []
+      F_B_set = []
+      F_extField_set = []
+      V_extField_set = []
+      E_nuc_field_set= []
+      
+      W_AB_set= []
+      W_BA_set= []
+      w_AB_set= []
+      w_BA_set= []
+      
+      A_AB_set= []
+      A_BA_set= []
+      a_AB_set= []
+      a_BA_set= []
+      
+      K_set   = []
+      L_set   = []
+      k_set   = []
+      l_set   = []
+
+      psi4.core.print_out(" ---> Computing wavefunction for each sample <---\n\n")
+      for s in range(self._nsamples):
+
+          # Dimer system
+          aggr= self._construct_aggregate()
+
+          # Monomer with point charges
+          F_extField, V_extField, wfn_extField, E_nuc_field = self._extField()
+
+          # Set sources of perturbation
+          self._determine_perturbing_densities()
+
+          # Overlap integrals
+          S_AB = self._dimer_wfn.S().to_array(dense=True)[:self._nbf,self._nbf:]
+
+          # Core Hamiltonian
+          H = self._dimer_wfn.H().to_array(dense=True)
+          T = self._dimer_mints.ao_kinetic().to_array(dense=True)
+          V = self._dimer_mints.ao_potential().to_array(dense=True)
+
+          # OPDM (dimer)
+          dD     = self._dimer_wfn.Da().to_array(dense=True)
+          dD[:self._nbf,:self._nbf]-= self._D0
+          dD[self._nbf:,self._nbf:]-= self._D0
+
+          dD_AA = dD[:self._nbf,:self._nbf].copy()
+          dD_BB = dD[self._nbf:,self._nbf:].copy()
+          dD_AB = dD[:self._nbf,self._nbf:].copy()
+
+          self._save_dD(dD, prefix='dd')
+
+          dD_extField = wfn_extField.Da().to_array(dense=True).copy()
+          dD_extField-= self._D0
+
+          dG_extField   = wfn_extField.Fa().to_array(dense=True) - wfn_extField.H().to_array(dense=True) # 2J - K
+          # G tensor
+          if   'e' in self._dms_types: # G = 2J - K
+                dG   = self._dimer_wfn.Fa().to_array(dense=True) - H
+          elif 'g' in self._dms_types: # G = V + 2J - K
+               #TT = numpy.zeros((self._nbf*2,self._nbf*2))
+               #T_AB = T[:self._nbf,self._nbf:]
+               #T_BA = T[self._nbf:,:self._nbf]
+               #TT[:self._nbf,self._nbf:] = T_AB.copy()
+               #TT[self._nbf:,:self._nbf] = T_BA.copy()
+                T_mon = T[:self._nbf,:self._nbf].copy()
+                dG   = self._dimer_wfn.Fa().to_array(dense=True) - T
+               #dG_extField   = wfn_extField.Fa().to_array(dense=True) - T_mon # G = [V + U] + 2J - K
+               #dG_extField   = dG_extField + V_extField # 2J - K + U
+          elif 'f' in self._dms_types: # G = T + V + 2J - K = F
+                dG   = self._dimer_wfn.Fa().to_array(dense=True)
+               #dG_extField   = wfn_extField.Fa().to_array(dense=True) # G = T + [V + U] + 2J - K = F'
+               #dG_extField   = dG_extField + V_extField # 2J - K + U
+          elif 'g1' in self._dms_types: # G = 2V + 2J - K #TODO
+                dG   = self._dimer_wfn.Fa().to_array(dense=True) - T + V
+               #dG_extField   = dG_extField + V_extField # 2J - K + U
+                raise NotImplementedError # check it (but maybe not needed is this condition)
+
+          dG[:self._nbf,:self._nbf]-= self._G0
+          dG[self._nbf:,self._nbf:]-= self._G0
+
+          dG_extField -= self._dms_extField_g._M.copy()
+
+          dG_AA = dG[:self._nbf,:self._nbf].copy()
+          dG_BB = dG[self._nbf:,self._nbf:].copy()
+          dG_AB = dG[:self._nbf,self._nbf:].copy()
+
+          self._save_dD(dG, prefix='gg')
+
+          # Electric field
+          F_A, F_B, F_A_mat, F_B_mat = self._compute_efield()
+
+          # Dipole integrals
+          DIP = [x.to_array(dense=True) for x in self._dimer_mints.ao_dipole()]
+          DIP_set.append(DIP)
+
+          # Auxiliary matrices
+          W_AB = self._DA @ S_AB
+          W_BA = self._DB @ S_AB.T
+
+         #W_AB*= s
+         #W_BA*= s
+
+          A_AB = W_AB.T @ W_AB
+          A_BA = W_BA.T @ W_BA
+
+          K    = W_AB.T @ dD_AB
+          L    = W_BA.T @ dD_AB.T
+
+          w_AB = self._GA @ S_AB
+          w_BA = self._GB @ S_AB.T
+
+          a_AB = w_AB.T @ w_AB
+          a_BA = w_BA.T @ w_BA
+
+          k    = w_AB.T @ dG_AB
+          l    = w_BA.T @ dG_AB.T
+
+          # Accumulate
+          S_AB_set.append(S_AB)
+          H_set.append(H)
+          T_set.append(T)
+          V_set.append(V)
+
+          dD_AA_set_ref.append(dD_AA)
+          dD_BB_set_ref.append(dD_BB)
+          dD_AB_set_ref.append(dD_AB)
+
+          dG_AA_set_ref.append(dG_AA)
+          dG_BB_set_ref.append(dG_BB)
+          dG_AB_set_ref.append(dG_AB)
+
+          dD_extField_set_ref.append(dD_extField)
+          dG_extField_set_ref.append(dG_extField)
+
+          F_A_set.append(F_A)
+          F_B_set.append(F_B)
+          F_extField_set.append(F_extField)
+          V_extField_set.append(V_extField)
+          E_nuc_field_set.append(E_nuc_field)
+
+          W_AB_set.append(W_AB)
+          W_BA_set.append(W_BA)
+
+          A_AB_set.append(A_AB)
+          A_BA_set.append(A_BA)
+
+          K_set.append(K)
+          L_set.append(L)
+
+          w_AB_set.append(w_AB)
+          w_BA_set.append(w_BA)
+
+          a_AB_set.append(a_AB)
+          a_BA_set.append(a_BA)
+
+          k_set.append(k)
+          l_set.append(l)
+          #
+
+
+      #
+      S_AB_set= numpy.array(S_AB_set)
+      H_set= numpy.array(H_set)
+      T_set= numpy.array(T_set)
+      V_set= numpy.array(V_set)
+      DIP_set= numpy.array(DIP_set)
+      #
+      dD_AA_set_ref= numpy.array(dD_AA_set_ref)
+      dD_BB_set_ref= numpy.array(dD_BB_set_ref)
+      dD_AB_set_ref= numpy.array(dD_AB_set_ref)
+      dD_extField_set_ref = numpy.array(dD_extField_set_ref)
+      #
+      dG_AA_set_ref= numpy.array(dG_AA_set_ref)
+      dG_BB_set_ref= numpy.array(dG_BB_set_ref)
+      dG_AB_set_ref= numpy.array(dG_AB_set_ref)
+      dG_extField_set_ref = numpy.array(dG_extField_set_ref)
+      #
+      F_A_set = numpy.array(F_A_set)
+      F_B_set = numpy.array(F_B_set)
+      F_extField_set = numpy.array(F_extField_set)
+      V_extField_set = numpy.array(V_extField_set)
+      E_nuc_field_set= numpy.array(E_nuc_field_set)
+      #
+      W_AB_set= numpy.array(W_AB_set)
+      W_BA_set= numpy.array(W_BA_set)
+      #
+      A_AB_set= numpy.array(A_AB_set)
+      A_BA_set= numpy.array(A_BA_set)
+      #
+      K_set   = numpy.array(K_set)
+      L_set   = numpy.array(L_set)
+      #
+      w_AB_set= numpy.array(w_AB_set)
+      w_BA_set= numpy.array(w_BA_set)
+      #
+      a_AB_set= numpy.array(a_AB_set)
+      a_BA_set= numpy.array(a_BA_set)
+      #
+      k_set   = numpy.array(k_set)
+      l_set   = numpy.array(l_set)
+
+      # Save on disk
+      S_AB_set.tofile('temp_S_AB_set.dat')
+      H_set.tofile('temp_H_set.dat')
+      T_set.tofile('temp_T_set.dat')
+      V_set.tofile('temp_V_set.dat')
+      DIP_set.tofile('temp_DIP_set.dat')
+      #
+      dD_AA_set_ref.tofile('temp_dD_AA_ref_set.dat')
+      dD_BB_set_ref.tofile('temp_dD_BB_ref_set.dat')
+      dD_AB_set_ref.tofile('temp_dD_AB_ref_set.dat')
+      dD_extField_set_ref.tofile('temp_dD_extField_ref_set.dat')
+      #
+      dG_AA_set_ref.tofile('temp_dG_AA_ref_set.dat')
+      dG_BB_set_ref.tofile('temp_dG_BB_ref_set.dat')
+      dG_AB_set_ref.tofile('temp_dG_AB_ref_set.dat')
+      dG_extField_set_ref.tofile('temp_dG_extField_ref_set.dat')
+      #
+      F_A_set .tofile('temp_F_A_set.dat')
+      F_B_set .tofile('temp_F_B_set.dat')
+      F_extField_set .tofile('temp_F_extField_set.dat')
+      V_extField_set .tofile('temp_V_extField_set.dat')
+      E_nuc_field_set.tofile('temp_E_nuc_field_set.dat')
+      #
+      W_AB_set.tofile('temp_W_AB_set.dat')
+      W_BA_set.tofile('temp_W_BA_set.dat')
+      #
+      A_AB_set.tofile('temp_A_AB_set.dat')
+      A_BA_set.tofile('temp_A_BA_set.dat')
+      #
+      K_set   .tofile('temp_K_set.dat')
+      L_set   .tofile('temp_L_set.dat')
+      #
+      w_AB_set.tofile('temp_w_AB_set.dat')
+      w_BA_set.tofile('temp_w_BA_set.dat')
+      #
+      a_AB_set.tofile('temp_a_AB_set.dat')
+      a_BA_set.tofile('temp_a_BA_set.dat')
+      #
+      k_set   .tofile('temp_k_set.dat')
+      l_set   .tofile('temp_l_set.dat')
+     
 
   def _compute_group_1(self, dms, F_A_set, F_B_set, dM_AA_ref_set, dM_BB_ref_set, A_AB_set, A_BA_set,
                                   W_AB_set, W_BA_set):#TODO
@@ -2062,8 +2116,9 @@ class Translation_DMSFit(EFP_DMSFit):
       b_10_extField = self.B(1,0,'g_extField')
       b_20_extField = self.B(2,0,'g_extField')
 
-     #B_10_extField = self.B(1,0,'fa')
-     #B_20_extField = self.B(2,0,'fa')
+      if 0:
+         B_10_extField = self.B(1,0,'fa')
+         B_20_extField = self.B(2,0,'fa')
 
 
       # additional DMS tensors
@@ -2086,7 +2141,9 @@ class Translation_DMSFit(EFP_DMSFit):
       F_A_set = numpy.fromfile('temp_F_A_set.dat').reshape(s,N,3)
       F_B_set = numpy.fromfile('temp_F_B_set.dat').reshape(s,N,3)
       F_extField_set = numpy.fromfile('temp_F_extField_set.dat').reshape(s,N,3)
-     
+      V_extField_set = numpy.fromfile('temp_V_extField_set.dat').reshape(s,n,n)
+      E_nuc_field_set= numpy.fromfile('temp_E_nuc_field_set.dat')
+  
       H_set = numpy.fromfile('temp_H_set.dat').reshape(s,n*2,n*2)
       T_set = numpy.fromfile('temp_T_set.dat').reshape(s,n*2,n*2)
       V_set = numpy.fromfile('temp_V_set.dat').reshape(s,n*2,n*2)
@@ -2112,6 +2169,9 @@ class Translation_DMSFit(EFP_DMSFit):
           F_A  = F_A_set[s]
           F_B  = F_B_set[s]
           F_extField  = F_extField_set[s]
+          V_extField  = V_extField_set[s]
+          E_nuc_field_mon = E_nuc_field_set[s]
+          E_nuc_mon_0 = self._mol.nuclear_repulsion_energy()
 
           H_AA = H_set[s][:n,:n]
           H_BB = H_set[s][n:,n:]
@@ -2286,7 +2346,7 @@ class Translation_DMSFit(EFP_DMSFit):
           G_com = dG_com.copy()
           G_com[:n,:n]+= self._G0
           G_com[n:,n:]+= self._G0
-          G_extField_com = dG_extField_com + self._G0
+          G_extField_com = dG_extField_com + self._dms_extField_g._M.copy()
 
           D_ref = dD_ref.copy()
           D_ref[:n,:n]+= self._D0
@@ -2296,7 +2356,7 @@ class Translation_DMSFit(EFP_DMSFit):
           G_ref = dG_ref.copy()
           G_ref[:n,:n]+= self._G0
           G_ref[n:,n:]+= self._G0
-          G_extField_ref = dG_extField_ref + self._G0
+          G_extField_ref = dG_extField_ref + self._dms_extField_g._M.copy()
 
           # test only off-diagonals
           if 0:
@@ -2310,7 +2370,7 @@ class Translation_DMSFit(EFP_DMSFit):
              G_ref[:n,:n].fill(0.0)
              G_ref[n:,n:].fill(0.0)
 
-             if 1:
+             if 0:
                 D_com[:n,:n] = self._D0 
                 D_com[n:,n:] = self._D0
                 D_ref[:n,:n] = self._D0
@@ -2330,45 +2390,83 @@ class Translation_DMSFit(EFP_DMSFit):
           mints = psi4.core.MintsHelper(self._bfs_0)
           V_mon = mints.ao_potential().to_array(dense=True)
           T_mon = mints.ao_kinetic().to_array(dense=True)
-          H_mon = T_mon + V_mon
+          U_mon = V_extField_set[s]
+          H_mon = T_mon + V_mon + U_mon
+          F_0   = self._wfn_0.Fa().to_array(dense=True)
 
-          if 'e' in self._dms_types:
+          F_extField_com = G_extField_com + H_mon 
+          F_extField_ref = G_extField_ref + H_mon 
+
+          if 'e' in self._dms_types: # G = 2J - K
               F_com = G_com + H
               F_ref = G_ref + H
-              #
-              F_extField_com = G_extField_com + H_mon
-              F_extField_ref = G_extField_ref + H_mon
-          elif 'g' in self._dms_types:
+          elif 'g' in self._dms_types: # G = V + 2J - K
               F_com = G_com + T
               F_ref = G_ref + T 
-              #
-              F_extField_com = G_extField_com + T_mon
-              F_extField_ref = G_extField_ref + T_mon
-          elif 'f' in self._dms_types:
+              # G = [V + U] + 2J - K
+             #F_extField_com = G_extField_com + T_mon
+             #F_extField_ref = G_extField_ref + T_mon
+             #F_extField_com = F_extField_com - U_mon
+             #F_extField_ref = F_extField_ref - U_mon
+          elif 'f' in self._dms_types: # G = T + V + 2J - K = F
               F_com = G_com  
               F_ref = G_ref  
-              #
-              F_extField_com = G_extField_com
-              F_extField_ref = G_extField_ref
-          elif 'g1' in self._dms_types:
+              # G = T + [V + U] + 2J - K = F'
+             #F_extField_com = G_extField_com 
+             #F_extField_ref = G_extField_ref
+             #F_extField_com = F_extField_com - U_mon
+             #F_extField_ref = F_extField_ref - U_mon
+          elif 'g1' in self._dms_types: # G = 2V + 2J - K
               F_com = G_com - V + T
               F_ref = G_ref - V + T
-              #
-              F_extField_com = G_extField_com - V_mon + T_mon
-              F_extField_ref = G_extField_ref - V_mon + T_mon
+              # G = #TODO
+             #F_extField_com = G_extField_com - V_mon + T_mon
+             #F_extField_ref = G_extField_ref - V_mon + T_mon
+             #F_extField_com = F_extField_com - U_mon
+             #F_extField_ref = F_extField_ref - U_mon
 
 
-          # compute total energy
-          E_com = (D_com @ (H + F_com)).trace() + self._E_nuc_set[s] - 2.0 * self._e0
-          E_ref = (D_ref @ (H + F_ref)).trace() + self._E_nuc_set[s] - 2.0 * self._e0
+          # compute total energy (MCBS)
+          dE_com = (D_com @ (H + F_com)).trace() + self._E_nuc_set[s] - 2.0 * self._e0
+          dE_ref = (D_ref @ (H + F_ref)).trace() + self._E_nuc_set[s] - 2.0 * self._e0
 
-          E_extField_ref = (D_extField_ref @ (H_mon + F_extField_ref)).trace() 
-          E_extField_com = (D_extField_com @ (H_mon + F_extField_com)).trace() 
+          E_extField_com = (D_extField_com @ (H_mon + F_extField_com)).trace() + E_nuc_mon_0 + E_nuc_field_mon
+          E_extField_ref = (D_extField_ref @ (H_mon + F_extField_ref)).trace() + E_nuc_mon_0 + E_nuc_field_mon
 
-          print("ExfField: E_ref= %14.6f E_com= %14.6f" % (E_ref, E_com))
+          dg_extField_com = F_extField_com - U_mon - F_0 # dg = F' - U - F_0
+          dg_extField_ref = F_extField_ref - U_mon - F_0 # dg = F' - U - F_0
+
+          dE_extField_pol_com = (self._D0 @ dg_extField_com).trace() \
+                               +((D_extField_com - self._D0) @ (H_mon + F_extField_com)).trace()
+          dE_extField_pol_ref = (self._D0 @ dg_extField_ref).trace() \
+                               +((D_extField_ref - self._D0) @ (H_mon + F_extField_ref)).trace()
+
+
+          # compute Fock matrices only from OPDM and ERIs
+          I = numpy.identity(n)
+          jk = psi4.core.JK.build(self._bfs_0, jk_type="direct")
+          jk.set_memory(int(5e8))
+          jk.initialize()
+          jk.C_clear()                                           
+          jk.C_left_add(psi4.core.Matrix.from_array(D_extField_com, ""))
+          jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+          jk.compute()
+          J = jk.J()[0].to_array(dense=True)
+          K = jk.K()[0].to_array(dense=True)
+          F_extField_test = H_mon + 2.0 * J - K
+
+
+          dg_extField_test = F_extField_test - U_mon - F_0 # dg = F' - U - F_0
+          dE_extField_pol_test= (self._D0 @ dg_extField_test).trace() \
+                               +((D_extField_com - self._D0) @ (H_mon + F_extField_test)).trace()
+
+
+          psi4.core.print_out("ExtField: E_com    = %14.6f E_ref    = %14.6f\n" % (E_extField_com, E_extField_ref))
+          psi4.core.print_out("ExtField: E_pol_com= %14.6E E_pol_tes= %14.6E E_pol_ref= %14.6E\n" % \
+                    (dE_extField_pol_com, dE_extField_pol_test, dE_extField_pol_ref))
 
           psi4.core.print_out(" Sample=%03d Dimer Energy %14.5f  %14.5f\n" \
-                   % (s+1, E_com, E_ref))
+                   % (s+1, dE_com, dE_ref))
 
           self._save_dD(dD_com, prefix='dd_com')
           self._save_dD(dD_ref, prefix='dd_ref')
@@ -2385,11 +2483,11 @@ class Translation_DMSFit(EFP_DMSFit):
           mu_y_com = 2.0 * (DIP[1] @ D_com).trace() + DIP_nuc[1]
           mu_z_com = 2.0 * (DIP[2] @ D_com).trace() + DIP_nuc[2]
 
-          psi4.core.print_out(" Sample=%03d Dipole Moment X %14.5f  %14.5f\n" \
+          psi4.core.print_out(" Sample=%03d Mu X %14.5f  %14.5f\n" \
                    % (s+1, mu_x_com, mu_x_ref))
-          psi4.core.print_out(" Sample=%03d Dipole Moment Y %14.5f  %14.5f\n" \
+          psi4.core.print_out(" Sample=%03d Mu Y %14.5f  %14.5f\n" \
                    % (s+1, mu_y_com, mu_y_ref))
-          psi4.core.print_out(" Sample=%03d Dipole Moment Z %14.5f  %14.5f\n" \
+          psi4.core.print_out(" Sample=%03d Mu Z %14.5f  %14.5f\n" \
                    % (s+1, mu_z_com, mu_z_ref))
 
 
@@ -2398,9 +2496,9 @@ class Translation_DMSFit(EFP_DMSFit):
   # -----> Private Utility methods <----- #
 
   def __draw_translation(self):
-      theta = numpy.arccos(numpy.random.random())
-      phi   = 2.0 * numpy.pi * numpy.random.random()
-      r     = self._start + self._range * numpy.sqrt(numpy.random.random())
+      theta = numpy.arccos(self._random_double())
+      phi   = 2.0 * numpy.pi * self._random_double()
+      r     = self._start + self._range * numpy.cbrt(self._random_double())
       x     = r * numpy.sin(theta) * numpy.cos(phi)
       y     = r * numpy.sin(theta) * numpy.sin(phi)
       z     = r * numpy.cos(theta)                 
@@ -2420,7 +2518,7 @@ class Translation_DMSFit(EFP_DMSFit):
 
 
 
-class Rotation_DMSFit(EFP_DMSFit):
+class Rotation_DMSFit(ExternalField_EFP_DMSFit):
   """
  Rotation method to fit DMS tensors.
 """
