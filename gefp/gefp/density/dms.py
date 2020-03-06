@@ -403,8 +403,9 @@ class DMSFit(ABC):
 
    # ---> Global defaults <--- #
                                                                                                        
-   minimum_atom_atom_distance = 1.2 / psi4.constants.bohr2angstroms
-   stop_when_error_hessian    = True
+   minimum_atom_atom_distance       = 1.2 / psi4.constants.bohr2angstroms
+   stop_when_error_hessian          = True
+   compute_dmatpol_susceptibilities = False
                                                                                                        
    def __init__(self, mol, method, 
                       nsamples, dms_types, order_type, use_iterative_model, use_external_field_model):
@@ -607,8 +608,8 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       N = self._dms_da.N()
 
       # compute DMS for isolated molecule in external electric field from DMATPOL routine (Da only)
-      if self._use_external_field_model:
-         self.__compute_dms_external_field()
+      if DMSFit.compute_dmatpol_susceptibilities:
+         self.__compute_dms_external_field_dmatpol()
 
       # prepare for the DMS fittings
       self._compute_samples()
@@ -725,7 +726,6 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       self._GB = GB
 
 
-
   def _compute_efield(self):
       "Compute instantaneous electric field on fragment due to other fragment"
 
@@ -783,7 +783,6 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
 
       Da = self._wfn_0.Da().to_array(dense=True)
       #
-      G_extField = self._wfn_0.Fa().to_array(dense=True) - self._wfn_0.H().to_array(dense=True) # G = 2J - K
       if   'e' in self._dms_types: # G = 2J - K
             G = G_extField.copy()
       elif 'g' in self._dms_types: # G = V + 2J - K
@@ -812,12 +811,14 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       self._D0 = Da.copy()
       self._G0 = G .copy()
 
-      self._dms_extField_da = DMS.create('da', "Field")
-      self._dms_extField_g  = DMS.create('g' , "Field")
-      self._dms_extField_da.set_bfs(self._bfs_0)
-      self._dms_extField_g .set_bfs(self._bfs_0)
-      self._dms_extField_da.set_M(Da.copy())
-      self._dms_extField_g .set_M(G_extField.copy())
+      if self._use_external_field_model:
+         G_extField = self._wfn_0.Fa().to_array(dense=True) - self._wfn_0.H().to_array(dense=True) # G = 2J - K
+         self._dms_extField_da = DMS.create('da', "Field") 
+         self._dms_extField_g  = DMS.create('g' , "Field")
+         self._dms_extField_da.set_bfs(self._bfs_0)
+         self._dms_extField_g .set_bfs(self._bfs_0)
+         self._dms_extField_da.set_M(Da.copy())
+         self._dms_extField_g .set_M(G_extField.copy())
 
 
       #if   self._dms_type.lower() == 'da': M = self._wfn_0.Da().to_array(dense=True)
@@ -829,8 +830,8 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       psi4.core.clean()
 
 
-  def __compute_dms_external_field(self):
-      "DMS for external electric field only (without other molecules)"
+  def __compute_dms_external_field_dmatpol(self):
+      "DMS for external electric field only (without other molecules) from DMATPOL routine"
       solver = oepdev.GenEffParFactory.build("POLARIZATION", self._wfn_0, psi4.core.get_options())
       genEffPar = solver.compute()
 
@@ -1271,7 +1272,8 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           aggr= self._construct_aggregate()
 
           # Monomer with point charges
-          F_extField, V_extField, wfn_extField, E_nuc_field = self._extField()
+          if self._use_external_field_model:
+             F_extField, V_extField, wfn_extField, E_nuc_field = self._extField()
 
           # Set sources of perturbation
           self._determine_perturbing_densities()
@@ -1295,10 +1297,6 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
 
           self._save_dD(dD, prefix='dd')
 
-          dD_extField = wfn_extField.Da().to_array(dense=True).copy()
-          dD_extField-= self._D0
-
-          dG_extField   = wfn_extField.Fa().to_array(dense=True) - wfn_extField.H().to_array(dense=True) # 2J - K
           # G tensor
           if   'e' in self._dms_types: # G = 2J - K
                 dG   = self._dimer_wfn.Fa().to_array(dense=True) - H
@@ -1324,11 +1322,16 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           dG[:self._nbf,:self._nbf]-= self._G0
           dG[self._nbf:,self._nbf:]-= self._G0
 
-          dG_extField -= self._dms_extField_g._M.copy()
+          dD_extField = wfn_extField.Da().to_array(dense=True).copy()
+          dD_extField-= self._D0
 
-          dG_AA = dG[:self._nbf,:self._nbf].copy()
-          dG_BB = dG[self._nbf:,self._nbf:].copy()
-          dG_AB = dG[:self._nbf,self._nbf:].copy()
+          if self._use_external_field_model:
+             dG_extField = wfn_extField.Fa().to_array(dense=True) - wfn_extField.H().to_array(dense=True) # 2J - K 
+             dG_extField-= self._dms_extField_g._M.copy()
+                                                                                                                   
+             dG_AA = dG[:self._nbf,:self._nbf].copy()
+             dG_BB = dG[self._nbf:,self._nbf:].copy()
+             dG_AB = dG[:self._nbf,self._nbf:].copy()
 
           self._save_dD(dG, prefix='gg')
 
@@ -1375,14 +1378,16 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           dG_BB_set_ref.append(dG_BB)
           dG_AB_set_ref.append(dG_AB)
 
-          dD_extField_set_ref.append(dD_extField)
-          dG_extField_set_ref.append(dG_extField)
 
           F_A_set.append(F_A)
           F_B_set.append(F_B)
-          F_extField_set.append(F_extField)
-          V_extField_set.append(V_extField)
-          E_nuc_field_set.append(E_nuc_field)
+
+          if self._use_external_field_model:
+             dD_extField_set_ref.append(dD_extField) 
+             dG_extField_set_ref.append(dG_extField)
+             F_extField_set.append(F_extField)
+             V_extField_set.append(V_extField)
+             E_nuc_field_set.append(E_nuc_field)
 
           W_AB_set.append(W_AB)
           W_BA_set.append(W_BA)
@@ -1414,18 +1419,20 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       dD_AA_set_ref= numpy.array(dD_AA_set_ref)
       dD_BB_set_ref= numpy.array(dD_BB_set_ref)
       dD_AB_set_ref= numpy.array(dD_AB_set_ref)
-      dD_extField_set_ref = numpy.array(dD_extField_set_ref)
       #
       dG_AA_set_ref= numpy.array(dG_AA_set_ref)
       dG_BB_set_ref= numpy.array(dG_BB_set_ref)
       dG_AB_set_ref= numpy.array(dG_AB_set_ref)
-      dG_extField_set_ref = numpy.array(dG_extField_set_ref)
       #
       F_A_set = numpy.array(F_A_set)
       F_B_set = numpy.array(F_B_set)
-      F_extField_set = numpy.array(F_extField_set)
-      V_extField_set = numpy.array(V_extField_set)
-      E_nuc_field_set= numpy.array(E_nuc_field_set)
+      #
+      if self._use_external_field_model:
+         dD_extField_set_ref = numpy.array(dD_extField_set_ref) 
+         dG_extField_set_ref = numpy.array(dG_extField_set_ref)
+         F_extField_set = numpy.array(F_extField_set)
+         V_extField_set = numpy.array(V_extField_set)
+         E_nuc_field_set= numpy.array(E_nuc_field_set)
       #
       W_AB_set= numpy.array(W_AB_set)
       W_BA_set= numpy.array(W_BA_set)
@@ -1455,18 +1462,20 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       dD_AA_set_ref.tofile('temp_dD_AA_ref_set.dat')
       dD_BB_set_ref.tofile('temp_dD_BB_ref_set.dat')
       dD_AB_set_ref.tofile('temp_dD_AB_ref_set.dat')
-      dD_extField_set_ref.tofile('temp_dD_extField_ref_set.dat')
       #
       dG_AA_set_ref.tofile('temp_dG_AA_ref_set.dat')
       dG_BB_set_ref.tofile('temp_dG_BB_ref_set.dat')
       dG_AB_set_ref.tofile('temp_dG_AB_ref_set.dat')
-      dG_extField_set_ref.tofile('temp_dG_extField_ref_set.dat')
       #
       F_A_set .tofile('temp_F_A_set.dat')
       F_B_set .tofile('temp_F_B_set.dat')
-      F_extField_set .tofile('temp_F_extField_set.dat')
-      V_extField_set .tofile('temp_V_extField_set.dat')
-      E_nuc_field_set.tofile('temp_E_nuc_field_set.dat')
+      #
+      if self._use_external_field_model:
+         dD_extField_set_ref.tofile('temp_dD_extField_ref_set.dat')
+         dG_extField_set_ref.tofile('temp_dG_extField_ref_set.dat')
+         F_extField_set .tofile('temp_F_extField_set.dat')
+         V_extField_set .tofile('temp_V_extField_set.dat')
+         E_nuc_field_set.tofile('temp_E_nuc_field_set.dat')
       #
       W_AB_set.tofile('temp_W_AB_set.dat')
       W_BA_set.tofile('temp_W_BA_set.dat')
@@ -1496,7 +1505,7 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       N = dms.N()
 
       # ---> Fit 10 and 20 susceptibilities intrinsically <--- #
-      if 1: #not self._use_external_field_model:
+      if not self._use_external_field_model:
 
          # Hessian                                                                                                
          dim_1 = N*3
@@ -1802,6 +1811,7 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       # ---> External Field Model <--- #
       else:
          print("Nothing to do here")
+         exit()
 
 
   def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):
@@ -2111,14 +2121,15 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       B_01 = self.B(0,1,'da')
       b_01 = self.B(0,1,'g')
 
-      B_10_extField = self.B(1,0,'da_extField')
-      B_20_extField = self.B(2,0,'da_extField')
-      b_10_extField = self.B(1,0,'g_extField')
-      b_20_extField = self.B(2,0,'g_extField')
+      if self._use_external_field_model: 
+         B_10_extField = self.B(1,0,'da_extField') 
+         B_20_extField = self.B(2,0,'da_extField')
+         b_10_extField = self.B(1,0,'g_extField')
+         b_20_extField = self.B(2,0,'g_extField')
 
-      if 0:
-         B_10_extField = self.B(1,0,'fa')
-         B_20_extField = self.B(2,0,'fa')
+      if DMSFit.compute_dmatpol_susceptibilities:
+         B_10_extField_dmatpol = self.B(1,0,'fa')
+         B_20_extField_dmatpol = self.B(2,0,'fa')
 
 
       # additional DMS tensors
@@ -2140,10 +2151,14 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       w_BA_set = numpy.fromfile('temp_w_BA_set.dat').reshape(s,n,n)
       F_A_set = numpy.fromfile('temp_F_A_set.dat').reshape(s,N,3)
       F_B_set = numpy.fromfile('temp_F_B_set.dat').reshape(s,N,3)
-      F_extField_set = numpy.fromfile('temp_F_extField_set.dat').reshape(s,N,3)
-      V_extField_set = numpy.fromfile('temp_V_extField_set.dat').reshape(s,n,n)
-      E_nuc_field_set= numpy.fromfile('temp_E_nuc_field_set.dat')
-  
+
+      if self._use_external_field_model:
+         F_extField_set = numpy.fromfile('temp_F_extField_set.dat').reshape(s,N,3)           
+         V_extField_set = numpy.fromfile('temp_V_extField_set.dat').reshape(s,n,n)
+         E_nuc_field_set= numpy.fromfile('temp_E_nuc_field_set.dat')
+         dD_extField_set_ref = numpy.fromfile('temp_dD_extField_ref_set.dat').reshape(s,n,n)
+         dG_extField_set_ref = numpy.fromfile('temp_dG_extField_ref_set.dat').reshape(s,n,n)
+
       H_set = numpy.fromfile('temp_H_set.dat').reshape(s,n*2,n*2)
       T_set = numpy.fromfile('temp_T_set.dat').reshape(s,n*2,n*2)
       V_set = numpy.fromfile('temp_V_set.dat').reshape(s,n*2,n*2)
@@ -2152,15 +2167,15 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       dD_AA_set_ref = numpy.fromfile('temp_dD_AA_ref_set.dat').reshape(s,n,n)
       dD_BB_set_ref = numpy.fromfile('temp_dD_BB_ref_set.dat').reshape(s,n,n)
       dD_AB_set_ref = numpy.fromfile('temp_dD_AB_ref_set.dat').reshape(s,n,n)
-      dD_extField_set_ref = numpy.fromfile('temp_dD_extField_ref_set.dat').reshape(s,n,n)
 
       dG_AA_set_ref = numpy.fromfile('temp_dG_AA_ref_set.dat').reshape(s,n,n)
       dG_BB_set_ref = numpy.fromfile('temp_dG_BB_ref_set.dat').reshape(s,n,n)
       dG_AB_set_ref = numpy.fromfile('temp_dG_AB_ref_set.dat').reshape(s,n,n)
-      dG_extField_set_ref = numpy.fromfile('temp_dG_extField_ref_set.dat').reshape(s,n,n)
 
       psi4.core.print_out(" ---> DMSFit: Check - training set <---\n\n")
       for s in range(self._nsamples):
+
+          self._i = s+1
          
           W_AB = W_AB_set[s]
           W_BA = W_BA_set[s]
@@ -2168,11 +2183,77 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           w_BA = w_BA_set[s]
           F_A  = F_A_set[s]
           F_B  = F_B_set[s]
-          F_extField  = F_extField_set[s]
-          V_extField  = V_extField_set[s]
-          E_nuc_field_mon = E_nuc_field_set[s]
-          E_nuc_mon_0 = self._mol.nuclear_repulsion_energy()
+          #
+          if self._use_external_field_model:
+             F_extField  = F_extField_set[s]                    
+             V_extField  = V_extField_set[s]
+             E_nuc_field_mon = E_nuc_field_set[s]
+             E_nuc_mon_0 = self._mol.nuclear_repulsion_energy()
+             dD_extField_ref = dD_extField_set_ref[s]
+             dG_extField_ref = dG_extField_set_ref[s]
 
+             dD_extField_com = numpy.einsum("acix,ix->ac", B_10_extField, F_extField)
+             dD_extField_com+= numpy.einsum("acixy,ix,iy->ac", B_20_extField, F_extField, F_extField)
+
+             dG_extField_com = numpy.einsum("acix,ix->ac", b_10_extField, F_extField)
+             dG_extField_com+= numpy.einsum("acixy,ix,iy->ac", b_20_extField, F_extField, F_extField)
+
+             self._save_dD(dD_extField_com, prefix='d_extfield_com') 
+             self._save_dD(dD_extField_ref, prefix='d_extfield_ref')
+                                                                     
+             self._save_dD(dG_extField_com, prefix='g_extfield_com')
+             self._save_dD(dG_extField_ref, prefix='g_extfield_ref')
+
+             D_extField_com = dD_extField_com + self._D0                       
+             G_extField_com = dG_extField_com + self._dms_extField_g._M.copy()
+             D_extField_ref = dD_extField_ref + self._D0
+             G_extField_ref = dG_extField_ref + self._dms_extField_g._M.copy()
+                                                                               
+             mints = psi4.core.MintsHelper(self._bfs_0)
+             V_mon = mints.ao_potential().to_array(dense=True)
+             T_mon = mints.ao_kinetic().to_array(dense=True)
+             U_mon = V_extField_set[s]
+             H_mon = T_mon + V_mon + U_mon
+             F_0   = self._wfn_0.Fa().to_array(dense=True)
+                                                                               
+             F_extField_com = G_extField_com + H_mon 
+             F_extField_ref = G_extField_ref + H_mon 
+
+             E_extField_com = (D_extField_com @ (H_mon + F_extField_com)).trace() + E_nuc_mon_0 + E_nuc_field_mon      
+             E_extField_ref = (D_extField_ref @ (H_mon + F_extField_ref)).trace() + E_nuc_mon_0 + E_nuc_field_mon
+                                                                                                                       
+             dg_extField_com = F_extField_com - U_mon - F_0 # dg = F' - U - F_0
+             dg_extField_ref = F_extField_ref - U_mon - F_0 # dg = F' - U - F_0
+                                                                                                                       
+             dE_extField_pol_com = (self._D0 @ dg_extField_com).trace() \
+                                  +((D_extField_com - self._D0) @ (H_mon + F_extField_com)).trace()
+             dE_extField_pol_ref = (self._D0 @ dg_extField_ref).trace() \
+                                  +((D_extField_ref - self._D0) @ (H_mon + F_extField_ref)).trace()
+                                                                                                                       
+             # compute Fock matrices only from OPDM and ERIs (for test)
+             I = numpy.identity(n)
+             jk = psi4.core.JK.build(self._bfs_0, jk_type="direct")
+             jk.set_memory(int(5e8))
+             jk.initialize()
+             jk.C_clear()                                           
+             jk.C_left_add(psi4.core.Matrix.from_array(D_extField_com, ""))
+             jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
+             jk.compute()
+             J = jk.J()[0].to_array(dense=True)
+             K = jk.K()[0].to_array(dense=True)
+             F_extField_test = H_mon + 2.0 * J - K
+                                                                                                                       
+             dg_extField_test = F_extField_test - U_mon - F_0 # dg = F' - U - F_0
+             dE_extField_pol_test= (self._D0 @ dg_extField_test).trace() \
+                                  +((D_extField_com - self._D0) @ (H_mon + F_extField_test)).trace()
+                                                                                                                       
+             psi4.core.print_out("ExtField: E_com    = %14.6f E_ref    = %14.6f\n" % (E_extField_com, E_extField_ref))
+             psi4.core.print_out("ExtField: E_pol_com= %14.6E E_pol_tes= %14.6E E_pol_ref= %14.6E\n" % \
+                       (dE_extField_pol_com, dE_extField_pol_test, dE_extField_pol_ref))
+             #
+
+
+          #
           H_AA = H_set[s][:n,:n]
           H_BB = H_set[s][n:,n:]
           H_AB = H_set[s][:n,n:]
@@ -2181,7 +2262,6 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           dD_BB_ref = dD_BB_set_ref[s]
           dD_AB_ref = dD_AB_set_ref[s]
           #
-          dD_extField_ref = dD_extField_set_ref[s]
           #
           dD_AA_com = numpy.einsum("acix,ix->ac", B_10, F_B)
           dD_AA_com+= numpy.einsum("acixy,ix,iy->ac", B_20, F_B, F_B)
@@ -2195,14 +2275,10 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           #
           dD_AB_com = W_AB @ B_01 + B_01.T @ W_BA.T
           #
-          dD_extField_com = numpy.einsum("acix,ix->ac", B_10_extField, F_extField)
-          dD_extField_com+= numpy.einsum("acixy,ix,iy->ac", B_20_extField, F_extField, F_extField)
-
           dG_AA_ref = dG_AA_set_ref[s]
           dG_BB_ref = dG_BB_set_ref[s]
           dG_AB_ref = dG_AB_set_ref[s]
           #
-          dG_extField_ref = dG_extField_set_ref[s]
           #
           dG_AA_com = numpy.einsum("acix,ix->ac", b_10, F_B)
           dG_AA_com+= numpy.einsum("acixy,ix,iy->ac", b_20, F_B, F_B)
@@ -2217,9 +2293,6 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           #
           dG_AB_com = w_AB @ b_01 + b_01.T @ w_BA.T
           #
-          dG_extField_com = numpy.einsum("acix,ix->ac", b_10_extField, F_extField)
-          dG_extField_com+= numpy.einsum("acixy,ix,iy->ac", b_20_extField, F_extField, F_extField)
-
           if (1,1) in self._dms_da.available_orders():
               dD_AB_com+= numpy.einsum("ac,ix,cbix->ab",W_AB, F_A, B_11)
               dD_AB_com+= numpy.einsum("ac,ix,cbix->ab",W_BA, F_B, B_11).T
@@ -2287,7 +2360,6 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           psi4.core.print_out(" Sample=%03d AB G  RMS=%13.5E  %14.5f %14.5f  Tr[dD,H]=%14.5f  %14.5f\n" \
                    % (s+1, rms_g , dG_AB_ref[0,0], dG_AB_com[0,0], t1_g , t2_g ))
 
-          self._i = s+1
 
           self._save_dD(dD_AA_ref, prefix='d_aa_ref')
           self._save_dD(dD_AA_com, prefix='d_aa_com')
@@ -2303,13 +2375,6 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           self._save_dD(dD_AB_com, prefix='d_ab_com')
           self._save_dD(dG_AB_ref, prefix='g_ab_ref')
           self._save_dD(dG_AB_com, prefix='g_ab_com')
-
-          self._save_dD(dD_extField_com, prefix='d_extfield_com')
-          self._save_dD(dD_extField_ref, prefix='d_extfield_ref')
-
-          self._save_dD(dG_extField_com, prefix='g_extfield_com')
-          self._save_dD(dG_extField_ref, prefix='g_extfield_ref')
-
 
           # reconstruct whole matrices
           dD_com = numpy.zeros((n+n,n+n))
@@ -2341,22 +2406,19 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           D_com = dD_com.copy()
           D_com[:n,:n]+= self._D0
           D_com[n:,n:]+= self._D0
-          D_extField_com = dD_extField_com + self._D0
+
 
           G_com = dG_com.copy()
           G_com[:n,:n]+= self._G0
           G_com[n:,n:]+= self._G0
-          G_extField_com = dG_extField_com + self._dms_extField_g._M.copy()
 
           D_ref = dD_ref.copy()
           D_ref[:n,:n]+= self._D0
           D_ref[n:,n:]+= self._D0
-          D_extField_ref = dD_extField_ref + self._D0
 
           G_ref = dG_ref.copy()
           G_ref[:n,:n]+= self._G0
           G_ref[n:,n:]+= self._G0
-          G_extField_ref = dG_extField_ref + self._dms_extField_g._M.copy()
 
           # test only off-diagonals
           if 0:
@@ -2386,16 +2448,6 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           H = H_set[s].copy()
           T = T_set[s].copy()
           V = V_set[s].copy()
-
-          mints = psi4.core.MintsHelper(self._bfs_0)
-          V_mon = mints.ao_potential().to_array(dense=True)
-          T_mon = mints.ao_kinetic().to_array(dense=True)
-          U_mon = V_extField_set[s]
-          H_mon = T_mon + V_mon + U_mon
-          F_0   = self._wfn_0.Fa().to_array(dense=True)
-
-          F_extField_com = G_extField_com + H_mon 
-          F_extField_ref = G_extField_ref + H_mon 
 
           if 'e' in self._dms_types: # G = 2J - K
               F_com = G_com + H
@@ -2429,41 +2481,6 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           # compute total energy (MCBS)
           dE_com = (D_com @ (H + F_com)).trace() + self._E_nuc_set[s] - 2.0 * self._e0
           dE_ref = (D_ref @ (H + F_ref)).trace() + self._E_nuc_set[s] - 2.0 * self._e0
-
-          E_extField_com = (D_extField_com @ (H_mon + F_extField_com)).trace() + E_nuc_mon_0 + E_nuc_field_mon
-          E_extField_ref = (D_extField_ref @ (H_mon + F_extField_ref)).trace() + E_nuc_mon_0 + E_nuc_field_mon
-
-          dg_extField_com = F_extField_com - U_mon - F_0 # dg = F' - U - F_0
-          dg_extField_ref = F_extField_ref - U_mon - F_0 # dg = F' - U - F_0
-
-          dE_extField_pol_com = (self._D0 @ dg_extField_com).trace() \
-                               +((D_extField_com - self._D0) @ (H_mon + F_extField_com)).trace()
-          dE_extField_pol_ref = (self._D0 @ dg_extField_ref).trace() \
-                               +((D_extField_ref - self._D0) @ (H_mon + F_extField_ref)).trace()
-
-
-          # compute Fock matrices only from OPDM and ERIs
-          I = numpy.identity(n)
-          jk = psi4.core.JK.build(self._bfs_0, jk_type="direct")
-          jk.set_memory(int(5e8))
-          jk.initialize()
-          jk.C_clear()                                           
-          jk.C_left_add(psi4.core.Matrix.from_array(D_extField_com, ""))
-          jk.C_right_add(psi4.core.Matrix.from_array(I, ""))
-          jk.compute()
-          J = jk.J()[0].to_array(dense=True)
-          K = jk.K()[0].to_array(dense=True)
-          F_extField_test = H_mon + 2.0 * J - K
-
-
-          dg_extField_test = F_extField_test - U_mon - F_0 # dg = F' - U - F_0
-          dE_extField_pol_test= (self._D0 @ dg_extField_test).trace() \
-                               +((D_extField_com - self._D0) @ (H_mon + F_extField_test)).trace()
-
-
-          psi4.core.print_out("ExtField: E_com    = %14.6f E_ref    = %14.6f\n" % (E_extField_com, E_extField_ref))
-          psi4.core.print_out("ExtField: E_pol_com= %14.6E E_pol_tes= %14.6E E_pol_ref= %14.6E\n" % \
-                    (dE_extField_pol_com, dE_extField_pol_test, dE_extField_pol_ref))
 
           psi4.core.print_out(" Sample=%03d Dimer Energy %14.5f  %14.5f\n" \
                    % (s+1, dE_com, dE_ref))
