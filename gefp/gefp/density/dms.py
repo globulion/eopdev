@@ -63,6 +63,8 @@ class DMS(ABC):
       if   order_type.lower() == 'field' : return         Field_DMS(dms_type)
       elif order_type.lower() == 'basic' : return         Basic_DMS(dms_type)
       elif order_type.lower() == 'bd'    : return        BasicD_DMS(dms_type)
+      elif order_type.lower() == 'bd-2'  : return       BasicD2_DMS(dms_type)
+      elif order_type.lower() == 'bd-3'  : return       BasicD3_DMS(dms_type)
       elif order_type.lower() == 'ct-1'  : return      LinearCT_DMS(dms_type)
       elif order_type.lower() == 'ct-1-d': return    LinearCT_D_DMS(dms_type)
       elif order_type.lower() == 'ct-2'  : return   QuadraticCT_DMS(dms_type)
@@ -183,6 +185,37 @@ class DMS(ABC):
           b     = self._s1[START:END]
           self._B[(0,2)] = b.reshape(n,n)
 
+      # (1,2)
+      if (1,2) in self._available_orders and order == (1,2):
+          START = n_*(N*3  + N*6) + n2
+          END   = START + n2*N*3
+          b     = self._s1[START:END]
+          self._B[(1,2)] = b.reshape(n,n,N,3)
+
+      # (2,2)
+      if (2,2) in self._available_orders and order == (2,2):
+          START = n_*(N*3  + N*6) + n2 + n2*N*3
+          END   = START + n2*N*6
+          b     = self._s1[START:END].reshape(n,n,N,6)
+          B     = numpy.zeros((n,n,N,3,3))
+          xx = b[:,:,:,0]
+          xy = b[:,:,:,1]
+          xz = b[:,:,:,2]
+          yy = b[:,:,:,3]
+          yz = b[:,:,:,4]
+          zz = b[:,:,:,5]
+          B[:,:,:,0,0] = xx
+          B[:,:,:,0,1] = xy
+          B[:,:,:,0,2] = xz
+          B[:,:,:,1,1] = yy
+          B[:,:,:,1,2] = yz
+          B[:,:,:,2,2] = zz
+          B[:,:,:,1,0] = xy.copy()
+          B[:,:,:,2,0] = xz.copy()
+          B[:,:,:,2,1] = yz.copy()
+          self._B[(2,2)] = B
+
+
       # ---> Group Z(2) <--- #
       # (0,1)
       if (0,1) in self._available_orders and order == (0,1):
@@ -302,13 +335,60 @@ class BasicD_DMS(DMS):
  -----         ---------      -----------    ------------  -----------   -------
   1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
   2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
-  3.            (0,2)          Pauli          Symmetric     (n,n)         Z(1)
+  3.            (0,2)          Pauli          Asymmetric    (n,n)         Z(1)
   4.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
 """
   def __init__(self, type='da'):
       DMS.__init__(self, type)
 
       self._available_orders = [(1,0), (2,0), (0,2), (0,1)]
+
+class BasicD2_DMS(DMS):
+  """
+ Advanced model of DMS that handles induction up to second-order and
+ mixing Pauli-CT effects.
+
+ The order of DMS blocks:
+
+ Block         DMS order      Interaction    Symmetry       Dimension     Group
+ -----         ---------      -----------    ------------  -----------   -------
+  1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
+  2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
+  3.            (0,1)          Pauli          Asymmteric    (n,n)         Z(1)
+  4.            (0,2)          Pauli          Asymmetric    (n,n)         Z(2)
+  5.            (1,2)          Pauli+CT       Asymmetric    (n,n,N,3)     Z(2)
+"""
+  def __init__(self, type='da'):
+      DMS.__init__(self, type)
+
+      self._available_orders = [(1,0), (2,0), (0,2), (0,1), (1,2)]
+
+class BasicD3_DMS(DMS):
+  """
+ Advanced model of DMS that handles induction up to second-order and
+ mixing Pauli-CT effects.
+
+ The order of DMS blocks:
+
+ Block         DMS order      Interaction    Symmetry       Dimension     Group
+ -----         ---------      -----------    ------------  -----------   -------
+  1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
+  2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
+  3.            (0,1)          Pauli          Asymmteric    (n,n)         Z(1)
+  4.            (0,2)          Pauli          Asymmetric    (n,n)         Z(2)
+  5.            (1,2)          Pauli+CT       Asymmetric    (n,n,N,3)     Z(2)
+  6.            (2,2)          Pauli+CT       Asymmetric    (n,n,N,3,3)   Z(2)
+"""
+  def __init__(self, type='da'):
+      DMS.__init__(self, type)
+
+      self._available_orders = [(1,0), (2,0), (0,2), (0,1), (1,2), (2,2)]
+
+
+
+
+
+
 
 
 class LinearCT_DMS(DMS):
@@ -342,7 +422,7 @@ class LinearCT_D_DMS(DMS):
  -----         ---------      -----------    ------------  -----------   -------
   1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
   2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
-  3.            (0,2)          Pauli          Symmetric     (n,n)         Z(1)
+  3.            (0,2)          Pauli          Asymmetric    (n,n)         Z(1)
   4.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
   5.            (1,1)          CT             Asymmetric    (n,n,N,3)     Z(2)
 """
@@ -384,7 +464,7 @@ class QuadraticCT_D_DMS(DMS):
  -----         ---------      -----------    ------------  -----------   -------
   1.            (1,0)          Induction      Symmetric     (n,n,N,3)     Z(1)
   2.            (2,0)          Induction      Symmetric     (n,n,N,3,3)   Z(1)
-  3.            (0,2)          Pauli          Symmetric     (n,n)         Z(1)
+  3.            (0,2)          Pauli          Asymmetric    (n,n)         Z(1)
   4.            (0,1)          Pauli          Asymmetric    (n,n)         Z(2)
   5.            (1,1)          CT             Asymmetric    (n,n,N,3)     Z(2)
   6.            (2,1)          CT             Asymmetric    (n,n,N,3,3)   Z(2)
@@ -1079,9 +1159,9 @@ class ExternalField_EFP_DMSFit(EFP_DMSFit):
       geom = mol.geometry().to_array(dense=True)
       for i in range(len(geom)):
           fields[i] = self.__field_due_to_charges(charges, geom[i])
-      return fields #* -1.0
+      return fields
 
-  def __field_due_to_charges(self, charges, r):#OK
+  def __field_due_to_charges(self, charges, r):
       x,y,z = r
       fx = 0.0; fy = 0.0; fz = 0.0
       for charge in charges:
@@ -1159,7 +1239,7 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
  Translation method to fit DMS tensors.
 """
   def __init__(self, mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model,
-                     start=1.0, srange=6.0):
+                     start=1.0, srange=4.0):
       super().__init__(mol, method, nsamples, dms_types, order_type, use_iterative_model, use_external_field_model)
 
       # translation parameters
@@ -1311,22 +1391,12 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           if   'e' in self._dms_types: # G = 2J - K
                 dG   = self._dimer_wfn.Fa().to_array(dense=True) - H
           elif 'g' in self._dms_types: # G = V + 2J - K
-               #TT = numpy.zeros((self._nbf*2,self._nbf*2))
-               #T_AB = T[:self._nbf,self._nbf:]
-               #T_BA = T[self._nbf:,:self._nbf]
-               #TT[:self._nbf,self._nbf:] = T_AB.copy()
-               #TT[self._nbf:,:self._nbf] = T_BA.copy()
                 T_mon = T[:self._nbf,:self._nbf].copy()
                 dG   = self._dimer_wfn.Fa().to_array(dense=True) - T
-               #dG_extField   = wfn_extField.Fa().to_array(dense=True) - T_mon # G = [V + U] + 2J - K
-               #dG_extField   = dG_extField + V_extField # 2J - K + U
           elif 'f' in self._dms_types: # G = T + V + 2J - K = F
                 dG   = self._dimer_wfn.Fa().to_array(dense=True)
-               #dG_extField   = wfn_extField.Fa().to_array(dense=True) # G = T + [V + U] + 2J - K = F'
-               #dG_extField   = dG_extField + V_extField # 2J - K + U
           elif 'g1' in self._dms_types: # G = 2V + 2J - K #TODO
                 dG   = self._dimer_wfn.Fa().to_array(dense=True) - T + V
-               #dG_extField   = dG_extField + V_extField # 2J - K + U
                 raise NotImplementedError # check it (but maybe not needed is this condition)
 
           dG[:self._nbf,:self._nbf]-= self._G0
@@ -1849,16 +1919,23 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
          s = self._nsamples
          #
          OFFs= [0,]
+         DIM = 0
+         FIELD_ONLY = True
          # (0,2)
-         DIM = n*n
-         OFFs.append(DIM)
+         if (0,2) in dms.available_orders():
+             DIM_1 = n*n
+             DIM+= DIM_1
+             OFFs.append(DIM)
+             FIELD_ONLY = False
          # (1,2)
          if (1,2) in dms.available_orders():
-             DIM += n*n*N*3
+             DIM_2 = n*n*N*3
+             DIM+= DIM_2
              OFFs.append(DIM)
          # (2,2)
          if (2,2) in dms.available_orders():
-             DIM += n*n*N*6
+             DIM_3 = n*n*N*6
+             DIM+= DIM_3
              OFFs.append(DIM)
                                                                                   
          # allocate 
@@ -1866,84 +1943,160 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
          H = numpy.zeros((DIM, DIM))
                                                                                   
          # gradient
-         S_AB_set = numpy.fromfile("temp_S_AB_set.dat").reshape(s,n,n)
-         W_ABA_set = numpy.einsum("nab,ncb->nac", W_AB_set, S_AB_set)
-         W_BAB_set = numpy.einsum("nab,nbc->nac", W_BA_set, S_AB_set)
-         B_10_field= dms_field.B(1,0)
-         B_20_field= dms_field.B(2,0)
-         F_A_set_2 = numpy.einsum("niu,niw->niuw", F_A_set, F_A_set)
-         F_B_set_2 = numpy.einsum("niu,niw->niuw", F_B_set, F_B_set)
-         FF_A_set = composite.form_futf(numpy.einsum("uw,niuw->uwni", composite.symmetry_matrix(3), F_A_set_2)).transpose(1,2,0)
-         FF_B_set = composite.form_futf(numpy.einsum("uw,niuw->uwni", composite.symmetry_matrix(3), F_B_set_2)).transpose(1,2,0)
+         if not FIELD_ONLY:
+            S_AB_set = numpy.fromfile("temp_S_AB_set.dat").reshape(s,n,n)                                                           
+            W_ABA_set = numpy.einsum("nab,ncb->nac", W_AB_set, S_AB_set)
+            W_BAB_set = numpy.einsum("nab,nbc->nac", W_BA_set, S_AB_set)
+            B_10_field= dms_field.B(1,0)
+            B_20_field= dms_field.B(2,0)
+            F_A_set_2 = numpy.einsum("niu,niw->niuw", F_A_set, F_A_set)
+            F_B_set_2 = numpy.einsum("niu,niw->niuw", F_B_set, F_B_set)
+            FF_A_set = composite.form_futf(numpy.einsum("uw,niuw->uwni", composite.symmetry_matrix(3), F_A_set_2)).transpose(1,2,0)
+            FF_B_set = composite.form_futf(numpy.einsum("uw,niuw->uwni", composite.symmetry_matrix(3), F_B_set_2)).transpose(1,2,0)
 
-         dM_AA_start_set = numpy.einsum("abiu,niu->nab", B_10_field, F_B_set)
-         dM_AA_start_set+= numpy.einsum("abiuw,niuw->nab", B_20_field, F_B_set_2)
-         dM_BB_start_set = numpy.einsum("abiu,niu->nab", B_10_field, F_A_set)
-         dM_BB_start_set+= numpy.einsum("abiuw,niuw->nab", B_20_field, F_A_set_2)
+            dM_AA_start_set = numpy.einsum("abiu,niu->nab", B_10_field, F_B_set)
+            dM_AA_start_set+= numpy.einsum("abiuw,niuw->nab", B_20_field, F_B_set_2)
+            dM_BB_start_set = numpy.einsum("abiu,niu->nab", B_10_field, F_A_set)
+            dM_BB_start_set+= numpy.einsum("abiuw,niuw->nab", B_20_field, F_A_set_2)
 
-         # (02) block
-         psi4.core.print_out(" * Computing Gradient (0,2)...\n")
-         START = OFFs[0]
-         END   = OFFs[1]
+            # (02) block
+            psi4.core.print_out(" * Computing Gradient (0,2)...\n")
+            START = OFFs[0]
+            END   = OFFs[1]
 
-         g_02 = 2.0 * numpy.einsum("nad,nac->cd", dM_AA_ref_set-dM_AA_start_set, W_ABA_set)
-         g_02+= 2.0 * numpy.einsum("nad,nac->cd", dM_BB_ref_set-dM_BB_start_set, W_BAB_set)
+            g_02 = 2.0 * numpy.einsum("nad,nac->cd", dM_AA_ref_set-dM_AA_start_set, W_ABA_set)
+            g_02+= 2.0 * numpy.einsum("nad,nac->cd", dM_BB_ref_set-dM_BB_start_set, W_BAB_set)
 
-         g[START:END] = g_02.ravel().copy(); del g_02
-                                                                                  
-         # (12) block
-         if (1,2) in dms.available_orders():
-             psi4.core.print_out(" * Computing Gradient (1,2)...\n")
-             START = OFFs[1]
-             END   = OFFs[2]
-             #
-             raise NotImplementedError
-            #g[START:END]+= numpy.einsum("nab,niu->abiu", L_set, F_B_set).ravel()
+            g[START:END] = g_02.ravel().copy(); del g_02
+                                                                                     
+            # (12) block
+            if (1,2) in dms.available_orders():
+                psi4.core.print_out(" * Computing Gradient (1,2)...\n")
+                START = OFFs[1]
+                END   = OFFs[2]
+                #
+                g_12 = 2.0 * numpy.einsum("nad,nac,niu->cdiu", dM_AA_ref_set-dM_AA_start_set, W_ABA_set, F_B_set)
+                g_12+= 2.0 * numpy.einsum("nad,nac,niu->cdiu", dM_BB_ref_set-dM_BB_start_set, W_BAB_set, F_A_set)
 
-      
-      
-         # Hessian                                                         
-         I = numpy.identity(n)
+                g[START:END] = g_12.reshape(DIM_2).copy(); del g_12
 
-         # (02) susceptibility
-         START = OFFs[0]
-         END   = OFFs[1]
-         #
-         L = END - START
-         #
-         psi4.core.print_out(" * Computing Hessian (0,2) (0,2)...\n")
-         W_ABA_ABA = numpy.einsum("nab,nac->nbc", W_ABA_set, W_ABA_set)
-         W_BAB_BAB = numpy.einsum("nab,nac->nbc", W_BAB_set, W_BAB_set)
-         H_02_02 = 2.0 * numpy.einsum("ac,bd->abcd", W_ABA_ABA.sum(axis=0), I)
-         H_02_02+= 2.0 * numpy.einsum("nda,nbc->abcd", W_ABA_set, W_ABA_set)
-         H_02_02+= 2.0 * numpy.einsum("ac,bd->abcd", W_BAB_BAB.sum(axis=0), I)
-         H_02_02+= 2.0 * numpy.einsum("nda,nbc->abcd", W_BAB_set, W_BAB_set)
-         #
-         H[START:END,START:END] = H_02_02.reshape(L,L).copy()
-         del H_02_02
-                                                                          
-         # (12) susceptibility
-         if (1,2) in dms.available_orders():
-             PREV  = OFFs[0]
-             START = OFFs[1]
-             END   = OFFs[2]
-             #
-             L = END - START
-             M = START - PREV
-             #
-             psi4.core.print_out(" * Computing Hessian (1,2) (1,2)...\n")
+            # (22) block
+            if (2,2) in dms.available_orders():
+                psi4.core.print_out(" * Computing Gradient (2,2)...\n")
+                START = OFFs[2]
+                END   = OFFs[3]
+                #
+                g_22 = 2.0 * numpy.einsum("nad,nac,niq->cdiq", dM_AA_ref_set-dM_AA_start_set, W_ABA_set, FF_B_set)
+                g_22+= 2.0 * numpy.einsum("nad,nac,niq->cdiq", dM_BB_ref_set-dM_BB_start_set, W_BAB_set, FF_A_set)
 
+                g[START:END] = g_22.reshape(DIM_3).copy(); del g_22
 
-         g *=-2.0
-         H *= 2.0
-         Hi = self._invert_hessian(H)
-                                                                                                               
-         # Fit
-         s = - g @ Hi
+            g *= -2.0
+                                                                                                                                    
+            # Hessian                                                         
+            I = numpy.identity(n)
+                                                                                                                                    
+            # (02) susceptibility
+            START = OFFs[0]
+            END   = OFFs[1]
+            #
+            L = END - START
+            #
+            psi4.core.print_out(" * Computing Hessian (0,2) (0,2)...\n")
+            W_ABA_ABA = numpy.einsum("nab,nac->nbc", W_ABA_set, W_ABA_set)
+            W_BAB_BAB = numpy.einsum("nab,nac->nbc", W_BAB_set, W_BAB_set)
+            A_ABA= W_ABA_ABA.sum(axis=0)
+            A_BAB= W_BAB_BAB.sum(axis=0)
 
-         # combine with external field DMS's
-         s_field = dms_field._s1.copy()
-         s = numpy.hstack([s_field, s])
+            H_02_02 = 2.0 * numpy.einsum("ac,bd->abcd",   A_ABA    , I        )
+            H_02_02+= 2.0 * numpy.einsum("nda,nbc->abcd", W_ABA_set, W_ABA_set)
+            H_02_02+= 2.0 * numpy.einsum("ac,bd->abcd",   A_BAB    , I        )
+            H_02_02+= 2.0 * numpy.einsum("nda,nbc->abcd", W_BAB_set, W_BAB_set)
+            #
+            H[START:END,START:END] = H_02_02.reshape(L,L).copy()
+            del H_02_02
+                                                                             
+            # (12) susceptibility
+            if (1,2) in dms.available_orders():
+                PREV  = OFFs[0]
+                START = OFFs[1]
+                END   = OFFs[2]
+                #
+                # (1,2) (1,2) block
+                psi4.core.print_out(" * Computing Hessian (1,2) (1,2)...\n")
+
+                H_12_12 = 2.0 * numpy.einsum("nac,bd,niu,njw->abiucdjw",  W_ABA_ABA,         I, F_B_set, F_B_set) 
+                H_12_12+= 2.0 * numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_ABA_set, W_ABA_set, F_B_set, F_B_set)
+                H_12_12+= 2.0 * numpy.einsum("nac,bd,niu,njw->abiucdjw",  W_BAB_BAB,         I, F_A_set, F_A_set)
+                H_12_12+= 2.0 * numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_BAB_set, W_BAB_set, F_A_set, F_A_set)
+
+                #
+                H[START:END,START:END] = H_12_12.reshape(DIM_2,DIM_2).copy(); del H_12_12
+
+                # (0,2) (1,2) block
+                psi4.core.print_out(" * Computing Hessian (0,2) (1,2)...\n")
+
+                H_02_12 = 2.0 * numpy.einsum("nac,bd,njw->abcdjw",  W_ABA_ABA,         I, F_B_set) 
+                H_02_12+= 2.0 * numpy.einsum("nda,nbc,njw->abcdjw", W_ABA_set, W_ABA_set, F_B_set)
+                H_02_12+= 2.0 * numpy.einsum("nac,bd,njw->abcdjw",  W_BAB_BAB,         I, F_A_set)
+                H_02_12+= 2.0 * numpy.einsum("nda,nbc,njw->abcdjw", W_BAB_set, W_BAB_set, F_A_set)
+
+                #
+                H[PREV:START,START:END] = H_02_12.reshape(DIM_1,DIM_2).copy(); del H_02_12
+                H[START:END,PREV:START] = H[PREV:START,START:END].T.copy()
+
+            # (22) susceptibility
+            if (2,2) in dms.available_orders():
+                DPREV = OFFs[0]
+                PREV  = OFFs[1]
+                START = OFFs[2]
+                END   = OFFs[3]
+                #
+                # (2,2) (2,2) block
+                psi4.core.print_out(" * Computing Hessian (2,2) (2,2)...\n")
+
+                H_22_22 = 2.0 * numpy.einsum("nac,bd,niu,njw->abiucdjw",  W_ABA_ABA, I,         FF_B_set, FF_B_set) 
+                H_22_22+= 2.0 * numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_ABA_set, W_ABA_set, FF_B_set, FF_B_set)
+                H_22_22+= 2.0 * numpy.einsum("nac,bd,niu,njw->abiucdjw",  W_BAB_BAB, I,         FF_A_set, FF_A_set)
+                H_22_22+= 2.0 * numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_BAB_set, W_BAB_set, FF_A_set, FF_A_set)
+                #
+                H[START:END,START:END] = H_22_22.reshape(DIM_3,DIM_3).copy(); del H_22_22
+
+                # (1,2) (2,2) block
+                psi4.core.print_out(" * Computing Hessian (1,2) (2,2)...\n")
+
+                H_12_22 = 2.0 * numpy.einsum("nac,bd,niu,njw->abiucdjw",  W_ABA_ABA, I,         F_B_set, FF_B_set) 
+                H_12_22+= 2.0 * numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_ABA_set, W_ABA_set, F_B_set, FF_B_set)
+                H_12_22+= 2.0 * numpy.einsum("nac,bd,niu,njw->abiucdjw",  W_BAB_BAB, I,         F_A_set, FF_A_set)
+                H_12_22+= 2.0 * numpy.einsum("nda,nbc,niu,njw->abiucdjw", W_BAB_set, W_BAB_set, F_A_set, FF_A_set)
+                #
+                H[PREV:START,START:END] = H_12_22.reshape(DIM_2,DIM_3).copy(); del H_12_22
+                H[START:END,PREV:START] = H[PREV:START,START:END].T.copy()
+
+                # (0,2) (2,2) block
+                psi4.core.print_out(" * Computing Hessian (0,2) (2,2)...\n")
+
+                H_02_22 = 2.0 * numpy.einsum("nac,bd,njw->abcdjw",  W_ABA_ABA, I,         FF_B_set) 
+                H_02_22+= 2.0 * numpy.einsum("nda,nbc,njw->abcdjw", W_ABA_set, W_ABA_set, FF_B_set)
+                H_02_22+= 2.0 * numpy.einsum("nac,bd,njw->abcdjw",  W_BAB_BAB, I,         FF_A_set)
+                H_02_22+= 2.0 * numpy.einsum("nda,nbc,njw->abcdjw", W_BAB_set, W_BAB_set, FF_A_set)
+                #
+                H[DPREV:PREV,START:END] = H_02_22.reshape(DIM_1,DIM_3).copy(); del H_02_22
+                H[START:END,DPREV:PREV] = H[DPREV:PREV,START:END].T.copy()
+
+                                                                                                                                   
+            H *= 2.0
+            Hi = self._invert_hessian(H)
+                                                                                                                  
+            # Fit
+            s = - g @ Hi
+                                                                                                                                    
+            # combine with external field DMS's
+            s_field = dms_field._s1.copy()
+            s = numpy.hstack([s_field, s])
+
+         else: 
+            s = dms_field._s1.copy()
                                                                                                                   
          # Extract susceptibilities
          psi4.core.print_out(" * Setting the DMS tensors...\n")
@@ -2270,8 +2423,8 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       #   b_20 = b_20_extfield
 
       if DMSFit.compute_dmatpol_susceptibilities:
-         B_10_extField_dmatpol = self.B(1,0,'fa')
-         B_20_extField_dmatpol = self.B(2,0,'fa')
+         B_10_extField_dmatpol = self.B(1,0,'dmatpol')
+         B_20_extField_dmatpol = self.B(2,0,'dmatpol')
 
 
       # additional DMS tensors
@@ -2284,6 +2437,12 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       if (0,2) in self._dms_da.available_orders():
           B_02 = self.B(0,2,'da')
           b_02 = self.B(0,2,'g')
+      if (1,2) in self._dms_da.available_orders():
+          B_12 = self.B(1,2,'da')
+          b_12 = self.B(1,2,'g')
+      if (2,2) in self._dms_da.available_orders():
+          B_22 = self.B(2,2,'da')
+          b_22 = self.B(2,2,'g')
 
 
       # read perturbations
@@ -2417,16 +2576,39 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           dD_AA_com+= numpy.einsum("acixy,ix,iy->ac", B_20, F_B, F_B)
           if (0,2) in self._dms_da.available_orders():
               dD_AA_com+= W_ABA @ B_02 + B_02.T @ W_ABA.T 
+          if (1,2) in self._dms_da.available_orders():
+              Q = numpy.einsum("ab,bciu,iu->ac", W_ABA, B_12, F_B)
+              dD_AA_com+= Q + Q.T
+             #dD_AA_com+= numpy.einsum("ab,bciu,iu->ac", W_ABA, B_12, F_B)
+             #dD_AA_com+= numpy.einsum("cb,baiu,iu->ac", W_ABA, B_12, F_B)
+          if (2,2) in self._dms_da.available_orders():
+              Q = numpy.einsum("ab,bciuw,iu,iw->ac", W_ABA, B_22, F_B, F_B)
+              dD_AA_com+= Q + Q.T
+             #dD_AA_com+= numpy.einsum("ab,bciuw,iu,iw->ac", W_ABA, B_22, F_B, F_B)
+             #dD_AA_com+= numpy.einsum("cb,baiuw,iu,iw->ac", W_ABA, B_22, F_B, F_B)
 
 
           dD_BB_com = numpy.einsum("acix,ix->ac", B_10, F_A)
           dD_BB_com+= numpy.einsum("acixy,ix,iy->ac", B_20, F_A, F_A)
           if (0,2) in self._dms_da.available_orders():
               dD_BB_com+= W_BAB @ B_02 + B_02.T @ W_BAB.T 
+          if (1,2) in self._dms_da.available_orders():
+              Q = numpy.einsum("ab,bciu,iu->ac", W_BAB, B_12, F_A)
+              dD_BB_com+= Q + Q.T
+             #dD_BB_com+= numpy.einsum("ab,bciu,iu->ac", W_BAB, B_12, F_A)
+             #dD_BB_com+= numpy.einsum("cb,baiu,iu->ac", W_BAB, B_12, F_A)
+          if (2,2) in self._dms_da.available_orders():
+              Q = numpy.einsum("ab,bciuw,iu,iw->ac", W_BAB, B_22, F_A, F_A)
+              dD_BB_com+= Q + Q.T
+             #dD_BB_com+= numpy.einsum("ab,bciuw,iu,iw->ac", W_BAB, B_22, F_A, F_A)
+             #dD_BB_com+= numpy.einsum("cb,baiuw,iu,iw->ac", W_BAB, B_22, F_A, F_A)
+
 
           #
           dD_AB_com = W_AB @ B_01 + B_01.T @ W_BA.T
           #
+
+
           dG_AA_ref = dG_AA_set_ref[s]
           dG_BB_ref = dG_BB_set_ref[s]
           dG_AB_ref = dG_AB_set_ref[s]
@@ -2436,11 +2618,33 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           dG_AA_com+= numpy.einsum("acixy,ix,iy->ac", b_20, F_B, F_B)
           if (0,2) in self._dms_da.available_orders():
               dG_AA_com+= w_ABA @ b_02 + b_02.T @ w_ABA.T 
+          if (1,2) in self._dms_da.available_orders():
+              Q = numpy.einsum("ab,bciu,iu->ac", w_ABA, b_12, F_B)
+              dG_AA_com+= Q + Q.T
+             #dG_AA_com+= numpy.einsum("ab,bciu,iu->ac", w_ABA, b_12, F_B)
+             #dG_AA_com+= numpy.einsum("cb,baiu,iu->ac", w_ABA, b_12, F_B)
+          if (2,2) in self._dms_da.available_orders():
+              Q = numpy.einsum("ab,bciuw,iu,iw->ac", w_ABA, b_22, F_B, F_B)
+              dG_AA_com+= Q + Q.T
+             #dG_AA_com+= numpy.einsum("ab,bciuw,iu,iw->ac", w_ABA, b_22, F_B, F_B)
+             #dG_AA_com+= numpy.einsum("cb,baiuw,iu,iw->ac", w_ABA, b_22, F_B, F_B)
+
 
           dG_BB_com = numpy.einsum("acix,ix->ac", b_10, F_A)
           dG_BB_com+= numpy.einsum("acixy,ix,iy->ac", b_20, F_A, F_A)
           if (0,2) in self._dms_da.available_orders():
               dG_BB_com+= w_BAB @ b_02 + b_02.T @ w_BAB.T 
+          if (1,2) in self._dms_da.available_orders():
+              Q = numpy.einsum("ab,bciu,iu->ac", w_BAB, b_12, F_A)
+              dG_BB_com+= Q + Q.T
+             #dG_BB_com+= numpy.einsum("ab,bciu,iu->ac", w_BAB, b_12, F_A)
+             #dG_BB_com+= numpy.einsum("cb,baiu,iu->ac", w_BAB, b_12, F_A)
+          if (2,2) in self._dms_da.available_orders():
+              Q = numpy.einsum("ab,bciuw,iu,iw->ac", w_BAB, b_22, F_A, F_A)
+              dG_BB_com+= Q + Q.T
+             #dG_BB_com+= numpy.einsum("ab,bciuw,iu,iw->ac", w_BAB, b_22, F_A, F_A)
+             #dG_BB_com+= numpy.einsum("cb,baiuw,iu,iw->ac", w_BAB, b_22, F_A, F_A)
+
 
           #
           dG_AB_com = w_AB @ b_01 + b_01.T @ w_BA.T
