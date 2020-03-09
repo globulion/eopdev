@@ -179,9 +179,9 @@ class DMS(ABC):
       # (0,2)
       if (0,2) in self._available_orders and order == (0,2):
           START = n_*(N*3  + N*6)
-          END   = START + n_
+          END   = START + n2
           b     = self._s1[START:END]
-          self._B[(0,2)] = composite.retrieve_tensor(b)
+          self._B[(0,2)] = b.reshape(n,n)
 
       # ---> Group Z(2) <--- #
       # (0,1)
@@ -615,12 +615,16 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       self._compute_samples()
 
       # compute DMS for isolated molecule in external electric field
+      dms_extField_da = None
+      dms_extField_g  = None
       if self._use_external_field_model:
          F_extField_set = numpy.fromfile('temp_F_extField_set.dat').reshape(s,N,3)
          dD_extField_ref_set = numpy.fromfile('temp_dD_extField_ref_set.dat').reshape(s,n,n)
          dG_extField_ref_set = numpy.fromfile('temp_dG_extField_ref_set.dat').reshape(s,n,n)
          self._compute_group_extField(self._dms_extField_da, F_extField_set, dD_extField_ref_set)
          self._compute_group_extField(self._dms_extField_g , F_extField_set, dG_extField_ref_set)
+         dms_extField_da = self._dms_extField_da
+         dms_extField_g  = self._dms_extField_g 
          del F_extField_set, dD_extField_ref_set, dG_extField_ref_set
 
       # fit DMS Z-1: (1,0), (2,0), (0,2), (1,2) and (2,2)
@@ -635,7 +639,8 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       A_AB_set = numpy.fromfile('temp_A_AB_set.dat').reshape(s,n,n)
       A_BA_set = numpy.fromfile('temp_A_BA_set.dat').reshape(s,n,n)
       
-      self._compute_group_1(self._dms_da, F_A_set, F_B_set, dD_AA_ref_set, dD_BB_ref_set, A_AB_set, A_BA_set, W_AB_set, W_BA_set)
+      self._compute_group_1(self._dms_da, dms_extField_da,
+                            F_A_set, F_B_set, dD_AA_ref_set, dD_BB_ref_set, A_AB_set, A_BA_set, W_AB_set, W_BA_set)
       del dD_AA_ref_set, dD_BB_ref_set
 
       dG_AA_ref_set = numpy.fromfile('temp_dG_AA_ref_set.dat').reshape(s,n,n)
@@ -647,7 +652,8 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
       a_BA_set = numpy.fromfile('temp_a_BA_set.dat').reshape(s,n,n)
 
 
-      self._compute_group_1(self._dms_g , F_A_set, F_B_set, dG_AA_ref_set, dG_BB_ref_set, a_AB_set, a_BA_set, w_AB_set, w_BA_set)
+      self._compute_group_1(self._dms_g , dms_extField_g,
+                            F_A_set, F_B_set, dG_AA_ref_set, dG_BB_ref_set, a_AB_set, a_BA_set, w_AB_set, w_BA_set)
       del dG_AA_ref_set, dG_BB_ref_set
 
 
@@ -677,8 +683,8 @@ class EFP_DMSFit(_Global_Settings_DMSFit):
            if dtype.lower().startswith('da'):  return self._dms_extField_da.B(m,n)
            elif dtype.lower().startswith('g'): return self._dms_extField_g .B(m,n)
            else: raise ValueError("DMSFit Error: Wrong value!!")
-      elif dtype.lower() == 'fa': 
-           if (m,n) == (1,0):   return self._B_ind_10
+      elif dtype.lower() == 'dmatpol': 
+           if   (m,n) == (1,0): return self._B_ind_10
            elif (m,n) == (2,0): return self._B_ind_20
            else: 
                raise ValueError("DMSFit Error: Only 10 and 20 electric field susceptibilities are available")
@@ -1034,7 +1040,11 @@ class ExternalField_EFP_DMSFit(EFP_DMSFit):
       psi4.core.clean()
       psi4.core.print_out(" ===> ExtField Run For Sample %i <===\n" % self._i)
 
+      opt_stash = DMSFit.minimum_atom_atom_distance
+      DMSFit.minimum_atom_atom_distance = 4.5
       charges = self.__generate_random_charges()
+      DMSFit.minimum_atom_atom_distance = opt_stash
+
       F = self.__generate_field_from_charges(charges, self._mol)
       F_aver = numpy.linalg.norm(F, axis=1)
       for i in range(self._mol.natom()):
@@ -1322,18 +1332,19 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           dG[:self._nbf,:self._nbf]-= self._G0
           dG[self._nbf:,self._nbf:]-= self._G0
 
-          dD_extField = wfn_extField.Da().to_array(dense=True).copy()
-          dD_extField-= self._D0
+          dG_AA = dG[:self._nbf,:self._nbf].copy()
+          dG_BB = dG[self._nbf:,self._nbf:].copy()
+          dG_AB = dG[:self._nbf,self._nbf:].copy()
+
+          self._save_dD(dG, prefix='gg')
 
           if self._use_external_field_model:
+             dD_extField = wfn_extField.Da().to_array(dense=True).copy()
+             dD_extField-= self._D0
+
              dG_extField = wfn_extField.Fa().to_array(dense=True) - wfn_extField.H().to_array(dense=True) # 2J - K 
              dG_extField-= self._dms_extField_g._M.copy()
                                                                                                                    
-             dG_AA = dG[:self._nbf,:self._nbf].copy()
-             dG_BB = dG[self._nbf:,self._nbf:].copy()
-             dG_AB = dG[:self._nbf,self._nbf:].copy()
-
-          self._save_dD(dG, prefix='gg')
 
           # Electric field
           F_A, F_B, F_A_mat, F_B_mat = self._compute_efield()
@@ -1377,7 +1388,6 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           dG_AA_set_ref.append(dG_AA)
           dG_BB_set_ref.append(dG_BB)
           dG_AB_set_ref.append(dG_AB)
-
 
           F_A_set.append(F_A)
           F_B_set.append(F_B)
@@ -1496,7 +1506,8 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       l_set   .tofile('temp_l_set.dat')
      
 
-  def _compute_group_1(self, dms, F_A_set, F_B_set, dM_AA_ref_set, dM_BB_ref_set, A_AB_set, A_BA_set,
+  def _compute_group_1(self, dms, dms_field,
+                                  F_A_set, F_B_set, dM_AA_ref_set, dM_BB_ref_set, A_AB_set, A_BA_set,
                                   W_AB_set, W_BA_set):#TODO
       "Compute 1st group of parameters"
       psi4.core.print_out(" ---> Computing DMS for Z1 group of type %s <---\n\n" % dms._type_long)
@@ -1655,7 +1666,7 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
             n_ = composite.number_of_elements(n)
             DIM_1 = n_ * dim_1
             DIM_2 = n_ * dim_2
-            DIM_3 = n_ 
+            DIM_3 = n*n
             DIM = DIM_1 + DIM_2 + DIM_3
             g = numpy.zeros(DIM)
             H = numpy.zeros((DIM, DIM))
@@ -1694,24 +1705,27 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
             del g_20
                                                                                                                   
             # (02)
+            S_AB_set = numpy.fromfile("temp_S_AB_set.dat").reshape(self._nsamples,n,n) 
             g_02 = numpy.zeros((n,n))
             tau = numpy.ones((n,n)) - I
             t   = numpy.triu(numpy.ones(n))
             for s in range(self._nsamples):
                 W_AB = W_AB_set[s]
                 W_BA = W_BA_set[s]
+                S_AB = S_AB_set[s]
+                S_BA = S_AB.T.copy()
+                W_ABA= W_AB @ S_BA
+                W_BAB= W_BA @ S_AB
                 dM_AA_ref = dM_AA_ref_set[s]
                 dM_BB_ref = dM_BB_ref_set[s]
-                X_AB = composite.partial_contraction_with_trace(W_AB, dM_AA_ref)
-                X_BA = composite.partial_contraction_with_trace(W_BA, dM_BB_ref)
-                R_AB = W_AB.T @ X_AB
-                R_AB+= tau * R_AB.T
-                R_BA = W_BA.T @ X_BA
-                R_BA+= tau * R_BA.T
-                g_02 += R_AB + R_BA
-           #g_02 = numpy.einsum("nac,nbd,nab->cd", W_AB_set, W_AB_set, dM_AA_ref_set)
-           #g_02+= numpy.einsum("nac,nbd,nab->cd", W_BA_set, W_BA_set, dM_BB_ref_set)
-            g[O1:O2] = composite.form_futf(g_02).reshape(DIM_3).copy()
+                X_ABA= composite.partial_contraction_with_trace(W_ABA, dM_AA_ref)
+                X_BAB= composite.partial_contraction_with_trace(W_BAB, dM_BB_ref)
+                Y_ABA= composite.partial_contraction_with_trace(I, dM_AA_ref)
+                Y_BAB= composite.partial_contraction_with_trace(I, dM_BB_ref)
+                g_02 += W_ABA.T @ Y_ABA + X_ABA.T
+                g_02 += W_BAB.T @ Y_BAB + X_BAB.T
+
+            g[O1:O2] = g_02.reshape(DIM_3).copy()
             del g_02
                                                                                                                   
             g *= -2.0
@@ -1740,23 +1754,31 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
                                                                                                                   
             # (02,02)
             H_02_02 = numpy.zeros((n,n,n,n))
+            dd = composite.partial_contraction(I,I)
             for s in range(self._nsamples):
                 W_AB = W_AB_set[s]
                 W_BA = W_BA_set[s]
-                Y_AB = composite.partial_contraction(W_AB, W_AB)
-                Y_BA = composite.partial_contraction(W_BA, W_BA)
-                H_02_02 += numpy.einsum("pa,pc,pbd->abcd", W_AB, W_AB, Y_AB)
-                H_02_02 += numpy.einsum("pa,pd,pbc,cd->abcd", W_AB, W_AB, Y_AB, tau)
-                H_02_02 += numpy.einsum("pb,pc,pad,ab->abcd", W_AB, W_AB, Y_AB, tau)
-                H_02_02 += numpy.einsum("pb,pd,pac,ab,cd->abcd", W_AB, W_AB, Y_AB, tau, tau)
+                S_AB = S_AB_set[s]
+                S_BA = S_AB.T.copy()
+                W_ABA= W_AB @ S_BA
+                W_BAB= W_BA @ S_AB
+
+                X_ABA = composite.partial_contraction(W_ABA, W_ABA)
+                X_BAB = composite.partial_contraction(W_BAB, W_BAB)
+                Z_ABA = composite.partial_contraction(W_ABA, I    )
+                Z_BAB = composite.partial_contraction(W_BAB, I    )
+
+                H_02_02 += numpy.einsum("pa,pc,pbd->abcd", W_ABA, W_ABA, dd)
+                H_02_02 += numpy.einsum("dac,bd->abcd", X_ABA, I)
+                H_02_02 += numpy.einsum("bc,bad->abcd", W_ABA, Z_ABA)
+                H_02_02 += numpy.einsum("da,dcb->abcd", W_ABA, Z_ABA)
                 #
-                H_02_02 += numpy.einsum("pa,pc,pbd->abcd", W_BA, W_BA, Y_BA)
-                H_02_02 += numpy.einsum("pa,pd,pbc,cd->abcd", W_BA, W_BA, Y_BA, tau)
-                H_02_02 += numpy.einsum("pb,pc,pad,ab->abcd", W_BA, W_BA, Y_BA, tau)
-                H_02_02 += numpy.einsum("pb,pd,pac,ab,cd->abcd", W_BA, W_BA, Y_BA, tau, tau)
-           #H_02_02 = numpy.einsum("nac,nbd->abcd", A_AB_set, A_AB_set)
-           #H_02_02+= numpy.einsum("nac,nbd->abcd", A_BA_set, A_BA_set)
-            H[O1:O2   ,O1:O2   ] = composite.form_superfutf(H_02_02, m1=2).reshape(DIM_3, DIM_3).copy()
+                H_02_02 += numpy.einsum("pa,pc,pbd->abcd", W_BAB, W_BAB, dd)
+                H_02_02 += numpy.einsum("dac,bd->abcd", X_BAB, I)
+                H_02_02 += numpy.einsum("bc,bad->abcd", W_BAB, Z_BAB)
+                H_02_02 += numpy.einsum("da,dcb->abcd", W_BAB, Z_BAB)
+
+            H[O1:O2   ,O1:O2   ] = H_02_02.reshape(DIM_3, DIM_3).copy()
             del H_02_02
                                                                                                                   
             # (10,02)
@@ -1764,16 +1786,22 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
             for s in range(self._nsamples):
                 W_AB = W_AB_set[s] ; F_A = F_A_set[s].reshape(3*N)
                 W_BA = W_BA_set[s] ; F_B = F_B_set[s].reshape(3*N)
-                Z_AB = composite.partial_contraction(I, W_AB)
-                Z_BA = composite.partial_contraction(I, W_BA)
-                H_10_02 += numpy.einsum("ac,abd,q->abqcd", W_AB, Z_AB, F_B)
-                H_10_02 += numpy.einsum("ad,abc,q,cd->abqcd", W_AB, Z_AB, F_B, tau)
+                S_AB = S_AB_set[s]
+                S_BA = S_AB.T.copy()
+
+                W_ABA= W_AB @ S_BA
+                W_BAB= W_BA @ S_AB
+
+                Z_ABA = composite.partial_contraction(W_ABA, I    )
+                Z_BAB = composite.partial_contraction(W_BAB, I    )
+
+                H_10_02 += numpy.einsum("ac,abd,q->abqcd", W_ABA, dd, F_B)
+                H_10_02 += numpy.einsum("ad,acb,q->abqcd", I, Z_ABA, F_B)
                 #
-                H_10_02 += numpy.einsum("ac,abd,q->abqcd", W_BA, Z_BA, F_A)
-                H_10_02 += numpy.einsum("ad,abc,q,cd->abqcd", W_BA, Z_BA, F_A, tau)
-           #H_10_02 = numpy.einsum("nac,nbd,nq->abqcd",W_AB_set,W_AB_set,F_B_set.reshape(self._nsamples, N*3))
-           #H_10_02+= numpy.einsum("nac,nbd,nq->abqcd",W_BA_set,W_BA_set,F_A_set.reshape(self._nsamples, N*3))
-            H[:DIM_1,O1:O2] = composite.form_superfutf(H_10_02, m1=3).reshape(DIM_1, DIM_3).copy()
+                H_10_02 += numpy.einsum("ac,abd,q->abqcd", W_BAB, dd, F_A)
+                H_10_02 += numpy.einsum("ad,acb,q->abqcd", I, Z_BAB, F_A)
+
+            H[:DIM_1,O1:O2] = composite.form_futf(H_10_02).reshape(DIM_1, DIM_3).copy()
             del H_10_02
             H[O1:O2,:DIM_1] = H[:DIM_1,O1:O2].T.copy()
                                                                                                                   
@@ -1782,16 +1810,22 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
             for s in range(self._nsamples):
                 W_AB = W_AB_set[s] ; FF_A = FF_A_set[s].reshape(6*N)
                 W_BA = W_BA_set[s] ; FF_B = FF_B_set[s].reshape(6*N)
-                Z_AB = composite.partial_contraction(I, W_AB)
-                Z_BA = composite.partial_contraction(I, W_BA)
-                H_20_02 += numpy.einsum("ac,abd,q->abqcd", W_AB, Z_AB, FF_B)
-                H_20_02 += numpy.einsum("ad,abc,q,cd->abqcd", W_AB, Z_AB, FF_B, tau)
+                S_AB = S_AB_set[s]
+                S_BA = S_AB.T.copy()
+
+                W_ABA= W_AB @ S_BA
+                W_BAB= W_BA @ S_AB
+
+                Z_ABA = composite.partial_contraction(W_ABA, I    )
+                Z_BAB = composite.partial_contraction(W_BAB, I    )
+
+                H_20_02 += numpy.einsum("ac,abd,q->abqcd", W_ABA, dd, FF_B)
+                H_20_02 += numpy.einsum("ad,acb,q->abqcd", I, Z_ABA, FF_B)
                 #
-                H_20_02 += numpy.einsum("ac,abd,q->abqcd", W_BA, Z_BA, FF_A)
-                H_20_02 += numpy.einsum("ad,abc,q,cd->abqcd", W_BA, Z_BA, FF_A, tau)
-           #H_20_02 = numpy.einsum("nac,nbd,nq->abqcd",W_AB_set,W_AB_set,FF_B_set.reshape(self._nsamples, N*6))
-           #H_20_02+= numpy.einsum("nac,nbd,nq->abqcd",W_BA_set,W_BA_set,FF_A_set.reshape(self._nsamples, N*6))
-            H[DIM_1:O1,O1:O2] = composite.form_superfutf(H_20_02, m1=3).reshape(DIM_2, DIM_3).copy()
+                H_20_02 += numpy.einsum("ac,abd,q->abqcd", W_BAB, dd, FF_A)
+                H_20_02 += numpy.einsum("ad,acb,q->abqcd", I, Z_BAB, FF_A)
+
+            H[DIM_1:O1,O1:O2] = composite.form_futf(H_20_02).reshape(DIM_2, DIM_3).copy()
             del H_20_02
             H[O1:O2,DIM_1:O1] = H[DIM_1:O1,O1:O2].T.copy()
                                                                                                                   
@@ -1810,8 +1844,113 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
 
       # ---> External Field Model <--- #
       else:
-         print("Nothing to do here")
-         exit()
+         n = dms.n()
+         N = dms.N()
+         s = self._nsamples
+         #
+         OFFs= [0,]
+         # (0,2)
+         DIM = n*n
+         OFFs.append(DIM)
+         # (1,2)
+         if (1,2) in dms.available_orders():
+             DIM += n*n*N*3
+             OFFs.append(DIM)
+         # (2,2)
+         if (2,2) in dms.available_orders():
+             DIM += n*n*N*6
+             OFFs.append(DIM)
+                                                                                  
+         # allocate 
+         g = numpy.zeros(DIM)
+         H = numpy.zeros((DIM, DIM))
+                                                                                  
+         # gradient
+         S_AB_set = numpy.fromfile("temp_S_AB_set.dat").reshape(s,n,n)
+         W_ABA_set = numpy.einsum("nab,ncb->nac", W_AB_set, S_AB_set)
+         W_BAB_set = numpy.einsum("nab,nbc->nac", W_BA_set, S_AB_set)
+         B_10_field= dms_field.B(1,0)
+         B_20_field= dms_field.B(2,0)
+         F_A_set_2 = numpy.einsum("niu,niw->niuw", F_A_set, F_A_set)
+         F_B_set_2 = numpy.einsum("niu,niw->niuw", F_B_set, F_B_set)
+         FF_A_set = composite.form_futf(numpy.einsum("uw,niuw->uwni", composite.symmetry_matrix(3), F_A_set_2)).transpose(1,2,0)
+         FF_B_set = composite.form_futf(numpy.einsum("uw,niuw->uwni", composite.symmetry_matrix(3), F_B_set_2)).transpose(1,2,0)
+
+         dM_AA_start_set = numpy.einsum("abiu,niu->nab", B_10_field, F_B_set)
+         dM_AA_start_set+= numpy.einsum("abiuw,niuw->nab", B_20_field, F_B_set_2)
+         dM_BB_start_set = numpy.einsum("abiu,niu->nab", B_10_field, F_A_set)
+         dM_BB_start_set+= numpy.einsum("abiuw,niuw->nab", B_20_field, F_A_set_2)
+
+         # (02) block
+         psi4.core.print_out(" * Computing Gradient (0,2)...\n")
+         START = OFFs[0]
+         END   = OFFs[1]
+
+         g_02 = 2.0 * numpy.einsum("nad,nac->cd", dM_AA_ref_set-dM_AA_start_set, W_ABA_set)
+         g_02+= 2.0 * numpy.einsum("nad,nac->cd", dM_BB_ref_set-dM_BB_start_set, W_BAB_set)
+
+         g[START:END] = g_02.ravel().copy(); del g_02
+                                                                                  
+         # (12) block
+         if (1,2) in dms.available_orders():
+             psi4.core.print_out(" * Computing Gradient (1,2)...\n")
+             START = OFFs[1]
+             END   = OFFs[2]
+             #
+             raise NotImplementedError
+            #g[START:END]+= numpy.einsum("nab,niu->abiu", L_set, F_B_set).ravel()
+
+      
+      
+         # Hessian                                                         
+         I = numpy.identity(n)
+
+         # (02) susceptibility
+         START = OFFs[0]
+         END   = OFFs[1]
+         #
+         L = END - START
+         #
+         psi4.core.print_out(" * Computing Hessian (0,2) (0,2)...\n")
+         W_ABA_ABA = numpy.einsum("nab,nac->nbc", W_ABA_set, W_ABA_set)
+         W_BAB_BAB = numpy.einsum("nab,nac->nbc", W_BAB_set, W_BAB_set)
+         H_02_02 = 2.0 * numpy.einsum("ac,bd->abcd", W_ABA_ABA.sum(axis=0), I)
+         H_02_02+= 2.0 * numpy.einsum("nda,nbc->abcd", W_ABA_set, W_ABA_set)
+         H_02_02+= 2.0 * numpy.einsum("ac,bd->abcd", W_BAB_BAB.sum(axis=0), I)
+         H_02_02+= 2.0 * numpy.einsum("nda,nbc->abcd", W_BAB_set, W_BAB_set)
+         #
+         H[START:END,START:END] = H_02_02.reshape(L,L).copy()
+         del H_02_02
+                                                                          
+         # (12) susceptibility
+         if (1,2) in dms.available_orders():
+             PREV  = OFFs[0]
+             START = OFFs[1]
+             END   = OFFs[2]
+             #
+             L = END - START
+             M = START - PREV
+             #
+             psi4.core.print_out(" * Computing Hessian (1,2) (1,2)...\n")
+
+
+         g *=-2.0
+         H *= 2.0
+         Hi = self._invert_hessian(H)
+                                                                                                               
+         # Fit
+         s = - g @ Hi
+
+         # combine with external field DMS's
+         s_field = dms_field._s1.copy()
+         s = numpy.hstack([s_field, s])
+                                                                                                                  
+         # Extract susceptibilities
+         psi4.core.print_out(" * Setting the DMS tensors...\n")
+         dms.set_s1(s)
+         for order in [(1,0),(2,0),(0,2),(1,2),(2,2)]:
+             if order in dms.available_orders(): dms._generate_B_from_s(order)
+
 
 
   def _compute_group_2(self, dms, K_set, L_set, F_A_set, F_B_set, W_AB_set, W_BA_set, A_AB_set, A_BA_set):
@@ -2115,17 +2254,20 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       # compulsory DMS tensors
       B_10 = self.B(1,0,'da')
       B_20 = self.B(2,0,'da')
+      B_01 = self.B(0,1,'da')
       b_10 = self.B(1,0,'g')
       b_20 = self.B(2,0,'g')
-
-      B_01 = self.B(0,1,'da')
       b_01 = self.B(0,1,'g')
 
-      if self._use_external_field_model: 
-         B_10_extField = self.B(1,0,'da_extField') 
-         B_20_extField = self.B(2,0,'da_extField')
-         b_10_extField = self.B(1,0,'g_extField')
-         b_20_extField = self.B(2,0,'g_extField')
+      #if self._use_external_field_model: 
+      #   B_10_extField = self.B(1,0,'da_extField') 
+      #   B_20_extField = self.B(2,0,'da_extField')
+      #   b_10_extField = self.B(1,0,'g_extField')
+      #   b_20_extField = self.B(2,0,'g_extField')
+      #   B_10 = B_10_extField
+      #   B_20 = B_20_extfield
+      #   b_10 = b_10_extField
+      #   b_20 = b_20_extfield
 
       if DMSFit.compute_dmatpol_susceptibilities:
          B_10_extField_dmatpol = self.B(1,0,'fa')
@@ -2159,6 +2301,8 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
          dD_extField_set_ref = numpy.fromfile('temp_dD_extField_ref_set.dat').reshape(s,n,n)
          dG_extField_set_ref = numpy.fromfile('temp_dG_extField_ref_set.dat').reshape(s,n,n)
 
+      S_AB_set = numpy.fromfile('temp_S_AB_set.dat').reshape(s,n,n)
+
       H_set = numpy.fromfile('temp_H_set.dat').reshape(s,n*2,n*2)
       T_set = numpy.fromfile('temp_T_set.dat').reshape(s,n*2,n*2)
       V_set = numpy.fromfile('temp_V_set.dat').reshape(s,n*2,n*2)
@@ -2176,11 +2320,17 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
       for s in range(self._nsamples):
 
           self._i = s+1
-         
+
+          S_AB = S_AB_set[s]; S_BA = S_AB.T.copy()
           W_AB = W_AB_set[s]
           W_BA = W_BA_set[s]
           w_AB = w_AB_set[s]
           w_BA = w_BA_set[s]
+          W_ABA= W_AB @ S_BA 
+          W_BAB= W_BA @ S_AB
+          w_ABA= w_AB @ S_BA
+          w_BAB= w_BA @ S_AB
+
           F_A  = F_A_set[s]
           F_B  = F_B_set[s]
           #
@@ -2192,11 +2342,11 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
              dD_extField_ref = dD_extField_set_ref[s]
              dG_extField_ref = dG_extField_set_ref[s]
 
-             dD_extField_com = numpy.einsum("acix,ix->ac", B_10_extField, F_extField)
-             dD_extField_com+= numpy.einsum("acixy,ix,iy->ac", B_20_extField, F_extField, F_extField)
+             dD_extField_com = numpy.einsum("acix,ix->ac", B_10, F_extField)
+             dD_extField_com+= numpy.einsum("acixy,ix,iy->ac", B_20, F_extField, F_extField)
 
-             dG_extField_com = numpy.einsum("acix,ix->ac", b_10_extField, F_extField)
-             dG_extField_com+= numpy.einsum("acixy,ix,iy->ac", b_20_extField, F_extField, F_extField)
+             dG_extField_com = numpy.einsum("acix,ix->ac", b_10, F_extField)
+             dG_extField_com+= numpy.einsum("acixy,ix,iy->ac", b_20, F_extField, F_extField)
 
              self._save_dD(dD_extField_com, prefix='d_extfield_com') 
              self._save_dD(dD_extField_ref, prefix='d_extfield_ref')
@@ -2266,12 +2416,14 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           dD_AA_com = numpy.einsum("acix,ix->ac", B_10, F_B)
           dD_AA_com+= numpy.einsum("acixy,ix,iy->ac", B_20, F_B, F_B)
           if (0,2) in self._dms_da.available_orders():
-              dD_AA_com+= numpy.einsum("cd,ac,bd->ab", B_02, W_AB, W_AB)
+              dD_AA_com+= W_ABA @ B_02 + B_02.T @ W_ABA.T 
+
 
           dD_BB_com = numpy.einsum("acix,ix->ac", B_10, F_A)
           dD_BB_com+= numpy.einsum("acixy,ix,iy->ac", B_20, F_A, F_A)
           if (0,2) in self._dms_da.available_orders():
-              dD_BB_com+= numpy.einsum("cd,ac,bd->ab", B_02, W_BA, W_BA)
+              dD_BB_com+= W_BAB @ B_02 + B_02.T @ W_BAB.T 
+
           #
           dD_AB_com = W_AB @ B_01 + B_01.T @ W_BA.T
           #
@@ -2283,12 +2435,12 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
           dG_AA_com = numpy.einsum("acix,ix->ac", b_10, F_B)
           dG_AA_com+= numpy.einsum("acixy,ix,iy->ac", b_20, F_B, F_B)
           if (0,2) in self._dms_da.available_orders():
-              dG_AA_com+= numpy.einsum("cd,ac,bd->ab", b_02, w_AB, w_AB)
+              dG_AA_com+= w_ABA @ b_02 + b_02.T @ w_ABA.T 
 
           dG_BB_com = numpy.einsum("acix,ix->ac", b_10, F_A)
           dG_BB_com+= numpy.einsum("acixy,ix,iy->ac", b_20, F_A, F_A)
           if (0,2) in self._dms_da.available_orders():
-              dG_BB_com+= numpy.einsum("cd,ac,bd->ab", b_02, w_BA, w_BA)
+              dG_BB_com+= w_BAB @ b_02 + b_02.T @ w_BAB.T 
 
           #
           dG_AB_com = w_AB @ b_01 + b_01.T @ w_BA.T
