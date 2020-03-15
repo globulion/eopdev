@@ -227,7 +227,9 @@ def rotate_ao_matrix(M, rot_3d, bfs, return_rot=False, aomo=False):
  bfs    - psi4.core.BasisSet in which M is represented
  aomo   -
 
- Returns: rotated matrix M
+ Returns: 
+     rotated matrix M:  M' = R.T @ M @ R (if aomo=False)
+                    M:  M' = R.T @ M     (if aomo=True)
 """
     # number of basis functions per shell type
     if bfs.has_puream():  nam = {0: 1, 1: 3, 2: 5, 3: 7, 4: 9}

@@ -64,6 +64,7 @@ class GenEffPar
            else                            {throw psi::PSIEXCEPTION(notsupported);}
       } else if (fieldRank == 2) {  // Quadratic wrt electric field
            if (fieldGradientRank == 0)     {set_dipole_dipole_hyperpolarizability(susc);}
+           else if (fieldGradientRank == 1){set_quadrupole_polarizability(susc);}
            else                            {throw psi::PSIEXCEPTION(notsupported);}
       } else {
            throw psi::PSIEXCEPTION(notsupported);
@@ -108,6 +109,7 @@ class GenEffPar
            else                            {throw psi::PSIEXCEPTION(notsupported);}
       } else if (fieldRank == 2) {  // Quadratic wrt electric field
            if (fieldGradientRank == 0)     {allocate_dipole_dipole_hyperpolarizability(nsites, nbf);}
+           else if (fieldGradientRank == 1){allocate_quadrupole_polarizability(nsites, nbf);}
            else                            {throw psi::PSIEXCEPTION(notsupported);}
       } else {
            throw psi::PSIEXCEPTION(notsupported);
@@ -166,6 +168,7 @@ class GenEffPar
            else                            {throw psi::PSIEXCEPTION(notsupported);}
       } else if (fieldRank == 2) {  // Quadratic wrt electric field
            if (fieldGradientRank == 0)     {return dipole_dipole_hyperpolarizability(i, x);}
+           else if (fieldGradientRank == 1){return quadrupole_polarizability(i, x);}
            else                            {throw psi::PSIEXCEPTION(notsupported);}
       } else {
            throw psi::PSIEXCEPTION(notsupported);
@@ -197,6 +200,7 @@ class GenEffPar
            else                            {throw psi::PSIEXCEPTION(notsupported);}
       } else if (fieldRank == 2) {  // Quadratic wrt electric field
            if (fieldGradientRank == 0)     {return dipole_dipole_hyperpolarizability(i);} 
+           else if (fieldGradientRank == 1){return quadrupole_polarizability(i);}
            else                            {throw psi::PSIEXCEPTION(notsupported);}
       } else {
            throw psi::PSIEXCEPTION(notsupported);
@@ -224,6 +228,7 @@ class GenEffPar
            else                            {throw psi::PSIEXCEPTION(notsupported);}
       } else if (fieldRank == 2) {  // Quadratic wrt electric field
            if (fieldGradientRank == 0)     {return dipole_dipole_hyperpolarizability();}
+           else if (fieldGradientRank == 1){return quadrupole_polarizability();}
            else                            {throw psi::PSIEXCEPTION(notsupported);}
       } else {
            throw psi::PSIEXCEPTION(notsupported);
@@ -1119,7 +1124,6 @@ class LinearGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPola
  *  - \f$ {\bf B}_{i;\alpha\beta}^{(01)} \f$ is the density matrix quadrupole polarizability
  * all defined for the distributed site at \f$ {\bf r}_i \f$.
  *
- * \note This model is not available now and probably will be deprecated in the future.
  */
 class QuadraticGradientNonUniformEFieldPolarGEFactory : public NonUniformEFieldPolarGEFactory
 {

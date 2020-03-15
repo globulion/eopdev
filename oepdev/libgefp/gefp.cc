@@ -209,6 +209,9 @@ oepdev::GenEffParFactory::GenEffParFactory(std::shared_ptr<psi::Wavefunction> wf
    // Populate vdwRadius
    vdwRadius_["C"] = options_.get_double("ESP_VDW_RADIUS_C" );
    vdwRadius_["H"] = options_.get_double("ESP_VDW_RADIUS_H" );
+   vdwRadius_["He"] = options_.get_double("ESP_VDW_RADIUS_HE" );
+   vdwRadius_["Ne"] = options_.get_double("ESP_VDW_RADIUS_NE" );
+   vdwRadius_["Ar"] = options_.get_double("ESP_VDW_RADIUS_AR" );
    vdwRadius_["N"] = options_.get_double("ESP_VDW_RADIUS_N" );
    vdwRadius_["O"] = options_.get_double("ESP_VDW_RADIUS_O" );
    vdwRadius_["F"] = options_.get_double("ESP_VDW_RADIUS_F" );
@@ -304,8 +307,8 @@ std::shared_ptr<oepdev::GenEffParFactory> oepdev::GenEffParFactory::build(const 
        const int rank_gradient = opt.get_int("DMATPOL_GRADIENT_RANK");
 
        // Check if gradient models are requested
-       if (rank_gradient > 0) 
-           throw psi::PSIEXCEPTION("Gradient models are not available now and probably will be deprecated in the future.");
+     //if (rank_gradient > 0) 
+     //    throw psi::PSIEXCEPTION("Gradient models are not available now and probably will be deprecated in the future.");
 
        if (mode == "NONE") {
           {return std::make_shared<oepdev::AbInitioPolarGEFactory>(wfn, opt);}

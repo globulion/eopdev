@@ -153,6 +153,9 @@ int read_options(std::string name, Options& options)
         options.add_double ("ESP_VDW_RADIUS_O"      ,  5.6                       );
         options.add_double ("ESP_VDW_RADIUS_F"      ,  2.3                       );
         options.add_double ("ESP_VDW_RADIUS_CL"     ,  2.9                       );
+        options.add_double ("ESP_VDW_RADIUS_HE"     ,  4.0                       );
+        options.add_double ("ESP_VDW_RADIUS_NE"     ,  4.0                       );
+        options.add_double ("ESP_VDW_RADIUS_AR"     ,  4.0                       );
 
 
         // ---> DMTP Global Options  <--- //
