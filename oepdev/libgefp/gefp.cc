@@ -209,13 +209,14 @@ oepdev::GenEffParFactory::GenEffParFactory(std::shared_ptr<psi::Wavefunction> wf
    // Populate vdwRadius
    vdwRadius_["C"] = options_.get_double("ESP_VDW_RADIUS_C" );
    vdwRadius_["H"] = options_.get_double("ESP_VDW_RADIUS_H" );
-   vdwRadius_["He"] = options_.get_double("ESP_VDW_RADIUS_HE" );
-   vdwRadius_["Ne"] = options_.get_double("ESP_VDW_RADIUS_NE" );
-   vdwRadius_["Ar"] = options_.get_double("ESP_VDW_RADIUS_AR" );
+   vdwRadius_["HE"] = options_.get_double("ESP_VDW_RADIUS_HE" );
+   vdwRadius_["NE"] = options_.get_double("ESP_VDW_RADIUS_NE" );
+   vdwRadius_["AR"] = options_.get_double("ESP_VDW_RADIUS_AR" );
    vdwRadius_["N"] = options_.get_double("ESP_VDW_RADIUS_N" );
    vdwRadius_["O"] = options_.get_double("ESP_VDW_RADIUS_O" );
    vdwRadius_["F"] = options_.get_double("ESP_VDW_RADIUS_F" );
-   vdwRadius_["Cl"]= options_.get_double("ESP_VDW_RADIUS_CL");
+   vdwRadius_["CL"]= options_.get_double("ESP_VDW_RADIUS_CL");
+   vdwRadius_["LI"]= options_.get_double("ESP_VDW_RADIUS_LI");
 
    // Set the centre of the sphere
    psi::Matrix  geom = wfn_->molecule()->geometry();

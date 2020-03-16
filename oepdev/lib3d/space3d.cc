@@ -87,10 +87,14 @@ RandomPoints3DIterator::RandomPoints3DIterator(const int& np, const double& pad,
    // populate vdwRadius
    vdwRadius_["C"] = psi::Process::environment.options.get_double("ESP_VDW_RADIUS_C" );
    vdwRadius_["H"] = psi::Process::environment.options.get_double("ESP_VDW_RADIUS_H" );
+   vdwRadius_["HE"] = psi::Process:environment.options.get_double("ESP_VDW_RADIUS_HE" );
+   vdwRadius_["NE"] = psi::Process:environment.options.get_double("ESP_VDW_RADIUS_NE" );
+   vdwRadius_["AR"] = psi::Process:environment.options.get_double("ESP_VDW_RADIUS_AR" );
    vdwRadius_["N"] = psi::Process::environment.options.get_double("ESP_VDW_RADIUS_N" );
    vdwRadius_["O"] = psi::Process::environment.options.get_double("ESP_VDW_RADIUS_O" );
    vdwRadius_["F"] = psi::Process::environment.options.get_double("ESP_VDW_RADIUS_F" );
-   vdwRadius_["Cl"]= psi::Process::environment.options.get_double("ESP_VDW_RADIUS_CL");
+   vdwRadius_["CL"]= psi::Process::environment.options.get_double("ESP_VDW_RADIUS_CL");
+   vdwRadius_["LI"]= psi::Process::environment.options.get_double("ESP_VDW_RADIUS_LI");
 
    // Set the centre of the sphere
    Matrix       geom = mol->geometry();
