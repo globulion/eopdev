@@ -256,14 +256,6 @@ class Computer(ABC):
        except: BA_03, BB_03 = None, None
        try: BA_04 = par_I['dms_04']; BB_04 = par_J['dms_04']
        except: BA_04, BB_04 = None, None
-       try: BA_11 = par_I['dms_11']; BB_11 = par_J['dms_11']
-       except: BA_11, BB_11 = None, None
-       try: BA_12 = par_I['dms_12']; BB_12 = par_J['dms_12']
-       except: BA_12, BB_12 = None, None
-       try: BA_21 = par_I['dms_21']; BB_21 = par_J['dms_21']
-       except: BA_21, BB_21 = None, None
-       try: BA_22 = par_I['dms_22']; BB_22 = par_J['dms_22']
-       except: BA_22, BB_22 = None, None
 
        # Compute perturbations
        D_A = self._Da[off_ao_I:off_ao_I+nbf_I,off_ao_I:off_ao_I+nbf_I].copy()
@@ -311,12 +303,6 @@ class Computer(ABC):
           dD_AA+= W_ABA @ BA_02 + BA_02.T @ W_ABA.T                      
        if BA_04 is not None: 
           dD_AA+= W_ABABA @ BA_04 + BA_04.T @ W_ABABA.T                      
-       if BA_12 is not None: 
-          Q = numpy.einsum("ab,bciu,iu->ac", W_ABA, BA_12, F_B)
-          dD_AA+= Q + Q.T
-       if BA_22 is not None:
-          Q = numpy.einsum("ab,bciuw,iu,iw->ac", W_ABA, BA_22, F_B, F_B)
-          dD_AA+= Q + Q.T
        # dD_BB
        dD_BB = numpy.einsum("acix,ix->ac", BB_10, F_A)
        dD_BB+= numpy.einsum("acixy,ix,iy->ac", BB_20, F_A, F_A)
@@ -324,24 +310,12 @@ class Computer(ABC):
           dD_BB+= W_BAB @ BB_02 + BB_02.T @ W_BAB.T                      
        if BB_04 is not None:
           dD_BB+= W_BABAB @ BB_04 + BB_04.T @ W_BABAB.T                      
-       if BB_12 is not None:
-          Q = numpy.einsum("ab,bciu,iu->ac", W_BAB, BB_12, F_A)
-          dD_BB+= Q + Q.T
-       if BB_22 is not None:
-          Q = numpy.einsum("ab,bciuw,iu,iw->ac", W_BAB, BB_22, F_A, F_A)
-          dD_BB+= Q + Q.T
        # dD_AB
        dD_AB = numpy.zeros((nbf_I, nbf_J))
        if BA_01 is not None:
-          dD_AB = W_AB @ BB_01 + BA_01.T @ W_BA.T                            
+          dD_AB+= W_AB @ BB_01 + BA_01.T @ W_BA.T                            
        if BA_03 is not None:
-          dD_AB = W_ABAB @ BB_03 + BA_03.T @ W_BABA.T                            
-       if BA_11 is not None:
-          dD_AB+= numpy.einsum("ac,ix,cbix->ab",W_AB, F_A, BB_11)
-          dD_AB+= numpy.einsum("ac,ix,cbix->ab",W_BA, F_B, BA_11).T
-       if BA_21 is not None:
-          dD_AB+= numpy.einsum("ac,ix,iy,cbixy->ab",W_AB, F_A, F_A, BB_21)
-          dD_AB+= numpy.einsum("ac,ix,iy,cbixy->ab",W_BA, F_B, F_B, BA_21).T
+          dD_AB+= W_ABAB @ BB_03 + BA_03.T @ W_BABA.T                            
 
        # Reconstruct OPDM for entire system
        D_new = self._Da.copy()
