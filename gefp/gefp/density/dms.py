@@ -206,6 +206,9 @@ class Computer(ABC):
            for i in range(self._number_of_fragments):
                for j in range(i):
                    energy = self._dmsscf_for_pair_of_fragments(i,j)
+                   if Computer.verbose and psi4.core.get_global_option("PRINT")>1:
+                      print(" @DMS-SCF: MicroIter I=%4d J=%4d E=%14.6f" % (i+1,j+1,energy))
+
 
            # Include Pauli deformation
            self._orthogonalize_density_matrix()
@@ -215,7 +218,7 @@ class Computer(ABC):
            current_dmsscf_energy = energy
 
            if Computer.verbose:
-              print(" @DMS-SCF: Iter.%04d E=%14.6f" % (Iter, energy))
+              print(" @DMS-SCF: Iter.%4d E=%14.6f" % (Iter, energy))
 
            Iter += 1
 
