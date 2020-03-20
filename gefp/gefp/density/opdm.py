@@ -235,7 +235,7 @@ class Density:
         # NO cutoff
         if no_cutoff is False: no_cutoff = self.no_cutoff
         if no_cutoff != 0.0:
-           ids = numpy.where(n>=self.no_cutoff)
+           ids = numpy.where(n>=no_cutoff)
            n = n[ids]
            U =(U.T[ids]).T
 
