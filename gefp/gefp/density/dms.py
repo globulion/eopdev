@@ -57,6 +57,23 @@ class Aggregate:
 
 class Computer(ABC): 
    """
+ ---------------------------------------------------------------------------------------------------
+ Method to solve DMS-SCF problems.
+
+ Usage:
+  computer = Computer(aggregate, fragments)
+  energy = computer.run(field=[0,0,0])
+  mu     = computer.dipole_moment()
+  mu     = computer.ff_dipole_moment()
+  alpha  = computer.ff_polarizability(energy=False)
+  beta   = computer.ff_hyperpolarizability(energy=False)
+  gamma  = computer.ff_hyper2polarizability(energy=Fanse)
+  camm   = computer.camm()
+  charges= computer.atomic_charges(kappa=0.0)
+
+  computer.update(psi_molecule)
+ ---------------------------------------------------------------------------------------------------
+                                                                           Gundelfingen, 31 Mar 2020
 """
    # Global defaults
    verbose                             = True
@@ -90,19 +107,54 @@ class Computer(ABC):
        self._Fa= None; self._Fb = None
        self._ao_offsets_by_fragment = None
        self._natom_offsets_by_fragment = None
-       self._n = None
+       self._n = None # --> deprecate (no need of NO occupancies anymore)
        #
        self._build_bfs()
        self._allocate_memory()
 
+   def run(self, field=None):
+       "Perform single-point energy or density calculation"
+       return self._run_dmsscf(field)
+
    def update(self, psi_molecule):
+       "Updates for the next calculation"
        psi4.core.clean()
        del self._mints
        self._jk.finalize()
        self._aggregate.update(psi_molecule.geometry())
        self._build_bfs()
 
-   def _allocate_memory(self):#OK
+   def Da(self): 
+       "Return OPDM alpha matrix"
+       return self._Da.copy()
+
+   def Fa(self): 
+       "Return Fock alpha matrix"
+       return self._Fa.copy()
+
+   def dipole_moment(self):
+       "Compute dipole moment from nuclear dipole moment and density matrix"
+       mu = self._aggregate.all.nuclear_dipole()
+       mu = numpy.array([mu[0], mu[1], mu[2]])
+       D = self._mints.ao_dipole()
+       mu += 2.0 * numpy.array([(D[x].to_array(dense=True) @ self._Da).trace() for x in range(3)])
+       return mu
+
+   def total_energy(self): 
+       "Return total energy of the system"
+       return self._total_energy
+
+   def E(self): return self._total_energy
+
+   # --> Protected Interface <-- #
+
+   @abstractmethod
+   def _orthogonalize_density_matrix(self): pass
+
+   @abstractmethod
+   def _run_dmsscf(self, field): pass
+
+   def _allocate_memory(self):
        n = self._nbf
        self._Da = numpy.zeros((n,n))
        self._Fa = numpy.zeros((n,n))
@@ -112,53 +164,57 @@ class Computer(ABC):
        t = numpy.cumsum([self._fragments[x].get_natoms() for x in range(self._number_of_fragments)])
        self._natom_offsets_by_fragment = numpy.hstack(([0],t[:-1]))
 
-   def _compute_electric_field_due_to_fragment(self, J, D_J, ints_J, ri):#OK
-       "Compute electric field at ri due to mol of dimer with D_J and field integrals ints_J"
-       off_natom_J = self._natom_offsets_by_fragment[J]
-       fi= numpy.zeros(3)
-       for j in range(self._fragments[J].get_natoms()):
-           xj=             self._aggregate.all.x(off_natom_J+j) 
-           yj=             self._aggregate.all.y(off_natom_J+j)
-           zj=             self._aggregate.all.z(off_natom_J+j)
-           Zj= numpy.float(self._aggregate.all.Z(off_natom_J+j))
+   def _build_bfs(self):#OK
+       self._bfs       = psi4.core.BasisSet.build(self._aggregate.all, "BASIS", psi4.core.get_global_option("BASIS"), puream=False)
+       self._mints     = psi4.core.MintsHelper(self._bfs)
+       self._jk        = psi4.core.JK.build(self._bfs, jk_type="direct")
+       self._jk.set_memory(int(5e8))
+       self._jk.initialize()
 
-           rij = numpy.array([ri[0]-xj, ri[1]-yj, ri[2]-zj])
-           rij_norm = numpy.linalg.norm(rij)
-           fi += Zj * rij / rij_norm**3
+       self._nbf = self._bfs.nbf()
 
-       fi[0] += 2.0 * (D_J @ ints_J[0]).trace() 
-       fi[1] += 2.0 * (D_J @ ints_J[1]).trace() 
-       fi[2] += 2.0 * (D_J @ ints_J[2]).trace() 
-       return fi
+class _DMS_SCF_Procedure(Computer):
+   "The DMS-SCF Procedure"
+   def __init__(self, aggregate, fragments):
+       Computer.__init__(self, aggregate, fragments)
 
-   def run(self):#OK
-       self._superimpose_fragments()
-       self._compute_one_electron_integrals()
-       self._initialize_opdm()
-       self._compute_total_energy()
+   # --> Implementation <-- #
+
+   def _run_dmsscf(self, field=None):
+       "Perform single-point energy or density calculation"
+       self.__superimpose_fragments()
+       self.__compute_one_electron_integrals(field)
+       self.__initialize_opdm()
+       self.__compute_total_energy(field)
        return self._total_energy
 
-   @abstractmethod
-   def _orthogonalize_density_matrix(self): pass
+   # --> Private Interface <-- #
 
-   def _initialize_opdm(self):
-       self._Da = numpy.zeros((self._nbf, self._nbf))
-       for I in range(self._number_of_fragments):
-           off = self._ao_offsets_by_fragment[I]
-           nbf = self._fragments[I].get_nbf()
-           Da  = self._fragments[I].get()["opdm"]
-           self._Da[off:off+nbf,off:off+nbf] = Da.copy()
+   def __initialize_opdm(self):
+       "Initializes the OPDM of the entire system. As for now, it takes the last OPDM as guess, otherwise gas-phase guess."
+       if self._Da is not None:
+          self._Da = numpy.zeros((self._nbf, self._nbf))    
+          for I in range(self._number_of_fragments):
+              off = self._ao_offsets_by_fragment[I]
+              nbf = self._fragments[I].get_nbf()
+              Da  = self._fragments[I].get()["opdm"]
+              self._Da[off:off+nbf,off:off+nbf] = Da.copy()
 
-   def _superimpose_fragments(self):#OK
+   def __superimpose_fragments(self):
+       "Perform superposition of all fragments"
        for I in range(self._number_of_fragments):
            mol = self._aggregate.all.extract_subsets(I+1)
            xyz = mol.geometry().to_array(dense=True)
            rms = self._fragments[I].superimpose(xyz)
  
-   def _compute_one_electron_integrals(self):#OK
+   def __compute_one_electron_integrals(self, field):
+       "Compute necessary one-electron integrals"
        T = self._mints.ao_kinetic().to_array(dense=True)
-       V = self._mints.ao_potential().to_array(dense=True)
+       V = self._mints.ao_potential().to_array(dense=True)         
        H = T + V
+       if field is not None:
+          D = self._mints.ao_dipole()
+          for x in range(3): H -= D[x].to_array(dense=True) * field[x]
        self._H = H
 
        self._S = self._mints.ao_overlap().to_array(dense=True)
@@ -173,7 +229,7 @@ class Computer(ABC):
            self._electric_field_ao_integrals.append(ints)
        self._electric_field_ao_integrals = numpy.array(self._electric_field_ao_integrals)
 
-       self._Ca = numpy.zeros((self._nbf, self._nbf))
+       self._Ca = numpy.zeros((self._nbf, self._nbf)) # --> can probably be deprecated
        self._n  = None #numpy.zeros(self._nbf)
        for I in range(self._number_of_fragments):
            par = self._fragments[I].get()
@@ -182,8 +238,27 @@ class Computer(ABC):
            Ca = numpy.hstack([par['caocc'], par['cavir']])
            self._Ca[off:off+nbf,off:off+nbf] = Ca.copy()
 
-      
-   def _compute_total_energy(self):#OK
+   def __compute_electric_field_due_to_fragment(self, J_list, D_J, ints_J, ri):
+       "Compute electric field at ri due to mol of dimer with D_J and field integrals ints_J"
+       fi= numpy.zeros(3)
+       for J in J_list:
+           off_natom_J = self._natom_offsets_by_fragment[J]
+           for j in range(self._fragments[J].get_natoms()):          
+               xj=             self._aggregate.all.x(off_natom_J+j) 
+               yj=             self._aggregate.all.y(off_natom_J+j)
+               zj=             self._aggregate.all.z(off_natom_J+j)
+               Zj= numpy.float(self._aggregate.all.Z(off_natom_J+j))
+                                                                     
+               rij = numpy.array([ri[0]-xj, ri[1]-yj, ri[2]-zj])
+               rij_norm = numpy.linalg.norm(rij)
+               fi += Zj * rij / rij_norm**3
+
+       fi[0] += 2.0 * (D_J @ ints_J[0]).trace() 
+       fi[1] += 2.0 * (D_J @ ints_J[1]).trace() 
+       fi[2] += 2.0 * (D_J @ ints_J[2]).trace() 
+       return fi
+
+   def __compute_total_energy(self, field):
        "DMS SCF Procedure for N-Body System"
        # Initialize
        Iter = 0
@@ -202,15 +277,17 @@ class Computer(ABC):
               success = False 
               break
 
+           ## Run microiterations for each pair of fragments: Older Code
+           #for i in range(self._number_of_fragments):
+           #    for j in range(i):
+           #        energy = self._dmsscf_for_pair_of_fragments(i,j)
+           #        if Computer.verbose and psi4.core.get_global_option("PRINT")>1:
+           #           print(" @DMS-SCF: MicroIter I=%4d J=%4d E=%14.6f" % (i+1,j+1,energy))
+
            # Run microiterations for each pair of fragments
-           for i in range(self._number_of_fragments):
-               for j in range(i):
-                   energy = self._dmsscf_for_pair_of_fragments(i,j)
-                   if Computer.verbose and psi4.core.get_global_option("PRINT")>1:
-                      print(" @DMS-SCF: MicroIter I=%4d J=%4d E=%14.6f" % (i+1,j+1,energy))
+           energy = self.__dmsscf_iteration(field)
 
-
-           # Include Pauli deformation
+           # Include Pauli deformation (experimental: use OtherComputer class) --> deprecate
            self._orthogonalize_density_matrix()
 
            # Compute total energy and error
@@ -224,6 +301,7 @@ class Computer(ABC):
 
        # Finalize
        self._total_energy = energy
+
        if success:
           if Computer.verbose:
              print(" @DMS-SCF: Converged. Final Energy = %14.8f" % (energy))
@@ -233,8 +311,407 @@ class Computer(ABC):
           if Computer.raise_error_when_unconverged: 
              raise ValueError(" DMS-SCF did not converge!")
 
-   def _dmsscf_for_pair_of_fragments(self, I, J):
-       "DMS SCF Procedure for Pair"
+   def __dmsscf_iteration(self, field):
+       "1 Global Iteration of DMS SCF Procedure"
+
+       # Extract OPDM and DMS tensors
+       nat = [x.get_natoms() for x in self._fragments]
+       par = [x.get() for x in self._fragments]
+       D0  = [x['opdm'  ] for x in par]
+       B_10= [x['dms_10'] for x in par] 
+       B_20= [x['dms_20'] for x in par] 
+       try: B_01= [x['dms_01'] for x in par] 
+       except KeyError: B_01= [None for x in par] 
+       try: B_02= [x['dms_02'] for x in par] 
+       except KeyError: B_02= [None for x in par] 
+       try: 
+           B_03= [x['dms_03'] for x in par] 
+       except KeyError: B_03= [None for x in par] 
+       try: 
+           B_04= [x['dms_04'] for x in par] 
+       except KeyError: B_04= [None for x in par] 
+
+       # Compute perturbations: Electric field
+       F = []
+       for I in range(self._number_of_fragments):
+           nbf_I = self._fragments[I].get_nbf()
+           natom_I = nat[I]
+           off_ao_I = self._ao_offsets_by_fragment[I]
+           off_natom_I = self._natom_offsets_by_fragment[I]
+
+           D_JJ = self._Da.copy()
+           D_JJ[off_ao_I:off_ao_I+nbf_I,off_ao_I:off_ao_I+nbf_I].fill(0.0)
+
+           JJ_list = []
+           for J in range(self._number_of_fragments):
+               if I!=J: 
+                  JJ_list.append(J)
+                  ## local field approximation:
+                  #off_ao_J = self._ao_offsets_by_fragment[J]
+                  #nbf_J = self._fragments[J].get_nbf()
+                  #D_JJ[off_ao_I:off_ao_I+nbf_I,off_ao_J:off_ao_J+nbf_J].fill(0.0)
+                  #D_JJ[off_ao_J:off_ao_J+nbf_J,off_ao_I:off_ao_I+nbf_I].fill(0.0)
+
+           F_I = []
+
+           for i in range(natom_I):
+               xi = self._aggregate.all.x(off_natom_I+i)
+               yi = self._aggregate.all.y(off_natom_I+i)
+               zi = self._aggregate.all.z(off_natom_I+i)
+               ri = numpy.array([xi,yi,zi])
+
+               ints = self._electric_field_ao_integrals[off_natom_I+i] # ints_ALL (at I)
+
+               f = self.__compute_electric_field_due_to_fragment(JJ_list, D_JJ, ints, ri)
+               if field is not None: f+= field
+
+               F_I.append(f)
+
+           F.append(numpy.array(F_I))
+
+       # Compute perturbations: CT force
+       W_2 = {}
+       W_3 = {}
+       W_4 = {}
+       W_5 = {}
+
+       # 2-body
+       for I in range(self._number_of_fragments):
+           nbf_I = self._fragments[I].get_nbf()
+           off_ao_I = self._ao_offsets_by_fragment[I]
+
+           D_I = self._Da[off_ao_I:off_ao_I+nbf_I,off_ao_I:off_ao_I+nbf_I].copy()
+
+           W_2[(I,I)] = numpy.zeros((nbf_I, nbf_I))
+
+           for J in range(self._number_of_fragments):
+             if I!=J:
+               nbf_J = self._fragments[J].get_nbf()
+               off_ao_J = self._ao_offsets_by_fragment[J]
+
+               S_IJ = self._S[off_ao_I:off_ao_I+nbf_I,off_ao_J:off_ao_J+nbf_J].copy()
+
+               W_2[(I,J)] = D_I @ S_IJ
+
+       # 3-body
+       for I in range(self._number_of_fragments):
+           nbf_I = self._fragments[I].get_nbf()
+           for J in range(self._number_of_fragments):
+               nbf_J = self._fragments[J].get_nbf()
+               off_ao_J = self._ao_offsets_by_fragment[J]
+
+               w_IJ = numpy.zeros((nbf_I, nbf_J))
+               #print("Considering IJ = %d%d" % (I,J))
+               for K in range(self._number_of_fragments):
+                 if K!=I and K!=J : # and I==J:
+                   #print("Adding K=%d to %dK%d" % (K,I,J))
+
+                   nbf_K = self._fragments[K].get_nbf()
+                   off_ao_K = self._ao_offsets_by_fragment[K]
+
+                   S_KJ = self._S[off_ao_K:off_ao_K+nbf_K,off_ao_J:off_ao_J+nbf_J].copy()
+
+                   w_IJ+= W_2[(I,K)] @ S_KJ
+
+               W_3[(I,J)] = w_IJ
+
+       # 4-body
+       for I in range(self._number_of_fragments):
+           nbf_I = self._fragments[I].get_nbf()
+           for J in range(self._number_of_fragments):
+               nbf_J = self._fragments[J].get_nbf()
+               off_ao_J = self._ao_offsets_by_fragment[J]
+               w_IJ = numpy.zeros((nbf_I, nbf_J))
+
+               for K in range(self._number_of_fragments):
+                   nbf_K = self._fragments[K].get_nbf()
+                   off_ao_K = self._ao_offsets_by_fragment[K]
+
+                   W_IK = W_2[(I,K)]
+
+                   for L in range(self._number_of_fragments):
+                     if I!=K and K!=L and L!=J : #and I==L and K==J:
+
+                       nbf_L = self._fragments[L].get_nbf()
+                       off_ao_L = self._ao_offsets_by_fragment[L]
+
+                       S_KL = self._S[off_ao_K:off_ao_K+nbf_K,off_ao_L:off_ao_L+nbf_L].copy()
+                       S_LJ = self._S[off_ao_L:off_ao_L+nbf_L,off_ao_J:off_ao_J+nbf_J].copy()
+
+                       w_IJ+= W_IK @ S_KL @ S_LJ
+
+                   #if K!=I and K!=J:
+                   #   S_KJ = self._S[off_ao_K:off_ao_K+nbf_K,off_ao_J:off_ao_J+nbf_J].copy()
+                   #   w_IJ+= W_IK @ S_KJ
+
+               W_4[(I,J)] = w_IJ
+
+       # 5-body
+       for I in range(self._number_of_fragments):
+           nbf_I = self._fragments[I].get_nbf()
+           for J in range(self._number_of_fragments):
+               nbf_J = self._fragments[J].get_nbf()
+               off_ao_J = self._ao_offsets_by_fragment[J]
+
+               w_IJ = numpy.zeros((nbf_I, nbf_J))
+
+               for K in range(self._number_of_fragments):
+                   nbf_K = self._fragments[K].get_nbf()
+                   off_ao_K = self._ao_offsets_by_fragment[K]
+
+                   W_IK = W_2[(I,K)]
+
+                   for L in range(self._number_of_fragments):
+                       nbf_L = self._fragments[L].get_nbf()                                   
+                       off_ao_L = self._ao_offsets_by_fragment[L]
+
+                       S_KL = self._S[off_ao_K:off_ao_K+nbf_K,off_ao_L:off_ao_L+nbf_L].copy()
+
+                       for M in range(self._number_of_fragments):
+                         if I!=K and K!=L and L!=M and M!=J : #  and I==L==J  and K==M: #and J==I==L:#  and I==L and K==M and L==J:
+
+                           nbf_M = self._fragments[M].get_nbf()                                   
+                           off_ao_M = self._ao_offsets_by_fragment[M]
+                                                                                                  
+                           S_LM = self._S[off_ao_L:off_ao_L+nbf_L,off_ao_M:off_ao_M+nbf_M].copy()
+                           S_MJ = self._S[off_ao_M:off_ao_M+nbf_M,off_ao_J:off_ao_J+nbf_J].copy()
+                                                                                                 
+                           w_IJ+= W_IK @ S_KL @ S_LM @ S_MJ
+
+               W_5[(I,J)] = w_IJ
+
+       # Compute blocks of deformation density matrix, dD
+       # Reconstruct OPDM for entire system
+       D_new = numpy.zeros((self._nbf, self._nbf))
+
+       for I in range(self._number_of_fragments):
+           nbf_I = self._fragments[I].get_nbf()
+           off_ao_I = self._ao_offsets_by_fragment[I]
+
+           dD_II_extField = numpy.einsum("acix,ix->ac"    , B_10[I], F[I])                     
+           dD_II_extField+= numpy.einsum("acixy,ix,iy->ac", B_20[I], F[I], F[I])
+
+           D_new[off_ao_I:off_ao_I+nbf_I,off_ao_I:off_ao_I+nbf_I] = D0[I].copy() + dD_II_extField
+
+           for J in range(I+1):
+               nbf_J = self._fragments[J].get_nbf()
+               off_ao_J = self._ao_offsets_by_fragment[J]
+
+               IJ = (I,J)
+               JI = (J,I)
+
+               dD_IJ = D_new[off_ao_I:off_ao_I+nbf_I,off_ao_J:off_ao_J+nbf_J].copy()
+
+               # 2-body terms
+               if B_01[J] is not None:          
+                  dD_IJ+= W_2[IJ] @ B_01[J] 
+               if B_01[I] is not None:
+                  dD_IJ+= B_01[I].T @ W_2[JI].T
+
+               # 3-body terms
+               if B_02[J] is not None:                                                   
+                  dD_IJ+= W_3[IJ] @ B_02[J]
+               if B_02[I] is not None:
+                  dD_IJ+= B_02[I].T @ W_3[JI].T
+
+               # 4-body terms
+               if B_03[J] is not None:
+                  dD_IJ+= W_4[IJ] @ B_03[J] 
+               if B_03[I] is not None:
+                  dD_IJ+= B_03[I].T @ W_4[JI].T                            
+
+               # 5-body terms
+               if B_04[J] is not None: 
+                  dD_IJ+= W_5[IJ] @ B_04[J]
+               if B_04[I] is not None:
+                  dD_IJ+= B_04[I].T @ W_5[JI].T
+
+
+               D_new[off_ao_I:off_ao_I+nbf_I,off_ao_J:off_ao_J+nbf_J] = dD_IJ.copy()
+               D_new[off_ao_J:off_ao_J+nbf_J,off_ao_I:off_ao_I+nbf_I] = dD_IJ.T.copy()
+
+
+       # Construct Fock matrix
+       II = numpy.identity(self._nbf)
+       self._jk.C_clear()                                           
+       self._jk.C_left_add(psi4.core.Matrix.from_array(D_new, ""))
+       self._jk.C_right_add(psi4.core.Matrix.from_array(II, ""))
+       self._jk.compute()
+       H = self._H
+       J = self._jk.J()[0].to_array(dense=True)
+       K = self._jk.K()[0].to_array(dense=True)
+       G = 2.0 * J - K
+       F = H + G
+       # compute energy
+       E = (D_new @ (H + F)).trace() + self._aggregate.all.nuclear_repulsion_energy()
+       if field is not None:
+          mu_nuc = self._aggregate.all.nuclear_dipole()
+          for x in range(3): E-= mu_nuc[x] * field[x]
+
+       # save
+       self._Da = D_new.copy()
+       self._Fa = F.copy()
+       return E
+
+   def __dmsscf_iteration_old(self):
+       "1 Global Iteration of DMS SCF Procedure"
+
+       # Extract OPDM and DMS tensors
+       nat = [x.get_natoms() for x in self._fragments]
+       par = [x.get() for x in self._fragments]
+       D0  = [x['opdm'  ] for x in par]
+       B_10= [x['dms_10'] for x in par] 
+       B_20= [x['dms_20'] for x in par] 
+       try: B_01= [x['dms_01'] for x in par] 
+       except KeyError: B_01= [None for x in par] 
+       try: B_02= [x['dms_02'] for x in par] 
+       except KeyError: B_02= [None for x in par] 
+       try: B_03= [x['dms_03'] for x in par] 
+       except KeyError: B_03= [None for x in par] 
+       try: B_04= [x['dms_04'] for x in par] 
+       except KeyError: B_04= [None for x in par] 
+
+       # Compute perturbations: Electric field
+       F = []
+       for I in range(self._number_of_fragments):
+           nbf_I = self._fragments[I].get_nbf()
+           natom_I = nat[I]
+           off_ao_I = self._ao_offsets_by_fragment[I]
+           off_natom_I = self._natom_offsets_by_fragment[I]
+
+           JJ_list = []
+           for J in range(self._number_of_fragments):
+               if I!=J: JJ_list.append(J)
+
+           F_I = []
+           for i in range(natom_I):
+               xi = self._aggregate.all.x(off_natom_I+i)
+               yi = self._aggregate.all.y(off_natom_I+i)
+               zi = self._aggregate.all.z(off_natom_I+i)
+               ri = numpy.array([xi,yi,zi])
+
+               D_JJ = self._Da.copy()
+               D_JJ[off_ao_I:off_ao_I+nbf_I,off_ao_I:off_ao_I+nbf_I].fill(0.0)
+
+               ints = self._electric_field_ao_integrals[off_natom_I+i] # ints_ALL (at I)
+
+               f = self.__compute_electric_field_due_to_fragment(JJ_list, D_JJ, ints, ri)
+               F_I.append(f)
+           F.append(numpy.array(F_I))
+
+       # Compute perturbations: CT force
+       W_IJ = {}
+       W_JI = {}
+       W_IJI = {}
+       W_JIJ = {}
+       W_IJIJ = {}
+       W_JIJI = {}
+       W_IJIJI = {}
+       W_JIJIJ = {}
+
+       for I in range(self._number_of_fragments):
+           nbf_I = self._fragments[I].get_nbf()
+           off_ao_I = self._ao_offsets_by_fragment[I]
+
+           D_I = self._Da[off_ao_I:off_ao_I+nbf_I,off_ao_I:off_ao_I+nbf_I].copy()
+
+           for J in range(self._number_of_fragments):
+             if I!=J:
+               nbf_J = self._fragments[J].get_nbf()
+               off_ao_J = self._ao_offsets_by_fragment[J]
+
+               D_J = self._Da[off_ao_J:off_ao_J+nbf_J,off_ao_J:off_ao_J+nbf_J].copy()
+
+               S_IJ = self._S[off_ao_I:off_ao_I+nbf_I,off_ao_J:off_ao_J+nbf_J].copy()
+               S_JI = S_IJ.T.copy()
+
+               pair = (I,J)
+
+               w_IJ = D_I @ S_IJ       
+               w_JI = D_J @ S_JI 
+                                       
+               w_IJI = w_IJ @ S_JI
+               w_JIJ = w_JI @ S_IJ
+                                       
+               w_IJIJ = w_IJI @ S_IJ
+               w_JIJI = w_JIJ @ S_JI
+                                       
+               w_IJIJI = w_IJIJ @ S_JI
+               w_JIJIJ = w_JIJI @ S_IJ
+               #
+               W_IJ[pair] = w_IJ
+               W_JI[pair] = w_JI
+               W_IJI[pair] = w_IJI
+               W_JIJ[pair] = w_JIJ
+               W_IJIJ[pair] = w_IJIJ
+               W_JIJI[pair] = w_JIJI
+               W_IJIJI[pair] = w_IJIJI
+               W_JIJIJ[pair] = w_JIJIJ
+
+       # Compute blocks of deformation density matrix, dD
+       # Reconstruct OPDM for entire system
+       D_new = self._Da.copy()
+       # dD_II
+       for I in range(self._number_of_fragments):
+           nbf_I = self._fragments[I].get_nbf()
+           off_ao_I = self._ao_offsets_by_fragment[I]
+
+           dD_II = numpy.einsum("acix,ix->ac"    , B_10[I], F[I])                     
+           dD_II+= numpy.einsum("acixy,ix,iy->ac", B_20[I], F[I], F[I])
+           for J in range(self._number_of_fragments):
+             if I!=J:
+               nbf_J = self._fragments[J].get_nbf()
+               off_ao_J = self._ao_offsets_by_fragment[J]
+
+               IJ = (I,J)
+               if B_02[I] is not None:                                                  
+                  dD_II+= 1.0 * (W_IJI[IJ] @ B_02[I] + B_02[I].T @ W_IJI[IJ].T)
+               if B_04[I] is not None: 
+                  dD_II+= 1.0 * (W_IJIJI[IJ] @ B_04[I] + B_04[I].T @ W_IJIJI[IJ].T)
+
+               dD_IJ = numpy.zeros((nbf_I, nbf_J))
+               if B_01[J] is not None:
+                  dD_IJ+= W_IJ[IJ] @ B_01[J] 
+               if B_01[I] is not None:
+                  dD_IJ+= B_01[I].T @ W_JI[IJ].T                            
+               if B_03[J] is not None:
+                  dD_IJ+= W_IJIJ[IJ] @ B_03[J] 
+               if B_03[I] is not None:
+                  dD_IJ+= B_03[I].T @ W_JIJI[IJ].T                            
+
+               D_new[off_ao_I:off_ao_I+nbf_I,off_ao_J:off_ao_J+nbf_J] = dD_IJ
+
+           D_new[off_ao_I:off_ao_I+nbf_I,off_ao_I:off_ao_I+nbf_I] = D0[I].copy() + dD_II
+
+       # Construct Fock matrix
+       II = numpy.identity(self._nbf)
+       self._jk.C_clear()                                           
+       self._jk.C_left_add(psi4.core.Matrix.from_array(D_new, ""))
+       self._jk.C_right_add(psi4.core.Matrix.from_array(II, ""))
+      #self._jk.C_left_add(wfn.Da())
+      #self._jk.C_right_add(psi4.core.Matrix.from_array(II, ""))
+       self._jk.compute()
+       H = self._H
+       J = self._jk.J()[0].to_array(dense=True)
+       K = self._jk.K()[0].to_array(dense=True)
+       G = 2.0 * J - K
+       F = H + G
+       #J_test = jk.J()[1].to_array(dense=True)
+       #K_test = jk.K()[1].to_array(dense=True)
+       #G_test = 2.0 * J_test - K_test
+       #F_test = H + G_test
+       #D_test = wfn.Da().to_array(dense=True)
+       # compute energy
+       E = (D_new @ (H + F)).trace() + self._aggregate.all.nuclear_repulsion_energy()
+       #E_test = (D_test @ (H + F_test)).trace() + wfn.molecule().nuclear_repulsion_energy()
+
+       # save
+       self._Da = D_new.copy()
+       self._Fa = F.copy()
+       return E
+
+   def __dmsscf_for_pair_of_fragments(self, I, J):
+       "DMS SCF Procedure for Pair: Original code written for dimer case - kept for debugging"
        frg_I = self._fragments[I]; par_I = frg_I.get()
        frg_J = self._fragments[J]; par_J = frg_J.get()
 
@@ -278,24 +755,42 @@ class Computer(ABC):
        W_BABAB = W_BABA @ S_AB
 
        F_B = [] # field due to B evaluated on A atoms
+       JJ_list = []
+       for JJ in range(self._number_of_fragments):
+           if JJ!=I: JJ_list.append(JJ)
        for i in range(natom_I):
-           xi = self._aggregate.all.x(off_natom_I+i)
-           yi = self._aggregate.all.y(off_natom_I+i)
-           zi = self._aggregate.all.z(off_natom_I+i)
-           ri = numpy.array([xi,yi,zi])
-           ints = self._electric_field_ao_integrals[off_natom_I+i,:,off_ao_J:off_ao_J+nbf_J,off_ao_J:off_ao_J+nbf_J] # ints_B (at A)
-           f = self._compute_electric_field_due_to_fragment(J, D_B, ints, ri)
-           F_B.append(f)
+        xi = self._aggregate.all.x(off_natom_I+i)
+        yi = self._aggregate.all.y(off_natom_I+i)
+        zi = self._aggregate.all.z(off_natom_I+i)
+        ri = numpy.array([xi,yi,zi])
+
+
+        D_JJ = self._Da.copy()
+        D_JJ[off_ao_I:off_ao_I+nbf_I,off_ao_I:off_ao_I+nbf_I].fill(0.0)
+
+        ints = self._electric_field_ao_integrals[off_natom_I+i] # ints_B (at A)
+
+        f = self.__compute_electric_field_due_to_fragment(JJ_list, D_JJ, ints, ri)
+        F_B.append(f)
            
        F_A = [] # field due to A evaluated on B atoms
+       II_list = []
+       for II in range(self._number_of_fragments):
+           if II!=J: II_list.append(II)
        for j in range(natom_J):
-           xj = self._aggregate.all.x(off_natom_J+j)
-           yj = self._aggregate.all.y(off_natom_J+j)
-           zj = self._aggregate.all.z(off_natom_J+j)
-           rj = numpy.array([xj,yj,zj])
-           ints = self._electric_field_ao_integrals[off_natom_J+j,:,off_ao_I:off_ao_I+nbf_I,off_ao_I:off_ao_I+nbf_I] # ints_A (at B)
-           f = self._compute_electric_field_due_to_fragment(I, D_A, ints, rj)
-           F_A.append(f)
+        xj = self._aggregate.all.x(off_natom_J+j)
+        yj = self._aggregate.all.y(off_natom_J+j)
+        zj = self._aggregate.all.z(off_natom_J+j)
+        rj = numpy.array([xj,yj,zj])
+
+        D_II = self._Da.copy()
+        D_II[off_ao_J:off_ao_J+nbf_J,off_ao_J:off_ao_J+nbf_J].fill(0.0)
+
+        ints = self._electric_field_ao_integrals[off_natom_J+j,:] # ints_A (at B)
+
+        f = self.__compute_electric_field_due_to_fragment(II_list, D_II, ints, rj)
+
+        F_A.append(f)
        F_A = numpy.array(F_A); F_B = numpy.array(F_B)
 
        # Compute blocks of deformation density matrix, dD
@@ -354,27 +849,116 @@ class Computer(ABC):
        self._Fa = F.copy()
        return E
 
-   def _build_bfs(self):#OK
-       self._bfs       = psi4.core.BasisSet.build(self._aggregate.all, "BASIS", psi4.core.get_global_option("BASIS"), puream=False)
-       self._mints     = psi4.core.MintsHelper(self._bfs)
-       self._jk        = psi4.core.JK.build(self._bfs, jk_type="direct")
-       self._jk.set_memory(int(5e8))
-       self._jk.initialize()
 
-       self._nbf = self._bfs.nbf()
+class Property_Computer(_DMS_SCF_Procedure):
+   "Implements properties other than total energy of the system."
+   def __init__(self, aggregate, fragments):
+       _DMS_SCF_Procedure.__init__(self, aggregate, fragments)
 
+   def atomic_charges(self, kappa=0.0):
+       "Compute atomic partial charges"
+       raise NotImplementedError
 
-class SimpleComputer(Computer):
+   def camm(self):
+       "Compute ground-state cumulative atomic multipole moments"
+       wfn = psi4.core.Wavefunction(self._aggregate.all, self._bfs)
+       Da  = psi4.core.Matrix.from_array(self._Da, "")
+       camm = oepdev.DMTPole.build("CAMM", wfn, 1)
+       camm.compute([Da], [False])
+       return camm
+
+   def ff_dipole_moment(self, step=0.001):
+       "Finite-field dipole moment: differentiation of total energy"
+       self.run(field=numpy.array([0.0,0.0,step]))
+       Ez1 = self.E()
+       self.run(field=numpy.array([0.0,0.0,-step]))
+       Ezm1= self.E()
+       #
+       self.run(field=numpy.array([0.0,step,0.0]))
+       Ey1 = self.E()
+       self.run(field=numpy.array([0.0,-step,0.0]))
+       Eym1= self.E()
+       #
+       self.run(field=numpy.array([step,0.0,0.0]))
+       Ex1 = self.E()
+       self.run(field=numpy.array([-step,0.0,0.0]))
+       Exm1= self.E()
+       #
+       h = 2.0 * step
+       mu_x =-(Ex1 - Exm1)/ h
+       mu_y =-(Ey1 - Eym1)/ h
+       mu_z =-(Ez1 - Ezm1)/ h
+       mu = numpy.array([mu_x, mu_y, mu_z])
+       return mu 
+
+   def ff_polarizability(self, step=0.001, energy=False):
+       "Finite-field dipole-dipole polarizability"
+       # differentiate total energy wrt electric field
+       if energy:
+          raise NotImplementedError
+          self.run(field=numpy.array([0.0,0.0,0.0]))
+          E0 = self.E()
+       # differentiate total dipole moment wrt electric field
+       else:
+          self.run(field=numpy.array([0.0,0.0,step]))  
+          Ez1 = self.dipole_moment()
+          self.run(field=numpy.array([0.0,0.0,-step]))
+          Ezm1= self.dipole_moment()
+          #
+          self.run(field=numpy.array([0.0,step,0.0]))
+          Ey1 = self.dipole_moment()
+          self.run(field=numpy.array([0.0,-step,0.0]))
+          Eym1= self.dipole_moment()
+          #
+          self.run(field=numpy.array([step,0.0,0.0]))
+          Ex1 = self.dipole_moment()
+          self.run(field=numpy.array([-step,0.0,0.0]))
+          Exm1= self.dipole_moment()
+          #
+          h = 2.0 * step
+          alpha_Ox = 0.5 * (Ex1 - Exm1)/ h
+          alpha_Oy = 0.5 * (Ey1 - Eym1)/ h
+          alpha_Oz = 0.5 * (Ez1 - Ezm1)/ h
+          alpha = numpy.vstack([alpha_Ox, alpha_Oy, alpha_Oz])
+       return alpha
+
+   def ff_hyperpolarizability(self, step=0.001, energy=False):
+       "Finite-field dipole-dipole first hyperpolarizability"
+       # differentiate total energy wrt electric field
+       if energy:
+          raise NotImplementedError
+          self.run(field=numpy.array([0.0,0.0,0.0]))
+          E0 = self.E()
+       # differentiate total dipole moment wrt electric field
+       else:
+          raise NotImplementedError
+       return beta
+
+   def ff_hyper2polarizability(self, step=0.001, energy=False):
+       "Finite-field dipole-dipole second hyperpolarizability"
+       # differentiate total energy wrt electric field
+       if energy:
+          raise NotImplementedError
+          self.run(field=numpy.array([0.0,0.0,0.0]))
+          E0 = self.E()
+       # differentiate total dipole moment wrt electric field
+       else:
+          raise NotImplementedError
+       return gamma
+
+          
+
+class SimpleComputer(Property_Computer):
    def __init__(self, *args, **kwargs):
-       Computer.__init__(self, *args, **kwargs)
+       Property_Computer.__init__(self, *args, **kwargs)
 
    def _orthogonalize_density_matrix(self):
        # nothing to do here
        pass
 
-class OtherComputer(Computer):
+class OtherComputer(Property_Computer): # --> deprecate
    def __init__(self, *args, **kwargs):
-       Computer.__init__(self, *args, **kwargs)
+       Property_Computer.__init__(self, *args, **kwargs)
 
    def _orthogonalize_density_matrix(self):
        if self._n is not None:
@@ -514,7 +1098,7 @@ class DMS(ABC):
       for i in range(self._mol.natom()):
           self._bfs.move_atom(i, t)
 
-  def superimpose(self, xyz, suplist=None):#TODO
+  def superimpose(self, xyz, suplist=None):#TODO --> deprecate since it is already implemented in Solvshift
       "Superimpose DMS object"
       raise NotImplementedError("Please implement superimposition since it is easy")
 
@@ -527,7 +1111,7 @@ class DMS(ABC):
       "Write DMS object to file"
       raise NotImplementedError
 
-  def _generate_B_from_s(self, order):#TODO
+  def _generate_B_from_s(self, order):
       "Retrieve DMS tensor from its parameter vector"
       n  = self._n
       n2 = self._n**2 
