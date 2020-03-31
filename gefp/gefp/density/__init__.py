@@ -6,6 +6,7 @@ Bartosz Błasiak, Gundelfingen, Dec 2018
 """
 from . import opdm
 from . import partitioning
+from . import population
 from . import parameters
 from . import functional
 from . import dmft
@@ -14,6 +15,6 @@ from . import dms
 from . import rvs
 from . import ci
 
-__all__ = ["opdm", "partitioning", "dfi", "dms", "rvs", "dmft", "functional", "parameters", "ci"]
+__all__ = ["opdm", "partitioning", "population", "dfi", "dms", "rvs", "dmft", "functional", "parameters", "ci"]
 
 __author__="Bartosz Błasiak"
