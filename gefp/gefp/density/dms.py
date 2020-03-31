@@ -136,14 +136,6 @@ class Computer(ABC):
        "Return Fock alpha matrix"
        return self._Fa.copy()
 
-   def dipole_moment(self):
-       "Compute dipole moment from nuclear dipole moment and density matrix"
-       mu = self._aggregate.all.nuclear_dipole()
-       mu = numpy.array([mu[0], mu[1], mu[2]])
-       D = self._mints.ao_dipole()
-       mu += 2.0 * numpy.array([(D[x].to_array(dense=True) @ self._Da).trace() for x in range(3)])
-       return mu
-
    def total_energy(self): 
        "Return total energy of the system"
        return self._total_energy
@@ -282,7 +274,8 @@ class _DMS_SCF_Procedure(Computer):
               break
 
            # Run microiterations for each pair of fragments: Older Code
-           for i in range(self._number_of_fragments):
+           if 0:
+             for i in range(self._number_of_fragments):
                energy = self.__dmsscf_iteration_fragment(i, field)
                if Computer.verbose and psi4.core.get_global_option("PRINT")>1:
                   print(" @DMS-SCF: MicroIter I=%4d E=%14.6f" % (i+1, energy))
@@ -290,7 +283,7 @@ class _DMS_SCF_Procedure(Computer):
            #        energy = self._dmsscf_for_pair_of_fragments(i,j)
 
            # Run microiterations for each pair of fragments
-           #energy = self.__dmsscf_iteration(field)
+           energy = self.__dmsscf_iteration(field)
 
            # Include Pauli deformation (experimental: use OtherComputer class) --> deprecate
            self._orthogonalize_density_matrix()
@@ -316,7 +309,7 @@ class _DMS_SCF_Procedure(Computer):
           if Computer.raise_error_when_unconverged: 
              raise ValueError(" DMS-SCF did not converge!")
 
-   def __dmsscf_iteration_old(self, field):
+   def __dmsscf_iteration(self, field):
        "1 Global Iteration of DMS SCF Procedure"
 
        # Extract OPDM and DMS tensors
@@ -408,7 +401,7 @@ class _DMS_SCF_Procedure(Computer):
                w_IJ = numpy.zeros((nbf_I, nbf_J))
                #print("Considering IJ = %d%d" % (I,J))
                for K in range(self._number_of_fragments):
-                 if K!=I and K!=J : # and I==J:
+                 if K!=I and K!=J and I==J:
                    #print("Adding K=%d to %dK%d" % (K,I,J))
 
                    nbf_K = self._fragments[K].get_nbf()
@@ -429,14 +422,15 @@ class _DMS_SCF_Procedure(Computer):
                w_IJ = numpy.zeros((nbf_I, nbf_J))
 
                for K in range(self._number_of_fragments):
+                if I!=K:
                    nbf_K = self._fragments[K].get_nbf()
                    off_ao_K = self._ao_offsets_by_fragment[K]
 
                    W_IK = W_2[(I,K)]
 
                    for L in range(self._number_of_fragments):
-                     if I!=K and K!=L and L!=J : #and I==L and K==J:
-
+                     if L!=J: #and I==L and K==J:
+                      if I!=J and I==L and K==J:
                        nbf_L = self._fragments[L].get_nbf()
                        off_ao_L = self._ao_offsets_by_fragment[L]
 
@@ -445,7 +439,7 @@ class _DMS_SCF_Procedure(Computer):
 
                        w_IJ+= W_IK @ S_KL @ S_LJ
 
-                   #if K!=I and K!=J:
+                   #if K!=I and K!=J and I!=J:
                    #   S_KJ = self._S[off_ao_K:off_ao_K+nbf_K,off_ao_J:off_ao_J+nbf_J].copy()
                    #   w_IJ+= W_IK @ S_KJ
 
@@ -461,19 +455,22 @@ class _DMS_SCF_Procedure(Computer):
                w_IJ = numpy.zeros((nbf_I, nbf_J))
 
                for K in range(self._number_of_fragments):
+                if I!=K:
                    nbf_K = self._fragments[K].get_nbf()
                    off_ao_K = self._ao_offsets_by_fragment[K]
 
                    W_IK = W_2[(I,K)]
 
                    for L in range(self._number_of_fragments):
+                    if L!=K:
                        nbf_L = self._fragments[L].get_nbf()                                   
                        off_ao_L = self._ao_offsets_by_fragment[L]
 
                        S_KL = self._S[off_ao_K:off_ao_K+nbf_K,off_ao_L:off_ao_L+nbf_L].copy()
 
                        for M in range(self._number_of_fragments):
-                         if I!=K and K!=L and L!=M and M!=J : #  and I==L==J  and K==M: #and J==I==L:#  and I==L and K==M and L==J:
+                         if L!=M and M!=J: #  and I==L==J  and K==M: #and J==I==L:#  and I==L and K==M and L==J:
+                          if I==J==L and K==M:
 
                            nbf_M = self._fragments[M].get_nbf()                                   
                            off_ao_M = self._ao_offsets_by_fragment[M]
@@ -508,28 +505,32 @@ class _DMS_SCF_Procedure(Computer):
                dD_IJ = D_new[off_ao_I:off_ao_I+nbf_I,off_ao_J:off_ao_J+nbf_J].copy()
 
                # 2-body terms
-               if B_01[J] is not None:          
-                  dD_IJ+= W_2[IJ] @ B_01[J] 
-               if B_01[I] is not None:
-                  dD_IJ+= B_01[I].T @ W_2[JI].T
+               if I!=J:
+                if B_01[J] is not None:           
+                   dD_IJ+= W_2[IJ] @ B_01[J] 
+                if B_01[I] is not None:
+                   dD_IJ+= B_01[I].T @ W_2[JI].T
 
                # 3-body terms
-               if B_02[J] is not None:                                                   
-                  dD_IJ+= W_3[IJ] @ B_02[J]
-               if B_02[I] is not None:
-                  dD_IJ+= B_02[I].T @ W_3[JI].T
+               if I==J:
+                if B_02[J] is not None:                                                    
+                   dD_IJ+= W_3[IJ] @ B_02[J]
+                if B_02[I] is not None:
+                   dD_IJ+= B_02[I].T @ W_3[JI].T
 
                # 4-body terms
-               if B_03[J] is not None:
-                  dD_IJ+= W_4[IJ] @ B_03[J] 
-               if B_03[I] is not None:
-                  dD_IJ+= B_03[I].T @ W_4[JI].T                            
+               if I!=J:
+                if B_03[J] is not None:                                      
+                   dD_IJ+= W_4[IJ] @ B_03[J] 
+                if B_03[I] is not None:
+                   dD_IJ+= B_03[I].T @ W_4[JI].T                            
 
                # 5-body terms
-               if B_04[J] is not None: 
-                  dD_IJ+= W_5[IJ] @ B_04[J]
-               if B_04[I] is not None:
-                  dD_IJ+= B_04[I].T @ W_5[JI].T
+               if I==J:
+                if B_04[J] is not None:          
+                   dD_IJ+= W_5[IJ] @ B_04[J]
+                if B_04[I] is not None:
+                   dD_IJ+= B_04[I].T @ W_5[JI].T
 
 
                D_new[off_ao_I:off_ao_I+nbf_I,off_ao_J:off_ao_J+nbf_J] = dD_IJ.copy()
@@ -677,6 +678,7 @@ class _DMS_SCF_Procedure(Computer):
 
        # ---> electric fields
        for J in range(self._number_of_fragments):
+       # if J!=I:
            nbf_J = self._fragments[J].get_nbf()
            off_ao_J = self._ao_offsets_by_fragment[J]
            J_idx = numpy.arange(off_ao_J, off_ao_J+nbf_J)
@@ -685,6 +687,7 @@ class _DMS_SCF_Procedure(Computer):
            dD_JJ_extField+= numpy.einsum("acixy,ix,iy->ac", B_20[J], F[J], F[J])
 
            self.__superslice(D_new, J_idx, J_idx, D0[J].copy() + dD_JJ_extField, add=False)
+        #else: self.__superslice(D_new, J_idx, J_idx, self.__superslice(self._Da, J_idx, J_idx), add=False)
 
        # ---> wavefunction overlaps
        dD_II = numpy.zeros((len(I_idx),len(I_idx)))
@@ -712,12 +715,12 @@ class _DMS_SCF_Procedure(Computer):
        dD_IJ+= W_IJIJ @ B_03_J
 
        dD_JJ+= W_JIJ @ B_02_J + B_02_J.T @ W_JIJ.T
-       dD_JJ+= W_JIJIJ @ B_04_J + B_04_J.T @ W_JIJIJ
+       dD_JJ+= W_JIJIJ @ B_04_J + B_04_J.T @ W_JIJIJ.T
 
        self.__superslice(D_new, I_idx,I_idx, dD_II  , add=True)
        self.__superslice(D_new,   idx,  idx, dD_JJ  , add=True)
-       self.__superslice(D_new, I_idx,  idx, dD_IJ  , add=False)
-       self.__superslice(D_new,   idx,I_idx, dD_IJ.T, add=False)
+       self.__superslice(D_new, I_idx,  idx, dD_IJ  , add=True)
+       self.__superslice(D_new,   idx,I_idx, dD_IJ.T, add=True)
 
 
        # Construct Fock matrix
@@ -1056,6 +1059,14 @@ class Property_Computer(_DMS_SCF_Procedure):
        camm = oepdev.DMTPole.build("CAMM", wfn, 1)
        camm.compute([Da], [False])
        return camm
+
+   def dipole_moment(self):
+       "Compute dipole moment from nuclear dipole moment and density matrix"
+       mu = self._aggregate.all.nuclear_dipole()
+       mu = numpy.array([mu[0], mu[1], mu[2]])
+       D = self._mints.ao_dipole()
+       mu += 2.0 * numpy.array([(D[x].to_array(dense=True) @ self._Da).trace() for x in range(3)])
+       return mu
 
    def ff_dipole_moment(self, step=0.001, verbose=None):
        "Finite-field dipole moment: differentiation of total energy"
