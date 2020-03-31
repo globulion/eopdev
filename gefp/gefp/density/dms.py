@@ -112,9 +112,13 @@ class Computer(ABC):
        self._build_bfs()
        self._allocate_memory()
 
-   def run(self, field=None):
+   def run(self, field=None, verbose=None):
        "Perform single-point energy or density calculation"
-       return self._run_dmsscf(field)
+       verbose_stash = Computer.verbose
+       if verbose is not None: Computer.verbose = verbose
+       E = self._run_dmsscf(field)
+       Computer.verbose = verbose_stash
+       return E
 
    def update(self, psi_molecule):
        "Updates for the next calculation"
@@ -277,15 +281,16 @@ class _DMS_SCF_Procedure(Computer):
               success = False 
               break
 
-           ## Run microiterations for each pair of fragments: Older Code
-           #for i in range(self._number_of_fragments):
+           # Run microiterations for each pair of fragments: Older Code
+           for i in range(self._number_of_fragments):
+               energy = self.__dmsscf_iteration_fragment(i, field)
+               if Computer.verbose and psi4.core.get_global_option("PRINT")>1:
+                  print(" @DMS-SCF: MicroIter I=%4d E=%14.6f" % (i+1, energy))
            #    for j in range(i):
            #        energy = self._dmsscf_for_pair_of_fragments(i,j)
-           #        if Computer.verbose and psi4.core.get_global_option("PRINT")>1:
-           #           print(" @DMS-SCF: MicroIter I=%4d J=%4d E=%14.6f" % (i+1,j+1,energy))
 
            # Run microiterations for each pair of fragments
-           energy = self.__dmsscf_iteration(field)
+           #energy = self.__dmsscf_iteration(field)
 
            # Include Pauli deformation (experimental: use OtherComputer class) --> deprecate
            self._orthogonalize_density_matrix()
@@ -311,7 +316,7 @@ class _DMS_SCF_Procedure(Computer):
           if Computer.raise_error_when_unconverged: 
              raise ValueError(" DMS-SCF did not converge!")
 
-   def __dmsscf_iteration(self, field):
+   def __dmsscf_iteration_old(self, field):
        "1 Global Iteration of DMS SCF Procedure"
 
        # Extract OPDM and DMS tensors
@@ -553,7 +558,192 @@ class _DMS_SCF_Procedure(Computer):
        self._Fa = F.copy()
        return E
 
-   def __dmsscf_iteration_old(self):
+   def __superslice(self, A, x, y, A_new=None, add=False):
+       X, Y = numpy.meshgrid(x, y, indexing='ij')
+       if A_new is None: 
+          return A[X,Y]
+       else: 
+          if add: A[X,Y]+= A_new
+          else:   A[X,Y] = A_new.copy()
+
+   def __dmsscf_iteration_fragment(self, I, field):
+       "1 Global Iteration of DMS SCF Procedure"
+
+       # Extract OPDM and DMS tensors
+       nat = [x.get_natoms() for x in self._fragments]
+       par = [x.get() for x in self._fragments]
+       D0  = [x['opdm'  ] for x in par]
+       B_10= [x['dms_10'] for x in par] 
+       B_20= [x['dms_20'] for x in par] 
+       try: B_01= [x['dms_01'] for x in par] 
+       except KeyError: B_01= [None for x in par] 
+       try: B_02= [x['dms_02'] for x in par] 
+       except KeyError: B_02= [None for x in par] 
+       try: 
+           B_03= [x['dms_03'] for x in par] 
+       except KeyError: B_03= [None for x in par] 
+       try: 
+           B_04= [x['dms_04'] for x in par] 
+       except KeyError: B_04= [None for x in par] 
+
+       # AO spaces
+       nbf_I = self._fragments[I].get_nbf()
+       off_ao_I = self._ao_offsets_by_fragment[I]
+       I_idx = numpy.arange(off_ao_I, off_ao_I+nbf_I)
+
+       idx = numpy.array([], dtype=int)
+       for J in range(self._number_of_fragments):
+         if I!=J:
+           nbf_J = self._fragments[J].get_nbf()
+           off_ao_J = self._ao_offsets_by_fragment[J]
+           J_idx = numpy.arange(off_ao_J, off_ao_J+nbf_J)
+           idx = numpy.hstack([idx, J_idx])
+
+       # B-tensor of entire aggregate
+       B_01_all = numpy.zeros((self._nbf, self._nbf))
+       B_02_all = numpy.zeros((self._nbf, self._nbf))
+       B_03_all = numpy.zeros((self._nbf, self._nbf))
+       B_04_all = numpy.zeros((self._nbf, self._nbf))
+       for J in range(self._number_of_fragments):
+           nbf_J = self._fragments[J].get_nbf()
+           off_ao_J = self._ao_offsets_by_fragment[J]
+           J_idx = numpy.arange(off_ao_J, off_ao_J+nbf_J)
+           if B_01[J] is not None: self.__superslice(B_01_all, J_idx, J_idx, B_01[J]) 
+           if B_02[J] is not None: self.__superslice(B_02_all, J_idx, J_idx, B_02[J]) 
+           if B_03[J] is not None: self.__superslice(B_03_all, J_idx, J_idx, B_03[J]) 
+           if B_04[J] is not None: self.__superslice(B_04_all, J_idx, J_idx, B_04[J]) 
+
+       # Compute perturbations: Electric field
+       F = []
+
+       for II in range(self._number_of_fragments):
+           nbf_II = self._fragments[II].get_nbf()                                           
+           natom_II = nat[II]
+           off_ao_II = self._ao_offsets_by_fragment[II]
+           off_natom_II = self._natom_offsets_by_fragment[II]
+                                                                                          
+           D_JJ = self._Da.copy()
+           D_JJ[off_ao_II:off_ao_II+nbf_II,off_ao_II:off_ao_II+nbf_II].fill(0.0)
+                                                                                          
+           JJ_list = []
+           for J in range(self._number_of_fragments):
+               if II!=J: 
+                  JJ_list.append(J)
+                  ## local field approximation:
+                  #off_ao_J = self._ao_offsets_by_fragment[J]
+                  #nbf_J = self._fragments[J].get_nbf()
+                  #D_JJ[off_ao_II:off_ao_II+nbf_II,off_ao_J:off_ao_J+nbf_J].fill(0.0)
+                  #D_JJ[off_ao_J:off_ao_J+nbf_J,off_ao_II:off_ao_II+nbf_II].fill(0.0)
+                                                                                          
+           F_II = []
+                                                                                          
+           for i in range(natom_II):
+               xi = self._aggregate.all.x(off_natom_II+i)
+               yi = self._aggregate.all.y(off_natom_II+i)
+               zi = self._aggregate.all.z(off_natom_II+i)
+               ri = numpy.array([xi,yi,zi])
+                                                                                          
+               ints = self._electric_field_ao_integrals[off_natom_II+i] # ints_ALL (at I)
+                                                                                          
+               f = self.__compute_electric_field_due_to_fragment(JJ_list, D_JJ, ints, ri)
+               if field is not None: f+= field
+                                                                                          
+               F_II.append(f)
+
+           F.append(numpy.array(F_II))
+
+       # Compute perturbations: PT force
+       D_I  = self.__superslice(self._Da, I_idx, I_idx).copy()
+       D_J  = self.__superslice(self._Da,   idx, idx)
+       S_IJ = self.__superslice(self._S , I_idx, idx)
+       S_JI = S_IJ.T.copy()
+
+       W_IJ = D_I @ S_IJ       
+       W_JI = D_J @ S_JI 
+                               
+       W_IJI = W_IJ @ S_JI
+       W_JIJ = W_JI @ S_IJ
+                               
+       W_IJIJ = W_IJI @ S_IJ
+       W_JIJI = W_JIJ @ S_JI
+                               
+       W_IJIJI = W_IJIJ @ S_JI
+       W_JIJIJ = W_JIJI @ S_IJ
+       #
+
+       # Compute blocks of deformation density matrix, dD
+       # Reconstruct OPDM for entire system
+       D_new = numpy.zeros((self._nbf, self._nbf))
+
+       # ---> electric fields
+       for J in range(self._number_of_fragments):
+           nbf_J = self._fragments[J].get_nbf()
+           off_ao_J = self._ao_offsets_by_fragment[J]
+           J_idx = numpy.arange(off_ao_J, off_ao_J+nbf_J)
+
+           dD_JJ_extField = numpy.einsum("acix,ix->ac"    , B_10[J], F[J])                     
+           dD_JJ_extField+= numpy.einsum("acixy,ix,iy->ac", B_20[J], F[J], F[J])
+
+           self.__superslice(D_new, J_idx, J_idx, D0[J].copy() + dD_JJ_extField, add=False)
+
+       # ---> wavefunction overlaps
+       dD_II = numpy.zeros((len(I_idx),len(I_idx)))
+       dD_JJ = numpy.zeros((len(  idx),len(  idx)))
+       dD_IJ = numpy.zeros((len(I_idx),len(  idx)))
+
+       # B_I <-- W_others
+       if B_01[I] is not None:
+          dD_IJ+= B_01[I].T @ W_JI.T
+       if B_03[I] is not None:
+          dD_IJ+= B_03[I].T @ W_JIJI.T                            
+
+       if B_02[I] is not None:
+          dD_II+= W_IJI @ B_02[I] + B_02[I].T @ W_IJI.T
+       if B_04[I] is not None:
+          dD_II+= W_IJIJI @ B_04[I] + B_04[I].T @ W_IJIJI.T
+
+       # W_I --> B_others
+       B_01_J = self.__superslice(B_01_all, idx, idx)
+       B_02_J = self.__superslice(B_02_all, idx, idx)
+       B_03_J = self.__superslice(B_03_all, idx, idx)
+       B_04_J = self.__superslice(B_04_all, idx, idx)
+
+       dD_IJ+= W_IJ @ B_01_J
+       dD_IJ+= W_IJIJ @ B_03_J
+
+       dD_JJ+= W_JIJ @ B_02_J + B_02_J.T @ W_JIJ.T
+       dD_JJ+= W_JIJIJ @ B_04_J + B_04_J.T @ W_JIJIJ
+
+       self.__superslice(D_new, I_idx,I_idx, dD_II  , add=True)
+       self.__superslice(D_new,   idx,  idx, dD_JJ  , add=True)
+       self.__superslice(D_new, I_idx,  idx, dD_IJ  , add=False)
+       self.__superslice(D_new,   idx,I_idx, dD_IJ.T, add=False)
+
+
+       # Construct Fock matrix
+       II = numpy.identity(self._nbf)
+       self._jk.C_clear()                                           
+       self._jk.C_left_add(psi4.core.Matrix.from_array(D_new, ""))
+       self._jk.C_right_add(psi4.core.Matrix.from_array(II, ""))
+       self._jk.compute()
+       H = self._H
+       J = self._jk.J()[0].to_array(dense=True)
+       K = self._jk.K()[0].to_array(dense=True)
+       G = 2.0 * J - K
+       F = H + G
+       # compute total energy
+       E = (D_new @ (H + F)).trace() + self._aggregate.all.nuclear_repulsion_energy()
+       if field is not None:
+          mu_nuc = self._aggregate.all.nuclear_dipole()
+          for x in range(3): E-= mu_nuc[x] * field[x]
+
+       # save
+       self._Da = D_new.copy()
+       self._Fa = F.copy()
+       return E
+
+
+   def __dmsscf_iteration_older(self):
        "1 Global Iteration of DMS SCF Procedure"
 
        # Extract OPDM and DMS tensors
@@ -867,21 +1057,21 @@ class Property_Computer(_DMS_SCF_Procedure):
        camm.compute([Da], [False])
        return camm
 
-   def ff_dipole_moment(self, step=0.001):
+   def ff_dipole_moment(self, step=0.001, verbose=None):
        "Finite-field dipole moment: differentiation of total energy"
-       self.run(field=numpy.array([0.0,0.0,step]))
+       self.run(field=numpy.array([0.0,0.0,step]), verbose=verbose)
        Ez1 = self.E()
-       self.run(field=numpy.array([0.0,0.0,-step]))
+       self.run(field=numpy.array([0.0,0.0,-step]), verbose=verbose)
        Ezm1= self.E()
        #
-       self.run(field=numpy.array([0.0,step,0.0]))
+       self.run(field=numpy.array([0.0,step,0.0]), verbose=verbose)
        Ey1 = self.E()
-       self.run(field=numpy.array([0.0,-step,0.0]))
+       self.run(field=numpy.array([0.0,-step,0.0]), verbose=verbose)
        Eym1= self.E()
        #
-       self.run(field=numpy.array([step,0.0,0.0]))
+       self.run(field=numpy.array([step,0.0,0.0]), verbose=verbose)
        Ex1 = self.E()
-       self.run(field=numpy.array([-step,0.0,0.0]))
+       self.run(field=numpy.array([-step,0.0,0.0]), verbose=verbose)
        Exm1= self.E()
        #
        h = 2.0 * step
@@ -891,7 +1081,7 @@ class Property_Computer(_DMS_SCF_Procedure):
        mu = numpy.array([mu_x, mu_y, mu_z])
        return mu 
 
-   def ff_polarizability(self, step=0.001, energy=False):
+   def ff_polarizability(self, step=0.001, energy=False, verbose=None):
        "Finite-field dipole-dipole polarizability"
        # differentiate total energy wrt electric field
        if energy:
@@ -900,19 +1090,19 @@ class Property_Computer(_DMS_SCF_Procedure):
           E0 = self.E()
        # differentiate total dipole moment wrt electric field
        else:
-          self.run(field=numpy.array([0.0,0.0,step]))  
+          self.run(field=numpy.array([0.0,0.0,step]), verbose=verbose)  
           Ez1 = self.dipole_moment()
-          self.run(field=numpy.array([0.0,0.0,-step]))
+          self.run(field=numpy.array([0.0,0.0,-step]), verbose=verbose)
           Ezm1= self.dipole_moment()
           #
-          self.run(field=numpy.array([0.0,step,0.0]))
+          self.run(field=numpy.array([0.0,step,0.0]), verbose=verbose)
           Ey1 = self.dipole_moment()
-          self.run(field=numpy.array([0.0,-step,0.0]))
+          self.run(field=numpy.array([0.0,-step,0.0]), verbose=verbose)
           Eym1= self.dipole_moment()
           #
-          self.run(field=numpy.array([step,0.0,0.0]))
+          self.run(field=numpy.array([step,0.0,0.0]), verbose=verbose)
           Ex1 = self.dipole_moment()
-          self.run(field=numpy.array([-step,0.0,0.0]))
+          self.run(field=numpy.array([-step,0.0,0.0]), verbose=verbose)
           Exm1= self.dipole_moment()
           #
           h = 2.0 * step
@@ -922,24 +1112,24 @@ class Property_Computer(_DMS_SCF_Procedure):
           alpha = numpy.vstack([alpha_Ox, alpha_Oy, alpha_Oz])
        return alpha
 
-   def ff_hyperpolarizability(self, step=0.001, energy=False):
+   def ff_hyperpolarizability(self, step=0.001, energy=False, verbose=None):
        "Finite-field dipole-dipole first hyperpolarizability"
        # differentiate total energy wrt electric field
        if energy:
           raise NotImplementedError
-          self.run(field=numpy.array([0.0,0.0,0.0]))
+          self.run(field=numpy.array([0.0,0.0,0.0]), verbose=verbose)
           E0 = self.E()
        # differentiate total dipole moment wrt electric field
        else:
           raise NotImplementedError
        return beta
 
-   def ff_hyper2polarizability(self, step=0.001, energy=False):
+   def ff_hyper2polarizability(self, step=0.001, energy=False, verbose=None):
        "Finite-field dipole-dipole second hyperpolarizability"
        # differentiate total energy wrt electric field
        if energy:
           raise NotImplementedError
-          self.run(field=numpy.array([0.0,0.0,0.0]))
+          self.run(field=numpy.array([0.0,0.0,0.0]), verbose=verbose)
           E0 = self.E()
        # differentiate total dipole moment wrt electric field
        else:
