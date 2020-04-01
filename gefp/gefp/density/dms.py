@@ -274,7 +274,7 @@ class _DMS_SCF_Procedure(Computer):
               break
 
            # Run microiterations for each pair of fragments: Older Code
-           A = 2
+           A = 2 # the best many-body model so far
            if A==0:
              for i in range(self._number_of_fragments):
                energy = self.__dmsscf_iteration_fragment(i, field)
@@ -289,7 +289,7 @@ class _DMS_SCF_Procedure(Computer):
                    if Computer.verbose and psi4.core.get_global_option("PRINT")>1:
                       print(" @DMS-SCF: MicroIter I=%4d J=%4d E=%14.6f" % (i+1, j+1, energy))
 
-           # Run microiterations for each pair of fragments
+           # Run globally including all possible many-body interactions
            else:
               energy = self.__dmsscf_iteration(field)
 
@@ -318,7 +318,7 @@ class _DMS_SCF_Procedure(Computer):
              raise ValueError(" DMS-SCF did not converge!")
 
    def __dmsscf_iteration(self, field):
-       "1 Global Iteration of DMS SCF Procedure"
+       "1 Global Iteration of DMS SCF Procedure. So far the best version of the DMS SCF."
 
        # Extract OPDM and DMS tensors
        nat = [x.get_natoms() for x in self._fragments]
@@ -520,14 +520,14 @@ class _DMS_SCF_Procedure(Computer):
                    dD_IJ+= B_01[I].T @ W_2[JI].T
 
                # 3-body terms
-               if I==J:
+               if 1: #I==J:
                 if B_02[J] is not None:                                                    
                    dD_IJ+= W_3[IJ] @ B_02[J]
                 if B_02[I] is not None:
                    dD_IJ+= B_02[I].T @ W_3[JI].T
 
                # 4-body terms
-               if I!=J:
+               if 1: #I!=J:
                 if B_03[J] is not None:                                      
                    dD_IJ+= W_4[IJ] @ B_03[J] 
                 if B_03[I] is not None:
@@ -1071,8 +1071,8 @@ class Property_Computer(_DMS_SCF_Procedure):
        "Compute dipole moment from nuclear dipole moment and density matrix"
        mu = self._aggregate.all.nuclear_dipole()
        mu = numpy.array([mu[0], mu[1], mu[2]])
-       D = self._mints.ao_dipole()
-       mu += 2.0 * numpy.array([(D[x].to_array(dense=True) @ self._Da).trace() for x in range(3)])
+       DIP = self._mints.ao_dipole()
+       mu += 2.0 * numpy.array([(DIP[x].to_array(dense=True) @ self._Da).trace() for x in range(3)])
        return mu
 
    def ff_dipole_moment(self, step=0.001, verbose=None):
@@ -1103,9 +1103,62 @@ class Property_Computer(_DMS_SCF_Procedure):
        "Finite-field dipole-dipole polarizability"
        # differentiate total energy wrt electric field
        if energy:
-          raise NotImplementedError
-          self.run(field=numpy.array([0.0,0.0,0.0]))
-          E0 = self.E()
+          self.run(field=numpy.array([0.0,0.0,0.0]), verbose=verbose)
+          E_0 = self.E()
+          #
+          self.run(field=numpy.array([step,0.0,0.0]), verbose=verbose)
+          E_1 = self.E()
+          self.run(field=numpy.array([-step,0.0,0.0]), verbose=verbose)
+          E_2 = self.E()
+          #
+          self.run(field=numpy.array([0.0,step,0.0]), verbose=verbose)
+          E_3 = self.E()
+          self.run(field=numpy.array([0.0,-step,0.0]), verbose=verbose)
+          E_4 = self.E()
+          #
+          self.run(field=numpy.array([0.0,0.0,step]), verbose=verbose)  
+          E_5 = self.E()
+          self.run(field=numpy.array([0.0,0.0,-step]), verbose=verbose)
+          E_6 = self.E()
+          ##
+          self.run(field=numpy.array([ step, step,0.0]), verbose=verbose)  
+          E_11= self.E()
+          self.run(field=numpy.array([-step, step,0.0]), verbose=verbose)
+          E_12= self.E()
+          self.run(field=numpy.array([-step,-step,0.0]), verbose=verbose)  
+          E_13= self.E()
+          self.run(field=numpy.array([ step,-step,0.0]), verbose=verbose)
+          E_14= self.E()
+          #
+          self.run(field=numpy.array([ step,0.0, step]), verbose=verbose)  
+          E_21= self.E()                             
+          self.run(field=numpy.array([-step,0.0, step]), verbose=verbose)
+          E_22= self.E()                             
+          self.run(field=numpy.array([-step,0.0,-step]), verbose=verbose)  
+          E_23= self.E()                             
+          self.run(field=numpy.array([ step,0.0,-step]), verbose=verbose)
+          E_24= self.E()
+          #
+          self.run(field=numpy.array([0.0, step, step]), verbose=verbose)  
+          E_31= self.E()                  
+          self.run(field=numpy.array([0.0,-step, step]), verbose=verbose)
+          E_32= self.E()                  
+          self.run(field=numpy.array([0.0,-step,-step]), verbose=verbose)  
+          E_33= self.E()                  
+          self.run(field=numpy.array([0.0, step,-step]), verbose=verbose)
+          E_34= self.E()
+
+          h = step
+          a_xx = ((E_1-E_0) + (E_2-E_0)) / h**2
+          a_yy = ((E_3-E_0) + (E_4-E_0)) / h**2
+          a_zz = ((E_5-E_0) + (E_6-E_0)) / h**2
+
+          a_xy = ((E_11-E_12) + (E_13-E_14)) / (4.0 * h**2)
+          a_xz = ((E_21-E_22) + (E_23-E_24)) / (4.0 * h**2)
+          a_yz = ((E_31-E_32) + (E_33-E_34)) / (4.0 * h**2)
+
+          alpha = -0.5 * numpy.array([[a_xx, a_xy, a_xz],[a_xy, a_yy, a_yz],[a_xz, a_yz, a_zz]])
+
        # differentiate total dipole moment wrt electric field
        else:
           self.run(field=numpy.array([0.0,0.0,step]), verbose=verbose)  
