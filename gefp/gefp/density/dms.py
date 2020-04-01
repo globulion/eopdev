@@ -274,16 +274,24 @@ class _DMS_SCF_Procedure(Computer):
               break
 
            # Run microiterations for each pair of fragments: Older Code
-           if 0:
+           A = 2
+           if A==0:
              for i in range(self._number_of_fragments):
                energy = self.__dmsscf_iteration_fragment(i, field)
                if Computer.verbose and psi4.core.get_global_option("PRINT")>1:
                   print(" @DMS-SCF: MicroIter I=%4d E=%14.6f" % (i+1, energy))
-           #    for j in range(i):
-           #        energy = self._dmsscf_for_pair_of_fragments(i,j)
+
+           elif A==1:
+             for i in range(self._number_of_fragments):
+               energy = self.__dmsscf_iteration_fragment(i, field)
+               for j in range(i):
+                   energy = self.__dmsscf_for_pair_of_fragments(i,j, field)
+                   if Computer.verbose and psi4.core.get_global_option("PRINT")>1:
+                      print(" @DMS-SCF: MicroIter I=%4d J=%4d E=%14.6f" % (i+1, j+1, energy))
 
            # Run microiterations for each pair of fragments
-           energy = self.__dmsscf_iteration(field)
+           else:
+              energy = self.__dmsscf_iteration(field)
 
            # Include Pauli deformation (experimental: use OtherComputer class) --> deprecate
            self._orthogonalize_density_matrix()
@@ -401,7 +409,7 @@ class _DMS_SCF_Procedure(Computer):
                w_IJ = numpy.zeros((nbf_I, nbf_J))
                #print("Considering IJ = %d%d" % (I,J))
                for K in range(self._number_of_fragments):
-                 if K!=I and K!=J and I==J:
+                 if K!=I and K!=J : #and I==J:
                    #print("Adding K=%d to %dK%d" % (K,I,J))
 
                    nbf_K = self._fragments[K].get_nbf()
@@ -429,8 +437,8 @@ class _DMS_SCF_Procedure(Computer):
                    W_IK = W_2[(I,K)]
 
                    for L in range(self._number_of_fragments):
-                     if L!=J: #and I==L and K==J:
-                      if I!=J and I==L and K==J:
+                     if K!=L and L!=J: #and I==L and K==J:
+                      #if I!=J and I==L and K==J:
                        nbf_L = self._fragments[L].get_nbf()
                        off_ao_L = self._ao_offsets_by_fragment[L]
 
@@ -470,7 +478,7 @@ class _DMS_SCF_Procedure(Computer):
 
                        for M in range(self._number_of_fragments):
                          if L!=M and M!=J: #  and I==L==J  and K==M: #and J==I==L:#  and I==L and K==M and L==J:
-                          if I==J==L and K==M:
+                          #if I==J==L and K==M:
 
                            nbf_M = self._fragments[M].get_nbf()                                   
                            off_ao_M = self._ao_offsets_by_fragment[M]
@@ -653,8 +661,10 @@ class _DMS_SCF_Procedure(Computer):
 
            F.append(numpy.array(F_II))
 
+
+
        # Compute perturbations: PT force
-       D_I  = self.__superslice(self._Da, I_idx, I_idx).copy()
+       D_I  = self.__superslice(self._Da, I_idx, I_idx)
        D_J  = self.__superslice(self._Da,   idx, idx)
        S_IJ = self.__superslice(self._S , I_idx, idx)
        S_JI = S_IJ.T.copy()
@@ -674,7 +684,7 @@ class _DMS_SCF_Procedure(Computer):
 
        # Compute blocks of deformation density matrix, dD
        # Reconstruct OPDM for entire system
-       D_new = numpy.zeros((self._nbf, self._nbf))
+       D_new = self._Da.copy() #numpy.zeros((self._nbf, self._nbf))
 
        # ---> electric fields
        for J in range(self._number_of_fragments):
@@ -698,7 +708,7 @@ class _DMS_SCF_Procedure(Computer):
        if B_01[I] is not None:
           dD_IJ+= B_01[I].T @ W_JI.T
        if B_03[I] is not None:
-          dD_IJ+= B_03[I].T @ W_JIJI.T                            
+          dD_IJ+= B_03[I].T @ W_JIJI.T
 
        if B_02[I] is not None:
           dD_II+= W_IJI @ B_02[I] + B_02[I].T @ W_IJI.T
@@ -719,8 +729,8 @@ class _DMS_SCF_Procedure(Computer):
 
        self.__superslice(D_new, I_idx,I_idx, dD_II  , add=True)
        self.__superslice(D_new,   idx,  idx, dD_JJ  , add=True)
-       self.__superslice(D_new, I_idx,  idx, dD_IJ  , add=True)
-       self.__superslice(D_new,   idx,I_idx, dD_IJ.T, add=True)
+       self.__superslice(D_new, I_idx,  idx, dD_IJ  , add=False)
+       self.__superslice(D_new,   idx,I_idx, dD_IJ.T, add=False)
 
 
        # Construct Fock matrix
@@ -903,7 +913,7 @@ class _DMS_SCF_Procedure(Computer):
        self._Fa = F.copy()
        return E
 
-   def __dmsscf_for_pair_of_fragments(self, I, J):
+   def __dmsscf_for_pair_of_fragments(self, I, J, field):
        "DMS SCF Procedure for Pair: Original code written for dimer case - kept for debugging"
        frg_I = self._fragments[I]; par_I = frg_I.get()
        frg_J = self._fragments[J]; par_J = frg_J.get()
@@ -964,6 +974,7 @@ class _DMS_SCF_Procedure(Computer):
         ints = self._electric_field_ao_integrals[off_natom_I+i] # ints_B (at A)
 
         f = self.__compute_electric_field_due_to_fragment(JJ_list, D_JJ, ints, ri)
+        if field is not None: f+= field
         F_B.append(f)
            
        F_A = [] # field due to A evaluated on B atoms
@@ -982,6 +993,7 @@ class _DMS_SCF_Procedure(Computer):
         ints = self._electric_field_ao_integrals[off_natom_J+j,:] # ints_A (at B)
 
         f = self.__compute_electric_field_due_to_fragment(II_list, D_II, ints, rj)
+        if field is not None: f+= field
 
         F_A.append(f)
        F_A = numpy.array(F_A); F_B = numpy.array(F_B)
@@ -1020,22 +1032,17 @@ class _DMS_SCF_Procedure(Computer):
        self._jk.C_clear()                                           
        self._jk.C_left_add(psi4.core.Matrix.from_array(D_new, ""))
        self._jk.C_right_add(psi4.core.Matrix.from_array(II, ""))
-      #self._jk.C_left_add(wfn.Da())
-      #self._jk.C_right_add(psi4.core.Matrix.from_array(II, ""))
        self._jk.compute()
        H = self._H
        J = self._jk.J()[0].to_array(dense=True)
        K = self._jk.K()[0].to_array(dense=True)
        G = 2.0 * J - K
        F = H + G
-       #J_test = jk.J()[1].to_array(dense=True)
-       #K_test = jk.K()[1].to_array(dense=True)
-       #G_test = 2.0 * J_test - K_test
-       #F_test = H + G_test
-       #D_test = wfn.Da().to_array(dense=True)
        # compute energy
        E = (D_new @ (H + F)).trace() + self._aggregate.all.nuclear_repulsion_energy()
-       #E_test = (D_test @ (H + F_test)).trace() + wfn.molecule().nuclear_repulsion_energy()
+       if field is not None:
+          mu_nuc = self._aggregate.all.nuclear_dipole()
+          for x in range(3): E-= mu_nuc[x] * field[x]
 
        # save
        self._Da = D_new.copy()
