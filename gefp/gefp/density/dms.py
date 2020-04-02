@@ -12,13 +12,16 @@ import psi4, oepdev
 import scipy.optimize
 import scipy.spatial.transform
 from abc import ABC, abstractmethod
-#from ..math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix_power
-#from ..math import composite
-from gefp.math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix_power
-from gefp.math import composite
-from gefp.core.utilities import psi_molecule_from_file
-from gefp.density.opdm import Density
-import slv_slvpar # temporary here, later will be moved back to solvshift
+from ..math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix_power
+from ..math import composite
+from ..core.utilities import psi_molecule_from_file
+from ..density.opdm import Density
+#from gefp.math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix_power
+#from gefp.math import composite
+#from gefp.core.utilities import psi_molecule_from_file
+#from gefp.density.opdm import Density
+from ..solvshift.mdinput import MDInput
+from ..solvshift.fragment import Fragment
 
 
 __all__ = ["DMSFit", "DMS", "Computer", "Aggregate"]
@@ -88,9 +91,12 @@ class Computer(ABC):
        if isinstance(fragments, list):
           assert(len(fragments) == aggregate.nfrags)
           self._fragments = fragments
-       elif isinstance(fragments, MDInput):
-          raise NotImplementedError("Solvshift's MDInput is not implemented yet")
-       else: raise ValueError("Wrong type of data passed into fragments. Only list or MDInput are possible.")
+       elif isinstance(fragments, str):
+          args, idx = MDInput(fragments).get()
+          ind, nmol, bsm, supl, reord = args
+          assert len(idx)==aggregate.all.natom()
+          self._fragments = [bsm[x].copy() for x in ind]
+       else: raise ValueError("Wrong type of data passed into fragments. Only list or str are possible.")
        #
        self._number_of_fragments = aggregate.nfrags
        #
@@ -112,11 +118,11 @@ class Computer(ABC):
        self._build_bfs()
        self._allocate_memory()
 
-   def run(self, field=None, verbose=None):
+   def run(self, field=None, verbose=None, converge_by='energy'):
        "Perform single-point energy or density calculation"
        verbose_stash = Computer.verbose
        if verbose is not None: Computer.verbose = verbose
-       E = self._run_dmsscf(field)
+       E = self._run_dmsscf(field, converge_by)
        Computer.verbose = verbose_stash
        return E
 
@@ -176,12 +182,12 @@ class _DMS_SCF_Procedure(Computer):
 
    # --> Implementation <-- #
 
-   def _run_dmsscf(self, field=None):
+   def _run_dmsscf(self, field=None, converge_by='energy'):
        "Perform single-point energy or density calculation"
        self.__superimpose_fragments()
        self.__compute_one_electron_integrals(field)
        self.__initialize_opdm()
-       self.__compute_total_energy(field)
+       self.__compute_total_energy(field, converge_by)
        return self._total_energy
 
    # --> Private Interface <-- #
@@ -209,8 +215,8 @@ class _DMS_SCF_Procedure(Computer):
        V = self._mints.ao_potential().to_array(dense=True)         
        H = T + V
        if field is not None:
-          D = self._mints.ao_dipole()
-          for x in range(3): H -= D[x].to_array(dense=True) * field[x]
+          DIP = self._mints.ao_dipole()
+          for x in range(3): H -= DIP[x].to_array(dense=True) * field[x]
        self._H = H
 
        self._S = self._mints.ao_overlap().to_array(dense=True)
@@ -254,7 +260,9 @@ class _DMS_SCF_Procedure(Computer):
        fi[2] += 2.0 * (D_J @ ints_J[2]).trace() 
        return fi
 
-   def __compute_total_energy(self, field):
+   def __rms(self, a, b): return ((a-b)**2).sum()
+
+   def __compute_total_energy(self, field, converge_by):
        "DMS SCF Procedure for N-Body System"
        # Initialize
        Iter = 0
@@ -291,14 +299,23 @@ class _DMS_SCF_Procedure(Computer):
 
            # Run globally including all possible many-body interactions
            else:
-              energy = self.__dmsscf_iteration(field)
+              energy = self.__dmsscf_iteration(field, converge_by)
 
            # Include Pauli deformation (experimental: use OtherComputer class) --> deprecate
            self._orthogonalize_density_matrix()
 
            # Compute total energy and error
-           error = abs(energy - current_dmsscf_energy)
-           current_dmsscf_energy = energy
+           if converge_by == 'energy':
+              error = abs(energy - current_dmsscf_energy)
+              current_dmsscf_energy = energy
+           elif converge_by == 'dipole':
+              error = self.__rms(energy, current_dmsscf_energy)
+              current_dmsscf_energy = energy
+              energy = numpy.linalg.norm(energy)
+           else:
+              error = self.__rms(energy, current_dmsscf_energy)
+              current_dmsscf_energy = energy
+              energy = energy.sum()
 
            if Computer.verbose:
               print(" @DMS-SCF: Iter.%4d E=%14.6f" % (Iter, energy))
@@ -317,7 +334,7 @@ class _DMS_SCF_Procedure(Computer):
           if Computer.raise_error_when_unconverged: 
              raise ValueError(" DMS-SCF did not converge!")
 
-   def __dmsscf_iteration(self, field):
+   def __dmsscf_iteration(self, field, converge_by):
        "1 Global Iteration of DMS SCF Procedure. So far the best version of the DMS SCF."
 
        # Extract OPDM and DMS tensors
@@ -544,28 +561,35 @@ class _DMS_SCF_Procedure(Computer):
                D_new[off_ao_I:off_ao_I+nbf_I,off_ao_J:off_ao_J+nbf_J] = dD_IJ.copy()
                D_new[off_ao_J:off_ao_J+nbf_J,off_ao_I:off_ao_I+nbf_I] = dD_IJ.T.copy()
 
-
-       # Construct Fock matrix
-       II = numpy.identity(self._nbf)
-       self._jk.C_clear()                                           
-       self._jk.C_left_add(psi4.core.Matrix.from_array(D_new, ""))
-       self._jk.C_right_add(psi4.core.Matrix.from_array(II, ""))
-       self._jk.compute()
-       H = self._H
-       J = self._jk.J()[0].to_array(dense=True)
-       K = self._jk.K()[0].to_array(dense=True)
-       G = 2.0 * J - K
-       F = H + G
-       # compute energy
-       E = (D_new @ (H + F)).trace() + self._aggregate.all.nuclear_repulsion_energy()
-       if field is not None:
-          mu_nuc = self._aggregate.all.nuclear_dipole()
-          for x in range(3): E-= mu_nuc[x] * field[x]
-
        # save
        self._Da = D_new.copy()
-       self._Fa = F.copy()
-       return E
+       if converge_by == 'energy':
+          # Construct Fock matrix                                                        
+          II = numpy.identity(self._nbf)
+          self._jk.C_clear()                                           
+          self._jk.C_left_add(psi4.core.Matrix.from_array(D_new, ""))
+          self._jk.C_right_add(psi4.core.Matrix.from_array(II, ""))
+          self._jk.compute()
+          H = self._H
+          J = self._jk.J()[0].to_array(dense=True)
+          K = self._jk.K()[0].to_array(dense=True)
+          G = 2.0 * J - K
+          F = H + G
+          # save
+          self._Fa = F.copy()
+          # compute energy
+          E = (D_new @ (H + F)).trace() + self._aggregate.all.nuclear_repulsion_energy()
+          if field is not None:
+             mu_nuc = self._aggregate.all.nuclear_dipole()
+             for x in range(3): E-= mu_nuc[x] * field[x]
+                                                                                         
+          return E
+       elif converge_by == 'dipole':
+          return self.dipole_moment()
+       elif converge_by == 'opdm':
+          return D_new
+       else:
+          raise NotImplementedError("Convergence by only energy, dipole or opdm is implemented")
 
    def __superslice(self, A, x, y, A_new=None, add=False):
        X, Y = numpy.meshgrid(x, y, indexing='ij')
@@ -1157,7 +1181,7 @@ class Property_Computer(_DMS_SCF_Procedure):
           a_xz = ((E_21-E_22) + (E_23-E_24)) / (4.0 * h**2)
           a_yz = ((E_31-E_32) + (E_33-E_34)) / (4.0 * h**2)
 
-          alpha = -0.5 * numpy.array([[a_xx, a_xy, a_xz],[a_xy, a_yy, a_yz],[a_xz, a_yz, a_zz]])
+          alpha = -numpy.array([[a_xx, a_xy, a_xz],[a_xy, a_yy, a_yz],[a_xz, a_yz, a_zz]])
 
        # differentiate total dipole moment wrt electric field
        else:
@@ -1177,9 +1201,9 @@ class Property_Computer(_DMS_SCF_Procedure):
           Exm1= self.dipole_moment()
           #
           h = 2.0 * step
-          alpha_Ox = 0.5 * (Ex1 - Exm1)/ h
-          alpha_Oy = 0.5 * (Ey1 - Eym1)/ h
-          alpha_Oz = 0.5 * (Ez1 - Ezm1)/ h
+          alpha_Ox = (Ex1 - Exm1)/ h
+          alpha_Oy = (Ey1 - Eym1)/ h
+          alpha_Oz = (Ez1 - Ezm1)/ h
           alpha = numpy.vstack([alpha_Ox, alpha_Oy, alpha_Oz])
        return alpha
 
@@ -1689,7 +1713,7 @@ class _Global_Settings_DMSFit(DMSFit):
 
    def _save_frg(self, dms, out_name):
        "Save Solvshift FRG file with DMS tensors"
-       frg = slv_slvpar.Fragment()
+       frg = Fragment()
        frg.set(basis=psi4.core.get_global_option("BASIS"), method=self._method, mol=self._mol, dms=dms)
        frg.write(out_name)
 
