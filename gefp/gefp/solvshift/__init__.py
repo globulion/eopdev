@@ -10,7 +10,8 @@ Bartosz Błasiak, Gundelfingen, Dec 2018
 """
 from . import fragment
 from . import mdinput
+from . import libbbg_units
 
-__all__ = ["mdinput", "fragment"]
+__all__ = ["mdinput", "fragment", "libbbg_units"]
 
 __author__="Bartosz Błasiak"

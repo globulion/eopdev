@@ -6,7 +6,8 @@
 
 import sys, copy, os, re, math, numpy #, libbbg, solvshift.efprot, \
 #       PyQuante.Ints
-import libbbg_units, psi4, gefp
+import libbbg_units, psi4
+from ..math.matrix import rotate_ao_matrix, Superimposer
 sys.stdout.flush()
 
 __all__     = ['Fragment',]
@@ -740,7 +741,7 @@ and RMS from the last superimposition"""
         # transform the DMS tensors
         if self.__opdm is not None:
            self.__bfs = self.get_bfs()
-           m, R = gefp.math.matrix.rotate_ao_matrix(numpy.identity(self.__nbasis), rot, self.__bfs, return_rot=True, aomo=False)
+           m, R = rotate_ao_matrix(numpy.identity(self.__nbasis), rot, self.__bfs, return_rot=True, aomo=False)
            self.__R = R; del m
            self.__opdm = self._rotate_dms_nn(self.__opdm, R)
            self.__caocc= self._rotate_aomo(self.__caocc, R)
@@ -788,7 +789,7 @@ and RMS from the last superimposition"""
         # superimposition
         if rotran is None:
            if len(xyz)!=1:                                                             
-              s = gefp.math.matrix.Superimposer()
+              s = Superimposer()
               if dxyz is None:
                  if suplist is None: s.set(xyz,self.__pos)
                  else:               s.set(xyz[suplist],self.__pos[suplist])
