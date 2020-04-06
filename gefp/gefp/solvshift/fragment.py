@@ -6,14 +6,15 @@
 
 import sys, copy, os, re, math, numpy #, libbbg, solvshift.efprot, \
 #       PyQuante.Ints
-import libbbg_units, psi4
+from ._libbbg_units import UNITS
 from ..math.matrix import rotate_ao_matrix, Superimposer
+import psi4
 sys.stdout.flush()
 
 __all__     = ['Fragment',]
 __version__ = '2.0.1'
 
-class Fragment(libbbg_units.UNITS):
+class Fragment(UNITS):
     """
  =============================================================================
                  Effective Fragment Parameter Format System                   
@@ -412,6 +413,8 @@ class Fragment(libbbg_units.UNITS):
            if (0,2) in dms.available_orders(): self.__dms_02 = dms.B(0,2)
            if (0,3) in dms.available_orders(): self.__dms_03 = dms.B(0,3)
            if (0,4) in dms.available_orders(): self.__dms_04 = dms.B(0,4)
+           if (0,5) in dms.available_orders(): self.__dms_05 = dms.B(0,5)
+           if (0,6) in dms.available_orders(): self.__dms_06 = dms.B(0,6)
            if (1,1) in dms.available_orders(): self.__dms_11 = dms.B(1,1)
            if (2,1) in dms.available_orders(): self.__dms_21 = dms.B(2,1)
            if (1,2) in dms.available_orders(): self.__dms_12 = dms.B(1,2)
@@ -468,6 +471,8 @@ class Fragment(libbbg_units.UNITS):
             if key == 'dms_02' : self.__dms_02= arg
             if key == 'dms_03' : self.__dms_03= arg
             if key == 'dms_04' : self.__dms_04= arg
+            if key == 'dms_05' : self.__dms_05= arg
+            if key == 'dms_06' : self.__dms_06= arg
             if key == 'dms_11' : self.__dms_11= arg
             if key == 'dms_12' : self.__dms_12= arg
             if key == 'dms_21' : self.__dms_21= arg
@@ -661,6 +666,8 @@ and RMS from the last superimposition"""
         if self.__dms_02     is not None: self._write_dms_02(f)
         if self.__dms_03     is not None: self._write_dms_03(f)
         if self.__dms_04     is not None: self._write_dms_04(f)
+        if self.__dms_05     is not None: self._write_dms_05(f)
+        if self.__dms_06     is not None: self._write_dms_06(f)
         if self.__dms_11     is not None: self._write_dms_11(f)
         if self.__dms_12     is not None: self._write_dms_12(f)
         if self.__dms_21     is not None: self._write_dms_21(f)
@@ -758,6 +765,11 @@ and RMS from the last superimposition"""
            self.__dms_03 = self._rotate_dms_nn   (self.__dms_03, R     )
         if self.__dms_04 is not None:                          
            self.__dms_04 = self._rotate_dms_nn   (self.__dms_04, R     )
+        if self.__dms_05 is not None:                          
+           self.__dms_05 = self._rotate_dms_nn   (self.__dms_05, R     )
+        if self.__dms_06 is not None:                          
+           self.__dms_06 = self._rotate_dms_nn   (self.__dms_06, R     )
+
         if self.__dms_11 is not None:                          
            self.__dms_11 = self._rotate_dms_nnN3 (self.__dms_11, R, rot)
         if self.__dms_12 is not None:                          
@@ -975,6 +987,7 @@ In other words - dma=True if DMA, CAMM and CBAMM are used. False if LMTP and oth
         self.__dms_12,self.__dms_22               = None, None
         self.__dms_01,self.__dms_11,self.__dms_21 = None, None, None
         self.__dms_03,self.__dms_04               = None, None
+        self.__dms_05,self.__dms_06               = None, None
         #
         mol_names = ('name' ,'basis' ,'method','natoms'   ,'nbasis',
                      'nmos' ,'nmodes','atoms' ,'shortname','nsites',
@@ -1029,6 +1042,8 @@ In other words - dma=True if DMA, CAMM and CBAMM are used. False if LMTP and oth
                     'dms_02': '[ DMS 02 ]'                                          ,
                     'dms_03': '[ DMS 03 ]'                                          ,
                     'dms_04': '[ DMS 04 ]'                                          ,
+                    'dms_05': '[ DMS 05 ]'                                          ,
+                    'dms_06': '[ DMS 06 ]'                                          ,
                     'dms_11': '[ DMS 11 ]'                                          ,
                     'dms_12': '[ DMS 12 ]'                                          ,
                     'dms_21': '[ DMS 21 ]'                                          ,
@@ -1060,6 +1075,8 @@ In other words - dma=True if DMA, CAMM and CBAMM are used. False if LMTP and oth
             elif key =='dms_02': self.__dms_02= val
             elif key =='dms_03': self.__dms_03= val
             elif key =='dms_04': self.__dms_04= val
+            elif key =='dms_05': self.__dms_05= val
+            elif key =='dms_06': self.__dms_06= val
             elif key =='dms_11': self.__dms_11= val
             elif key =='dms_12': self.__dms_12= val
             elif key =='dms_21': self.__dms_21= val
@@ -1136,6 +1153,8 @@ In other words - dma=True if DMA, CAMM and CBAMM are used. False if LMTP and oth
         if self.__dms_02 is not None: par['dms_02'] = self.__dms_02
         if self.__dms_03 is not None: par['dms_03'] = self.__dms_03
         if self.__dms_04 is not None: par['dms_04'] = self.__dms_04
+        if self.__dms_05 is not None: par['dms_05'] = self.__dms_05
+        if self.__dms_06 is not None: par['dms_06'] = self.__dms_06
         if self.__dms_11 is not None: par['dms_11'] = self.__dms_11
         if self.__dms_12 is not None: par['dms_12'] = self.__dms_12
         if self.__dms_21 is not None: par['dms_21'] = self.__dms_21
@@ -1810,6 +1829,18 @@ If dma=True it returns Coulomb.py DMA object
                   assert N == self.__nbasis**2, merror
                   data = data.reshape(self.__nbasis, self.__nbasis)
                   self.__dms_04 = data
+            # DMS 05
+            elif  key == 'dms_05':
+                  merror = ''
+                  assert N == self.__nbasis**2, merror
+                  data = data.reshape(self.__nbasis, self.__nbasis)
+                  self.__dms_05 = data
+            # DMS 06
+            elif  key == 'dms_06':
+                  merror = ''
+                  assert N == self.__nbasis**2, merror
+                  data = data.reshape(self.__nbasis, self.__nbasis)
+                  self.__dms_06 = data
             # DMS 11
             elif  key == 'dms_11':
                   merror = ''
@@ -2674,6 +2705,36 @@ If dma=True it returns Coulomb.py DMA object
         for a in range(self.__nbasis):
             for b in range(self.__nbasis):
                   log+= "%20.10E" % self.__dms_04[a,b]
+                  if not n%5: log+= '\n'
+                  n+=1
+        log+= '\n'
+        if N%5: log+= '\n'
+        file.write(log)
+        return
+
+    def _write_dms_05(self, file):
+        """write DMS of order 05"""
+        N = self.__dms_05.size
+        log = ' %s %s= %d\n' % (self.__sec_names['dms_05'].ljust(40), 'N'.rjust(10), N)
+        n = 1
+        for a in range(self.__nbasis):
+            for b in range(self.__nbasis):
+                  log+= "%20.10E" % self.__dms_05[a,b]
+                  if not n%5: log+= '\n'
+                  n+=1
+        log+= '\n'
+        if N%5: log+= '\n'
+        file.write(log)
+        return
+
+    def _write_dms_06(self, file):
+        """write DMS of order 06"""
+        N = self.__dms_06.size
+        log = ' %s %s= %d\n' % (self.__sec_names['dms_06'].ljust(40), 'N'.rjust(10), N)
+        n = 1
+        for a in range(self.__nbasis):
+            for b in range(self.__nbasis):
+                  log+= "%20.10E" % self.__dms_06[a,b]
                   if not n%5: log+= '\n'
                   n+=1
         log+= '\n'

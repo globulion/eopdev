@@ -1,5 +1,5 @@
 import os, re, numpy
-import slv_slvpar
+from .fragment import Fragment
 
 def text_to_list(text,delimiter=None,dtype=int,dt=1):
     """
@@ -137,7 +137,7 @@ Usage:
        if lines[0].startswith('!'): return
 
        # read the fragment parameters
-       frag = slv_slvpar.Fragment(lines[0].split()[1])
+       frag = Fragment(lines[0].split()[1])
 
        # reorder the fragment
        reord = None
