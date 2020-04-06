@@ -46,6 +46,12 @@ void oepdev::NonUniformEFieldPolarGEFactory::compute_samples(void)
              grads_n .push_back(grad);
              cout << oepdev::string_sprintf(" Computation for N=%2d S=%2d F=[%14.4f, %14.4f, %14.4f]\n",n+1, o+1,
                                               field->get(0), field->get(1), field->get(2));
+             cout << oepdev::string_sprintf("                      grad F=[[%14.8f, %14.8f, %14.8f]\n",
+                                              grad->get(0,0), grad->get(0,1), grad->get(0,2));
+             cout << oepdev::string_sprintf("                              [%14.8f, %14.8f, %14.8f]\n",
+                                              grad->get(1,0), grad->get(1,1), grad->get(1,2));
+             cout << oepdev::string_sprintf("                              [%14.8f, %14.8f, %14.8f]]\n",
+                                              grad->get(2,0), grad->get(2,1), grad->get(2,2));
         }
 
         std::shared_ptr<oepdev::RHFPerturbed> pert = perturbed_state(charges);

@@ -227,7 +227,9 @@ def rotate_ao_matrix(M, rot_3d, bfs, return_rot=False, aomo=False):
  bfs    - psi4.core.BasisSet in which M is represented
  aomo   -
 
- Returns: rotated matrix M
+ Returns: 
+     rotated matrix M:  M' = R.T @ M @ R (if aomo=False)
+                    M:  M' = R.T @ M     (if aomo=True)
 """
     # number of basis functions per shell type
     if bfs.has_puream():  nam = {0: 1, 1: 3, 2: 5, 3: 7, 4: 9}
@@ -352,7 +354,7 @@ def move_atom_scale_coordinates(mol, t):
     return
 
 
-def move_atom_rotate_molecule(mol, angles, t='zxy', units='bohr'):
+def move_atom_rotate_molecule(mol, angles, t='zxy'):
     "Rotate atoms in the molecule by applying rotation (3,3) matrix (provide Euler angles in degrees)"
     R = scipy.spatial.transform.Rotation.from_euler(t, angles, degrees=True)
     rot= R.as_dcm()
