@@ -117,13 +117,22 @@ class DFBasis:
       "Make list of bounds appropriate for optimization"
       bounds = []
       for item in bounds_codes:
+          print(item,bounds_codes)
           item = item.lower()
           if item.startswith('e'):
-               bound = (self.exp_lower_bound, self.exp_upper_bound) if len(item) == 1 \
-                 else tuple( float(x) for x in item[2:].split(',') )
+               if len(item)==1:
+                   bound = (self.exp_lower_bound, self.exp_upper_bound)
+               else:
+                   bound = tuple( float(x) for x in item[2:].split(',') )
+               #bound = (self.exp_lower_bound, self.exp_upper_bound) if len(item) == 1 \
+               #  else tuple( float(x) for x in item[2:].split(',') )
           elif item.startswith('c'):
-               bound = (self.ctr_lower_bound, self.ctr_upper_bound) if len(item) == 1 \
-                 else tuple( float(x) for x in item[2:].split(',') )
+               if len(item)==1:
+                   bound = (self.ctr_lower_bound, self.ctr_upper_bound)
+               else:
+                   bound = tuple( float(x) for x in item[2:].split(',') )
+               #bound = (self.ctr_lower_bound, self.ctr_upper_bound) if len(item) == 1 \
+               #  else tuple( float(x) for x in item[2:].split(',') )
           else: raise(ValueError, 
                 "Wrong input in bounds `%s`. Use either one syntax: `X` or `X:min,max` where X = E or C." % item)
           bounds.append(bound)
@@ -152,7 +161,7 @@ class OEP(ABC):
       # Auxiliary (A) basis
       self.basis_aux = dfbasis.basis
       # ERI object (PP|PT) 
-      self.eri_pppt = self.mints.ao_eri(self.basis_prim, self.basis_prim, self.basis_prim, self.basis_test)
+      self.eri_pppt = numpy.asarray(self.mints.ao_eri(self.basis_prim, self.basis_prim, self.basis_prim, self.basis_test))
       # V matrix
       self.V   = self._compute_V()
       # Clear memory
@@ -235,9 +244,10 @@ class DFBasisOptimizer:
   
   # ---> public interface <--- #
 
-  def fit(self, maxiter=1000, tol=1.e-9, method='slsqp'):
+  def fit(self, maxiter=1000, tolerance=1e-9, method='slsqp', opt_global=False, temperature=500, stepsize=500,
+                take_step=None, accept_test=None):
       "Perform fitting of basis set exponents"
-      success = self._fit(maxiter, tol, method)
+      success = self._fit(maxiter, tolerance, method, opt_global, temperature, stepsize, take_step, accept_test)
       return success
 
   def compute_error(self, basis, rms=False):
@@ -255,12 +265,23 @@ class DFBasisOptimizer:
 
   # ---> protected interface <--- #
 
-  def _fit(self, maxiter, tol, method):
+  def _fit(self, maxiter, tolerance, method='slsqp', opt_global=False, temperature=500, stepsize=500, 
+                 take_step=None, accept_test=None):
       "The actual fitting procedure"
       param_0 = self.basis_fit.param
-      options = {"disp": True, "maxiter": maxiter, "ftol": tol, "iprint": 4}
-      res = scipy.optimize.minimize(self._objective_function, param_0, args=(), tol=tol, method=method,
-                  options=options, bounds=self.basis_fit.bounds, constraints=self.basis_fit.constraints)
+      options = {"disp": True, "maxiter": maxiter, "ftol": tolerance, "iprint": 4}
+      if not opt_global:
+         res = scipy.optimize.minimize(self._objective_function, param_0, args=(), tol=tolerance, method=method,
+                     options=options, bounds=self.basis_fit.bounds, constraints=self.basis_fit.constraints)
+         success = res.success
+      else:
+         res = scipy.optimize.basinhopping(self._objective_function, param_0, niter=30, 
+                                    T=temperature, stepsize=stepsize, 
+                                    minimizer_kwargs={"method": method, "options": options, 
+                                        "bounds": self.basis_fit.bounds}, 
+                                    callback=None, interval=50, disp=True, niter_success=None,
+                                    take_step=take_step, accept_test=accept_test)
+         success = True
       param = res.x
       self.oep.dfbasis.basisset(param)
       self.oep.dfbasis.param = param
@@ -268,7 +289,7 @@ class DFBasisOptimizer:
       print("          Initial           Fitted")
       for i in range(self.basis_fit.n_param):
           print("%15.3f %15.3f" % (param_0[i], param[i]))
-      return res.success
+      return success # for some reson res.success is not created in global
      
   def _objective_function(self, param):
       "Objective function for auxiliary basis refinement"
