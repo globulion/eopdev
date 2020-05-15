@@ -5,7 +5,7 @@
 namespace oepdev{
 
 R_CISComputer_Direct::R_CISComputer_Direct(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt):
- R_CISComputer(wfn, opt)
+ R_CISComputer_Explicit(wfn, opt)
 {
 }
 

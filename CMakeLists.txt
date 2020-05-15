@@ -81,8 +81,10 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/scf_perturb.cc
                        oepdev/libutil/cis_base.cc
                        oepdev/libutil/cis_rhf.cc
+                       oepdev/libutil/cis_rhf_explicit.cc
                        oepdev/libutil/cis_rhf_dl.cc
                        oepdev/libutil/cis_uhf.cc
+                       oepdev/libutil/cis_uhf_explicit.cc
                        oepdev/libutil/cis_uhf_dl.cc
 		       oepdev/libutil/cis_rhf_direct.cc
 		       # lib3d
@@ -126,9 +128,9 @@ add_psi4_plugin(oepdev main.cc
 		       # libtest
                        oepdev/libtest/test.cc
 		       oepdev/libtest/basic.cc
-                       oepdev/libtest/cis_rhf.cc
+                       oepdev/libtest/cis_rhf_explicit.cc
                        oepdev/libtest/cis_rhf_dl.cc
-                       oepdev/libtest/cis_uhf.cc
+                       oepdev/libtest/cis_uhf_explicit.cc
                        oepdev/libtest/cis_uhf_dl.cc
 		       oepdev/libtest/cphf.cc
 		       oepdev/libtest/camm.cc

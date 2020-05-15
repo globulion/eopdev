@@ -340,6 +340,24 @@ class R_CISComputer: public CISComputer {
    R_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~R_CISComputer(); 
   protected:
+   virtual void print_excited_state_character_(int I);
+};
+
+class U_CISComputer: public CISComputer {
+  public:
+   U_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~U_CISComputer(); 
+  protected:
+   virtual void print_excited_state_character_(int I);
+};
+
+
+
+class R_CISComputer_Explicit: public R_CISComputer {
+  public:
+   R_CISComputer_Explicit(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~R_CISComputer_Explicit(); 
+  protected:
    virtual void set_beta_(void);
    virtual void build_hamiltonian_(void);
 };
@@ -388,7 +406,7 @@ class R_CISComputer: public CISComputer {
  * transformed to CMO's.
  *
  */
-class R_CISComputer_DL: public R_CISComputer {
+class R_CISComputer_DL: public R_CISComputer_Explicit {
   public:
    R_CISComputer_DL(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~R_CISComputer_DL(); 
@@ -405,7 +423,7 @@ class R_CISComputer_DL: public R_CISComputer {
    psi::SharedMatrix Ca_occ__, Ca_vir__;
 };
 
-class R_CISComputer_Direct: public R_CISComputer {
+class R_CISComputer_Direct: public R_CISComputer_Explicit {
   public:
    R_CISComputer_Direct(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~R_CISComputer_Direct(); 
@@ -414,10 +432,10 @@ class R_CISComputer_Direct: public R_CISComputer {
    virtual void transform_integrals_(void);
 };
 
-class U_CISComputer: public CISComputer {
+class U_CISComputer_Explicit: public U_CISComputer {
   public:
-   U_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
-   virtual ~U_CISComputer(); 
+   U_CISComputer_Explicit(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~U_CISComputer_Explicit(); 
   protected:
    virtual void set_beta_(void);
    virtual void build_hamiltonian_(void);
@@ -472,7 +490,7 @@ class U_CISComputer: public CISComputer {
  *
  */
 
-class U_CISComputer_DL: public U_CISComputer {
+class U_CISComputer_DL: public U_CISComputer_Explicit {
   public:
    U_CISComputer_DL(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~U_CISComputer_DL(); 

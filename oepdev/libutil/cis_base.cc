@@ -209,7 +209,7 @@ std::shared_ptr<CISComputer> CISComputer::build(const std::string& type,
      if (cis_type == "DAVIDSON_LIU") {
 	 cis = std::make_shared<U_CISComputer_DL>(ref_wfn, opt);
      } else {
-	 cis = std::make_shared<U_CISComputer>(ref_wfn, opt);
+	 cis = std::make_shared<U_CISComputer_Explicit>(ref_wfn, opt);
      }
   }
   else {
@@ -219,7 +219,7 @@ std::shared_ptr<CISComputer> CISComputer::build(const std::string& type,
      if (cis_type == "DAVIDSON_LIU") {
          cis = std::make_shared<R_CISComputer_DL>(ref_wfn, opt);
      } else { // Explicit CIS
-	 cis = std::make_shared<R_CISComputer>(ref_wfn, opt);
+	 cis = std::make_shared<R_CISComputer_Explicit>(ref_wfn, opt);
      }
   }
   
