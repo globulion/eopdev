@@ -6,8 +6,8 @@ namespace oepdev{
 
 R_CISComputer_DL::R_CISComputer_DL(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt):
  R_CISComputer(wfn, opt),
- Ca_occ__(wfn->Ca_subset("AO","OCC")),
- Ca_vir__(wfn->Ca_subset("AO","VIR"))
+ Ca_occ__(wfn->Ca_subset("AO","ACTIVE_OCC")),
+ Ca_vir__(wfn->Ca_subset("AO","ACTIVE_VIR"))
 {
 }
 

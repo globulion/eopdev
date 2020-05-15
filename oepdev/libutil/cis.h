@@ -314,12 +314,15 @@ class CISComputer : public DavidsonLiu {
 
    CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt, psi::IntegralTransform::TransformationType trans_type);
 
+   virtual void print_header_(void);
    virtual void set_nstates_(void);
    virtual void allocate_memory(void);
    virtual void allocate_hamiltonian_(void);
    virtual void prepare_for_cis_(void);
    virtual void build_hamiltonian_(void) = 0;
    virtual void diagonalize_hamiltonian_(void);
+   virtual void print_excited_states_(void);
+   virtual void print_excited_state_character_(int I) = 0;
 
    virtual void set_beta_(void) = 0;
    virtual void transform_integrals_(void);

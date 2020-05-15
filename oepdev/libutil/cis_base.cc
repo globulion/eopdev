@@ -25,9 +25,9 @@ CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& o
           E_(nullptr),
           U_(nullptr),
           H_(nullptr),
-          nmo_(ref_wfn_->nmo()),
-          naocc_(ref_wfn_->nalpha()),
-          nbocc_(ref_wfn_->nbeta()),
+          nmo_(ref_wfn_->nmo()-ref_wfn_->nfrzc()),
+          naocc_(ref_wfn_->nalpha()-ref_wfn_->nfrzc()),
+          nbocc_(ref_wfn_->nbeta()-ref_wfn_->nfrzc()),
           navir_(nmo_ - naocc_),
           nbvir_(nmo_ - nbocc_),
           transformation_type_(trans_type),
@@ -58,14 +58,66 @@ void CISComputer::common_init(void) {
  jk_->print_header();
 }
 
+void CISComputer::print_header_(void) {
+ std::string cis_algorithm = options_.get_str("CIS_TYPE");
+ std::string cis_type;
+ if (options_.get_str("REFERENCE") == "RHF") {cis_type = "R";}
+ else {cis_type = "U";}
+
+ psi::outfile->Printf("\n ===> Starting %s-CIS Calculation <===\n\n", cis_type.c_str());
+ psi::outfile->Printf("  => Setup <=\n\n");
+ psi::outfile->Printf("   Memory       = %11zu MB\n" , psi::Process::environment.get_memory() / (1024L*1024L));
+ psi::outfile->Printf("   Algorithm    = %s\n"       , cis_algorithm.c_str());
+ if (cis_algorithm == "DAVIDSON_LIU") {
+ psi::outfile->Printf("     Conver     = %11.3E\n"   , options_.get_double("DAVIDSON_LIU_CONVER"));
+ psi::outfile->Printf("     Maxiter    = %11.3E\n"   , options_.get_double("DAVIDSON_LIU_MAXITER"));
+ psi::outfile->Printf("     BVecGuess  = %s\n"       , options_.get_str("DAVIDSON_LIU_GUESS").c_str());
+ psi::outfile->Printf("     Thr_large  = %11.3E\n"   , options_.get_double("DAVIDSON_LIU_THRESH_LARGE"));
+ psi::outfile->Printf("     Thr_small  = %11.3E\n"   , options_.get_double("DAVIDSON_LIU_THRESH_SMALL"));
+ psi::outfile->Printf("     Nroots     = %11d  \n"   , options_.get_double("DAVIDSON_LIU_NROOTS"));
+ psi::outfile->Printf("     SpStart    = %11d  \n"   , options_.get_double("DAVIDSON_LIU_SPACE_START"));
+ psi::outfile->Printf("     SpMax      = %11d  \n"   , options_.get_double("DAVIDSON_LIU_SPACE_MAX"));
+ }
+ psi::outfile->Printf("   SchwartzCut  = %11.3E\n"   , options_.get_double("CIS_SCHWARTZ_CUTOFF"));
+ psi::outfile->Printf("   Nbasis       = %11d\n"     , ref_wfn_->basisset()->nbf());
+ psi::outfile->Printf("   Nsingles     = %11d\n"     , naocc_*navir_ + nbocc_*nbvir_);
+ psi::outfile->Printf("   Naocc(Active)= %11d\n"     , naocc_);
+ psi::outfile->Printf("   Navir(Active)= %11d\n"     , navir_);
+ psi::outfile->Printf("   Nocc(Frozen) = %11d\n"     , ref_wfn_->nfrzc());
+ psi::outfile->Printf("   Nvir(Frozen) = %11d\n"     , ref_wfn_->frzvpi()[0]);
+ psi::outfile->Printf("\n");
+ psi::outfile->Printf("  => Molecule <=\n\n");
+ ref_wfn_->molecule()->print();
+ psi::outfile->Printf("  => Primary Basis <=\n\n");
+ ref_wfn_->basisset()->print();
+}
+
+void CISComputer::print_excited_states_(void) {
+ psi::outfile->Printf("\n ===> Excited States <===\n\n");
+ for (int I=0; I<this->nstates_; ++I) {
+       double E_ex = this->E_->get(I);
+       psi::SharedVector tj = this->transition_dipole(I);
+       double tjx = tj->get(0);
+       double tjy = tj->get(1);
+       double tjz = tj->get(2);
+
+       psi::outfile->Printf("     State= %2d, f= %9.6f [a.u.] E= %9.3f [EV] TrMu= (%9.3f, %9.3f, %9.3f) [A.U.]\n", 
+                                 I+1, this->oscillator_strength(I), E_ex*OEPDEV_AU_EV, tjx, tjy, tjz);
+
+       this->print_excited_state_character_(I);
+ }
+}
+
+void CISComputer::print_excited_state_character_(int I) {}
+
 void CISComputer::set_nstates_() {
   this->nstates_ = this->ndets_;
 }
 void CISComputer::set_beta_(void) {}
 
 void CISComputer::allocate_memory(void) {
- eps_a_o_ = ref_wfn_->epsilon_a_subset("MO", "OCC");
- eps_a_v_ = ref_wfn_->epsilon_a_subset("MO", "VIR");
+ eps_a_o_ = ref_wfn_->epsilon_a_subset("MO", "ACTIVE_OCC");
+ eps_a_v_ = ref_wfn_->epsilon_a_subset("MO", "ACTIVE_VIR");
  this->allocate_hamiltonian_();
 }
 
@@ -76,15 +128,18 @@ void CISComputer::allocate_hamiltonian_(void) {
 }
 
 void CISComputer::compute(void) {
+ this->print_header_();
  this->set_nstates_();    // Maybe better to move it to constructor? 
                           // (then Davidson-Liu must be re-adapted) - this needs to be now here
  this->allocate_memory(); // moved here to allocate E_ and U_ before Davidson-Liu needs to be initialized
  this->prepare_for_cis_();
  this->build_hamiltonian_();
  this->diagonalize_hamiltonian_(); 
+ this->print_excited_states_();
 
  // Clear memory
  this->jk_->finalize();
+ psi::outfile->Printf("\n @CIS: Done.\n\n");
 }
 
 void CISComputer::prepare_for_cis_(void) {
@@ -106,7 +161,7 @@ void CISComputer::transform_integrals_(void) {
  inttrans_ = std::make_shared<psi::IntegralTransform>(ref_wfn_, spaces, this->transformation_type_, 
                                                    psi::IntegralTransform::OutputType::DPDOnly,
                                                    psi::IntegralTransform::MOOrdering::QTOrder,
-                                                   psi::IntegralTransform::FrozenOrbitals::None); 
+                                                   psi::IntegralTransform::FrozenOrbitals::OccOnly); 
  inttrans_->set_keep_dpd_so_ints(true);
  inttrans_->transform_tei(psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::occ);
  inttrans_->transform_tei(psi::MOSpace::occ, psi::MOSpace::occ, psi::MOSpace::vir, psi::MOSpace::vir);
@@ -201,13 +256,14 @@ psi::SharedMatrix CISComputer::Db_ao(int I) const {
 }
 
 psi::SharedMatrix CISComputer::Ta_ao(int J) const {
+  const int nfrzc = ref_wfn_->nfrzc();
   psi::SharedMatrix Co = ref_wfn_->Ca_subset("AO","OCC");
   psi::SharedMatrix Cv = ref_wfn_->Ca_subset("AO","VIR");
-  psi::SharedMatrix D = std::make_shared<psi::Matrix>(naocc_, navir_); 
+  psi::SharedMatrix D = std::make_shared<psi::Matrix>(naocc_+nfrzc, navir_); 
   for (int i=0; i<naocc_; ++i) {
   for (int a=0; a<navir_; ++a) {
        int ia = navir_*i + a;
-       D->set(i, a, U_->get(ia, J));
+       D->set(i+nfrzc, a, U_->get(ia, J));
   }
   }
   psi::SharedMatrix d = psi::Matrix::triplet(Co, D, Cv, false, false, true);
@@ -215,14 +271,15 @@ psi::SharedMatrix CISComputer::Ta_ao(int J) const {
 }
 
 psi::SharedMatrix CISComputer::Tb_ao(int J) const {
+  const int nfrzc = ref_wfn_->nfrzc();
   psi::SharedMatrix Co = ref_wfn_->Cb_subset("AO","OCC");
   psi::SharedMatrix Cv = ref_wfn_->Cb_subset("AO","VIR");
-  psi::SharedMatrix D = std::make_shared<psi::Matrix>(nbocc_, nbvir_); 
+  psi::SharedMatrix D = std::make_shared<psi::Matrix>(nbocc_+nfrzc, nbvir_); 
   const int off = naocc_*navir_;
   for (int i=0; i<nbocc_; ++i) {
   for (int a=0; a<nbvir_; ++a) {
        int ia = nbvir_*i + a + off;
-       D->set(i, a, U_->get(ia, J));
+       D->set(i+nfrzc, a, U_->get(ia, J));
   }
   }
   psi::SharedMatrix d = psi::Matrix::triplet(Co, D, Cv, false, false, true);
@@ -248,9 +305,15 @@ psi::SharedMatrix CISComputer::Tb_ao(int I, int J) const {
 }
 
 psi::SharedMatrix CISComputer::Da_mo(int I) const {
- psi::SharedMatrix D = std::make_shared<psi::Matrix>(string_sprintf("Alpha Density Matrix (MO) I=%3d", I), nmo_, nmo_);
- for (int i=0; i<naocc_; ++i) {
+ const int nmo_all = ref_wfn_->nmo();
+ const int nfrzc   = ref_wfn_->nfrzc();
+
+ psi::SharedMatrix D = std::make_shared<psi::Matrix>(string_sprintf("Alpha Density Matrix (MO) I=%3d", I), nmo_all, nmo_all);
+ for (int i=0; i<nfrzc; ++i) {
    D->set(i, i, 1.0);
+ }
+ for (int i=0; i<naocc_; ++i) {
+   D->set(i+nfrzc, i+nfrzc, 1.0);
  }
  double** U = U_->pointer();    
  double** d = D->pointer();    
@@ -264,7 +327,7 @@ psi::SharedMatrix CISComputer::Da_mo(int I) const {
            int qa = navir_*q + a;
            v += U[pa][I] * U[qa][I];
       }
-      d[p][q] -= v;
+      d[p+nfrzc][q+nfrzc] -= v;
  }
  } 
 
@@ -277,7 +340,7 @@ psi::SharedMatrix CISComputer::Da_mo(int I) const {
            int qi = navir_*i + q;
            v += U[pi][I] * U[qi][I];
       }
-      d[naocc_ + p][naocc_ + q] += v;
+      d[naocc_ + p + nfrzc][naocc_ + q + nfrzc] += v;
  }
  } 
 
@@ -286,9 +349,15 @@ psi::SharedMatrix CISComputer::Da_mo(int I) const {
 }
 
 psi::SharedMatrix CISComputer::Db_mo(int I) const {
- psi::SharedMatrix D = std::make_shared<psi::Matrix>(string_sprintf("Beta Density Matrix (MO) I=%3d", I), nmo_, nmo_);
- for (int i=0; i<nbocc_; ++i) {
+ const int nmo_all = ref_wfn_->nmo();
+ const int nfrzc   = ref_wfn_->nfrzc();
+
+ psi::SharedMatrix D = std::make_shared<psi::Matrix>(string_sprintf("Beta Density Matrix (MO) I=%3d", I), nmo_all, nmo_all);
+ for (int i=0; i<nfrzc; ++i) {
    D->set(i, i, 1.0);
+ }
+ for (int i=0; i<nbocc_; ++i) {
+   D->set(i+nfrzc, i+nfrzc, 1.0);
  }
  const int off = navir_ * naocc_;
  double** U = U_->pointer();    
@@ -303,7 +372,7 @@ psi::SharedMatrix CISComputer::Db_mo(int I) const {
            int qa = nbvir_*q + a;
            v += U[pa+off][I] * U[qa+off][I];
       }
-      d[p][q] -= v;
+      d[p+nfrzc][q+nfrzc] -= v;
  }
  } 
 
@@ -316,7 +385,7 @@ psi::SharedMatrix CISComputer::Db_mo(int I) const {
            int qi = nbvir_*i + q;
            v += U[pi+off][I] * U[qi+off][I];
       }
-      d[naocc_ + p][naocc_ + q] += v;
+      d[naocc_ + p + nfrzc][naocc_ + q + nfrzc] += v;
  }
  } 
 
