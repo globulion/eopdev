@@ -79,6 +79,7 @@ void CISComputer::print_header_(void) {
  psi::outfile->Printf("     SpMax      = %11d  \n"   , options_.get_double("DAVIDSON_LIU_SPACE_MAX"));
  }
  psi::outfile->Printf("   SchwartzCut  = %11.3E\n"   , options_.get_double("CIS_SCHWARTZ_CUTOFF"));
+ psi::outfile->Printf("   PrintAmpl    = %11.3f"     , options_.get_double("OEPDEV_AMPLITUDE_PRINT_THRESHOLD"));
  psi::outfile->Printf("   Nbasis       = %11d\n"     , ref_wfn_->basisset()->nbf());
  psi::outfile->Printf("   Nsingles     = %11d\n"     , naocc_*navir_ + nbocc_*nbvir_);
  psi::outfile->Printf("   Naocc(Active)= %11d\n"     , naocc_);

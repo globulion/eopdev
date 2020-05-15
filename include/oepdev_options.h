@@ -93,6 +93,7 @@ int read_options(std::string name, Options& options)
         options.add_int    ("OEPDEV_SOLVER_EET_LUMO_B"    , 0                    );
 
         /*- Electronic excited states */
+        options.add_double ("OEPDEV_AMPLITUDE_PRINT_THRESHOLD", 0.2              );
         options.add_int    ("EXCITED_STATE"               ,-1                    );
         options.add_int    ("EXCITED_STATE_A"             ,-1                    );
         options.add_int    ("EXCITED_STATE_B"             ,-1                    );                  
