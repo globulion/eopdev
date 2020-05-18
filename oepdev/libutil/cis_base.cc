@@ -86,6 +86,8 @@ void CISComputer::print_header_(void) {
  psi::outfile->Printf("   Navir(Active)= %11d\n"     , navir_);
  psi::outfile->Printf("   Nocc(Frozen) = %11d\n"     , ref_wfn_->nfrzc());
  psi::outfile->Printf("   Nvir(Frozen) = %11d\n"     , ref_wfn_->frzvpi()[0]);
+ psi::outfile->Printf("   <S2>(Ref)    = %11.3f\n"   , this->compute_s2_reference());
+ psi::outfile->Printf("   <S2>(Exact)  = %11.3f\n"   , this->compute_s2_exact());
  psi::outfile->Printf("\n");
  psi::outfile->Printf("  => Molecule <=\n\n");
  ref_wfn_->molecule()->print();
@@ -93,7 +95,211 @@ void CISComputer::print_header_(void) {
  ref_wfn_->basisset()->print();
 }
 
+double CISComputer::compute_s2_reference(void) {
+ double s2 = this->compute_s2_exact() + (double)ref_wfn_->nbeta();
+
+ psi::SharedMatrix S  = this->ref_wfn_->S();
+ psi::SharedMatrix Ca = this->ref_wfn_->Ca_subset("AO","OCC");
+ psi::SharedMatrix Cb = this->ref_wfn_->Cb_subset("AO","OCC");
+ psi::SharedMatrix Sab = psi::Matrix::triplet(Ca, S, Cb, true, false, false);
+ for (int a=0; a<ref_wfn_->nalpha(); ++a) {
+ for (int b=0; b<ref_wfn_->nbeta (); ++b) {
+      double s = Sab->get(a,b);
+      s2 -= s*s;
+ }
+ }
+ return s2;
+}
+
+double CISComputer::compute_s2_exact(void) {
+ double ns = (double)ref_wfn_->nalpha() - (double)ref_wfn_->nbeta();
+ return (ns*(ns+2.0)/4.0);
+}
+
+//double CISComputer::compute_overlap_between_singles_determinants(int i, int a, int j, int b, int s1, int s2,
+//      psi::SharedMatrix& U1, psi::SharedMatrix& V1, psi::SharedVector& sigma1,
+//      psi::SharedMatrix& U2, psi::SharedMatrix& V2, psi::SharedVector& sigma2,
+//      psi::SharedMatrix& Ca_occ, psi::SharedMatrix& Cb_occ, 
+//      psi::SharedMatrix& Ca_vir, psi::SharedMatrix& Cb_vir) {
+//
+//  // overlap = < D_ia(s1) | D_jb(s2) >
+//
+//  psi::SharedMatrix C1_a, C1_b, C2_a, C2_b; 
+//  const int nfrzc = ref_wfn_->nfrzc();
+//  // D_ia(s1)
+//  if (s1 == 0) {
+//      C1_a = Ca_occ->clone(); // substitute i-->a
+//      C1_b = Cb_occ->clone(); // retain from reference
+//
+//      psi::SharedVector c_a = Ca_vir->get_column(0,a);
+//      for (int k=0; k<c_a->dim(); ++k) {
+//           C1_a->set(i+nfrzc, k, c_a->get(k));
+//      }
+//
+//  } else {
+//      C1_b = Cb_occ->clone(); // substitute i-->a
+//      C1_a = Ca_occ->clone(); // retain from reference
+//
+//      psi::SharedVector c_a = Cb_vir->get_column(0,a);
+//      for (int k=0; k<c_a->dim(); ++k) {
+//           C1_b->set(i+nfrzc, k, c_a->get(k));
+//      }
+//  }
+//  // D_jb(s2)
+//  if (s1 == 0) {
+//      C2_a = Ca_occ->clone(); // substitute j-->b
+//      C2_b = Cb_occ->clone(); // retain from reference
+//
+//      psi::SharedVector c_b = Ca_vir->get_column(0,b);
+//      for (int k=0; k<c_b->dim(); ++k) {
+//           C2_a->set(j+nfrzc, k, c_b->get(k));
+//      }
+//
+//  } else {
+//      C2_b = Cb_occ->clone(); // substitute j-->b
+//      C2_a = Ca_occ->clone(); // retain from reference
+//
+//      psi::SharedVector c_b = Cb_vir->get_column(0,b);
+//      for (int k=0; k<c_b->dim(); ++k) {
+//           C2_b->set(j+nfrzc, k, c_b->get(k));
+//      }
+//  }
+//
+//  psi::SharedMatrix Sab_a = psi::Matrix::triplet(C1_a, this->ref_wfn_->S(), C2_a, true, false, false);
+//  psi::SharedMatrix Sab_b = psi::Matrix::triplet(C1_b, this->ref_wfn_->S(), C2_b, true, false, false);
+//
+//  U1->zero(); V1->zero(); sigma1->zero();
+//  U2->zero(); V2->zero(); sigma2->zero();
+//  Sab_a->svd(U1, sigma1, V1);
+//  Sab_b->svd(U2, sigma2, V2);
+//  double s=1.0;
+//  for (int k=0; k<sigma1->dim(); ++k) s*= sigma1->get(k);
+//  for (int k=0; k<sigma2->dim(); ++k) s*= sigma2->get(k);
+//
+//  return s;
+//}
+
+double CISComputer::s2(int I) const {
+  // all reference molecular orbitals
+  psi::SharedMatrix Ca_occ = this->ref_wfn_->Ca_subset("AO","OCC");
+  psi::SharedMatrix Cb_occ = this->ref_wfn_->Cb_subset("AO","OCC");
+  psi::SharedMatrix Ca_vir = this->ref_wfn_->Ca_subset("AO","VIR");
+  psi::SharedMatrix Cb_vir = this->ref_wfn_->Cb_subset("AO","VIR");
+
+  const int na = ref_wfn_->nalpha();
+  const int nb = ref_wfn_->nbeta ();
+
+  const double ns = (double)na - (double)nb;
+
+  psi::SharedMatrix Dij = psi::Matrix::triplet(Ca_occ, this->ref_wfn_->S(), Cb_occ, true, false, false);
+  psi::SharedMatrix Dab = psi::Matrix::triplet(Ca_vir, this->ref_wfn_->S(), Cb_vir, true, false, false);
+  psi::SharedMatrix Dia = psi::Matrix::triplet(Ca_occ, this->ref_wfn_->S(), Cb_vir, true, false, false);
+  psi::SharedMatrix Dai = psi::Matrix::triplet(Ca_vir, this->ref_wfn_->S(), Cb_occ, true, false, false);
+  psi::SharedMatrix Pij_A = std::make_shared<psi::Matrix>("", na, na); 
+  psi::SharedMatrix Pab_A = std::make_shared<psi::Matrix>("", navir_, navir_); 
+  psi::SharedMatrix Pij_B = std::make_shared<psi::Matrix>("", nb, nb); 
+  psi::SharedMatrix Pab_B = std::make_shared<psi::Matrix>("", nbvir_, nbvir_); 
+
+  psi::SharedMatrix Qab_A   = psi::Matrix::doublet(Dai,Dai,false,true);
+  psi::SharedMatrix Qij_A   = psi::Matrix::doublet(Dij,Dij,false,true);
+
+  psi::SharedMatrix Qab_B   = psi::Matrix::doublet(Dia,Dia,true,false);
+  psi::SharedMatrix Qij_B   = psi::Matrix::doublet(Dij,Dij,true,false);
+
+  const int off = naocc_*navir_;
+  const int nfrzc = ref_wfn_->nfrzc();
+
+  // <S2>_UHF
+  double s2 = ns*0.5*(ns*0.5 + 1.0) + (double)nb - Dij->vector_dot(Dij);
+  double ds2= 0.0;
+
+  // Pab_A
+  for (int a=0; a<this->navir_; ++a) {
+  for (int b=0; b<this->navir_; ++b) {
+       double v = 0.0;
+       for (int i=0; i<this->naocc_; ++i) {
+            int ia = navir_*i + a;
+            int ib = navir_*i + b;
+            v += U_->get(ia,I) * U_->get(ib,I);
+       }
+       Pab_A->set(a,b,v);
+  }
+  }
+  // Pab_B
+  for (int a=0; a<this->nbvir_; ++a) {
+  for (int b=0; b<this->nbvir_; ++b) {
+       double v = 0.0;
+       for (int i=0; i<this->nbocc_; ++i) {
+            int ia = nbvir_*i + a;
+            int ib = nbvir_*i + b;
+            v += U_->get(ia+off,I) * U_->get(ib+off,I);
+       }
+       Pab_B->set(a,b,v);
+  }
+  }
+
+  // Pij_A
+  for (int i=0; i<this->naocc_; ++i) {
+  for (int j=0; j<this->naocc_; ++j) {
+       double v = 0.0;
+       for (int a=0; a<this->navir_; ++a) {
+            int ia = navir_*i + a;
+            int ja = navir_*j + a;
+            v -= U_->get(ia,I) * U_->get(ja,I);
+       }
+       Pij_A->set(i+nfrzc,j+nfrzc,v);
+  }
+  }
+  // Pij_B
+  for (int i=0; i<this->nbocc_; ++i) {
+  for (int j=0; j<this->nbocc_; ++j) {
+       double v = 0.0;
+       for (int a=0; a<this->nbvir_; ++a) {
+            int ia = nbvir_*i + a;
+            int ja = nbvir_*j + a;
+            v -= U_->get(ia+off,I) * U_->get(ja+off,I);
+       }
+       Pij_B->set(i+nfrzc,j+nfrzc,v);
+  }
+  }
+
+  // UCIS contribution
+  ds2 -= Qab_A->vector_dot(Pab_A);
+  ds2 -= Qij_A->vector_dot(Pij_A);
+
+  ds2 -= Qab_B->vector_dot(Pab_B);
+  ds2 -= Qij_B->vector_dot(Pij_B);
+
+  for (int i=0; i<this->naocc_; ++i) {
+  for (int a=0; a<this->navir_; ++a) {
+       int ia = navir_*i + a;
+       for (int j=0; j<this->nbocc_; ++j) {
+       for (int b=0; b<this->nbvir_; ++b) {
+            int jb = nbvir_*j + b;
+            ds2 -= 2.0 * Dij->get(i+nfrzc,j+nfrzc) * Dab->get(a,b) * U_->get(ia,I) * U_->get(jb+off,I);
+       }
+       }
+  }
+  }
+  s2 += ds2;
+
+  return s2;
+}
+
+
 void CISComputer::print_excited_states_(void) {
+ std::map<int, std::string> state_multiplicity;
+ state_multiplicity[ 1] = "Singlet";
+ state_multiplicity[ 2] = "Doublet";
+ state_multiplicity[ 3] = "Triplet";
+ state_multiplicity[ 4] = "Quadrup";
+ state_multiplicity[ 5] = "Quintup";
+ state_multiplicity[ 6] = "Quintup";
+ state_multiplicity[ 7] = "Hextupl";
+ state_multiplicity[ 8] = "Heptupl";
+ state_multiplicity[ 9] = "Octuplt";
+ state_multiplicity[10] = "Nonuplt";
+
  psi::outfile->Printf("\n ===> Excited States <===\n\n");
  for (int I=0; I<this->nstates_; ++I) {
        double E_ex = this->E_->get(I);
@@ -102,8 +308,14 @@ void CISComputer::print_excited_states_(void) {
        double tjy = tj->get(1);
        double tjz = tj->get(2);
 
-       psi::outfile->Printf("     State= %2d, f= %9.6f [a.u.] E= %9.3f [EV] TrMu= (%9.3f, %9.3f, %9.3f) [A.U.]\n", 
-                                 I+1, this->oscillator_strength(I), E_ex*OEPDEV_AU_EV, tjx, tjy, tjz);
+       double s2 = this->s2(I);
+       double f  = this->oscillator_strength(I);
+
+       double s = round(sqrt(4.0*s2+1.0));
+       std::string mult = state_multiplicity.at((int)s);
+
+       psi::outfile->Printf("     State= %2d [%6s], <S2>= %6.3f, f= %9.6f [a.u.] E= %9.3f [EV] TrMu= (%9.3f, %9.3f, %9.3f) [A.U.]\n", 
+                                 I+1, mult.c_str(), s2, f, E_ex*OEPDEV_AU_EV, tjx, tjy, tjz);
 
        this->print_excited_state_character_(I);
  }

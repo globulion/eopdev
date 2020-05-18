@@ -259,6 +259,9 @@ class CISComputer : public DavidsonLiu {
    /// Compute oscillator strength for *i*->*j* transition
    double oscillator_strength(int i, int j) const;
 
+   /// Compute <S2> expectation value for the *i*th state
+   double s2(int i) const;
+
    /// Determine electronic state
    void determine_electronic_state(int& I);
 
@@ -333,6 +336,9 @@ class CISComputer : public DavidsonLiu {
   // --> private interface <-- //
   private:
    void common_init(void);
+   double compute_s2_reference(void);
+   double compute_s2_exact(void);
+
 };
 
 class R_CISComputer: public CISComputer {
