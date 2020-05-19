@@ -70,7 +70,7 @@ void CISComputer::print_header_(void) {
  psi::outfile->Printf("   Algorithm    = %s\n"       , cis_algorithm.c_str());
  if (cis_algorithm == "DAVIDSON_LIU") {
  psi::outfile->Printf("     Conver     = %11.3E\n"   , options_.get_double("DAVIDSON_LIU_CONVER"));
- psi::outfile->Printf("     Maxiter    = %11d\n  "   , options_.get_int("DAVIDSON_LIU_MAXITER"));
+ psi::outfile->Printf("     Maxiter    = %11d\n"     , options_.get_int("DAVIDSON_LIU_MAXITER"));
  psi::outfile->Printf("     BVecGuess  = %s\n"       , options_.get_str("DAVIDSON_LIU_GUESS").c_str());
  psi::outfile->Printf("     Thr_large  = %11.3E\n"   , options_.get_double("DAVIDSON_LIU_THRESH_LARGE"));
  psi::outfile->Printf("     Thr_small  = %11.3E\n"   , options_.get_double("DAVIDSON_LIU_THRESH_SMALL"));
