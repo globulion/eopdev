@@ -32,7 +32,7 @@ int read_options(std::string name, Options& options)
 
         /*- Basis set for guess in OEPDEV SCF routine driver -*/
         options.add_bool   ("OEPDEV_BASIS_GUESS"    , true                       );
-        options.add_bool   ("OEPDEV_BASIS_GUESS_SET", "3-21G"                    );
+        options.add_str    ("OEPDEV_BASIS_GUESS_SET", "3-21G"                    );
 
         /*- Type of Density Fitting -*/
         options.add_str    ("OEPDEV_DF_TYPE"        , "DOUBLE"                   );

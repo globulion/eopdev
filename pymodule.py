@@ -86,6 +86,9 @@ def run_oepdev(name, **kwargs):
           b_int = psi4.core.get_global_option("DF_BASIS_INT")
        basis_df_int = psi4.core.BasisSet.build(molecule  , "BASIS", b_int,
                                                puream=ref_wfn.basisset().has_puream())
+       basis_guess = psi4.core.BasisSet.build(molecule  , "BASIS", psi4.core.get_global_option("OEPDEV_BASIS_GUESS_SET"),
+                                               puream=ref_wfn.basisset().has_puream())
+
 
        #if (psi4.core.get_option("SCF", "GUESS") == "SAD"):
        #    sad_basis_sets = psi4.core.BasisSet.build(molecule, "ORBITAL", psi4.core.get_global_option("BASIS"),                    
@@ -99,6 +102,7 @@ def run_oepdev(name, **kwargs):
        ref_wfn.set_basisset("BASIS_DF_OEP", basis_df_oep)
        ref_wfn.set_basisset("BASIS_DF_SCF", basis_df_scf)
        ref_wfn.set_basisset("BASIS_DF_INT", basis_df_int)
+       ref_wfn.set_basisset("BASIS_GUESS", basis_guess)
 
     # case when task on wavefunction union can be requested
     elif(psi4.core.get_global_option("OEPDEV_TARGET") == "SOLVER") \
@@ -142,6 +146,13 @@ def run_oepdev(name, **kwargs):
        basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", b_int,
                                                  puream=ref_wfn.basisset().has_puream())
 
+       # --- guess (OEP)
+       basis_guess_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("OEPDEV_BASIS_GUESS_SET"),
+                                                puream=ref_wfn.basisset().has_puream())
+       basis_guess_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("OEPDEV_BASIS_GUESS_SET"),
+                                                puream=ref_wfn.basisset().has_puream())
+
+
        # --- SAD Guess (Psi4)
        #if (psi4.core.get_option("SCF", "GUESS") == "SAD"):
        #    sad_basis_sets_A = psi4.core.BasisSet.build(molecule_A, "ORBITAL", psi4.core.get_global_option("BASIS"),                    
@@ -166,6 +177,8 @@ def run_oepdev(name, **kwargs):
        ref_wfn.set_basisset("BASIS_DF_OEP_2" , basis_df_oep_B )
        ref_wfn.set_basisset("BASIS_INT_OEP_1", basis_int_oep_A)
        ref_wfn.set_basisset("BASIS_INT_OEP_2", basis_int_oep_B)
+       ref_wfn.set_basisset("BASIS_GUESS_1"  , basis_guess_A)
+       ref_wfn.set_basisset("BASIS_GUESS_2"  , basis_guess_B)
        ref_wfn.set_basisset("BASIS_DF_SCF"   , basis_df_scf   )
 
 

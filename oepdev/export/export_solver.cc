@@ -36,6 +36,9 @@ void export_solver(py::module &m) {
        		       std::shared_ptr<psi::BasisSet>, 
 		       std::shared_ptr<psi::BasisSet>, 
 		       std::shared_ptr<psi::BasisSet>, 
+       		       std::shared_ptr<psi::BasisSet>, 
+		       std::shared_ptr<psi::BasisSet>, 
+		       std::shared_ptr<psi::BasisSet>, 
 		       std::shared_ptr<psi::BasisSet>, 
 		       std::shared_ptr<psi::BasisSet>, 
 		       std::shared_ptr<psi::BasisSet>, 
@@ -58,6 +61,7 @@ void export_solver(py::module &m) {
          .def("l_primary", &oepdev::WavefunctionUnion::l_primary, "")
          .def("l_auxiliary", &oepdev::WavefunctionUnion::l_auxiliary, "")
          .def("l_intermediate", &oepdev::WavefunctionUnion::l_intermediate, "")
+         .def("l_guess", &oepdev::WavefunctionUnion::l_guess, "")
          .def("l_wfn", &oepdev::WavefunctionUnion::l_wfn, "")
          .def("l_localizer", &oepdev::WavefunctionUnion::l_localizer, "")
          .def("integrals", &oepdev::WavefunctionUnion::integrals, "")
