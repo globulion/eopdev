@@ -70,13 +70,13 @@ void CISComputer::print_header_(void) {
  psi::outfile->Printf("   Algorithm    = %s\n"       , cis_algorithm.c_str());
  if (cis_algorithm == "DAVIDSON_LIU") {
  psi::outfile->Printf("     Conver     = %11.3E\n"   , options_.get_double("DAVIDSON_LIU_CONVER"));
- psi::outfile->Printf("     Maxiter    = %11.3E\n"   , options_.get_double("DAVIDSON_LIU_MAXITER"));
+ psi::outfile->Printf("     Maxiter    = %11d\n  "   , options_.get_int("DAVIDSON_LIU_MAXITER"));
  psi::outfile->Printf("     BVecGuess  = %s\n"       , options_.get_str("DAVIDSON_LIU_GUESS").c_str());
  psi::outfile->Printf("     Thr_large  = %11.3E\n"   , options_.get_double("DAVIDSON_LIU_THRESH_LARGE"));
  psi::outfile->Printf("     Thr_small  = %11.3E\n"   , options_.get_double("DAVIDSON_LIU_THRESH_SMALL"));
- psi::outfile->Printf("     Nroots     = %11d  \n"   , options_.get_double("DAVIDSON_LIU_NROOTS"));
- psi::outfile->Printf("     SpStart    = %11d  \n"   , options_.get_double("DAVIDSON_LIU_SPACE_START"));
- psi::outfile->Printf("     SpMax      = %11d  \n"   , options_.get_double("DAVIDSON_LIU_SPACE_MAX"));
+ psi::outfile->Printf("     Nroots     = %11d\n"     , options_.get_int("DAVIDSON_LIU_NROOTS"));
+ psi::outfile->Printf("     SpStart    = %11d\n"     , options_.get_int("DAVIDSON_LIU_SPACE_START"));
+ psi::outfile->Printf("     SpMax      = %11d\n"     , options_.get_int("DAVIDSON_LIU_SPACE_MAX"));
  }
  psi::outfile->Printf("   SchwartzCut  = %11.3E\n"   , options_.get_double("CIS_SCHWARTZ_CUTOFF"));
  psi::outfile->Printf("   PrintAmpl    = %11.3f"     , options_.get_double("OEPDEV_AMPLITUDE_PRINT_THRESHOLD"));
@@ -270,17 +270,35 @@ double CISComputer::s2(int I) const {
   ds2 -= Qab_B->vector_dot(Pab_B);
   ds2 -= Qij_B->vector_dot(Pij_B);
 
+  psi::SharedMatrix t_ia = std::make_shared<psi::Matrix>("", naocc_+nfrzc, navir_);
+  psi::SharedMatrix t_jb = std::make_shared<psi::Matrix>("", nbocc_+nfrzc, nbvir_);
   for (int i=0; i<this->naocc_; ++i) {
   for (int a=0; a<this->navir_; ++a) {
        int ia = navir_*i + a;
-       for (int j=0; j<this->nbocc_; ++j) {
-       for (int b=0; b<this->nbvir_; ++b) {
-            int jb = nbvir_*j + b;
-            ds2 -= 2.0 * Dij->get(i+nfrzc,j+nfrzc) * Dab->get(a,b) * U_->get(ia,I) * U_->get(jb+off,I);
-       }
-       }
+       t_ia->set(i+nfrzc,a,U_->get(ia,I));
   }
   }
+  for (int j=0; j<this->nbocc_; ++j) {
+  for (int b=0; b<this->nbvir_; ++b) {
+       int jb = nbvir_*j + b;
+       t_jb->set(j+nfrzc,b,U_->get(jb+off,I));
+  }
+  }
+  psi::SharedMatrix W = psi::Matrix::triplet(Dij, t_ia, Dab, true, false, false);
+  ds2 -= 2.0 * W->vector_dot(t_jb);
+ 
+  // slower code for quadruple sum over ia,jb
+  //for (int i=0; i<this->naocc_; ++i) {
+  //for (int a=0; a<this->navir_; ++a) {
+  //     int ia = navir_*i + a;
+  //     for (int j=0; j<this->nbocc_; ++j) {
+  //     for (int b=0; b<this->nbvir_; ++b) {
+  //          int jb = nbvir_*j + b;
+  //          ds2 -= 2.0 * Dij->get(i+nfrzc,j+nfrzc) * Dab->get(a,b) * U_->get(ia,I) * U_->get(jb+off,I);
+  //     }
+  //     }
+  //}
+  //}
   s2 += ds2;
 
   return s2;
