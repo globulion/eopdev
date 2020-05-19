@@ -9,15 +9,18 @@ extern "C" PSI_API
 void preambule(void) {
       outfile->Printf("                                                                             \n");
       outfile->Printf("    -------------------------------------------------------------------------\n");
-      outfile->Printf("          OepDev: One-Electron Effective Potentials Development Routine      \n");
-      outfile->Printf("                               OepDev 0.1 (no release)                       \n");
+      outfile->Printf("          OepDev: One-Electron Effective Potentials Development Routines     \n");
+      outfile->Printf("                               OepDev 0.2 (pre-release)                      \n");
       outfile->Printf("                                                                             \n");
-      outfile->Printf("                         Git: Rev {}                                         \n");
+      outfile->Printf("                         Git: Rev {203ae6c}                                  \n");
       outfile->Printf("                                                                             \n");
       outfile->Printf("    Bartosz Błasiak                                                          \n");
       outfile->Printf("                                                                             \n");
       outfile->Printf("    References:                                                              \n");
-      outfile->Printf("                                                                             \n");
+      outfile->Printf("     [1] B. Błasiak, J. Chem. Phys. 149, 16 (2018), 164115                   \n");
+      outfile->Printf("     [2] B. Błasiak, J. D. Bednarska, M. Chołuj, W. Bartkowiak, (2020),      \n");
+      outfile->Printf("                   arXiv:2002.00766                                          \n");
+      outfile->Printf("     [3] B. Błasiak, R. W. Góra, W. Bartkowiak, (2020), arXiv:2002.00778     \n");
       outfile->Printf("    -------------------------------------------------------------------------\n");
       outfile->Printf("                                                                             \n");
 }
