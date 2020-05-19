@@ -181,8 +181,47 @@ class CISComputer : public DavidsonLiu {
     * Transition cumulative atomic multipole moments (TrCAMM) are computed from
     * the transition density matrices in AO basis. The nuclear contribution is not included.
     *
+    * ## Spin angular momentum
+    *
+    * The expectation value of the \f$ \hat{S}^2\f$ operator is calculated from the CIS amplitudes
+    * and MOs of the reference wavefunction according to D. Maurice and M. Head-Gordon, *Int. J. Quant. Chem.*, 
+    * **1995**, 95, 010361-10:
+    *
+    * \f{multline*}{
+    *   \left< \hat{S}^2 \right>_{\rm UCIS} = \left< \hat{S}^2 \right>_{\rm UHF}
+    *   - {\rm Tr}\left[ {\bf Q}^{(\alpha)}_{\rm Occ} \cdot \left\{ {\bf P}^{(e,\alpha)}_{\rm Occ} - {\bf 1}\right\} \right]
+    *   - {\rm Tr}\left[ {\bf Q}^{(\beta )}_{\rm Occ} \cdot \left\{ {\bf P}^{(e,\beta )}_{\rm Occ} - {\bf 1}\right\} \right]\\
+    *   - {\rm Tr}\left[ {\bf Q}^{(\alpha)}_{\rm Vir} \cdot {\bf P}^{(e,\alpha)}_{\rm Vir} \right]
+    *   - {\rm Tr}\left[ {\bf Q}^{(\beta )}_{\rm Vir} \cdot {\bf P}^{(e,\beta )}_{\rm Vir} \right] 
+    *   - 2\sum_{i}^{\rm Occ}\sum_{a}^{\rm Vir}
+    *      \sum_{\overline{j}}^{\rm Occ}\sum_{\overline{b}}^{\rm Vir} 
+    *      \Delta^*_{i{\overline{j}}} \Delta_{a{\overline{b}}}
+    *      t_{i,e}^a t_{{\overline{j}},e}^{\overline{b}}
+    * \f}
+    * where
+    * \f{align*}{
+    *    [{\bf Q}^{(\alpha)}_{\rm Occ}]_{ij}                       &= \sum_{\overline{k}}^{\rm Occ} \Delta^*_{\overline{k}i}\Delta_{\overline{k}j} \\
+    *    [{\bf Q}^{(\beta )}_{\rm Occ}]_{\overline{i}\overline{j}} &= \sum_{k}^{\rm Occ} \Delta^*_{k\overline{i}}\Delta_{k\overline{j}} \\
+    *    [{\bf Q}^{(\alpha)}_{\rm Vir}]_{ab}                       &= \sum_{\overline{k}}^{\rm Occ} \Delta^*_{\overline{k}a}\Delta_{\overline{k}b} \\
+    *    [{\bf Q}^{(\beta )}_{\rm Vir}]_{\overline{a}\overline{b}} &= \sum_{k}^{\rm Occ} \Delta^*_{k\overline{a}}\Delta_{k\overline{b}} 
+    * \f}
+    * and
+    * \f[
+    *   \Delta_{pq} = \sum_{\mu\nu} C_{\mu p} S_{\mu\nu} C_{\nu p}
+    * \f]
+    * The diagnostic for UHF spin contamination is given by
+    * \f[
+    * \left< \hat{S}^2 \right>_{\rm UHF} = \left< \hat{S}^2 \right>_{\rm exact}
+    *  + N_{\beta} - \sum_i^{\rm Occ}\sum_{\overline{j}}^{\rm Occ} \vert \Delta_{i\overline{j}} \vert^2
+    * \f]
+    * with
+    * \f[
+    * \left< \hat{S}^2 \right>_{\rm exact} = \frac{N_\alpha-N_\beta}{2} 
+    *  \left( \frac{N_\alpha-N_\beta+2}{2} \right)
+    * \f]
+    * and is also printed out to the output file.
+    *
     * \note Useful options:
-    *   - `CIS_NSTATES` - Number of lowest-energy excited states to include. Default: `-1` (means all states are saved).
     *   - `CIS_TYPE`    - Algorithm of CIS. Available: `DAVIDSON_LIU` (Default), `DIRECT_EXPLICIT` (only RHF reference), `EXPLICIT`.
     *   - `CIS_SCHWARTZ_CUTOFF`  - Cutoff for Schwartz ERI screening. Default: 0.0. Relevant if `DAVIDSON_LIU` or `DIRECT_EXPLICIT` are chosen as CIS type.
     *   - For UHF references, SAD guess might lead to triplet instabilities. It is then better to set `CORE` as the UHF guess
@@ -190,6 +229,7 @@ class CISComputer : public DavidsonLiu {
    static std::shared_ptr<CISComputer> build(const std::string& type, 
                                              std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt,
                                              const std::string& reference = "");
+    //->add this option for convenience*   - `CIS_NSTATES` - Number of lowest-energy excited states to include. Default: `-1` (means all states are saved).
 
    /// Destructor
    virtual ~CISComputer();
@@ -259,6 +299,9 @@ class CISComputer : public DavidsonLiu {
    /// Compute oscillator strength for *i*->*j* transition
    double oscillator_strength(int i, int j) const;
 
+   /// Compute <S2> expectation value for the *i*th state
+   double s2(int i) const;
+
    /// Determine electronic state
    void determine_electronic_state(int& I);
 
@@ -314,12 +357,15 @@ class CISComputer : public DavidsonLiu {
 
    CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt, psi::IntegralTransform::TransformationType trans_type);
 
+   virtual void print_header_(void);
    virtual void set_nstates_(void);
    virtual void allocate_memory(void);
    virtual void allocate_hamiltonian_(void);
    virtual void prepare_for_cis_(void);
    virtual void build_hamiltonian_(void) = 0;
    virtual void diagonalize_hamiltonian_(void);
+   virtual void print_excited_states_(void);
+   virtual void print_excited_state_character_(int I) = 0;
 
    virtual void set_beta_(void) = 0;
    virtual void transform_integrals_(void);
@@ -330,12 +376,33 @@ class CISComputer : public DavidsonLiu {
   // --> private interface <-- //
   private:
    void common_init(void);
+   double compute_s2_reference(void);
+   double compute_s2_exact(void);
+
 };
 
 class R_CISComputer: public CISComputer {
   public:
    R_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~R_CISComputer(); 
+  protected:
+   virtual void print_excited_state_character_(int I);
+};
+
+class U_CISComputer: public CISComputer {
+  public:
+   U_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~U_CISComputer(); 
+  protected:
+   virtual void print_excited_state_character_(int I);
+};
+
+
+
+class R_CISComputer_Explicit: public R_CISComputer {
+  public:
+   R_CISComputer_Explicit(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~R_CISComputer_Explicit(); 
   protected:
    virtual void set_beta_(void);
    virtual void build_hamiltonian_(void);
@@ -385,7 +452,7 @@ class R_CISComputer: public CISComputer {
  * transformed to CMO's.
  *
  */
-class R_CISComputer_DL: public R_CISComputer {
+class R_CISComputer_DL: public R_CISComputer_Explicit {
   public:
    R_CISComputer_DL(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~R_CISComputer_DL(); 
@@ -402,7 +469,7 @@ class R_CISComputer_DL: public R_CISComputer {
    psi::SharedMatrix Ca_occ__, Ca_vir__;
 };
 
-class R_CISComputer_Direct: public R_CISComputer {
+class R_CISComputer_Direct: public R_CISComputer_Explicit {
   public:
    R_CISComputer_Direct(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~R_CISComputer_Direct(); 
@@ -411,10 +478,10 @@ class R_CISComputer_Direct: public R_CISComputer {
    virtual void transform_integrals_(void);
 };
 
-class U_CISComputer: public CISComputer {
+class U_CISComputer_Explicit: public U_CISComputer {
   public:
-   U_CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
-   virtual ~U_CISComputer(); 
+   U_CISComputer_Explicit(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   virtual ~U_CISComputer_Explicit(); 
   protected:
    virtual void set_beta_(void);
    virtual void build_hamiltonian_(void);
@@ -469,7 +536,7 @@ class U_CISComputer: public CISComputer {
  *
  */
 
-class U_CISComputer_DL: public U_CISComputer {
+class U_CISComputer_DL: public U_CISComputer_Explicit {
   public:
    U_CISComputer_DL(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
    virtual ~U_CISComputer_DL(); 

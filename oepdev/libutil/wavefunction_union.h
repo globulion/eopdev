@@ -132,6 +132,8 @@ class WavefunctionUnion : public Wavefunction
     std::vector<SharedBasisSet> l_auxiliary_;
     /// List of intermediate basis functions per molecule
     std::vector<SharedBasisSet> l_intermediate_;
+    /// List of guess basis functions per molecule
+    std::vector<SharedBasisSet> l_guess_;
     /// List of original isolated wavefunctions (electrons unrelaxed)
     std::vector<SharedWavefunction> l_wfn_;
     /// List of names of isolated wavefunctions
@@ -192,6 +194,8 @@ class WavefunctionUnion : public Wavefunction
      *  @param auxiliary_df_2 - basis set object for 2nd monomer
      *  @param intermediate_1 - basis set object for 1st monomer
      *  @param intermediate_2 - basis set object for 2nd monomer
+     *  @param guess_1        - basis set object for 1st monomer
+     *  @param guess_2        - basis set object for 2nd monomer
      *  @param wfn_1          - unperturbed wavefunction object
      *  @param wfn_2          - unperturbed wavefunction object
      *  @param options        - Psi4 options
@@ -201,6 +205,7 @@ class WavefunctionUnion : public Wavefunction
 		SharedMolecule dimer,
 		SharedBasisSet primary,
 		SharedBasisSet auxiliary_df,
+                SharedBasisSet guess,
 		SharedBasisSet primary_1,
 		SharedBasisSet primary_2,
 		SharedBasisSet auxiliary_1,
@@ -209,6 +214,8 @@ class WavefunctionUnion : public Wavefunction
 		SharedBasisSet auxiliary_df_2,
 		SharedBasisSet intermediate_1,
 		SharedBasisSet intermediate_2,
+		SharedBasisSet guess_1,
+		SharedBasisSet guess_2,
 		SharedWavefunction wfn_1,
 		SharedWavefunction wfn_2,
 		Options& options
@@ -278,6 +285,9 @@ class WavefunctionUnion : public Wavefunction
 
     /// Get the intermediate basis set object of the *n*th fragment
     SharedBasisSet l_intermediate (int n) const {return l_intermediate_[n];}
+
+    /// Get the guess basis set object of the *n*th fragment
+    SharedBasisSet l_guess (int n) const {return l_guess_[n];}
 
     /// Get the wavefunction object of the *n*th fragment
     SharedWavefunction l_wfn (int n) const {return l_wfn_[n];}
@@ -354,6 +364,8 @@ class WavefunctionUnion : public Wavefunction
 		SharedBasisSet auxiliary_df_2,
 		SharedBasisSet intermediate_1,
 		SharedBasisSet intermediate_2,
+		SharedBasisSet guess_1,
+		SharedBasisSet guess_2,
 		SharedWavefunction wfn_1,
 		SharedWavefunction wfn_2
 		);

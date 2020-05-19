@@ -110,8 +110,9 @@ double compute_distance(psi::SharedVector v1,
 /** \brief Solve RHF-SCF equations for a given molecule in a given basis set.
  *
  *  @param molecule psi::SharedMolecule object with molecule
- *  @param primary shared primary basis set 
- *  @param auxiliary shared auxiliary basis set 
+ *  @param primary basis set 
+ *  @param auxiliary basis set 
+ *  @param guess basis set 
  *  @param functional DFT functional
  *  @param options psi::Options object
  *  @param psio psi::PSIO object
@@ -123,6 +124,7 @@ std::shared_ptr<Wavefunction>
 solve_scf(std::shared_ptr<Molecule> molecule, 
           std::shared_ptr<BasisSet> primary, 
 	  std::shared_ptr<BasisSet> auxiliary,
+          std::shared_ptr<BasisSet> guess,
           std::shared_ptr<SuperFunctional> functional,
           Options& options,
           std::shared_ptr<PSIO> psio,

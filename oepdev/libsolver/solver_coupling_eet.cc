@@ -510,7 +510,7 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   if (options_.get_bool("TI_CIS_SCF_FOCK_MATRIX")) {
      const int nbf = wfn_union_->basisset()->nbf();
      psi::SharedWavefunction wfn_dimer = oepdev::solve_scf(wfn_union_->molecule(), wfn_union_->basisset(), 
-                                wfn_union_->get_basisset("BASIS_DF_SCF"),
+                                wfn_union_->get_basisset("BASIS_DF_SCF"), wfn_union_->get_basisset("BASIS_GUESS"),
                                 oepdev::create_superfunctional("HF", options_), options_, psi::PSIO::shared_object(), false);
      for (int i=0; i<nbf_A; ++i) {
           for (int j=0; j<nbf_B; ++j) {

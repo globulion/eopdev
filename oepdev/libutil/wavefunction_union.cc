@@ -41,8 +41,10 @@ WavefunctionUnion::WavefunctionUnion(SharedWavefunction ref_wfn, Options& option
    SharedBasisSet auxiliary_df_2  = basissets_["BASIS_DF_SCF_2"];
    SharedBasisSet intermediate_1  = basissets_["BASIS_INT_OEP_1"];
    SharedBasisSet intermediate_2  = basissets_["BASIS_INT_OEP_2"];
-   SharedWavefunction wfn_1  = solve_scf(molecule_1, primary_1, auxiliary_df_1, functional, options_, psi::PSIO::shared_object());
-   SharedWavefunction wfn_2  = solve_scf(molecule_2, primary_2, auxiliary_df_2, functional, options_, psi::PSIO::shared_object());
+   SharedBasisSet guess_1  = basissets_["BASIS_GUESS_1"];
+   SharedBasisSet guess_2  = basissets_["BASIS_GUESS_2"];
+   SharedWavefunction wfn_1  = solve_scf(molecule_1, primary_1, auxiliary_df_1, guess_1, functional, options_, psi::PSIO::shared_object());
+   SharedWavefunction wfn_2  = solve_scf(molecule_2, primary_2, auxiliary_df_2, guess_2, functional, options_, psi::PSIO::shared_object());
 
    // Finish initialize
    common_init(ref_wfn, molecule_1, molecule_2, 
@@ -50,6 +52,7 @@ WavefunctionUnion::WavefunctionUnion(SharedWavefunction ref_wfn, Options& option
 			auxiliary_1, auxiliary_2, 
 			auxiliary_df_1, auxiliary_df_2, 
 			intermediate_1, intermediate_2, 
+                        guess_1, guess_2,
 			wfn_1, wfn_2);
 }
 
@@ -57,6 +60,7 @@ WavefunctionUnion::WavefunctionUnion(
 		SharedMolecule dimer,
 		SharedBasisSet primary,
 		SharedBasisSet auxiliary_df,
+                SharedBasisSet guess,
 		SharedBasisSet primary_1,
 		SharedBasisSet primary_2,
 		SharedBasisSet auxiliary_1,
@@ -65,6 +69,8 @@ WavefunctionUnion::WavefunctionUnion(
 		SharedBasisSet auxiliary_df_2,
 		SharedBasisSet intermediate_1,
 		SharedBasisSet intermediate_2,
+		SharedBasisSet guess_1,
+		SharedBasisSet guess_2,
 		SharedWavefunction wfn_1,
 		SharedWavefunction wfn_2,
 		Options& options
@@ -88,10 +94,11 @@ WavefunctionUnion::WavefunctionUnion(
        PSIEXCEPTION(" OEPDEV: NotImplementedError Wavefunction init. So far only DIMERS (nfrag=2) are supported!\n");
 
    // Create full dimer wavefunction
-   SharedWavefunction ref_wfn = oepdev::solve_scf(dimer, primary, auxiliary_df, 
+   SharedWavefunction ref_wfn = oepdev::solve_scf(dimer, primary, auxiliary_df, guess,
    		                create_superfunctional("HF", options_), options_, psi::PSIO::shared_object(), false);
    shallow_copy(ref_wfn);
    set_basisset("BASIS_DF_SCF", auxiliary_df);
+   set_basisset("BASIS_GUESS", guess);
 
    // Extract monomers
    SharedMolecule molecule_1 = extract_monomer(molecule_, 1);
@@ -106,6 +113,7 @@ WavefunctionUnion::WavefunctionUnion(
 			auxiliary_1, auxiliary_2, 
 			auxiliary_df_1, auxiliary_df_2, 
 			intermediate_1, intermediate_2, 
+                        guess_1, guess_2,
 			wfn_1, wfn_2);
 }
 
@@ -124,6 +132,8 @@ void WavefunctionUnion::common_init(
 		SharedBasisSet auxiliary_df_2,
 		SharedBasisSet intermediate_1,
 		SharedBasisSet intermediate_2,
+		SharedBasisSet guess_1,
+		SharedBasisSet guess_2,
 		SharedWavefunction wfn_1,
 		SharedWavefunction wfn_2
 		)
@@ -144,6 +154,7 @@ void WavefunctionUnion::common_init(
    l_primary_       .push_back(primary_1                ); l_primary_       .push_back(primary_2                   );
    l_auxiliary_     .push_back(auxiliary_1              ); l_auxiliary_     .push_back(auxiliary_2                 );
    l_intermediate_  .push_back(intermediate_1           ); l_intermediate_  .push_back(intermediate_2              );
+   l_guess_         .push_back(guess_1                  ); l_guess_         .push_back(guess_2                     );
    l_name_          .push_back(wfn_1->name()            ); l_name_          .push_back(wfn_2->name()               );
    l_nbf_           .push_back(primary_1->nbf()         ); l_nbf_           .push_back(primary_2->nbf()            );
    l_nmo_           .push_back(wfn_1->nmo()             ); l_nmo_           .push_back(wfn_2->nmo()                );

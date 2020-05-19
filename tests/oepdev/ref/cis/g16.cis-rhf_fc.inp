@@ -1,0 +1,9 @@
+#P CIS(50-50,NStates=300,Conver=10,FC,NonAdiabaticCoupling)/6-31G* 6D Density=RhoCI GFPrint NoSymm SCF(conver=11,novaracc,FinalIteration,QC,VeryTightLinEq)
+
+test
+
+0 1
+O         -3.08471        1.12313        0.00396
+H         -2.11791        0.90877        0.01763
+H         -3.12325        2.07922       -0.24921
+

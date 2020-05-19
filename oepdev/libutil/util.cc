@@ -9,15 +9,18 @@ extern "C" PSI_API
 void preambule(void) {
       outfile->Printf("                                                                             \n");
       outfile->Printf("    -------------------------------------------------------------------------\n");
-      outfile->Printf("          OepDev: One-Electron Effective Potentials Development Routine      \n");
-      outfile->Printf("                               OepDev 0.1 (no release)                       \n");
+      outfile->Printf("          OepDev: One-Electron Effective Potentials Development Routines     \n");
+      outfile->Printf("                               OepDev 0.2 (pre-release)                      \n");
       outfile->Printf("                                                                             \n");
-      outfile->Printf("                         Git: Rev {}                                         \n");
+      outfile->Printf("                         Git: Rev {203ae6c}                                  \n");
       outfile->Printf("                                                                             \n");
       outfile->Printf("    Bartosz Błasiak                                                          \n");
       outfile->Printf("                                                                             \n");
       outfile->Printf("    References:                                                              \n");
-      outfile->Printf("                                                                             \n");
+      outfile->Printf("     [1] B. Błasiak, J. Chem. Phys. 149, 16 (2018), 164115                   \n");
+      outfile->Printf("     [2] B. Błasiak, J. D. Bednarska, M. Chołuj, W. Bartkowiak, (2020),      \n");
+      outfile->Printf("                   arXiv:2002.00766                                          \n");
+      outfile->Printf("     [3] B. Błasiak, R. W. Góra, W. Bartkowiak, (2020), arXiv:2002.00778     \n");
       outfile->Printf("    -------------------------------------------------------------------------\n");
       outfile->Printf("                                                                             \n");
 }
@@ -69,21 +72,73 @@ std::shared_ptr<Wavefunction>
 solve_scf(std::shared_ptr<Molecule> molecule, 
           std::shared_ptr<BasisSet> primary, 
 	  std::shared_ptr<BasisSet> auxiliary,
+	  std::shared_ptr<BasisSet> guess,
           std::shared_ptr<SuperFunctional> functional,
           Options& options,
-          std::shared_ptr<PSIO> psio,
+          std::shared_ptr<PSIO> psio, 
 	  bool compute_mints) 
 {
-    SharedWavefunction scf_base(new Wavefunction(molecule, primary, options));
-    scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
 
-    // Compute integrals (write IWL entry to PSIO)
-    if (compute_mints) {
-      std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
-      mints->integrals();
+    psi::SharedWavefunction scf;
+
+    // Guess: Hcore in guess basis --> projection to primary basis
+    if (options.get_bool("OEPDEV_BASIS_GUESS")==true) {
+
+       // ===> Step 1: Guess SCF <=== //
+       outfile->Printf("\n @solve_scf: Starting SCF in Guess Basis... \n\n");
+       SharedWavefunction scf_base_guess(new Wavefunction(molecule, guess, options));                     
+       //bool opt_stash = options.get_bool("DF_SCF_GUESS");
+       //options.set_bool("SCF", "DF_SCF_GUESS", false);
+       scf_base_guess->set_basisset("DF_BASIS_SCF", auxiliary);//TODO
+                                                                                                      
+       if (compute_mints) {
+         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(guess);
+         mints->integrals();
+       }
+       SharedWavefunction scf_guess = std::make_shared<psi::scf::RHF>(scf_base_guess, functional, options, psio);
+       scf_guess->compute_energy();
+
+       // ===> Step 2: Basis set projection
+       outfile->Printf("\n @solve_scf: Basis Set Projection to Target Basis... \n\n");
+       psi::SharedMatrix pCa = scf_guess->basis_projection(scf_guess->Ca_subset("AO","OCC"),scf_guess->nalphapi(),
+                                                           guess, primary);
+       psi::SharedMatrix pCb = scf_guess->basis_projection(scf_guess->Cb_subset("AO","OCC"),scf_guess->nbetapi(),
+                                                           guess, primary);
+       //options.set_bool("SCF", "DF_SCF_GUESS", opt_stash);
+
+       // ===> Step 3: Target SCF <=== //
+       outfile->Printf("\n @solve_scf: Starting SCF in Target Basis... \n\n");
+       SharedWavefunction scf_base(new Wavefunction(molecule, primary, options));                     
+       scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
+                                                                                                     
+       if (compute_mints) {
+         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
+         mints->integrals();
+       }
+       std::shared_ptr<psi::scf::RHF> scf_ = std::make_shared<psi::scf::RHF>(scf_base, functional, options, psio);
+       scf_->guess_Ca(pCa);
+       scf_->guess_Cb(pCb);
+       scf_->compute_energy();
+       scf = scf_;
+
+
+    // Guess: Hcore in primary basis
+    } else {
+       outfile->Printf("\n @solve_scf: Starting SCF in Target Basis... \n\n");
+       SharedWavefunction scf_base(new Wavefunction(molecule, primary, options));                     
+       scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
+                                                                                                      
+       // Compute integrals (write IWL entry to PSIO)
+       if (compute_mints) {
+         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
+         mints->integrals();
+       }
+       scf = std::make_shared<psi::scf::RHF>(scf_base, functional, options, psio);
+       scf->compute_energy();
+
+
     }
-    SharedWavefunction scf = std::make_shared<psi::scf::RHF>(scf_base, functional, options, psio);
-    scf->compute_energy();
+    outfile->Printf("\n @solve_scf: Done. \n\n");
     return scf;
 }
 
