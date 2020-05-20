@@ -53,6 +53,8 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
   int nbf_2 = wfn_union_->l_nbf(1);
 
   // ===> One electron part <=== //
+  clock_t t_time = -clock(); // Clock BEGIN
+
   // Term 1//
   std::shared_ptr<psi::Matrix> VaoB12    = std::make_shared<psi::Matrix>("VaoB(1,2)" , nbf_1, nbf_2);
   std::shared_ptr<psi::Matrix> VaoB11    = std::make_shared<psi::Matrix>("VaoB(1,1)" , nbf_1, nbf_1);
@@ -571,6 +573,8 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
   E_ct_2_13 *= 2.0;
   E_ct_2_23 *= 2.0;
 
+  t_time += clock(); // Clock END
+  cout << " o TIME OL  : " << ((double)t_time/CLOCKS_PER_SEC) << endl;
 
   //Whole CT Energy E_CT(A+B-) + E_CT(A-B+)//
   double E_ct = E_ct_1 + E_ct_2;
@@ -1237,10 +1241,6 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2a(fact_1p2a.ao_overlap());
 
-  clock_t t_time = -clock(); // Clock BEGIN
-  ovlInt_1a2p->compute(Sao_1a2p);
-  ovlInt_1p2a->compute(Sao_1p2a);
-
 
   // ---> Canonical MO's: LCAO and energies <--- //
   std::shared_ptr<psi::Matrix> Ca_occ_1 = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
@@ -1252,9 +1252,12 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   std::shared_ptr<psi::Vector> e_vir_1  = wfn_union_->l_wfn(0)->epsilon_a_subset("MO","VIR");
   std::shared_ptr<psi::Vector> e_vir_2  = wfn_union_->l_wfn(1)->epsilon_a_subset("MO","VIR");
 
+  clock_t t_time = -clock(); // Clock BEGIN
+  ovlInt_1a2p->compute(Sao_1a2p);
+  ovlInt_1p2a->compute(Sao_1p2a);
+
   std::shared_ptr<psi::Matrix> S1 = psi::Matrix::doublet(Ca_occ_1, Sao_1p2a, true, false); // OCC(A) x AUX(B)
   std::shared_ptr<psi::Matrix> S2 = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true ); // OCC(B) x AUX(A)
-
 
 
   // ---> Localized occupied orbitals <--- //

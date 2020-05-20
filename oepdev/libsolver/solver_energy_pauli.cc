@@ -178,6 +178,7 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
 
   // ---> Allocate <--- //
   psi::IntegralFactory fact(wfn_union_->basisset());
+  clock_t t_time = -clock(); // Clock BEGIN
 
   std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> kinInt(fact.ao_kinetic());
@@ -261,6 +262,9 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
 
   // ===> Compute Exchange Energy <=== //
   e_ex = compute_pure_exchange_energy();
+
+  t_time += clock(); // Clock END
+  cout << " o TIME HS       : " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
 
   // ---> Save <--- //
   psi::Process::environment.globals["EINT REP HAYES-STONE KCAL"] =(e_1+e_2)     *OEPDEV_AU_KcalPerMole;
@@ -347,6 +351,8 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   psi::IntegralFactory fact_21(wfn_union_->l_primary(1), wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(0));
   psi::IntegralFactory fact_11(wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0));
   psi::IntegralFactory fact_22(wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1));
+  clock_t t_time = -clock(); // Clock BEGIN
+
   std::shared_ptr<psi::OneBodyAOInt> oneInt, ovlInt(fact_12.ao_overlap());
   std::shared_ptr<psi::PotentialInt> potInt_1 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(),
                                                                                     wfn_union_->l_primary(0),
@@ -487,6 +493,9 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
   //psi::timer_off("SOLVER: Repulsion Energy Calculations (Murrell et al.)");
   psi::timer_off("Solver E(Paul) Murrell-etal     ");
+
+  t_time += clock(); // Clock END
+  cout << " o TIME MRL      : " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
 
   // ===> Compute the Exchange Energy <=== //
   double e_exch = compute_pure_exchange_energy();
@@ -757,8 +766,11 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
   int nat_2 = mol_2->natom();
 
   // Compute orbital centroids as well as overlap, kinetic and Fock matrix elements in MO basis
+  clock_t t_time = -clock(); // Clock BEGIN
   std::shared_ptr<psi::Matrix> Sao12     = std::make_shared<psi::Matrix>("Sao(1,2)", nbf_1, nbf_2);
   std::shared_ptr<psi::Matrix> Tao12     = std::make_shared<psi::Matrix>("Tao(1,2)", nbf_1, nbf_2);
+  t_time += clock(); // Clock END
+
   std::vector<std::shared_ptr<psi::Matrix>> R1ao, R2ao;
   std::vector<std::shared_ptr<psi::Vector>> R1mo, R2mo;
 
@@ -772,13 +784,17 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
   psi::IntegralFactory fact_11(wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0), wfn_union_->l_primary(0));
   psi::IntegralFactory fact_22(wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1), wfn_union_->l_primary(1));
 
+  t_time -= clock(); // Clock BEGIN
   std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact_12.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> kinInt(fact_12.ao_kinetic());
+  t_time += clock(); // Clock END
   std::shared_ptr<psi::OneBodyAOInt> dipInt1(fact_11.ao_dipole());
   std::shared_ptr<psi::OneBodyAOInt> dipInt2(fact_22.ao_dipole());
 
+  t_time -= clock(); // Clock BEGIN
   ovlInt->compute(Sao12);
   kinInt->compute(Tao12);
+  t_time += clock(); // Clock END
   dipInt1->compute(R1ao);
   dipInt2->compute(R2ao);
 
@@ -799,17 +815,24 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
        R2ao[z].reset(); 
   }
 
+  t_time -= clock(); // Clock BEGIN
   std::shared_ptr<psi::Matrix> Smo12 = psi::Matrix::triplet(Ca_occ_A, Sao12 , Ca_occ_B, true, false, false);
   std::shared_ptr<psi::Matrix> Tmo12 = psi::Matrix::triplet(Ca_occ_A, Tao12 , Ca_occ_B, true, false, false);
+  t_time += clock(); // Clock END
   std::shared_ptr<psi::Matrix> F1    = psi::Matrix::triplet(Ca_occ_A, wfn_union_->l_wfn(0)->Fa(), Ca_occ_A, true, false, false);
   std::shared_ptr<psi::Matrix> F2    = psi::Matrix::triplet(Ca_occ_B, wfn_union_->l_wfn(1)->Fa(), Ca_occ_B, true, false, false);
+  t_time -= clock(); // Clock BEGIN
   std::shared_ptr<psi::Matrix> SF1S  = psi::Matrix::triplet(Smo12, F1, Smo12, true, false, false);
   std::shared_ptr<psi::Matrix> SF2S  = psi::Matrix::triplet(Smo12, F2, Smo12, false, false, true);
 
   e_s1 = SF1S->trace() + SF2S->trace() - 2.0 * Smo12->vector_dot(Tmo12);
+  t_time += clock(); // Clock END
+  cout << " o TIME EFP2 (S1): " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
 
   SF1S.reset();
   SF2S.reset();
+
+  clock_t t_time_rest = -clock(); // Clock BEGIN
 
   double** S = Smo12->pointer();
   std::shared_ptr<psi::Vector> ss1 = std::make_shared<psi::Vector>("s^2 (1)", wfn_union_->l_ndocc(0));
@@ -901,12 +924,17 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
   // ---> Finalize with repulsion <--- //
   e_s1 *=-2.0;
   e_s2 *= 2.0;
+  t_time_rest += clock(); // Clock END
+
   //psi::timer_off("SOLVER: Repulsion Energy Calculations (EFP2)");
   psi::timer_off("Solver E(Paul) EFP2             ");
 
   // ===> Compute the Exchange Energy <=== //
   double e_exch_pure = compute_pure_exchange_energy();
+  t_time_rest -= clock(); // Clock BEGIN
   double e_exch_efp2 = compute_efp2_exchange_energy(Smo12, R1mo, R2mo);
+  t_time_rest += clock(); // Clock END
+  cout << " o TIME EFP2 (RS): " << ((double)t_time_rest/CLOCKS_PER_SEC * 1000.0) << endl;
 
   // ===> Finish <=== //
   e = e_s1 + e_s2;
@@ -984,14 +1012,17 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
   int nbf_a1 = wfn_union_->l_auxiliary(0)->nbf();
   int nbf_a2 = wfn_union_->l_auxiliary(1)->nbf();
 
+  clock_t t_time = -clock(); // Clock BEGIN
   std::shared_ptr<psi::Matrix> Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_p1, nbf_p2);
   std::shared_ptr<psi::Matrix> Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
   std::shared_ptr<psi::Matrix> Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_p1, nbf_a2);
+  t_time += clock(); // Clock END
 
   psi::IntegralFactory fact_1p2p(wfn_union_->l_primary  (0), wfn_union_->l_primary  (1), wfn_union_->l_primary  (0), wfn_union_->l_primary  (1));
   psi::IntegralFactory fact_1a2p(wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1), wfn_union_->l_auxiliary(0), wfn_union_->l_primary  (1));
   psi::IntegralFactory fact_1p2a(wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1), wfn_union_->l_primary  (0), wfn_union_->l_auxiliary(1));
 
+  t_time -= clock(); // Clock BEGIN
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2a(fact_1p2a.ao_overlap());
@@ -999,10 +1030,12 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
   ovlInt_1p2p->compute(Sao_1p2p);
   ovlInt_1a2p->compute(Sao_1a2p);
   ovlInt_1p2a->compute(Sao_1p2a);
+  t_time += clock(); // Clock END
 
   std::shared_ptr<psi::Matrix> Ca_occ_1 = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
   std::shared_ptr<psi::Matrix> Ca_occ_2 = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
 
+  t_time -= clock(); // Clock BEGIN
   std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(Ca_occ_1, Sao_1p2p, Ca_occ_2, true, false, false);
   std::shared_ptr<psi::Matrix> Sba = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true);
   std::shared_ptr<psi::Matrix> Sab = psi::Matrix::doublet(Ca_occ_1, Sao_1p2a, true, false);
@@ -1014,6 +1047,8 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
                                                           true, false, false);
   e_s1  = SSG1->trace() + SSG2->trace();
   e_s1 *= -2.0;
+  t_time += clock(); // Clock END
+  cout << " o TIME OEP  (S1): " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
 
   // ===> Compute S^-2 term <=== //
   SharedMTPConv conv_aB = oep_1->oep("Otto-Ladik.S2.CAMM.a").dmtp->energy(oep_2->oep("Otto-Ladik.S2.CAMM.A").dmtp);
@@ -1039,9 +1074,9 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
   e = e_s1 + e_s2;
 
   // ---> Save <--- //
-  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM KCAL"   ] = e   *OEPDEV_AU_KcalPerMole;
-  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM:S1 KCAL"] = e_s1*OEPDEV_AU_KcalPerMole;
-  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM:S2 KCAL"] = e_s2*OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL-1 KCAL"   ] = e   *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL-1 S1 KCAL"] = e_s1*OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL-1 S2 KCAL"] = e_s2*OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > -1) {
@@ -1222,9 +1257,9 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
   e = e_s1 + e_s2;
 
   // ---> Save <--- //
-  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP KCAL"   ] = e   *OEPDEV_AU_KcalPerMole;
-  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP:S1 KCAL"] = e_s1*OEPDEV_AU_KcalPerMole;
-  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP:S2 KCAL"] = e_s2*OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL-2 KCAL"   ] = e   *OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL-2 S1 KCAL"] = e_s1*OEPDEV_AU_KcalPerMole;
+  psi::Process::environment.globals["EINT REP OEP-MURRELL-ETAL-2 S2 KCAL"] = e_s2*OEPDEV_AU_KcalPerMole;
 
   // ---> Print <--- //
   if (wfn_union_->options().get_int("PRINT") > -1) {

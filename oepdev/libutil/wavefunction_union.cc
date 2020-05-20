@@ -369,6 +369,8 @@ void WavefunctionUnion::localize_orbitals() {
 
 void WavefunctionUnion::transform_integrals() 
 {
+  clock_t t_time = -clock(); // Clock BEGIN
+
     SharedMOSpaceVector spaces;
     SharedMOSpace space_1o = l_mospace(0,"OCC");
     SharedMOSpace space_2o = l_mospace(1,"OCC");
@@ -460,6 +462,10 @@ void WavefunctionUnion::transform_integrals()
     timer_on("Trans (YJ|IJ)");
     integrals_->transform_tei(space_2v, space_2o, space_1o, space_2o, IntegralTransform::HalfTrans::MakeAndNuke);
     timer_off("Trans (YJ|IJ)");
+
+
+  t_time += clock(); // Clock END
+  cout << " o TIME Integral transformation (WFN UNION)  : " << ((double)t_time/CLOCKS_PER_SEC) << endl;
 
 }
 

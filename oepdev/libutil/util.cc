@@ -89,7 +89,7 @@ solve_scf(std::shared_ptr<Molecule> molecule,
        SharedWavefunction scf_base_guess(new Wavefunction(molecule, guess, options));                     
        //bool opt_stash = options.get_bool("DF_SCF_GUESS");
        //options.set_bool("SCF", "DF_SCF_GUESS", false);
-       scf_base_guess->set_basisset("DF_BASIS_SCF", auxiliary);//TODO
+       scf_base_guess->set_basisset("DF_BASIS_SCF", auxiliary);//TODO -> perhaps better use smaller basis adequate for 3-21G
                                                                                                       
        if (compute_mints) {
          std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(guess);
