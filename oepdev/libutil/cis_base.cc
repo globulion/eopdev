@@ -339,6 +339,7 @@ void CISComputer::print_excited_states_(void) {
  }
 }
 
+// Abstract
 void CISComputer::print_excited_state_character_(int I) {}
 
 void CISComputer::set_nstates_() {
@@ -366,6 +367,7 @@ void CISComputer::compute(void) {
  this->prepare_for_cis_();
  this->build_hamiltonian_();
  this->diagonalize_hamiltonian_(); 
+ this->standardize_amplitudes_();
  this->print_excited_states_();
 
  // Clear memory
@@ -408,56 +410,23 @@ void CISComputer::diagonalize_hamiltonian_(void) {
  }
 }
 
-void CISComputer::davidson_liu_compute_sigma(void) {}
-void CISComputer::davidson_liu_compute_diagonal_hamiltonian(void) {}
+void CISComputer::standardize_amplitudes_(void) {
+ if (options_.get_bool("CIS_STANDARDIZE_AMPLITUDES")==true) {
 
-std::shared_ptr<CISComputer> CISComputer::build(const std::string& type, 
-                                                std::shared_ptr<psi::Wavefunction> ref_wfn, 
-                                                psi::Options& opt, const std::string& reference) {
-
-  // Determine reference if not specified
-  std::string ref = reference;
-  if (ref.empty()) {
-      if (!ref_wfn->same_a_b_orbs() && !ref_wfn->same_a_b_dens()) {ref += "UHF";}
-      else { ref += "RHF";}
-  }
-
-  // Sanity checks
-  bool b = false;
-  for (auto &refc : CISComputer::reference_types) {
-       if (ref == refc) {b = true; break;}
-  }
-  if (!b) {throw psi::PSIEXCEPTION("Incorrect reference wavefunction type chosen. Only RHF and UHF are available");}
-
-  if (ref =="RHF" and ref_wfn->molecule()->multiplicity() != 1)
-   throw psi::PSIEXCEPTION("RHF reference cannot be set for open-shell system!");
-
-  // Create
-  std::shared_ptr<CISComputer> cis;
-  std::string cis_type = opt.get_str("CIS_TYPE");
-
-  if ((ref_wfn->molecule()->multiplicity() != 1) || (ref == "UHF")) { 
-     if (cis_type == "DAVIDSON_LIU") {
-	 cis = std::make_shared<U_CISComputer_DL>(ref_wfn, opt);
-     } else {
-	 cis = std::make_shared<U_CISComputer_Explicit>(ref_wfn, opt);
+     for (int I=0; I<nstates_; ++I) {
+          double dominant_amplitude = 0.0;
+          for (int k=0; k<U_->nrow(); ++k) {
+               double u = U_->get(k,I);
+               if (std::abs(u) > std::abs(dominant_amplitude)) dominant_amplitude = u;
+          }
+          if (dominant_amplitude < 0.0) U_->scale_column(0,I,-1.0);
      }
-  }
-  else {
-     if (cis_type == "DIRECT_EXPLICIT") { 
-	 cis = std::make_shared<R_CISComputer_Direct>(ref_wfn, opt); 
-     } else 
-     if (cis_type == "DAVIDSON_LIU") {
-         cis = std::make_shared<R_CISComputer_DL>(ref_wfn, opt);
-     } else { // Explicit CIS
-	 cis = std::make_shared<R_CISComputer_Explicit>(ref_wfn, opt);
-     }
-  }
-  
-  // Return 
-  return cis;
+
+ }
 }
 
+void CISComputer::davidson_liu_compute_sigma(void) {}
+void CISComputer::davidson_liu_compute_diagonal_hamiltonian(void) {}
 
 std::pair<double,double> CISComputer::U_homo_lumo(int I, int h, int l) const {
   int i  = naocc_-1-h;
@@ -772,7 +741,53 @@ std::shared_ptr<CISData> CISComputer::data(int I, int h, int l, bool symm) {
   return cis_data;
 }
 
+// Build routine
+std::shared_ptr<CISComputer> CISComputer::build(const std::string& type, 
+                                                std::shared_ptr<psi::Wavefunction> ref_wfn, 
+                                                psi::Options& opt, const std::string& reference) {
 
+  // Determine reference if not specified
+  std::string ref = reference;
+  if (ref.empty()) {
+      if (!ref_wfn->same_a_b_orbs() && !ref_wfn->same_a_b_dens()) {ref += "UHF";}
+      else { ref += "RHF";}
+  }
+
+  // Sanity checks
+  bool b = false;
+  for (auto &refc : CISComputer::reference_types) {
+       if (ref == refc) {b = true; break;}
+  }
+  if (!b) {throw psi::PSIEXCEPTION("Incorrect reference wavefunction type chosen. Only RHF and UHF are available");}
+
+  if (ref =="RHF" and ref_wfn->molecule()->multiplicity() != 1)
+   throw psi::PSIEXCEPTION("RHF reference cannot be set for open-shell system!");
+
+  // Create
+  std::shared_ptr<CISComputer> cis;
+  std::string cis_type = opt.get_str("CIS_TYPE");
+
+  if ((ref_wfn->molecule()->multiplicity() != 1) || (ref == "UHF")) { 
+     if (cis_type == "DAVIDSON_LIU") {
+	 cis = std::make_shared<U_CISComputer_DL>(ref_wfn, opt);
+     } else {
+	 cis = std::make_shared<U_CISComputer_Explicit>(ref_wfn, opt);
+     }
+  }
+  else {
+     if (cis_type == "DIRECT_EXPLICIT") { 
+	 cis = std::make_shared<R_CISComputer_Direct>(ref_wfn, opt); 
+     } else 
+     if (cis_type == "DAVIDSON_LIU") {
+         cis = std::make_shared<R_CISComputer_DL>(ref_wfn, opt);
+     } else { // Explicit CIS
+	 cis = std::make_shared<R_CISComputer_Explicit>(ref_wfn, opt);
+     }
+  }
+  
+  // Return 
+  return cis;
+}
 
 
 } // EndNameSpace oepdev

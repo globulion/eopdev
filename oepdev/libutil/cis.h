@@ -224,6 +224,8 @@ class CISComputer : public DavidsonLiu {
     * \note Useful options:
     *   - `CIS_TYPE`    - Algorithm of CIS. Available: `DAVIDSON_LIU` (Default), `DIRECT_EXPLICIT` (only RHF reference), `EXPLICIT`.
     *   - `CIS_SCHWARTZ_CUTOFF`  - Cutoff for Schwartz ERI screening. Default: 0.0. Relevant if `DAVIDSON_LIU` or `DIRECT_EXPLICIT` are chosen as CIS type.
+    *   - `CIS_STANDARDIZE_AMPLITUDES`  - If true, CIS amplitudes of each excited state are rephased so that the leading amplitude is positive. Default: true.
+    *   - `OEPDEV_AMPLITUDE_PRINT_THRESHOLD`  - Control threshold how many CIS amplitudes to print to the output. Default: 0.1.
     *   - For UHF references, SAD guess might lead to triplet instabilities. It is then better to set `CORE` as the UHF guess
     */
    static std::shared_ptr<CISComputer> build(const std::string& type, 
@@ -364,6 +366,7 @@ class CISComputer : public DavidsonLiu {
    virtual void prepare_for_cis_(void);
    virtual void build_hamiltonian_(void) = 0;
    virtual void diagonalize_hamiltonian_(void);
+   virtual void standardize_amplitudes_(void);
    virtual void print_excited_states_(void);
    virtual void print_excited_state_character_(int I) = 0;
 

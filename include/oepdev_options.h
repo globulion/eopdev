@@ -111,6 +111,7 @@ int read_options(std::string name, Options& options)
         options.add_int    ("PHASE_LUMO_B"                , 1                    );
 	options.add_str    ("CIS_TYPE"                    , "DAVIDSON_LIU"       );
         options.add_double ("CIS_SCHWARTZ_CUTOFF"         , 0.0                  );
+        options.add_bool   ("CIS_STANDARDIZE_AMPLITUDES"  , true                 );
         options.add_int    ("DAVIDSON_LIU_NROOTS"         , 1                    );
         options.add_double ("DAVIDSON_LIU_CONVER"         , 1.0E-10              );
         options.add_int    ("DAVIDSON_LIU_MAXITER"        , 500                  );
