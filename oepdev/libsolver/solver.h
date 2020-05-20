@@ -128,12 +128,12 @@ using SharedOEPotential        = std::shared_ptr<OEPotential>;
  *  <tr><td> `EINT REP EFP2:S1 KCAL` <td> Pauli repulsion: S^{-1} term
  *  <tr><td> `EINT REP EFP2:S2 KCAL` <td> Pauli repulsion: S^{-2} term
  * <tr><td colspan=2> <center><strong><i>OEP-based models</i></strong></center>
- *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM KCAL`    <td> Pauli repulsion: S1 term using GDF, S2 term using CAMM
- *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM:S1 KCAL` <td> S^{-1} term of the above total term
- *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-CAMM:S2 KCAL` <td> S^{-2} term of the above total term
- *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP KCAL`     <td> Pauli repulsion: S1 term using GDF, S2 term using ESP
- *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP:S1 KCAL`  <td> S^{-1} term of the above total term
- *  <tr><td> `EINT REP OEP-MURRELL-ETAL:S1-GDF/S2-ESP:S1 KCAL`  <td> S^{-2} term of the above total term
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL-1 KCAL`    <td> Pauli repulsion: S1 term using GDF, S2 term using CAMM
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL-1 S1 KCAL` <td> S^{-1} term of the above total term
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL-1 S2 KCAL` <td> S^{-2} term of the above total term
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL-2 KCAL`     <td> Pauli repulsion: S1 term using GDF, S2 term using ESP
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL-2 S1 KCAL`  <td> S^{-1} term of the above total term
+ *  <tr><td> `EINT REP OEP-MURRELL-ETAL-2 S1 KCAL`  <td> S^{-2} term of the above total term
  * <tr><td colspan=2> <center><strong>Charge-Transfer Interaction Energy</strong></center>
  * <tr><td colspan=2> <center><strong><i>EFP2 Model</i></strong></center>
  *  <tr><td> `EINT CT EFP2 KCAL` <td> Total charge-transfer energy (kcal/mole)
