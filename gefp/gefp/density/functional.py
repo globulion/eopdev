@@ -69,12 +69,15 @@ class XCFunctional(ABC, Density):
   o 'OEDI'- the oscillatory exponential decay        P         No
             of interpolates between MBB and
             MBB with zero exchange.                  
+  o 'IDF1'- interpolating density matrix functional  P         No
+            ???
 """
         if   name.lower() == 'hf'   : xc_functional =        HF_XCFunctional()
         elif name.lower() == 'mbb'  : xc_functional =       MBB_XCFunctional()
         elif name.lower() == 'gu'   : xc_functional =        GU_XCFunctional()
         elif name.lower() == 'bbc1' : xc_functional =      BBC1_XCFunctional()
         elif name.lower() == 'bbc2' : xc_functional =      BBC2_XCFunctional()
+        elif name.lower() == 'idf1' : xc_functional =      IDF1_XCFunctional(kwargs['parameters']) #TODO
         elif name.lower() == 'a1medi': xc_functional =    A_V1_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         elif name.lower() == 'a2medi': xc_functional =    A_V2_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         elif name.lower() == 'p2medi': xc_functional =    P_V2_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
@@ -87,6 +90,11 @@ class XCFunctional(ABC, Density):
     @staticmethod
     @abstractmethod
     def name(): pass
+
+    @property
+    def abbr(self): 
+        "Functional name abbreviation"
+        return default.upper()
 
     @staticmethod
     @abstractmethod
@@ -147,11 +155,6 @@ class XCFunctional(ABC, Density):
         "Gradient with respect to P and C"
         raise NotImplementedError("Gradient of %s energy is not implemented for PC sets." % self.abbr.upper())
 
-
-    @property
-    def abbr(self): 
-        "Functional name abbreviation"
-        return default.upper()
 
 
     # ----> Protected Interface (utilities) <---- #
@@ -461,10 +464,55 @@ class BBC2_XCFunctional(BBC1_XCFunctional):
                       f[i,j] = f_hf[i,j]
         return f
 
-
-class Interpolation_XCFunctional(XCFunctional):
+class Interpolating_XCFunctional(XCFunctional):
     """
- The New Class of Exchange-Correlation Functionals: Interpolation Functionals
+ The New Class of Exchange-Correlation Functionals: Interpolation Functionals: Abstract base.
+"""
+    def __init__(self, parameters):
+        super(Interpolating_XCFunctional, self).__init__()
+        self.parameters = parameters
+
+    @staticmethod
+    def fij(n, z, eps=1.0e-20): 
+        "z - unfolding parameter"
+        k = z
+        W = 1.0/float(k+1.0)
+        K = float(k*(k+1.0))
+        U = float(k+1.0)
+        f = MBB_XCFunctional.fij(n)
+        f = 2.0**W * ( f**U )
+        de= ( n[:,numpy.newaxis]**K + n[numpy.newaxis,:]**K )**W
+        for i in range(len(n)):
+            for j in range(len(n)):
+                if i==j: f[i,j] = n[i]
+                else:
+                  de_ij = de[i,j]
+                  if de_ij < eps: f[i,j] = 0.0
+                  else: f[i,j] = f[i,j] / de_ij
+        return f
+
+
+
+
+class IDF1_XCFunctional(Interpolating_XCFunctional):
+    """
+ 4-Component Interpolation Functional with MBB lower and HF upper bound.
+"""
+    def __init__(self, parameters):
+        super(IDF1_XCFunctional, self).__init__(parameters)
+
+    @staticmethod
+    def name(): return "IDF(MBB/HF) XC functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "IDF1"
+
+
+
+
+class JKOnly_Interpolating_XCFunctional(Interpolating_XCFunctional):
+    """
+ The New Class of Exchange-Correlation Functionals: Interpolation Functionals for JK-Only ansatz
 
  They differ in the model for the interpolation decay.
  Each functional has to provide its own coefficients, 
@@ -473,7 +521,7 @@ class Interpolation_XCFunctional(XCFunctional):
  Eg.: coeff = {'coefficient_name': coefficient_object}
 """
     def __init__(self, coeff, kmax=10):
-        super(Interpolation_XCFunctional, self).__init__()
+        super(JKOnly_Interpolating_XCFunctional, self).__init__(parameters=None) # change it because parameters are still used but in the old interface
         self._coeff  = coeff
         self._kmax   = kmax
 
@@ -541,7 +589,7 @@ class Interpolation_XCFunctional(XCFunctional):
         raise NotImplementedError
 
 
-class MEDI_XCFunctional(Interpolation_XCFunctional):
+class MEDI_XCFunctional(JKOnly_Interpolating_XCFunctional):
     """
  The New Class of Exchange-Correlation Functionals: 
  Interpolation Functionals with Monotonous Exponential Decay.
@@ -595,7 +643,7 @@ class V1_MEDI_XCFunctional(MEDI_XCFunctional):
         super(V1_MEDI_XCFunctional, self).__init__(coeff, kmax)
 
     def _interpolate_function(self): 
-       return Interpolation_XCFunctional._fij_bbbk_1
+       return JKOnly_Interpolating_XCFunctional._fij_bbbk_1
 
     def compute_ak(self, k, t):
         return t * math.exp(k*math.log(1.0 - t))
@@ -624,7 +672,7 @@ class V2_MEDI_XCFunctional(MEDI_XCFunctional):
         super(V2_MEDI_XCFunctional, self).__init__(coeff, kmax)
 
     def _interpolate_function(self): 
-       return Interpolation_XCFunctional._fij_bbbk_2
+       return JKOnly_Interpolating_XCFunctional._fij_bbbk_2
 
     def compute_ak(self, k, t):
         "Computes ak coefficients in Gegenbauer series"
@@ -807,7 +855,7 @@ class P_V2_MEDI_XCFunctional(A_V2_MEDI_XCFunctional):
 
 
 
-#class OEDI_XCFunctional(Interpolation_XCFunctional):
+#class OEDI_XCFunctional(JKOnly_Interpolating_XCFunctional):
 #    """
 # The New Class of Exchange-Correlation Functionals: 
 # Interpolation Functionals with Oscillatory Exponential Decay.
