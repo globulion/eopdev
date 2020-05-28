@@ -184,8 +184,9 @@ class WavefunctionUnion : public Wavefunction
      *
      *  Provide molecule dimer and all the required monomer basis sets and wavefunctions.
      *  @param dimer          - molecule object
-     *  @param primary        - basis set object
-     *  @param auxiliary_df   - basis set object (for DF SCF)
+     *  @param primary        - basis set object: dimer (primary)
+     *  @param auxiliary_df   - basis set object: dimer (DF SCF)
+     *  @param guess          - basis set object: dimer (guess)
      *  @param primary_1      - basis set object for 1st monomer
      *  @param primary_2      - basis set object for 2nd monomer
      *  @param auxiliary_1    - basis set object for 1st monomer

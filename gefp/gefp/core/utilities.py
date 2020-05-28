@@ -111,12 +111,20 @@ def _get_wavefunction_union_basis_sets(dimer):
     basis_int_oep_A= psi4.core.BasisSet.build(molecule_A, "BASIS", b_int, puream=pam)
     basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", b_int, puream=pam)
 
+    # --- guess (OEP)
+    basis_guess_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("OEPDEV_BASIS_GUESS_SET"),
+                                             puream=pam)
+    basis_guess_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("OEPDEV_BASIS_GUESS_SET"),
+                                             puream=pam)
+
+
     basis        = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("BASIS"       ), puream=pam)
     basis_df_scf = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"), puream=pam)
+    basis_guess  = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("OEPDEV_BASIS_GUESS_SET"), puream=pam)
     #
     return molecule_A, molecule_B, \
-           basis, basis_df_scf, basis_A, basis_B, basis_df_oep_A, basis_df_oep_B, \
-           basis_df_scf_A, basis_df_scf_B, basis_int_oep_A, basis_int_oep_B
+           basis, basis_df_scf, basis_guess, basis_A, basis_B, basis_df_oep_A, basis_df_oep_B, \
+           basis_df_scf_A, basis_df_scf_B, basis_int_oep_A, basis_int_oep_B, basis_guess_A, basis_guess_B
 
 
 def wavefunction_union_from_dimer(dimer, wfn_1=None, wfn_2=None,
@@ -124,11 +132,12 @@ def wavefunction_union_from_dimer(dimer, wfn_1=None, wfn_2=None,
     "Create oepdev.WavefunctionUnion from the molecular dimer"
 
     molecule_A, molecule_B, \
-    basis, basis_df_scf, \
+    basis, basis_df_scf, basis_guess, \
     basis_A, basis_B,\
     basis_df_oep_A, basis_df_oep_B,\
     basis_df_scf_A, basis_df_scf_B,\
-    basis_int_oep_A, basis_int_oep_B = _get_wavefunction_union_basis_sets(dimer)
+    basis_int_oep_A, basis_int_oep_B, \
+    basis_guess_A, basis_guess_B = _get_wavefunction_union_basis_sets(dimer)
 
     if wfn_1 is None:
        en_1, wfn_1 = psi4.energy('hf', molecule=molecule_A, return_wfn=True); del en_1
@@ -141,11 +150,12 @@ def wavefunction_union_from_dimer(dimer, wfn_1=None, wfn_2=None,
     wfn_1.set_basisset("BASIS_DF_SCF", basis_df_scf_A)
     wfn_2.set_basisset("BASIS_DF_SCF", basis_df_scf_B)
 
-    un = oepdev.WavefunctionUnion(dimer, basis, basis_df_scf,
+    un = oepdev.WavefunctionUnion(dimer, basis, basis_df_scf, basis_guess,
                                   basis_A, basis_B,
                                   basis_df_oep_A, basis_df_oep_B,
                                   basis_df_scf_A, basis_df_scf_B,
                                   basis_int_oep_A, basis_int_oep_B,
+                                  basis_guess_A, basis_guess_B,
                                   wfn_1, wfn_2,
                                   psi4.core.get_options())
 

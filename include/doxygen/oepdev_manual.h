@@ -602,6 +602,25 @@ psi::timer_off("OEP    E(Paul) Murrell-etal S1  ");
 To maintain the printout in a neat form, the timing associated with the OEPDev code 
 should be generated via `misc/python/timing.py` utility script.
 
+\section memclean Clean memory between independent jobs
+
+If you use scratch disk space to store integrals, clean the scratch in between
+independent calculations. From C++ level invoke
+\code{.cpp}
+#include "psi4/libpsio/psio.hpp"
+// ...
+psi::PSIOManager::shared_object()->psiclean();
+\endcode
+whereas from the Python level use
+\code{.py}
+import psi4
+# ..
+psi4.core.clean()
+\endcode
+If the scratch space is not cleaned up before next independent task begins, 
+certain computational routines might crash with `PSIOError`
+or continue without error, but produce wrong results.
+
 \section soop Use Object-Oriented Programming
 
 Try to organise your creations in objects having special relationships and data structures. Encapsulation

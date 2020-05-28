@@ -105,6 +105,7 @@ solve_scf(std::shared_ptr<Molecule> molecule,
        psi::SharedMatrix pCb = scf_guess->basis_projection(scf_guess->Cb_subset("AO","OCC"),scf_guess->nbetapi(),
                                                            guess, primary);
        //options.set_bool("SCF", "DF_SCF_GUESS", opt_stash);
+       psi::PSIOManager::shared_object()->psiclean();
 
        // ===> Step 3: Target SCF <=== //
        outfile->Printf("\n @solve_scf: Starting SCF in Target Basis... \n\n");
