@@ -42,6 +42,26 @@ class GenEffPar
    // ---> Mutators <--- //
 
 
+   /** \brief Rotate the parameters in 3D Euclidean space
+    *
+    *  @param R              - the rotation matrix
+    */
+   void rotate(psi::SharedMatrix R);
+
+   /** \brief Translate the parameters in 3D Euclidean space
+    *
+    *  @param t              - the translation vector
+    */
+   void translate(psi::SharedVector t);
+ 
+   /** \brief Superimpose the parameters in 3D Euclidean space onto a target geometry
+    *
+    *  @param targetXYZ      - the target geometry   
+    *  @param suplist        - the superimposition list
+    */
+   void superimpose(psi::SharedMatrix targetXYZ, std::vector<int> supList);
+ 
+
    /** \brief Set the Density Matrix Susceptibility
     *
     *  @param fieldRank         - power dependency with respect to the electric field \f$ {\bf F} \f$
@@ -523,6 +543,54 @@ class GenEffParFactory
    /// Ab initio polarization susceptibility factory
    std::shared_ptr<oepdev::GenEffParFactory> abInitioPolarizationSusceptibilitiesFactory_;
 };
+
+/** \brief EFP2 GEFP Factory. 
+ * 
+ *  Basic interface for the EFP2 parameters.
+ */
+class EFP2_GEFactory : public GenEffParFactory
+{
+  public:
+   /// Construct from Psi4 options
+   EFP2_GEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+
+   /// Destruct
+   virtual ~EFP2_GEFactory();
+
+   /// Compute the EFP2 parameters
+   virtual std::shared_ptr<GenEffPar> compute(void);
+
+  protected:
+
+    virtual std::shared_ptr<oepdev::DMTPole> compute_dmtp(void);
+    virtual void compute_lmoc(void);
+    virtual std::shared_ptr<oepdev::CPHF> compute_cphf(void);
+    virtual void assemble_parameters(void);
+
+};
+
+/** \brief OEP-EFP2 GEFP Factory. 
+ * 
+ *  Basic interface for the OEP-EFP2 parameters.
+ */
+class OEP_EFP2_GEFactory : public EFP2_GEFactory
+{
+  public:
+   /// Construct from Psi4 options
+   OEP_EFP2_GEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+
+   /// Destruct
+   virtual ~OEP_EFP2_GEFactory();
+
+   /// Compute the OEP-EFP2 parameters
+   virtual std::shared_ptr<GenEffPar> compute(void);
+
+  protected:
+
+};
+
+
+
 
 /** \brief Polarization GEFP Factory. Abstract Base.
  * 

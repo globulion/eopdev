@@ -164,7 +164,21 @@ std::shared_ptr<psi::Matrix> oepdev::GenEffPar::compute_density_matrix(std::vect
    }
    return D;
 }
-//-- GenEffPar --///////////////////////////////////////////////////////////////////////////////////////
+void oepdev::GenEffPar::rotate(psi::SharedMatrix R) {
+  // Nothing to do here
+  outfile->Printf("  OepDEV Warning: Rotation feature not implemented in GenEffFrag instance!\n");
+}
+void oepdev::GenEffPar::translate(psi::SharedVector t) {
+  // Nothing to do here
+  outfile->Printf("  OepDEV Warning: Translation feature not implemented in GenEffFrag instance!\n");
+}
+void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList) {
+  // Nothing to do here
+  outfile->Printf("  OepDEV Warning: Superimposition feature not implemented in GenEffFrag instance!\n");
+}
+
+
+//-- GenEffFrag --///////////////////////////////////////////////////////////////////////////////////////
 oepdev::GenEffFrag::GenEffFrag(std::string name) : 
   name_(name),
   densityMatrixSusceptibilityGEF_(nullptr),
@@ -173,24 +187,30 @@ oepdev::GenEffFrag::GenEffFrag(std::string name) :
   chargeTransferEnergyGEF_(nullptr),
   EETCouplingConstantGEF_(nullptr)
 {
-  parameters["POLARIZATION"   ] = densityMatrixSusceptibilityGEF_;
-  parameters["COULOMBIC   "   ] = electrostaticEnergyGEF_;
-  parameters["REPULSION"      ] = repulsionEnergyGEF_;
-  parameters["CHARGE_TRANSFER"] = chargeTransferEnergyGEF_;
-  parameters["EET_COUPLING"   ] = EETCouplingConstantGEF_;
+//parameters["POLARIZATION"   ] = densityMatrixSusceptibilityGEF_;
+//parameters["COULOMBIC   "   ] = electrostaticEnergyGEF_;
+//parameters["REPULSION"      ] = repulsionEnergyGEF_;
+//parameters["CHARGE_TRANSFER"] = chargeTransferEnergyGEF_;
+//parameters["EET_COUPLING"   ] = EETCouplingConstantGEF_;
 }
 oepdev::GenEffFrag::~GenEffFrag() {}
 void oepdev::GenEffFrag::rotate(std::shared_ptr<psi::Matrix> R)
 {
-  throw psi::NOT_IMPLEMENTED_EXCEPTION();
+  for (auto const& x : this->parameters) {
+       x.second->rotate(R);
+  }
 }
 void oepdev::GenEffFrag::translate(std::shared_ptr<psi::Vector> T)
 {
-  throw psi::NOT_IMPLEMENTED_EXCEPTION();
+  for (auto const& x : this->parameters) {
+       x.second->translate(T);
+  }
 }
 void oepdev::GenEffFrag::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList)
 {
-  throw psi::NOT_IMPLEMENTED_EXCEPTION();
+  for (auto const& x : this->parameters) {
+       x.second->superimpose(targetXYZ, supList);
+  }
 }
 //-- GenEffParFactory --////////////////////////////////////////////////////////////////////////////////
 oepdev::GenEffParFactory::GenEffParFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt) :
@@ -344,6 +364,10 @@ std::shared_ptr<oepdev::GenEffParFactory> oepdev::GenEffParFactory::build(const 
              throw psi::PSIEXCEPTION(notsupported);
         }
        }
+   } else if (type=="EFP2") {
+     return std::make_shared<oepdev::EFP2_GEFactory>(wfn, opt);
+   } else if (type=="OEP-EFP2") {
+     return std::make_shared<oepdev::OEP_EFP2_GEFactory>(wfn, opt);
    } else {
      throw psi::PSIEXCEPTION("Invalid factory type chosen!");
    }

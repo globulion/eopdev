@@ -107,6 +107,8 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/liboep/oep_gdf.cc
 		       # libgefp  
                        oepdev/libgefp/gefp.cc
+                       oepdev/libgefp/gefp_efp2.cc
+                       oepdev/libgefp/gefp_oep_efp2.cc
                        oepdev/libgefp/gefp_polar_base.cc
                        oepdev/libgefp/gefp_polar_uniform_base.cc
                        oepdev/libgefp/gefp_polar_uniform_field_1.cc

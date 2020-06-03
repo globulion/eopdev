@@ -218,6 +218,19 @@ def make_r2(r):
     #R6 = numpy.linalg.multi_dot([sci, R6, sc])
     return R6.T
 
+def make_r3(r):
+    "Create 10 by 10 transformation matrix for 10F-type vector elements"
+    R10 = numpy.zeros((10,10))
+    s = 1.0
+    r00 = r[0,0]; r11 = r[1,1]; r22 = r[2,2]
+    r01 = r[0,1]; r02 = r[0,2]; r12 = r[1,2]
+    r10 = r[1,0]; r20 = r[2,0]; r21 = r[2,1]
+    # for 0 - xxx
+    #TODO
+    R10[0,0] = r00 * r00 * r00                            # xxx xxx
+    return R10.T
+
+
 def rotate_ao_matrix(M, rot_3d, bfs, return_rot=False, aomo=False):
     """\
  Rotation of matrices in AO basis due to 3D rotation of basis set.
