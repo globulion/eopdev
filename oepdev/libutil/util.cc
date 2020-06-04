@@ -80,21 +80,25 @@ solve_scf(std::shared_ptr<Molecule> molecule,
 {
 
     psi::SharedWavefunction scf;
+    //psi::PSIOManager::shared_object()->psiclean();//TODO
 
     // Guess: Hcore in guess basis --> projection to primary basis
     if (options.get_bool("OEPDEV_BASIS_GUESS")==true) {
 
        // ===> Step 1: Guess SCF <=== //
        outfile->Printf("\n @solve_scf: Starting SCF in Guess Basis... \n\n");
+
+       //compute_mints = true; 
+       if (compute_mints) {
+         //psi::PSIOManager::shared_object()->psiclean();//TODO
+         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(guess);
+         mints->integrals();
+       }
        SharedWavefunction scf_base_guess(new Wavefunction(molecule, guess, options));                     
        //bool opt_stash = options.get_bool("DF_SCF_GUESS");
        //options.set_bool("SCF", "DF_SCF_GUESS", false);
        scf_base_guess->set_basisset("DF_BASIS_SCF", auxiliary);//TODO -> perhaps better use smaller basis adequate for 3-21G
-                                                                                                      
-       if (compute_mints) {
-         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(guess);
-         mints->integrals();
-       }
+      
        SharedWavefunction scf_guess = std::make_shared<psi::scf::RHF>(scf_base_guess, functional, options, psio);
        scf_guess->compute_energy();
 
@@ -105,17 +109,19 @@ solve_scf(std::shared_ptr<Molecule> molecule,
        psi::SharedMatrix pCb = scf_guess->basis_projection(scf_guess->Cb_subset("AO","OCC"),scf_guess->nbetapi(),
                                                            guess, primary);
        //options.set_bool("SCF", "DF_SCF_GUESS", opt_stash);
-       psi::PSIOManager::shared_object()->psiclean();
+       //psi::PSIOManager::shared_object()->psiclean();//TODO --> this needs to be set when calling from Python level! ???
 
        // ===> Step 3: Target SCF <=== //
        outfile->Printf("\n @solve_scf: Starting SCF in Target Basis... \n\n");
-       SharedWavefunction scf_base(new Wavefunction(molecule, primary, options));                     
-       scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
-                                                                                                     
+
        if (compute_mints) {
+         //psi::PSIOManager::shared_object()->psiclean();//TODO
          std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
          mints->integrals();
        }
+       SharedWavefunction scf_base(new Wavefunction(molecule, primary, options));                     
+       scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
+                                                                                                     
        std::shared_ptr<psi::scf::RHF> scf_ = std::make_shared<psi::scf::RHF>(scf_base, functional, options, psio);
        scf_->guess_Ca(pCa);
        scf_->guess_Cb(pCb);
@@ -140,6 +146,8 @@ solve_scf(std::shared_ptr<Molecule> molecule,
 
     }
     outfile->Printf("\n @solve_scf: Done. \n\n");
+    //psi::PSIOManager::shared_object()->psiclean();//TODO
+
     return scf;
 }
 

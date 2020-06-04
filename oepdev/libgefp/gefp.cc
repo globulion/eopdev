@@ -181,11 +181,11 @@ void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std:
 //-- GenEffFrag --///////////////////////////////////////////////////////////////////////////////////////
 oepdev::GenEffFrag::GenEffFrag(std::string name) : 
   name_(name),
-  densityMatrixSusceptibilityGEF_(nullptr),
-  electrostaticEnergyGEF_(nullptr),
-  repulsionEnergyGEF_(nullptr),
-  chargeTransferEnergyGEF_(nullptr),
-  EETCouplingConstantGEF_(nullptr)
+  densityMatrixSusceptibilityGEF_(nullptr)
+//electrostaticEnergyGEF_(nullptr),
+//repulsionEnergyGEF_(nullptr),
+//chargeTransferEnergyGEF_(nullptr),
+//EETCouplingConstantGEF_(nullptr)
 {
 //parameters["POLARIZATION"   ] = densityMatrixSusceptibilityGEF_;
 //parameters["COULOMBIC   "   ] = electrostaticEnergyGEF_;

@@ -6,6 +6,7 @@
 #include <string>
 #include <random>
 #include <cmath>
+#include <map>
 #include "psi4/libpsi4util/PsiOutStream.h"
 #include "psi4/libpsi4util/process.h"
 #include "psi4/libmints/wavefunction.h"
@@ -20,6 +21,7 @@
 namespace oepdev{
 
 using namespace std;
+class EFP2_GEFactory;
 
 /** \addtogroup OEPDEV_GEFP
  * @{
@@ -27,20 +29,29 @@ using namespace std;
 
 /** \brief Generalized Effective Fragment Parameters. Container Class.
  *
+ * \see GenEffFrag, GenEffParFactory
  */
 class GenEffPar
 {
+
   public:
-   /// Create with name of this parameter type
+   /** \name Constructor and Destructor */
+   //@{
+
+
+   /// Create with name of this parameter
    GenEffPar(std::string name) : name_(name), hasDensityMatrixDipolePolarizability_(false), 
                                               hasDensityMatrixDipoleDipoleHyperpolarizability_(false),
-                                              hasDensityMatrixQuadrupolePolarizability_(false) {};
+                                              hasDensityMatrixQuadrupolePolarizability_(false),
+                                 type_(name),
+                                 data_matrix_({}), data_dmtp_({}), data_dpol_({}) {};
    /// Destruct
   ~GenEffPar() {};
+   //@}
 
 
-   // ---> Mutators <--- //
-
+   /** \name Transformators */
+   //@{
 
    /** \brief Rotate the parameters in 3D Euclidean space
     *
@@ -60,7 +71,42 @@ class GenEffPar
     *  @param suplist        - the superimposition list
     */
    void superimpose(psi::SharedMatrix targetXYZ, std::vector<int> supList);
- 
+   //@}
+
+
+
+   /** \name Mutators */
+   //@{
+
+   /** \brief Set the matrix data
+    *
+    *  @param key      - keyword for a matrix
+    *  @param mat      - matrix
+    *
+    *  This sets the item in the map `data_matrix_`.
+    */
+   void set_matrix(std::string key, psi::SharedMatrix mat) {data_matrix_[key] = mat;}
+
+   /** \brief Set the DMTP data
+    *
+    *  @param key      - keyword for a DMTP
+    *  @param dmtp     - DMTP object  
+    *
+    *  This sets the item in the map `data_dmtp_`.
+    */
+   void set_dmtp(std::string key, std::shared_ptr<oepdev::DMTPole> mat) {data_dmtp_[key] = mat;} 
+
+   /** \brief Set the DPOL data
+    *
+    *  @param key      - keyword for a DPOL
+    *  @param dmtp     - DPOL object  
+    *
+    *  This sets the item in the map `data_dpol_`.
+    */
+   void set_dpol(std::string key, std::vector<psi::SharedMatrix> mats) {data_dpol_[key] = mats;} 
+
+
+
 
    /** \brief Set the Density Matrix Susceptibility
     *
@@ -102,9 +148,12 @@ class GenEffPar
 
    /// Set the distributed centres' positions
    void set_centres(const std::vector<std::shared_ptr<psi::Vector>>& centres) {distributedCentres_=centres;}
+   //@}
 
-   // ---> Allocators <--- //
 
+
+   /** \name Allocators */
+   //@{
 
    /** \brief Allocate the Density Matrix Susceptibility
     *
@@ -144,14 +193,50 @@ class GenEffPar
 
    /// Allocate The Density Matrix Quadrupole Polarizability
    void allocate_quadrupole_polarizability(int nsites, int nbf);
+   //@}
 
 
-   // ---> Descriptors <--- //
+
+   /** \name Descriptors */
+   //@{
+
+   /// Type of Parameters
+   std::string type() const {return type_;}
+   /// Name of Parameters
+   std::string name() const {return name_;}
+   /// Does it has dipole polarizability DMS?
    bool hasDensityMatrixDipolePolarizability() const {return hasDensityMatrixDipolePolarizability_;}
+   /// Does it has dipole-dipole hyperpolarizability DMS?
    bool hasDensityMatrixDipoleDipoleHyperpolarizability () const {return hasDensityMatrixDipoleDipoleHyperpolarizability_;}
+   /// Does it has quadrupole polarizability DMS?
    bool hasDensityMatrixQuadrupolePolarizability() const {return hasDensityMatrixQuadrupolePolarizability_;}
+   //@}
 
-   // ---> Accessors <--- //
+
+
+   /** \name Accessors */
+   //@{
+
+   /** \brief Get the matrix data
+    *
+    *  @param key      - keyword for a matrix
+    *  @return matrix data type
+    */
+   psi::SharedMatrix matrix(std::string key) const {return data_matrix_.at(key);} 
+
+   /** \brief Get the DMTP data
+    *
+    *  @param key      - keyword for a DMTP
+    *  @return DMTP data type
+    */
+   std::shared_ptr<oepdev::DMTPole> dmtp(std::string key) const {return data_dmtp_.at(key);} 
+
+   /** \brief Get the DPOL data
+    *
+    *  @param key      - keyword for a DPOL
+    *  @return DPOL data type
+    */
+   std::vector<psi::SharedMatrix> dpol(std::string key) const {return data_dpol_.at(key);} 
 
 
    /** \brief Grab the Density Matrix Susceptibility
@@ -281,8 +366,12 @@ class GenEffPar
    /// Grab the position of the *i*-th distributed site
    std::shared_ptr<psi::Vector> centre(int i) const {return distributedCentres_[i];}
 
-   // ---> Computers <--- //
+   //@}
 
+
+
+   /** \name DMS Computers */
+   //@{
 
    /** \brief Compute the density matrix due to the uniform electric field perturbation.
    *
@@ -309,11 +398,57 @@ class GenEffPar
    std::shared_ptr<psi::Matrix> compute_density_matrix(std::vector<std::shared_ptr<psi::Vector>> fields,
                                                        std::vector<std::shared_ptr<psi::Matrix>> grads);
 
+   //@}
+
+   /** \name EFP2 Computers */
+   //@{
+
+   /** \brief Compute the interaction energy between this and other EFP2 fragment.
+   *
+   *  @param par - other parameters object
+   */
+   //double compute_interaction_energy(std::shared_ptr<GenEffPar> other); --> for now moved to separate class
+   // due to difficult handling of the BasisSet object (cannot be rotated in currently used version of psi4-1.2.1)
+   //@}
+
 
 
   protected:
-   /// The Name of Parameter Type
+   /** \name Qualifiers */
+   //@{
+
+   /// The Name of Parameter
    std::string name_;
+
+   /// The Type of Parameter
+   std::string type_;
+
+   bool hasDensityMatrixDipolePolarizability_;
+   bool hasDensityMatrixDipoleDipoleHyperpolarizability_;
+   bool hasDensityMatrixQuadrupolePolarizability_;
+
+   //@}
+
+
+   /** \name Matrices and Multipoles */
+   //@{
+
+   /// The Positions of the Distributed Centres
+   std::vector<std::shared_ptr<psi::Vector>> distributedCentres_;
+
+   /// Data for Matrix Types by Keyword
+   std::map<std::string, psi::SharedMatrix> data_matrix_;
+
+   /// Data for DMTP Types by Keyword
+   std::map<std::string, std::shared_ptr<oepdev::DMTPole>> data_dmtp_;
+
+   /// Data for DMTP Types by Keyword
+   std::map<std::string, std::vector<psi::SharedMatrix>> data_dpol_;
+   //@}
+
+
+   /** \name Density Matrix Susceptibility */
+   //@{
 
    /// The Density Matrix Dipole Polarizability
    std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixDipolePolarizability_;
@@ -323,20 +458,15 @@ class GenEffPar
 
    /// The Density Matrix Quadrupole Polarizability
    std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixQuadrupolePolarizability_;
+   //@}
 
-   /// The Positions of the Distributed Centres
-   std::vector<std::shared_ptr<psi::Vector>> distributedCentres_;
-
-   /// 
-   bool hasDensityMatrixDipolePolarizability_;
-   bool hasDensityMatrixDipoleDipoleHyperpolarizability_;
-   bool hasDensityMatrixQuadrupolePolarizability_;
 };
 
 /** \brief Generalized Effective Fragment. Container Class.
  *
  * Describes the GEFP fragment that is in principle designed to work
  * at correlated levels of theory.
+ * \see GenEffPar, GenEffParFactory
  */
 class GenEffFrag
 {
@@ -345,18 +475,27 @@ class GenEffFrag
    std::string name_;
 
   public:
+   /** \name Constructors and Destructor */ 
+   //@{
+
    /// Initialize with default name of GEFP (Default)
    GenEffFrag();
    /// Initialize with custom name of GEFP
    GenEffFrag(std::string name);
    /// Destruct
   ~GenEffFrag();
+   //@}
+
+   /** \name Parameters */ 
+   //@{
 
    /// Dictionary of All GEF Parameters
    std::map<std::string, std::shared_ptr<GenEffPar>> parameters;
+   //@}
 
 
-   // ---> Mutators <--- //
+   /** \name Transformators */
+   //@{
 
    /// Rotate
    void rotate(std::shared_ptr<psi::Matrix> R);
@@ -366,6 +505,11 @@ class GenEffFrag
 
    /// Superimpose
    void superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList);
+   //@}
+
+
+   /** \name Mutators */
+   //@{
 
    /// Set the Density Matrix Susceptibility Tensor Object
    void set_gefp_polarization(const std::shared_ptr<GenEffPar>& par) {densityMatrixSusceptibilityGEF_=par;}
@@ -384,13 +528,11 @@ class GenEffFrag
    void set_dmat_quadrupole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc)
         { if (densityMatrixSusceptibilityGEF_)
               densityMatrixSusceptibilityGEF_->set_quadrupole_polarizability(susc); }
+   //@}
 
 
-   //void set_lmo_centroids();
-
-
-   // --> Accessors <-- //
-
+   /** \name Accessors */ 
+   //@{
 
    /** \brief Grab the Density Matrix Susceptibility
     *
@@ -424,26 +566,27 @@ class GenEffFrag
    {
        return densityMatrixSusceptibilityGEF_->susceptibility(fieldRank, fieldGradientRank);
    }
+   //@}
 
 
 
   protected:
-   // ===> Generalized Fragment Parameters <=== //
+   //-// ===> Generalized Fragment Parameters <=== //
 
-   /// Density Matrix Susceptibility Tensor
+   //-/// Density Matrix Susceptibility Tensor
    std::shared_ptr<GenEffPar> densityMatrixSusceptibilityGEF_;
 
-   /// Electrostatic Energy Effective One-Electron Potential
-   std::shared_ptr<GenEffPar> electrostaticEnergyGEF_;
+   //-/// Electrostatic Energy Effective One-Electron Potential
+   //std::shared_ptr<GenEffPar> electrostaticEnergyGEF_;
 
-   /// Exchange-Repulsion Effective One-Electron Potential
-   std::shared_ptr<GenEffPar> repulsionEnergyGEF_;
+   //-/// Exchange-Repulsion Effective One-Electron Potential
+   //std::shared_ptr<GenEffPar> repulsionEnergyGEF_;
 
-   /// Charge-Transfer Effective One-Electron Potential
-   std::shared_ptr<GenEffPar> chargeTransferEnergyGEF_;
+   //-/// Charge-Transfer Effective One-Electron Potential
+   //std::shared_ptr<GenEffPar> chargeTransferEnergyGEF_;
 
-   /// EET Coupling Effective One-Electron Potential
-   std::shared_ptr<GenEffPar> EETCouplingConstantGEF_;
+   //-/// EET Coupling Effective One-Electron Potential
+   //std::shared_ptr<GenEffPar> EETCouplingConstantGEF_;
 };
 
 
@@ -451,9 +594,14 @@ class GenEffFrag
  *
  * Describes the GEFP fragment that is in principle designed to work
  * at correlated levels of theory.
+ * \see GenEffPar, GenEffFrag
  */
 class GenEffParFactory
 {
+
+   /** \name Constructors and Desctructor */
+   //@{
+
   public: 
    /** \brief Build Density Matrix Susceptibility Generalized Factory.
     *
@@ -489,9 +637,18 @@ class GenEffParFactory
 
    /// Destruct
    virtual ~GenEffParFactory();
+   //@}
+
+
+   /** \name Executor of the Factory */
+   //@{
 
    /// Compute the fragment parameters
    virtual std::shared_ptr<GenEffPar> compute(void) = 0;
+   //@}
+
+   /** \name Accessors */
+   //@{
 
    /// Grab wavefunction
    virtual std::shared_ptr<psi::Wavefunction> wfn(void) const {return wfn_;}
@@ -500,16 +657,31 @@ class GenEffParFactory
    virtual psi::Options& options(void) const {return options_;}
 
    /// Grab the CPHF object
-   std::shared_ptr<CPHF> cphf_solver() const {return cphfSolver_;}
+   std::shared_ptr<oepdev::CPHF> cphf_solver() const {return cphfSolver_;}
+
+   /// Grab the DMTP object
+   std::shared_ptr<oepdev::DMTPole> dmtp() const {return dmtp_;}
+
+   //@}
+
 
   protected:
+
+   /** \name Basic data */
+   //@{
    /// Wavefunction
    std::shared_ptr<psi::Wavefunction> wfn_;
 
    /// Psi4 Options
    psi::Options& options_;
 
-   /// Random number generators
+   /// Number of basis functions
+   const int nbf_;
+   //@}
+
+
+   /** \name Random number generation */
+   //@{
    std::default_random_engine randomNumberGenerator_;
    std::uniform_real_distribution<double> randomDistribution_;
 
@@ -518,7 +690,11 @@ class GenEffParFactory
 
    /// Draw random point in 3D space, excluding the vdW region
    virtual std::shared_ptr<psi::Vector> draw_random_point();
+   //@}
 
+
+   /** \name Van der Waals region */
+   //@{
    /// Is the point inside a vdW region?
    virtual bool is_in_vdWsphere(double x, double y, double z) const;
 
@@ -527,21 +703,35 @@ class GenEffParFactory
 
    /// Map with vdW radii
    std::map<std::string, double> vdwRadius_;
+   //@}
 
+
+   /** \name Padding of box */
+   //@{
    /// Centre-of-mass coordinates
    double cx_, cy_, cz_;
 
    /// Radius of padding sphere around the molecule
    double radius_;
+   //@}
 
-   /// Number of basis functions
-   const int nbf_;
 
+   /** \name Container objects */
+   //@{
    /// The CPHF object
-   std::shared_ptr<CPHF> cphfSolver_;
+   std::shared_ptr<oepdev::CPHF> cphfSolver_;
 
+   /// The DMTP object
+   std::shared_ptr<oepdev::DMTPole> dmtp_;
+   //@}
+
+
+   /** \name Other Factories */
+   //@{
    /// Ab initio polarization susceptibility factory
    std::shared_ptr<oepdev::GenEffParFactory> abInitioPolarizationSusceptibilitiesFactory_;
+   //@}
+
 };
 
 /** \brief EFP2 GEFP Factory. 
@@ -550,6 +740,7 @@ class GenEffParFactory
  */
 class EFP2_GEFactory : public GenEffParFactory
 {
+
   public:
    /// Construct from Psi4 options
    EFP2_GEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
@@ -566,6 +757,15 @@ class EFP2_GEFactory : public GenEffParFactory
     virtual void compute_lmoc(void);
     virtual std::shared_ptr<oepdev::CPHF> compute_cphf(void);
     virtual void assemble_parameters(void);
+
+    virtual void assemble_geometry_data(void);
+    virtual void assemble_dmtp_data(void);
+    virtual void assemble_lmo_centroids(void);
+    virtual void assemble_fock_matrix(void);
+    virtual void assemble_distributed_polarizabilities(void);
+
+  protected:
+    std::shared_ptr<oepdev::GenEffPar> EFP2Parameters_;
 
 };
 

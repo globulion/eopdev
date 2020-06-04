@@ -51,10 +51,20 @@ using namespace psi;
  */
 class CPHF {
    protected:
+     /** \name Basic Data */
+     //@{
      /// Wavefunction object
      std::shared_ptr<psi::Wavefunction> _wfn;
+     /// Options
+     Options& _options;
+     /// Primary Basis Set
+     std::shared_ptr<BasisSet> _primary;
      /// Orbital localizer
      std::shared_ptr<Localizer> _localizer;
+     //@}
+
+     /** \name Sizing Information */
+     //@{
      /// Number of occupied orbitals
      const int _no;
      /// Number of virtual orbitals
@@ -63,6 +73,10 @@ class CPHF {
      const int _nn;
      /// Memory
      long int _memory;
+     //@}
+
+     /** \name Parameters of CPHF Calculations */
+     //@{
      /// Maximum number of iterations
      int _maxiter;
      /// CPHF convergence threshold
@@ -71,8 +85,10 @@ class CPHF {
      bool _with_diis;
      /// Size of subspace 
      const int _diis_dim;
-     /// Primary Basis Set
-     std::shared_ptr<BasisSet> _primary;
+     //@}
+
+     /** \name Molecular Orbitals */
+     //@{
      /// Occupied orbitals
      std::shared_ptr<Matrix> _cocc;
      /// Virtual orbitals
@@ -81,17 +97,22 @@ class CPHF {
      std::shared_ptr<Vector> _eps_occ;
      /// Virtual orbital energies
      std::shared_ptr<Vector> _eps_vir;
+     /// Transformation from old to new MO's
+     std::shared_ptr<psi::Matrix> _T;
+     //@}
+
+     /** \name DIIS Manager */
+     //@{
      /// the DIIS managers for each perturbation operator x, y and z
      #if OEPDEV_USE_PSI4_DIIS_MANAGER == 0
        std::vector<std::shared_ptr<oepdev::DIISManager>> _diis;
      #else
        std::vector<std::shared_ptr<psi::DIISManager>> _diis;
      #endif
-     /// Options
-     Options& _options;
+     //@}
 
-     // <--- target quantities ---> //
-
+     /** \name Response Properties */
+     //@{
      /// Total (molecular) polarizability tensor
      std::shared_ptr<Matrix> _molecularPolarizability;
 
@@ -110,10 +131,14 @@ class CPHF {
      std::vector<std::shared_ptr<Matrix>> _X_OV_mo_matrices;
      /// Electric Field Operator O->V matrices in MO basis
      std::vector<std::shared_ptr<Matrix>> _F_OV_mo_matrices;
-     /// Transformation from old to new MO's
-     std::shared_ptr<psi::Matrix> _T;
+     //@}
+
 
    public:
+
+     /** \name Constructor and Destructor */
+     //@{
+
      /// \brief Constructor
      ///
      /// @param ref_wfn reference HF wavefunction
@@ -123,15 +148,22 @@ class CPHF {
 
      /// Desctructor
     ~CPHF();
+     //@}
 
+     /** \name Executor */
+     //@{
      /// run the calculations
      void compute(void);
+     //@}
 
+     /** \name Printer */
+     //@{
      /// print to output file
      void print(void) const;
+     //@}
 
-     // <--- getters ---> //
-
+     /** \name Accessors */
+     //@{
      /// get the number of occupied orbitals
      int nocc(void) const {return _no;}
 
@@ -171,7 +203,7 @@ class CPHF {
      /// retrieve the transformation from old to new MO's
      std::shared_ptr<Matrix> T(void) const {return _T;}
 
-     /// retrieve the Cocc
+     /// retrieve the Cocc (always Canonical)
      std::shared_ptr<Matrix> Cocc(void) const {return _cocc;}
 
      /// retrieve the Cvir
@@ -182,6 +214,7 @@ class CPHF {
 
      /// retrieve the orbital localizer
      std::shared_ptr<Localizer> localizer(void) const {return _localizer;}
+     //@}
 };
 
 /** @}*/

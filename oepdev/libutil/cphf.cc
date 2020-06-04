@@ -198,7 +198,7 @@ void CPHF::compute(void) {
     // Transform the Xmo and Fmo vectors to a localized MO basis if requested
     if (_options.get_bool("CPHF_LOCALIZE") == true) {
         _localizer = Localizer::build(_options.get_str("CPHF_LOCALIZER"), 
-                     _wfn->basisset(), _wfn->Ca_subset("AO", "OCC"), _options);
+                     _wfn->basisset(), _cocc, _options);
         _localizer->localize();
         _T = _localizer->U();
     } else {
