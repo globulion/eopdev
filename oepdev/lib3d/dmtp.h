@@ -140,9 +140,8 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 
   public:
 
-    // <--- Constructors and Destructor ---> //
-
-
+    /** \name Constructors and Destructor */
+    //@{
     /** \brief Build an empty DMTP object from the wavefunction.
      *
      *  @param type - DMTP method. Available: `CAMM`.
@@ -154,6 +153,19 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
                                           std::shared_ptr<psi::Wavefunction> wfn, 
                                           int n = 1);
 
+    /// Copy constructor
+    DMTPole(const DMTPole*);
+
+    /// Make a deep copy (`wfn_`, `mol_`, and `primary_` are shallow-copied)
+    std::shared_ptr<DMTPole> clone(void) const {
+        auto temp = std::make_shared<DMTPole>(this);
+        return temp;
+    }
+
+    /// Destructor
+    virtual ~DMTPole();
+    //@}
+
     /** 
      * Determine the CAMM convergence for a given global option
      *
@@ -161,13 +173,10 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
      */
     static MultipoleConvergence::ConvergenceLevel determine_dmtp_convergence_level(const std::string& option);
 
-
-    /// Destructor
-    virtual ~DMTPole();
-  
  
-    // <--- Accessors ---> //
-
+ 
+    /** \name Accessors */
+    //@{
     /// Has distributed charges?
     virtual bool has_charges()       const {return hasCharges_;      }
     /// Has distributed dipoles?
@@ -215,10 +224,11 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     virtual int n_sites() const {return nSites_;}
     /// Get the number of distributions
     virtual int n_dmtp() const {return nDMTPs_;}
+    //@}
 
 
-    // <--- Mutators ---> //
-
+    /** \name Mutators */
+    //@{
     /// Set the distributed charges
     void set_charges(std::vector<psi::SharedMatrix> M) {charges_ = M;}
     /// Set the distributed dipoles
@@ -240,7 +250,11 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     void set_octupoles(psi::SharedMatrix M, int i) {octupoles_[i] = std::make_shared<psi::Matrix>(M);}
     /// Set the distributed hexadecapoles for the \f$ i \f$th distribution
     void set_hexadecapoles(psi::SharedMatrix M, int i) {hexadecapoles_[i] = std::make_shared<psi::Matrix>(M);}
+    //@}
 
+
+    /** \name Transformators */
+    //@{
     /** 
      *  Change origins of the distributed multipole moments of all sets
      *
@@ -321,10 +335,11 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     void rotate(psi::SharedMatrix rotmat);
     /// Superimpose the DMTP sets
     void superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist);
+    //@}
 
 
-    // <--- Computers ---> //
-
+    /** \name Computers */
+    //@{
     /** 
      * Compute DMTP's from the set of the one-particle density matrices.
      *
@@ -370,18 +385,22 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
      */
      std::shared_ptr<MultipoleConvergence> potential(std::shared_ptr<DMTPole> other,
                                                  MultipoleConvergence::ConvergenceLevel max_clevel = MultipoleConvergence::R5);
+     //@}
 
 
-    // <--- Printers ---> //
-
+    /** \name Printers */
+    //@{
     /// Print the header
-    virtual void print_header() const = 0;
+    virtual void print_header() const;
 
     /// Print the contents
     void print() const;
+    //@}
 
   protected:
 
+    /** \name Protected Interface */
+    //@{
     /** \brief Construct an empty DMTP object from the wavefunction.
      *
      *  @param wfn - wavefunction
@@ -393,7 +412,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 
 
     /// Compute DMTP's from the one-particle density matrix
-    virtual void compute(psi::SharedMatrix D, bool transition, int i) = 0;
+    virtual void compute(psi::SharedMatrix D, bool transition, int i);
     /// Compute multipole integrals
     void compute_integrals();
     /// Compute maximum order of the integrals
@@ -402,6 +421,17 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     /// Change origins of the distributed multipole moments of ith set
     virtual void recenter(psi::SharedMatrix new_origins, int i);
 
+    /// Initialize and allocate memory
+    virtual void allocate();
+
+    /// Deep-copy the matrix and DMTP data
+    virtual void copy_from(const DMTPole*);
+    //@}
+
+
+
+    /** \name Basic */
+    //@{
     /// Name of the distribution method
     std::string name_;
     /// Molecule associated with this DMTP
@@ -410,7 +440,12 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     psi::SharedWavefunction wfn_;
     /// Basis set (primary)
     psi::SharedBasisSet primary_;
+    /// Multipole integrals
+    std::vector<psi::SharedMatrix> mpInts_;
+    //@}
 
+    /** \name Sizing */
+    //@{
     /// Number of DMTP's
     int nDMTPs_;
     /// Number of DMTP sites
@@ -418,10 +453,10 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 
     /// Maximum order of the multipole
     int order_;
+    //@}
 
-    /// Multipole integrals
-    std::vector<psi::SharedMatrix> mpInts_;
-
+    /** \name Descriptors */
+    //@{
     /// Has distributed charges?
     bool hasCharges_;
     /// Has distributed dipoles?
@@ -432,12 +467,18 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     bool hasOctupoles_;
     /// Has distributed hexadecapoles?
     bool hasHexadecapoles_;
+    //@}
 
+    /** \name Geometry */
+    //@{
     /// DMTP centres
     psi::SharedMatrix centres_;
     /// DMTP origins
     psi::SharedMatrix origins_;
+    //@}
 
+    /** \name Multipoles */
+    //@{
     /// DMTP charges
     std::vector<psi::SharedMatrix> charges_;
     /// DMTP dipoles
@@ -448,9 +489,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     std::vector<psi::SharedMatrix> octupoles_;
     /// DMTP hexadecapoles
     std::vector<psi::SharedMatrix> hexadecapoles_;
-
-    /// Initialize and allocate memory
-    virtual void allocate();
+    //@}
 };
 
 /** 
@@ -486,6 +525,8 @@ class CAMM : public DMTPole
  public:
    /// Construct CAMM DMTPole object
    CAMM(psi::SharedWavefunction wfn, int n);
+   /// Copy Constructor
+   CAMM(const CAMM* other) : DMTPole(other) {};
    virtual ~CAMM();
    virtual void compute(psi::SharedMatrix D, bool transition, int n);
    virtual void print_header(void) const;

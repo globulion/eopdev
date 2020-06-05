@@ -452,6 +452,63 @@ DMTPole::DMTPole(psi::SharedWavefunction wfn, int n)
 {
 
 }
+DMTPole::DMTPole(const DMTPole* d) {
+ // Do shallow copy on those:
+ mol_ = d->mol_;
+ wfn_ = d->wfn_;
+ primary_ = d->primary_;
+ // Do deep copy on those:
+ nDMTPs_ = d->nDMTPs_;
+ name_ = d->name_;
+ order_ = d->order_;
+ nSites_ = d->nSites_;
+ hasCharges_ = d->hasCharges_;
+ hasDipoles_ = d->hasDipoles_;
+ hasQuadrupoles_ = d->hasQuadrupoles_;
+ hasOctupoles_ = d->hasOctupoles_;
+ hasHexadecapoles_ = d->hasHexadecapoles_;
+ centres_ = std::make_shared<psi::Matrix>(d->centres_);
+ origins_ = std::make_shared<psi::Matrix>(d->origins_);
+ this->copy_from(d);
+}
+
+void DMTPole::copy_from(const DMTPole* d) {
+ charges_.clear();
+ for (unsigned int i=0; i<charges_.size(); ++i) {
+      psi::SharedMatrix m = std::make_shared<psi::Matrix>(d->charges_[i]);
+      charges_.push_back(m);
+ }
+ //
+ dipoles_.clear();
+ for (unsigned int i=0; i<dipoles_.size(); ++i) {
+      psi::SharedMatrix m = std::make_shared<psi::Matrix>(d->dipoles_[i]);
+      dipoles_.push_back(m);
+ }
+ //
+ quadrupoles_.clear();
+ for (unsigned int i=0; i<quadrupoles_.size(); ++i) {
+      psi::SharedMatrix m = std::make_shared<psi::Matrix>(d->quadrupoles_[i]);
+      quadrupoles_.push_back(m);
+ }
+ //
+ octupoles_.clear();
+ for (unsigned int i=0; i<octupoles_.size(); ++i) {
+      psi::SharedMatrix m = std::make_shared<psi::Matrix>(d->octupoles_[i]);
+      octupoles_.push_back(m);
+ }
+ //
+ hexadecapoles_.clear();
+ for (unsigned int i=0; i<hexadecapoles_.size(); ++i) {
+      psi::SharedMatrix m = std::make_shared<psi::Matrix>(d->hexadecapoles_[i]);
+      hexadecapoles_.push_back(m);
+ }
+ //
+ mpInts_.clear();
+ for (unsigned int i=0; i<mpInts_.size(); ++i) {
+      psi::SharedMatrix m = std::make_shared<psi::Matrix>(d->mpInts_[i]);
+      mpInts_.push_back(m);
+ }
+}
 DMTPole::~DMTPole()
 {
 

@@ -4,6 +4,83 @@
 
 using namespace std;
 
+oepdev::GenEffPar::GenEffPar(const GenEffPar* f) {
+  name_ = f->name_;
+  type_ = f->type_;
+  hasDensityMatrixDipolePolarizability_ = f->hasDensityMatrixDipolePolarizability_;
+  hasDensityMatrixDipoleDipoleHyperpolarizability_ = f->hasDensityMatrixDipoleDipoleHyperpolarizability_;
+  hasDensityMatrixQuadrupolePolarizability_ = f->hasDensityMatrixQuadrupolePolarizability_;
+  //TODO - do the proper copy
+  copy_from(f);
+  data_dmtp_ = f->data_dmtp_;
+  densityMatrixDipolePolarizability_ = f->densityMatrixDipolePolarizability_;
+  densityMatrixDipoleDipoleHyperpolarizability_ = f->densityMatrixDipoleDipoleHyperpolarizability_;
+  densityMatrixQuadrupolePolarizability_ = f->densityMatrixQuadrupolePolarizability_;
+}
+void oepdev::GenEffPar::copy_from(const GenEffPar* f) {
+  //
+  distributedCentres_.clear();
+  for (unsigned int i=0; i<distributedCentres_.size(); ++i) {
+       psi::SharedVector centre = std::make_shared<psi::Vector>(*f->distributedCentres_[i]);
+       distributedCentres_.push_back(centre);
+  }
+  //
+  data_matrix_.clear();
+  for (auto const& x : f->data_matrix_) {
+     std::string key = x.first;
+     psi::SharedMatrix mat = std::make_shared<psi::Matrix>(x.second);
+     data_matrix_[key] = mat;
+  }
+  //
+  data_dpol_.clear();
+  for (auto const&x : f->data_dpol_) {
+       std::string key = x.first;
+       std::vector<psi::SharedMatrix> v;
+       for (unsigned int i=0; i<x.second.size(); ++i) {
+            psi::SharedMatrix m = std::make_shared<psi::Matrix>(x.second[i]);
+            v.push_back(m);
+       }
+       data_dpol_[key] = v;
+  }
+  //
+  data_dmtp_.clear();
+  for (auto const& x : f->data_dmtp_) {
+     std::string key = x.first;
+     oepdev::SharedDMTPole dmtp = x.second->clone();
+     data_dmtp_[key] = dmtp;
+  }
+  //
+  densityMatrixDipolePolarizability_.clear();
+  for (unsigned int i=0; i<f->densityMatrixDipolePolarizability_.size(); ++i) {
+       std::vector<psi::SharedMatrix> v;
+       for (unsigned int a=0; a<f->densityMatrixDipolePolarizability_[i].size(); ++a) {
+            psi::SharedMatrix mat = std::make_shared<psi::Matrix>(f->densityMatrixDipolePolarizability_[i][a]);
+            v.push_back(mat);
+       }
+       densityMatrixDipolePolarizability_.push_back(v);
+  }
+  //
+  densityMatrixDipoleDipoleHyperpolarizability_.clear();
+  for (unsigned int i=0; i<f->densityMatrixDipoleDipoleHyperpolarizability_.size(); ++i) {
+       std::vector<psi::SharedMatrix> v;
+       for (unsigned int a=0; a<f->densityMatrixDipoleDipoleHyperpolarizability_[i].size(); ++a) {
+            psi::SharedMatrix mat = std::make_shared<psi::Matrix>(f->densityMatrixDipoleDipoleHyperpolarizability_[i][a]);
+            v.push_back(mat);
+       }
+       densityMatrixDipoleDipoleHyperpolarizability_.push_back(v);
+  }
+  //
+  densityMatrixQuadrupolePolarizability_.clear();
+  for (unsigned int i=0; i<f->densityMatrixQuadrupolePolarizability_.size(); ++i) {
+       std::vector<psi::SharedMatrix> v;
+       for (unsigned int a=0; a<f->densityMatrixQuadrupolePolarizability_[i].size(); ++a) {
+            psi::SharedMatrix mat = std::make_shared<psi::Matrix>(f->densityMatrixQuadrupolePolarizability_[i][a]);
+            v.push_back(mat);
+       }
+       densityMatrixQuadrupolePolarizability_.push_back(v);
+  }
+
+}
 
 void oepdev::GenEffPar::allocate_dipole_polarizability(int nsites, int nbf)
 {
@@ -166,52 +243,17 @@ std::shared_ptr<psi::Matrix> oepdev::GenEffPar::compute_density_matrix(std::vect
 }
 void oepdev::GenEffPar::rotate(psi::SharedMatrix R) {
   // Nothing to do here
-  outfile->Printf("  OepDEV Warning: Rotation feature not implemented in GenEffFrag instance!\n");
+  outfile->Printf("  OepDEV Warning: Rotation feature not implemented in GenEffPar instance!\n");
 }
 void oepdev::GenEffPar::translate(psi::SharedVector t) {
   // Nothing to do here
-  outfile->Printf("  OepDEV Warning: Translation feature not implemented in GenEffFrag instance!\n");
+  outfile->Printf("  OepDEV Warning: Translation feature not implemented in GenEffPar instance!\n");
 }
 void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList) {
   // Nothing to do here
-  outfile->Printf("  OepDEV Warning: Superimposition feature not implemented in GenEffFrag instance!\n");
+  outfile->Printf("  OepDEV Warning: Superimposition feature not implemented in GenEffPar instance!\n");
 }
 
-
-//-- GenEffFrag --///////////////////////////////////////////////////////////////////////////////////////
-oepdev::GenEffFrag::GenEffFrag(std::string name) : 
-  name_(name),
-  densityMatrixSusceptibilityGEF_(nullptr)
-//electrostaticEnergyGEF_(nullptr),
-//repulsionEnergyGEF_(nullptr),
-//chargeTransferEnergyGEF_(nullptr),
-//EETCouplingConstantGEF_(nullptr)
-{
-//parameters["POLARIZATION"   ] = densityMatrixSusceptibilityGEF_;
-//parameters["COULOMBIC   "   ] = electrostaticEnergyGEF_;
-//parameters["REPULSION"      ] = repulsionEnergyGEF_;
-//parameters["CHARGE_TRANSFER"] = chargeTransferEnergyGEF_;
-//parameters["EET_COUPLING"   ] = EETCouplingConstantGEF_;
-}
-oepdev::GenEffFrag::~GenEffFrag() {}
-void oepdev::GenEffFrag::rotate(std::shared_ptr<psi::Matrix> R)
-{
-  for (auto const& x : this->parameters) {
-       x.second->rotate(R);
-  }
-}
-void oepdev::GenEffFrag::translate(std::shared_ptr<psi::Vector> T)
-{
-  for (auto const& x : this->parameters) {
-       x.second->translate(T);
-  }
-}
-void oepdev::GenEffFrag::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList)
-{
-  for (auto const& x : this->parameters) {
-       x.second->superimpose(targetXYZ, supList);
-  }
-}
 //-- GenEffParFactory --////////////////////////////////////////////////////////////////////////////////
 oepdev::GenEffParFactory::GenEffParFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt) :
  wfn_(wfn),

@@ -87,6 +87,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/cis_uhf_explicit.cc
                        oepdev/libutil/cis_uhf_dl.cc
 		       oepdev/libutil/cis_rhf_direct.cc
+                       oepdev/libutil/kabsch_superimposer.cc
 		       # lib3d
                        oepdev/lib3d/space3d.cc
                        oepdev/lib3d/esp.cc
@@ -107,6 +108,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/liboep/oep_gdf.cc
 		       # libgefp  
                        oepdev/libgefp/gefp.cc
+                       oepdev/libgefp/gefp_frag.cc
                        oepdev/libgefp/gefp_efp2.cc
                        oepdev/libgefp/gefp_oep_efp2.cc
                        oepdev/libgefp/gefp_polar_base.cc

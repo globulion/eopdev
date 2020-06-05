@@ -59,6 +59,7 @@ void export_dmtp(py::module &m) {
 	.def_static("build"            , build_dmtp     (&oepdev::DMTPole::build )                    , "Build DMTP set of distributions. Use one of the compute methods to complete the build.", py::return_value_policy::take_ownership)
 	.def       ("compute"          , compute_default(&oepdev::DMTPole::compute)                   , "Compute CAMM's")
 	.def       ("compute"          , compute_dmatrix(&oepdev::DMTPole::compute)                   , "Compute generalized CAMM's from user-provided density matrix")
+        .def       ("clone"            ,                 &oepdev::DMTPole::clone                      , "Deep-copy the object", py::return_value_policy::take_ownership)
 	.def       ("centres"          ,                 &oepdev::DMTPole::centres                    , "Get DMTP centres")
 	.def       ("origins"          ,                 &oepdev::DMTPole::origins                    , "Get DMTP origins")
 	.def       ("centre"           ,                 &oepdev::DMTPole::centre                     , "Get DMTP centre")

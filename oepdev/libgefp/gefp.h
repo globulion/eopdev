@@ -45,11 +45,22 @@ class GenEffPar
                                               hasDensityMatrixQuadrupolePolarizability_(false),
                                  type_(name),
                                  data_matrix_({}), data_dmtp_({}), data_dpol_({}) {};
+   /// Copy Constructor
+   GenEffPar(const GenEffPar*);
+   /// Make a deep copy
+   std::shared_ptr<GenEffPar> clone(void) const {
+       auto temp = std::make_shared<GenEffPar>(this);
+       return temp;
+   }
    /// Destruct
   ~GenEffPar() {};
+
+  protected:
+   /// Deep-copy the matrix and DMTP data
+   void copy_from(const GenEffPar*);
    //@}
 
-
+  public:
    /** \name Transformators */
    //@{
 
@@ -473,6 +484,8 @@ class GenEffFrag
   protected: 
    /// Name of GEFP
    std::string name_;
+   /// Structure
+   psi::SharedMolecule frag_;
 
   public:
    /** \name Constructors and Destructor */ 
@@ -482,6 +495,13 @@ class GenEffFrag
    GenEffFrag();
    /// Initialize with custom name of GEFP
    GenEffFrag(std::string name);
+   /// Copy Constructor
+   GenEffFrag(const GenEffFrag*);
+   /// Make a deep copy
+   std::shared_ptr<GenEffFrag> clone(void) const {
+       auto temp = std::make_shared<GenEffFrag>(this);
+       return temp;
+   }
    /// Destruct
   ~GenEffFrag();
    //@}
@@ -491,6 +511,8 @@ class GenEffFrag
 
    /// Dictionary of All GEF Parameters
    std::map<std::string, std::shared_ptr<GenEffPar>> parameters;
+   /// Dictionary of All Basis Sets
+   std::map<std::string, psi::SharedBasisSet> basissets; 
    //@}
 
 
@@ -505,11 +527,22 @@ class GenEffFrag
 
    /// Superimpose
    void superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList);
+
+   /// Superimpose to the structure held in `frag_`
+   void superimpose(void) {superimpose(std::make_shared<psi::Matrix>(frag_->geometry()), {});};
    //@}
 
 
    /** \name Mutators */
    //@{
+
+   /// Set the fragment molecule
+   void set_molecule(const psi::SharedMolecule mol) {
+        std::vector<int> real_list = {};
+        std::vector<int> ghost_list= {};
+        for (int i=0; i<mol->nfragments(); ++i) real_list.push_back(i);
+        frag_ = mol->extract_subsets(real_list, ghost_list);
+   }
 
    /// Set the Density Matrix Susceptibility Tensor Object
    void set_gefp_polarization(const std::shared_ptr<GenEffPar>& par) {densityMatrixSusceptibilityGEF_=par;}
@@ -567,6 +600,33 @@ class GenEffFrag
        return densityMatrixSusceptibilityGEF_->susceptibility(fieldRank, fieldGradientRank);
    }
    //@}
+
+
+   /** \name Computers */
+   //@{
+   /** \brief Compute interaction energy between this and other fragment.
+    *
+    *  @param theory - theory used to compute energy
+    *  @param other  - other fragment
+    *  @return interaction energy in [A.U.]
+    */
+   double energy(std::string theory, std::shared_ptr<GenEffFrag> other);
+   //@}
+
+  protected:
+   /** \name Interface Computers */
+   //@{
+   double compute_energy_efp2_coul(std::shared_ptr<GenEffFrag> other);
+   double compute_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other);
+   double compute_energy_efp2_ind(std::shared_ptr<GenEffFrag> other);
+   double compute_energy_efp2_ct(std::shared_ptr<GenEffFrag> other);
+   double compute_energy_efp2_disp(std::shared_ptr<GenEffFrag> other);
+   double compute_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other);
+   double compute_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other);
+   //@}
+
+
+
 
 
 

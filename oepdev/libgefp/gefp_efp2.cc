@@ -59,10 +59,10 @@ void oepdev::EFP2_GEFactory::assemble_parameters() {
 
 void oepdev::EFP2_GEFactory::assemble_geometry_data() {
   psi::SharedMatrix geom = std::make_shared<psi::Matrix>(wfn_->molecule()->geometry());
-  this->EFP2Parameters_->set_matrix("POS", geom);
+  this->EFP2Parameters_->set_matrix("pos", geom);
 }
 void oepdev::EFP2_GEFactory::assemble_dmtp_data() {
-  this->EFP2Parameters_->set_dmtp("CAMM", dmtp_);
+  this->EFP2Parameters_->set_dmtp("camm", dmtp_);
 }
 void oepdev::EFP2_GEFactory::assemble_lmo_centroids() {
   psi::SharedMatrix C = cphfSolver_->localizer()->L();
@@ -71,7 +71,7 @@ void oepdev::EFP2_GEFactory::assemble_lmo_centroids() {
   for (int i=0; i<cphfSolver_->nocc(); ++i) {
        lmoc->set_row(0, i, cphfSolver_->lmo_centroid(i));
   }
-  this->EFP2Parameters_->set_matrix("LMOC", lmoc);
+  this->EFP2Parameters_->set_matrix("lmoc", lmoc);
 }
 
 void oepdev::EFP2_GEFactory::assemble_fock_matrix() {
@@ -79,13 +79,13 @@ void oepdev::EFP2_GEFactory::assemble_fock_matrix() {
   psi::SharedMatrix Fa_ao = wfn_->Fa();
   psi::SharedMatrix Fa_mo = psi::Matrix::triplet(C, Fa_ao, C, true, false, false);
 
-  this->EFP2Parameters_->set_matrix("FOCK", Fa_mo);
+  this->EFP2Parameters_->set_matrix("fock", Fa_mo);
 
   psi::SharedMatrix Ca_occ_canonical = cphfSolver_->Cocc();
   psi::SharedMatrix Ca_vir_canonical = cphfSolver_->Cvir();
 
-  this->EFP2Parameters_->set_matrix("CMOO", Ca_occ_canonical);
-  this->EFP2Parameters_->set_matrix("CMOV", Ca_vir_canonical);
+  this->EFP2Parameters_->set_matrix("cmoo", Ca_occ_canonical);
+  this->EFP2Parameters_->set_matrix("cmov", Ca_vir_canonical);
 }
 
 void oepdev::EFP2_GEFactory::assemble_distributed_polarizabilities() {
@@ -94,5 +94,5 @@ void oepdev::EFP2_GEFactory::assemble_distributed_polarizabilities() {
        dpol.push_back(cphfSolver_->polarizability(i));
    }
 
-  this->EFP2Parameters_->set_dpol("DPOL-0", dpol);
+  this->EFP2Parameters_->set_dpol("dpol-0", dpol);
 }
