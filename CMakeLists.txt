@@ -140,6 +140,7 @@ add_psi4_plugin(oepdev main.cc
 		       oepdev/libtest/camm.cc
 		       oepdev/libtest/dmtp_energy.cc
 		       oepdev/libtest/efp2_energy.cc
+                       oepdev/libtest/kabsch_superimposition.cc
 		       oepdev/libtest/eri_2_2.cc
 		       oepdev/libtest/eri_3_1.cc
 		       oepdev/libtest/eri_1_1.cc

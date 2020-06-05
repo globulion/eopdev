@@ -30,6 +30,10 @@ class KabschSuperimposer
   ~KabschSuperimposer() {};
    /// Run the superimposition
    void compute(psi::SharedMatrix initial_xyz, psi::SharedMatrix final_xyz);
+   void compute(psi::SharedMolecule initial_mol, psi::SharedMolecule final_mol) {
+        psi::SharedMatrix initial_xyz = std::make_shared<psi::Matrix>(initial_mol->geometry());
+        psi::SharedMatrix final_xyz = std::make_shared<psi::Matrix>(final_mol->geometry());
+        compute(initial_xyz, final_xyz);}
    /// Rotation matrix
    psi::SharedMatrix rotation;
    /// Translation vector

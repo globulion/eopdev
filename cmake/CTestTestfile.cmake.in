@@ -20,6 +20,7 @@ add_test (NAME SCF_PERTURB           COMMAND "psi4" "tests/oepdev/scf_perturb.in
 add_test (NAME CAMM                  COMMAND "psi4" "tests/oepdev/camm.inp"                 "tests/oepdev/camm.out"       )
 add_test (NAME DMTP_ENERGY           COMMAND "psi4" "tests/oepdev/dmtp_energy.inp"          "tests/oepdev/dmtp_energy.out")
 add_test (NAME EFP2_ENERGY           COMMAND "psi4" "tests/oepdev/efp2_energy.inp"          "tests/oepdev/efp2_energy.out")
+add_test (NAME KABSCH_SUPERIMPOSITION COMMAND "psi4" "tests/oepdev/kabsch_superimposition.inp" "tests/oepdev/kabsch_superimposition.out")
 add_test (NAME ESP_SOLVER            COMMAND "psi4" "tests/oepdev/esp_solver.inp"           "tests/oepdev/esp_solver.out" )
 add_test (NAME POINTS_COLLECTION3D   COMMAND "psi4" "tests/oepdev/points_collection3d.inp"  "tests/oepdev/points_collection3d.out" )
 add_test (NAME CT_ENERGY_BENCHMARK_OL   COMMAND "psi4" "tests/oepdev/ct_energy_benchmark_ol.inp"  "tests/oepdev/ct_energy_benchmark_ol.out" )
@@ -51,6 +52,7 @@ set_tests_properties (SCF_PERTURB           PROPERTIES PASS_REGULAR_EXPRESSION "
 set_tests_properties (CAMM                  PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000531")
 set_tests_properties (DMTP_ENERGY           PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000006")
 set_tests_properties (EFP2_ENERGY           PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000") #TODO
+set_tests_properties (KABSCH_SUPERIMPOSITION PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000") #TODO
 set_tests_properties (ESP_SOLVER            PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.1344"    )
 set_tests_properties (POINTS_COLLECTION3D   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.03804657")
 set_tests_properties (CT_ENERGY_BENCHMARK_OL   PROPERTIES PASS_REGULAR_EXPRESSION " CT Energy Otto-Ladik= -0.00050753") # Revise

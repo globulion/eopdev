@@ -54,17 +54,17 @@ void KabschSuperimposer::compute(psi::SharedMatrix initial_xyz, psi::SharedMatri
   double det = S->get(0) * S->get(1) * S->get(2);
 
   if (det < 0.0) {
-      Vt->scale_row(2, 0, -1.0);
+      Vt->scale_row(0, 2, -1.0);
       this->rotation = psi::Matrix::doublet(U, Vt, false, false);
   }
 
   // Compute translation vector
-  psi::SharedMatrix T = psi::Matrix::doublet(this->rotation, c_av);
+  psi::SharedMatrix T = psi::Matrix::doublet(c_av, this->rotation, true, false);
   T->subtract(r_av);
   T->scale(-1.0);
-  this->translation->set(0, T->get(0, 0));
-  this->translation->set(1, T->get(1, 0));
-  this->translation->set(2, T->get(2, 0));
+  this->translation->set(0, T->get(0,0));
+  this->translation->set(1, T->get(0,1));
+  this->translation->set(2, T->get(0,2));
 }
 
 void KabschSuperimposer::clear(void) {
