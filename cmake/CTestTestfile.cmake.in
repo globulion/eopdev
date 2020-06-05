@@ -52,7 +52,7 @@ set_tests_properties (SCF_PERTURB           PROPERTIES PASS_REGULAR_EXPRESSION "
 set_tests_properties (CAMM                  PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000531")
 set_tests_properties (DMTP_ENERGY           PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000006")
 set_tests_properties (EFP2_ENERGY           PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000") #TODO
-set_tests_properties (KABSCH_SUPERIMPOSITION PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000") #TODO
+set_tests_properties (KABSCH_SUPERIMPOSITION PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
 set_tests_properties (ESP_SOLVER            PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.1344"    )
 set_tests_properties (POINTS_COLLECTION3D   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.03804657")
 set_tests_properties (CT_ENERGY_BENCHMARK_OL   PROPERTIES PASS_REGULAR_EXPRESSION " CT Energy Otto-Ladik= -0.00050753") # Revise

@@ -22,8 +22,8 @@ void KabschSuperimposer::compute(psi::SharedMatrix initial_xyz, psi::SharedMatri
 
   // Subtract average
   double w = 1.0/(double)initial_xyz->nrow();
-  psi::SharedMatrix c_av = c->collapse(1); c_av->scale(w);
-  psi::SharedMatrix r_av = r->collapse(1); r_av->scale(w);
+  psi::SharedMatrix c_av = c->collapse(0); c_av->scale(w);
+  psi::SharedMatrix r_av = r->collapse(0); r_av->scale(w);
 
   double** pc = c->pointer();
   double** pr = r->pointer();
@@ -47,11 +47,9 @@ void KabschSuperimposer::compute(psi::SharedMatrix initial_xyz, psi::SharedMatri
 
   // Compute rotation matrix
   this->rotation = psi::Matrix::doublet(U, Vt, false, false);
-  // Sarrus:
-  //double** rr = this->rotation->pointer();
-  //double det = rr[0][0]*rr[1][1]*rr[2][2] + rr[0][1]*rr[1][2]*rr[2][0] + rr[0][2]*rr[1][0]*rr[2][1]
-  //            -rr[0][2]*rr[1][1]*rr[2][0] - rr[0][1]*rr[1][0]*rr[2][2] - rr[0][0]*rr[1][2]*rr[2][1];
-  double det = S->get(0) * S->get(1) * S->get(2);
+  double** rr = this->rotation->pointer();
+  double det = rr[0][0]*rr[1][1]*rr[2][2] + rr[0][1]*rr[1][2]*rr[2][0] + rr[0][2]*rr[1][0]*rr[2][1]
+              -rr[0][2]*rr[1][1]*rr[2][0] - rr[0][1]*rr[1][0]*rr[2][2] - rr[0][0]*rr[1][2]*rr[2][1]; // Sarrus
 
   if (det < 0.0) {
       Vt->scale_row(0, 2, -1.0);
@@ -65,6 +63,9 @@ void KabschSuperimposer::compute(psi::SharedMatrix initial_xyz, psi::SharedMatri
   this->translation->set(0, T->get(0,0));
   this->translation->set(1, T->get(0,1));
   this->translation->set(2, T->get(0,2));
+
+  this->translation->set_name("Kabsch Translation Vector");
+  this->rotation->set_name("Kabsch Rotation Matrix");
 }
 
 void KabschSuperimposer::clear(void) {
