@@ -331,10 +331,36 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 
     /// Translate the DMTP sets
     void translate(psi::SharedVector transl);
-    /// Rotate the DMTP sets
+    /** 
+     *  \brief Rotate the DMTP sets
+     *
+     *  @param rotmat - Cartesian rotation matrix \f$ {\bf r} \f$
+     *
+     *  Centers and origins, as well as dipole, quadrupole, octupole and hexadecapole moments
+     *  are transformed according to:
+     *  \f{align*}{
+     *     x_{a}^{(i)}      &\rightarrow \sum_{a'}        x_{a'}^{(i)}          r_{a'a}                             \\
+     *     o_{a}^{(i)}      &\rightarrow \sum_{a'}        o_{a'}^{(i)}          r_{a'a}                             \\
+     *     \mu_{a}^{(i)}    &\rightarrow \sum_{a'}        \mu_{a'}^{(i)}        r_{a'a}                             \\
+     *     \Theta_{a}^{(i)} &\rightarrow \sum_{a'b'}      \Theta_{a'b'}^{(i)}   r_{a'a} r_{b'b}                     \\
+     *     \Omega_{a}^{(i)} &\rightarrow \sum_{a'b'c'}    \Omega_{a'b'c'}^{(i)} r_{a'a} r_{b'b} r_{c'c}             \\
+     *     \Xi_{a}^{(i)}    &\rightarrow \sum_{a'b'c'd'}  \Xi_{a'b'c'd'}^{(i)}  r_{a'a} r_{b'b} r_{c'c} r_{d'd}
+     *  \f}
+     *  where the definition of \f$ r_{a'a} \f$ is consistent with the Kabsch algorithm
+     *  implemented in KabschSuperimposer.
+     *  \see KabschSuperimposer
+     */
     void rotate(psi::SharedMatrix rotmat);
-    /// Superimpose the DMTP sets. Returns the RMS of superimposition.
-    double superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist);
+    /**
+     * \brief Superimpose the DMTP sets.
+     *
+     *  @param ref_xyz - target geometry to superimpose
+     *  @param suplist - superimposition list
+     *  @return the RMS of superimposition
+     *  Kabsch algorithm is used for superimposition.
+     *  \see KabschSuperimposer
+     */
+    double superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist = {});
     //@}
 
 

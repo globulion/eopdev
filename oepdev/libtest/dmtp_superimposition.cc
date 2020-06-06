@@ -13,7 +13,10 @@ double oepdev::test::Test::test_dmtp_superimposition(void) {
   // This test is for H2O dimer at HF/STO-3G (PyQuante-mod basis)
   // Rotation: mol_1 --> mol_2
 
-  // Reference multipoles
+  // Reference structure and multipoles
+  const double c_ref[9]  = { 1.295723E+00,-6.220050E+00, 6.714250E-01,
+                             2.412830E+00,-5.646150E+00, 2.002778E+00,
+                            -2.851442E-01,-5.355062E+00, 1.121727E+00};
   const double d_ref[9]  = {-3.850832E-02, 1.363762E-01, 1.714598E-01,
                             -2.937028E-02, 1.733716E-02, 1.012935E-02,
                              1.450756E-02, 1.517663E-02, 2.804010E-02};
@@ -49,10 +52,13 @@ double oepdev::test::Test::test_dmtp_superimposition(void) {
 
   // Accumulate error stored in result
   double result = 0.0;
+  double** pc = dmtp->centres()->pointer();
+  double** po = dmtp->origins()->pointer();
   double** pd = dmtp->dipoles(0)->pointer();
   double** pQ = dmtp->quadrupoles(0)->pointer();
   double** pO = dmtp->octupoles(0)->pointer();
   double** pH = dmtp->hexadecapoles(0)->pointer();
+  const double* pref_c = c_ref;
   const double* pref_d = d_ref;
   const double* pref_Q = Q_ref;
   const double* pref_O = O_ref;
@@ -61,7 +67,10 @@ double oepdev::test::Test::test_dmtp_superimposition(void) {
   for (int i=0; i<dmtp->n_sites(); ++i) {
        for (int z=0; z<3; ++z) {
             result += pow(pd[i][z] - *pref_d, 2.0);
+            result += pow(pc[i][z] - *pref_c, 2.0);
+            result += pow(po[i][z] - *pref_c, 2.0);
             pref_d++;
+            pref_c++;
        }
        for (int z=0; z<6; ++z) {
             result += pow(pQ[i][z] - *pref_Q, 2.0);
@@ -72,7 +81,7 @@ double oepdev::test::Test::test_dmtp_superimposition(void) {
             pref_O++;
        }
        for (int z=0; z<15; ++z) {
-          //result += pow(pH[i][z] - *pref_H, 2.0);
+            result += pow(pH[i][z] - *pref_H, 2.0);
             pref_H++;
        }
   }
