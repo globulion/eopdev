@@ -864,7 +864,416 @@ void DMTPole::translate(psi::SharedVector transl)
 /// Rotate the DMTP sets
 void DMTPole::rotate(psi::SharedMatrix rotmat) 
 {
-   throw psi::PSIEXCEPTION("DMTP rotation is not implemented yet.");
+  psi::SharedMatrix new_centres = psi::Matrix::doublet(this->centres_, rotmat, false, false);
+  psi::SharedMatrix new_origins = psi::Matrix::doublet(this->origins_, rotmat, false, false);
+  this->centres_->copy(new_centres);
+  this->origins_->copy(new_origins);
+
+  double** rr = rotmat->pointer();
+  const double RXX = rr[0][0];
+  const double RYX = rr[1][0];
+  const double RZX = rr[2][0];
+  const double RXY = rr[0][1];
+  const double RYY = rr[1][1];
+  const double RZY = rr[2][1];
+  const double RXZ = rr[0][2];
+  const double RYZ = rr[1][2];
+  const double RZZ = rr[2][2];
+
+  for (int n=0; n<this->nDMTPs_; ++n) {
+      
+       // Dipoles 
+       psi::SharedMatrix new_dipoles = psi::Matrix::doublet(this->dipoles_[n], rotmat, false, false);
+       this->dipoles_[n]->copy(new_dipoles);
+
+       for (int i=0; i<this->nSites_; ++i) {
+            // Quadrupoles                                                          
+            double** Q = this->quadrupoles_[n]->pointer();
+            double QXX = Q[i][0]; 
+            double QXY = Q[i][1];
+            double QXZ = Q[i][2];
+            double QYY = Q[i][3];
+            double QYZ = Q[i][4];
+            double QZZ = Q[i][5];
+                                                                                    
+            double rQXX = RXX * RXX * QXX +  
+                          RXX * RYX * QXY +
+                          RXX * RZX * QXZ +
+                          RYX * RXX * QXY +
+                          RYX * RYX * QYY +
+                          RYX * RZX * QYZ +
+                          RZX * RXX * QXZ +
+                          RZX * RYX * QYZ +
+                          RZX * RZX * QZZ;
+            double rQYY = RXY * RXY * QXX +
+                          RXY * RYY * QXY +
+                          RXY * RZY * QXZ +
+                          RYY * RXY * QXY +
+                          RYY * RYY * QYY +
+                          RYY * RZY * QYZ +
+                          RZY * RXY * QXZ +
+                          RZY * RYY * QYZ +
+                          RZY * RZY * QZZ;
+            double rQZZ = RXZ * RXZ * QXX +
+                          RXZ * RYZ * QXY +
+                          RXZ * RZZ * QXZ +
+                          RYZ * RXZ * QXY +
+                          RYZ * RYZ * QYY +
+                          RYZ * RZZ * QYZ +
+                          RZZ * RXZ * QXZ +
+                          RZZ * RYZ * QYZ +
+                          RZZ * RZZ * QZZ;
+            double rQXY = RXX * RXY * QXX +
+                          RXX * RYY * QXY +
+                          RXX * RZY * QXZ +
+                          RYX * RXY * QXY +
+                          RYX * RYY * QYY +
+                          RYX * RZY * QYZ +
+                          RZX * RXY * QXZ +
+                          RZX * RYY * QYZ +
+                          RZX * RZY * QZZ;
+            double rQXZ = RXX * RXZ * QXX +
+                          RXX * RYZ * QXY +
+                          RXX * RZZ * QXZ +
+                          RYX * RXZ * QXY +
+                          RYX * RYZ * QYY +
+                          RYX * RZZ * QYZ +
+                          RZX * RXZ * QXZ +
+                          RZX * RYZ * QYZ +
+                          RZX * RZZ * QZZ;
+            double rQYZ = RXY * RXZ * QXX + 
+                          RXY * RYZ * QXY + 
+                          RXY * RZZ * QXZ +
+                          RYY * RXZ * QXY +
+                          RYY * RYZ * QYY +
+                          RYY * RZZ * QYZ +
+                          RZY * RXZ * QXZ +
+                          RZY * RYZ * QYZ +
+                          RZY * RZZ * QZZ;
+
+            Q[i][0] = rQXX; 
+            Q[i][1] = rQXY;
+            Q[i][2] = rQXZ;
+            Q[i][3] = rQYY;
+            Q[i][4] = rQYZ;
+            Q[i][5] = rQZZ;
+
+            // Octupoles
+            double** O = this->octupoles_[n]->pointer();
+            double OXXX = O[i][0];
+            double OXXY = O[i][1]; 
+            double OXXZ = O[i][2]; 
+            double OXYY = O[i][3]; 
+            double OXYZ = O[i][4]; 
+            double OXZZ = O[i][5]; 
+            double OYYY = O[i][6]; 
+            double OYYZ = O[i][7]; 
+            double OYZZ = O[i][8]; 
+            double OZZZ = O[i][9]; 
+
+            double rOXXX = RXX * RXX * RXX * OXXX + 
+                           RXX * RXX * RYX * OXXY +
+                           RXX * RXX * RZX * OXXZ +
+                           RXX * RYX * RXX * OXXY +
+                           RXX * RYX * RYX * OXYY +
+                           RXX * RYX * RZX * OXYZ +
+                           RXX * RZX * RXX * OXXZ +
+                           RXX * RZX * RYX * OXYZ +
+                           RXX * RZX * RZX * OXZZ +
+                           RYX * RXX * RXX * OXXY +
+                           RYX * RXX * RYX * OXYY +
+                           RYX * RXX * RZX * OXYZ +
+                           RYX * RYX * RXX * OXYY +
+                           RYX * RYX * RYX * OYYY +
+                           RYX * RYX * RZX * OYYZ +
+                           RYX * RZX * RXX * OXYZ +
+                           RYX * RZX * RYX * OYYZ +
+                           RYX * RZX * RZX * OYZZ +
+                           RZX * RXX * RXX * OXXZ +
+                           RZX * RXX * RYX * OXYZ +
+                           RZX * RXX * RZX * OXZZ +
+                           RZX * RYX * RXX * OXYZ +
+                           RZX * RYX * RYX * OYYZ +
+                           RZX * RYX * RZX * OYZZ +
+                           RZX * RZX * RXX * OXZZ +
+                           RZX * RZX * RYX * OYZZ +
+                           RZX * RZX * RZX * OZZZ;
+            double rOYYY = RXY * RXY * RXY * OXXX +
+                           RXY * RXY * RYY * OXXY +
+                           RXY * RXY * RZY * OXXZ +
+                           RXY * RYY * RXY * OXXY +
+                           RXY * RYY * RYY * OXYY +
+                           RXY * RYY * RZY * OXYZ +
+                           RXY * RZY * RXY * OXXZ +
+                           RXY * RZY * RYY * OXYZ +
+                           RXY * RZY * RZY * OXZZ +
+                           RYY * RXY * RXY * OXXY +
+                           RYY * RXY * RYY * OXYY +
+                           RYY * RXY * RZY * OXYZ +
+                           RYY * RYY * RXY * OXYY +
+                           RYY * RYY * RYY * OYYY +
+                           RYY * RYY * RZY * OYYZ +
+                           RYY * RZY * RXY * OXYZ +
+                           RYY * RZY * RYY * OYYZ +
+                           RYY * RZY * RZY * OYZZ +
+                           RZY * RXY * RXY * OXXZ +
+                           RZY * RXY * RYY * OXYZ +
+                           RZY * RXY * RZY * OXZZ +
+                           RZY * RYY * RXY * OXYZ +
+                           RZY * RYY * RYY * OYYZ +
+                           RZY * RYY * RZY * OYZZ +
+                           RZY * RZY * RXY * OXZZ +
+                           RZY * RZY * RYY * OYZZ +
+                           RZY * RZY * RZY * OZZZ;
+            double rOZZZ = RXZ * RXZ * RXZ * OXXX +
+                           RXZ * RXZ * RYZ * OXXY +
+                           RXZ * RXZ * RZZ * OXXZ +
+                           RXZ * RYZ * RXZ * OXXY +
+                           RXZ * RYZ * RYZ * OXYY +
+                           RXZ * RYZ * RZZ * OXYZ +
+                           RXZ * RZZ * RXZ * OXXZ +
+                           RXZ * RZZ * RYZ * OXYZ +
+                           RXZ * RZZ * RZZ * OXZZ +
+                           RYZ * RXZ * RXZ * OXXY +
+                           RYZ * RXZ * RYZ * OXYY +
+                           RYZ * RXZ * RZZ * OXYZ +
+                           RYZ * RYZ * RXZ * OXYY +
+                           RYZ * RYZ * RYZ * OYYY +
+                           RYZ * RYZ * RZZ * OYYZ +
+                           RYZ * RZZ * RXZ * OXYZ +
+                           RYZ * RZZ * RYZ * OYYZ +
+                           RYZ * RZZ * RZZ * OYZZ +
+                           RZZ * RXZ * RXZ * OXXZ +
+                           RZZ * RXZ * RYZ * OXYZ +
+                           RZZ * RXZ * RZZ * OXZZ +
+                           RZZ * RYZ * RXZ * OXYZ +
+                           RZZ * RYZ * RYZ * OYYZ +
+                           RZZ * RYZ * RZZ * OYZZ +
+                           RZZ * RZZ * RXZ * OXZZ +
+                           RZZ * RZZ * RYZ * OYZZ +
+                           RZZ * RZZ * RZZ * OZZZ;
+            double rOXXY = RXX * RXX * RXY * OXXX +
+                           RXX * RXX * RYY * OXXY +
+                           RXX * RXX * RZY * OXXZ +
+                           RXX * RYX * RXY * OXXY +
+                           RXX * RYX * RYY * OXYY +
+                           RXX * RYX * RZY * OXYZ +
+                           RXX * RZX * RXY * OXXZ +
+                           RXX * RZX * RYY * OXYZ +
+                           RXX * RZX * RZY * OXZZ +
+                           RYX * RXX * RXY * OXXY +
+                           RYX * RXX * RYY * OXYY +
+                           RYX * RXX * RZY * OXYZ +
+                           RYX * RYX * RXY * OXYY +
+                           RYX * RYX * RYY * OYYY +
+                           RYX * RYX * RZY * OYYZ +
+                           RYX * RZX * RXY * OXYZ +
+                           RYX * RZX * RYY * OYYZ +
+                           RYX * RZX * RZY * OYZZ +
+                           RZX * RXX * RXY * OXXZ +
+                           RZX * RXX * RYY * OXYZ +
+                           RZX * RXX * RZY * OXZZ +
+                           RZX * RYX * RXY * OXYZ +
+                           RZX * RYX * RYY * OYYZ +
+                           RZX * RYX * RZY * OYZZ +
+                           RZX * RZX * RXY * OXZZ +
+                           RZX * RZX * RYY * OYZZ +
+                           RZX * RZX * RZY * OZZZ;
+            double rOXXZ = RXX * RXX * RXZ * OXXX +
+                           RXX * RXX * RYZ * OXXY +
+                           RXX * RXX * RZZ * OXXZ +
+                           RXX * RYX * RXZ * OXXY +
+                           RXX * RYX * RYZ * OXYY +
+                           RXX * RYX * RZZ * OXYZ +
+                           RXX * RZX * RXZ * OXXZ +
+                           RXX * RZX * RYZ * OXYZ +
+                           RXX * RZX * RZZ * OXZZ +
+                           RYX * RXX * RXZ * OXXY +
+                           RYX * RXX * RYZ * OXYY +
+                           RYX * RXX * RZZ * OXYZ +
+                           RYX * RYX * RXZ * OXYY +
+                           RYX * RYX * RYZ * OYYY +
+                           RYX * RYX * RZZ * OYYZ +
+                           RYX * RZX * RXZ * OXYZ +
+                           RYX * RZX * RYZ * OYYZ +
+                           RYX * RZX * RZZ * OYZZ +
+                           RZX * RXX * RXZ * OXXZ +
+                           RZX * RXX * RYZ * OXYZ +
+                           RZX * RXX * RZZ * OXZZ +
+                           RZX * RYX * RXZ * OXYZ +
+                           RZX * RYX * RYZ * OYYZ +
+                           RZX * RYX * RZZ * OYZZ +
+                           RZX * RZX * RXZ * OXZZ +
+                           RZX * RZX * RYZ * OYZZ +
+                           RZX * RZX * RZZ * OZZZ;
+            double rOXYY = RXX * RXY * RXY * OXXX +
+                           RXX * RXY * RYY * OXXY +
+                           RXX * RXY * RZY * OXXZ +
+                           RXX * RYY * RXY * OXXY +
+                           RXX * RYY * RYY * OXYY +
+                           RXX * RYY * RZY * OXYZ +
+                           RXX * RZY * RXY * OXXZ +
+                           RXX * RZY * RYY * OXYZ +
+                           RXX * RZY * RZY * OXZZ +
+                           RYX * RXY * RXY * OXXY +
+                           RYX * RXY * RYY * OXYY +
+                           RYX * RXY * RZY * OXYZ +
+                           RYX * RYY * RXY * OXYY +
+                           RYX * RYY * RYY * OYYY +
+                           RYX * RYY * RZY * OYYZ +
+                           RYX * RZY * RXY * OXYZ +
+                           RYX * RZY * RYY * OYYZ +
+                           RYX * RZY * RZY * OYZZ +
+                           RZX * RXY * RXY * OXXZ +
+                           RZX * RXY * RYY * OXYZ +
+                           RZX * RXY * RZY * OXZZ +
+                           RZX * RYY * RXY * OXYZ +
+                           RZX * RYY * RYY * OYYZ +
+                           RZX * RYY * RZY * OYZZ +
+                           RZX * RZY * RXY * OXZZ +
+                           RZX * RZY * RYY * OYZZ +
+                           RZX * RZY * RZY * OZZZ;
+            double rOYYZ = RXY * RXY * RXZ * OXXX +
+                           RXY * RXY * RYZ * OXXY +
+                           RXY * RXY * RZZ * OXXZ +
+                           RXY * RYY * RXZ * OXXY +
+                           RXY * RYY * RYZ * OXYY +
+                           RXY * RYY * RZZ * OXYZ +
+                           RXY * RZY * RXZ * OXXZ +
+                           RXY * RZY * RYZ * OXYZ +
+                           RXY * RZY * RZZ * OXZZ +
+                           RYY * RXY * RXZ * OXXY +
+                           RYY * RXY * RYZ * OXYY +
+                           RYY * RXY * RZZ * OXYZ +
+                           RYY * RYY * RXZ * OXYY +
+                           RYY * RYY * RYZ * OYYY +
+                           RYY * RYY * RZZ * OYYZ +
+                           RYY * RZY * RXZ * OXYZ +
+                           RYY * RZY * RYZ * OYYZ +
+                           RYY * RZY * RZZ * OYZZ +
+                           RZY * RXY * RXZ * OXXZ +
+                           RZY * RXY * RYZ * OXYZ +
+                           RZY * RXY * RZZ * OXZZ +
+                           RZY * RYY * RXZ * OXYZ +
+                           RZY * RYY * RYZ * OYYZ +
+                           RZY * RYY * RZZ * OYZZ +
+                           RZY * RZY * RXZ * OXZZ +
+                           RZY * RZY * RYZ * OYZZ +
+                           RZY * RZY * RZZ * OZZZ;
+            double rOXZZ = RXX * RXZ * RXZ * OXXX +
+                           RXX * RXZ * RYZ * OXXY +
+                           RXX * RXZ * RZZ * OXXZ +
+                           RXX * RYZ * RXZ * OXXY +
+                           RXX * RYZ * RYZ * OXYY +
+                           RXX * RYZ * RZZ * OXYZ +
+                           RXX * RZZ * RXZ * OXXZ +
+                           RXX * RZZ * RYZ * OXYZ +
+                           RXX * RZZ * RZZ * OXZZ +
+                           RYX * RXZ * RXZ * OXXY +
+                           RYX * RXZ * RYZ * OXYY +
+                           RYX * RXZ * RZZ * OXYZ +
+                           RYX * RYZ * RXZ * OXYY +
+                           RYX * RYZ * RYZ * OYYY +
+                           RYX * RYZ * RZZ * OYYZ +
+                           RYX * RZZ * RXZ * OXYZ +
+                           RYX * RZZ * RYZ * OYYZ +
+                           RYX * RZZ * RZZ * OYZZ +
+                           RZX * RXZ * RXZ * OXXZ +
+                           RZX * RXZ * RYZ * OXYZ +
+                           RZX * RXZ * RZZ * OXZZ +
+                           RZX * RYZ * RXZ * OXYZ +
+                           RZX * RYZ * RYZ * OYYZ +
+                           RZX * RYZ * RZZ * OYZZ +
+                           RZX * RZZ * RXZ * OXZZ +
+                           RZX * RZZ * RYZ * OYZZ +
+                           RZX * RZZ * RZZ * OZZZ;
+            double rOYZZ = RXY * RXZ * RXZ * OXXX +
+                           RXY * RXZ * RYZ * OXXY +
+                           RXY * RXZ * RZZ * OXXZ +
+                           RXY * RYZ * RXZ * OXXY +
+                           RXY * RYZ * RYZ * OXYY +
+                           RXY * RYZ * RZZ * OXYZ +
+                           RXY * RZZ * RXZ * OXXZ +
+                           RXY * RZZ * RYZ * OXYZ +
+                           RXY * RZZ * RZZ * OXZZ +
+                           RYY * RXZ * RXZ * OXXY +
+                           RYY * RXZ * RYZ * OXYY +
+                           RYY * RXZ * RZZ * OXYZ +
+                           RYY * RYZ * RXZ * OXYY +
+                           RYY * RYZ * RYZ * OYYY +
+                           RYY * RYZ * RZZ * OYYZ +
+                           RYY * RZZ * RXZ * OXYZ +
+                           RYY * RZZ * RYZ * OYYZ +
+                           RYY * RZZ * RZZ * OYZZ +
+                           RZY * RXZ * RXZ * OXXZ +
+                           RZY * RXZ * RYZ * OXYZ +
+                           RZY * RXZ * RZZ * OXZZ +
+                           RZY * RYZ * RXZ * OXYZ +
+                           RZY * RYZ * RYZ * OYYZ +
+                           RZY * RYZ * RZZ * OYZZ +
+                           RZY * RZZ * RXZ * OXZZ +
+                           RZY * RZZ * RYZ * OYZZ +
+                           RZY * RZZ * RZZ * OZZZ;
+            double rOXYZ = RXX * RXY * RXZ * OXXX +
+                           RXX * RXY * RYZ * OXXY +
+                           RXX * RXY * RZZ * OXXZ +
+                           RXX * RYY * RXZ * OXXY +
+                           RXX * RYY * RYZ * OXYY +
+                           RXX * RYY * RZZ * OXYZ +
+                           RXX * RZY * RXZ * OXXZ +
+                           RXX * RZY * RYZ * OXYZ +
+                           RXX * RZY * RZZ * OXZZ +
+                           RYX * RXY * RXZ * OXXY +
+                           RYX * RXY * RYZ * OXYY +
+                           RYX * RXY * RZZ * OXYZ +
+                           RYX * RYY * RXZ * OXYY +
+                           RYX * RYY * RYZ * OYYY +
+                           RYX * RYY * RZZ * OYYZ +
+                           RYX * RZY * RXZ * OXYZ +
+                           RYX * RZY * RYZ * OYYZ +
+                           RYX * RZY * RZZ * OYZZ +
+                           RZX * RXY * RXZ * OXXZ +
+                           RZX * RXY * RYZ * OXYZ +
+                           RZX * RXY * RZZ * OXZZ +
+                           RZX * RYY * RXZ * OXYZ +
+                           RZX * RYY * RYZ * OYYZ +
+                           RZX * RYY * RZZ * OYZZ +
+                           RZX * RZY * RXZ * OXZZ +
+                           RZX * RZY * RYZ * OYZZ +
+                           RZX * RZY * RZZ * OZZZ;
+        
+            O[i][0] = rOXXX;
+            O[i][1] = rOXXY; 
+            O[i][2] = rOXXZ; 
+            O[i][3] = rOXYY; 
+            O[i][4] = rOXYZ; 
+            O[i][5] = rOXZZ; 
+            O[i][6] = rOYYY; 
+            O[i][7] = rOYYZ; 
+            O[i][8] = rOYZZ; 
+            O[i][9] = rOZZZ; 
+
+            // Hexadecapoles
+            double** H = this->hexadecapoles_[n]->pointer();
+
+            double HXXXX = H[i][ 0]; 
+            double HXXXY = H[i][ 1];
+            double HXXXZ = H[i][ 2];
+            double HXXYY = H[i][ 3];
+            double HXXYZ = H[i][ 4];
+            double HXXZZ = H[i][ 5];
+            double HXYYY = H[i][ 6];
+            double HXYYZ = H[i][ 7];
+            double HXYZZ = H[i][ 8];
+            double HXZZZ = H[i][ 9];
+            double HYYYY = H[i][10];
+            double HYYYZ = H[i][11];
+            double HYYZZ = H[i][12];
+            double HYZZZ = H[i][13];
+            double HZZZZ = H[i][14];
+
+       }
+  }
 }
 /// Superimpose the DMTP sets
 double DMTPole::superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist) 

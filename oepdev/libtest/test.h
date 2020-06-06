@@ -110,6 +110,9 @@ class Test
    /// Test the oepdev::KabschSuperimposer
    double test_kabsch_superimposition(void);
 
+   /// Test the oepdev::DMTP class for superimposition
+   double test_dmtp_superimposition(void);
+
    /// Test the oepdev::ESPSolver
    double test_esp_solver(void);
 
