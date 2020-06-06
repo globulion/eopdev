@@ -256,7 +256,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     /** \name Transformators */
     //@{
     /** 
-     *  Change origins of the distributed multipole moments of all sets
+     *  \brief Change origins of the distributed multipole moments of all sets
      *
      *  @param new_origins - matrix with coordinates of the new origins \f$ \{ {\bf r}_{\rm new} \}\f$.
      *  \note The number of origins has to be equal to the number of distributed centres.
@@ -333,23 +333,24 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     void translate(psi::SharedVector transl);
     /// Rotate the DMTP sets
     void rotate(psi::SharedMatrix rotmat);
-    /// Superimpose the DMTP sets
-    void superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist);
+    /// Superimpose the DMTP sets. Returns the RMS of superimposition.
+    double superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist);
     //@}
 
 
     /** \name Computers */
     //@{
     /** 
-     * Compute DMTP's from the set of the one-particle density matrices.
+     * \brief Compute DMTP's from the set of the one-particle density matrices.
      *
      * @param D - list of one-particle density matrices
      * @param t - list of flags determining if density is of transition type or not
      */
     void compute(std::vector<psi::SharedMatrix> D, std::vector<bool> t);
     /** 
-     * Compute DMTP's from the *sum* of the ground-state alpha and beta one-particle density matrices (t=false, i=0).
+     * \brief Compute ground state DMTP.
      *
+     * Compute DMTP's from the *sum* of the ground-state alpha and beta one-particle density matrices (t=false, i=0).
      * Results in a usual DMTP analysis of a molecule's charge density distribution.
      */
     void compute(void);
@@ -523,9 +524,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 class CAMM : public DMTPole 
 {
  public:
-   /// Construct CAMM DMTPole object
    CAMM(psi::SharedWavefunction wfn, int n);
-   /// Copy Constructor
    CAMM(const CAMM* other) : DMTPole(other) {};
    virtual ~CAMM();
    virtual void compute(psi::SharedMatrix D, bool transition, int n);

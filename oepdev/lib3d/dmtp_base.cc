@@ -2,6 +2,7 @@
 #include "psi4/libmints/integral.h"
 #include "psi4/libmints/multipolesymmetry.h"
 #include "psi4/libpsi4util/process.h"
+#include "../libutil/kabsch_superimposer.h"
 #include <cassert>
 #include <iostream>
 
@@ -866,9 +867,36 @@ void DMTPole::rotate(psi::SharedMatrix rotmat)
    throw psi::PSIEXCEPTION("DMTP rotation is not implemented yet.");
 }
 /// Superimpose the DMTP sets
-void DMTPole::superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist) 
+double DMTPole::superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist) 
 {
-   throw psi::PSIEXCEPTION("DMTP superimposition is not implemented yet.");
+   // Initialize
+   KabschSuperimposer sup = KabschSuperimposer();
+
+   // Determine the overlapping structure slices
+   psi::SharedMatrix initial_xyz, final_xyz;
+   if (suplist.empty()) {
+       initial_xyz = this->centres_;
+       final_xyz = ref_xyz;
+   } else {
+       const int n = suplist.size();
+       initial_xyz = std::make_shared<psi::Matrix>("", n, 3);
+       final_xyz   = std::make_shared<psi::Matrix>("", n, 3);
+       for (int i=0; i<n; ++i) {
+            initial_xyz->set_row(0, suplist[i], this->centres_->get_row(0, suplist[i]));
+            final_xyz  ->set_row(0, suplist[i],        ref_xyz->get_row(0, suplist[i]));
+       }
+   }
+
+   // Superimpose
+   sup.compute(initial_xyz, final_xyz);
+   psi::SharedMatrix r = sup.rotation;
+   psi::SharedVector t = sup.translation;
+
+   this->rotate(r);
+   this->translate(t);
+
+   double rms = sup.rms();
+   return rms;
 }
 
 void DMTPole::print(void) const
