@@ -453,10 +453,370 @@ void MultipoleConvergence::compute_energy()
 void MultipoleConvergence::compute_potential(const double& x, const double& y, const double& z)
 {
   throw psi::PSIEXCEPTION("The potential from DMTP's is not implemented yet.");
+
+   double** r_A_ = dmtp_1_->centres()->pointer();
+
+   for (int N=0; N<dmtp_1_->nDMTPs_; ++N) {
+        double** q_A_ = dmtp_1_->charges_[N]->pointer();
+        double** D_A_ = dmtp_1_->dipoles_[N]->pointer();
+        double** Q_A_ = dmtp_1_->quadrupoles_[N]->pointer();
+        double** O_A_ = dmtp_1_->octupoles_[N]->pointer();
+        double** H_A_ = dmtp_1_->hexadecapoles_[N]->pointer();
+
+        double f_r1 = 0.0;  // R-1
+        double f_r2 = 0.0;  // R-2
+        double f_r3 = 0.0;  // R-3
+        double f_r4 = 0.0;  // R-4
+        double f_r5 = 0.0;  // R-5
+        
+        for (int i=0; i<dmtp_1_->nSites_; ++i) {
+             double rix = r_A_[i][0];
+             double riy = r_A_[i][1];
+             double riz = r_A_[i][2];
+
+             double Rx  = x - rix; // r_ji vector
+             double Ry  = y - riy;
+             double Rz  = z - riz;
+
+             double r   = 1.0/sqrt(Rx*Rx+Ry*Ry+Rz*Rz);
+             double r3  = r*r*r;
+             double r5  = r*r*r3;
+             double r7  = r*r*r5;
+             double r9  = r*r*r7;
+
+             double qi = q_A_[i][0];
+             double dix, diy, diz;
+             double Qixx, Qixy, Qixz, Qiyy, Qiyz, Qizz;
+             double Oixxx, Oixxy, Oixxz, Oixyy, Oixyz, Oixzz, Oiyyy, Oiyyz, Oiyzz, Oizzz;
+             double Hixxxx, Hixxxy, Hixxxz, Hixxyy, Hixxyz, Hixxzz, Hixyyy, Hixyyz, Hixyzz, 
+                    Hixzzz, Hiyyyy, Hiyyyz, Hiyyzz, Hiyzzz, Hizzzz;
+
+             //fx_r2 += qi * Rx * r3;
+             //fy_r2 += qi * Ry * r3;
+             //fz_r2 += qi * Rz * r3;
+
+             if (dmtp_1_->hasDipoles_) {
+                 dix = D_A_[i][0]; 
+                 diy = D_A_[i][1];
+                 diz = D_A_[i][2];
+
+                 double w = 3.0 * r5 * (Rx * dix + Ry * diy + Rz * diz);
+                 //fx_r3 += Rx * w - dix * r3;
+                 //fy_r3 += Ry * w - diy * r3;
+                 //fz_r3 += Rz * w - diz * r3;
+
+                 if (dmtp_1_->hasQuadrupoles_) {
+                     Qixx = Q_A_[i][0] * 1.5; 
+                     Qixy = Q_A_[i][1] * 1.5;
+                     Qixz = Q_A_[i][2] * 1.5;
+                     Qiyy = Q_A_[i][3] * 1.5;
+                     Qiyz = Q_A_[i][4] * 1.5;
+                     Qizz = Q_A_[i][5] * 1.5;
+                     double t = (Qixx + Qiyy + Qizz) / 3.0;
+                     Qixx -= t; Qiyy -= t; Qizz -= t;
+
+                     double u_x = Qixx*Rx + Qixy*Ry + Qixz*Rz;
+                     double u_y = Qixy*Rx + Qiyy*Ry + Qiyz*Rz;
+                     double u_z = Qixz*Rx + Qiyz*Ry + Qizz*Rz;
+ 
+                     double u   = u_x*Rx + u_y*Ry + u_z*Rz;
+                     //double u = Qixx*Rx*Rx + Qixy*Rx*Ry + Qixz*Rx*Rz
+                     //          +Qixy*Ry*Rx + Qiyy*Ry*Ry + Qiyz*Ry*Rz
+                     //          +Qixz*Rz*Rx + Qiyz*Rz*Ry + Qizz*Rz*Rz;
+
+                     double ww = 5.0 * r7 * u;
+                     double cc = 2.0 * r5;
+                     //fx_r4 += ww * Rx - cc * u_x;
+                     //fy_r4 += ww * Ry - cc * u_y;
+                     //fz_r4 += ww * Rz - cc * u_z;
+
+                     if (dmtp_1_->hasOctupoles_) {
+                         Oixxx = O_A_[i][0] * 2.5;
+                         Oixxy = O_A_[i][1] * 2.5; 
+                         Oixxz = O_A_[i][2] * 2.5; 
+                         Oixyy = O_A_[i][3] * 2.5; 
+                         Oixyz = O_A_[i][4] * 2.5; 
+                         Oixzz = O_A_[i][5] * 2.5; 
+                         Oiyyy = O_A_[i][6] * 2.5; 
+                         Oiyyz = O_A_[i][7] * 2.5; 
+                         Oiyzz = O_A_[i][8] * 2.5; 
+                         Oizzz = O_A_[i][9] * 2.5; 
+                         double tx = (Oixxx + Oixyy + Oixzz) / 5.0;
+                         double ty = (Oixxy + Oiyyy + Oiyzz) / 5.0;
+                         double tz = (Oixxz + Oiyyz + Oizzz) / 5.0;
+                         Oixxx -= tx * 3.0;
+                         Oixxy -= ty;
+                         Oixxz -= tz;
+                         Oixyy -= tx;
+                         Oixzz -= tx;
+                         Oiyyy -= ty * 3.0;
+                         Oiyyz -= tz;
+                         Oiyzz -= ty;
+                         Oizzz -= tz * 3.0;
+
+                         double p_xx = Oixxx*Rx + Oixxy*Ry + Oixxz*Rz;
+                         double p_xy = Oixxy*Rx + Oixyy*Ry + Oixyz*Rz;
+                         double p_xz = Oixxz*Rx + Oixyz*Ry + Oixzz*Rz;
+                         double p_yx = Oixxy*Rx + Oixyy*Ry + Oixyz*Rz;
+                         double p_yy = Oixyy*Rx + Oiyyy*Ry + Oiyyz*Rz;
+                         double p_yz = Oixyz*Rx + Oiyyz*Ry + Oiyzz*Rz;
+                         double p_zx = Oixxz*Rx + Oixyz*Ry + Oixzz*Rz;
+                         double p_zy = Oixyz*Rx + Oiyyz*Ry + Oiyzz*Rz;
+                         double p_zz = Oixzz*Rx + Oiyzz*Ry + Oizzz*Rz;
+
+                         double p_x  = p_xx*Rx + p_xy*Ry + p_xz*Rz;
+                         double p_y  = p_yx*Rx + p_yy*Ry + p_yz*Rz;
+                         double p_z  = p_zx*Rx + p_zy*Ry + p_zz*Rz;
+
+                         double p    = p_x*Rx + p_y*Ry + p_z*Rz;
+
+                         double oo = 7.0 * r9 * p;
+                         double pp = 3.0 * r7;
+
+                         //fx_r5 += oo * Rx - pp * p_x;
+                         //fy_r5 += oo * Ry - pp * p_y;
+                         //fz_r5 += oo * Rz - pp * p_z;
+
+                         //if (dmtp_1_->hasHexadecapoles_) {
+                             // do nothing: R^-6 terms are not implemented
+                             //Hixxxx = H_A_[i][ 0] * 4.375; 
+                             //Hixxxy = H_A_[i][ 1] * 4.375;
+                             //Hixxxz = H_A_[i][ 2] * 4.375;
+                             //Hixxyy = H_A_[i][ 3] * 4.375;
+                             //Hixxyz = H_A_[i][ 4] * 4.375;
+                             //Hixxzz = H_A_[i][ 5] * 4.375;
+                             //Hixyyy = H_A_[i][ 6] * 4.375;
+                             //Hixyyz = H_A_[i][ 7] * 4.375;
+                             //Hixyzz = H_A_[i][ 8] * 4.375;
+                             //Hixzzz = H_A_[i][ 9] * 4.375;
+                             //Hiyyyy = H_A_[i][10] * 4.375;
+                             //Hiyyyz = H_A_[i][11] * 4.375;
+                             //Hiyyzz = H_A_[i][12] * 4.375;
+                             //Hiyzzz = H_A_[i][13] * 4.375;
+                             //Hizzzz = H_A_[i][14] * 4.375;
+                             //double txx = (Hixxxx + Hixxyy + Hixxzz) / 7.0;
+                             //double txy = (Hixxxy + Hixyyy + Hixyzz) / 7.0;
+                             //double txz = (Hixxxz + Hixyyz + Hixzzz) / 7.0;
+                             //double tyy = (Hixxyy + Hiyyyy + Hiyyzz) / 7.0;
+                             //double tyz = (Hixxyz + Hiyyyz + Hiyzzz) / 7.0;
+                             //double tzz = (Hixxzz + Hiyyzz + Hizzzz) / 7.0; 
+                             //double th  = (txx + tyy + tzz) / 5.0;
+                             //Hixxxx-= 6.0 * txx - 3.0 * th;
+                             //Hixxxy-= 3.0 * txy;
+                             //Hixxxz-= 3.0 * txz;
+                             //Hixxyy-= txx + tyy - th;
+                             //Hixxyz-= tyz;
+                             //Hixxzz-= txx + tzz - th;
+                             //Hixyyy-= 3.0 * txy;
+                             //Hixyyz-= txz; 
+                             //Hixyzz-= txy;
+                             //Hixzzz-= 3.0 * txz;
+                             //Hiyyyy-= 6.0 * tyy - 3.0 * th;
+                             //Hiyyyz-= 3.0 * tyz;
+                             //Hiyyzz-= tyy + tzz - th;
+                             //Hiyzzz-= 3.0 * tyz;
+                             //Hizzzz-= 6.0 * tzz - 3.0 * th;
+                         //}
+                     }
+                 }
+             }
+
+        } // EndForDMTPCentres_A
+
+        convergenceList_["R1"]->set(N, 0, f_r1); 
+        convergenceList_["R2"]->set(N, 0, f_r2); 
+        convergenceList_["R3"]->set(N, 0, f_r3); 
+        convergenceList_["R4"]->set(N, 0, f_r4); 
+        convergenceList_["R5"]->set(N, 0, f_r5); 
+
+   } // EndForDMTPs
+
 }
 void MultipoleConvergence::compute_field(const double& x, const double& y, const double& z)
 {
-  throw psi::PSIEXCEPTION("The field from DMTP's is not implemented yet.");
+   double** r_A_ = dmtp_1_->centres()->pointer();
+
+   for (int N=0; N<dmtp_1_->nDMTPs_; ++N) {
+        double** q_A_ = dmtp_1_->charges_[N]->pointer();
+        double** D_A_ = dmtp_1_->dipoles_[N]->pointer();
+        double** Q_A_ = dmtp_1_->quadrupoles_[N]->pointer();
+        double** O_A_ = dmtp_1_->octupoles_[N]->pointer();
+        double** H_A_ = dmtp_1_->hexadecapoles_[N]->pointer();
+
+        double fx_r2 = 0.0; double fy_r2 = 0.0; double fz_r2 = 0.0;  // R-2
+        double fx_r3 = 0.0; double fy_r3 = 0.0; double fz_r3 = 0.0;  // R-3
+        double fx_r4 = 0.0; double fy_r4 = 0.0; double fz_r4 = 0.0;  // R-4
+        double fx_r5 = 0.0; double fy_r5 = 0.0; double fz_r5 = 0.0;  // R-5
+        
+        for (int i=0; i<dmtp_1_->nSites_; ++i) {
+             double rix = r_A_[i][0];
+             double riy = r_A_[i][1];
+             double riz = r_A_[i][2];
+
+             double Rx  = x - rix; // r_ji vector
+             double Ry  = y - riy;
+             double Rz  = z - riz;
+
+             double r   = 1.0/sqrt(Rx*Rx+Ry*Ry+Rz*Rz);
+             double r3  = r*r*r;
+             double r5  = r*r*r3;
+             double r7  = r*r*r5;
+             double r9  = r*r*r7;
+
+             double qi = q_A_[i][0];
+             double dix, diy, diz;
+             double Qixx, Qixy, Qixz, Qiyy, Qiyz, Qizz;
+             double Oixxx, Oixxy, Oixxz, Oixyy, Oixyz, Oixzz, Oiyyy, Oiyyz, Oiyzz, Oizzz;
+             double Hixxxx, Hixxxy, Hixxxz, Hixxyy, Hixxyz, Hixxzz, Hixyyy, Hixyyz, Hixyzz, 
+                    Hixzzz, Hiyyyy, Hiyyyz, Hiyyzz, Hiyzzz, Hizzzz;
+
+             fx_r2 += qi * Rx * r3;
+             fy_r2 += qi * Ry * r3;
+             fz_r2 += qi * Rz * r3;
+
+             if (dmtp_1_->hasDipoles_) {
+                 dix = D_A_[i][0]; 
+                 diy = D_A_[i][1];
+                 diz = D_A_[i][2];
+
+                 double w = 3.0 * r5 * (Rx * dix + Ry * diy + Rz * diz);
+                 fx_r3 += Rx * w - dix * r3;
+                 fy_r3 += Ry * w - diy * r3;
+                 fz_r3 += Rz * w - diz * r3;
+
+                 if (dmtp_1_->hasQuadrupoles_) {
+                     Qixx = Q_A_[i][0] * 1.5; 
+                     Qixy = Q_A_[i][1] * 1.5;
+                     Qixz = Q_A_[i][2] * 1.5;
+                     Qiyy = Q_A_[i][3] * 1.5;
+                     Qiyz = Q_A_[i][4] * 1.5;
+                     Qizz = Q_A_[i][5] * 1.5;
+                     double t = (Qixx + Qiyy + Qizz) / 3.0;
+                     Qixx -= t; Qiyy -= t; Qizz -= t;
+
+                     double u_x = Qixx*Rx + Qixy*Ry + Qixz*Rz;
+                     double u_y = Qixy*Rx + Qiyy*Ry + Qiyz*Rz;
+                     double u_z = Qixz*Rx + Qiyz*Ry + Qizz*Rz;
+ 
+                     double u   = u_x*Rx + u_y*Ry + u_z*Rz;
+                     //double u = Qixx*Rx*Rx + Qixy*Rx*Ry + Qixz*Rx*Rz
+                     //          +Qixy*Ry*Rx + Qiyy*Ry*Ry + Qiyz*Ry*Rz
+                     //          +Qixz*Rz*Rx + Qiyz*Rz*Ry + Qizz*Rz*Rz;
+
+                     double ww = 5.0 * r7 * u;
+                     double cc = 2.0 * r5;
+                     fx_r4 += ww * Rx - cc * u_x;
+                     fy_r4 += ww * Ry - cc * u_y;
+                     fz_r4 += ww * Rz - cc * u_z;
+
+                     if (dmtp_1_->hasOctupoles_) {
+                         Oixxx = O_A_[i][0] * 2.5;
+                         Oixxy = O_A_[i][1] * 2.5; 
+                         Oixxz = O_A_[i][2] * 2.5; 
+                         Oixyy = O_A_[i][3] * 2.5; 
+                         Oixyz = O_A_[i][4] * 2.5; 
+                         Oixzz = O_A_[i][5] * 2.5; 
+                         Oiyyy = O_A_[i][6] * 2.5; 
+                         Oiyyz = O_A_[i][7] * 2.5; 
+                         Oiyzz = O_A_[i][8] * 2.5; 
+                         Oizzz = O_A_[i][9] * 2.5; 
+                         double tx = (Oixxx + Oixyy + Oixzz) / 5.0;
+                         double ty = (Oixxy + Oiyyy + Oiyzz) / 5.0;
+                         double tz = (Oixxz + Oiyyz + Oizzz) / 5.0;
+                         Oixxx -= tx * 3.0;
+                         Oixxy -= ty;
+                         Oixxz -= tz;
+                         Oixyy -= tx;
+                         Oixzz -= tx;
+                         Oiyyy -= ty * 3.0;
+                         Oiyyz -= tz;
+                         Oiyzz -= ty;
+                         Oizzz -= tz * 3.0;
+
+                         double p_xx = Oixxx*Rx + Oixxy*Ry + Oixxz*Rz;
+                         double p_xy = Oixxy*Rx + Oixyy*Ry + Oixyz*Rz;
+                         double p_xz = Oixxz*Rx + Oixyz*Ry + Oixzz*Rz;
+                         double p_yx = Oixxy*Rx + Oixyy*Ry + Oixyz*Rz;
+                         double p_yy = Oixyy*Rx + Oiyyy*Ry + Oiyyz*Rz;
+                         double p_yz = Oixyz*Rx + Oiyyz*Ry + Oiyzz*Rz;
+                         double p_zx = Oixxz*Rx + Oixyz*Ry + Oixzz*Rz;
+                         double p_zy = Oixyz*Rx + Oiyyz*Ry + Oiyzz*Rz;
+                         double p_zz = Oixzz*Rx + Oiyzz*Ry + Oizzz*Rz;
+
+                         double p_x  = p_xx*Rx + p_xy*Ry + p_xz*Rz;
+                         double p_y  = p_yx*Rx + p_yy*Ry + p_yz*Rz;
+                         double p_z  = p_zx*Rx + p_zy*Ry + p_zz*Rz;
+
+                         double p    = p_x*Rx + p_y*Ry + p_z*Rz;
+
+                         double oo = 7.0 * r9 * p;
+                         double pp = 3.0 * r7;
+
+                         fx_r5 += oo * Rx - pp * p_x;
+                         fy_r5 += oo * Ry - pp * p_y;
+                         fz_r5 += oo * Rz - pp * p_z;
+
+                         //if (dmtp_1_->hasHexadecapoles_) {
+                             // do nothing: R^-6 terms are not implemented
+                             //Hixxxx = H_A_[i][ 0] * 4.375; 
+                             //Hixxxy = H_A_[i][ 1] * 4.375;
+                             //Hixxxz = H_A_[i][ 2] * 4.375;
+                             //Hixxyy = H_A_[i][ 3] * 4.375;
+                             //Hixxyz = H_A_[i][ 4] * 4.375;
+                             //Hixxzz = H_A_[i][ 5] * 4.375;
+                             //Hixyyy = H_A_[i][ 6] * 4.375;
+                             //Hixyyz = H_A_[i][ 7] * 4.375;
+                             //Hixyzz = H_A_[i][ 8] * 4.375;
+                             //Hixzzz = H_A_[i][ 9] * 4.375;
+                             //Hiyyyy = H_A_[i][10] * 4.375;
+                             //Hiyyyz = H_A_[i][11] * 4.375;
+                             //Hiyyzz = H_A_[i][12] * 4.375;
+                             //Hiyzzz = H_A_[i][13] * 4.375;
+                             //Hizzzz = H_A_[i][14] * 4.375;
+                             //double txx = (Hixxxx + Hixxyy + Hixxzz) / 7.0;
+                             //double txy = (Hixxxy + Hixyyy + Hixyzz) / 7.0;
+                             //double txz = (Hixxxz + Hixyyz + Hixzzz) / 7.0;
+                             //double tyy = (Hixxyy + Hiyyyy + Hiyyzz) / 7.0;
+                             //double tyz = (Hixxyz + Hiyyyz + Hiyzzz) / 7.0;
+                             //double tzz = (Hixxzz + Hiyyzz + Hizzzz) / 7.0; 
+                             //double th  = (txx + tyy + tzz) / 5.0;
+                             //Hixxxx-= 6.0 * txx - 3.0 * th;
+                             //Hixxxy-= 3.0 * txy;
+                             //Hixxxz-= 3.0 * txz;
+                             //Hixxyy-= txx + tyy - th;
+                             //Hixxyz-= tyz;
+                             //Hixxzz-= txx + tzz - th;
+                             //Hixyyy-= 3.0 * txy;
+                             //Hixyyz-= txz; 
+                             //Hixyzz-= txy;
+                             //Hixzzz-= 3.0 * txz;
+                             //Hiyyyy-= 6.0 * tyy - 3.0 * th;
+                             //Hiyyyz-= 3.0 * tyz;
+                             //Hiyyzz-= tyy + tzz - th;
+                             //Hiyzzz-= 3.0 * tyz;
+                             //Hizzzz-= 6.0 * tzz - 3.0 * th;
+                         //}
+                     }
+                 }
+             }
+
+        } // EndForDMTPCentres_A
+
+        convergenceList_["R2"]->set(N, 0, fx_r2); 
+        convergenceList_["R2"]->set(N, 1, fy_r2); 
+        convergenceList_["R2"]->set(N, 2, fz_r2); 
+        convergenceList_["R3"]->set(N, 0, fx_r3); 
+        convergenceList_["R3"]->set(N, 1, fy_r3); 
+        convergenceList_["R3"]->set(N, 2, fz_r3); 
+        convergenceList_["R4"]->set(N, 0, fx_r4); 
+        convergenceList_["R4"]->set(N, 1, fy_r4); 
+        convergenceList_["R4"]->set(N, 2, fz_r4); 
+        convergenceList_["R5"]->set(N, 0, fx_r5); 
+        convergenceList_["R5"]->set(N, 1, fy_r5); 
+        convergenceList_["R5"]->set(N, 2, fz_r5); 
+
+   } // EndForDMTPs
+
 }
 
 
@@ -467,7 +827,7 @@ DMTPole::DMTPole(void)
  : mol_(nullptr), 
    wfn_(nullptr), 
    primary_(nullptr),
-   nDMTPs_(0),
+   nDMTPs_(3), // weird but necessary for MultipoleConvergence! -> /TODO change it!
    name_("none"),
    order_(0),
    nSites_(0),

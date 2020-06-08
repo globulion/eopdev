@@ -101,6 +101,9 @@ class Test
    /// Test the oepdev::CAMM class
    double test_camm(void);
 
+   /// Test the oepdev::MultipoleConvergence class: potential and field calculations
+   double test_dmtp_pot_field(void);
+
    /// Test the oepdev::DMTP class for energy calculations
    double test_dmtp_energy(void);
 

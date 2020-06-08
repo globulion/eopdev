@@ -138,6 +138,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libtest/cis_uhf_dl.cc
 		       oepdev/libtest/cphf.cc
 		       oepdev/libtest/camm.cc
+                       oepdev/libtest/dmtp_pot_field.cc
 		       oepdev/libtest/dmtp_energy.cc
 		       oepdev/libtest/efp2_energy.cc
                        oepdev/libtest/kabsch_superimposition.cc
