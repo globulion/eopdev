@@ -23,6 +23,8 @@ void export_dmtp(py::module &m) {
     typedef std::shared_ptr<oepdev::DMTPole> (*build_dmtp)(const std::string&, psi::SharedWavefunction, int);
     typedef void (oepdev::DMTPole::*compute_default)(void);
     typedef void (oepdev::DMTPole::*compute_dmatrix)(std::vector<psi::SharedMatrix>, std::vector<bool>);
+    typedef void (oepdev::MultipoleConvergence::*compute_energy_like)(oepdev::MultipoleConvergence::Property);
+    typedef void (oepdev::MultipoleConvergence::*compute_potential_like)(const double& x, const double& y, const double& z, oepdev::MultipoleConvergence::Property);
     typedef psi::SharedMatrix (oepdev::DMTPole::*get_matrix_int)(int) const;
     typedef std::vector<psi::SharedMatrix> (oepdev::DMTPole::*get_vecmat)(void) const;
     typedef void (oepdev::DMTPole::*set_matrix_int)(psi::SharedMatrix, int);
@@ -36,7 +38,8 @@ void export_dmtp(py::module &m) {
     py::class_<oepdev::MultipoleConvergence, std::shared_ptr<oepdev::MultipoleConvergence>> MC(m, "MultipoleConvergence", "Handles the convergence of the distributed multipole expansions up to hexadecapole.");
     MC
 	.def(py::init<std::shared_ptr<oepdev::DMTPole>, std::shared_ptr<oepdev::DMTPole>, oepdev::MultipoleConvergence::ConvergenceLevel>())
-        .def("compute", &oepdev::MultipoleConvergence::compute, "Compute generalized property based on distributed multipole expansion sets")
+        .def("compute", compute_energy_like(&oepdev::MultipoleConvergence::compute), "Compute generalized energy-like property based on distributed multipole expansion sets")
+        .def("compute", compute_potential_like(&oepdev::MultipoleConvergence::compute), "Compute generalized potential-like property based on distributed multipole expansion sets")
 	.def("level", &oepdev::MultipoleConvergence::level, "", py::return_value_policy::take_ownership)
     ;
 
@@ -48,9 +51,10 @@ void export_dmtp(py::module &m) {
 	.value("R5", oepdev::MultipoleConvergence::ConvergenceLevel::R5)
 	.export_values();
 
-    py::enum_<oepdev::MultipoleConvergence::Property>(MC, "Property", "Property to evalueate (energy or potential)")
+    py::enum_<oepdev::MultipoleConvergence::Property>(MC, "Property", "Property to evalueate (energy, potential or field)")
 	.value("Energy"   , oepdev::MultipoleConvergence::Property::Energy)
 	.value("Potential", oepdev::MultipoleConvergence::Property::Potential)
+	.value("Field"    , oepdev::MultipoleConvergence::Property::Field)
 	.export_values();
 
 

@@ -18,17 +18,25 @@ MultipoleConvergence::MultipoleConvergence(std::shared_ptr<DMTPole> dmtp1, std::
  : dmtp_1_(dmtp1),
    dmtp_2_(dmtp2),
    max_clevel_(max_clevel),
-   convergenceList_{}
+   convergenceList_{},
+   energyConvergencePairs_{}
 {
-   convergenceList_["qq"] = std::make_shared<psi::Matrix>("q-q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
-   convergenceList_["qD"] = std::make_shared<psi::Matrix>("q-D term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
-   convergenceList_["DD"] = std::make_shared<psi::Matrix>("D-D term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
-   convergenceList_["qQ"] = std::make_shared<psi::Matrix>("q-Q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
-   convergenceList_["DQ"] = std::make_shared<psi::Matrix>("D-Q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
-   convergenceList_["qO"] = std::make_shared<psi::Matrix>("q-O term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
-   convergenceList_["QQ"] = std::make_shared<psi::Matrix>("Q-Q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
-   convergenceList_["DO"] = std::make_shared<psi::Matrix>("D-O term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
-   convergenceList_["qH"] = std::make_shared<psi::Matrix>("q-H term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   energyConvergencePairs_["qq"] = std::make_shared<psi::Matrix>("q-q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   energyConvergencePairs_["qD"] = std::make_shared<psi::Matrix>("q-D term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   energyConvergencePairs_["DD"] = std::make_shared<psi::Matrix>("D-D term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   energyConvergencePairs_["qQ"] = std::make_shared<psi::Matrix>("q-Q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   energyConvergencePairs_["DQ"] = std::make_shared<psi::Matrix>("D-Q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   energyConvergencePairs_["qO"] = std::make_shared<psi::Matrix>("q-O term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   energyConvergencePairs_["QQ"] = std::make_shared<psi::Matrix>("Q-Q term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   energyConvergencePairs_["DO"] = std::make_shared<psi::Matrix>("D-O term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   energyConvergencePairs_["qH"] = std::make_shared<psi::Matrix>("q-H term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+
+   convergenceList_["R1"] = std::make_shared<psi::Matrix>("R-1 term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["R2"] = std::make_shared<psi::Matrix>("R-2 term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["R3"] = std::make_shared<psi::Matrix>("R-3 term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["R4"] = std::make_shared<psi::Matrix>("R-4 term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+   convergenceList_["R5"] = std::make_shared<psi::Matrix>("R-5 term",dmtp_1_->nDMTPs_,dmtp_2_->nDMTPs_);
+
 }
 MultipoleConvergence::~MultipoleConvergence() 
 {
@@ -36,32 +44,42 @@ MultipoleConvergence::~MultipoleConvergence()
 void MultipoleConvergence::compute(MultipoleConvergence::Property property)
 {
   if      (property == MultipoleConvergence::Property::Energy   ) {this->compute_energy   ();}
-  else if (property == MultipoleConvergence::Property::Potential) {this->compute_potential();}
+}
+void MultipoleConvergence::compute(const double& x, const double& y, const double& z, MultipoleConvergence::Property property)
+{
+  if      (property == MultipoleConvergence::Property::Energy   ) {this->compute_energy   (     );}
+  else if (property == MultipoleConvergence::Property::Potential) {this->compute_potential(x,y,z);}
+  else if (property == MultipoleConvergence::Property::Field    ) {this->compute_field    (x,y,z);}
 }
 std::shared_ptr<psi::Matrix> MultipoleConvergence::level(MultipoleConvergence::ConvergenceLevel clevel)
 {
   std::shared_ptr<psi::Matrix> result = std::make_shared<psi::Matrix>("Result", dmtp_1_->nDMTPs_, dmtp_2_->nDMTPs_);
   // R-1
-  result->add(convergenceList_["qq"]);
+  //result->add(energyConvergencePairs_["qq"]);
+  result->add(convergenceList_["R1"]);
   // R-2
   if ((clevel > MultipoleConvergence::ConvergenceLevel::R1) && (clevel <= max_clevel_)) {
-      result->add(convergenceList_["qD"]);
+    //result->add(energyConvergencePairs_["qD"]);
+      result->add(convergenceList_["R2"]);
   }
   // R-3
   if ((clevel > MultipoleConvergence::ConvergenceLevel::R2) && (clevel <= max_clevel_)) {
-      result->add(convergenceList_["qQ"]);
-      result->add(convergenceList_["DD"]);
+    //result->add(energyConvergencePairs_["qQ"]);
+    //result->add(energyConvergencePairs_["DD"]);
+      result->add(convergenceList_["R3"]);
   }
   // R-4
   if ((clevel > MultipoleConvergence::ConvergenceLevel::R3) && (clevel <= max_clevel_)) {
-      result->add(convergenceList_["qO"]);
-      result->add(convergenceList_["DQ"]);
+    //result->add(energyConvergencePairs_["qO"]);
+    //result->add(energyConvergencePairs_["DQ"]);
+      result->add(convergenceList_["R4"]);
   }
   // R-5
   if ((clevel > MultipoleConvergence::ConvergenceLevel::R4) && (clevel <= max_clevel_)) {
-      result->add(convergenceList_["qH"]);
-      result->add(convergenceList_["DO"]);
-      result->add(convergenceList_["QQ"]);
+    //result->add(energyConvergencePairs_["qH"]);
+    //result->add(energyConvergencePairs_["DO"]);
+    //result->add(energyConvergencePairs_["QQ"]);
+      result->add(convergenceList_["R5"]);
   }
 
   return result;
@@ -409,26 +427,63 @@ void MultipoleConvergence::compute_energy()
              } // EndForDMTPCentres_B
         } // EndForDMTPCentres_A
 
-        convergenceList_["qq"]->set(N1, N2, qq);
-        convergenceList_["qD"]->set(N1, N2, qD);
-        convergenceList_["DD"]->set(N1, N2, DD);
-        convergenceList_["qQ"]->set(N1, N2, qQ);
-        convergenceList_["DQ"]->set(N1, N2, DQ);
-        convergenceList_["qO"]->set(N1, N2, qO);
-        convergenceList_["QQ"]->set(N1, N2, QQ);
-        convergenceList_["DO"]->set(N1, N2, DO);
-        convergenceList_["qH"]->set(N1, N2, qH);
+        energyConvergencePairs_["qq"]->set(N1, N2, qq);
+        energyConvergencePairs_["qD"]->set(N1, N2, qD);
+        energyConvergencePairs_["DD"]->set(N1, N2, DD);
+        energyConvergencePairs_["qQ"]->set(N1, N2, qQ);
+        energyConvergencePairs_["DQ"]->set(N1, N2, DQ);
+        energyConvergencePairs_["qO"]->set(N1, N2, qO);
+        energyConvergencePairs_["QQ"]->set(N1, N2, QQ);
+        energyConvergencePairs_["DO"]->set(N1, N2, DO);
+        energyConvergencePairs_["qH"]->set(N1, N2, qH);
+
 
    }} // EndForDMTPs
+
+   convergenceList_["R1"]->add(energyConvergencePairs_["qq"]);
+   convergenceList_["R2"]->add(energyConvergencePairs_["qD"]);
+   convergenceList_["R3"]->add(energyConvergencePairs_["DD"]);
+   convergenceList_["R3"]->add(energyConvergencePairs_["qQ"]);
+   convergenceList_["R4"]->add(energyConvergencePairs_["qO"]);
+   convergenceList_["R4"]->add(energyConvergencePairs_["DQ"]);
+   convergenceList_["R5"]->add(energyConvergencePairs_["qH"]);
+   convergenceList_["R5"]->add(energyConvergencePairs_["DO"]);
+   convergenceList_["R5"]->add(energyConvergencePairs_["QQ"]);
 }
-void MultipoleConvergence::compute_potential()
+void MultipoleConvergence::compute_potential(const double& x, const double& y, const double& z)
 {
   throw psi::PSIEXCEPTION("The potential from DMTP's is not implemented yet.");
 }
+void MultipoleConvergence::compute_field(const double& x, const double& y, const double& z)
+{
+  throw psi::PSIEXCEPTION("The field from DMTP's is not implemented yet.");
+}
+
 
 
 // DMTPole
 
+DMTPole::DMTPole(void) 
+ : mol_(nullptr), 
+   wfn_(nullptr), 
+   primary_(nullptr),
+   nDMTPs_(0),
+   name_("none"),
+   order_(0),
+   nSites_(0),
+   hasCharges_(false),
+   hasDipoles_(false),
+   hasQuadrupoles_(false),
+   hasOctupoles_(false),
+   hasHexadecapoles_(false),
+   centres_(nullptr),
+   origins_(nullptr),
+   charges_({}),
+   dipoles_({}),
+   quadrupoles_({}),
+   octupoles_({}),
+   hexadecapoles_({}),
+   mpInts_({}) {}
 DMTPole::DMTPole(psi::SharedWavefunction wfn, int n) 
  : mol_(wfn->molecule()), 
    wfn_(wfn), 
@@ -533,6 +588,10 @@ psi::SharedVector DMTPole::origin(int x) const {
  psi::SharedVector r = std::make_shared<psi::Vector>("", 3);
  for (int z=0; z<3; ++z) r->set(z, origins_->get(x, z));
  return r;
+}
+std::shared_ptr<DMTPole> DMTPole::empty(void) {
+ std::shared_ptr<DMTPole> empty_dmtp = std::make_shared<DMTPole>();
+ return empty_dmtp;
 }
 MultipoleConvergence::ConvergenceLevel DMTPole::determine_dmtp_convergence_level(const std::string& option)
 {
@@ -840,10 +899,10 @@ std::shared_ptr<MultipoleConvergence> DMTPole::energy(std::shared_ptr<DMTPole> o
   convergence->compute(MultipoleConvergence::Energy);
   return convergence;
 }
-std::shared_ptr<MultipoleConvergence> DMTPole::potential(std::shared_ptr<DMTPole> other, MultipoleConvergence::ConvergenceLevel max_clevel)
+std::shared_ptr<MultipoleConvergence> DMTPole::potential(const double& x, const double& y, const double& z, MultipoleConvergence::ConvergenceLevel max_clevel)
 {
-  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), other, max_clevel);
-  convergence->compute(MultipoleConvergence::Potential);
+  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), DMTPole::empty(), max_clevel);
+  convergence->compute(x, y, z, MultipoleConvergence::Potential);
   //std::vector<double> potentials;
   //for (int i=0; i<nDMTPs_; ++i) potentials.push_back(0.0);
   //TODO
@@ -851,6 +910,13 @@ std::shared_ptr<MultipoleConvergence> DMTPole::potential(std::shared_ptr<DMTPole
   // Return
   return convergence;
 }
+std::shared_ptr<MultipoleConvergence> DMTPole::field(const double& x, const double& y, const double& z, MultipoleConvergence::ConvergenceLevel max_clevel)
+{
+  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), DMTPole::empty(), max_clevel);
+  convergence->compute(x, y, z, MultipoleConvergence::Field);
+  return convergence;
+}
+
 /// Translate the DMTP sets
 void DMTPole::translate(psi::SharedVector transl) 
 {
@@ -2564,7 +2630,7 @@ void DMTPole::print(void) const
 	   dipoles_[i]->print();
 	}
 }
-// abstract methods
+// quasi-abstract methods
 void DMTPole::compute(psi::SharedMatrix D, bool transition, int i) {/* nothing to implement here */}
 void DMTPole::print_header(void) const {/* nothing to implement here */}
 

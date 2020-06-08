@@ -58,13 +58,14 @@ class MultipoleConvergence
     enum ConvergenceLevel {R1, R2, R3, R4, R5};
 
     /** 
-     * Property to be evaluated from interacting DMTP's:
+     * Property to be evaluated from DMTP's:
      *
      * @param Energy    - generalized energy
+     * @param Field     - generalized field
      * @param Potential - generalized potential
      *
      */
-    enum Property {Energy, Potential};
+    enum Property {Energy, Potential, Field};
 
     /** \brief Construct from two shared DMTPole objects.
      *
@@ -79,11 +80,21 @@ class MultipoleConvergence
     virtual ~MultipoleConvergence();
 
 
-    /** Compute the generalized property
+    /** Compute the generalized interaction property
      * 
      *  @param property - generalized Property
      */
     void compute(Property property = Energy);
+
+    /** Compute the generalized generator property
+     * 
+     *  @param x        - location *x*-th Cartesian component
+     *  @param y        - location *y*-th Cartesian component
+     *  @param z        - location *z*-th Cartesian component
+     *  @param property - generalized Property
+     */
+    void compute(const double& x, const double& y, const double& z, Property property = Potential);
+
 
     /** Grab the generalized property at specified level of convergence
      * 
@@ -103,11 +114,15 @@ class MultipoleConvergence
     std::shared_ptr<DMTPole> dmtp_2_;
     /// Dictionary of available convergence level results
     std::map<std::string, std::shared_ptr<psi::Matrix>> convergenceList_;
+    /// Dictionary of available energy convergence pairs
+    std::map<std::string, std::shared_ptr<psi::Matrix>> energyConvergencePairs_;
 
     /// Compute the generalized energy
     void compute_energy();
-    /// Void compute the generalized potential
-    void compute_potential();
+    /// Compute the generalized potential
+    void compute_potential(const double& x, const double& y, const double& z);
+    /// Compute the generalized field potential
+    void compute_field(const double& x, const double& y, const double& z);
 };
 
 /** \brief Distributed Multipole Analysis Container and Computer. Abstract Base.
@@ -152,6 +167,19 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     static std::shared_ptr<DMTPole> build(const std::string& type,
                                           std::shared_ptr<psi::Wavefunction> wfn, 
                                           int n = 1);
+
+    /** \brief Build an empty DMTP object of no type.
+     *
+     *  @return Blank DMTP distribution with memory allocated by no data.
+     */
+    static std::shared_ptr<DMTPole> empty(void);
+
+
+    /** \brief Construct an empty DMTP object of no type.
+     *
+     *  Do not use this constructor. Use the DMTPole::empty method.
+     */
+    DMTPole(void);
 
     /// Copy constructor
     DMTPole(const DMTPole*);
@@ -397,9 +425,11 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     std::shared_ptr<MultipoleConvergence> energy(std::shared_ptr<DMTPole> other, 
                                                  MultipoleConvergence::ConvergenceLevel max_clevel = MultipoleConvergence::R5);
 
-    /** \brief Evaluate the generalized potential.
+    /** \brief Evaluate the generalized potential at a given point.
      *
-     *  @param other       - interacting DMTP distribution. 
+     *  @param x           - location *x*-th Cartesian component
+     *  @param y           - location *y*-th Cartesian component
+     *  @param z           - location *z*-th Cartesian component
      *  @param max_clevel  - maximum convergence level (see below).
      *  @return The generalized potential convergence (A.U. units)
      *
@@ -410,7 +440,25 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
      *    - `MultipoleConvergence::R4`: includes qO, dQ terms and above. 
      *    - `MultipoleConvergence::R5`: includes qH, dO, QQ terms and above.
      */
-     std::shared_ptr<MultipoleConvergence> potential(std::shared_ptr<DMTPole> other,
+     std::shared_ptr<MultipoleConvergence> potential(const double& x, const double& y, const double& z,
+                                                 MultipoleConvergence::ConvergenceLevel max_clevel = MultipoleConvergence::R5);
+
+    /** \brief Evaluate the generalized field at a given point.
+     *
+     *  @param x           - location *x*-th Cartesian component
+     *  @param y           - location *y*-th Cartesian component
+     *  @param z           - location *z*-th Cartesian component
+     *  @param max_clevel  - maximum convergence level (see below).
+     *  @return The generalized field convergence (A.U. units)
+     *
+     *  The following convergence levels are available:
+     *    - `MultipoleConvergence::R1`: includes qq terms.
+     *    - `MultipoleConvergence::R2`: includes dq terms and above.
+     *    - `MultipoleConvergence::R3`: includes qQ, dd terms and above.
+     *    - `MultipoleConvergence::R4`: includes qO, dQ terms and above. 
+     *    - `MultipoleConvergence::R5`: includes qH, dO, QQ terms and above.
+     */
+     std::shared_ptr<MultipoleConvergence> field(const double& x, const double& y, const double& z,
                                                  MultipoleConvergence::ConvergenceLevel max_clevel = MultipoleConvergence::R5);
      //@}
 

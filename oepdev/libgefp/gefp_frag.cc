@@ -6,13 +6,14 @@ using namespace std;
 
 oepdev::GenEffFrag::GenEffFrag(std::string name) : 
   name_(name), frag_(nullptr),
-  densityMatrixSusceptibilityGEF_(std::make_shared<oepdev::GenEffPar>("POLARIZATION"))
+  densityMatrixSusceptibilityGEF_(std::make_shared<oepdev::GenEffPar>("POLARIZATION")) // deprecate this!!!/TODO
 //electrostaticEnergyGEF_(nullptr),
 //repulsionEnergyGEF_(nullptr),
 //chargeTransferEnergyGEF_(nullptr),
 //EETCouplingConstantGEF_(nullptr)
 {
-  parameters["POLARIZATION"   ] = densityMatrixSusceptibilityGEF_;
+// Deprecate all below:
+//parameters["POLARIZATION"   ] = densityMatrixSusceptibilityGEF_;
 //parameters["COULOMBIC   "   ] = electrostaticEnergyGEF_;
 //parameters["REPULSION"      ] = repulsionEnergyGEF_;
 //parameters["CHARGE_TRANSFER"] = chargeTransferEnergyGEF_;
@@ -82,7 +83,6 @@ double oepdev::GenEffFrag::energy(std::string theory, std::shared_ptr<GenEffFrag
  return e_tot;
 }
 double oepdev::GenEffFrag::compute_energy_efp2_coul(std::shared_ptr<GenEffFrag> other) {
- //TODO
  oepdev::MultipoleConvergence::ConvergenceLevel clevel = oepdev::DMTPole::determine_dmtp_convergence_level("DMTP_CONVER");
  oepdev::SharedDMTPole camm_1 = this->parameters["efp2"]->dmtp("camm");
  oepdev::SharedDMTPole camm_2 =other->parameters["efp2"]->dmtp("camm");
@@ -92,6 +92,7 @@ double oepdev::GenEffFrag::compute_energy_efp2_coul(std::shared_ptr<GenEffFrag> 
 }
 double oepdev::GenEffFrag::compute_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other) {
  //TODO
+ outfile->Printf(" Computing EFP2-ExRep interaction energy\n");
  return 0.0;
 }
 double oepdev::GenEffFrag::compute_energy_efp2_ind(std::shared_ptr<GenEffFrag> other) {

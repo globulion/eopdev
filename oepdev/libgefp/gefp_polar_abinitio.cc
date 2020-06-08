@@ -515,5 +515,8 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::UnitaryTransformedMOPolarGEFactory::c
   std::shared_ptr<oepdev::GenEffPar> par = std::make_shared<oepdev::GenEffPar>("Polarization");
   par->set_dipole_polarizability(B_susc);
 
+  psi::SharedMatrix geom = std::make_shared<psi::Matrix>(wfn_->molecule()->geometry());
+  par->set_matrix("pos", geom);
+
   return par;
 }

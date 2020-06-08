@@ -8,7 +8,6 @@ using namespace std;
 oepdev::PolarGEFactory::PolarGEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt) :
  oepdev::GenEffParFactory(wfn, opt)
 {
-
 }
 oepdev::PolarGEFactory::~PolarGEFactory()
 {
@@ -214,6 +213,11 @@ oepdev::GeneralizedPolarGEFactory::GeneralizedPolarGEFactory(std::shared_ptr<psi
    jk_->set_memory((options_.get_double("SCF_MEM_SAFETY_FACTOR")*(psi::Process::environment.get_memory() / 8L)));
    jk_->initialize();
    jk_->print_header();
+
+   // Set data members
+   psi::SharedMatrix geom = std::make_shared<psi::Matrix>(wfn_->molecule()->geometry());
+   this->PolarizationSusceptibilities_->set_matrix("pos", geom);
+   this->abInitioPolarizationSusceptibilities_->set_matrix("pos", geom);
 }
 oepdev::GeneralizedPolarGEFactory::~GeneralizedPolarGEFactory()
 {

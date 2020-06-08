@@ -1,6 +1,7 @@
 #include <iostream>
 #include <random>
 #include "gefp.h"
+#include "../libutil/kabsch_superimposer.h"
 
 using namespace std;
 
@@ -244,10 +245,40 @@ void oepdev::GenEffPar::translate(psi::SharedVector t) {
   outfile->Printf("  OepDEV Warning: Translation feature not implemented in GenEffPar instance!\n");
 }
 void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList) {
+   // Initialize Kabsch Solver
+   KabschSuperimposer sup = KabschSuperimposer();
+
+   // Determine the overlapping structure slices
+   psi::SharedMatrix initial_xyz, final_xyz;
+   if (supList.empty()) {
+       initial_xyz = this->data_matrix_.at("pos");
+       final_xyz = targetXYZ;
+   } else {
+       const int n = supList.size();
+       initial_xyz = std::make_shared<psi::Matrix>("", n, 3);
+       final_xyz   = std::make_shared<psi::Matrix>("", n, 3);
+       for (int i=0; i<n; ++i) {
+            initial_xyz->set_row(0, supList[i], this->data_matrix_.at("pos")->get_row(0, supList[i]));
+            final_xyz  ->set_row(0, supList[i],                    targetXYZ->get_row(0, supList[i]));
+       }
+   }
+
+   // Run Kabsch Algorithm
+   sup.compute(initial_xyz, final_xyz);
+   psi::SharedMatrix r = sup.rotation;
+   psi::SharedVector t = sup.translation;
+
+   // Compute AO rotation matrix
+   //psi::SharedMatrix R = ...
+
+
   // Superimpose DMTP
   if (this->data_dmtp_.find("camm") != this->data_dmtp_.end()) {
       outfile->Printf("  Superimposing CAMM in Parameters %s\n", this->name_.c_str());
-      this->data_dmtp_.at("camm")->superimpose(targetXYZ, supList);
+    //this->data_dmtp_.at("camm")->superimpose(targetXYZ, supList);
+      this->data_dmtp_.at("camm")->rotate(r);
+      this->data_dmtp_.at("camm")->translate(t);
+
   }
   //TODO
   
