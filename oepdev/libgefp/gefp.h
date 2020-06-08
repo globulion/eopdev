@@ -57,7 +57,7 @@ class GenEffPar
 
   protected:
    /// Deep-copy the matrix and DMTP data
-   void copy_from(const GenEffPar*);
+   virtual void copy_from(const GenEffPar*);
    //@}
 
   public:
@@ -528,8 +528,11 @@ class GenEffFrag
    /// Superimpose
    void superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList);
 
+   /// Superimpose
+   void superimpose(psi::SharedMolecule targetMol, std::vector<int> supList);
+
    /// Superimpose to the structure held in `frag_`
-   void superimpose(void) {superimpose(std::make_shared<psi::Matrix>(frag_->geometry()), {});};
+   void superimpose(void);  
    //@}
 
 
@@ -538,10 +541,12 @@ class GenEffFrag
 
    /// Set the fragment molecule
    void set_molecule(const psi::SharedMolecule mol) {
-        std::vector<int> real_list = {};
-        std::vector<int> ghost_list= {};
-        for (int i=0; i<mol->nfragments(); ++i) real_list.push_back(i);
-        frag_ = mol->extract_subsets(real_list, ghost_list);
+        //std::vector<int> real_list = {};
+        //std::vector<int> ghost_list= {};
+        //cout << "!!!! " << mol->nfragments() << endl;
+        //for (int i=0; i<mol->nfragments(); ++i) real_list.push_back(i);
+        //frag_ = mol->extract_subsets(real_list, ghost_list);
+        frag_ = mol;
    }
 
    /// Set the Density Matrix Susceptibility Tensor Object

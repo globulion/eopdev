@@ -1,10 +1,16 @@
 #include "kabsch_superimposer.h"
+#include "psi4/libqt/qt.h"
+#include "psi4/libpsi4util/PsiOutStream.h"
+
 
 namespace oepdev{
 
 void KabschSuperimposer::compute(psi::SharedMatrix initial_xyz, psi::SharedMatrix final_xyz) {
   const int n = initial_xyz->nrow();
-  if (n!=final_xyz->nrow()) {throw  psi::PSIEXCEPTION(" Superimposition with incompatible initial and final coordinates!");}
+  if (n!=final_xyz->nrow()) {
+        psi::outfile->Printf(" Dimensions of initial_xyz and final_xyz: (%d, %d) and (%d, %d)\n",
+             initial_xyz->nrow(), initial_xyz->ncol(), final_xyz->nrow(), final_xyz->ncol());
+        throw  psi::PSIEXCEPTION(" Superimposition with incompatible initial and final coordinates!");}
 
   // Clear all previous calculations
   this->clear();

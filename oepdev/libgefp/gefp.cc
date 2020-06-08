@@ -10,17 +10,12 @@ oepdev::GenEffPar::GenEffPar(const GenEffPar* f) {
   hasDensityMatrixDipolePolarizability_ = f->hasDensityMatrixDipolePolarizability_;
   hasDensityMatrixDipoleDipoleHyperpolarizability_ = f->hasDensityMatrixDipoleDipoleHyperpolarizability_;
   hasDensityMatrixQuadrupolePolarizability_ = f->hasDensityMatrixQuadrupolePolarizability_;
-  //TODO - do the proper copy
   copy_from(f);
-  data_dmtp_ = f->data_dmtp_;
-  densityMatrixDipolePolarizability_ = f->densityMatrixDipolePolarizability_;
-  densityMatrixDipoleDipoleHyperpolarizability_ = f->densityMatrixDipoleDipoleHyperpolarizability_;
-  densityMatrixQuadrupolePolarizability_ = f->densityMatrixQuadrupolePolarizability_;
 }
 void oepdev::GenEffPar::copy_from(const GenEffPar* f) {
   //
   distributedCentres_.clear();
-  for (unsigned int i=0; i<distributedCentres_.size(); ++i) {
+  for (unsigned int i=0; i<f->distributedCentres_.size(); ++i) {
        psi::SharedVector centre = std::make_shared<psi::Vector>(*f->distributedCentres_[i]);
        distributedCentres_.push_back(centre);
   }
@@ -79,7 +74,6 @@ void oepdev::GenEffPar::copy_from(const GenEffPar* f) {
        }
        densityMatrixQuadrupolePolarizability_.push_back(v);
   }
-
 }
 
 void oepdev::GenEffPar::allocate_dipole_polarizability(int nsites, int nbf)
@@ -250,8 +244,13 @@ void oepdev::GenEffPar::translate(psi::SharedVector t) {
   outfile->Printf("  OepDEV Warning: Translation feature not implemented in GenEffPar instance!\n");
 }
 void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList) {
-  // Nothing to do here
-  outfile->Printf("  OepDEV Warning: Superimposition feature not implemented in GenEffPar instance!\n");
+  // Superimpose DMTP
+  if (this->data_dmtp_.find("camm") != this->data_dmtp_.end()) {
+      outfile->Printf("  Superimposing CAMM in Parameters %s\n", this->name_.c_str());
+      this->data_dmtp_.at("camm")->superimpose(targetXYZ, supList);
+  }
+  //TODO
+  
 }
 
 //-- GenEffParFactory --////////////////////////////////////////////////////////////////////////////////

@@ -6,7 +6,7 @@ using namespace std;
 
 oepdev::GenEffFrag::GenEffFrag(std::string name) : 
   name_(name), frag_(nullptr),
-  densityMatrixSusceptibilityGEF_(nullptr)
+  densityMatrixSusceptibilityGEF_(std::make_shared<oepdev::GenEffPar>("POLARIZATION"))
 //electrostaticEnergyGEF_(nullptr),
 //repulsionEnergyGEF_(nullptr),
 //chargeTransferEnergyGEF_(nullptr),
@@ -39,8 +39,19 @@ void oepdev::GenEffFrag::translate(std::shared_ptr<psi::Vector> T)
 void oepdev::GenEffFrag::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList)
 {
   for (auto const& x : this->parameters) {
+       outfile->Printf(" Superimposing now %s in Fragment %s\n", x.first.c_str(), this->name_.c_str());
        x.second->superimpose(targetXYZ, supList);
   }
+}
+void oepdev::GenEffFrag::superimpose(psi::SharedMolecule mol, std::vector<int> supList)
+{
+ psi::SharedMatrix xyz = std::make_shared<psi::Matrix>(mol->geometry());
+ this->superimpose(xyz, supList);
+}
+void oepdev::GenEffFrag::superimpose(void)
+{
+ psi::SharedMatrix xyz = std::make_shared<psi::Matrix>(this->frag_->geometry());
+ this->superimpose(xyz, {});
 }
 double oepdev::GenEffFrag::energy(std::string theory, std::shared_ptr<GenEffFrag> other) {
  double e_tot;
@@ -75,6 +86,7 @@ double oepdev::GenEffFrag::compute_energy_efp2_coul(std::shared_ptr<GenEffFrag> 
  oepdev::MultipoleConvergence::ConvergenceLevel clevel = oepdev::DMTPole::determine_dmtp_convergence_level("DMTP_CONVER");
  oepdev::SharedDMTPole camm_1 = this->parameters["efp2"]->dmtp("camm");
  oepdev::SharedDMTPole camm_2 =other->parameters["efp2"]->dmtp("camm");
+ outfile->Printf(" Computing CAMM interaction energy\n");
  double e = camm_1->energy(camm_2)->level(clevel)->get(0,0);
  return e;
 }
