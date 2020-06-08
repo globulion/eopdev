@@ -24,18 +24,25 @@ double oepdev::test::Test::test_dmtp_pot_field(void) {
   psi::timer_off("CAMM   Calculation              ");
 
   // Compute electrostatic potential at R
-  //std::shared_ptr<oepdev::MultipoleConvergence> potential = dmtp->potential(r[0], r[1], r[2], oepdev::MultipoleConvergence::ConvergenceLevel::R5);
-  double v = 0.0;
+  std::shared_ptr<oepdev::MultipoleConvergence> potential = dmtp->potential(r[0], r[1], r[2], oepdev::MultipoleConvergence::ConvergenceLevel::R5);
+  double v = potential->level(oepdev::MultipoleConvergence::ConvergenceLevel::R5)->get(0,0);
+
   // Compute electric field at R
   std::shared_ptr<oepdev::MultipoleConvergence> efield = dmtp->field(r[0], r[1], r[2], oepdev::MultipoleConvergence::ConvergenceLevel::R5);
   double f_efield_x = efield->level(oepdev::MultipoleConvergence::ConvergenceLevel::R5)->get(0,0);
   double f_efield_y = efield->level(oepdev::MultipoleConvergence::ConvergenceLevel::R5)->get(0,1);
   double f_efield_z = efield->level(oepdev::MultipoleConvergence::ConvergenceLevel::R5)->get(0,2);
 
+  psi::outfile->Printf(" Point R: %14.5f %14.5f %14.5f [Bohr]\n\n"  , r[0], r[1], r[2]);
+
+  psi::outfile->Printf(" Calculated Elc. Potential at Point R: %14.5f\n"  , v_ref);
+  psi::outfile->Printf(" Reference  Elc. Potential at Point R: %14.5f\n\n", v);
+
   psi::outfile->Printf(" Calculated Electric Field at Point R: %14.5f %14.5f %14.5f\n", f_efield_x, f_efield_y, f_efield_z);
   psi::outfile->Printf(" Reference  Electric Field at Point R: %14.5f %14.5f %14.5f\n", f_ref[0], f_ref[1], f_ref[2]);
 
   // Accumulate errors
+  result += pow(v_ref    - v         , 2.0);
   result += pow(f_ref[0] - f_efield_x, 2.0);
   result += pow(f_ref[1] - f_efield_y, 2.0);
   result += pow(f_ref[2] - f_efield_z, 2.0);

@@ -452,8 +452,6 @@ void MultipoleConvergence::compute_energy()
 }
 void MultipoleConvergence::compute_potential(const double& x, const double& y, const double& z)
 {
-  throw psi::PSIEXCEPTION("The potential from DMTP's is not implemented yet.");
-
    double** r_A_ = dmtp_1_->centres()->pointer();
 
    for (int N=0; N<dmtp_1_->nDMTPs_; ++N) {
@@ -491,19 +489,15 @@ void MultipoleConvergence::compute_potential(const double& x, const double& y, c
              double Hixxxx, Hixxxy, Hixxxz, Hixxyy, Hixxyz, Hixxzz, Hixyyy, Hixyyz, Hixyzz, 
                     Hixzzz, Hiyyyy, Hiyyyz, Hiyyzz, Hiyzzz, Hizzzz;
 
-             //fx_r2 += qi * Rx * r3;
-             //fy_r2 += qi * Ry * r3;
-             //fz_r2 += qi * Rz * r3;
+             f_r1 += qi * r;
 
              if (dmtp_1_->hasDipoles_) {
                  dix = D_A_[i][0]; 
                  diy = D_A_[i][1];
                  diz = D_A_[i][2];
 
-                 double w = 3.0 * r5 * (Rx * dix + Ry * diy + Rz * diz);
-                 //fx_r3 += Rx * w - dix * r3;
-                 //fy_r3 += Ry * w - diy * r3;
-                 //fz_r3 += Rz * w - diz * r3;
+                 double w = r3 * (Rx * dix + Ry * diy + Rz * diz);
+                 f_r2 += w;
 
                  if (dmtp_1_->hasQuadrupoles_) {
                      Qixx = Q_A_[i][0] * 1.5; 
@@ -520,15 +514,9 @@ void MultipoleConvergence::compute_potential(const double& x, const double& y, c
                      double u_z = Qixz*Rx + Qiyz*Ry + Qizz*Rz;
  
                      double u   = u_x*Rx + u_y*Ry + u_z*Rz;
-                     //double u = Qixx*Rx*Rx + Qixy*Rx*Ry + Qixz*Rx*Rz
-                     //          +Qixy*Ry*Rx + Qiyy*Ry*Ry + Qiyz*Ry*Rz
-                     //          +Qixz*Rz*Rx + Qiyz*Rz*Ry + Qizz*Rz*Rz;
 
-                     double ww = 5.0 * r7 * u;
-                     double cc = 2.0 * r5;
-                     //fx_r4 += ww * Rx - cc * u_x;
-                     //fy_r4 += ww * Ry - cc * u_y;
-                     //fz_r4 += ww * Rz - cc * u_z;
+                     double ww = r5 * u;
+                     f_r3 += ww;
 
                      if (dmtp_1_->hasOctupoles_) {
                          Oixxx = O_A_[i][0] * 2.5;
@@ -570,15 +558,12 @@ void MultipoleConvergence::compute_potential(const double& x, const double& y, c
 
                          double p    = p_x*Rx + p_y*Ry + p_z*Rz;
 
-                         double oo = 7.0 * r9 * p;
-                         double pp = 3.0 * r7;
+                         double oo = r7 * p;
 
-                         //fx_r5 += oo * Rx - pp * p_x;
-                         //fy_r5 += oo * Ry - pp * p_y;
-                         //fz_r5 += oo * Rz - pp * p_z;
+                         f_r4 += oo;
 
                          //if (dmtp_1_->hasHexadecapoles_) {
-                             // do nothing: R^-6 terms are not implemented
+                             // do nothing: R^-5 terms are not implemented yet! \TODO
                              //Hixxxx = H_A_[i][ 0] * 4.375; 
                              //Hixxxy = H_A_[i][ 1] * 4.375;
                              //Hixxxz = H_A_[i][ 2] * 4.375;
