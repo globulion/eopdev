@@ -116,7 +116,14 @@ class GenEffPar
     */
    void set_dpol(std::string key, std::vector<psi::SharedMatrix> mats) {data_dpol_[key] = mats;} 
 
-
+   /** \brief Set the basis set data
+    *
+    *  @param key      - keyword for a matrix
+    *  @param mat      - matrix
+    *
+    *  This sets the item in the map `data_basisset_`.
+    */
+   void set_basisset(std::string key, psi::SharedBasisSet basis) {data_basisset_[key] = basis;}
 
 
    /** \brief Set the Density Matrix Susceptibility
@@ -455,6 +462,9 @@ class GenEffPar
 
    /// Data for DMTP Types by Keyword
    std::map<std::string, std::vector<psi::SharedMatrix>> data_dpol_;
+
+   /// Data for AO Basis Set by Keyword
+   std::map<std::string, psi::SharedBasisSet> data_basisset_;
    //@}
 
 
@@ -548,6 +558,9 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
         //frag_ = mol->extract_subsets(real_list, ghost_list);
         frag_ = mol;
    }
+ 
+   /// Set the basis set
+   void set_basisset(std::string key, psi::SharedBasisSet basis);
 
    /// Set the Density Matrix Susceptibility Tensor Object
    void set_gefp_polarization(const std::shared_ptr<GenEffPar>& par) {densityMatrixSusceptibilityGEF_=par;}

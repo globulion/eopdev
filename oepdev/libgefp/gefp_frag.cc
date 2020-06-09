@@ -32,6 +32,12 @@ oepdev::GenEffFrag::GenEffFrag(const GenEffFrag* f) {
  densityMatrixSusceptibilityGEF_ = f->densityMatrixSusceptibilityGEF_;//TODO ->copy it, not pass the pointer
 }
 oepdev::GenEffFrag::~GenEffFrag() {}
+void oepdev::GenEffFrag::set_basisset(std::string key, psi::SharedBasisSet basis) {
+ this->basissets[key] = basis;
+   for (auto const& x : this->parameters) {
+       x.second->set_basisset(key, basis);
+  }
+}
 void oepdev::GenEffFrag::rotate(std::shared_ptr<psi::Matrix> R)
 {
   for (auto const& x : this->parameters) {

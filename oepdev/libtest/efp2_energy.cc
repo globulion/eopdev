@@ -36,14 +36,16 @@ double oepdev::test::Test::test_efp2_energy(void) {
   frag_2->set_molecule(wfn_union->l_molecule(1));
   wfn_union->l_molecule(0)->print();
   wfn_union->l_molecule(1)->print();
-  frag_1->basissets["primary"] = wfn_union->l_primary(0);
-  frag_2->basissets["primary"] = wfn_union->l_primary(1);
-
   std::shared_ptr<GenEffPar> par_1 = parameters->clone();
   std::shared_ptr<GenEffPar> par_2 = parameters->clone();
   
   frag_1->parameters["efp2"] = par_1;
   frag_2->parameters["efp2"] = par_2;
+  frag_1->set_basisset("primary", wfn_union->l_primary(0));
+  frag_2->set_basisset("primary", wfn_union->l_primary(1));
+
+  frag_2->basissets["primary"]->print_detail();
+
   frag_2->superimpose();
   psi::outfile->Printf(" Superimposing finished\n");
 

@@ -132,7 +132,7 @@ psi::SharedMatrix ao_rotation_matrix(psi::SharedMatrix rot, psi::SharedBasisSet 
       idx[am].push_back(i);
  }
  for (int am=0; am<max_am+1; ++am) {
-      if (idx[am].size() != nam[am]) throw psi::PSIEXCEPTION("ERROR!!");
+      if (idx[am].size() % nam[am] != 0) throw psi::PSIEXCEPTION("ERROR!!");
  }
 
 

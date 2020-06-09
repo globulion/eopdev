@@ -2,6 +2,7 @@
 #include <random>
 #include "gefp.h"
 #include "../libutil/kabsch_superimposer.h"
+#include "../libutil/basis_rotation.h"
 
 using namespace std;
 
@@ -272,10 +273,6 @@ void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std:
    const double tz = t->get(2);
    outfile->Printf("\n Kabsch Superimposition RMS = %14.5f [a.u.]\n", sup.rms());
 
-   // Compute AO rotation matrix
-   //psi::SharedMatrix R = ...
-
-
   // Superimpose POS
   psi::SharedMatrix pos_new = psi::Matrix::doublet(this->data_matrix_.at("pos"), r, false, false);
   this->data_matrix_["pos"] = pos_new;
@@ -312,6 +309,17 @@ void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std:
       this->data_dpol_["0"] = dpol_new;
   }
   //TODO
+
+   // Compute AO rotation matrix
+   psi::SharedMatrix R_primary(nullptr);
+   if (this->data_basisset_.find("primary") != this->data_basisset_.end()) {
+       R_primary = oepdev::ao_rotation_matrix(r, this->data_basisset_.at("primary"));
+       R_primary->set_name("AO Rotation Matrix: Primary Basis");
+       R_primary->print();
+   }
+
+
+
   
 }
 
