@@ -616,18 +616,36 @@ class GenEffFrag
     *  @return interaction energy in [A.U.]
     */
    double energy(std::string theory, std::shared_ptr<GenEffFrag> other);
+
+   /** \brief Compute interaction energy in a cluster of fragments.
+    *
+    *  @param theory     - theory used to compute energy
+    *  @param fragments  - list of fragments in the system
+    *  @param manybody   - use the manybody routine? If not, pairwise routine is utilized.
+    *  @return interaction energy in [A.U.]
+    */
+   static double compute_energy(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments, bool manybody);
+
+   /** \brief Compute interaction energy in a cluster of fragments by using manybody routine.
+    *
+    *  @param theory     - theory used to compute energy
+    *  @param fragments  - list of fragments in the system
+    *  @return interaction energy in [A.U.]
+    */
+   static double compute_many_body_energy(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments);
    //@}
 
   protected:
    /** \name Interface Computers */
    //@{
-   double compute_energy_efp2_coul(std::shared_ptr<GenEffFrag> other);
-   double compute_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other);
-   double compute_energy_efp2_ind(std::shared_ptr<GenEffFrag> other);
-   double compute_energy_efp2_ct(std::shared_ptr<GenEffFrag> other);
-   double compute_energy_efp2_disp(std::shared_ptr<GenEffFrag> other);
-   double compute_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other);
-   double compute_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other);
+   double compute_pairwise_energy(std::string theory, std::shared_ptr<GenEffFrag> other);
+   double compute_pairwise_energy_efp2_coul(std::shared_ptr<GenEffFrag> other);
+   double compute_pairwise_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other);
+   double compute_pairwise_energy_efp2_ind(std::shared_ptr<GenEffFrag> other);
+   double compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEffFrag> other);
+   double compute_pairwise_energy_efp2_disp(std::shared_ptr<GenEffFrag> other);
+   double compute_pairwise_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other);
+   double compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other);
    //@}
 
 

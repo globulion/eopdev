@@ -54,64 +54,100 @@ void oepdev::GenEffFrag::superimpose(void)
  psi::SharedMatrix xyz = std::make_shared<psi::Matrix>(this->frag_->geometry());
  this->superimpose(xyz, {});
 }
+// 
 double oepdev::GenEffFrag::energy(std::string theory, std::shared_ptr<GenEffFrag> other) {
- double e_tot;
- if (theory == "EFP2") {
-     double e_coul = this->compute_energy_efp2_coul(other);
-     double e_exrep= this->compute_energy_efp2_exrep(other);
-     double e_ind  = this->compute_energy_efp2_ind(other);
-     double e_ct   = this->compute_energy_efp2_ct(other);
-     double e_disp = this->compute_energy_efp2_disp(other);
-     e_tot = e_coul + e_exrep + e_ind + e_ct + e_disp;
- } else if (theory == "OEP_EFP2-a") {
-     double e_coul = this->compute_energy_efp2_coul(other);
-     double e_exrep= this->compute_energy_oep_efp2_exrep(other);
-     double e_ind  = this->compute_energy_efp2_ind(other);
-     double e_ct   = this->compute_energy_oep_efp2_ct(other);
-     double e_disp = this->compute_energy_efp2_disp(other);
-     e_tot = e_coul + e_exrep + e_ind + e_ct + e_disp;
- } else if (theory == "OEP_EFP2-b") {
-     double e_coul = this->compute_energy_efp2_coul(other);
-     double e_exrep= this->compute_energy_efp2_exrep(other);
-     double e_ind  = this->compute_energy_efp2_ind(other);
-     double e_ct   = this->compute_energy_oep_efp2_ct(other);
-     double e_disp = this->compute_energy_efp2_disp(other);
-     e_tot = e_coul + e_exrep + e_ind + e_ct + e_disp;
- } else {
-     throw psi::PSIEXCEPTION("Wrong theory chosen.");
- }
+ double e_tot = this->compute_pairwise_energy(theory, other);
  return e_tot;
 }
-double oepdev::GenEffFrag::compute_energy_efp2_coul(std::shared_ptr<GenEffFrag> other) {
+
+double oepdev::GenEffFrag::compute_energy(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments, bool manybody)
+{
+  double e_tot = 0.0;
+  if (manybody) {e_tot += oepdev::GenEffFrag::compute_many_body_energy(theory, fragments);}
+  else {
+
+     const int n = fragments.size();                                            
+     for (int i=0; i<n; ++i) {
+     for (int j=0; j<i; ++j) {
+          e_tot += fragments[i]->compute_pairwise_energy(theory, fragments[j]);
+     }}
+  }
+  return e_tot;
+}
+double oepdev::GenEffFrag::compute_many_body_energy(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments)
+{
+  double e;
+
+  if (theory == "EFP2:IND" || theory == "OEPa-EFP2:IND" || theory == "OEPb-EFP2:IND") {
+      e = 0.0;
+      //TODO
+  } else {
+     throw psi::PSIEXCEPTION("Wrong manybody theory chosen.");
+  }
+  return e;
+}
+//double oepdev::GenEffFrag::compute_pairwise_total_energy(std::vector<std::shared_ptr<GenEffFrag>> fragments,
+//          double (oepdev::GenEffFrag::*pairwise_energy_computer)(void )) {
+//  const int n = fragments.size();
+//  double e_tot = 0.0;
+//  for (int i=0; i<n; ++i) {
+//  for (int j=0; j<i; ++j) {
+//       e_tot += fragments[i]->
+//       e_tot += pairwise_energy_computer(fragments[i], fragments[j]);
+//  }
+//  }
+//  return e_tot;
+//}
+double oepdev::GenEffFrag::compute_pairwise_energy(std::string theory, std::shared_ptr<GenEffFrag> other) {
+  double e;
+ if (theory == "EFP2:COUL" || theory == "OEPa-EFP2:COUL" || theory == "OEPb-EFP2:COUL") 
+     {e = this->compute_pairwise_energy_efp2_coul(other);}
+ else if (theory == "EFP2:IND" || theory == "OEPa-EFP2:IND" || theory == "OEPb-EFP2:IND") 
+     {e = this->compute_pairwise_energy_efp2_ind(other);}
+ else if (theory == "EFP2:EXREP" || theory == "OEPa-EFP2:EXREP") 
+     {e = this->compute_pairwise_energy_efp2_exrep(other);}
+ else if (theory == "EFP2:CT")
+     {e = this->compute_pairwise_energy_efp2_ct(other);}
+ else if (theory == "EFP2:DISP" || theory == "OEPa-EFP2:DISP" || theory == "OEPb-EFP2:DISP")
+     {e = this->compute_pairwise_energy_efp2_disp(other);}
+ else if (theory == "OEPb-EFP2:EXREP") 
+     {e = this->compute_pairwise_energy_oep_efp2_exrep(other);}
+ else if (theory == "OEPa-EFP2:CT" || theory == "OEPb-EFP2:CT") 
+     {e = this->compute_pairwise_energy_oep_efp2_ct(other);}
+ else {
+     throw psi::PSIEXCEPTION("Wrong pairwise theory chosen.");
+ }
+ return e;
+}
+double oepdev::GenEffFrag::compute_pairwise_energy_efp2_coul(std::shared_ptr<GenEffFrag> other) {
  oepdev::MultipoleConvergence::ConvergenceLevel clevel = oepdev::DMTPole::determine_dmtp_convergence_level("DMTP_CONVER");
  oepdev::SharedDMTPole camm_1 = this->parameters["efp2"]->dmtp("camm");
  oepdev::SharedDMTPole camm_2 =other->parameters["efp2"]->dmtp("camm");
- outfile->Printf(" Computing CAMM interaction energy\n");
  double e = camm_1->energy(camm_2)->level(clevel)->get(0,0);
  return e;
 }
-double oepdev::GenEffFrag::compute_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other) {
  //TODO
  outfile->Printf(" Computing EFP2-ExRep interaction energy\n");
  return 0.0;
 }
-double oepdev::GenEffFrag::compute_energy_efp2_ind(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ind(std::shared_ptr<GenEffFrag> other) {
  //TODO
  return 0.0;
 }
-double oepdev::GenEffFrag::compute_energy_efp2_ct(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEffFrag> other) {
  //TODO
  return 0.0;
 }
-double oepdev::GenEffFrag::compute_energy_efp2_disp(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_efp2_disp(std::shared_ptr<GenEffFrag> other) {
  //TODO
  return 0.0;
 }
-double oepdev::GenEffFrag::compute_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other) {
  //TODO
  return 0.0;
 }
-double oepdev::GenEffFrag::compute_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other) {
  //TODO
  return 0.0;
 }

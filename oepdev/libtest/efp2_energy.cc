@@ -48,8 +48,21 @@ double oepdev::test::Test::test_efp2_energy(void) {
   psi::outfile->Printf(" Superimposing finished\n");
 
   // Compute interaction energy
-  double eint = frag_1->energy("EFP2", frag_2);
-  psi::outfile->Printf("\n EFP2 Interaction Energy= %14.6f [kcal/mol]\n\n", eint*OEPDEV_AU_KcalPerMole);
+  double eint_coul = frag_1->energy("EFP2:COUL", frag_2);
+  double eint_exrep= frag_1->energy("EFP2:EXREP",frag_2);
+  double eint_ind  = frag_1->energy("EFP2:IND" , frag_2);
+  double eint_disp = frag_1->energy("EFP2:DISP", frag_2);
+  double eint_ct   = frag_1->energy("EFP2:CT"  , frag_2);
+
+  double eint = eint_coul + eint_ind + eint_exrep + eint_ct + eint_disp;
+
+  psi::outfile->Printf("\n EFP2 Interaction Energy Components [kcal/mol]\n\n");
+  psi::outfile->Printf("  COUL= %14.6f\n", eint_coul*OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  EXRP= %14.6f\n", eint_exrep*OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  IND = %14.6f\n", eint_ind  *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  DISP= %14.6f\n", eint_disp *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  CT  = %14.6f\n", eint_ct   *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  TOT = %14.6f\n", eint*OEPDEV_AU_KcalPerMole);
 
   double result = eint - eint_ref;
 
