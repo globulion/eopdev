@@ -94,5 +94,5 @@ void oepdev::EFP2_GEFactory::assemble_distributed_polarizabilities() {
        dpol.push_back(cphfSolver_->polarizability(i));
    }
 
-  this->EFP2Parameters_->set_dpol("dpol-0", dpol);
+  this->EFP2Parameters_->set_dpol("0", dpol);
 }

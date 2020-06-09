@@ -128,12 +128,113 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_coul(std::shared_ptr<Gen
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other) {
  //TODO
- outfile->Printf(" Computing EFP2-ExRep interaction energy\n");
  return 0.0;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ind(std::shared_ptr<GenEffFrag> other) {
- //TODO
- return 0.0;
+ // Initialize
+ std::vector<psi::SharedMatrix> dpol_1 = this->parameters["efp2"]->dpol("0");
+ std::vector<psi::SharedMatrix> dpol_2 =other->parameters["efp2"]->dpol("0");
+ psi::SharedMatrix rpol_1 = this->parameters["efp2"]->matrix("lmoc");
+ psi::SharedMatrix rpol_2 =other->parameters["efp2"]->matrix("lmoc");
+ const int nocc_1 = dpol_1.size();
+ const int nocc_2 = dpol_2.size();
+ const int DIM = 3*(nocc_1 + nocc_2);
+
+ const int n_frag = 2;
+
+ std::vector<std::vector<psi::SharedMatrix>> dpols; dpols.push_back(dpol_1); dpols.push_back(dpol_2);
+ std::vector<psi::SharedMatrix> rpols; rpols.push_back(rpol_1); rpols.push_back(rpol_2);
+
+ // Calculate D and F matrices
+ psi::SharedMatrix D = std::make_shared<psi::Matrix>("D-matrix", DIM, DIM);
+ psi::SharedMatrix F = std::make_shared<psi::Matrix>("F-matrix", DIM, 1  );
+ double** Dp = D->pointer();
+ double** Fp = F->pointer();
+
+ int i_pol = 0;
+ for (int n=0; n<n_frag; ++n) {
+      const int N = dpols[n].size();
+      
+      i_pol += N;
+      for (int a=0; a<N; ++a) {
+           int ix3 = 3*(i_pol - N) + 3*a;
+
+           psi::SharedMatrix A = dpols[n][a]->clone();
+           A->invert();
+           double** Ap = A->pointer();
+
+           Dp[ix3+0][ix3+0] = Ap[0][0];
+           Dp[ix3+0][ix3+1] = Ap[0][1];
+           Dp[ix3+0][ix3+2] = Ap[0][2];
+           Dp[ix3+1][ix3+0] = Ap[1][0];
+           Dp[ix3+1][ix3+1] = Ap[1][1];
+           Dp[ix3+1][ix3+2] = Ap[1][2];
+           Dp[ix3+2][ix3+0] = Ap[2][0];
+           Dp[ix3+2][ix3+1] = Ap[2][1];
+           Dp[ix3+2][ix3+2] = Ap[2][2];
+
+           psi::SharedVector ra = rpols[n]->get_row(0, a);
+
+           int j_pol = 0;
+           for (int m=0; m<n_frag; ++m) {
+                const int M = dpols[m].size();
+                j_pol += M;
+
+                // Consider only other fragments than the n-th one
+                if (n!=m) {
+
+                    // Compute electric field
+                    //psi::SharedVector F = //TODO
+
+                    for (int b=0; b<M; ++b) {
+                         int jx3 = 3*(j_pol - M) + 3*b;
+
+                         psi::SharedVector rb = rpols[m]->get_row(0, b);
+
+                         // compute Tab
+                         double rab_x = ra->get(0) - rb->get(0);
+                         double rab_y = ra->get(1) - rb->get(1);
+                         double rab_z = ra->get(2) - rb->get(2);
+                         double r = sqrt(rab_x*rab_x+rab_y*rab_y+rab_z*rab_z);
+                         double r3 = 1.0/(r*r*r);
+                         double r5 = r3/(r*r);
+
+                         psi::SharedMatrix Tab = std::make_shared<psi::Matrix>("",3,3); Tab->identity();
+                         Tab->scale(-1.0*r3);
+                         double** t = Tab->pointer();
+                         t[0][0] += 3.0 * r5 * rab_x * rab_x;
+                         t[0][1] += 3.0 * r5 * rab_x * rab_y;
+                         t[0][2] += 3.0 * r5 * rab_x * rab_z;
+                         t[1][1] += 3.0 * r5 * rab_y * rab_y;
+                         t[1][2] += 3.0 * r5 * rab_y * rab_z;
+                         t[2][2] += 3.0 * r5 * rab_z * rab_z;
+                         t[1][0]  = t[0][1];
+                         t[2][0]  = t[0][2];
+                         t[2][1]  = t[1][2];
+
+                         // Set off-diagonals of D with -Tab
+                         Dp[ix3+0][jx3+0] = -t[0][0];
+                         Dp[ix3+0][jx3+1] = -t[0][1];
+                         Dp[ix3+0][jx3+2] = -t[0][2];
+                         Dp[ix3+1][jx3+0] = -t[1][0];
+                         Dp[ix3+1][jx3+1] = -t[1][1];
+                         Dp[ix3+1][jx3+2] = -t[1][2];
+                         Dp[ix3+2][jx3+0] = -t[2][0];
+                         Dp[ix3+2][jx3+1] = -t[2][1];
+                         Dp[ix3+2][jx3+2] = -t[2][2];
+                    }
+                }
+           }
+
+      }
+ }
+
+ // Compute interaction energy
+ D->invert();
+ D->print();
+ psi::SharedMatrix P = psi::Matrix::doublet(D, F, false, false);
+ double e_ind = P->vector_dot(F) / 2.0;
+ return e_ind;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEffFrag> other) {
  //TODO
