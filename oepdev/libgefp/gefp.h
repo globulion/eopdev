@@ -479,7 +479,7 @@ class GenEffPar
  * at correlated levels of theory.
  * \see GenEffPar, GenEffParFactory
  */
-class GenEffFrag
+class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
 {
   protected: 
    /// Name of GEFP

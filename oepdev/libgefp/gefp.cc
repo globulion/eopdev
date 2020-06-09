@@ -267,10 +267,18 @@ void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std:
    sup.compute(initial_xyz, final_xyz);
    psi::SharedMatrix r = sup.rotation;
    psi::SharedVector t = sup.translation;
+   const double tx = t->get(0);
+   const double ty = t->get(1);
+   const double tz = t->get(2);
+   outfile->Printf("\n Kabsch Superimposition RMS = %14.5f [a.u.]\n", sup.rms());
 
    // Compute AO rotation matrix
    //psi::SharedMatrix R = ...
 
+
+  // Superimpose POS
+  psi::SharedMatrix pos_new = psi::Matrix::doublet(this->data_matrix_.at("pos"), r, false, false);
+  this->data_matrix_["pos"] = pos_new;
 
   // Superimpose DMTP
   if (this->data_dmtp_.find("camm") != this->data_dmtp_.end()) {
@@ -279,6 +287,29 @@ void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std:
       this->data_dmtp_.at("camm")->rotate(r);
       this->data_dmtp_.at("camm")->translate(t);
 
+  }
+  // Superimpose LMOC
+  if (this->data_matrix_.find("lmoc") != this->data_matrix_.end()) {
+      outfile->Printf("  Superimposing LMOC in Parameters %s\n", this->name_.c_str());
+      psi::SharedMatrix lmoc = psi::Matrix::doublet(this->data_matrix_.at("lmoc"), r, false, false);
+      double** l = lmoc->pointer();
+      for (int i=0; i<lmoc->nrow(); ++i) {
+           l[i][0] += tx; 
+           l[i][1] += ty; 
+           l[i][2] += tz; 
+      }
+      this->data_matrix_["lmoc"] = lmoc;
+  }
+  // Superimpose DPOL
+  if (this->data_dpol_.find("0") != this->data_dpol_.end()) {
+      outfile->Printf("  Superimposing DPOL in Parameters %s\n", this->name_.c_str());
+      std::vector<psi::SharedMatrix> dpol_new;
+      for (int i=0; i<this->data_dpol_.at("0").size(); ++i) {
+           psi::SharedMatrix A = psi::Matrix::doublet(this->data_dpol_.at("0")[i], r, false, false);
+           psi::SharedMatrix a = psi::Matrix::doublet(r, A, true, false);
+           dpol_new.push_back(a);
+      }
+      this->data_dpol_["0"] = dpol_new;
   }
   //TODO
   
