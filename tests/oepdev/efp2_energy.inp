@@ -29,7 +29,7 @@ set {
     cphf_localize                 True
     oepdev_enable_trial           False
     # ==> General Psi4 Options <== #
-    basis                         6-31++G**
+    basis                         6-311++G(2df)
     scf_type                      pk
     guess                         core
     e_convergence                 1e-11
