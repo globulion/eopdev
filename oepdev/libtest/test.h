@@ -59,6 +59,9 @@ class Test
    /// Test the basic functionalities of OEPDev
    double test_basic(void);
 
+   /// Test the AO basis set rotation from oepdev::ao_rotation_matrix
+   double test_basis_rotation(void);
+
    /// Test the CIS(RHF) method
    double test_cis_rhf(void);
 

@@ -133,6 +133,7 @@ add_psi4_plugin(oepdev main.cc
 		       # libtest
                        oepdev/libtest/test.cc
 		       oepdev/libtest/basic.cc
+		       oepdev/libtest/basis_rotation.cc
                        oepdev/libtest/cis_rhf_explicit.cc
                        oepdev/libtest/cis_rhf_dl.cc
                        oepdev/libtest/cis_uhf_explicit.cc

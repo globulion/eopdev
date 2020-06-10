@@ -15,6 +15,7 @@ double oepdev::test::Test::run(void)
 {
   double result;
   if      (options_.get_str("OEPDEV_TEST_NAME")=="BASIC"  ) result = test_basic  ();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="BASIS_ROTATION") result = test_basis_rotation();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CIS_RHF") result = test_cis_rhf();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CIS_UHF") result = test_cis_uhf();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CIS_RHF_DL") result = test_cis_rhf_dl();
