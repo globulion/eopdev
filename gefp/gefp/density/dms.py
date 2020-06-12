@@ -12,9 +12,8 @@ import psi4, oepdev
 import scipy.optimize
 import scipy.spatial.transform
 from abc import ABC, abstractmethod
-from ..math.matrix import move_atom_rotate_molecule, rotate_ao_matrix, matrix_power
+from ..math.matrix import matrix_power
 from ..math import composite
-from ..core.utilities import psi_molecule_from_file
 from ..density.opdm import Density
 from ..solvshift.mdinput import MDInput
 from ..solvshift.fragment import Fragment

@@ -748,7 +748,7 @@ and RMS from the last superimposition"""
         # transform the DMS tensors
         if self.__opdm is not None:
            self.__bfs = self.get_bfs()
-           m, R = rotate_ao_matrix(numpy.identity(self.__nbasis), rot, self.__bfs, return_rot=True, aomo=False)
+           m, R = rotate_ao_matrix(numpy.identity(self.__nbasis), rot, self.__bfs, return_rot=True, orbitals=True)
            self.__R = R; del m
            self.__opdm = self._rotate_dms_nn(self.__opdm, R)
            self.__caocc= self._rotate_aomo(self.__caocc, R)

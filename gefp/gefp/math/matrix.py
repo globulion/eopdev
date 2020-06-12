@@ -212,7 +212,12 @@ def make_r2(r):
     R6[5,4] = r[1,2] * r[2,2] * 2.0 * s                  # ZZ YZ
     R6[5,5] = r[2,2] * r[2,2]                            # ZZ ZZ
 
-    return R6.T
+    R6 = R6.T
+    # 
+   #p = numpy.sqrt(3.0)/3.0 * numpy.ones(6); p[0] = p[3] = p[5] = 1.0 ---> This normalization is not needed!
+   #q =1./p; p = numpy.diag(p); q = numpy.diag(q)
+   #R6 = p @ R6 @ q
+    return R6
 
 def make_r3(r):
     "Create 10 by 10 transformation matrix for 10F-type vector elements"
@@ -325,20 +330,30 @@ def make_r3(r):
     return R10
 
 
-def rotate_ao_matrix(M, rot_3d, bfs, return_rot=False, aomo=False):
+def rotate_ao_matrix(M, rot_3d, bfs, orbitals=False, density=False, return_rot=False):
     """\
  Rotation of matrices in AO basis due to 3D rotation of basis set.
 
- M      - matrix in AO basis to be rotated
- rot_3d - 3 x 3 rotation matrix (Cartesian)
- bfs    - psi4.core.BasisSet in which M is represented
- aomo   -
+ M       - matrix in AO basis to be rotated
+ rot_3d  - 3 x 3 rotation matrix (Cartesian)
+ bfs     - psi4.core.BasisSet in which M is represented
+ orbitals- rotate LCAO-MO matrix?
+ density - rotate density matrix?
+ return_rot - return also the rotation matrix R as second element
 
  Returns: 
-     rotated matrix M:  M' = R.T @ M @ R (if aomo=False)
-                    M:  M' = R.T @ M     (if aomo=True)
+     rotated matrix M:  M' = R.T @ M @ R  if orbitals = False and return_rot = False
+                    M:  M' = R.T @ M      if orbitals = True  and return_rot = False
 
- Notes: rotation up to 10F functions is implemented.
+                              or
+
+     rotated matrix M, rotation matrix R: if return_rot = True
+
+ Notes: 
+  o rotation up to 10F functions is implemented.
+
+ Warning:
+  o only Cartesian bases are supported now (puream = False)
 """
     # number of basis functions per shell type
     if bfs.has_puream():  nam = {0: 1, 1: 3, 2: 5, 3: 7, 4: 9}
@@ -360,9 +375,6 @@ def rotate_ao_matrix(M, rot_3d, bfs, return_rot=False, aomo=False):
     # build rotation matrix
     R = numpy.identity(M.shape[0], numpy.float64)
 
-    #if max_am > 1: r2= numpy.matrix_power(rot_3d, 2).transpose([0,2,1,3])
-    #if max_am > 2: r3= numpy.matrix_power(rot_3d, 3).transpose([1-1,4-1,2-1,5-1,3-1,6-1])
-
     def populate_R(am, r):
         n_p_groups = int(len(idx[am]) / nam[am])
         g_c = 0
@@ -373,37 +385,6 @@ def rotate_ao_matrix(M, rot_3d, bfs, return_rot=False, aomo=False):
                 for jr,j in enumerate(idx_g):
                     R[i,j] = r[ir,jr]
             g_c+= nam[am]
-
-    #def make_66(a):
-    #    r = numpy.zeros((9,9))
-    #    print("WWWWW")
-    #    for i in range(3):
-    #        for j in range(3):
-    #            ij = 3*i+j
-    #            print ("ij = ", ij, " i,j = ", i, j)
-    #            for k in range(3):
-    #                for l in range(3):
-    #                    kl = 3*k+l
-    #                    r[ij,kl] = a[i,k]*a[j,l]
-    #    ids = [0, 1, 2, 4, 5, 8]
-    #    r2 = r[ids].T[ids].T
-    #    return r2
-    #def make_r2(r):
-    #    r2_4= numpy.multiply.outer(r, r).transpose([1,3,0,2]).reshape(9,9)
-    #    ids = [0, 1, 2, 4, 5, 8]
-    #    #s = numpy.sqrt(2.0)
-    #    s = 2.0
-    #    q1   = numpy.array([1.0, s, s, 1.0, s, 1.0])
-    #    s = 2.0
-    #    q2   = numpy.array([1.0, s, s, 1.0, s, 1.0])
-
-    #    ids1 = [0, 1, 2, 4, 5, 8]
-    #    ids2 = [0, 3, 6, 4, 7, 8]
-    #    r2 = r2_4[ids2].T[ids1].T #* numpy.outer(q1,q1)
-    #    #r2 = numpy.dot(numpy.dot(numpy.diag(q), r2), numpy.diag(q))
-    #    #r2 = numpy.dot(numpy.diag(q2), r2)
-    #    #r2 = numpy.dot(r2, numpy.diag(q2))
-    #    return r2
 
     # --- s block
     None
@@ -420,8 +401,11 @@ def rotate_ao_matrix(M, rot_3d, bfs, return_rot=False, aomo=False):
     # --- g block
     if max_am > 3: raise NotImplementedError
 
+    # transform like density?
+    if orbitals or density: R = numpy.linalg.inv(R).T
+
     # rotate
-    if aomo == True:
+    if orbitals == True:
        M_rot = numpy.dot(R.T, numpy.array(M,numpy.float64).copy())
     else:
        M_rot = numpy.linalg.multi_dot([R.T, numpy.array(M), R])
