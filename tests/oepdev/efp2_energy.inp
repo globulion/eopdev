@@ -27,6 +27,7 @@ set {
     oepdev_test_mode              dimer
     oepdev_localize               False
     cphf_localize                 True
+    efp2_ct_no_octupoles          False
     oepdev_enable_trial           False
     # ==> General Psi4 Options <== #
     basis                         6-311++G(2df)

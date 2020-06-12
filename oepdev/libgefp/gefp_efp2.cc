@@ -71,7 +71,8 @@ void oepdev::EFP2_GEFactory::assemble_dmtp_data() {
   this->EFP2Parameters_->set_dmtp("camm", dmtp_);
 }
 void oepdev::EFP2_GEFactory::assemble_lmo_centroids() {
-  psi::SharedMatrix C = cphfSolver_->localizer()->L();
+  psi::SharedMatrix C = cphfSolver_->localizer()->L()->clone();
+  this->EFP2Parameters_->set_matrix("lmoo", C);
 
   psi::SharedMatrix lmoc = std::make_shared<psi::Matrix>("LMO Centroids", cphfSolver_->nocc(), 3);
   for (int i=0; i<cphfSolver_->nocc(); ++i) {
@@ -82,10 +83,11 @@ void oepdev::EFP2_GEFactory::assemble_lmo_centroids() {
 
 void oepdev::EFP2_GEFactory::assemble_fock_matrix() {
   psi::SharedMatrix C = cphfSolver_->localizer()->L();
-  psi::SharedMatrix Fa_ao = wfn_->Fa();
+  psi::SharedMatrix Fa_ao = wfn_->Fa()->clone();
   psi::SharedMatrix Fa_mo = psi::Matrix::triplet(C, Fa_ao, C, true, false, false);
 
-  this->EFP2Parameters_->set_matrix("fock", Fa_mo);
+  this->EFP2Parameters_->set_matrix("fock_lmo", Fa_mo);
+  this->EFP2Parameters_->set_matrix("fock_ao", Fa_ao);
 
   psi::SharedMatrix Ca_occ_canonical = cphfSolver_->Cocc();
   psi::SharedMatrix Ca_vir_canonical = cphfSolver_->Cvir();

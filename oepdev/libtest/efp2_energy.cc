@@ -52,7 +52,6 @@ double oepdev::test::Test::test_efp2_energy(void) {
 //frag_2->basissets["primary"]->print_detail();
 
   frag_2->superimpose();
-  psi::outfile->Printf(" Superimposing finished\n");
 
   // Compute interaction energy
   double eint_coul = frag_1->energy("EFP2:COUL", frag_2);

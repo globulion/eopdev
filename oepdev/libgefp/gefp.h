@@ -529,6 +529,12 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
    /// Number of doubly occupied MOs
    int ndocc_;
 
+   /// Extract XYZ
+   psi::SharedVector extract_xyz(psi::SharedMolecule);
+   /// Extract DMTP
+   psi::SharedVector extract_dmtp(std::shared_ptr<oepdev::DMTPole>);
+
+
 
   public:
    /** \name Constructors and Destructor */ 
