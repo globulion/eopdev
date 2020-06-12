@@ -44,7 +44,7 @@ class GenEffPar
                                               hasDensityMatrixDipoleDipoleHyperpolarizability_(false),
                                               hasDensityMatrixQuadrupolePolarizability_(false),
                                  type_(name),
-                                 data_matrix_({}), data_dmtp_({}), data_dpol_({}) {};
+                                 data_vector_({}), data_matrix_({}), data_dmtp_({}), data_dpol_({}) {};
    /// Copy Constructor
    GenEffPar(const GenEffPar*);
    /// Make a deep copy
@@ -88,6 +88,15 @@ class GenEffPar
 
    /** \name Mutators */
    //@{
+
+   /** \brief Set the vector data
+    *
+    *  @param key      - keyword for a vector
+    *  @param mat      - vector
+    *
+    *  This sets the item in the map `data_vector_`.
+    */
+   void set_vector(std::string key, psi::SharedVector mat) {data_vector_[key] = mat;}
 
    /** \brief Set the matrix data
     *
@@ -235,6 +244,13 @@ class GenEffPar
    /** \name Accessors */
    //@{
 
+   /** \brief Get the vector data
+    *
+    *  @param key      - keyword for a vector
+    *  @return vector data type
+    */
+   psi::SharedVector vector(std::string key) const {return data_vector_.at(key);} 
+
    /** \brief Get the matrix data
     *
     *  @param key      - keyword for a matrix
@@ -255,6 +271,13 @@ class GenEffPar
     *  @return DPOL data type
     */
    std::vector<psi::SharedMatrix> dpol(std::string key) const {return data_dpol_.at(key);} 
+
+   /** \brief Get the basis set data
+    *
+    *  @param key      - keyword for a basis set
+    *  @return basis set data type
+    */
+   psi::SharedBasisSet basisset(std::string key) const {return data_basisset_.at(key);} 
 
 
    /** \brief Grab the Density Matrix Susceptibility
@@ -454,6 +477,9 @@ class GenEffPar
    /// The Positions of the Distributed Centres
    std::vector<std::shared_ptr<psi::Vector>> distributedCentres_;
 
+   /// Data for Vector Types by Keyword
+   std::map<std::string, psi::SharedVector> data_vector_;
+
    /// Data for Matrix Types by Keyword
    std::map<std::string, psi::SharedMatrix> data_matrix_;
 
@@ -496,6 +522,13 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
    std::string name_;
    /// Structure
    psi::SharedMolecule frag_;
+   /// Number of primary basis functions
+   int nbf_;
+   /// Number of atoms
+   int natom_;
+   /// Number of doubly occupied MOs
+   int ndocc_;
+
 
   public:
    /** \name Constructors and Destructor */ 
@@ -549,6 +582,12 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
    /** \name Mutators */
    //@{
 
+   /// Set the number of doubly occupied MOs
+   void set_ndocc(int n) {ndocc_=n;}
+
+   /// Set the number of primary basis functions
+   void set_nbf(int n) {nbf_=n;}
+
    /// Set the fragment molecule
    void set_molecule(const psi::SharedMolecule mol) {
         //std::vector<int> real_list = {};
@@ -557,6 +596,7 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
         //for (int i=0; i<mol->nfragments(); ++i) real_list.push_back(i);
         //frag_ = mol->extract_subsets(real_list, ghost_list);
         frag_ = mol;
+        natom_= mol->natom();
    }
  
    /// Set the basis set
@@ -584,6 +624,18 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
 
    /** \name Accessors */ 
    //@{
+
+   /// Grab the number of primary basis functions
+   int nbf(void) const {return nbf_;}
+
+   /// Grab the number of atoms
+   int natom(void) const {return natom_;}
+
+   /// Grab the number of doubly occupied molecular orbitals
+   int ndocc(void) const {return ndocc_;}
+
+   /// Grab the molecule attached to this fragment
+   psi::SharedMolecule molecule(void) const {return frag_;}
 
    /** \brief Grab the Density Matrix Susceptibility
     *

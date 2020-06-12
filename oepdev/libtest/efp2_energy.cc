@@ -32,19 +32,24 @@ double oepdev::test::Test::test_efp2_energy(void) {
   std::shared_ptr<GenEffFrag> frag_1 = std::make_shared<oepdev::GenEffFrag>("Fragment 1");
   std::shared_ptr<GenEffFrag> frag_2 = std::make_shared<oepdev::GenEffFrag>("Fragment 2");
 
-  frag_1->set_molecule(wfn_union->l_molecule(0));
-  frag_2->set_molecule(wfn_union->l_molecule(1));
   wfn_union->l_molecule(0)->print();
   wfn_union->l_molecule(1)->print();
+
   std::shared_ptr<GenEffPar> par_1 = parameters->clone();
   std::shared_ptr<GenEffPar> par_2 = parameters->clone();
-  
   frag_1->parameters["efp2"] = par_1;
   frag_2->parameters["efp2"] = par_2;
-  frag_1->set_basisset("primary", wfn_union->l_primary(0));
-  frag_2->set_basisset("primary", wfn_union->l_primary(1));
 
-  frag_2->basissets["primary"]->print_detail();
+  frag_1->set_molecule(wfn_union->l_molecule(0));
+  frag_2->set_molecule(wfn_union->l_molecule(1));
+  frag_1->set_basisset("primary", wfn_union->l_primary(0)); // set_basisset has to be invoked after parameters exist
+  frag_2->set_basisset("primary", wfn_union->l_primary(1));
+  frag_1->set_ndocc(wfn_union->l_ndocc(0));
+  frag_2->set_ndocc(wfn_union->l_ndocc(1));
+  frag_1->set_nbf(wfn_union->l_nbf(0));
+  frag_2->set_nbf(wfn_union->l_nbf(1));
+
+//frag_2->basissets["primary"]->print_detail();
 
   frag_2->superimpose();
   psi::outfile->Printf(" Superimposing finished\n");
@@ -58,13 +63,13 @@ double oepdev::test::Test::test_efp2_energy(void) {
 
   double eint = eint_coul + eint_ind + eint_exrep + eint_ct + eint_disp;
 
-  psi::outfile->Printf("\n EFP2 Interaction Energy Components [kcal/mol]\n\n");
-  psi::outfile->Printf("  COUL= %14.6f\n", eint_coul*OEPDEV_AU_KcalPerMole);
-  psi::outfile->Printf("  EXRP= %14.6f\n", eint_exrep*OEPDEV_AU_KcalPerMole);
-  psi::outfile->Printf("  IND = %14.6f\n", eint_ind  *OEPDEV_AU_KcalPerMole);
-  psi::outfile->Printf("  DISP= %14.6f\n", eint_disp *OEPDEV_AU_KcalPerMole);
-  psi::outfile->Printf("  CT  = %14.6f\n", eint_ct   *OEPDEV_AU_KcalPerMole);
-  psi::outfile->Printf("  TOT = %14.6f\n", eint*OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("\n EFP2 Interaction Energy Components [a.u.] [kcal/mol]\n\n");
+  psi::outfile->Printf("  COUL= %14.6f%14.6f\n", eint_coul , eint_coul *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  EXRP= %14.6f%14.6f\n", eint_exrep, eint_exrep*OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  IND = %14.6f%14.6f\n", eint_ind  , eint_ind  *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  DISP= %14.6f%14.6f\n", eint_disp , eint_disp *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  CT  = %14.6f%14.6f\n", eint_ct   , eint_ct   *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  TOT = %14.6f%14.6f\n", eint      , eint      *OEPDEV_AU_KcalPerMole);
 
   double result = eint - eint_ref;
 

@@ -60,6 +60,12 @@ void oepdev::EFP2_GEFactory::assemble_parameters() {
 void oepdev::EFP2_GEFactory::assemble_geometry_data() {
   psi::SharedMatrix geom = std::make_shared<psi::Matrix>(wfn_->molecule()->geometry());
   this->EFP2Parameters_->set_matrix("pos", geom);
+
+  psi::SharedVector Z = std::make_shared<psi::Vector>("Atomic numbers", wfn_->molecule()->natom());
+  for (int i=0; i<wfn_->molecule()->natom(); ++i) {
+       Z->set(0, (double)wfn_->molecule()->Z(i));
+  }
+  this->EFP2Parameters_->set_vector("atno", Z);
 }
 void oepdev::EFP2_GEFactory::assemble_dmtp_data() {
   this->EFP2Parameters_->set_dmtp("camm", dmtp_);

@@ -308,19 +308,29 @@ void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std:
       }
       this->data_dpol_["0"] = dpol_new;
   }
-  //TODO
 
    // Compute AO rotation matrix
-   psi::SharedMatrix R_primary(nullptr);
+   psi::SharedMatrix R_primary(nullptr), Ri_primary(nullptr);
    if (this->data_basisset_.find("primary") != this->data_basisset_.end()) {
        R_primary = oepdev::ao_rotation_matrix(r, this->data_basisset_.at("primary"));
        R_primary->set_name("AO Rotation Matrix: Primary Basis");
        R_primary->print();
+
+       Ri_primary = R_primary->clone(); Ri_primary->invert(); Ri_primary->transpose_this();
    }
 
+   // Superimpose orbitals
+   if (this->data_matrix_.find("cmoo") != this->data_matrix_.end()) {
+       psi::SharedMatrix cmoo = psi::Matrix::doublet(Ri_primary, this->data_matrix_.at("cmoo"), true, false);
+       this->data_matrix_["cmoo"] = cmoo;
+   }
 
-
+   if (this->data_matrix_.find("cmov") != this->data_matrix_.end()) {
+       psi::SharedMatrix cmov = psi::Matrix::doublet(Ri_primary, this->data_matrix_.at("cmov"), true, false);
+       this->data_matrix_["cmov"] = cmov;
+   }
   
+   //TODO
 }
 
 //-- GenEffParFactory --////////////////////////////////////////////////////////////////////////////////
