@@ -21,6 +21,8 @@
 namespace oepdev{
 
 using namespace std;
+using SharedOEPotential = std::shared_ptr<OEPotential>;
+
 class EFP2_GEFactory;
 
 /** \addtogroup OEPDEV_GEFP
@@ -44,7 +46,7 @@ class GenEffPar
                                               hasDensityMatrixDipoleDipoleHyperpolarizability_(false),
                                               hasDensityMatrixQuadrupolePolarizability_(false),
                                  type_(name),
-                                 data_vector_({}), data_matrix_({}), data_dmtp_({}), data_dpol_({}) {};
+                                 data_vector_({}), data_matrix_({}), data_dmtp_({}), data_oep_({}), data_dpol_({}) {};
    /// Copy Constructor
    GenEffPar(const GenEffPar*);
    /// Make a deep copy
@@ -115,6 +117,15 @@ class GenEffPar
     *  This sets the item in the map `data_dmtp_`.
     */
    void set_dmtp(std::string key, std::shared_ptr<oepdev::DMTPole> mat) {data_dmtp_[key] = mat;} 
+
+   /** \brief Set the OEP data
+    *
+    *  @param key      - keyword for a OEP
+    *  @param oep      - OEP object  
+    *
+    *  This sets the item in the map `data_oep_`.
+    */
+   void set_oep(std::string key, oepdev::SharedOEPotential oep) {data_oep_[key] = oep;} 
 
    /** \brief Set the DPOL data
     *
@@ -264,6 +275,13 @@ class GenEffPar
     *  @return DMTP data type
     */
    std::shared_ptr<oepdev::DMTPole> dmtp(std::string key) const {return data_dmtp_.at(key);} 
+
+   /** \brief Get the OEP data
+    *
+    *  @param key      - keyword for a OEP
+    *  @return OEP data type
+    */
+   oepdev::SharedOEPotential oep(std::string key) const {return data_oep_.at(key);} 
 
    /** \brief Get the DPOL data
     *
@@ -485,6 +503,9 @@ class GenEffPar
 
    /// Data for DMTP Types by Keyword
    std::map<std::string, std::shared_ptr<oepdev::DMTPole>> data_dmtp_;
+
+   /// Data for OEP Types by Keyword
+   std::map<std::string, oepdev::SharedOEPotential> data_oep_;
 
    /// Data for DMTP Types by Keyword
    std::map<std::string, std::vector<psi::SharedMatrix>> data_dpol_;

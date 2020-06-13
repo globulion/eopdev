@@ -125,6 +125,15 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
      */
     OEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options);
 
+    /// Copy constructor
+    OEPotential(const OEPotential*);
+
+    /// Make a deep copy of this object
+       std::shared_ptr<OEPotential> clone(void) const {
+       auto temp = std::make_shared<OEPotential>(this);
+       return temp;
+    }
+
     /// Destructor
     virtual ~OEPotential();
 
@@ -159,10 +168,10 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     /** \brief Compute matrix forms of all OEP's within a specified OEP type
      */
-    virtual void compute(const std::string& oepType) = 0;
+    virtual void compute(const std::string& oepType); // = 0;
 
     /// Compute value of potential in point x, y, z and save at v
-    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) = 0;
+    virtual void compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v); // = 0;
 
     /** \brief Create 3D vector field with OEP
      *  @param oepType - type of OEP. ESP-based OEP is assumed.
@@ -226,11 +235,14 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     // <--- Printers ---> //
 
     /// Header information
-    virtual void print_header() const = 0;
+    virtual void print_header() const; // = 0;
 
     /// Print the contents (OEP data)
     void print() const;
 
+  protected:
+   /// Deep-copy the data
+   virtual void copy_from(const OEPotential*);
 
   private:
 

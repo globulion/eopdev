@@ -47,6 +47,13 @@ void oepdev::GenEffPar::copy_from(const GenEffPar* f) {
      data_dmtp_[key] = dmtp;
   }
   //
+  data_oep_.clear();
+  for (auto const& x : f->data_oep_) {
+     std::string key = x.first;
+     oepdev::SharedOEPotential oep = x.second->clone();
+     data_oep_[key] = oep;
+  }
+  //
   densityMatrixDipolePolarizability_.clear();
   for (unsigned int i=0; i<f->densityMatrixDipolePolarizability_.size(); ++i) {
        std::vector<psi::SharedMatrix> v;

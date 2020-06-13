@@ -2,6 +2,9 @@
 #include <random>
 #include "gefp.h"
 
+namespace oepdev {
+}
+
 using namespace std;
 
 oepdev::GenEffFrag::GenEffFrag(std::string name) : 
@@ -749,8 +752,184 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_disp(std::shared_ptr<Gen
  return 0.0;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other) {
- //TODO
- return 0.0;
+ // Initialize results
+ double e_s1 = 0.0, e_s2 = 0.0, e_ex = 0.0, e_tot = 0.0;
+
+ // Extract EFP2 parameters from fragments
+ const int nbf_p1 =  this->nbf();
+ const int nbf_p2 = other->nbf();
+ const int nat_1 =  this->natom();
+ const int nat_2 = other->natom();
+ const int ndocc_1=  this->ndocc();
+ const int ndocc_2= other->ndocc();
+ psi::SharedMolecule mol_1 =  this->molecule();
+ psi::SharedMolecule mol_2 = other->molecule();
+ psi::SharedBasisSet primary_1 =  this->parameters["efp2"]->basisset("primary");
+ psi::SharedBasisSet primary_2 = other->parameters["efp2"]->basisset("primary");
+ psi::SharedBasisSet auxiliary_1 =  this->parameters["efp2"]->basisset("auxiliary");
+ psi::SharedBasisSet auxiliary_2 = other->parameters["efp2"]->basisset("auxiliary");
+ psi::SharedMatrix cmoo_1 =  this->parameters["efp2"]->matrix("lmoo");
+ psi::SharedMatrix cmoo_2 = other->parameters["efp2"]->matrix("lmoo");
+ psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc");
+ psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc");
+ const int nbf_a1 =auxiliary_1->nbf();
+ const int nbf_a2 =auxiliary_2->nbf();
+
+ // ===> Compute S^-1 term <=== //
+ oepdev::SharedOEPotential oep_1 =  this->parameters["efp2"]->oep("rep");
+ oepdev::SharedOEPotential oep_2 = other->parameters["efp2"]->oep("rep");
+
+ psi::SharedMatrix Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_p1, nbf_p2);
+ psi::SharedMatrix Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
+ psi::SharedMatrix Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_p1, nbf_a2);
+
+ psi::IntegralFactory fact_1p2p(  primary_1,   primary_2,   primary_1,   primary_2);
+ psi::IntegralFactory fact_1a2p(auxiliary_1,   primary_2, auxiliary_1,   primary_2);
+ psi::IntegralFactory fact_1p2a(  primary_1, auxiliary_2,   primary_1, auxiliary_2);
+
+ std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
+ std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
+ std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2a(fact_1p2a.ao_overlap());
+
+ ovlInt_1p2p->compute(Sao_1p2p);
+ ovlInt_1a2p->compute(Sao_1a2p);
+ ovlInt_1p2a->compute(Sao_1p2a);
+
+ psi::SharedMatrix Smo = psi::Matrix::triplet(cmoo_1, Sao_1p2p, cmoo_2, true, false, false);
+ psi::SharedMatrix Sba = psi::Matrix::doublet(cmoo_2, Sao_1a2p, true, true);
+ psi::SharedMatrix Sab = psi::Matrix::doublet(cmoo_1, Sao_1p2a, true, false);
+
+ psi::SharedMatrix SSG1= psi::Matrix::triplet(Smo, Sba, oep_1->matrix("Murrell-etal.S1"), false, false, false);
+ psi::SharedMatrix SSG2= psi::Matrix::triplet(Smo, Sab, oep_2->matrix("Murrell-etal.S1"), true, false, false);
+
+ e_s1  = SSG1->trace() + SSG2->trace();
+ e_s1 *= -2.0;
+
+ // ===> Compute S^-2 term: EFP2 model <=== //
+ double** S = Smo->pointer();
+ psi::SharedVector ss1 = std::make_shared<psi::Vector>("s^2 (1)", ndocc_1);
+ psi::SharedVector ss2 = std::make_shared<psi::Vector>("s^2 (2)", ndocc_2);
+ double* s1 = ss1->pointer();
+ double* s2 = ss2->pointer();
+ double val, sab;
+ for (int a = 0; a<ndocc_1; ++a) {
+      val = 0.0;
+      for (int b = 0; b<ndocc_2; ++b) {
+           sab = S[a][b];
+           val += sab * sab;
+      }
+      s1[a] = val;
+ }
+ for (int b = 0; b<ndocc_2; ++b) {
+      val = 0.0;
+      for (int a = 0; a<ndocc_1; ++a) {
+           sab = S[a][b];
+           val += sab * sab;
+      }
+      s2[b] = val;
+ }
+
+ psi::SharedVector ZR1 = std::make_shared<psi::Vector>("ZR1", ndocc_1);
+ psi::SharedVector ZR2 = std::make_shared<psi::Vector>("ZR2", ndocc_2);
+ psi::SharedVector IR1 = std::make_shared<psi::Vector>("IR1", ndocc_1);
+ psi::SharedVector IR2 = std::make_shared<psi::Vector>("IR2", ndocc_2);
+
+ double* pZR1 = ZR1->pointer();
+ double* pZR2 = ZR2->pointer();
+ double* pIR1 = IR1->pointer();
+ double* pIR2 = IR2->pointer();
+ 
+ double rbx, ray, rad, rbc, rab;
+
+ for (int b=0; b<ndocc_2; ++b){
+      val = 0.0;
+      for (int x=0; x<nat_1; ++x) { 
+           rbx  = sqrt(pow(mol_1->x(x)-lmoc_2->get(b,0), 2.0) + 
+                       pow(mol_1->y(x)-lmoc_2->get(b,1), 2.0) + 
+                       pow(mol_1->z(x)-lmoc_2->get(b,2), 2.0) );
+           val -= (double)mol_1->Z(x) / rbx;
+      }
+      pZR2[b] = val;
+ }
+ for (int a=0; a<ndocc_1; ++a){
+      val = 0.0;
+      for (int y=0; y<nat_2; ++y) { 
+           ray  = sqrt(pow(mol_2->x(y)-lmoc_1->get(a,0), 2.0) + 
+                       pow(mol_2->y(y)-lmoc_1->get(a,1), 2.0) + 
+                       pow(mol_2->z(y)-lmoc_1->get(a,2), 2.0) );
+           val -= (double)mol_2->Z(y) / ray;
+      }
+      pZR1[a] = val;
+ }
+ for (int a=0; a<ndocc_1; ++a) {
+      val = 0.0;
+      for (int b=0; b<ndocc_2; ++b) {
+           rad  = sqrt(pow(lmoc_1->get(a,0)-lmoc_2->get(b,0), 2.0) + 
+                       pow(lmoc_1->get(a,1)-lmoc_2->get(b,1), 2.0) + 
+                       pow(lmoc_1->get(a,2)-lmoc_2->get(b,2), 2.0) );
+           val += 2.0 / rad;
+      }
+      pIR1[a] = val;
+ }
+ for (int b=0; b<ndocc_2; ++b) {
+      val = 0.0;
+      for (int a=0; a<ndocc_1; ++a) {
+           rbc  = sqrt(pow(lmoc_1->get(a,0)-lmoc_2->get(b,0), 2.0) + 
+                       pow(lmoc_1->get(a,1)-lmoc_2->get(b,1), 2.0) + 
+                       pow(lmoc_1->get(a,2)-lmoc_2->get(b,2), 2.0) );
+           val += 2.0 / rbc;
+      }
+      pIR2[b] = val;
+ }
+ ZR1->add(IR1);
+ ZR2->add(IR2);
+
+ e_s2 = ss1->vector_dot(ZR1) + ss2->vector_dot(ZR2);
+
+ for (int a=0; a<ndocc_1; ++a) {
+      for (int b=0; b<ndocc_2; ++b) { 
+           sab = S[a][b];
+           rab = sqrt(pow(lmoc_1->get(a,0) - lmoc_2->get(b,0), 2.0) +
+                      pow(lmoc_1->get(a,1) - lmoc_2->get(b,1), 2.0) +
+                      pow(lmoc_1->get(a,2) - lmoc_2->get(b,2), 2.0) );
+           e_s2 -= sab * sab / rab;
+      }
+ }
+ e_s2 *= 2.0;
+
+
+ // ===> Compute S_exc term: EFP2-SGO model <=== //
+ for (int a=0; a<ndocc_1; ++a) {
+      for (int b=0; b<ndocc_2; ++b) {
+           sab = S[a][b];
+           rab = sqrt(pow(lmoc_1->get(a,0) - lmoc_2->get(b,0), 2.0) + 
+                      pow(lmoc_1->get(a,1) - lmoc_2->get(b,1), 2.0) + 
+                      pow(lmoc_1->get(a,2) - lmoc_2->get(b,2), 2.0) );
+           e_ex += sqrt(-2.0*log(abs(sab)) / M_PI) * sab * sab / rab;
+      }
+ }
+ e_ex *= -4.0;
+
+ // Save
+ double v_e_rep = psi::Process::environment.globals["EINT REP OEP EFP2 KCAL"];   
+ double v_e_exc = psi::Process::environment.globals["EINT EXC OEP EFP2 KCAL"];   
+ double v_e_exr = psi::Process::environment.globals["EINT EXR OEP EFP2 KCAL"];   
+ double v_e_rs1 = psi::Process::environment.globals["EINT REP OEP EFP2:S1 KCAL"];
+ double v_e_rs2 = psi::Process::environment.globals["EINT REP OEP EFP2:S2 KCAL"];
+ v_e_rep +=(e_s1 + e_s2        )*OEPDEV_AU_KcalPerMole;
+ v_e_exc +=(e_ex               )*OEPDEV_AU_KcalPerMole;
+ v_e_exr +=(e_s1 + e_s2 + e_ex )*OEPDEV_AU_KcalPerMole;
+ v_e_rs1 +=(e_s1               )*OEPDEV_AU_KcalPerMole;
+ v_e_rs2 +=(e_s2               )*OEPDEV_AU_KcalPerMole;
+
+ psi::Process::environment.globals["EINT REP OEP EFP2 KCAL"]    = v_e_rep;
+ psi::Process::environment.globals["EINT EXC OEP EFP2 KCAL"]    = v_e_exc;
+ psi::Process::environment.globals["EINT EXR OEP EFP2 KCAL"]    = v_e_exr;
+ psi::Process::environment.globals["EINT REP OEP EFP2:S1 KCAL"] = v_e_rs1;
+ psi::Process::environment.globals["EINT REP OEP EFP2:S2 KCAL"] = v_e_rs2;
+ 
+ e_tot = e_s1 + e_s2 + e_ex;
+ return e_tot;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other) {
  //TODO

@@ -19,6 +19,30 @@ OEPotential::OEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, Share
 {
     common_init();
 }
+OEPotential::OEPotential(const OEPotential* f) {
+  // Do shallow-copy on those:
+  options_ = f->options_;
+  wfn_ = f->wfn_;
+  primary_ = f->primary_;
+  auxiliary_ = f->auxiliary_;
+  intermediate_ = f->intermediate_;
+  localizer_ = f->localizer_;
+  // Do deep-copy on those:
+  name_ = f->name_;
+  cOcc_ = f->cOcc_->clone();
+  cVir_ = f->cVir_->clone();
+  if (f->potMat_) {potMat_= f->potMat_->clone();} else {potMat_=nullptr;}
+  if (f->lOcc_) {lOcc_ = f->lOcc_->clone();} else {lOcc_=nullptr;}
+  lmoc_ = ...//TODO
+  oepTypes_= //TODO
+  // Set to null
+  intsFactory_ = nullptr;
+  OEInt_= nullptr;
+  potInt_ = nullptr;
+}
+void OEPotential::copy_from(const OEPotential* f) {
+//TODO
+}
 void OEPotential::common_init(void) 
 {
    name_        = "default";
@@ -56,7 +80,7 @@ void OEPotential::localize(void)
    localizer_ = psi::Localizer::build(o_loc, primary_, cOcc_, options_);
    localizer_->localize();
    // LMO's
-   lOcc_ = localizer_->L();
+   lOcc_ = localizer_->L()->clone();
    // LMO centroids
    lmoc_ = this->mo_centroids(lOcc_);
 }
