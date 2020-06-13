@@ -453,15 +453,14 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  psi::SharedBasisSet primary_1 = this->parameters["efp2"]->basisset("primary");
  psi::SharedBasisSet primary_2 =other->parameters["efp2"]->basisset("primary");
 
-
  // V matrices //
- psi::SharedMatrix VaoB12    = std::make_shared<psi::Matrix>("VaoB(1,2)" , nbf_1, nbf_2);
- psi::SharedMatrix VaoB11    = std::make_shared<psi::Matrix>("VaoB(1,1)" , nbf_1, nbf_1);
- psi::SharedMatrix VaoA21    = std::make_shared<psi::Matrix>("VaoA(2,1)" , nbf_2, nbf_1);
- psi::SharedMatrix VaoA22    = std::make_shared<psi::Matrix>("VaoA(2,2)" , nbf_2, nbf_2);
+ psi::SharedMatrix VaoB12    = std::make_shared<psi::Matrix>("VaoB(1,2)", nbf_1, nbf_2);
+ psi::SharedMatrix VaoB11    = std::make_shared<psi::Matrix>("VaoB(1,1)", nbf_1, nbf_1);
+ psi::SharedMatrix VaoA21    = std::make_shared<psi::Matrix>("VaoA(2,1)", nbf_2, nbf_1);
+ psi::SharedMatrix VaoA22    = std::make_shared<psi::Matrix>("VaoA(2,2)", nbf_2, nbf_2);
 
  // S matrices //
- psi::SharedMatrix Sao12     = std::make_shared<psi::Matrix>("Sao(1,2)"  , nbf_1, nbf_2);
+ psi::SharedMatrix Sao12     = std::make_shared<psi::Matrix>("Sao(1,2)", nbf_1, nbf_2);
 
  // T matrices //
  psi::SharedMatrix Tao12     = std::make_shared<psi::Matrix>("Tao(1,2)", nbf_1, nbf_2);
@@ -480,298 +479,268 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  const int nvir_1 = cmov_1->ncol();
  const int nvir_2 = cmov_2->ncol();
 
-  // IntegralFactory //
-  psi::IntegralFactory fact_12(primary_1, primary_2, primary_1, primary_2);
-  psi::IntegralFactory fact_21(primary_2, primary_1, primary_2, primary_1);
-  psi::IntegralFactory fact_11(primary_1, primary_1, primary_1, primary_1);
-  psi::IntegralFactory fact_22(primary_2, primary_2, primary_2, primary_2);
+ // IntegralFactory //
+ psi::IntegralFactory fact_12(primary_1, primary_2, primary_1, primary_2);
+ psi::IntegralFactory fact_21(primary_2, primary_1, primary_2, primary_1);
+ psi::IntegralFactory fact_11(primary_1, primary_1, primary_1, primary_1);
+ psi::IntegralFactory fact_22(primary_2, primary_2, primary_2, primary_2);
 
-  //clock_t t_time = -clock(); // Clock BEGIN
+ // Overlap integrals //
+ std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact_12.ao_overlap());
+ ovlInt->compute(Sao12);
 
-  // PotentialInt - nuclear part //
-  std::shared_ptr<psi::PotentialInt> potInt_12 = std::make_shared<psi::PotentialInt>(fact_12.spherical_transform(), 
-                                                                                    primary_1,
-                                                                                    primary_2);
-  std::shared_ptr<psi::PotentialInt> potInt_21 = std::make_shared<psi::PotentialInt>(fact_21.spherical_transform(),
-                                                                                    primary_2,
-                                                                                    primary_1);
-  std::shared_ptr<psi::PotentialInt> potInt_11 = std::make_shared<psi::PotentialInt>(fact_11.spherical_transform(),
-                                                                                    primary_1,
-                                                                                    primary_1);
-  std::shared_ptr<psi::PotentialInt> potInt_22 = std::make_shared<psi::PotentialInt>(fact_22.spherical_transform(),
-                                                                                    primary_2,
-                                                                                    primary_2);
-                                                                                                                    
-                                                                                                                    
-  // Set charge field //
-  psi::SharedMatrix Zxyz_1 = std::make_shared<psi::Matrix>(potInt_11->charge_field());
-  psi::SharedMatrix Zxyz_2 = std::make_shared<psi::Matrix>(potInt_22->charge_field());
-                                                                                                                    
-  potInt_12->set_charge_field(Zxyz_2);
-  potInt_11->set_charge_field(Zxyz_2);
-  potInt_21->set_charge_field(Zxyz_1);
-  potInt_22->set_charge_field(Zxyz_1);
-                                                                                                                    
-  // Potential integrals (nuclear contribution) //
-  std::shared_ptr<psi::OneBodyAOInt> oneInt;
-  oneInt = potInt_12;
-  oneInt->compute(VaoB12);
-  oneInt = potInt_11;
-  oneInt->compute(VaoB11);
-  oneInt = potInt_21;
-  oneInt->compute(VaoA21);
-  oneInt = potInt_22;
-  oneInt->compute(VaoA22);
-  //t_time += clock(); // Clock END
+ // Kinetic energy integrals //
+ std::shared_ptr<psi::OneBodyAOInt> kinInt12(fact_12.ao_kinetic());
+ kinInt12->compute(Tao12); 
 
-  // Overlap integrals //
-  std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact_12.ao_overlap());
-  ovlInt->compute(Sao12);
+ //t_time -= clock(); // Clock BEGIN
+ std::shared_ptr<psi::OneBodyAOInt> kinInt11(fact_11.ao_kinetic());
+ kinInt11->compute(Tao11);
 
-  // Kinetic energy integrals //
-  std::shared_ptr<psi::OneBodyAOInt> kinInt12(fact_12.ao_kinetic());
-  kinInt12->compute(Tao12); 
+ std::shared_ptr<psi::OneBodyAOInt> kinInt22(fact_22.ao_kinetic());
+ kinInt22->compute(Tao22);
+ //t_time += clock(); // Clock END
 
-  //t_time -= clock(); // Clock BEGIN
-  std::shared_ptr<psi::OneBodyAOInt> kinInt11(fact_11.ao_kinetic());
-  kinInt11->compute(Tao11);
+ // Compute potential energy integrals from CAMM and multipole integrals
+ std::shared_ptr<oepdev::DMTPole> camm_1 = this->parameters["efp2"]->dmtp("camm"); 
+ std::shared_ptr<oepdev::DMTPole> camm_2 =other->parameters["efp2"]->dmtp("camm"); 
+ //
+ const double p1 = 1.0 / 3.0;
+ const double p2 = 2.0 / 3.0;
+ const double p3 = 1.0 /15.0;
+ const double p4 = 3.0 /15.0;
+ const double p5 = 6.0 /15.0;
+ const double prefacs[20] = {
+ /* 0    X    Y    Z    XX  YY  ZZ  XY  XZ  YZ */
+    1.0, 1.0, 1.0, 1.0, p1, p1, p1, p2, p2, p2, 
+ /*    XXX YYY ZZZ XXY XXZ XYY YYZ XZZ YZZ XYZ */
+       p3, p3, p3, p4, p4, p4, p4, p4, p4, p5};
+ //
+ //t_time -= clock(); // Clock BEGIN
 
-  std::shared_ptr<psi::OneBodyAOInt> kinInt22(fact_22.ao_kinetic());
-  kinInt22->compute(Tao22);
-  //t_time += clock(); // Clock END
+ /* __12  ->   V from molecule 2 
+    __11  ->   V from molecule 2
+    __21  ->   V from molecule 1
+    __22  ->   V from molecule 1 */
 
-  // Compute CAMM on monomers 1 and 2
-  std::shared_ptr<oepdev::DMTPole> camm_1 = this->parameters["efp2"]->dmtp("camm"); 
-  std::shared_ptr<oepdev::DMTPole> camm_2 =other->parameters["efp2"]->dmtp("camm"); 
-  //
-  const double p1 = 1.0 / 3.0;
-  const double p2 = 2.0 / 3.0;
-  const double p3 = 1.0 /15.0;
-  const double p4 = 3.0 /15.0;
-  const double p5 = 6.0 /15.0;
-  const double prefacs[20] = {
-  /* 0    X    Y    Z    XX  YY  ZZ  XY  XZ  YZ */
-     1.0, 1.0, 1.0, 1.0, p1, p1, p1, p2, p2, p2, 
-  /*    XXX YYY ZZZ XXY XXZ XYY YYZ XZZ YZZ XYZ */
-        p3, p3, p3, p4, p4, p4, p4, p4, p4, p5};
-  //
-  //t_time -= clock(); // Clock BEGIN
+ // 
+ size_t n_multipole_1 = mol_1->natom();
+ size_t n_multipole_2 = mol_2->natom();
+ assert (n_multipole_1 == camm_1->n_sites());
+ assert (n_multipole_2 == camm_2->n_sites());
+ auto xyz_1 = this->extract_xyz(mol_1);
+ auto xyz_2 = this->extract_xyz(mol_2);
+ auto mult_1= this->extract_dmtp(camm_1);
+ auto mult_2= this->extract_dmtp(camm_2);
+ //
+ std::shared_ptr<psi::OneBodyAOInt> efp_ints_12(fact_12.ao_efp_multipole_potential());
+ std::shared_ptr<psi::OneBodyAOInt> efp_ints_11(fact_11.ao_efp_multipole_potential());
+ std::shared_ptr<psi::OneBodyAOInt> efp_ints_21(fact_21.ao_efp_multipole_potential());
+ std::shared_ptr<psi::OneBodyAOInt> efp_ints_22(fact_22.ao_efp_multipole_potential());
+ //
+ std::vector<psi::SharedMatrix> mats_12, mats_11, mats_21, mats_22;
+ for (int i = 0; i < 20; ++i) {
+      psi::SharedMatrix mm12 = std::make_shared<psi::Matrix>("", nbf_1, nbf_2);
+      psi::SharedMatrix mm11 = std::make_shared<psi::Matrix>("", nbf_1, nbf_1);
+      psi::SharedMatrix mm21 = std::make_shared<psi::Matrix>("", nbf_2, nbf_1);
+      psi::SharedMatrix mm22 = std::make_shared<psi::Matrix>("", nbf_2, nbf_2);
+      mats_12.push_back(mm12);
+      mats_11.push_back(mm11);
+      mats_21.push_back(mm21);
+      mats_22.push_back(mm22);
+      //mats_12.push_back(std::make_shared<psi::Matrix>("", nbf_1, nbf_2));
+      //mats_11.push_back(std::make_shared<psi::Matrix>("", nbf_1, nbf_1));
+      //mats_21.push_back(std::make_shared<psi::Matrix>("", nbf_2, nbf_1));
+      //mats_22.push_back(std::make_shared<psi::Matrix>("", nbf_2, nbf_2));
+ }
+ //
+ double *xyz_1_p = xyz_1->pointer();
+ double *xyz_2_p = xyz_2->pointer();
+ double *mult_1_p = mult_1->pointer();
+ double *mult_2_p = mult_2->pointer();
 
-  /* __12  ->   V from molecule 2 
-     __11  ->   V from molecule 2
-     __21  ->   V from molecule 1
-     __22  ->   V from molecule 1 */
+ // Molecule B CAMM
+ for (size_t n2 = 0; n2 < n_multipole_2; n2++) {
 
-  // 
-  size_t n_multipole_1 = mol_1->natom();
-  size_t n_multipole_2 = mol_2->natom();
-  assert (n_multipole_1 == camm_1->n_sites());
-  assert (n_multipole_2 == camm_2->n_sites());
-  auto xyz_1 = this->extract_xyz(mol_1);
-  auto xyz_2 = this->extract_xyz(mol_2);
-  auto mult_1= this->extract_dmtp(camm_1);
-  auto mult_2= this->extract_dmtp(camm_2);
-  //
-  std::shared_ptr<psi::OneBodyAOInt> efp_ints_12(fact_12.ao_efp_multipole_potential());
-  std::shared_ptr<psi::OneBodyAOInt> efp_ints_11(fact_11.ao_efp_multipole_potential());
-  std::shared_ptr<psi::OneBodyAOInt> efp_ints_21(fact_21.ao_efp_multipole_potential());
-  std::shared_ptr<psi::OneBodyAOInt> efp_ints_22(fact_22.ao_efp_multipole_potential());
-  //
-  std::vector<psi::SharedMatrix> mats_12, mats_11, mats_21, mats_22;
-  for (int i = 0; i < 20; ++i) {
-       mats_12.push_back(std::make_shared<psi::Matrix>("", nbf_1, nbf_2));
-       mats_11.push_back(std::make_shared<psi::Matrix>("", nbf_1, nbf_1));
-       mats_21.push_back(std::make_shared<psi::Matrix>("", nbf_2, nbf_1));
-       mats_22.push_back(std::make_shared<psi::Matrix>("", nbf_2, nbf_2));
-  }
-  //
-  double *xyz_1_p = xyz_1->pointer();
-  double *xyz_2_p = xyz_2->pointer();
-  double *mult_1_p = mult_1->pointer();
-  double *mult_2_p = mult_2->pointer();
+      for (int i = 0; i < 20; ++i) {
+           mats_12[i]->zero();
+           mats_11[i]->zero();
+      }
+      psi::Vector3 coords_2(xyz_2_p[n2 * 3], xyz_2_p[n2 * 3 + 1], xyz_2_p[n2 * 3 + 2]);
+      efp_ints_12->set_origin(coords_2);
+      efp_ints_11->set_origin(coords_2);
+      efp_ints_12->compute(mats_12);
+      efp_ints_11->compute(mats_11);
 
-  // Molecule B CAMM
-  for (size_t n2 = 0; n2 < n_multipole_2; n2++) {
+      for (int i = 0; i < 20; ++i) {                            
+           mats_12[i]->scale(-prefacs[i] * mult_2_p[20 * n2 + i]);
+           mats_11[i]->scale(-prefacs[i] * mult_2_p[20 * n2 + i]);
+           VaoB12->add(mats_12[i]);
+           VaoB11->add(mats_11[i]);
+      }
+ }
 
-       for (int i = 0; i < 20; ++i) {
-            mats_12[i]->zero();
-            mats_11[i]->zero();
+ // Molecule A CAMM
+ for (size_t n1 = 0; n1 < n_multipole_1; n1++) {
+
+      for (int i = 0; i < 20; ++i) {
+           mats_21[i]->zero();
+           mats_22[i]->zero();
+      }
+      psi::Vector3 coords_1(xyz_1_p[n1 * 3], xyz_1_p[n1 * 3 + 1], xyz_1_p[n1 * 3 + 2]);
+      efp_ints_21->set_origin(coords_1);
+      efp_ints_22->set_origin(coords_1);
+      efp_ints_21->compute(mats_21);
+      efp_ints_22->compute(mats_22);
+
+      for (int i = 0; i < 20; ++i) {                            
+           mats_21[i]->scale(-prefacs[i] * mult_1_p[20 * n1 + i]);
+           mats_22[i]->scale(-prefacs[i] * mult_1_p[20 * n1 + i]);
+           VaoA21->add(mats_21[i]);
+           VaoA22->add(mats_22[i]);
+      }
+ }
+ //
+ //t_time += clock(); // Clock END
+
+
+ // ---> Transform one electron contributions to MO basis <--- //
+  
+
+ // Transform S matrices //
+ //t_time -= clock(); // Clock BEGIN
+ psi::SharedMatrix Smoij    = psi::Matrix::triplet(cmoo_1, Sao12,  cmoo_2, true, false, false);
+ psi::SharedMatrix Smoxn    = psi::Matrix::triplet(cmoo_1, Sao12,  cmov_2, true, false, false); // x \in OCC_A
+ psi::SharedMatrix Smoyn    = psi::Matrix::triplet(cmov_1, Sao12,  cmov_2, true, false, false); // y \in VIR_A
+
+ psi::SharedMatrix Smoxm    = psi::Matrix::triplet(cmoo_2, Sao12,  cmov_1, true, true , false); // x \in OCC_B
+ psi::SharedMatrix Smoym    = psi::Matrix::triplet(cmov_2, Sao12,  cmov_1, true, true , false); // y \in VIR_B
+                                                                                                                                
+
+ // Transform T matrices //
+ psi::SharedMatrix Tmonn    = psi::Matrix::triplet(cmov_2, Tao22,  cmov_2, true, false, false);
+ psi::SharedMatrix Tmonj    = psi::Matrix::triplet(cmov_2, Tao22,  cmoo_2, true, false, false);                            
+ psi::SharedMatrix Tmoxj    = psi::Matrix::triplet(cmoo_1, Tao12,  cmoo_2, true, false, false);  // x \in OCC_A (T_mj)
+ psi::SharedMatrix Tmoyj    = psi::Matrix::triplet(cmov_1, Tao12,  cmoo_2, true, false, false);  // y \in VIR_A (T_mj)          
+ psi::SharedMatrix Tmomm    = psi::Matrix::triplet(cmov_1, Tao11,  cmov_1, true, false, false);
+ psi::SharedMatrix Tmomi    = psi::Matrix::triplet(cmov_1, Tao11,  cmoo_1, true, false, false);  
+ psi::SharedMatrix Tmoxi    = psi::Matrix::triplet(cmoo_2, Tao12,  cmoo_1, true, true , false);  // x \in OCC_B (T_ni)
+ psi::SharedMatrix Tmoyi    = psi::Matrix::triplet(cmov_2, Tao12,  cmoo_1, true, true , false);  // y \in VIR_B (T_ni)
+
+                                                                                                                                
+ // Transform F matrices //
+ psi::SharedMatrix Fmoii    = psi::Matrix::triplet(cmoo_1, Fao11,  cmoo_1, true, false, false);
+ psi::SharedMatrix Fmojj    = psi::Matrix::triplet(cmoo_2, Fao22,  cmoo_2, true, false, false);
+
+
+ // Transform V matrices //                                                                                                   
+ psi::SharedMatrix VmoBin   = psi::Matrix::triplet(cmoo_1, VaoB12, cmov_2, true, false, false); 
+ psi::SharedMatrix VmoBix   = psi::Matrix::triplet(cmoo_1, VaoB11, cmoo_1, true, false, false); // x \in OCC_A (V_im)
+ psi::SharedMatrix VmoBiy   = psi::Matrix::triplet(cmoo_1, VaoB11, cmov_1, true, false, false); // y \in VIR_A (V_im)
+
+ psi::SharedMatrix VmoAjm   = psi::Matrix::triplet(cmoo_2, VaoA21, cmov_1, true, false, false); 
+ psi::SharedMatrix VmoAjx   = psi::Matrix::triplet(cmoo_2, VaoA22, cmoo_2, true, false, false); // x \in OCC_B (V_jn)
+ psi::SharedMatrix VmoAjy   = psi::Matrix::triplet(cmoo_2, VaoA22, cmov_2, true, false, false); // y \in VIR_B (V_jn)
+
+
+ // ==> Vin_I and Wjm_I <== // 
+
+ // Vin_I = VBin - VBix*Sxn - VBiy*Syn // 
+ psi::SharedMatrix Vin_I = VmoBin->clone();
+ Vin_I->gemm(false, false, -1.0, VmoBix, Smoxn, 1.0);
+ Vin_I->gemm(false, false, -1.0, VmoBiy, Smoyn, 1.0);
+
+ // Wjm_I = VAjm - Vjx*Sxm - Vjy*Sym 
+ psi::SharedMatrix Wjm_I = VmoAjm->clone();
+ Wjm_I->gemm(false, false, -1.0, VmoAjx, Smoxm, 1.0);
+ Wjm_I->gemm(false, false, -1.0, VmoAjy, Smoym, 1.0);
+
+ // ==> Vin_II and Wjm_II <== //
+
+ // Vin_II = Vin_I + Sij*(Tnj - Sxn*Txj - Syn*Tyj) //
+ Tmonj->gemm(true, false, -1.0, Smoxn, Tmoxj, 1.0);
+ Tmonj->gemm(true, false, -1.0, Smoyn, Tmoyj, 1.0);
+ psi::SharedMatrix Vin_II = psi::Matrix::doublet(Smoij, Tmonj, false, true);
+ Vin_II->add(Vin_I);
+
+ // Wjm_II = Wjm_I + Sij*(Tmi - Sxm*Txi - Sym*Tyi)
+ Tmomi->gemm(true, false, -1.0, Smoxm, Tmoxi, 1.0);
+ Tmomi->gemm(true, false, -1.0, Smoym, Tmoyi, 1.0);
+ psi::SharedMatrix Wjm_II = psi::Matrix::doublet(Smoij, Tmomi, true, true);
+ Wjm_II->add(Wjm_I);
+
+
+ // ==> Final calculation of CT energy <== //
+
+ double e_ct_AB = 0.0; // A ---> B
+ for (int i=0; i<ndocc_1; ++i)
+      {
+      for (int n=0; n<nvir_2; ++n)
+           {
+           // Vin_I/(F_ii - T_nn)
+           double value = Vin_I->get(i, n) / (Fmoii->get(i, i) - Tmonn->get(n, n));
+
+           // (1 - S2_mn) -> normalizing factor
+           double s2 = 0.0;
+           for (int x=0; x<ndocc_1; ++x)
+                {
+                double s = Smoxn->get(x, n);
+                s2 += s*s;
+                }
+           for (int y=0; y<nvir_1; ++y)
+                {
+                double s = Smoyn->get(y, n);
+                s2 += s*s;
+                }
+           value /= (1.0 - s2);
+
+           // Vin_I * Vin_II/(F_ii-T_nn)/(1-S2mn)
+           value *= Vin_II->get(i, n);
+
+           e_ct_AB += value;
+           }
        }
-       psi::Vector3 coords_2(xyz_2_p[n2 * 3], xyz_2_p[n2 * 3 + 1], xyz_2_p[n2 * 3 + 2]);
-       efp_ints_12->set_origin(coords_2);
-       efp_ints_11->set_origin(coords_2);
-       efp_ints_12->compute(mats_12);
-       efp_ints_11->compute(mats_11);
 
-       for (int i = 0; i < 20; ++i) {                            
-            mats_12[i]->scale(-prefacs[i] * mult_2_p[20 * n2 + i]);
-            mats_11[i]->scale(-prefacs[i] * mult_2_p[20 * n2 + i]);
-            VaoB12->add(mats_12[i]);
-            VaoB11->add(mats_11[i]);
+ double e_ct_BA = 0.0; // B ---> A
+ for (int j=0; j<ndocc_2; ++j)
+      {
+      for (int m=0; m<nvir_1; ++m)
+           {
+           // Wjm_I/(F_jj - T_mm)
+           double value = Wjm_I->get(j, m) / (Fmojj->get(j, j) - Tmomm->get(m, m));
+
+           // 1 - S2mn -> normalizing factor
+           double s2 = 0.0;
+           for (int x=0; x<ndocc_2; ++x)
+                {
+                double s = Smoxm->get(x, m);
+                s2 += s*s;
+                }
+           for (int y=0; y<nvir_2; ++y)
+                {
+                double s = Smoym->get(y, m);
+                s2 += s*s;
+                }
+           value /= (1.0 - s2);
+
+           // Wjm_I * Wjm_II/(F_jj-T_mm)/(1-S2mn)
+           value *= Wjm_II->get(j, m);
+
+           e_ct_BA += value;
+           }
        }
-  }
 
-  // Molecule A CAMM
-  for (size_t n1 = 0; n1 < n_multipole_1; n1++) {
+ // --> Compute total CT energy <-- //
+ e_ct_AB *= 2.0;
+ e_ct_BA *= 2.0;
+ e_ct = e_ct_AB + e_ct_BA;
+ cout << e_ct_AB << " " << e_ct_BA << endl;
 
-       for (int i = 0; i < 20; ++i) {
-            mats_21[i]->zero();
-            mats_22[i]->zero();
-       }
-       psi::Vector3 coords_1(xyz_1_p[n1 * 3], xyz_1_p[n1 * 3 + 1], xyz_1_p[n1 * 3 + 2]);
-       efp_ints_21->set_origin(coords_1);
-       efp_ints_22->set_origin(coords_1);
-       efp_ints_21->compute(mats_21);
-       efp_ints_22->compute(mats_22);
+ psi::Process::environment.globals["EINT CT EFP2 KCAL"] = e_ct * OEPDEV_AU_KcalPerMole;
 
-       for (int i = 0; i < 20; ++i) {                            
-            mats_21[i]->scale(-prefacs[i] * mult_1_p[20 * n1 + i]);
-            mats_22[i]->scale(-prefacs[i] * mult_1_p[20 * n1 + i]);
-            VaoA21->add(mats_21[i]);
-            VaoA22->add(mats_22[i]);
-       }
-  }
-  //
-  //t_time += clock(); // Clock END
-
-
-  // ---> Transform one electron contributions to MO basis <--- //
-   
-
-  // Transform S matrices //
-  //t_time -= clock(); // Clock BEGIN
-  psi::SharedMatrix Smoij    = psi::Matrix::triplet(cmoo_1, Sao12,  cmoo_2, true, false, false);
-  psi::SharedMatrix Smoxn    = psi::Matrix::triplet(cmoo_1, Sao12,  cmov_2, true, false, false); // x \in OCC_A
-  psi::SharedMatrix Smoyn    = psi::Matrix::triplet(cmov_1, Sao12,  cmov_2, true, false, false); // y \in VIR_A
-
-  psi::SharedMatrix Smoxm    = psi::Matrix::triplet(cmoo_2, Sao12,  cmov_1, true, true , false); // x \in OCC_B
-  psi::SharedMatrix Smoym    = psi::Matrix::triplet(cmov_2, Sao12,  cmov_1, true, true , false); // y \in VIR_B
-                                                                                                                                 
-
-  // Transform T matrices //
-  psi::SharedMatrix Tmonn    = psi::Matrix::triplet(cmov_2, Tao22,  cmov_2, true, false, false);
-  psi::SharedMatrix Tmonj    = psi::Matrix::triplet(cmov_2, Tao22,  cmoo_2, true, false, false);                            
-  psi::SharedMatrix Tmoxj    = psi::Matrix::triplet(cmoo_1, Tao12,  cmoo_2, true, false, false);  // x \in OCC_A (T_mj)
-  psi::SharedMatrix Tmoyj    = psi::Matrix::triplet(cmov_1, Tao12,  cmoo_2, true, false, false);  // y \in VIR_A (T_mj)          
-  psi::SharedMatrix Tmomm    = psi::Matrix::triplet(cmov_1, Tao11,  cmov_1, true, false, false);
-  psi::SharedMatrix Tmomi    = psi::Matrix::triplet(cmov_1, Tao11,  cmoo_1, true, false, false);  
-  psi::SharedMatrix Tmoxi    = psi::Matrix::triplet(cmoo_2, Tao12,  cmoo_1, true, true , false);  // x \in OCC_B (T_ni)
-  psi::SharedMatrix Tmoyi    = psi::Matrix::triplet(cmov_2, Tao12,  cmoo_1, true, true , false);  // y \in VIR_B (T_ni)
-
-                                                                                                                                 
-  // Transform F matrices //
-  psi::SharedMatrix Fmoii    = psi::Matrix::triplet(cmoo_1, Fao11,  cmoo_1, true, false, false);
-  psi::SharedMatrix Fmojj    = psi::Matrix::triplet(cmoo_2, Fao22,  cmoo_2, true, false, false);
-
-
-  // Transform V matrices //                                                                                                   
-  psi::SharedMatrix VmoBin   = psi::Matrix::triplet(cmoo_1, VaoB12, cmov_2, true, false, false); 
-  psi::SharedMatrix VmoBix   = psi::Matrix::triplet(cmoo_1, VaoB11, cmoo_1, true, false, false); // x \in OCC_A (V_im)
-  psi::SharedMatrix VmoBiy   = psi::Matrix::triplet(cmoo_1, VaoB11, cmov_1, true, false, false); // y \in VIR_A (V_im)
-
-  psi::SharedMatrix VmoAjm   = psi::Matrix::triplet(cmoo_2, VaoA21, cmov_1, true, false, false); 
-  psi::SharedMatrix VmoAjx   = psi::Matrix::triplet(cmoo_2, VaoA22, cmoo_2, true, false, false); // x \in OCC_B (V_jn)
-  psi::SharedMatrix VmoAjy   = psi::Matrix::triplet(cmoo_2, VaoA22, cmov_2, true, false, false); // y \in VIR_B (V_jn)
-
-
-  // ==> Vin_I and Wjm_I <== // 
-
-  // Vin_I = VBin - VBix*Sxn - VBiy*Syn // 
-  psi::SharedMatrix Vin_I = VmoBin->clone();
-  Vin_I->gemm(false, false, -1.0, VmoBix, Smoxn, 1.0);
-  Vin_I->gemm(false, false, -1.0, VmoBiy, Smoyn, 1.0);
-
-  // Wjm_I = VAjm - Vjx*Sxm - Vjy*Sym 
-  psi::SharedMatrix Wjm_I = VmoAjm->clone();
-  Wjm_I->gemm(false, false, -1.0, VmoAjx, Smoxm, 1.0);
-  Wjm_I->gemm(false, false, -1.0, VmoAjy, Smoym, 1.0);
-
-  // ==> Vin_II and Wjm_II <== //
-
-  // Vin_II = Vin_I + Sij*(Tnj - Sxn*Txj - Syn*Tyj) //
-  Tmonj->gemm(true, false, -1.0, Smoxn, Tmoxj, 1.0);
-  Tmonj->gemm(true, false, -1.0, Smoyn, Tmoyj, 1.0);
-  psi::SharedMatrix Vin_II = psi::Matrix::doublet(Smoij, Tmonj, false, true);
-  Vin_II->add(Vin_I);
-
-  // Wjm_II = Wjm_I + Sij*(Tmi - Sxm*Txi - Sym*Tyi)
-  Tmomi->gemm(true, false, -1.0, Smoxm, Tmoxi, 1.0);
-  Tmomi->gemm(true, false, -1.0, Smoym, Tmoyi, 1.0);
-  psi::SharedMatrix Wjm_II = psi::Matrix::doublet(Smoij, Tmomi, true, true);
-  Wjm_II->add(Wjm_I);
-
-
-  // ==> Final calculation of CT energy <== //
-
-  double e_ct_AB = 0.0; // A ---> B
-  for (int i=0; i<ndocc_1; ++i)
-       {
-       for (int n=0; n<nvir_2; ++n)
-            {
-            // Vin_I/(F_ii - T_nn)
-            double value = Vin_I->get(i, n) / (Fmoii->get(i, i) - Tmonn->get(n, n));
-
-            // (1 - S2_mn) -> normalizing factor
-            double s2 = 0.0;
-            for (int x=0; x<ndocc_1; ++x)
-                 {
-                 double s = Smoxn->get(x, n);
-                 s2 += s*s;
-                 }
-            for (int y=0; y<nvir_1; ++y)
-                 {
-                 double s = Smoyn->get(y, n);
-                 s2 += s*s;
-                 }
-            value /= (1.0 - s2);
-
-            // Vin_I * Vin_II/(F_ii-T_nn)/(1-S2mn)
-            value *= Vin_II->get(i, n);
-
-            e_ct_AB += value;
-            }
-        }
-
-  double e_ct_BA = 0.0; // B ---> A
-  for (int j=0; j<ndocc_2; ++j)
-       {
-       for (int m=0; m<nvir_1; ++m)
-            {
-            // Wjm_I/(F_jj - T_mm)
-            double value = Wjm_I->get(j, m) / (Fmojj->get(j, j) - Tmomm->get(m, m));
-
-            // 1 - S2mn -> normalizing factor
-            double s2 = 0.0;
-            for (int x=0; x<ndocc_2; ++x)
-                 {
-                 double s = Smoxm->get(x, m);
-                 s2 += s*s;
-                 }
-            for (int y=0; y<nvir_2; ++y)
-                 {
-                 double s = Smoym->get(y, m);
-                 s2 += s*s;
-                 }
-            value /= (1.0 - s2);
-
-            // Wjm_I * Wjm_II/(F_jj-T_mm)/(1-S2mn)
-            value *= Wjm_II->get(j, m);
-
-            e_ct_BA += value;
-            }
-        }
-
-  // --> Compute total CT energy <-- //
-  e_ct_AB *= 2.0;
-  e_ct_BA *= 2.0;
-  e_ct = e_ct_AB + e_ct_BA;
-  cout << e_ct_AB << " " << e_ct_BA << endl;
-
-  psi::Process::environment.globals["EINT CT EFP2 KCAL"] = e_ct * OEPDEV_AU_KcalPerMole;
-
-  // ---> Timer-off <--- //
-  //t_time += clock(); // Clock END
-  //cout << " o TIME EFP2: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+ // ---> Timer-off <--- //
+ //t_time += clock(); // Clock END
+ //cout << " o TIME EFP2: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
 
  return e_ct;
 }

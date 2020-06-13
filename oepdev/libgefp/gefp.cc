@@ -275,6 +275,11 @@ void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std:
 
   // Superimpose POS
   psi::SharedMatrix pos_new = psi::Matrix::doublet(this->data_matrix_.at("pos"), r, false, false);
+  for (int i=0; i<pos_new->nrow(); ++i) {
+       pos_new->set(i,0,pos_new->get(i,0)+tx);
+       pos_new->set(i,1,pos_new->get(i,1)+ty);
+       pos_new->set(i,2,pos_new->get(i,2)+tz);
+  }
   this->data_matrix_["pos"] = pos_new;
 
   // Superimpose DMTP

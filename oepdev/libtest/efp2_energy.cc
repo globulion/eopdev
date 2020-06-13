@@ -19,7 +19,12 @@ double oepdev::test::Test::test_efp2_energy(void) {
      throw psi::PSIEXCEPTION("Monomer test mode cannot be used for this test. Set the OEPDEV_TEST_MODE to DIMER");
 
   // Reference interaction energy
-  const double eint_ref = 0.0;
+  const double ref_eint_coul = 0.0; //TODO
+  const double ref_eint_exrep= 0.0; //TODO
+  const double ref_eint_ind  = 0.0; //TODO
+  const double ref_eint_ct   = 0.0; //TODO
+  const double ref_eint_disp = 0.0; //TODO
+  const double ref_eint      = ref_eint_coul + ref_eint_exrep + ref_eint_ind + ref_eint_ct + ref_eint_disp;
 
   // Create WFN Union
   std::shared_ptr<oepdev::WavefunctionUnion> wfn_union = std::make_shared<oepdev::WavefunctionUnion>(wfn_, options_);
@@ -57,8 +62,8 @@ double oepdev::test::Test::test_efp2_energy(void) {
   double eint_coul = frag_1->energy("EFP2:COUL", frag_2);
   double eint_exrep= frag_1->energy("EFP2:EXREP",frag_2);
   double eint_ind  = frag_1->energy("EFP2:IND" , frag_2);
-  double eint_disp = frag_1->energy("EFP2:DISP", frag_2);
   double eint_ct   = frag_1->energy("EFP2:CT"  , frag_2);
+  double eint_disp = frag_1->energy("EFP2:DISP", frag_2);
 
   double eint = eint_coul + eint_ind + eint_exrep + eint_ct + eint_disp;
 
@@ -66,11 +71,24 @@ double oepdev::test::Test::test_efp2_energy(void) {
   psi::outfile->Printf("  COUL= %14.6f%14.6f\n", eint_coul , eint_coul *OEPDEV_AU_KcalPerMole);
   psi::outfile->Printf("  EXRP= %14.6f%14.6f\n", eint_exrep, eint_exrep*OEPDEV_AU_KcalPerMole);
   psi::outfile->Printf("  IND = %14.6f%14.6f\n", eint_ind  , eint_ind  *OEPDEV_AU_KcalPerMole);
-  psi::outfile->Printf("  DISP= %14.6f%14.6f\n", eint_disp , eint_disp *OEPDEV_AU_KcalPerMole);
   psi::outfile->Printf("  CT  = %14.6f%14.6f\n", eint_ct   , eint_ct   *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  DISP= %14.6f%14.6f\n", eint_disp , eint_disp *OEPDEV_AU_KcalPerMole);
   psi::outfile->Printf("  TOT = %14.6f%14.6f\n", eint      , eint      *OEPDEV_AU_KcalPerMole);
 
-  double result = eint - eint_ref;
+  psi::outfile->Printf("\n EFP2 Interaction Energy Components from GAMESS-US [a.u.] [kcal/mol]\n\n");
+  psi::outfile->Printf("  COUL= %14.6f%14.6f\n", ref_eint_coul , ref_eint_coul *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  EXRP= %14.6f%14.6f\n", ref_eint_exrep, ref_eint_exrep*OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  IND = %14.6f%14.6f\n", ref_eint_ind  , ref_eint_ind  *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  CT  = %14.6f%14.6f\n", ref_eint_ct   , ref_eint_ct   *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  DISP= %14.6f%14.6f\n", ref_eint_disp , ref_eint_disp *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  TOT = %14.6f%14.6f\n", ref_eint      , ref_eint      *OEPDEV_AU_KcalPerMole);
+
+
+  double result = pow(eint_coul -ref_eint_coul , 2.0) +
+                  pow(eint_exrep-ref_eint_exrep, 2.0) + 
+                  pow(eint_ind  -ref_eint_ind  , 2.0) +
+                  pow(eint_ct   -ref_eint_ct   , 2.0) +
+                  pow(eint_disp -ref_eint_disp , 2.0);
 
   // Print result
   std::cout << std::fixed;

@@ -57,7 +57,7 @@ namespace oepdev{
  *
  *   ## Rotation of 6D functions
  *
- *   The rotation of the 6D vector full tensor AO space of rank 2 and dimensions (3,3) 
+ *   The rotation of the full tensor AO space of rank 2 and dimensions (3,3) 
  *   is given by
  *   \f[
  *      M_{ab} = \sum_{a'b'} M_{a'b'} r_{a'b} r_{b'b}
@@ -75,7 +75,7 @@ namespace oepdev{
  *
  *   ## Rotation of 10F functions
  *
- *   The rotation of the 10D vector full tensor AO space of rank 3 and dimensions (3,3,3) 
+ *   The rotation of the full tensor AO space of rank 3 and dimensions (3,3,3) 
  *   is given by
  *   \f[
  *      M_{abc} = \sum_{a'b'c'} M_{a'b'c'} r_{a'b} r_{b'b} r_{c'c}
@@ -110,7 +110,7 @@ namespace oepdev{
  *          \left( s^{abc}_{'a'b'c} + s^{abc}_{a'c'b'} + s^{abc}_{b'a'c'} + 
                    s^{abc}_{b'c'a'} + s^{abc}_{c'a'b'} + s^{abc}_{c'b'a'} \right)
  *   \f}
- *   where
+ *   and
  *   \f[
  *    s^{abc}_{a'b'c'} \equiv \hat{s}_{a'b'c'} {\bf r} \otimes {\bf r} \otimes {\bf r} = r_{a'a} r_{b'b} r_{c'c}
  *   \f]
