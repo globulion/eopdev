@@ -37,8 +37,8 @@ using SharedIntegralTransform  = std::shared_ptr<psi::IntegralTransform>;
  * @{
  */
 
-/**
- *  \brief Container to handle the CIS wavefunction parameters
+/** \brief CIS wavefunction parameters. Container structure.
+ *
  */
 struct CISData
 {
@@ -56,6 +56,11 @@ struct CISData
     SharedDMTPole camm_homo;
     /// CAMM for LUMO orbital
     SharedDMTPole camm_lumo;
+
+    /// Null Constructor
+    CISData(void) = default;
+    /// Copy Constructor
+    CISData(const CISData*);
 };
 
 

@@ -37,10 +37,10 @@ void EETCouplingOEPotential::common_init()
     SharedMatrix mat_ct_m= std::make_shared<psi::Matrix>("R(HL)", 1, 1);
 
     // Provide correct classes (DF- or ESP-based) and number of OEP's involved in each type
-    OEPType type_1 = {"Fujimoto.GDF", true, 4, mat_gdf};
+    OEPType type_1 = {"Fujimoto.GDF", true, 4, mat_gdf, nullptr, nullptr};
     OEPType type_2 = {"Fujimoto.CIS", false,1, std::make_shared<psi::Matrix>(), nullptr, nullptr};
-    OEPType type_3 = {"Fujimoto.EXCH", false, n1, mat_exch};
-    OEPType type_4 = {"Fujimoto.CT_M", false, 1, mat_ct_m};
+    OEPType type_3 = {"Fujimoto.EXCH", false, n1, mat_exch, nullptr, nullptr};
+    OEPType type_4 = {"Fujimoto.CT_M", false, 1, mat_ct_m, nullptr, nullptr};
 
     // Register OEPType's
     oepTypes_[type_1.name] = type_1;

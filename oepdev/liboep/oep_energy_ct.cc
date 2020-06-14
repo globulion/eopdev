@@ -40,9 +40,9 @@ void ChargeTransferEnergyOEPotential::common_init()
   //SharedMatrix mat_2 = std::make_shared<psi::Matrix>("Q1", n3, n1);
     SharedMatrix mat_3 = std::make_shared<psi::Matrix>("Q2", n3, 1);
 
-    OEPType type_1 = {"Otto-Ladik.V1.GDF", true , n1, mat_1};
+    OEPType type_1 = {"Otto-Ladik.V1.GDF", true , n1, mat_1, nullptr, nullptr};
   //OEPType type_2 = {"Otto-Ladik.V2", false, n1, mat_2};
-    OEPType type_3 = {"Otto-Ladik.V3.CAMM-nj", false, n1, std::make_shared<psi::Matrix>()};
+    OEPType type_3 = {"Otto-Ladik.V3.CAMM-nj", false, n1, std::make_shared<psi::Matrix>(), nullptr, nullptr};
 
     oepTypes_[type_1.name] = type_1;
   //oepTypes_[type_2.name] = type_2;

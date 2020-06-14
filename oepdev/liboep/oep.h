@@ -53,6 +53,13 @@ struct OEPType
     SharedDMTPole dmtp;
     /// CIS data
     SharedCISData cis_data;
+
+    /// Initializer
+    OEPType() = default;
+    /// Initializer from list
+    OEPType(std::string, bool, int, SharedMatrix, SharedDMTPole, SharedCISData);
+    /// Copy constructor
+    OEPType(const OEPType*);
 };
 
 
@@ -91,19 +98,19 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     /// Integral factory
     std::shared_ptr<psi::IntegralFactory> intsFactory_;
     /// Matrix of potential one-electron integrals
-    std::shared_ptr<psi::Matrix> potMat_;
+    psi::SharedMatrix potMat_;
     /// One-electron integral shared pointer
     std::shared_ptr<psi::OneBodyAOInt> OEInt_;
     /// One-electron potential shared pointer
     std::shared_ptr<oepdev::PotentialInt> potInt_;
     /// Occupied orbitals: Canonical (CMO)
-    std::shared_ptr<psi::Matrix> cOcc_;
+    psi::SharedMatrix cOcc_;
     /// Virtual orbitals
-    std::shared_ptr<psi::Matrix> cVir_;
+    psi::SharedMatrix cVir_;
     /// Occupied orbitals: Localized (LMO)
-    std::shared_ptr<psi::Matrix> lOcc_;
+    psi::SharedMatrix lOcc_;
     /// LMO Centroids
-    std::vector<std::shared_ptr<psi::Vector>> lmoc_;
+    std::vector<psi::SharedVector> lmoc_;
 
   public:
 

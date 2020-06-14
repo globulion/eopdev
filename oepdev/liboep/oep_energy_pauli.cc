@@ -40,10 +40,10 @@ void RepulsionEnergyOEPotential::common_init()
    SharedMatrix mat_1 = std::make_shared<psi::Matrix>("G(S^{-1})", n2, n1);
    SharedMatrix mat_2 = std::make_shared<psi::Matrix>("G(S^{-2})", n3, n1);
 
-   OEPType type_1 = {"Murrell-etal.S1"       , true , n1, mat_1};
-   OEPType type_2 = {"Otto-Ladik.S2.ESP"     , false, n1, mat_2};
-   OEPType type_3 = {"Otto-Ladik.S2.CAMM.a"  , false, n1, std::make_shared<psi::Matrix>()};
-   OEPType type_4 = {"Otto-Ladik.S2.CAMM.A"  , false, n1, std::make_shared<psi::Matrix>()};
+   OEPType type_1 = {"Murrell-etal.S1"       , true , n1, mat_1, nullptr, nullptr};
+   OEPType type_2 = {"Otto-Ladik.S2.ESP"     , false, n1, mat_2, nullptr, nullptr};
+   OEPType type_3 = {"Otto-Ladik.S2.CAMM.a"  , false, n1, std::make_shared<psi::Matrix>(), nullptr, nullptr};
+   OEPType type_4 = {"Otto-Ladik.S2.CAMM.A"  , false, n1, std::make_shared<psi::Matrix>(), nullptr, nullptr};
 
    oepTypes_[type_1.name] = type_1; 
    oepTypes_[type_2.name] = type_2;

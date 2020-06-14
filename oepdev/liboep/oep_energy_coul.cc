@@ -22,7 +22,7 @@ void ElectrostaticEnergyOEPotential::common_init()
    // In this demo OEPotential, there is only one OEP type. In addition,
    // only one OEP exists within this type: the electrostatic potential of entire molecule
    SharedMatrix mat = std::make_shared<psi::Matrix>("OEP V", wfn_->molecule()->natom(), 1);
-   OEPType type = {"V", false, 1, mat};
+   OEPType type = OEPType("V", false, 1, mat, nullptr, nullptr);
    oepTypes_["V"] = type;
 }
 

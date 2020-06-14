@@ -5,6 +5,23 @@ using namespace oepdev;
 
 using SharedField3D = std::shared_ptr<oepdev::Field3D>;
 
+OEPType::OEPType(std::string name, bool is_density_fitted, int n, SharedMatrix matrix, SharedDMTPole dmtp, SharedCISData cis_data) {
+   this->name = name;
+   this->is_density_fitted = is_density_fitted;
+   this->n = n;
+   this->matrix = matrix;
+   this->dmtp = dmtp;
+   this->cis_data = cis_data;
+}
+OEPType::OEPType(const OEPType* f) {
+   this->name = f->name;
+   this->is_density_fitted = f->is_density_fitted;
+   this->n = f->n;
+   if (f->matrix) this->matrix = f->matrix->clone();
+   if (f->dmtp) this->dmtp = f->dmtp->clone();
+   if (f->cis_data) this->cis_data = std::make_shared<CISData>(f->cis_data.get());
+}
+
 OEPotential::OEPotential(SharedWavefunction wfn, Options& options) 
    : wfn_(wfn),
      options_(options)
@@ -29,19 +46,32 @@ OEPotential::OEPotential(const OEPotential* f) {
   localizer_ = f->localizer_;
   // Do deep-copy on those:
   name_ = f->name_;
-  cOcc_ = f->cOcc_->clone();
-  cVir_ = f->cVir_->clone();
+  if (f->cOcc_) cOcc_ = f->cOcc_->clone();
+  if (f->cVir_) cVir_ = f->cVir_->clone();
   if (f->potMat_) {potMat_= f->potMat_->clone();} else {potMat_=nullptr;}
   if (f->lOcc_) {lOcc_ = f->lOcc_->clone();} else {lOcc_=nullptr;}
-  lmoc_ = ...//TODO
-  oepTypes_= //TODO
   // Set to null
   intsFactory_ = nullptr;
   OEInt_= nullptr;
   potInt_ = nullptr;
+  // Copy the rest (lmoc_ and oepTypes_)
+  this->copy_from(f);
 }
 void OEPotential::copy_from(const OEPotential* f) {
-//TODO
+  // copy lmoc_
+  this->lmoc_ = {nullptr, nullptr, nullptr};
+  if (f->lmoc_[0]) {
+      this->lmoc_[0] = std::make_shared<psi::Vector>(*(f->lmoc_[0])); 
+      this->lmoc_[1] = std::make_shared<psi::Vector>(*(f->lmoc_[1])); 
+      this->lmoc_[2] = std::make_shared<psi::Vector>(*(f->lmoc_[2])); 
+  }
+  // copy oepTypes_
+  this->oepTypes_.clear(); 
+  for (auto const& x : f->oepTypes_) {
+     std::string key = x.first;
+     OEPType o = OEPType(x.second);
+     this->oepTypes_[key] = o;
+  }
 }
 void OEPotential::common_init(void) 
 {
