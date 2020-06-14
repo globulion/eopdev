@@ -262,3 +262,22 @@ void RepulsionEnergyOEPotential::print_header(void) const
         psi::outfile->Printf(  "      S-1 term: Murrell et.al\n");
         psi::outfile->Printf(  "      S-2 term: Otto and Ladik\n");
 }
+void RepulsionEnergyOEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
+
+  // Potential "Murrell-etal.S1"
+  psi::SharedMatrix new_matrix = psi::Matrix::doublet(R_aux, oepTypes_.at("Murrell-etal.S1").matrix, true, false);
+  oepTypes_.at("Murrell-etal.S1").matrix->copy(new_matrix);
+
+  // Potential "Otto-Ladik.S2.CAMM.a"
+  oepTypes_.at("Otto-Ladik.S2.CAMM.a").dmtp->rotate(r);
+
+  // Potential "Otto-Ladik.S2.CAMM.A"
+  oepTypes_.at("Otto-Ladik.S2.CAMM.A").dmtp->rotate(r);
+}
+void RepulsionEnergyOEPotential::translate(psi::SharedVector t) {
+
+  // Potential "Otto-Ladik.S2.CAMM.a"
+  oepTypes_.at("Otto-Ladik.S2.CAMM.a").dmtp->translate(t);
+  // Potential "Otto-Ladik.S2.CAMM.A"
+  oepTypes_.at("Otto-Ladik.S2.CAMM.A").dmtp->translate(t);
+}

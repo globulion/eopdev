@@ -196,9 +196,9 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     virtual std::vector<psi::SharedVector> mo_centroids(psi::SharedMatrix C);
 
     /// Rotate 
-    virtual void rotate(const Matrix& rotmat);
+    virtual void rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux);
     /// Translate
-    virtual void translate(const Vector& trans);
+    virtual void translate(psi::SharedVector t);
     /// Superimpose
     virtual void superimpose(const Matrix& refGeometry, 
                              const std::vector<int>& supList, 
@@ -276,6 +276,9 @@ class ElectrostaticEnergyOEPotential : public OEPotential
     virtual void compute_3D(const std::string& oepType, 
                             const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) override;
     virtual void print_header() const override;
+    virtual void rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) override;
+    virtual void translate(psi::SharedVector t) override;
+
 
   private:
     /// Set defaults
@@ -303,6 +306,8 @@ class RepulsionEnergyOEPotential : public OEPotential
     virtual void compute_3D(const std::string& oepType, 
                             const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) override;
     virtual void print_header() const override;
+    virtual void rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) override;
+    virtual void translate(psi::SharedVector t) override;
 
   private:
     /// Set defaults
@@ -339,6 +344,8 @@ class ChargeTransferEnergyOEPotential : public OEPotential
     virtual void compute_3D(const std::string& oepType, 
                             const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) override;
     virtual void print_header() const override;
+    virtual void rotate(psi::SharedMatrix, psi::SharedMatrix, psi::SharedMatrix) override;
+    virtual void translate(psi::SharedVector) override;
 
   private:
     /// Set defaults
@@ -371,6 +378,8 @@ class EETCouplingOEPotential : public OEPotential
     virtual void compute_3D(const std::string& oepType, 
                             const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) override;
     virtual void print_header() const override;
+    virtual void rotate(psi::SharedMatrix, psi::SharedMatrix, psi::SharedMatrix) override;
+    virtual void translate(psi::SharedVector) override;
 
   private:
     /// Set defaults

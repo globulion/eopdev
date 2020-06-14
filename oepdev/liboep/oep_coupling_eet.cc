@@ -246,3 +246,30 @@ void EETCouplingOEPotential::compute_fujimoto_ct_m()
 
 void EETCouplingOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
 void EETCouplingOEPotential::print_header(void) const {}
+
+void EETCouplingOEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
+
+  // Potential "Fujimoto.GDF"
+  psi::SharedMatrix new_matrix = psi::Matrix::doublet(R_aux, oepTypes_.at("Fujimoto.GDF").matrix, true, false);
+  oepTypes_.at("Fujimoto.GDF").matrix->copy(new_matrix);
+
+  // Potential "Fujimoto.EXCH" -> TODO
+  // add this to rotate oepTypes_.at("Fujimoto.CIS").matrix !
+
+  // Potential "Fujimoto.CIS"
+  psi::SharedMatrix Ri = R_prim->clone(); Ri->invert(); Ri->transpose_this();
+  psi::SharedMatrix new_Pe = psi::Matrix::triplet(Ri, oepTypes_.at("Fujimoto.CIS").cis_data->Pe , Ri, true, false, false);
+  psi::SharedMatrix new_Peg= psi::Matrix::triplet(Ri, oepTypes_.at("Fujimoto.CIS").cis_data->Peg, Ri, true, false, false);
+  oepTypes_.at("Fujimoto.CIS").cis_data->Pe->copy(new_Pe);
+  oepTypes_.at("Fujimoto.CIS").cis_data->Peg->copy(new_Peg);
+  oepTypes_.at("Fujimoto.CIS").cis_data->trcamm->rotate(r);
+  oepTypes_.at("Fujimoto.CIS").cis_data->camm_homo->rotate(r);
+  oepTypes_.at("Fujimoto.CIS").cis_data->camm_lumo->rotate(r);
+  
+}
+void EETCouplingOEPotential::translate(psi::SharedVector t) {
+  // Potential "Fujimoto.CIS"
+  oepTypes_.at("Fujimoto.CIS").cis_data->trcamm->translate(t);
+  oepTypes_.at("Fujimoto.CIS").cis_data->camm_homo->translate(t);
+  oepTypes_.at("Fujimoto.CIS").cis_data->camm_lumo->translate(t);
+}

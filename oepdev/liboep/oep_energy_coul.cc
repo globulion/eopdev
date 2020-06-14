@@ -99,3 +99,11 @@ void ElectrostaticEnergyOEPotential::print_header(void) const
    psi::outfile->Printf("  ==> OEPotential: %s <==\n\n", name_.c_str());
    oepTypes_.at("V").matrix->print();
 }
+void ElectrostaticEnergyOEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
+  // Potential "V"
+  oepTypes_.at("V").dmtp->rotate(r);
+}
+void ElectrostaticEnergyOEPotential::translate(psi::SharedVector t) {
+  // Potential "V"
+  oepTypes_.at("V").dmtp->translate(t);
+}

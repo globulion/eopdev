@@ -158,8 +158,8 @@ std::shared_ptr<OEPotential3D<OEPotential>> OEPotential::make_oeps3d(const std::
                                         shared_from_this(), oepType));
       return oeps3d;
 }
-void OEPotential::rotate(const Matrix& rotmat) {}
-void OEPotential::translate(const Vector& trans) {}
+void OEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {}
+void OEPotential::translate(psi::SharedVector t) {}
 void OEPotential::superimpose(const Matrix& refGeometry,
                               const std::vector<int>& supList,
                               const std::vector<int>& reordList) {}

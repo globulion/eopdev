@@ -113,6 +113,9 @@ class Test
    /// Test the oepdev::EFP2_GenEffPar and oepdev::EFP2_Computer classes
    double test_efp2_energy(void);
 
+   /// Test the oepdev::EFP2_GenEffPar and oepdev::EFP2_Computer classes
+   double test_oep_efp2_energy(void);
+
    /// Test the oepdev::KabschSuperimposer
    double test_kabsch_superimposition(void);
 

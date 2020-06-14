@@ -33,6 +33,7 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_POT_FIELD") result = test_dmtp_pot_field();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_ENERGY") result = test_dmtp_energy();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="EFP2_ENERGY") result = test_efp2_energy();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="OEP_EFP2_ENERGY") result = test_oep_efp2_energy();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="KABSCH_SUPERIMPOSITION") result = test_kabsch_superimposition();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_SUPERIMPOSITION") result = test_dmtp_superimposition();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="ESP_SOLVER") result = test_esp_solver();  

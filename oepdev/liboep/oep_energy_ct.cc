@@ -165,4 +165,17 @@ void ChargeTransferEnergyOEPotential::compute_otto_ladik_v3_camm_nj()
 void ChargeTransferEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
 void ChargeTransferEnergyOEPotential::print_header(void) const {}
 
+void ChargeTransferEnergyOEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
 
+  // Potential "Otto-Ladik.V1.GDF"
+  psi::SharedMatrix new_matrix = psi::Matrix::doublet(R_aux, oepTypes_.at("Otto-Ladik.V1.GDF").matrix, true, false);
+  oepTypes_.at("Otto-Ladik.V1.GDF").matrix->copy(new_matrix);
+
+  // Potential "Otto-Ladik.V3.CAMM-nj"
+  oepTypes_.at("Otto-Ladik.V3.CAMM-nj").dmtp->rotate(r);
+}
+void ChargeTransferEnergyOEPotential::translate(psi::SharedVector t) {
+
+  // Potential "Otto-Ladik.V3.CAMM-nj"
+  oepTypes_.at("Otto-Ladik.V3.CAMM.nj").dmtp->translate(t);
+}
