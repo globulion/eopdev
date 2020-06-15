@@ -209,6 +209,13 @@ class CPHF {
      /// retrieve the Cvir
      std::shared_ptr<Matrix> Cvir(void) const {return _cvir;}
 
+     /// retrieve the epsocc (always Canonical)
+     std::shared_ptr<Vector> epsocc(void) const {return _eps_occ;}
+
+     /// retrieve the epsvir
+     std::shared_ptr<Vector> epsvir(void) const {return _eps_vir;}
+
+
      /// retrieve the *i*-th orbital (LMO) centroid 
      std::shared_ptr<Vector> lmo_centroid(int i) const {return _orbitalCentroids[i];}
 

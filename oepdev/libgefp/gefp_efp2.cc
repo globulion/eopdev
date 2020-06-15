@@ -91,9 +91,15 @@ void oepdev::EFP2_GEFactory::assemble_fock_matrix() {
 
   psi::SharedMatrix Ca_occ_canonical = cphfSolver_->Cocc();
   psi::SharedMatrix Ca_vir_canonical = cphfSolver_->Cvir();
+  psi::SharedVector eps_a_occ_canonical = cphfSolver_->epsocc();
+  psi::SharedVector eps_a_vir_canonical = cphfSolver_->epsvir();
 
   this->EFP2Parameters_->set_matrix("cmoo", Ca_occ_canonical);
   this->EFP2Parameters_->set_matrix("cmov", Ca_vir_canonical);
+
+  this->EFP2Parameters_->set_vector("epso", eps_a_occ_canonical);
+  this->EFP2Parameters_->set_vector("epsv", eps_a_vir_canonical);
+
 }
 
 void oepdev::EFP2_GEFactory::assemble_distributed_polarizabilities() {

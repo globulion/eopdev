@@ -50,6 +50,7 @@ OEPotential::OEPotential(const OEPotential* f) {
   if (f->cVir_) cVir_ = f->cVir_->clone();
   if (f->potMat_) {potMat_= f->potMat_->clone();} else {potMat_=nullptr;}
   if (f->lOcc_) {lOcc_ = f->lOcc_->clone();} else {lOcc_=nullptr;}
+  if (f->T_) {T_ = f->T_->clone();} else {T_=nullptr;}
   // Set to null
   intsFactory_ = nullptr;
   OEInt_= nullptr;
@@ -84,6 +85,7 @@ void OEPotential::common_init(void)
    cVir_        = wfn_->Ca_subset("AO","VIR");
    lOcc_        = nullptr; //std::make_shared<psi::Matrix>();
    localizer_   = nullptr; //psi::Localizer::build(options_.get_str("SOLVER_CT_LOCALIZER"), primary_, cOcc_, options_);
+   T_           = nullptr;
    lmoc_        = {nullptr, nullptr, nullptr};
 }
 std::vector<psi::SharedVector> OEPotential::mo_centroids(psi::SharedMatrix C){
@@ -113,6 +115,8 @@ void OEPotential::localize(void)
    lOcc_ = localizer_->L()->clone();
    // LMO centroids
    lmoc_ = this->mo_centroids(lOcc_);
+   // Transformation
+   T_ = localizer_->U()->clone();
 }
 std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, SharedWavefunction wfn, Options& options)
 {

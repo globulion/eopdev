@@ -554,6 +554,14 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
    psi::SharedVector extract_xyz(psi::SharedMolecule);
    /// Extract DMTP
    psi::SharedVector extract_dmtp(std::shared_ptr<oepdev::DMTPole>);
+   /// Compute u vector for OEP-CT calculations
+   psi::SharedVector compute_u_vector(psi::SharedMatrix rmo_1, psi::SharedMatrix rmo_2, psi::SharedMolecule mol_2);
+   /// Compute w matrix for OEP-CT calculations
+   psi::SharedMatrix compute_w_matrix(psi::SharedMolecule mol_1, psi::SharedMolecule mol_2, psi::SharedMatrix rmo_1);
+   /// Compute OEP-CT energy component
+   double compute_ct_component(psi::SharedVector eps_occ_X, psi::SharedVector eps_vir_Y, psi::SharedMatrix V);
+
+
 
 
 

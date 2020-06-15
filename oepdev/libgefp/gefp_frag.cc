@@ -932,179 +932,178 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_pt
  return e_tot;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other) {
-// // Initialize results
-// double e_ab = 0.0, e_ba = 0.0, e_tot = 0.0;
-//
-// // Extract EFP2 parameters from fragments
-// const int nbf_p1 =  this->nbf();
-// const int nbf_p2 = other->nbf();
-// const int nat_1 =  this->natom();
-// const int nat_2 = other->natom();
-// const int nocc_1=  this->ndocc();
-// const int nocc_2= other->ndocc();
-// oepdev::SharedOEPotential oep_1 =  this->parameters["efp2"]->oep("ct");
-// oepdev::SharedOEPotential oep_2 = other->parameters["efp2"]->oep("ct");
-// psi::SharedMolecule mol_1 =  this->molecule();
-// psi::SharedMolecule mol_2 = other->molecule();
-// psi::SharedBasisSet primary_1 =  this->parameters["efp2"]->basisset("primary");
-// psi::SharedBasisSet primary_2 = other->parameters["efp2"]->basisset("primary");
-// psi::SharedBasisSet auxiliary_1 =  this->parameters["efp2"]->basisset("auxiliary");
-// psi::SharedBasisSet auxiliary_2 = other->parameters["efp2"]->basisset("auxiliary");
-// psi::SharedMatrix cmoo_1 =  this->parameters["efp2"]->matrix("cmoo");
-// psi::SharedMatrix cmoo_2 = other->parameters["efp2"]->matrix("cmoo");
-// psi::SharedMatrix cmov_1 =  this->parameters["efp2"]->matrix("cmov");
-// psi::SharedMatrix cmov_2 = other->parameters["efp2"]->matrix("cmov");
-// psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc");
-// psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc");
-// psi::SharedMatrix lmoo_1 = oep_1->lOcc();
-// psi::SharedMatrix lmoo_2 = oep_2->lOcc();
-// psi::SharedVector e_occ_1 =  this->parameters["efp2"]->vector("eps_occ"); //TODO in GenEffParFactory
-// psi::SharedVector e_occ_2 = other->parameters["efp2"]->vector("eps_occ"); 
-// psi::SharedVector e_vir_1 =  this->parameters["efp2"]->vector("eps_vir"); 
-// psi::SharedVector e_vir_2 = other->parameters["efp2"]->vector("eps_vir"); 
-//
-// const int nbf_a1 =auxiliary_1->nbf();
-// const int nbf_a2 =auxiliary_2->nbf();
-// const int nvir_1= cmov_1->ncol();
-// const int nvir_2= cmov_2->ncol();
-//
-// psi::SharedMatrix Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_p1, nbf_p2);
-// psi::SharedMatrix Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
-// psi::SharedMatrix Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_p1, nbf_a2);
-//
-//
-//  psi::IntegralFactory fact_1p2p(primary_1, primary_2, primary_1, primary_2);
-//  psi::IntegralFactory fact_1a2p(auxiliary_1, primary_2, auxiliary_1, primary_2);
-//  psi::IntegralFactory fact_1p2a(primary_1, auxiliary_2, primary_1, auxiliary_2);
-//
-//  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
-//  ovlInt_1p2p->compute(Sao_1p2p);
-//
-//  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
-//  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2a(fact_1p2a.ao_overlap());
-//
-//
-//  ovlInt_1a2p->compute(Sao_1a2p);
-//  ovlInt_1p2a->compute(Sao_1p2a);
-//
-//  psi::SharedMatrix S1 = psi::Matrix::doublet(cmoo_1, Sao_1p2a, true, false); // OCC(A) x AUX(B)
-//  psi::SharedMatrix S2 = psi::Matrix::doublet(cmoo_2, Sao_1a2p, true, true ); // OCC(B) x AUX(A)
-//
-//
-//  // ---> Localized occupied orbitals <--- //
-//  psi::SharedMatrix S12= psi::Matrix::triplet(lmoo_1, Sao_1p2p, lmoo_2, true, false, false); // LOCC(A) x LOCC(B)
-//  psi::SharedMatrix S1Y= psi::Matrix::triplet(lmoo_1, Sao_1p2p, cmov_2, true, false, false); // LOCC(A) x  VIR(B)
-//  psi::SharedMatrix S2X= psi::Matrix::triplet(lmoo_2, Sao_1p2p, cmov_1, true, true , false); // LOCC(B) x  VIR(A)
-//  
-//  // ---> Get LMO centroids <--- //
-//  std::vector<std::shared_ptr<psi::Vector>> rmo_1 = oep_1->lmoc();
-//  std::vector<std::shared_ptr<psi::Vector>> rmo_2 = oep_2->lmoc();
-//
-//  // ---> Compute auxiliary tensors u and w <--- //
-//  std::shared_ptr<psi::Vector> u_1 = this->compute_u_vector(rmo_1, rmo_2, mol_2);
-//  std::shared_ptr<psi::Vector> u_2 = this->compute_u_vector(rmo_2, rmo_1, mol_1);
-//  std::shared_ptr<psi::Matrix> w_1 = this->compute_w_matrix(mol_1, mol_2, rmo_1);
-//  std::shared_ptr<psi::Matrix> w_2 = this->compute_w_matrix(mol_2, mol_1, rmo_2);
-//  u_1->set_name("Auxiliary calculables: Vector u_1"); u_1->print();
-//  w_1->set_name("Auxiliary calculables: Matrix w_1"); w_1->print();
-//  u_2->set_name("Auxiliary calculables: Vector u_2"); u_2->print();
-//  w_2->set_name("Auxiliary calculables: Matrix w_2"); w_2->print();
-//
-//  // ---> Get distributed effective charges <--- //
-//  std::vector<psi::SharedMatrix> q_1 = oep_1->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
-//  std::vector<psi::SharedMatrix> q_2 = oep_2->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
-//
-//  // ===> Compute V1 term <=== //
-//  psi::SharedMatrix v_ab_v1 = psi::Matrix::doublet(S1, oep_2->matrix("Otto-Ladik.V1.GDF"), false, false);
-//  psi::SharedMatrix v_ba_v1 = psi::Matrix::doublet(S2, oep_1->matrix("Otto-Ladik.V1.GDF"), false, false);
-//  //const double sc = 0.25;
-//  //v_ab_v1->scale(sc);
-//  //v_ba_v1->scale(sc);
-//
-//  // ===> Compute V2 term <=== //
-//  psi::SharedMatrix v_ab_v2 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
-//  psi::SharedMatrix v_ba_v2 = std::make_shared<psi::Matrix>("", nocc_2, nvir_1);
-//  for (int i=0; i<nocc_1; ++i) {
-//       for (int n=0; n<nvir_2; ++n) {
-//            double v = S1Y->get(i,n) * u_1->get(i);
-//            v_ab_v2->set(i, n, v); 
-//       }
-//  }
-//  for (int i=0; i<nocc_2; ++i) {
-//       for (int n=0; n<nvir_1; ++n) {
-//            double v = S2X->get(i,n) * u_2->get(i);
-//            v_ba_v2->set(i, n, v); 
-//       }
-//  }
-//  psi::SharedMatrix v_ab_v2_copy = v_ab_v2->clone(); v_ab_v2->zero();
-//  psi::SharedMatrix v_ba_v2_copy = v_ba_v2->clone(); v_ba_v2->zero();
-//  v_ab_v2->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v2_copy, 0.0); //TODO -> add U to OEPotential
-//  v_ba_v2->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v2_copy, 0.0);
-//
-//  // ===> Compute V3 term <=== //
-//  psi::SharedMatrix v_ab_v3 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
-//  psi::SharedMatrix v_ba_v3 = std::make_shared<psi::Matrix>("", nocc_2, nvir_1);
-//  for (int i=0; i<nocc_1; ++i) {
-//       for (int n=0; n<nvir_2; ++n) {
-//            double v = 0;
-//            for (int j=0; j<nocc_2; ++j) {              
-//                 for (int y=0; y<mol_2->natom(); ++y) {
-//                      v += S12->get(i,j) * w_1->get(i, y) * q_2[nvir_2*j+n]->get(y, 0);
-//                 }
-//            }
-//            v_ab_v3->set(i, n, v);
-//       }
-//  }
-//  //
-//  for (int i=0; i<nocc_2; ++i) {
-//       for (int n=0; n<nvir_1; ++n) {
-//            double v = 0;
-//            for (int j=0; j<nocc_1; ++j) {              
-//                 for (int y=0; y<mol_1->natom(); ++y) {
-//                      v += S12->get(j,i) * w_2->get(i, y) * q_1[nvir_1*j+n]->get(y, 0);
-//                 }
-//            }
-//            v_ba_v3->set(i, n, v);
-//       }
-//  }
-//  psi::SharedMatrix v_ab_v3_copy = v_ab_v3->clone(); v_ab_v3->zero();
-//  psi::SharedMatrix v_ba_v3_copy = v_ba_v3->clone(); v_ba_v3->zero();
-//  v_ab_v3->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v3_copy, 0.0); //TODO as above
-//  v_ba_v3->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v3_copy, 0.0);
-//
-//
-//  // ---> Add coupling constant contributions <--- //
-//  std::shared_ptr<psi::Matrix> v_ab_v12 = v_ab_v1->clone(); v_ab_v12->add(v_ab_v2);
-//  std::shared_ptr<psi::Matrix> v_ba_v12 = v_ba_v1->clone(); v_ba_v12->add(v_ba_v2);
-//  std::shared_ptr<psi::Matrix> v_ab_v13 = v_ab_v1->clone(); v_ab_v13->add(v_ab_v3);
-//  std::shared_ptr<psi::Matrix> v_ba_v13 = v_ba_v1->clone(); v_ba_v13->add(v_ba_v3);
-//  std::shared_ptr<psi::Matrix> v_ab_v23 = v_ab_v2->clone(); v_ab_v23->add(v_ab_v3);
-//  std::shared_ptr<psi::Matrix> v_ba_v23 = v_ba_v2->clone(); v_ba_v23->add(v_ba_v3);
-//  std::shared_ptr<psi::Matrix> v_ab_v123= v_ab_v12->clone(); v_ab_v123->add(v_ab_v3);
-//  std::shared_ptr<psi::Matrix> v_ba_v123= v_ba_v12->clone(); v_ba_v123->add(v_ba_v3);
-//
-//  // ===> Compute CT Energy <=== //
-//  double e_ab_v1  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v1);
-//  double e_ba_v1  = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v1);
-//  double e_ab_v2  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v2);
-//  double e_ba_v2  = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v2);
-//  double e_ab_v3  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v3);
-//  double e_ba_v3  = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v3);
-//  double e_ab_v12 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v12);
-//  double e_ba_v12 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v12);
-//  double e_ab_v13 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v13);
-//  double e_ba_v13 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v13);
-//  double e_ab_v23 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v23);
-//  double e_ba_v23 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v23);
-//  double e_ab_v123= this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v123);
-//  double e_ba_v123= this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v123);
-//
-//  e_ab = e_ab_v123;
-//  e_ba = e_ba_v123;
-//
-//  e_tot = e_ab + e_ba;
-//
-// return e_tot;
+ // Initialize results
+ double e_ab = 0.0, e_ba = 0.0, e_tot = 0.0;
+
+ // Extract EFP2 parameters from fragments
+ const int nbf_p1 =  this->nbf();
+ const int nbf_p2 = other->nbf();
+ const int nat_1 =  this->natom();
+ const int nat_2 = other->natom();
+ const int nocc_1=  this->ndocc();
+ const int nocc_2= other->ndocc();
+ oepdev::SharedOEPotential oep_1 =  this->parameters["efp2"]->oep("ct");
+ oepdev::SharedOEPotential oep_2 = other->parameters["efp2"]->oep("ct");
+ psi::SharedMolecule mol_1 =  this->molecule();
+ psi::SharedMolecule mol_2 = other->molecule();
+ psi::SharedBasisSet primary_1 =  this->parameters["efp2"]->basisset("primary");
+ psi::SharedBasisSet primary_2 = other->parameters["efp2"]->basisset("primary");
+ psi::SharedBasisSet auxiliary_1 =  this->parameters["efp2"]->basisset("auxiliary");
+ psi::SharedBasisSet auxiliary_2 = other->parameters["efp2"]->basisset("auxiliary");
+ psi::SharedMatrix cmoo_1 =  this->parameters["efp2"]->matrix("cmoo");
+ psi::SharedMatrix cmoo_2 = other->parameters["efp2"]->matrix("cmoo");
+ psi::SharedMatrix cmov_1 =  this->parameters["efp2"]->matrix("cmov");
+ psi::SharedMatrix cmov_2 = other->parameters["efp2"]->matrix("cmov");
+ psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc");
+ psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc");
+ psi::SharedMatrix lmoo_1 = oep_1->lOcc();
+ psi::SharedMatrix lmoo_2 = oep_2->lOcc();
+ psi::SharedMatrix U_1 = oep_1->T();
+ psi::SharedMatrix U_2 = oep_2->T();
+ psi::SharedVector e_occ_1 =  this->parameters["efp2"]->vector("epso");
+ psi::SharedVector e_occ_2 = other->parameters["efp2"]->vector("epso"); 
+ psi::SharedVector e_vir_1 =  this->parameters["efp2"]->vector("epsv"); 
+ psi::SharedVector e_vir_2 = other->parameters["efp2"]->vector("epsv"); 
+
+ const int nbf_a1 =auxiliary_1->nbf();
+ const int nbf_a2 =auxiliary_2->nbf();
+ const int nvir_1= cmov_1->ncol();
+ const int nvir_2= cmov_2->ncol();
+
+ psi::SharedMatrix Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_p1, nbf_p2);
+ psi::SharedMatrix Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
+ psi::SharedMatrix Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_p1, nbf_a2);
+
+
+  psi::IntegralFactory fact_1p2p(primary_1, primary_2, primary_1, primary_2);
+  psi::IntegralFactory fact_1a2p(auxiliary_1, primary_2, auxiliary_1, primary_2);
+  psi::IntegralFactory fact_1p2a(primary_1, auxiliary_2, primary_1, auxiliary_2);
+
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
+  ovlInt_1p2p->compute(Sao_1p2p);
+
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
+  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2a(fact_1p2a.ao_overlap());
+
+
+  ovlInt_1a2p->compute(Sao_1a2p);
+  ovlInt_1p2a->compute(Sao_1p2a);
+
+  psi::SharedMatrix S1 = psi::Matrix::doublet(cmoo_1, Sao_1p2a, true, false); // OCC(A) x AUX(B)
+  psi::SharedMatrix S2 = psi::Matrix::doublet(cmoo_2, Sao_1a2p, true, true ); // OCC(B) x AUX(A)
+
+
+  // ---> Localized occupied orbitals <--- //
+  psi::SharedMatrix S12= psi::Matrix::triplet(lmoo_1, Sao_1p2p, lmoo_2, true, false, false); // LOCC(A) x LOCC(B)
+  psi::SharedMatrix S1Y= psi::Matrix::triplet(lmoo_1, Sao_1p2p, cmov_2, true, false, false); // LOCC(A) x  VIR(B)
+  psi::SharedMatrix S2X= psi::Matrix::triplet(lmoo_2, Sao_1p2p, cmov_1, true, true , false); // LOCC(B) x  VIR(A)
+  
+
+  // ---> Compute auxiliary tensors u and w <--- //
+  psi::SharedVector u_1 = this->compute_u_vector(lmoc_1, lmoc_2, mol_2);
+  psi::SharedVector u_2 = this->compute_u_vector(lmoc_2, lmoc_1, mol_1);
+  psi::SharedMatrix w_1 = this->compute_w_matrix(mol_1, mol_2, lmoc_1);
+  psi::SharedMatrix w_2 = this->compute_w_matrix(mol_2, mol_1, lmoc_2);
+  u_1->set_name("Auxiliary calculables: Vector u_1"); u_1->print();
+  w_1->set_name("Auxiliary calculables: Matrix w_1"); w_1->print();
+  u_2->set_name("Auxiliary calculables: Vector u_2"); u_2->print();
+  w_2->set_name("Auxiliary calculables: Matrix w_2"); w_2->print();
+
+  // ---> Get distributed effective charges <--- //
+  std::vector<psi::SharedMatrix> q_1 = oep_1->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
+  std::vector<psi::SharedMatrix> q_2 = oep_2->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
+
+  // ===> Compute V1 term <=== //
+  psi::SharedMatrix v_ab_v1 = psi::Matrix::doublet(S1, oep_2->matrix("Otto-Ladik.V1.GDF"), false, false);
+  psi::SharedMatrix v_ba_v1 = psi::Matrix::doublet(S2, oep_1->matrix("Otto-Ladik.V1.GDF"), false, false);
+  //const double sc = 0.25;
+  //v_ab_v1->scale(sc);
+  //v_ba_v1->scale(sc);
+
+  // ===> Compute V2 term <=== //
+  psi::SharedMatrix v_ab_v2 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
+  psi::SharedMatrix v_ba_v2 = std::make_shared<psi::Matrix>("", nocc_2, nvir_1);
+  for (int i=0; i<nocc_1; ++i) {
+       for (int n=0; n<nvir_2; ++n) {
+            double v = S1Y->get(i,n) * u_1->get(i);
+            v_ab_v2->set(i, n, v); 
+       }
+  }
+  for (int i=0; i<nocc_2; ++i) {
+       for (int n=0; n<nvir_1; ++n) {
+            double v = S2X->get(i,n) * u_2->get(i);
+            v_ba_v2->set(i, n, v); 
+       }
+  }
+  psi::SharedMatrix v_ab_v2_copy = v_ab_v2->clone(); v_ab_v2->zero();
+  psi::SharedMatrix v_ba_v2_copy = v_ba_v2->clone(); v_ba_v2->zero();
+  v_ab_v2->gemm(false, false, 1.0, U_1, v_ab_v2_copy, 0.0);
+  v_ba_v2->gemm(false, false, 1.0, U_2, v_ba_v2_copy, 0.0);
+
+  // ===> Compute V3 term <=== //
+  psi::SharedMatrix v_ab_v3 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
+  psi::SharedMatrix v_ba_v3 = std::make_shared<psi::Matrix>("", nocc_2, nvir_1);
+  for (int i=0; i<nocc_1; ++i) {
+       for (int n=0; n<nvir_2; ++n) {
+            double v = 0;
+            for (int j=0; j<nocc_2; ++j) {              
+                 for (int y=0; y<mol_2->natom(); ++y) {
+                      v += S12->get(i,j) * w_1->get(i, y) * q_2[nvir_2*j+n]->get(y, 0);
+                 }
+            }
+            v_ab_v3->set(i, n, v);
+       }
+  }
+  //
+  for (int i=0; i<nocc_2; ++i) {
+       for (int n=0; n<nvir_1; ++n) {
+            double v = 0;
+            for (int j=0; j<nocc_1; ++j) {              
+                 for (int y=0; y<mol_1->natom(); ++y) {
+                      v += S12->get(j,i) * w_2->get(i, y) * q_1[nvir_1*j+n]->get(y, 0);
+                 }
+            }
+            v_ba_v3->set(i, n, v);
+       }
+  }
+  psi::SharedMatrix v_ab_v3_copy = v_ab_v3->clone(); v_ab_v3->zero();
+  psi::SharedMatrix v_ba_v3_copy = v_ba_v3->clone(); v_ba_v3->zero();
+  v_ab_v3->gemm(false, false, 1.0, U_1, v_ab_v3_copy, 0.0);
+  v_ba_v3->gemm(false, false, 1.0, U_2, v_ba_v3_copy, 0.0);
+
+
+  // ---> Add coupling constant contributions <--- //
+  std::shared_ptr<psi::Matrix> v_ab_v12 = v_ab_v1->clone(); v_ab_v12->add(v_ab_v2);
+  std::shared_ptr<psi::Matrix> v_ba_v12 = v_ba_v1->clone(); v_ba_v12->add(v_ba_v2);
+//std::shared_ptr<psi::Matrix> v_ab_v13 = v_ab_v1->clone(); v_ab_v13->add(v_ab_v3);
+//std::shared_ptr<psi::Matrix> v_ba_v13 = v_ba_v1->clone(); v_ba_v13->add(v_ba_v3);
+//std::shared_ptr<psi::Matrix> v_ab_v23 = v_ab_v2->clone(); v_ab_v23->add(v_ab_v3);
+//std::shared_ptr<psi::Matrix> v_ba_v23 = v_ba_v2->clone(); v_ba_v23->add(v_ba_v3);
+  std::shared_ptr<psi::Matrix> v_ab_v123= v_ab_v12->clone(); v_ab_v123->add(v_ab_v3);
+  std::shared_ptr<psi::Matrix> v_ba_v123= v_ba_v12->clone(); v_ba_v123->add(v_ba_v3);
+
+  // ===> Compute CT Energy <=== //
+//double e_ab_v1  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v1);
+//double e_ba_v1  = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v1);
+//double e_ab_v2  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v2);
+//double e_ba_v2  = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v2);
+//double e_ab_v3  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v3);
+//double e_ba_v3  = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v3);
+//double e_ab_v12 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v12);
+//double e_ba_v12 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v12);
+//double e_ab_v13 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v13);
+//double e_ba_v13 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v13);
+//double e_ab_v23 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v23);
+//double e_ba_v23 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v23);
+  double e_ab_v123= this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v123);
+  double e_ba_v123= this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v123);
+
+  e_ab = e_ab_v123;
+  e_ba = e_ba_v123;
+
+  e_tot = e_ab + e_ba;
+
+ return e_tot;
 }
 
 // --> quick helpers
@@ -1167,4 +1166,92 @@ psi::SharedVector oepdev::GenEffFrag::extract_dmtp(std::shared_ptr<oepdev::DMTPo
        *mult_p++ = p_3[i][4] * 2.5           ;   // XYZ
   }
   return mult;
+}
+psi::SharedVector oepdev::GenEffFrag::compute_u_vector(
+  psi::SharedMatrix rmo_1, 
+  psi::SharedMatrix rmo_2, 
+  psi::SharedMolecule mol_2
+)
+{
+  const int nocc_1 = rmo_1->nrow();
+  const int nocc_2 = rmo_2->nrow();
+  const int nat_2  = mol_2->natom();
+
+  psi::SharedVector u = std::make_shared<psi::Vector>("", nocc_1);
+
+  for (int i=0; i<nocc_1; ++i) {
+       double v = 0.0;
+       //
+       for (int y=0; y<nat_2; ++y) {
+            double ryi = sqrt(pow(mol_2->x(y) - rmo_1->get(i,0), 2.0) +
+                              pow(mol_2->y(y) - rmo_1->get(i,1), 2.0) +
+                              pow(mol_2->z(y) - rmo_1->get(i,2), 2.0) );
+            v += (double)mol_2->Z(y) / ryi;
+       }
+       //
+       for (int j=0; j<nocc_2; ++j) {
+            double rji = sqrt(pow(rmo_2->get(j,0) - rmo_1->get(i,0), 2.0) +
+                              pow(rmo_2->get(j,1) - rmo_1->get(i,1), 2.0) +
+                              pow(rmo_2->get(j,2) - rmo_1->get(i,2), 2.0) );
+            v -= 2.0 / rji;
+       }
+       u->set(i, v);
+  }
+  return u;
+}
+std::shared_ptr<psi::Matrix> oepdev::GenEffFrag::compute_w_matrix(
+  psi::SharedMolecule mol_1,
+  psi::SharedMolecule mol_2,
+  psi::SharedMatrix rmo_1
+)
+{
+  const int nat_1 = mol_1->natom();
+  const int nat_2 = mol_2->natom();
+  const int nocc_1= rmo_1->nrow();
+
+  psi::SharedMatrix w = std::make_shared<psi::Matrix>("", nocc_1, nat_2);
+
+  for (int y=0; y<nat_2; ++y) {
+       double vy = 0.0;
+       //
+       for (int x=0; x<nat_1; ++x) { 
+            double rxy = sqrt(pow(mol_1->x(x) - mol_2->x(y), 2.0) +
+                              pow(mol_1->y(x) - mol_2->y(y), 2.0) +
+                              pow(mol_1->z(x) - mol_2->z(y), 2.0) );
+            vy += (double)mol_1->Z(x) / rxy;
+       }
+       //
+       for (int k=0; k<nocc_1; ++k) {
+            double rky = sqrt(pow(rmo_1->get(k,0) - mol_2->x(y), 2.0) +
+                              pow(rmo_1->get(k,1) - mol_2->y(y), 2.0) +
+                              pow(rmo_1->get(k,2) - mol_2->z(y), 2.0) );
+            vy-= 2.0 / rky;
+       }
+       //
+       for (int i=0; i<nocc_1; ++i) {
+            //
+            double riy = sqrt(pow(rmo_1->get(i,0) - mol_2->x(y), 2.0) +
+                              pow(rmo_1->get(i,1) - mol_2->y(y), 2.0) +
+                              pow(rmo_1->get(i,2) - mol_2->z(y), 2.0) );
+            w->set(i, y, vy + 2.0/riy );
+       }
+  }
+  w->scale(-1.0);
+  return w;
+}
+double oepdev::GenEffFrag::compute_ct_component(
+ psi::SharedVector eps_occ_X, psi::SharedVector eps_vir_Y, psi::SharedMatrix V)
+{
+   // requires matrix elements in CMO (canonical SCF) basis
+   const int nocc_X = eps_occ_X->dim();
+   const int nvir_Y = eps_vir_Y->dim();
+   double e_XY = 0.0;
+   for (int i=0; i<nocc_X; ++i) { /* X-->Y term */
+       for (int n=0; n<nvir_Y; ++n) {
+            double vin = V->get(i, n); /* V: OCC_X x VIR_Y */
+            e_XY += (vin * vin) / (eps_occ_X->get(i) - eps_vir_Y->get(n));
+       }
+  }
+  e_XY *= 2.0;
+  return e_XY;
 }

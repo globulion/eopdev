@@ -29,6 +29,13 @@ void oepdev::GenEffPar::copy_from(const GenEffPar* f) {
      data_matrix_[key] = mat;
   }
   //
+  data_vector_.clear();
+  for (auto const& x : f->data_vector_) {
+     std::string key = x.first;
+     psi::SharedVector vec = std::make_shared<psi::Vector>(*(x.second));
+     data_vector_[key] = vec;
+  }
+  //
   data_dpol_.clear();
   for (auto const&x : f->data_dpol_) {
        std::string key = x.first;

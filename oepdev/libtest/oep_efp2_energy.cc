@@ -66,7 +66,7 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
   double eint_coul = frag_1->energy("EFP2:COUL", frag_2);
   double eint_exrep= frag_1->energy("OEPb-EFP2:EXREP",frag_2);
   double eint_ind  = frag_1->energy("EFP2:IND" , frag_2);
-  double eint_ct   = frag_1->energy("EFP2:CT"  , frag_2);
+  double eint_ct   = frag_1->energy("OEPb-EFP2:CT"  , frag_2);
   double eint_disp = frag_1->energy("EFP2:DISP", frag_2);
 
   double eint = eint_coul + eint_ind + eint_exrep + eint_ct + eint_disp;

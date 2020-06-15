@@ -109,6 +109,8 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     psi::SharedMatrix cVir_;
     /// Occupied orbitals: Localized (LMO)
     psi::SharedMatrix lOcc_;
+    /// Canonical to Occupied orbitals transformation
+    psi::SharedMatrix T_;
     /// LMO Centroids
     std::vector<psi::SharedVector> lmoc_;
 
@@ -222,9 +224,14 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     /// Retrieve wavefunction object
     SharedWavefunction wfn() const {return wfn_;}
 
+    /// Retrieve Canonical occupied MOs
     SharedMatrix cOcc() const {return cOcc_;}
+    /// Retrieve Canonical virtual MOs
     SharedMatrix cVir() const {return cVir_;}
+    /// Retrieve Localized occupied MOs
     SharedMatrix lOcc() const {return lOcc_;}
+    /// Retrieve Canonical to Localized occupied MO transformation matrix
+    SharedMatrix T() const {return T_;}
 
     /// Retrieve MO Localizer
     SharedLocalizer localizer() const {return localizer_;}
