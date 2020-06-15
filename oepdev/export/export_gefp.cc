@@ -24,12 +24,15 @@ void export_gefp(py::module &m) {
     typedef psi::SharedMatrix (oepdev::GenEffPar::*cdm_3)(double, double, double);
     typedef psi::SharedMatrix (oepdev::GenEffPar::*cdm_F)(std::vector<psi::SharedVector>);
     typedef psi::SharedMatrix (oepdev::GenEffPar::*cdm_FG)(std::vector<psi::SharedVector>, std::vector<psi::SharedMatrix>);
+    typedef std::shared_ptr<oepdev::GenEffParFactory> (*build_1)(const std::string&, psi::SharedWavefunction, psi::Options&);
+    typedef std::shared_ptr<oepdev::GenEffParFactory> (*build_2)(const std::string&, psi::SharedWavefunction, psi::Options&, psi::SharedBasisSet, psi::SharedBasisSet);
 
 
     /* Class oepdev::GenEffParFactory */
     py::class_<oepdev::GenEffParFactory, std::shared_ptr<oepdev::GenEffParFactory>> Solver(m, "GenEffParFactory", "GEFP factory of OEPDev.");
     Solver
-	.def_static("build", &oepdev::GenEffParFactory::build, "Build a chosen GEFP solver", py::return_value_policy::take_ownership)
+	.def_static("build", build_1(&oepdev::GenEffParFactory::build), "Build a chosen GEFP solver", py::return_value_policy::take_ownership)
+	.def_static("build", build_2(&oepdev::GenEffParFactory::build), "Build a chosen GEFP solver for OEP-based purposes", py::return_value_policy::take_ownership)
 	.def("compute",   &oepdev::GenEffParFactory::compute  , "Run the GEFP calculation", py::return_value_policy::take_ownership)
         .def("wfn", &oepdev::GenEffParFactory::wfn, "Retrieve wfn")
         .def("options", &oepdev::GenEffParFactory::options, "Retrieve options")

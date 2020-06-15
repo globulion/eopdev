@@ -23,7 +23,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::EFP2_GEFactory::compute()
    dmtp_ = camm;
    cphfSolver_ = cphf;
 
-   this->assemble_parameters();
+   this->assemble_efp2_parameters();
 
    return this->EFP2Parameters_;
 }
@@ -44,7 +44,7 @@ std::shared_ptr<oepdev::CPHF> oepdev::EFP2_GEFactory::compute_cphf() {
   psi::outfile->Printf(" @EFP2_GEFactory: CPHF Done.\n");
   return cphf;
 }
-void oepdev::EFP2_GEFactory::assemble_parameters() {
+void oepdev::EFP2_GEFactory::assemble_efp2_parameters() {
   psi::outfile->Printf(" @EFP2_GEFactory: Assembling Geometry data...\n");
   this->assemble_geometry_data();
   psi::outfile->Printf(" @EFP2_GEFactory: Assembling DMTP data...\n");

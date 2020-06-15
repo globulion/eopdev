@@ -355,6 +355,30 @@ void oepdev::GenEffPar::superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std:
        psi::SharedMatrix fock = psi::Matrix::triplet(R_primary, this->data_matrix_.at("fock_ao"), R_primary, true, false, false);
        this->data_matrix_["fock_ao"] = fock;
    }
+
+
+   // --> Superimpose OEPs <-- //
+   psi::SharedMatrix R_auxiliary(nullptr);
+   if (this->data_basisset_.find("auxiliary") != this->data_basisset_.end()) {
+       R_auxiliary = oepdev::ao_rotation_matrix(r, this->data_basisset_.at("auxiliary"));
+       R_auxiliary->set_name("AO Rotation Matrix: Auxiliary Basis");
+   }
+
+   // Superimpose OEP-REP
+   if (this->data_oep_.find("rep") != this->data_oep_.end()) {
+       outfile->Printf("  Superimposing OEP-REP in Parameters %s\n", this->name_.c_str());
+       this->data_oep_.at("rep")->rotate(r, R_primary, R_auxiliary);
+       this->data_oep_.at("rep")->translate(t);
+   }
+
+   // Superimpose OEP-CT
+   if (this->data_oep_.find("ct") != this->data_oep_.end()) {
+       outfile->Printf("  Superimposing OEP-CT in Parameters %s\n", this->name_.c_str());
+       this->data_oep_.at("ct")->rotate(r, R_primary, R_auxiliary);
+       this->data_oep_.at("ct")->translate(t);
+   }
+
+
 }
 
 //-- GenEffParFactory --////////////////////////////////////////////////////////////////////////////////
@@ -464,6 +488,23 @@ std::shared_ptr<psi::Vector> oepdev::GenEffParFactory::draw_random_point()
   return point;
 }
 // Static factory method
+std::shared_ptr<oepdev::GenEffParFactory> oepdev::GenEffParFactory::build(const std::string& type,
+                                                  std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt,
+                                                  psi::SharedBasisSet auxiliary, psi::SharedBasisSet intermediate) {
+   std::shared_ptr<oepdev::GenEffParFactory> factory;
+
+   if ((!auxiliary) && (!intermediate)) {
+       factory = oepdev::GenEffParFactory::build(type, wfn, opt);
+   } else {
+     // when auxiliary and intermediate are given, OEP-based factory will be of interest
+     if (type == "OEP-EFP2") {
+         factory = std::make_shared<oepdev::OEP_EFP2_GEFactory>(wfn, opt, auxiliary, intermediate);
+     } else {
+         factory = oepdev::GenEffParFactory::build(type, wfn, opt);
+     }
+   }
+   return factory;
+}
 std::shared_ptr<oepdev::GenEffParFactory> oepdev::GenEffParFactory::build(const std::string& type, 
                                                   std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt)
 {

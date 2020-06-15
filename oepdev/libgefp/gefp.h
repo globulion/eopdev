@@ -807,6 +807,12 @@ class GenEffParFactory
    static std::shared_ptr<GenEffParFactory> build(const std::string& type, 
                                                   std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
 
+   static std::shared_ptr<GenEffParFactory> build(const std::string& type, 
+                                                  std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt,
+                                                  psi::SharedBasisSet aux, psi::SharedBasisSet intermed);
+
+
+
    /// Construct from wavefunction and Psi4 options
    GenEffParFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
 
@@ -931,7 +937,7 @@ class EFP2_GEFactory : public GenEffParFactory
     virtual std::shared_ptr<oepdev::DMTPole> compute_dmtp(void);
     virtual void compute_lmoc(void);
     virtual std::shared_ptr<oepdev::CPHF> compute_cphf(void);
-    virtual void assemble_parameters(void);
+    virtual void assemble_efp2_parameters(void);
 
     virtual void assemble_geometry_data(void);
     virtual void assemble_dmtp_data(void);
@@ -953,6 +959,10 @@ class OEP_EFP2_GEFactory : public EFP2_GEFactory
   public:
    /// Construct from Psi4 options
    OEP_EFP2_GEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   /// Construct from Psi4 options and additional basis sets
+   OEP_EFP2_GEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt, psi::SharedBasisSet aux, psi::SharedBasisSet intermed);
+
+
 
    /// Destruct
    virtual ~OEP_EFP2_GEFactory();
@@ -962,6 +972,12 @@ class OEP_EFP2_GEFactory : public EFP2_GEFactory
 
   protected:
 
+   virtual void assemble_oep_efp2_parameters(void);
+
+   psi::SharedBasisSet auxiliary_;
+   psi::SharedBasisSet intermediate_;
+   oepdev::SharedOEPotential oep_rep_;
+   oepdev::SharedOEPotential oep_ct_;
 };
 
 
