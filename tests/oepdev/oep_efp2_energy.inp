@@ -33,6 +33,9 @@ set {
     efp2_ct_no_octupoles          True
     oepdev_enable_trial           False
     df_basis_oep                  aug-cc-pvdz-jkfit
+    df_basis_int                  aug-cc-pvdz-jkfit
+    oepdev_df_type                single
+    #wfn_union_localizer           boys
     # ==> General Psi4 Options <== #
     basis                         6-311++G(2df)
     scf_type                      pk
