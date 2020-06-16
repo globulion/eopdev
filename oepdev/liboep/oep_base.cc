@@ -46,6 +46,7 @@ OEPotential::OEPotential(const OEPotential* f) {
   localizer_ = f->localizer_;
   // Do deep-copy on those:
   name_ = f->name_;
+  use_localized_orbitals = f->use_localized_orbitals;
   if (f->cOcc_) cOcc_ = f->cOcc_->clone();
   if (f->cVir_) cVir_ = f->cVir_->clone();
   if (f->potMat_) {potMat_= f->potMat_->clone();} else {potMat_=nullptr;}
@@ -87,6 +88,7 @@ void OEPotential::common_init(void)
    localizer_   = nullptr; //psi::Localizer::build(options_.get_str("SOLVER_CT_LOCALIZER"), primary_, cOcc_, options_);
    T_           = nullptr;
    lmoc_        = {nullptr, nullptr, nullptr};
+   use_localized_orbitals = false;
 }
 std::vector<psi::SharedVector> OEPotential::mo_centroids(psi::SharedMatrix C){
    std::vector<std::shared_ptr<psi::Matrix>> Rao;                                                                  
@@ -163,7 +165,34 @@ std::shared_ptr<OEPotential3D<OEPotential>> OEPotential::make_oeps3d(const std::
       return oeps3d;
 }
 void OEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {}
+void OEPotential::rotate_basic(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
+  // Rotate orbitals
+  psi::SharedMatrix Ri = R_prim->clone(); Ri->invert(); Ri->transpose_this();
+  psi::SharedMatrix new_cOcc = psi::Matrix::doublet(Ri, cOcc_, true, false);
+  psi::SharedMatrix new_cVir = psi::Matrix::doublet(Ri, cVir_, true, false);
+  this->cOcc_->copy(new_cOcc);
+  this->cVir_->copy(new_cVir);
+  if (lOcc_) {
+  psi::SharedMatrix new_lOcc = psi::Matrix::doublet(Ri, lOcc_, true, false);
+  this->lOcc_->copy(new_lOcc);
+  }
+
+  // Rotate lmoc_
+  //TODO - now not necessary!
+  // 
+
+  // Rotate potMat_
+  if (potMat_) {
+  psi::SharedMatrix new_potMat = psi::Matrix::triplet(R_prim, potMat_, R_prim, true, false, false);
+  this->potMat_->copy(new_potMat);
+  }
+}
 void OEPotential::translate(psi::SharedVector t) {}
+void OEPotential::translate_basic(psi::SharedVector t) {
+  // Translate lmoc_
+  //TODO - now not necessary!
+  // 
+}
 void OEPotential::superimpose(const Matrix& refGeometry,
                               const std::vector<int>& supList,
                               const std::vector<int>& reordList) {}

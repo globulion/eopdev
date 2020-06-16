@@ -987,6 +987,8 @@ class OEP_EFP2_GEFactory : public EFP2_GEFactory
 
    virtual void assemble_oep_efp2_parameters(void);
 
+   virtual void assemble_oep_lmo_centroids(void);
+
    psi::SharedBasisSet auxiliary_;
    psi::SharedBasisSet intermediate_;
    oepdev::SharedOEPotential oep_rep_;

@@ -265,11 +265,14 @@ void EETCouplingOEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_pri
   oepTypes_.at("Fujimoto.CIS").cis_data->trcamm->rotate(r);
   oepTypes_.at("Fujimoto.CIS").cis_data->camm_homo->rotate(r);
   oepTypes_.at("Fujimoto.CIS").cis_data->camm_lumo->rotate(r);
-  
+
+  this->rotate_basic(r, R_prim, R_aux);
 }
 void EETCouplingOEPotential::translate(psi::SharedVector t) {
   // Potential "Fujimoto.CIS"
   oepTypes_.at("Fujimoto.CIS").cis_data->trcamm->translate(t);
   oepTypes_.at("Fujimoto.CIS").cis_data->camm_homo->translate(t);
   oepTypes_.at("Fujimoto.CIS").cis_data->camm_lumo->translate(t);
+
+  this->translate_basic(t);
 }

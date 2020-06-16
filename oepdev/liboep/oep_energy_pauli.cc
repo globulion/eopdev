@@ -72,7 +72,13 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
 
    // ===> Allocate <=== //
    std::shared_ptr<psi::Matrix> Vao = std::make_shared<psi::Matrix>("Vao" , primary_->nbf(), target->nbf());
-   std::shared_ptr<psi::Matrix> Ca_occ = wfn_->Ca_subset("AO","OCC");
+   std::shared_ptr<psi::Matrix> Ca_occ;
+   //if (options_.get_bool("OEPDEV_OEP_REP_LOCALIZE")) {
+   if (this->use_localized_orbitals) {
+       if (!localizer_) this->localize();
+       Ca_occ = this->lOcc_;
+   }
+   else {Ca_occ = this->cOcc_;} //wfn_->Ca_subset("AO","OCC");
 
    psi::IntegralFactory fact_1(primary_, target, primary_, target);
    psi::IntegralFactory fact_2(primary_, primary_, primary_, target);
@@ -153,6 +159,15 @@ void RepulsionEnergyOEPotential::compute_otto_ladik_s2_camm_a()
    // ==> Initialize CAMM object <== //
    SharedDMTPole camm = oepdev::DMTPole::build("CAMM", wfn_, nocc);
 
+   // ==> Choose which orbitals to use <== //
+   psi::SharedMatrix Ca_occ;
+   //if (options_.get_bool("OEPDEV_OEP_REP_LOCALIZE")) {
+   if (this->use_localized_orbitals) {
+       if (!localizer_) this->localize();
+       Ca_occ = this->lOcc_;
+   }
+   else {Ca_occ = this->cOcc_;} 
+
    // ==> Compute the vector of OED's <== //
    std::vector<psi::SharedMatrix> oeds;
    std::vector<bool> trans;
@@ -167,7 +182,7 @@ void RepulsionEnergyOEPotential::compute_otto_ladik_s2_camm_a()
 
 	for (int a=0; a<nbf; ++a) {
         for (int b=0; b<nbf; ++b) {
-	     oed_p[a][b] = cOcc_->get(a,i) * cOcc_->get(b,i);
+	     oed_p[a][b] = Ca_occ->get(a,i) * Ca_occ->get(b,i);
         }
 	}
 	oeds.push_back(oed);
@@ -190,6 +205,15 @@ void RepulsionEnergyOEPotential::compute_otto_ladik_s2_camm_A()
    SharedDMTPole camm = oepdev::DMTPole::build("CAMM", wfn_, nocc);
    SharedMatrix Da = wfn_->Da()->clone();
 
+   // ==> Choose which orbitals to use <== //
+   psi::SharedMatrix Ca_occ;
+   //if (options_.get_bool("OEPDEV_OEP_REP_LOCALIZE")) {
+   if (this->use_localized_orbitals) {
+       if (!localizer_) this->localize();
+       Ca_occ = this->lOcc_;
+   }
+   else {Ca_occ = this->cOcc_;} 
+
    // ==> Compute the vector of OED's <== //
    std::vector<psi::SharedMatrix> oeds;
    std::vector<bool> trans;
@@ -204,7 +228,7 @@ void RepulsionEnergyOEPotential::compute_otto_ladik_s2_camm_A()
 
 	for (int a=0; a<nbf; ++a) {
         for (int b=0; b<nbf; ++b) {
-	     oed_p[a][b] = cOcc_->get(a,i) * cOcc_->get(b,i);
+	     oed_p[a][b] = Ca_occ->get(a,i) * Ca_occ->get(b,i);
         }
 	}
 	oed->scale(-0.5);
@@ -246,7 +270,17 @@ void RepulsionEnergyOEPotential::compute_3D_otto_ladik_s2(const double& x, const
   potInt_->set_charge_field(x, y, z);
   OEInt_ = potInt_;
   OEInt_->compute(potMat_);
-  std::shared_ptr<psi::Matrix> potMO = psi::Matrix::triplet(cOcc_, potMat_, cOcc_, true, false, false);
+
+  // ==> Choose which orbitals to use <== //
+  psi::SharedMatrix Ca_occ;
+  //if (options_.get_bool("OEPDEV_OEP_REP_LOCALIZE")) {
+  if (this->use_localized_orbitals) {
+      if (!localizer_) this->localize();
+      Ca_occ = this->lOcc_;
+  }
+  else {Ca_occ = this->cOcc_;} 
+
+  psi::SharedMatrix potMO = psi::Matrix::triplet(Ca_occ, potMat_, Ca_occ, true, false, false);
   potMat_->zero();
   //for (int o=0; o<oepTypes_["Otto-Ladik.S2.ESP"].n; ++o) val += 2.0 * potMO->get(o, o);
   val += 2.0 * potMO->trace();
@@ -273,6 +307,8 @@ void RepulsionEnergyOEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R
 
   // Potential "Otto-Ladik.S2.CAMM.A"
   oepTypes_.at("Otto-Ladik.S2.CAMM.A").dmtp->rotate(r);
+
+  this->rotate_basic(r, R_prim, R_aux);
 }
 void RepulsionEnergyOEPotential::translate(psi::SharedVector t) {
 
@@ -280,4 +316,6 @@ void RepulsionEnergyOEPotential::translate(psi::SharedVector t) {
   oepTypes_.at("Otto-Ladik.S2.CAMM.a").dmtp->translate(t);
   // Potential "Otto-Ladik.S2.CAMM.A"
   oepTypes_.at("Otto-Ladik.S2.CAMM.A").dmtp->translate(t);
+
+  this->translate_basic(t);
 }

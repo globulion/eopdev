@@ -431,7 +431,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_exrep(std::shared_ptr<Ge
  psi::Process::environment.globals["EINT REP EFP2:S2 KCAL"] = v_e_rs2;
  
  e_tot = e_s1 + e_s2 + e_ex;
-// cout << e_s1 << " " << e_s2 << " " << e_ex << endl;
+//cout << e_s1 << " " << e_s2 << " " << e_ex << endl;
  return e_tot;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ind(std::shared_ptr<GenEffFrag> other) {
@@ -752,6 +752,16 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_disp(std::shared_ptr<Gen
  return 0.0;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other) {
+
+ /* Note:
+  *
+  * This implements repulsion energy from OEP-Murrell-etal by using localized molecular orbitals for S-1 term 
+  * as well as a conventional EFP2 S-2 term by using the same orbitals
+  * This saves a bit of time because the same orbital sets are used for S-1 and S-2. 
+  * Theoretically, canonical orbitals could be also used for the S-1 term here with exactly the same result, 
+  * but then more calculations and memory is required.
+  */
+
  // Initialize results
  double e_s1 = 0.0, e_s2 = 0.0, e_ex = 0.0, e_tot = 0.0;
 
@@ -768,10 +778,10 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_pt
  psi::SharedBasisSet primary_2 = other->parameters["efp2"]->basisset("primary");
  psi::SharedBasisSet auxiliary_1 =  this->parameters["efp2"]->basisset("auxiliary");
  psi::SharedBasisSet auxiliary_2 = other->parameters["efp2"]->basisset("auxiliary");
- psi::SharedMatrix cmoo_1 =  this->parameters["efp2"]->matrix("cmoo");
- psi::SharedMatrix cmoo_2 = other->parameters["efp2"]->matrix("cmoo");
- psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc");
- psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc");
+ psi::SharedMatrix lmoo_1 =  this->parameters["efp2"]->matrix("lmoo-oep");
+ psi::SharedMatrix lmoo_2 = other->parameters["efp2"]->matrix("lmoo-oep");
+ psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc-oep");
+ psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc-oep");
  const int nbf_a1 =auxiliary_1->nbf();
  const int nbf_a2 =auxiliary_2->nbf();
 
@@ -795,9 +805,9 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_pt
  ovlInt_1a2p->compute(Sao_1a2p);
  ovlInt_1p2a->compute(Sao_1p2a);
 
- psi::SharedMatrix Smo = psi::Matrix::triplet(cmoo_1, Sao_1p2p, cmoo_2, true, false, false);
- psi::SharedMatrix Sba = psi::Matrix::doublet(cmoo_2, Sao_1a2p, true, true);
- psi::SharedMatrix Sab = psi::Matrix::doublet(cmoo_1, Sao_1p2a, true, false);
+ psi::SharedMatrix Smo = psi::Matrix::triplet(lmoo_1, Sao_1p2p, lmoo_2, true, false, false);
+ psi::SharedMatrix Sba = psi::Matrix::doublet(lmoo_2, Sao_1a2p, true, true);
+ psi::SharedMatrix Sab = psi::Matrix::doublet(lmoo_1, Sao_1p2a, true, false);
 
  psi::SharedMatrix SSG1= psi::Matrix::triplet(Smo, Sba, oep_1->matrix("Murrell-etal.S1"), false, false, false);
  psi::SharedMatrix SSG2= psi::Matrix::triplet(Smo, Sab, oep_2->matrix("Murrell-etal.S1"), true, false, false);
@@ -929,6 +939,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_pt
  psi::Process::environment.globals["EINT REP OEP EFP2:S2 KCAL"] = v_e_rs2;
  
  e_tot = e_s1 + e_s2 + e_ex;
+  cout << e_s1 << " " << e_s2 << " " << e_ex << endl;
  return e_tot;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other) {
@@ -954,12 +965,12 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
  psi::SharedMatrix cmoo_2 = other->parameters["efp2"]->matrix("cmoo");
  psi::SharedMatrix cmov_1 =  this->parameters["efp2"]->matrix("cmov");
  psi::SharedMatrix cmov_2 = other->parameters["efp2"]->matrix("cmov");
- psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc");
- psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc");
- psi::SharedMatrix lmoo_1 = oep_1->lOcc();
- psi::SharedMatrix lmoo_2 = oep_2->lOcc();
- psi::SharedMatrix U_1 = oep_1->T();
- psi::SharedMatrix U_2 = oep_2->T();
+ psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc-oep");
+ psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc-oep");
+ psi::SharedMatrix lmoo_1 =  this->parameters["efp2"]->matrix("lmoo-oep");
+ psi::SharedMatrix lmoo_2 = other->parameters["efp2"]->matrix("lmoo-oep");
+ psi::SharedMatrix U_1 =  this->parameters["efp2"]->matrix("cmoo2lmoo");
+ psi::SharedMatrix U_2 = other->parameters["efp2"]->matrix("cmoo2lmoo");
  psi::SharedVector e_occ_1 =  this->parameters["efp2"]->vector("epso");
  psi::SharedVector e_occ_2 = other->parameters["efp2"]->vector("epso"); 
  psi::SharedVector e_vir_1 =  this->parameters["efp2"]->vector("epsv"); 

@@ -245,6 +245,8 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     /// Set the name of this OEP
     void set_name(const std::string& name) {name_ = name;}
 
+    /// Whether to use localized molecular orbitals in OEP calculation; Default: False
+    bool use_localized_orbitals;
 
     // <--- Printers ---> //
 
@@ -257,6 +259,11 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
   protected:
    /// Deep-copy the data
    virtual void copy_from(const OEPotential*);
+   /// Rotate basic data
+   virtual void rotate_basic(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux);
+   /// Translate basic data
+   virtual void translate_basic(psi::SharedVector t);
+
 
   private:
 

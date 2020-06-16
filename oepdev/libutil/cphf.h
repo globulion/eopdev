@@ -224,6 +224,9 @@ class CPHF {
      //@}
 };
 
+/// CPHF object
+using SharedCPHF = std::shared_ptr<CPHF>;
+
 /** @}*/
 }// EndNameSpace oepdev
 

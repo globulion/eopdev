@@ -17,8 +17,8 @@ oepdev::EFP2_GEFactory::~EFP2_GEFactory() { }
 
 std::shared_ptr<oepdev::GenEffPar> oepdev::EFP2_GEFactory::compute()
 {
-   std::shared_ptr<oepdev::DMTPole> camm = this->compute_dmtp();
-   std::shared_ptr<oepdev::CPHF> cphf = this->compute_cphf();
+   oepdev::SharedDMTPole camm = this->compute_dmtp();
+   oepdev::SharedCPHF cphf = this->compute_cphf();
 
    dmtp_ = camm;
    cphfSolver_ = cphf;
@@ -28,18 +28,18 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::EFP2_GEFactory::compute()
    return this->EFP2Parameters_;
 }
 
-std::shared_ptr<oepdev::DMTPole> oepdev::EFP2_GEFactory::compute_dmtp() {
+oepdev::SharedDMTPole oepdev::EFP2_GEFactory::compute_dmtp() {
   psi::outfile->Printf(" @EFP2_GEFactory: Calculating CAMM...\n");
-  std::shared_ptr<oepdev::DMTPole> camm = oepdev::DMTPole::build("CAMM", wfn_);
+  oepdev::SharedDMTPole camm = oepdev::DMTPole::build("CAMM", wfn_);
   camm->compute();
   psi::outfile->Printf(" @EFP2_GEFactory: CAMM Done.\n");
   return camm;
 }
 
 void oepdev::EFP2_GEFactory::compute_lmoc() {}
-std::shared_ptr<oepdev::CPHF> oepdev::EFP2_GEFactory::compute_cphf() {
+oepdev::SharedCPHF oepdev::EFP2_GEFactory::compute_cphf() {
   psi::outfile->Printf(" @EFP2_GEFactory: Solving CPHF Equations...\n");
-  std::shared_ptr<oepdev::CPHF> cphf = std::make_shared<oepdev::CPHF>(wfn_, options_);
+  oepdev::SharedCPHF cphf = std::make_shared<oepdev::CPHF>(wfn_, options_);
   cphf->compute();
   psi::outfile->Printf(" @EFP2_GEFactory: CPHF Done.\n");
   return cphf;
@@ -99,7 +99,6 @@ void oepdev::EFP2_GEFactory::assemble_fock_matrix() {
 
   this->EFP2Parameters_->set_vector("epso", eps_a_occ_canonical);
   this->EFP2Parameters_->set_vector("epsv", eps_a_vir_canonical);
-
 }
 
 void oepdev::EFP2_GEFactory::assemble_distributed_polarizabilities() {

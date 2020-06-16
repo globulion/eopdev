@@ -608,6 +608,10 @@ class CAMM : public DMTPole
    void initialize_sites(void);
 };
 
+/// DMTPole object
+using SharedDMTPole = std::shared_ptr<DMTPole>;
+
+
 /** @}*/
 
 } // EndNameSpace oepdev

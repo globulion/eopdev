@@ -173,9 +173,13 @@ void ChargeTransferEnergyOEPotential::rotate(psi::SharedMatrix r, psi::SharedMat
 
   // Potential "Otto-Ladik.V3.CAMM-nj"
   oepTypes_.at("Otto-Ladik.V3.CAMM-nj").dmtp->rotate(r);
+
+  this->rotate_basic(r, R_prim, R_aux);
 }
 void ChargeTransferEnergyOEPotential::translate(psi::SharedVector t) {
 
   // Potential "Otto-Ladik.V3.CAMM-nj"
   oepTypes_.at("Otto-Ladik.V3.CAMM.nj").dmtp->translate(t);
+
+  this->translate_basic(t);
 }
