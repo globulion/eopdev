@@ -580,6 +580,11 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
        auto temp = std::make_shared<GenEffFrag>(this);
        return temp;
    }
+   /// Create an empty fragment
+   static std::shared_ptr<GenEffFrag> build(std::string name) {
+       auto temp = std::make_shared<GenEffFrag>(name);
+       return temp;
+   }
    /// Destruct
   ~GenEffFrag();
    //@}
@@ -1624,6 +1629,52 @@ class UnitaryTransformedMOPolarGEFactory : public AbInitioPolarGEFactory
    std::shared_ptr<GenEffPar> compute(void);
 
 };
+
+/// GEFP Parameters container
+using SharedGenEffPar = std::shared_ptr<GenEffPar>;
+/// GEFP Parameter factory
+using SharedGenEffParFactory = std::shared_ptr<GenEffParFactory>;
+/// GEFP Fragment container
+using SharedGenEffFrag = std::shared_ptr<GenEffFrag>;
+
+/** \example example_gefp.cc
+ *  ## Working with GenEffFrag objects
+ *  
+ *  At the moment, `psi::Molecule` and `psi::BasisSet` objects do not have
+ *  Cartesian rotation implemented which prohibits using them as containers
+ *  in OEPDev. On the other hand, many calculations in FB approaches require
+ *  molecule and basis set rotation. Therefore, to temporarily overcome this
+ *  technical difficulty, molecule and basis set objects need to be supplied
+ *  for each fragment in the system by building them from scratch. Below, 
+ *  the guideline for fragment generation and manipulation is given:
+ *  \code{cpp}
+ *  // Create empty fragment
+ *  SharedGenEffFrag fragment = oepdev::GenEffFrag::build("Ethylene");
+ *  // Set the parameters
+ *  fragment->parameters["efp2"] = par_efp2;
+ *  fragment->parameters["eet"] = par_eet;
+ *  // Set the current molecule and basis set
+ *  fragment->set_molecule(mol);
+ *  // Set the number of doubly occupied MOs and number of primary basis functions at the end
+ *  fragment->set_ndocc(ndocc);
+ *  fragment->set_nbf(nbf);
+ *  \endcode
+ *  Creating the parameters can be done by using an appropriate factory
+ *  \code{cpp}
+ *   SharedGenEffParFactory factory = GenEffParFactory::build("OEP-EFP2", wfn, options, auxiliary, intermediate);
+ *   SharedGenEffPar parameters = factory->compute();
+ *  \endcode
+ *  Currently, parameters are not created with allocated basis set objects
+ *  due to the above mentioned problem in Psi4 regarding lack of functionality of basis set rotation.
+ *  Therefore, **it is important to first set the parameters before setting the basis set**
+ *  when constructing the fragments.
+ *  It is because using the `set_basisset` method for the fragment sets the basis set
+ *  for all parameters as well, and if the parameters were set after the basis set, 
+ *  they would not have any basis sets allocated leading to errors in FB calculations.
+ *  This problem will not emerge once a rotation of `psi::BasisSet` is implemented (either
+ *  in Psi4 or in OEPDev).
+ */
+
 
 
 /** @}*/

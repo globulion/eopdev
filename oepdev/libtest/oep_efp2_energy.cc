@@ -27,25 +27,26 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
   const double ref_eint      = ref_eint_coul + ref_eint_exrep + ref_eint_ind + ref_eint_ct + ref_eint_disp;
 
   // Create WFN Union
-  std::shared_ptr<oepdev::WavefunctionUnion> wfn_union = std::make_shared<oepdev::WavefunctionUnion>(wfn_, options_);
-
-  // Compute EFP2 parameters for fragment 1
-  std::shared_ptr<GenEffParFactory> factory = oepdev::GenEffParFactory::build("OEP-EFP2", wfn_union->l_wfn(0), options_,
-                                                               wfn_union->l_auxiliary(0), wfn_union->l_intermediate(0));
-  std::shared_ptr<GenEffPar> parameters = factory->compute();
-
-  // Create EFP2 Fragments
-  std::shared_ptr<GenEffFrag> frag_1 = std::make_shared<oepdev::GenEffFrag>("Fragment 1");
-  std::shared_ptr<GenEffFrag> frag_2 = std::make_shared<oepdev::GenEffFrag>("Fragment 2");
-
+  oepdev::SharedWavefunctionUnion wfn_union = std::make_shared<oepdev::WavefunctionUnion>(wfn_, options_);
   wfn_union->l_molecule(0)->print();
   wfn_union->l_molecule(1)->print();
 
-  std::shared_ptr<GenEffPar> par_1 = parameters->clone();
-  std::shared_ptr<GenEffPar> par_2 = parameters->clone();
+  // Compute EFP2 parameters for fragment 1
+  oepdev::SharedGenEffParFactory factory = oepdev::GenEffParFactory::build("OEP-EFP2", wfn_union->l_wfn(0), options_,
+                                                               wfn_union->l_auxiliary(0), wfn_union->l_intermediate(0));
+  oepdev::SharedGenEffPar parameters = factory->compute();
+
+  // Create EFP2 Fragments
+  oepdev::SharedGenEffFrag frag_1 = oepdev::GenEffFrag::build("Fragment 1");
+  oepdev::SharedGenEffFrag frag_2 = oepdev::GenEffFrag::build("Fragment 2");
+
+  // Set the parameters first
+  oepdev::SharedGenEffPar par_1 = parameters->clone();
+  oepdev::SharedGenEffPar par_2 = parameters->clone();
   frag_1->parameters["efp2"] = par_1;
   frag_2->parameters["efp2"] = par_2;
 
+  // Set the molecule and basis sets
   frag_1->set_molecule(wfn_union->l_molecule(0));
   frag_2->set_molecule(wfn_union->l_molecule(1));
   frag_1->set_basisset("primary", wfn_union->l_primary(0)); // set_basisset has to be invoked after parameters exist
@@ -53,6 +54,7 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
   frag_1->set_basisset("auxiliary", wfn_union->l_auxiliary(0)); 
   frag_2->set_basisset("auxiliary", wfn_union->l_auxiliary(1));
 
+  // Set other important data
   frag_1->set_ndocc(wfn_union->l_ndocc(0));
   frag_2->set_ndocc(wfn_union->l_ndocc(1));
   frag_1->set_nbf(wfn_union->l_nbf(0));
@@ -63,11 +65,11 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
   frag_2->superimpose();
 
   // Compute interaction energy
-  double eint_coul = frag_1->energy("EFP2:COUL", frag_2);
-  double eint_exrep= frag_1->energy("OEPb-EFP2:EXREP",frag_2);
-  double eint_ind  = frag_1->energy("EFP2:IND" , frag_2);
-  double eint_ct   = frag_1->energy("OEPb-EFP2:CT"  , frag_2);
-  double eint_disp = frag_1->energy("EFP2:DISP", frag_2);
+  double eint_coul = frag_1->energy("EFP2:COUL"      , frag_2);
+  double eint_exrep= frag_1->energy("OEPb-EFP2:EXREP", frag_2);
+  double eint_ind  = frag_1->energy("EFP2:IND"       , frag_2);
+  double eint_ct   = frag_1->energy("OEPb-EFP2:CT"   , frag_2);
+  double eint_disp = frag_1->energy("EFP2:DISP"      , frag_2);
 
   double eint = eint_coul + eint_ind + eint_exrep + eint_ct + eint_disp;
 

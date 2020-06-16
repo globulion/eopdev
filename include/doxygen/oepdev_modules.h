@@ -22,6 +22,17 @@
  *  Implements the GEFP method, the far goal of the OEPDev project.
  *  Here you will find the containers for GEFP parameters, the density matrix
  *  susceptibility tensors and GEFP solvers. Located at `oepdev/libgefp`.
+ *
+ *  The objective is to implement the framework for the fragment-based (FB)
+ *  calculations in which the system is divided into interacting fragments.
+ *  The functionality relies on a few data structures: 
+ *    - the `GenEffFrag` - Generalized Effective Fragment
+ *    - the `GenEffPar` - Generalized Effective Parameters
+ *    - the `GenEffParFactory` - Generalized Effective Parameters Factory
+ *  Fragments can contain multiple types of parameters, e.g., ethylene fragment
+ *  can have EFP2, OEP-EFP2 as well as OEP-EET parameters. Fragments can
+ *  be superimposed on target structures and the class contain methods that evaluate
+ *  properties based on the fragments in the system.
  */
 
 /**
