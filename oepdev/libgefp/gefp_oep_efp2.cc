@@ -35,8 +35,8 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::OEP_EFP2_GEFactory::compute()
 
    oep_ct_->use_localized_orbitals = false;
    oep_ct_->compute("Otto-Ladik.V1.GDF");
+   oep_ct_->set_localized_orbitals(oep_rep_);
    oep_ct_->use_localized_orbitals = true;
-   oep_ct_->localize();
    oep_ct_->compute("Otto-Ladik.V3.CAMM-nj");
 
    // Assemble all

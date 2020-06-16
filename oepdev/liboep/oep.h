@@ -245,6 +245,12 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     /// Set the name of this OEP
     void set_name(const std::string& name) {name_ = name;}
 
+    /// Set the localized molecular orbitals in OEP calculation
+    void set_localized_orbitals(std::shared_ptr<psi::Localizer> localizer);
+
+    /// Set the localized molecular orbitals in OEP calculation
+    void set_localized_orbitals(std::shared_ptr<OEPotential> oep) {if (oep->localizer_) set_localized_orbitals(oep->localizer_);}
+
     /// Whether to use localized molecular orbitals in OEP calculation; Default: False
     bool use_localized_orbitals;
 

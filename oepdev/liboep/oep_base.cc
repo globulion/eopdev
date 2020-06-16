@@ -108,17 +108,22 @@ std::vector<psi::SharedVector> OEPotential::mo_centroids(psi::SharedMatrix C){
    }
    return Rmo;
 }
+void OEPotential::set_localized_orbitals(std::shared_ptr<psi::Localizer> localizer) {
+   // LMO's
+   lOcc_ = localizer->L()->clone();
+   // LMO centroids
+   lmoc_ = this->mo_centroids(lOcc_);
+   // Transformation
+   T_ = localizer->U()->clone();
+   // 
+   localizer_ = localizer;
+}
 void OEPotential::localize(void) 
 {
    std::string o_loc = options_.get_str("SOLVER_CT_LOCALIZER");
    localizer_ = psi::Localizer::build(o_loc, primary_, cOcc_, options_);
    localizer_->localize();
-   // LMO's
-   lOcc_ = localizer_->L()->clone();
-   // LMO centroids
-   lmoc_ = this->mo_centroids(lOcc_);
-   // Transformation
-   T_ = localizer_->U()->clone();
+   this->set_localized_orbitals(localizer_);
 }
 std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, SharedWavefunction wfn, Options& options)
 {
