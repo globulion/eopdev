@@ -872,6 +872,7 @@ DMTPole::DMTPole(const DMTPole* d) {
  origins_ = std::make_shared<psi::Matrix>(d->origins_);
  this->copy_from(d);
 }
+SharedDMTPole DMTPole::clone(void) const {}
 
 void DMTPole::copy_from(const DMTPole* d) {
  //
@@ -934,8 +935,10 @@ psi::SharedVector DMTPole::origin(int x) const {
  for (int z=0; z<3; ++z) r->set(z, origins_->get(x, z));
  return r;
 }
-std::shared_ptr<DMTPole> DMTPole::empty(void) {
- std::shared_ptr<DMTPole> empty_dmtp = std::make_shared<DMTPole>();
+std::shared_ptr<DMTPole> DMTPole::empty(std::string type) {
+ SharedDMTPole empty_dmtp;
+ if (type == "CAMM") { empty_dmtp = std::make_shared<CAMM>();}
+ else {throw psi::PSIEXCEPTION("Trying to create empty DMTPole object of unknown or not implemted type!\n");}
  return empty_dmtp;
 }
 MultipoleConvergence::ConvergenceLevel DMTPole::determine_dmtp_convergence_level(const std::string& option)
@@ -1246,7 +1249,7 @@ std::shared_ptr<MultipoleConvergence> DMTPole::energy(std::shared_ptr<DMTPole> o
 }
 std::shared_ptr<MultipoleConvergence> DMTPole::potential(const double& x, const double& y, const double& z, MultipoleConvergence::ConvergenceLevel max_clevel)
 {
-  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), DMTPole::empty(), max_clevel);
+  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), DMTPole::empty("CAMM"), max_clevel);
   convergence->compute(x, y, z, MultipoleConvergence::Potential);
   //std::vector<double> potentials;
   //for (int i=0; i<nDMTPs_; ++i) potentials.push_back(0.0);
@@ -1257,7 +1260,7 @@ std::shared_ptr<MultipoleConvergence> DMTPole::potential(const double& x, const 
 }
 std::shared_ptr<MultipoleConvergence> DMTPole::field(const double& x, const double& y, const double& z, MultipoleConvergence::ConvergenceLevel max_clevel)
 {
-  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), DMTPole::empty(), max_clevel);
+  std::shared_ptr<MultipoleConvergence> convergence = std::make_shared<MultipoleConvergence>(shared_from_this(), DMTPole::empty("CAMM"), max_clevel);
   convergence->compute(x, y, z, MultipoleConvergence::Field);
   return convergence;
 }
@@ -1267,10 +1270,14 @@ void DMTPole::translate(psi::SharedVector transl)
 {
    double** c = centres_->pointer();
    double** o = origins_->pointer();
+   const double tx = transl->get(0);
+   const double ty = transl->get(1);
+   const double tz = transl->get(2);
+
    for (int i=0; i<nSites_; ++i) {
-	c[i][0] += transl->get(0); o[i][0] += transl->get(0); 
-	c[i][1] += transl->get(1); o[i][1] += transl->get(1);
-	c[i][2] += transl->get(2); o[i][2] += transl->get(2);
+	c[i][0] += tx; o[i][0] += tx; 
+	c[i][1] += ty; o[i][1] += ty;
+	c[i][2] += tz; o[i][2] += tz;
    }
 }
 /// Rotate the DMTP sets

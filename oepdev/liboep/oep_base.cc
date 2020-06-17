@@ -17,9 +17,9 @@ OEPType::OEPType(const OEPType* f) {
    this->name = f->name;
    this->is_density_fitted = f->is_density_fitted;
    this->n = f->n;
-   if (f->matrix) this->matrix = f->matrix->clone();
-   if (f->dmtp) this->dmtp = f->dmtp->clone();
-   if (f->cis_data) this->cis_data = std::make_shared<CISData>(f->cis_data.get());
+   if (f->matrix) {this->matrix = f->matrix->clone(); } else {this->matrix = f->matrix;}
+   if (f->dmtp) {this->dmtp = f->dmtp->clone();} else {this->dmtp = f->dmtp;}
+   if (f->cis_data) {this->cis_data = std::make_shared<CISData>(f->cis_data.get());} else {this->cis_data = f->cis_data;}
 }
 
 OEPotential::OEPotential(SharedWavefunction wfn, Options& options) 
@@ -47,20 +47,22 @@ OEPotential::OEPotential(const OEPotential* f) {
   // Do deep-copy on those:
   name_ = f->name_;
   use_localized_orbitals = f->use_localized_orbitals;
-  if (f->cOcc_) cOcc_ = f->cOcc_->clone();
-  if (f->cVir_) cVir_ = f->cVir_->clone();
-  if (f->potMat_) {potMat_= f->potMat_->clone();} else {potMat_=nullptr;}
-  if (f->lOcc_) {lOcc_ = f->lOcc_->clone();} else {lOcc_=nullptr;}
-  if (f->T_) {T_ = f->T_->clone();} else {T_=nullptr;}
+  if (f->cOcc_) {cOcc_ = f->cOcc_->clone();} else {cOcc_ = f->cOcc_;}
+  if (f->cVir_) {cVir_ = f->cVir_->clone();} else {cVir_ = f->cVir_;}
+  if (f->potMat_) {potMat_= f->potMat_->clone();} else {potMat_=f->potMat_;}
+  if (f->lOcc_) {lOcc_ = f->lOcc_->clone();} else {lOcc_=f->lOcc_;}
+  if (f->T_) {T_ = f->T_->clone();} else {T_=f->T_;}
   // Set to null
-  intsFactory_ = nullptr;
-  OEInt_= nullptr;
-  potInt_ = nullptr;
+  intsFactory_ = f->intsFactory_; //nullptr;
+  OEInt_= f->OEInt_; //nullptr;
+  potInt_ = f->potInt_; //nullptr;
   // Copy the rest (lmoc_ and oepTypes_)
   this->copy_from(f);
 }
+SharedOEPotential OEPotential::clone(void) const {}
 void OEPotential::copy_from(const OEPotential* f) {
   // copy lmoc_
+  this->lmoc_.clear();
   this->lmoc_ = {nullptr, nullptr, nullptr};
   if (f->lmoc_[0]) {
       this->lmoc_[0] = std::make_shared<psi::Vector>(*(f->lmoc_[0])); 
@@ -169,17 +171,20 @@ std::shared_ptr<OEPotential3D<OEPotential>> OEPotential::make_oeps3d(const std::
                                         shared_from_this(), oepType));
       return oeps3d;
 }
-void OEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {}
+void OEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
+ this->rotate_oep(r, R_prim, R_aux);
+}
+void OEPotential::rotate_oep(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {cout<<"EEE\n";}
 void OEPotential::rotate_basic(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
   // Rotate orbitals
   psi::SharedMatrix Ri = R_prim->clone(); Ri->invert(); Ri->transpose_this();
   psi::SharedMatrix new_cOcc = psi::Matrix::doublet(Ri, cOcc_, true, false);
   psi::SharedMatrix new_cVir = psi::Matrix::doublet(Ri, cVir_, true, false);
-  this->cOcc_->copy(new_cOcc);
-  this->cVir_->copy(new_cVir);
+  this->cOcc_ = new_cOcc;
+  this->cVir_ = new_cVir;
   if (lOcc_) {
   psi::SharedMatrix new_lOcc = psi::Matrix::doublet(Ri, lOcc_, true, false);
-  this->lOcc_->copy(new_lOcc);
+  this->lOcc_ = new_lOcc;
   }
 
   // Rotate lmoc_
@@ -189,10 +194,11 @@ void OEPotential::rotate_basic(psi::SharedMatrix r, psi::SharedMatrix R_prim, ps
   // Rotate potMat_
   if (potMat_) {
   psi::SharedMatrix new_potMat = psi::Matrix::triplet(R_prim, potMat_, R_prim, true, false, false);
-  this->potMat_->copy(new_potMat);
+  this->potMat_ = new_potMat;
   }
 }
-void OEPotential::translate(psi::SharedVector t) {}
+void OEPotential::translate(psi::SharedVector t) {this->translate_oep(t);}
+void OEPotential::translate_oep(psi::SharedVector t) {}
 void OEPotential::translate_basic(psi::SharedVector t) {
   // Translate lmoc_
   //TODO - now not necessary!

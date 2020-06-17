@@ -11,7 +11,12 @@ using SharedField3D = std::shared_ptr<oepdev::Field3D>;
 using SharedDMTPole = std::shared_ptr<oepdev::DMTPole>;
 
 // <============== Repulsion Energy ==============> //
-
+SharedOEPotential RepulsionEnergyOEPotential::clone(void) const {
+    SharedOEPotential temp = std::make_shared<RepulsionEnergyOEPotential>(this);
+    return temp;
+}
+RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(const RepulsionEnergyOEPotential* f) 
+ : OEPotential(f)  {vec_otto_ladik_s2_ = new double[1];}
 RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(SharedWavefunction wfn, Options& options) 
  : OEPotential(wfn, options)
 { 
@@ -27,7 +32,9 @@ RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(SharedWavefunction wfn,
 
 RepulsionEnergyOEPotential::~RepulsionEnergyOEPotential() 
 {
-  delete[] vec_otto_ladik_s2_;
+  if (vec_otto_ladik_s2_) {
+     delete[] vec_otto_ladik_s2_;
+   }
 }
 void RepulsionEnergyOEPotential::common_init() 
 {
@@ -130,7 +137,7 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    std::shared_ptr<psi::Matrix> G = gdf->compute();
    
    // ===> Save and Finish <=== //
-   oepTypes_.at("Murrell-etal.S1").matrix->copy(G);
+   oepTypes_.at("Murrell-etal.S1").matrix = G;
    if (options_.get_int("PRINT") > 1) G->print();
    //psi::timer_off("OEP    E(Paul) Murrell-etal S1  ");
 }
@@ -296,11 +303,14 @@ void RepulsionEnergyOEPotential::print_header(void) const
         psi::outfile->Printf(  "      S-1 term: Murrell et.al\n");
         psi::outfile->Printf(  "      S-2 term: Otto and Ladik\n");
 }
-void RepulsionEnergyOEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
+void RepulsionEnergyOEPotential::rotate_oep(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
 
   // Potential "Murrell-etal.S1"
-  psi::SharedMatrix new_matrix = psi::Matrix::doublet(R_aux, oepTypes_.at("Murrell-etal.S1").matrix, true, false);
-  oepTypes_.at("Murrell-etal.S1").matrix->copy(new_matrix);
+  psi::SharedMatrix Ri = R_aux->clone(); Ri->invert(); Ri->transpose_this();
+  psi::SharedMatrix new_matrix = psi::Matrix::doublet(Ri, oepTypes_.at("Murrell-etal.S1").matrix, true, false);
+  oepTypes_.at("Murrell-etal.S1").matrix = new_matrix;
+//oepTypes_.at("Murrell-etal.S1").matrix->copy(new_matrix.get()); --> wrong!!! why???
+//oepTypes_["Murrell-etal.S1"].matrix->copy(new_matrix.get()); ---> wrong!!! why???
 
   // Potential "Otto-Ladik.S2.CAMM.a"
   oepTypes_.at("Otto-Ladik.S2.CAMM.a").dmtp->rotate(r);
@@ -310,7 +320,7 @@ void RepulsionEnergyOEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R
 
   this->rotate_basic(r, R_prim, R_aux);
 }
-void RepulsionEnergyOEPotential::translate(psi::SharedVector t) {
+void RepulsionEnergyOEPotential::translate_oep(psi::SharedVector t) {
 
   // Potential "Otto-Ladik.S2.CAMM.a"
   oepTypes_.at("Otto-Ladik.S2.CAMM.a").dmtp->translate(t);

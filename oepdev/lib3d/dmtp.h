@@ -172,7 +172,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
      *
      *  @return Blank DMTP distribution with memory allocated by no data.
      */
-    static std::shared_ptr<DMTPole> empty(void);
+    static std::shared_ptr<DMTPole> empty(std::string type);
 
 
     /** \brief Construct an empty DMTP object of no type.
@@ -185,10 +185,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     DMTPole(const DMTPole*);
 
     /// Make a deep copy (`wfn_`, `mol_`, and `primary_` are shallow-copied)
-    std::shared_ptr<DMTPole> clone(void) const {
-        auto temp = std::make_shared<DMTPole>(this);
-        return temp;
-    }
+    virtual std::shared_ptr<DMTPole> clone(void) const = 0;
 
     /// Destructor
     virtual ~DMTPole();
@@ -466,7 +463,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     /** \name Printers */
     //@{
     /// Print the header
-    virtual void print_header() const;
+    virtual void print_header() const = 0;
 
     /// Print the contents
     void print() const;
@@ -598,11 +595,16 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 class CAMM : public DMTPole 
 {
  public:
+   CAMM(void) : DMTPole() {};
    CAMM(psi::SharedWavefunction wfn, int n);
    CAMM(const CAMM* other) : DMTPole(other) {};
    virtual ~CAMM();
    virtual void compute(psi::SharedMatrix D, bool transition, int n);
    virtual void print_header(void) const;
+   virtual std::shared_ptr<DMTPole> clone(void) const override {
+      auto temp = std::make_shared<CAMM>(this);
+      return temp;
+   }
  private:
    /// Set the distribution sites to atoms
    void initialize_sites(void);

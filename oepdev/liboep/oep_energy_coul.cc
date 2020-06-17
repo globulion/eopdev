@@ -9,7 +9,11 @@ using SharedField3D = std::shared_ptr<oepdev::Field3D>;
 using SharedDMTPole = std::shared_ptr<oepdev::DMTPole>;
 
 // <============== Electrostatic Energy (demo class) ==============> //
-
+SharedOEPotential ElectrostaticEnergyOEPotential::clone(void) const {
+    SharedOEPotential temp = std::make_shared<ElectrostaticEnergyOEPotential>(this);
+    return temp;
+}
+ElectrostaticEnergyOEPotential::ElectrostaticEnergyOEPotential(const ElectrostaticEnergyOEPotential* f) : OEPotential(f) {}
 ElectrostaticEnergyOEPotential::ElectrostaticEnergyOEPotential(SharedWavefunction wfn, Options& options) 
  : OEPotential(wfn, options)
 { 
@@ -99,13 +103,13 @@ void ElectrostaticEnergyOEPotential::print_header(void) const
    psi::outfile->Printf("  ==> OEPotential: %s <==\n\n", name_.c_str());
    oepTypes_.at("V").matrix->print();
 }
-void ElectrostaticEnergyOEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
+void ElectrostaticEnergyOEPotential::rotate_oep(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
   // Potential "V"
   oepTypes_.at("V").dmtp->rotate(r);
 
   this->rotate_basic(r, R_prim, R_aux);
 }
-void ElectrostaticEnergyOEPotential::translate(psi::SharedVector t) {
+void ElectrostaticEnergyOEPotential::translate_oep(psi::SharedVector t) {
   // Potential "V"
   oepTypes_.at("V").dmtp->translate(t);
 

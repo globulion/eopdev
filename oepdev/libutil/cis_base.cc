@@ -12,11 +12,11 @@ const std::vector<std::string> CISComputer::reference_types = {"RHF", "UHF"};
 CISData::CISData(const CISData* f) {
  this->E_ex = f->E_ex;
  this->t_homo_lumo = f->t_homo_lumo;
- if (f->Pe) this->Pe = f->Pe->clone();
- if (f->Peg) this->Peg = f->Peg->clone();
- if (f->trcamm) this->trcamm = f->trcamm->clone();
- if (f->camm_homo) this->camm_homo = f->camm_homo->clone();
- if (f->camm_lumo) this->camm_lumo = f->camm_lumo->clone();
+ if (f->Pe) {this->Pe = f->Pe->clone();} else {this->Pe = f->Pe;}
+ if (f->Peg) {this->Peg = f->Peg->clone();} else {this->Peg = f->Peg;}
+ if (f->trcamm) {this->trcamm = f->trcamm->clone();} else {this->trcamm = f->trcamm;}
+ if (f->camm_homo) {this->camm_homo = f->camm_homo->clone();} else {this->camm_homo = f->camm_homo;}
+ if (f->camm_lumo) {this->camm_lumo = f->camm_lumo->clone();} else {this->camm_lumo = f->camm_lumo;}
 }
 
 CISComputer::CISComputer(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt, 

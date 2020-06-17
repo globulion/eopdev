@@ -341,7 +341,7 @@ void oepdev::GenEffPar::superimpose(psi::SharedMatrix targetXYZ, std::vector<int
   }
 
    // Compute AO rotation matrix
-   psi::SharedMatrix R_primary(nullptr), Ri_primary(nullptr);
+   psi::SharedMatrix R_primary, Ri_primary;
    if (this->data_basisset_.find("primary") != this->data_basisset_.end()) {
        R_primary = oepdev::ao_rotation_matrix(r, this->data_basisset_.at("primary"));
        R_primary->set_name("AO Rotation Matrix: Primary Basis");
@@ -383,7 +383,7 @@ void oepdev::GenEffPar::superimpose(psi::SharedMatrix targetXYZ, std::vector<int
 
 
    // --> Superimpose OEPs <-- //
-   psi::SharedMatrix R_auxiliary(nullptr);
+   psi::SharedMatrix R_auxiliary;
    if (this->data_basisset_.find("auxiliary") != this->data_basisset_.end()) {
        R_auxiliary = oepdev::ao_rotation_matrix(r, this->data_basisset_.at("auxiliary"));
        R_auxiliary->set_name("AO Rotation Matrix: Auxiliary Basis");
