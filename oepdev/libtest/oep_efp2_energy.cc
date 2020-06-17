@@ -73,6 +73,35 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
 
   double eint = eint_coul + eint_ind + eint_exrep + eint_ct + eint_disp;
 
+  // Create a fragmented system
+  oepdev::SharedGenEffFrag f = frag_2->clone();
+
+  std::vector<int> ind = {0,0};
+  std::vector<oepdev::SharedGenEffFrag> bsm;
+  std::vector<psi::SharedMolecule> list_mol;
+  std::vector<psi::SharedBasisSet> list_prim, list_aux;
+
+  bsm.push_back(f);
+  list_mol.push_back(wfn_union->l_molecule(0));
+  list_mol.push_back(wfn_union->l_molecule(1));
+  list_prim.push_back(wfn_union->l_primary(0));
+  list_prim.push_back(wfn_union->l_primary(1));
+  list_aux.push_back(wfn_union->l_auxiliary(0));
+  list_aux.push_back(wfn_union->l_auxiliary(1));
+
+  oepdev::SharedFragmentedSystem system = oepdev::FragmentedSystem::build(bsm, ind);
+  system->set_aggregate(list_mol);
+  system->set_primary(list_prim);
+  system->set_auxiliary(list_aux);
+
+  double eint_coul_t = system->compute_energy("EFP2:COUL"      , false);
+  double eint_exrep_t= system->compute_energy("OEPb-EFP2:EXREP", false);
+  double eint_ind_t  = system->compute_energy("EFP2:IND"       , true );
+  double eint_ct_t   = system->compute_energy("OEPb-EFP2:CT"   , false);
+  double eint_disp_t = system->compute_energy("EFP2:DISP"      , false);
+  double eint_t = eint_coul_t + eint_ind_t + eint_exrep_t + eint_ct_t + eint_disp_t;
+
+
   psi::outfile->Printf("\n EFP2 Interaction Energy Components [a.u.] [kcal/mol]\n\n");
   psi::outfile->Printf("  COUL= %14.6f%14.6f\n", eint_coul , eint_coul *OEPDEV_AU_KcalPerMole);
   psi::outfile->Printf("  EXRP= %14.6f%14.6f\n", eint_exrep, eint_exrep*OEPDEV_AU_KcalPerMole);
@@ -80,6 +109,14 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
   psi::outfile->Printf("  CT  = %14.6f%14.6f\n", eint_ct   , eint_ct   *OEPDEV_AU_KcalPerMole);
   psi::outfile->Printf("  DISP= %14.6f%14.6f\n", eint_disp , eint_disp *OEPDEV_AU_KcalPerMole);
   psi::outfile->Printf("  TOT = %14.6f%14.6f\n", eint      , eint      *OEPDEV_AU_KcalPerMole);
+
+  psi::outfile->Printf("\n EFP2 Interaction Energy Components [a.u.] [kcal/mol] - From FragmentedSystem\n\n");
+  psi::outfile->Printf("  COUL= %14.6f%14.6f\n", eint_coul_t , eint_coul_t *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  EXRP= %14.6f%14.6f\n", eint_exrep_t, eint_exrep_t*OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  IND = %14.6f%14.6f\n", eint_ind_t  , eint_ind_t  *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  CT  = %14.6f%14.6f\n", eint_ct_t   , eint_ct_t   *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  DISP= %14.6f%14.6f\n", eint_disp_t , eint_disp_t *OEPDEV_AU_KcalPerMole);
+  psi::outfile->Printf("  TOT = %14.6f%14.6f\n", eint_t      , eint_t      *OEPDEV_AU_KcalPerMole);
 
   psi::outfile->Printf("\n EFP2 Interaction Energy Components from GAMESS-US [a.u.] [kcal/mol]\n\n");
   psi::outfile->Printf("  COUL= %14.6f%14.6f\n", ref_eint_coul , ref_eint_coul *OEPDEV_AU_KcalPerMole);
