@@ -1632,12 +1632,41 @@ class UnitaryTransformedMOPolarGEFactory : public AbInitioPolarGEFactory
 
 };
 
+class FragmentedSystem
+{
+   public:
+     static std::shared_ptr<FragmentedSystem> build(std::vector<std::shared_ptr<GenEffFrag>> bsm, std::vector<int> ind);
+     FragmentedSystem(std::vector<std::shared_ptr<GenEffFrag>> bsm, std::vector<int> ind);
+     virtual ~FragmentedSystem();
+     void set_aggregate(std::vector<psi::SharedMolecule> aggregate) {aggregate_=aggregate;}
+     void set_primary(std::vector<psi::SharedBasisSet> p) {basis_prim_=p;}
+     void set_auxiliary(std::vector<psi::SharedBasisSet> a) {basis_aux_=a;}
+     void superimpose();
+     double compute_energy(std::string theory, bool manybody);
+
+   protected:
+
+     std::vector<std::shared_ptr<GenEffFrag>> bsm_;
+     std::vector<int> ind_;
+
+     std::vector<psi::SharedMolecule> aggregate_;
+     std::vector<psi::SharedBasisSet> basis_prim_;
+     std::vector<psi::SharedBasisSet> basis_aux_;
+
+     const int nfrag_;
+     std::vector<std::shared_ptr<GenEffFrag>> fragments_;
+  
+};
+
 /// GEFP Parameters container
 using SharedGenEffPar = std::shared_ptr<GenEffPar>;
 /// GEFP Parameter factory
 using SharedGenEffParFactory = std::shared_ptr<GenEffParFactory>;
 /// GEFP Fragment container
 using SharedGenEffFrag = std::shared_ptr<GenEffFrag>;
+/// Fragmented system
+using SharedFragmentedSystem = std::shared_ptr<FragmentedSystem>;
+
 
 /** \example example_gefp.cc
  *  ## Working with GenEffFrag objects

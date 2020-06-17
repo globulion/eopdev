@@ -780,12 +780,8 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_pt
  psi::SharedBasisSet auxiliary_2 = other->parameters["efp2"]->basisset("auxiliary");
  psi::SharedMatrix lmoo_1 =  this->parameters["efp2"]->matrix("lmoo-oep");
  psi::SharedMatrix lmoo_2 = other->parameters["efp2"]->matrix("lmoo-oep");
-// psi::SharedMatrix lmoo_1 =  this->parameters["efp2"]->matrix("cmoo");
-// psi::SharedMatrix lmoo_2 = other->parameters["efp2"]->matrix("cmoo");
  psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc-oep");
  psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc-oep");
-// psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc");
-// psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc");
  const int nbf_a1 =auxiliary_1->nbf();
  const int nbf_a2 =auxiliary_2->nbf();
 

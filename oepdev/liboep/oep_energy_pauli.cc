@@ -309,7 +309,7 @@ void RepulsionEnergyOEPotential::rotate_oep(psi::SharedMatrix r, psi::SharedMatr
   psi::SharedMatrix Ri = R_aux->clone(); Ri->invert(); Ri->transpose_this();
   psi::SharedMatrix new_matrix = psi::Matrix::doublet(Ri, oepTypes_.at("Murrell-etal.S1").matrix, true, false);
   oepTypes_.at("Murrell-etal.S1").matrix = new_matrix;
-//oepTypes_.at("Murrell-etal.S1").matrix->copy(new_matrix.get()); --> wrong!!! why???
+//oepTypes_.at("Murrell-etal.S1").matrix->copy(new_matrix); --> wrong!!! why???
 //oepTypes_["Murrell-etal.S1"].matrix->copy(new_matrix.get()); ---> wrong!!! why???
 
   // Potential "Otto-Ladik.S2.CAMM.a"
