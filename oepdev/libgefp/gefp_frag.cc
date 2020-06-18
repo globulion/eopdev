@@ -75,15 +75,92 @@ void oepdev::GenEffFrag::superimpose(void)
  this->superimpose(xyz, {});
 }
 // 
-double oepdev::GenEffFrag::energy(std::string theory, std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::energy_term(std::string theory, std::shared_ptr<GenEffFrag> other) {
  double e_tot = this->compute_pairwise_energy(theory, other);
  return e_tot;
 }
 
-double oepdev::GenEffFrag::compute_energy(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments, bool manybody)
+double oepdev::GenEffFrag::compute_energy(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments)
 {
   double e_tot = 0.0;
-  if (manybody) {e_tot += oepdev::GenEffFrag::compute_many_body_energy(theory, fragments);}
+  /*
+   * EFP2 Model.
+   */
+  if (theory == "EFP2") {
+      double e_cou = 0.0;
+      double e_exr = 0.0;
+      double e_ind = oepdev::GenEffFrag::compute_many_body_energy_term("EFP2:IND", fragments);
+      double e_dis = 0.0;
+      double e_ct  = 0.0;
+
+      const int n = fragments.size();                                            
+
+      for (int i=0; i<n; ++i) {
+      for (int j=0; j<i; ++j) {
+           e_cou += fragments[i]->compute_pairwise_energy("EFP2:COUL" , fragments[j]);
+           e_exr += fragments[i]->compute_pairwise_energy("EFP2:EXREP", fragments[j]);
+           e_dis += fragments[i]->compute_pairwise_energy("EFP2:DISP" , fragments[j]);
+           e_ct  += fragments[i]->compute_pairwise_energy("EFP2:CT"   , fragments[j]);
+      }}
+      cout << e_cou << " " << e_exr << " " << e_ind << " " << e_ct << endl;
+      e_tot = e_cou + e_exr + e_ind + e_dis + e_ct;
+  } 
+  /*
+   * OEPa-EFP2 Model. 
+   *
+   * EFP2 with CT term replaced with OEP-CT term 
+   */
+  else if (theory == "OEPa-EFP2") {
+      double e_cou = 0.0;
+      double e_exr = 0.0;
+      double e_ind = oepdev::GenEffFrag::compute_many_body_energy_term("EFP2:IND", fragments);
+      double e_dis = 0.0;
+      double e_ct  = 0.0;
+
+      const int n = fragments.size();                                            
+
+      for (int i=0; i<n; ++i) {
+      for (int j=0; j<i; ++j) {
+           e_cou += fragments[i]->compute_pairwise_energy(     "EFP2:COUL" , fragments[j]);
+           e_exr += fragments[i]->compute_pairwise_energy(     "EFP2:EXREP", fragments[j]);
+           e_dis += fragments[i]->compute_pairwise_energy(     "EFP2:DISP" , fragments[j]);
+           e_ct  += fragments[i]->compute_pairwise_energy("OEPb-EFP2:CT"   , fragments[j]);
+      }}
+      e_tot = e_cou + e_exr + e_ind + e_dis + e_ct;
+  }
+  /*
+   * OEPb-EFP2 Model. 
+   *
+   * EFP2 with CT term replaced with OEP-CT(Otto-Ladik) term 
+   * as well as REP term replaced with OEP-REP(Murrell etal) term
+   */
+  else if (theory == "OEPb-EFP2") {
+      double e_cou = 0.0;
+      double e_exr = 0.0;
+      double e_ind = oepdev::GenEffFrag::compute_many_body_energy_term("EFP2:IND", fragments);
+      double e_dis = 0.0;
+      double e_ct  = 0.0;
+
+      const int n = fragments.size();                                            
+
+      for (int i=0; i<n; ++i) {
+      for (int j=0; j<i; ++j) {
+           e_cou += fragments[i]->compute_pairwise_energy(     "EFP2:COUL" , fragments[j]);
+           e_exr += fragments[i]->compute_pairwise_energy("OEPb-EFP2:EXREP", fragments[j]);
+           e_dis += fragments[i]->compute_pairwise_energy(     "EFP2:DISP" , fragments[j]);
+           e_ct  += fragments[i]->compute_pairwise_energy("OEPb-EFP2:CT"   , fragments[j]);
+      }}
+      e_tot = e_cou + e_exr + e_ind + e_dis + e_ct;
+  } else {
+    throw psi::PSIEXCEPTION("Unknown theory chosen for GenEffFrag::compute_energy!\n");
+  }
+  return e_tot;
+}
+
+double oepdev::GenEffFrag::compute_energy_term(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments, bool manybody)
+{
+  double e_tot = 0.0;
+  if (manybody) {e_tot += oepdev::GenEffFrag::compute_many_body_energy_term(theory, fragments);}
   else {
 
      const int n = fragments.size();                                            
@@ -94,7 +171,7 @@ double oepdev::GenEffFrag::compute_energy(std::string theory, std::vector<std::s
   }
   return e_tot;
 }
-double oepdev::GenEffFrag::compute_many_body_energy(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments)
+double oepdev::GenEffFrag::compute_many_body_energy_term(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments)
 {
   double energy;
 
@@ -438,7 +515,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ind(std::shared_ptr<GenE
  std::vector<std::shared_ptr<oepdev::GenEffFrag>> fragments;
  fragments.push_back(shared_from_this());
  fragments.push_back(other);
- double e_ind = oepdev::GenEffFrag::compute_many_body_energy("EFP2:IND", fragments);
+ double e_ind = oepdev::GenEffFrag::compute_many_body_energy_term("EFP2:IND", fragments);
  return e_ind;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEffFrag> other) {
@@ -737,7 +814,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  e_ct_AB *= 2.0;
  e_ct_BA *= 2.0;
  e_ct = e_ct_AB + e_ct_BA;
- cout << e_ct_AB << " " << e_ct_BA << endl;
+//cout << e_ct_AB << " " << e_ct_BA << endl;
 
  psi::Process::environment.globals["EINT CT EFP2 KCAL"] = e_ct * OEPDEV_AU_KcalPerMole;
 
@@ -939,7 +1016,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_pt
  psi::Process::environment.globals["EINT REP OEP EFP2:S2 KCAL"] = v_e_rs2;
  
  e_tot = e_s1 + e_s2 + e_ex;
-  cout << e_s1 << " " << e_s2 << " " << e_ex << endl;
+//cout << e_s1 << " " << e_s2 << " " << e_ex << endl;
  return e_tot;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other) {

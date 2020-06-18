@@ -46,6 +46,12 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
   frag_1->parameters["efp2"] = par_1;
   frag_2->parameters["efp2"] = par_2;
 
+  // Set necessary sizing data
+  frag_1->set_ndocc(wfn_union->l_ndocc(0));
+  frag_2->set_ndocc(wfn_union->l_ndocc(1));
+  frag_1->set_nbf(wfn_union->l_nbf(0));
+  frag_2->set_nbf(wfn_union->l_nbf(1));
+
   // Set the molecule and basis sets
   frag_1->set_molecule(wfn_union->l_molecule(0));
   frag_2->set_molecule(wfn_union->l_molecule(1));
@@ -54,26 +60,20 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
   frag_1->set_basisset("auxiliary", wfn_union->l_auxiliary(0)); 
   frag_2->set_basisset("auxiliary", wfn_union->l_auxiliary(1));
 
-  // Set other important data
-  frag_1->set_ndocc(wfn_union->l_ndocc(0));
-  frag_2->set_ndocc(wfn_union->l_ndocc(1));
-  frag_1->set_nbf(wfn_union->l_nbf(0));
-  frag_2->set_nbf(wfn_union->l_nbf(1));
-
 //frag_2->basissets["primary"]->print_detail();
 
   frag_2->superimpose();
 
   // Compute interaction energy
-  double eint_coul = frag_1->energy("EFP2:COUL"      , frag_2);
-  double eint_exrep= frag_1->energy("OEPb-EFP2:EXREP", frag_2);
-  double eint_ind  = frag_1->energy("EFP2:IND"       , frag_2);
-  double eint_ct   = frag_1->energy("OEPb-EFP2:CT"   , frag_2);
-  double eint_disp = frag_1->energy("EFP2:DISP"      , frag_2);
+  double eint_coul = frag_1->energy_term("EFP2:COUL"      , frag_2);
+  double eint_exrep= frag_1->energy_term("OEPb-EFP2:EXREP", frag_2);
+  double eint_ind  = frag_1->energy_term("EFP2:IND"       , frag_2);
+  double eint_ct   = frag_1->energy_term("OEPb-EFP2:CT"   , frag_2);
+  double eint_disp = frag_1->energy_term("EFP2:DISP"      , frag_2);
 
   double eint = eint_coul + eint_ind + eint_exrep + eint_ct + eint_disp;
 
-  // Create a fragmented system
+  // New test: Compute from fragmented system instance
   oepdev::SharedGenEffFrag f = frag_2->clone();
 
   std::vector<int> ind = {0,0};
@@ -90,15 +90,15 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
   list_aux.push_back(wfn_union->l_auxiliary(1));
 
   oepdev::SharedFragmentedSystem system = oepdev::FragmentedSystem::build(bsm, ind);
-  system->set_aggregate(list_mol);
+  system->set_geometry(list_mol);
   system->set_primary(list_prim);
   system->set_auxiliary(list_aux);
 
-  double eint_coul_t = system->compute_energy("EFP2:COUL"      , false);
-  double eint_exrep_t= system->compute_energy("OEPb-EFP2:EXREP", false);
-  double eint_ind_t  = system->compute_energy("EFP2:IND"       , true );
-  double eint_ct_t   = system->compute_energy("OEPb-EFP2:CT"   , false);
-  double eint_disp_t = system->compute_energy("EFP2:DISP"      , false);
+  double eint_coul_t = system->compute_energy_term("EFP2:COUL"      , false);
+  double eint_exrep_t= system->compute_energy_term("OEPb-EFP2:EXREP", false);
+  double eint_ind_t  = system->compute_energy_term("EFP2:IND"       , true );
+  double eint_ct_t   = system->compute_energy_term("OEPb-EFP2:CT"   , false);
+  double eint_disp_t = system->compute_energy_term("EFP2:DISP"      , false);
   double eint_t = eint_coul_t + eint_ind_t + eint_exrep_t + eint_ct_t + eint_disp_t;
 
 
@@ -132,6 +132,12 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
                   pow(eint_ind  -ref_eint_ind  , 2.0) +
                   pow(eint_ct   -ref_eint_ct   , 2.0) +
                   pow(eint_disp -ref_eint_disp , 2.0);
+         result+= pow(eint_coul_t -eint_coul , 2.0) +
+                  pow(eint_exrep_t-eint_exrep, 2.0) + 
+                  pow(eint_ind_t  -eint_ind  , 2.0) +
+                  pow(eint_ct_t   -eint_ct   , 2.0) +
+                  pow(eint_disp_t -eint_disp , 2.0);
+
 
   // Print result
   std::cout << std::fixed;

@@ -720,24 +720,32 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
     *  @param other  - other fragment
     *  @return interaction energy in [A.U.]
     */
-   double energy(std::string theory, std::shared_ptr<GenEffFrag> other);
+   double energy_term(std::string theory, std::shared_ptr<GenEffFrag> other);
 
-   /** \brief Compute interaction energy in a cluster of fragments.
+   /** \brief Compute the total interaction energy term in a cluster of fragments.
+    *
+    *  @param theory     - theory used to compute energy
+    *  @param fragments  - list of fragments in the system
+    *  @return interaction energy in [A.U.]
+    */
+   static double compute_energy(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments);
+
+   /** \brief Compute a single interaction energy term in a cluster of fragments.
     *
     *  @param theory     - theory used to compute energy
     *  @param fragments  - list of fragments in the system
     *  @param manybody   - use the manybody routine? If not, pairwise routine is utilized.
     *  @return interaction energy in [A.U.]
     */
-   static double compute_energy(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments, bool manybody);
+   static double compute_energy_term(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments, bool manybody);
 
-   /** \brief Compute interaction energy in a cluster of fragments by using manybody routine.
+   /** \brief Compute a single interaction energy term in a cluster of fragments by using manybody routine.
     *
     *  @param theory     - theory used to compute energy
     *  @param fragments  - list of fragments in the system
     *  @return interaction energy in [A.U.]
     */
-   static double compute_many_body_energy(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments);
+   static double compute_many_body_energy_term(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments);
    //@}
 
   protected:
@@ -1632,31 +1640,137 @@ class UnitaryTransformedMOPolarGEFactory : public AbInitioPolarGEFactory
 
 };
 
+/** \brief Molecular System for Fragment-Based Calculations.
+ *
+ * Implements interface of running fragment-based calculations
+ * on molecular systems defined in terms of independent but
+ * interacting fragments.
+ */
 class FragmentedSystem
 {
    public:
+    /** \name Constructors and Destructor.
+     */
+    //@{
+
+    /** \brief Build from the list of base molecules (BSM) and fragment assignment vector.
+     * 
+     * @param bsm - list of base molecules
+     * @param ind - list of fragment assignments indices
+     * @return system of fragments
+     *
+     * The list of fragments \f$ f_i \f$ is created where the *i*th fragment
+     * is given by
+     * \f[
+     *    f_i = {\rm copy}\left( m_{d_i} \right)
+     * \f]
+     * where *m* and *d* denote the lists of BSM and fragment assignment indices, respectively.
+     */
      static std::shared_ptr<FragmentedSystem> build(std::vector<std::shared_ptr<GenEffFrag>> bsm, std::vector<int> ind);
+
+     /// Constructor
      FragmentedSystem(std::vector<std::shared_ptr<GenEffFrag>> bsm, std::vector<int> ind);
+
+     /// Destructor
      virtual ~FragmentedSystem();
-     void set_aggregate(std::vector<psi::SharedMolecule> aggregate) {aggregate_=aggregate;}
+     //@}
+
+    /** \name Mutators
+     */
+    //@{
+
+    /** \brief Set the current atomic coordinates of the system.
+     * 
+     * @param aggregate - list of all molecules in the system
+     */
+     void set_geometry(std::vector<psi::SharedMolecule> aggregate) {aggregate_=aggregate;}
+
+ // /** \brief Set the current atomic coordinates of the system.
+ //  * 
+ //  * @param aggregate - molecule object of the whole system
+ //  */
+ //  void set_geometry(psi::SharedMolecule aggregate) {throw psi::PSIEXCEPTION("Not implemented yet");}
+
+ // /** \brief Set the current atomic coordinates of the system.
+ //  * 
+ //  * @param aggregate - molecule object of the whole system
+ //  */
+ //  void set_geometry(psi::SharedMatrix positions) {throw psi::PSIEXCEPTION("Not implemented yet");}
+
+
+    /** \brief Set the primary basis sets (TO BE DEPRECATED)
+     * 
+     * @param p - list of all primary basis sets in the system
+     * \note
+     *   This will be deprecated once basis sets can be rotated and embedded in oepdev::GenEffFrag.
+     */
      void set_primary(std::vector<psi::SharedBasisSet> p) {basis_prim_=p;}
+
+    /** \brief Set the auxiliary basis sets (TO BE DEPRECATED)
+     * 
+     * @param a - list of all auxiliary basis sets in the system
+     * \note
+     *   This will be deprecated once basis sets can be rotated and embedded in oepdev::GenEffFrag.
+     */
      void set_auxiliary(std::vector<psi::SharedBasisSet> a) {basis_aux_=a;}
+     //@}
+
+
+    /** \name Transformators
+     */
+    //@{
+     /// Superimpose all the fragments onto the current atomic coordinates
      void superimpose();
-     double compute_energy(std::string theory, bool manybody);
+     //@}
+
+
+    /** \name Computers
+     */
+    //@{
+
+    /** \brief Compute a total energy
+     * 
+     * @param theory - theory to use for calculations
+     * @return energy in a.u.
+     */
+     double compute_energy(std::string theory);
+
+
+    /** \brief Compute a single energy term
+     * 
+     * @param theory - theory to use for calculations
+     * @param manybody - whether to use many body routines.
+     * @return energy in a.u.
+     */
+     double compute_energy_term(std::string theory, bool manybody);
+     //@}
 
    protected:
 
+    /** \name Working Attributes
+     */
+    //@{
+
+     /// List of Base Fragments (BSMs)
      std::vector<std::shared_ptr<GenEffFrag>> bsm_;
+     /// List of fragment assignment indices
      std::vector<int> ind_;
 
-     std::vector<psi::SharedMolecule> aggregate_;
-     std::vector<psi::SharedBasisSet> basis_prim_;
-     std::vector<psi::SharedBasisSet> basis_aux_;
-
+     /// Number of all fragments in the system
      const int nfrag_;
+     /// List of all fragments in the system
      std::vector<std::shared_ptr<GenEffFrag>> fragments_;
-  
+
+     /// List of molecules currently representing all fragments in the system
+     std::vector<psi::SharedMolecule> aggregate_;
+     /// List of current primary basis sets (TO BE DEPRECATED)
+     std::vector<psi::SharedBasisSet> basis_prim_;
+     /// List of current auxiliary basis sets (TO BE DEPRECATED)
+     std::vector<psi::SharedBasisSet> basis_aux_;
+     //@}
+
 };
+
 
 /// GEFP Parameters container
 using SharedGenEffPar = std::shared_ptr<GenEffPar>;
@@ -1684,11 +1798,13 @@ using SharedFragmentedSystem = std::shared_ptr<FragmentedSystem>;
  *  // Set the parameters
  *  fragment->parameters["efp2"] = par_efp2;
  *  fragment->parameters["eet"] = par_eet;
- *  // Set the current molecule and basis set
- *  fragment->set_molecule(mol);
  *  // Set the number of doubly occupied MOs and number of primary basis functions at the end
  *  fragment->set_ndocc(ndocc);
  *  fragment->set_nbf(nbf);
+ *  // Set the current molecule and basis set
+ *  fragment->set_molecule(mol);
+ *  fragment->set_basisset("primary", basis_prim);
+ *  fragment->set_basisset("auxiliary", basis_aux);
  *  \endcode
  *  Creating the parameters can be done by using an appropriate factory
  *  \code{cpp}
