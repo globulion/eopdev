@@ -253,11 +253,11 @@ psi::SharedMatrix oepdev::GenEffPar::compute_density_matrix(std::vector<psi::Sha
 }
 void oepdev::GenEffPar::rotate(psi::SharedMatrix R) {
   // Nothing to do here
-  outfile->Printf("  OepDEV Warning: Rotation feature not implemented in GenEffPar instance!\n");
+  throw psi::PSIEXCEPTION("  OepDEV Error: Rotation feature not implemented in GenEffPar instance!\n");
 }
 void oepdev::GenEffPar::translate(psi::SharedVector t) {
   // Nothing to do here
-  outfile->Printf("  OepDEV Warning: Translation feature not implemented in GenEffPar instance!\n");
+  throw psi::PSIEXCEPTION("  OepDEV Error: Translation feature not implemented in GenEffPar instance!\n");
 }
 void oepdev::GenEffPar::superimpose(psi::SharedMatrix targetXYZ, std::vector<int> supList) {
    // Initialize Kabsch Solver

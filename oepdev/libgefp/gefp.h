@@ -1659,12 +1659,12 @@ class FragmentedSystem
      * @param ind - list of fragment assignments indices
      * @return system of fragments
      *
-     * The list of fragments \f$ f_i \f$ is created where the *i*th fragment
-     * is given by
+     * After initialization, the list of fragments \f$ f_i \f$ is created within the object, where
+     * the *i*-th fragment is given by
      * \f[
      *    f_i = {\rm copy}\left( m_{d_i} \right)
      * \f]
-     * where *m* and *d* denote the lists of BSM and fragment assignment indices, respectively.
+     * In the above, *m* and *d* denote the lists of BSMs and fragment assignment indices, respectively.
      */
      static std::shared_ptr<FragmentedSystem> build(std::vector<std::shared_ptr<GenEffFrag>> bsm, std::vector<int> ind);
 
