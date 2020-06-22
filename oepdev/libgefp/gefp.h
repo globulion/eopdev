@@ -551,15 +551,15 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
    int ndocc_;
 
    /// Extract XYZ
-   psi::SharedVector extract_xyz(psi::SharedMolecule);
+   psi::SharedVector extract_xyz(psi::SharedMolecule) const;
    /// Extract DMTP
-   psi::SharedVector extract_dmtp(std::shared_ptr<oepdev::DMTPole>);
+   psi::SharedVector extract_dmtp(std::shared_ptr<oepdev::DMTPole>) const;
    /// Compute u vector for OEP-CT calculations
-   psi::SharedVector compute_u_vector(psi::SharedMatrix rmo_1, psi::SharedMatrix rmo_2, psi::SharedMolecule mol_2);
+   psi::SharedVector compute_u_vector(psi::SharedMatrix rmo_1, psi::SharedMatrix rmo_2, psi::SharedMolecule mol_2) const;
    /// Compute w matrix for OEP-CT calculations
-   psi::SharedMatrix compute_w_matrix(psi::SharedMolecule mol_1, psi::SharedMolecule mol_2, psi::SharedMatrix rmo_1);
+   psi::SharedMatrix compute_w_matrix(psi::SharedMolecule mol_1, psi::SharedMolecule mol_2, psi::SharedMatrix rmo_1) const;
    /// Compute OEP-CT energy component
-   double compute_ct_component(psi::SharedVector eps_occ_X, psi::SharedVector eps_vir_Y, psi::SharedMatrix V);
+   double compute_ct_component(psi::SharedVector eps_occ_X, psi::SharedVector eps_vir_Y, psi::SharedMatrix V) const;
 
 
 
@@ -720,7 +720,7 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
     *  @param other  - other fragment
     *  @return interaction energy in [A.U.]
     */
-   double energy_term(std::string theory, std::shared_ptr<GenEffFrag> other);
+   double energy_term(std::string theory, std::shared_ptr<GenEffFrag> other) const;
 
    /** \brief Compute the total interaction energy term in a cluster of fragments.
     *
@@ -751,14 +751,14 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
   protected:
    /** \name Interface Computers */
    //@{
-   double compute_pairwise_energy(std::string theory, std::shared_ptr<GenEffFrag> other);
-   double compute_pairwise_energy_efp2_coul(std::shared_ptr<GenEffFrag> other);
-   double compute_pairwise_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other);
-   double compute_pairwise_energy_efp2_ind(std::shared_ptr<GenEffFrag> other);
-   double compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEffFrag> other);
-   double compute_pairwise_energy_efp2_disp(std::shared_ptr<GenEffFrag> other);
-   double compute_pairwise_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other);
-   double compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other);
+   double compute_pairwise_energy(std::string theory, std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_efp2_coul(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_efp2_ind(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_efp2_disp(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other) const;
    //@}
 
 

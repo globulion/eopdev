@@ -75,7 +75,7 @@ void oepdev::GenEffFrag::superimpose(void)
  this->superimpose(xyz, {});
 }
 // 
-double oepdev::GenEffFrag::energy_term(std::string theory, std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::energy_term(std::string theory, std::shared_ptr<GenEffFrag> other) const {
  double e_tot = this->compute_pairwise_energy(theory, other);
  return e_tot;
 }
@@ -312,7 +312,7 @@ double oepdev::GenEffFrag::compute_many_body_energy_term(std::string theory, std
 //  }
 //  return e_tot;
 //}
-double oepdev::GenEffFrag::compute_pairwise_energy(std::string theory, std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy(std::string theory, std::shared_ptr<GenEffFrag> other) const {
   double e;
  if (theory == "EFP2:COUL" || theory == "OEPa-EFP2:COUL" || theory == "OEPb-EFP2:COUL") 
      {e = this->compute_pairwise_energy_efp2_coul(other);}
@@ -333,14 +333,14 @@ double oepdev::GenEffFrag::compute_pairwise_energy(std::string theory, std::shar
  }
  return e;
 }
-double oepdev::GenEffFrag::compute_pairwise_energy_efp2_coul(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_efp2_coul(std::shared_ptr<GenEffFrag> other) const {
  oepdev::MultipoleConvergence::ConvergenceLevel clevel = oepdev::DMTPole::determine_dmtp_convergence_level("DMTP_CONVER");
- oepdev::SharedDMTPole camm_1 = this->parameters["efp2"]->dmtp("camm");
- oepdev::SharedDMTPole camm_2 =other->parameters["efp2"]->dmtp("camm");
+ oepdev::SharedDMTPole camm_1 = this->parameters.at("efp2")->dmtp("camm");
+ oepdev::SharedDMTPole camm_2 =other->parameters.at("efp2")->dmtp("camm");
  double e = camm_1->energy(camm_2)->level(clevel)->get(0,0);
  return e;
 }
-double oepdev::GenEffFrag::compute_pairwise_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other) const {
 
  // Initialize results
  double e_s1 = 0.0, e_s2 = 0.0, e_ex = 0.0, e_tot = 0.0;
@@ -354,14 +354,14 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_exrep(std::shared_ptr<Ge
  const int ndocc_2=other->ndocc();
  psi::SharedMolecule mol_1 = this->molecule();
  psi::SharedMolecule mol_2 =other->molecule();
- psi::SharedBasisSet primary_1 = this->parameters["efp2"]->basisset("primary");
- psi::SharedBasisSet primary_2 =other->parameters["efp2"]->basisset("primary");
- psi::SharedMatrix cmoo_1 =  this->parameters["efp2"]->matrix("lmoo");
- psi::SharedMatrix cmoo_2 = other->parameters["efp2"]->matrix("lmoo");
- psi::SharedMatrix fock_1 =  this->parameters["efp2"]->matrix("fock_lmo");
- psi::SharedMatrix fock_2 = other->parameters["efp2"]->matrix("fock_lmo");
- psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc");
- psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc");
+ psi::SharedBasisSet primary_1 = this->parameters.at("efp2")->basisset("primary");
+ psi::SharedBasisSet primary_2 =other->parameters.at("efp2")->basisset("primary");
+ psi::SharedMatrix cmoo_1 =  this->parameters.at("efp2")->matrix("lmoo");
+ psi::SharedMatrix cmoo_2 = other->parameters.at("efp2")->matrix("lmoo");
+ psi::SharedMatrix fock_1 =  this->parameters.at("efp2")->matrix("fock_lmo");
+ psi::SharedMatrix fock_2 = other->parameters.at("efp2")->matrix("fock_lmo");
+ psi::SharedMatrix lmoc_1 =  this->parameters.at("efp2")->matrix("lmoc");
+ psi::SharedMatrix lmoc_2 = other->parameters.at("efp2")->matrix("lmoc");
 
  // Compute one-electron integrals
  // Cl+
@@ -511,14 +511,15 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_exrep(std::shared_ptr<Ge
 //cout << e_s1 << " " << e_s2 << " " << e_ex << endl;
  return e_tot;
 }
-double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ind(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ind(std::shared_ptr<GenEffFrag> other) const {
  std::vector<std::shared_ptr<oepdev::GenEffFrag>> fragments;
- fragments.push_back(shared_from_this());
+ std::shared_ptr<oepdev::GenEffFrag> t = shared_from_this()->clone();
+ fragments.push_back(t);
  fragments.push_back(other);
  double e_ind = oepdev::GenEffFrag::compute_many_body_energy_term("EFP2:IND", fragments);
  return e_ind;
 }
-double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEffFrag> other) const {
 
  // Initialize result
  double e_ct  = 0.0;
@@ -530,8 +531,8 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  const int ndocc_2=other->ndocc();
  psi::SharedMolecule mol_1 = this->molecule();
  psi::SharedMolecule mol_2 =other->molecule();
- psi::SharedBasisSet primary_1 = this->parameters["efp2"]->basisset("primary");
- psi::SharedBasisSet primary_2 =other->parameters["efp2"]->basisset("primary");
+ psi::SharedBasisSet primary_1 = this->parameters.at("efp2")->basisset("primary");
+ psi::SharedBasisSet primary_2 =other->parameters.at("efp2")->basisset("primary");
 
  // V matrices //
  psi::SharedMatrix VaoB12    = std::make_shared<psi::Matrix>("VaoB(1,2)", nbf_1, nbf_2);
@@ -548,14 +549,14 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  psi::SharedMatrix Tao22     = std::make_shared<psi::Matrix>("Tao(2,2)", nbf_2, nbf_2);
 
  // F matrices //
- psi::SharedMatrix Fao11     = this->parameters["efp2"]->matrix("fock_ao");
- psi::SharedMatrix Fao22     =other->parameters["efp2"]->matrix("fock_ao");
+ psi::SharedMatrix Fao11     = this->parameters.at("efp2")->matrix("fock_ao");
+ psi::SharedMatrix Fao22     =other->parameters.at("efp2")->matrix("fock_ao");
 
  // Ca matrices //
- psi::SharedMatrix cmoo_1 =  this->parameters["efp2"]->matrix("cmoo"); 
- psi::SharedMatrix cmoo_2 = other->parameters["efp2"]->matrix("cmoo");
- psi::SharedMatrix cmov_1 =  this->parameters["efp2"]->matrix("cmov");
- psi::SharedMatrix cmov_2 = other->parameters["efp2"]->matrix("cmov");
+ psi::SharedMatrix cmoo_1 =  this->parameters.at("efp2")->matrix("cmoo"); 
+ psi::SharedMatrix cmoo_2 = other->parameters.at("efp2")->matrix("cmoo");
+ psi::SharedMatrix cmov_1 =  this->parameters.at("efp2")->matrix("cmov");
+ psi::SharedMatrix cmov_2 = other->parameters.at("efp2")->matrix("cmov");
  const int nvir_1 = cmov_1->ncol();
  const int nvir_2 = cmov_2->ncol();
 
@@ -582,8 +583,8 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  //t_time += clock(); // Clock END
 
  // Compute potential energy integrals from CAMM and multipole integrals
- std::shared_ptr<oepdev::DMTPole> camm_1 = this->parameters["efp2"]->dmtp("camm"); 
- std::shared_ptr<oepdev::DMTPole> camm_2 =other->parameters["efp2"]->dmtp("camm"); 
+ std::shared_ptr<oepdev::DMTPole> camm_1 = this->parameters.at("efp2")->dmtp("camm"); 
+ std::shared_ptr<oepdev::DMTPole> camm_2 =other->parameters.at("efp2")->dmtp("camm"); 
  //
  const double p1 = 1.0 / 3.0;
  const double p2 = 2.0 / 3.0;
@@ -824,11 +825,11 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
 
  return e_ct;
 }
-double oepdev::GenEffFrag::compute_pairwise_energy_efp2_disp(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_efp2_disp(std::shared_ptr<GenEffFrag> other) const {
  //TODO
  return 0.0;
 }
-double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other) const {
 
  /* Note:
   *
@@ -851,20 +852,20 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_pt
  const int ndocc_2= other->ndocc();
  psi::SharedMolecule mol_1 =  this->molecule();
  psi::SharedMolecule mol_2 = other->molecule();
- psi::SharedBasisSet primary_1 =  this->parameters["efp2"]->basisset("primary");
- psi::SharedBasisSet primary_2 = other->parameters["efp2"]->basisset("primary");
- psi::SharedBasisSet auxiliary_1 =  this->parameters["efp2"]->basisset("auxiliary");
- psi::SharedBasisSet auxiliary_2 = other->parameters["efp2"]->basisset("auxiliary");
- psi::SharedMatrix lmoo_1 =  this->parameters["efp2"]->matrix("lmoo-oep");
- psi::SharedMatrix lmoo_2 = other->parameters["efp2"]->matrix("lmoo-oep");
- psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc-oep");
- psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc-oep");
+ psi::SharedBasisSet primary_1 =  this->parameters.at("efp2")->basisset("primary");
+ psi::SharedBasisSet primary_2 = other->parameters.at("efp2")->basisset("primary");
+ psi::SharedBasisSet auxiliary_1 =  this->parameters.at("efp2")->basisset("auxiliary");
+ psi::SharedBasisSet auxiliary_2 = other->parameters.at("efp2")->basisset("auxiliary");
+ psi::SharedMatrix lmoo_1 =  this->parameters.at("efp2")->matrix("lmoo-oep");
+ psi::SharedMatrix lmoo_2 = other->parameters.at("efp2")->matrix("lmoo-oep");
+ psi::SharedMatrix lmoc_1 =  this->parameters.at("efp2")->matrix("lmoc-oep");
+ psi::SharedMatrix lmoc_2 = other->parameters.at("efp2")->matrix("lmoc-oep");
  const int nbf_a1 =auxiliary_1->nbf();
  const int nbf_a2 =auxiliary_2->nbf();
 
  // ===> Compute S^-1 term <=== //
- oepdev::SharedOEPotential oep_1 =  this->parameters["efp2"]->oep("rep");
- oepdev::SharedOEPotential oep_2 = other->parameters["efp2"]->oep("rep");
+ oepdev::SharedOEPotential oep_1 =  this->parameters.at("efp2")->oep("rep");
+ oepdev::SharedOEPotential oep_2 = other->parameters.at("efp2")->oep("rep");
 
  psi::SharedMatrix Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_p1, nbf_p2);
  psi::SharedMatrix Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
@@ -1019,7 +1020,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_pt
 //cout << e_s1 << " " << e_s2 << " " << e_ex << endl;
  return e_tot;
 }
-double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other) {
+double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other) const {
  // Initialize results
  double e_ab = 0.0, e_ba = 0.0, e_tot = 0.0;
 
@@ -1030,28 +1031,28 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
  const int nat_2 = other->natom();
  const int nocc_1=  this->ndocc();
  const int nocc_2= other->ndocc();
- oepdev::SharedOEPotential oep_1 =  this->parameters["efp2"]->oep("ct");
- oepdev::SharedOEPotential oep_2 = other->parameters["efp2"]->oep("ct");
+ oepdev::SharedOEPotential oep_1 =  this->parameters.at("efp2")->oep("ct");
+ oepdev::SharedOEPotential oep_2 = other->parameters.at("efp2")->oep("ct");
  psi::SharedMolecule mol_1 =  this->molecule();
  psi::SharedMolecule mol_2 = other->molecule();
- psi::SharedBasisSet primary_1 =  this->parameters["efp2"]->basisset("primary");
- psi::SharedBasisSet primary_2 = other->parameters["efp2"]->basisset("primary");
- psi::SharedBasisSet auxiliary_1 =  this->parameters["efp2"]->basisset("auxiliary");
- psi::SharedBasisSet auxiliary_2 = other->parameters["efp2"]->basisset("auxiliary");
- psi::SharedMatrix cmoo_1 =  this->parameters["efp2"]->matrix("cmoo");
- psi::SharedMatrix cmoo_2 = other->parameters["efp2"]->matrix("cmoo");
- psi::SharedMatrix cmov_1 =  this->parameters["efp2"]->matrix("cmov");
- psi::SharedMatrix cmov_2 = other->parameters["efp2"]->matrix("cmov");
- psi::SharedMatrix lmoc_1 =  this->parameters["efp2"]->matrix("lmoc-oep");
- psi::SharedMatrix lmoc_2 = other->parameters["efp2"]->matrix("lmoc-oep");
- psi::SharedMatrix lmoo_1 =  this->parameters["efp2"]->matrix("lmoo-oep");
- psi::SharedMatrix lmoo_2 = other->parameters["efp2"]->matrix("lmoo-oep");
- psi::SharedMatrix U_1 =  this->parameters["efp2"]->matrix("cmoo2lmoo");
- psi::SharedMatrix U_2 = other->parameters["efp2"]->matrix("cmoo2lmoo");
- psi::SharedVector e_occ_1 =  this->parameters["efp2"]->vector("epso");
- psi::SharedVector e_occ_2 = other->parameters["efp2"]->vector("epso"); 
- psi::SharedVector e_vir_1 =  this->parameters["efp2"]->vector("epsv"); 
- psi::SharedVector e_vir_2 = other->parameters["efp2"]->vector("epsv"); 
+ psi::SharedBasisSet primary_1 =  this->parameters.at("efp2")->basisset("primary");
+ psi::SharedBasisSet primary_2 = other->parameters.at("efp2")->basisset("primary");
+ psi::SharedBasisSet auxiliary_1 =  this->parameters.at("efp2")->basisset("auxiliary");
+ psi::SharedBasisSet auxiliary_2 = other->parameters.at("efp2")->basisset("auxiliary");
+ psi::SharedMatrix cmoo_1 =  this->parameters.at("efp2")->matrix("cmoo");
+ psi::SharedMatrix cmoo_2 = other->parameters.at("efp2")->matrix("cmoo");
+ psi::SharedMatrix cmov_1 =  this->parameters.at("efp2")->matrix("cmov");
+ psi::SharedMatrix cmov_2 = other->parameters.at("efp2")->matrix("cmov");
+ psi::SharedMatrix lmoc_1 =  this->parameters.at("efp2")->matrix("lmoc-oep");
+ psi::SharedMatrix lmoc_2 = other->parameters.at("efp2")->matrix("lmoc-oep");
+ psi::SharedMatrix lmoo_1 =  this->parameters.at("efp2")->matrix("lmoo-oep");
+ psi::SharedMatrix lmoo_2 = other->parameters.at("efp2")->matrix("lmoo-oep");
+ psi::SharedMatrix U_1 =  this->parameters.at("efp2")->matrix("cmoo2lmoo");
+ psi::SharedMatrix U_2 = other->parameters.at("efp2")->matrix("cmoo2lmoo");
+ psi::SharedVector e_occ_1 =  this->parameters.at("efp2")->vector("epso");
+ psi::SharedVector e_occ_2 = other->parameters.at("efp2")->vector("epso"); 
+ psi::SharedVector e_vir_1 =  this->parameters.at("efp2")->vector("epsv"); 
+ psi::SharedVector e_vir_2 = other->parameters.at("efp2")->vector("epsv"); 
 
  const int nbf_a1 =auxiliary_1->nbf();
  const int nbf_a2 =auxiliary_2->nbf();
@@ -1195,7 +1196,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
 }
 
 // --> quick helpers
-psi::SharedVector oepdev::GenEffFrag::extract_xyz(psi::SharedMolecule mol)
+psi::SharedVector oepdev::GenEffFrag::extract_xyz(psi::SharedMolecule mol) const
 {
   auto xyz = std::make_shared<psi::Vector>(3 * mol->natom());
   double* xyz_p = xyz->pointer();
@@ -1207,7 +1208,7 @@ psi::SharedVector oepdev::GenEffFrag::extract_xyz(psi::SharedMolecule mol)
   return xyz;
 }
 //
-psi::SharedVector oepdev::GenEffFrag::extract_dmtp(std::shared_ptr<oepdev::DMTPole> camm)
+psi::SharedVector oepdev::GenEffFrag::extract_dmtp(std::shared_ptr<oepdev::DMTPole> camm) const
 {
   auto mult= std::make_shared<psi::Vector>((1 + 3 + 6 + 10) * camm->n_sites());
   psi::SharedMatrix m_0 = camm->charges(0);
@@ -1259,7 +1260,7 @@ psi::SharedVector oepdev::GenEffFrag::compute_u_vector(
   psi::SharedMatrix rmo_1, 
   psi::SharedMatrix rmo_2, 
   psi::SharedMolecule mol_2
-)
+) const
 {
   const int nocc_1 = rmo_1->nrow();
   const int nocc_2 = rmo_2->nrow();
@@ -1291,7 +1292,7 @@ std::shared_ptr<psi::Matrix> oepdev::GenEffFrag::compute_w_matrix(
   psi::SharedMolecule mol_1,
   psi::SharedMolecule mol_2,
   psi::SharedMatrix rmo_1
-)
+) const
 {
   const int nat_1 = mol_1->natom();
   const int nat_2 = mol_2->natom();
@@ -1328,7 +1329,7 @@ std::shared_ptr<psi::Matrix> oepdev::GenEffFrag::compute_w_matrix(
   return w;
 }
 double oepdev::GenEffFrag::compute_ct_component(
- psi::SharedVector eps_occ_X, psi::SharedVector eps_vir_Y, psi::SharedMatrix V)
+ psi::SharedVector eps_occ_X, psi::SharedVector eps_vir_Y, psi::SharedMatrix V) const
 {
    // requires matrix elements in CMO (canonical SCF) basis
    const int nocc_X = eps_occ_X->dim();
