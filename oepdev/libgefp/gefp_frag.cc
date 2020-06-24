@@ -102,7 +102,7 @@ double oepdev::GenEffFrag::compute_energy(std::string theory, std::vector<std::s
            e_dis += fragments[i]->compute_pairwise_energy("EFP2:DISP" , fragments[j]);
            e_ct  += fragments[i]->compute_pairwise_energy("EFP2:CT"   , fragments[j]);
       }}
-      cout << e_cou << " " << e_exr << " " << e_ind << " " << e_ct << endl;
+    //cout << e_cou << " " << e_exr << " " << e_ind << " " << e_ct << endl;
       e_tot = e_cou + e_exr + e_ind + e_dis + e_ct;
   } 
   /*
@@ -150,6 +150,7 @@ double oepdev::GenEffFrag::compute_energy(std::string theory, std::vector<std::s
            e_dis += fragments[i]->compute_pairwise_energy(     "EFP2:DISP" , fragments[j]);
            e_ct  += fragments[i]->compute_pairwise_energy("OEPb-EFP2:CT"   , fragments[j]);
       }}
+    //cout << e_cou << " " << e_exr << " " << e_ind << " " << e_ct << endl;
       e_tot = e_cou + e_exr + e_ind + e_dis + e_ct;
   } else {
     throw psi::PSIEXCEPTION("Unknown theory chosen for GenEffFrag::compute_energy!\n");
@@ -159,17 +160,17 @@ double oepdev::GenEffFrag::compute_energy(std::string theory, std::vector<std::s
 
 double oepdev::GenEffFrag::compute_energy_term(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments, bool manybody)
 {
-  double e_tot = 0.0;
-  if (manybody) {e_tot += oepdev::GenEffFrag::compute_many_body_energy_term(theory, fragments);}
+  double e_term = 0.0;
+  if (manybody) {e_term += oepdev::GenEffFrag::compute_many_body_energy_term(theory, fragments);}
   else {
 
      const int n = fragments.size();                                            
      for (int i=0; i<n; ++i) {
      for (int j=0; j<i; ++j) {
-          e_tot += fragments[i]->compute_pairwise_energy(theory, fragments[j]);
+          e_term += fragments[i]->compute_pairwise_energy(theory, fragments[j]);
      }}
   }
-  return e_tot;
+  return e_term;
 }
 double oepdev::GenEffFrag::compute_many_body_energy_term(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments)
 {
@@ -1211,10 +1212,10 @@ psi::SharedVector oepdev::GenEffFrag::extract_xyz(psi::SharedMolecule mol) const
 psi::SharedVector oepdev::GenEffFrag::extract_dmtp(std::shared_ptr<oepdev::DMTPole> camm) const
 {
   auto mult= std::make_shared<psi::Vector>((1 + 3 + 6 + 10) * camm->n_sites());
-  psi::SharedMatrix m_0 = camm->charges(0);
-  psi::SharedMatrix m_1 = camm->dipoles(0);
-  psi::SharedMatrix m_2 = camm->quadrupoles(0);
-  psi::SharedMatrix m_3 = camm->octupoles(0);
+  psi::SharedMatrix m_0 = camm->charges(0)->clone();
+  psi::SharedMatrix m_1 = camm->dipoles(0)->clone();
+  psi::SharedMatrix m_2 = camm->quadrupoles(0)->clone();
+  psi::SharedMatrix m_3 = camm->octupoles(0)->clone();
   //m_1->zero();
   //m_2->zero(); 
   if (psi::Process::environment.options.get_bool("EFP2_CT_NO_OCTUPOLES")) m_3->zero();

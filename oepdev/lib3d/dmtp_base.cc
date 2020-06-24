@@ -1231,15 +1231,15 @@ void DMTPole::recenter(psi::SharedMatrix new_origins, int i)
  }
 
  // Save
- if (hasDipoles_      ) dipoles_      [i]->copy(dipoles_new);
- if (hasQuadrupoles_  ) quadrupoles_  [i]->copy(qdpoles_new);
- if (hasOctupoles_    ) octupoles_    [i]->copy(ocpoles_new);
- if (hasHexadecapoles_) hexadecapoles_[i]->copy(hdpoles_new);
+ if (hasDipoles_      ) dipoles_      [i] = dipoles_new; //->copy(dipoles_new);
+ if (hasQuadrupoles_  ) quadrupoles_  [i] = qdpoles_new; //->copy(qdpoles_new);
+ if (hasOctupoles_    ) octupoles_    [i] = ocpoles_new; //->copy(ocpoles_new);
+ if (hasHexadecapoles_) hexadecapoles_[i] = hdpoles_new; //->copy(hdpoles_new);
 }
 void DMTPole::recenter(psi::SharedMatrix new_origins)
 {
  for (int i=0; i<nDMTPs_; ++i) this->recenter(new_origins, i);
- origins_->copy(new_origins);
+ origins_ = new_origins; //->copy(new_origins);
 }
 std::shared_ptr<MultipoleConvergence> DMTPole::energy(std::shared_ptr<DMTPole> other, MultipoleConvergence::ConvergenceLevel max_clevel)
 {
@@ -1285,8 +1285,8 @@ void DMTPole::rotate(psi::SharedMatrix rotmat)
 {
   psi::SharedMatrix new_centres = psi::Matrix::doublet(this->centres_, rotmat, false, false);
   psi::SharedMatrix new_origins = psi::Matrix::doublet(this->origins_, rotmat, false, false);
-  this->centres_->copy(new_centres);
-  this->origins_->copy(new_origins);
+  this->centres_ = new_centres; //->copy(new_centres);
+  this->origins_ = new_origins; //->copy(new_origins);
 
   double** rr = rotmat->pointer();
   const double RXX = rr[0][0];
@@ -1303,7 +1303,7 @@ void DMTPole::rotate(psi::SharedMatrix rotmat)
       
        // Dipoles 
        psi::SharedMatrix new_dipoles = psi::Matrix::doublet(this->dipoles_[n], rotmat, false, false);
-       this->dipoles_[n]->copy(new_dipoles);
+       this->dipoles_[n] = new_dipoles; //->copy(new_dipoles);
 
        for (int i=0; i<this->nSites_; ++i) {
             // Quadrupoles                                                          

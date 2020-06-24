@@ -28,8 +28,6 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
 
   // Create WFN Union
   oepdev::SharedWavefunctionUnion wfn_union = std::make_shared<oepdev::WavefunctionUnion>(wfn_, options_);
-  wfn_union->l_molecule(0)->print();
-  wfn_union->l_molecule(1)->print();
 
   // Compute EFP2 parameters for fragment 1
   oepdev::SharedGenEffParFactory factory = oepdev::GenEffParFactory::build("OEP-EFP2", wfn_union->l_wfn(0), options_,
@@ -73,8 +71,9 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
 
   double eint = eint_coul + eint_ind + eint_exrep + eint_ct + eint_disp;
 
+
   // New test: Compute from fragmented system instance
-  oepdev::SharedGenEffFrag f = frag_2->clone();
+  oepdev::SharedGenEffFrag f = frag_1->clone();
 
   std::vector<int> ind = {0,0};
   std::vector<oepdev::SharedGenEffFrag> bsm;
@@ -93,6 +92,8 @@ double oepdev::test::Test::test_oep_efp2_energy(void) {
   system->set_geometry(list_mol);
   system->set_primary(list_prim);
   system->set_auxiliary(list_aux);
+
+  double eint_tt = system->compute_energy("OEPb-EFP2");
 
   double eint_coul_t = system->compute_energy_term("EFP2:COUL"      , false);
   double eint_exrep_t= system->compute_energy_term("OEPb-EFP2:EXREP", false);
