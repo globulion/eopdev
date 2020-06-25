@@ -124,6 +124,7 @@ void OEPotential::localize(void)
 {
    std::string o_loc = options_.get_str("SOLVER_CT_LOCALIZER");
    localizer_ = psi::Localizer::build(o_loc, primary_, cOcc_, options_);
+   localizer_->set_maxiter(options_.get_int("OEPDEV_LOCALIZER_MAXITER"));
    localizer_->localize();
    this->set_localized_orbitals(localizer_);
 }
