@@ -404,7 +404,11 @@ def gdf_basisset_optimizer(mol, oep_type,
     # fit the auxiliary basis
     dfbasis = DFBasis(w_hf.molecule(), templ_file=templ_file, param_file=param_file,
                                        bounds_file=bounds_file, constraints=constraints)
+
+    OEP.read_vints = True
     oep     = OEP.create(oep_type, w_hf, dfbasis)
+    #oep.compute()
+    oep.compute_and_save_V()
     opt     = DFBasisOptimizer(oep)
 
     success = opt.fit(maxiter, tolerance, method, opt_global, temperature, stepsize, take_step, accept_test)

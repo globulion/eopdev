@@ -307,6 +307,22 @@ std::shared_ptr<psi::Matrix> calculate_DFI_Vel_J(
                 std::shared_ptr<psi::Matrix> d_b);
 
 
+/** \brief Compute the 2-Electron Part of the Effective OEP Matrix for Auxiliary Basis Set Optimization. 
+ *
+ *  @param nt     - number of test basis functions
+ *  @param f_pppt - IntegralFactory of type (PP|PT)
+ *  @param ca     - target MOs
+ *  @param da     - one-particle density matrix in AO basis
+ *  @return       - V matrix
+ *
+ */
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix> calculate_OEP_basisopt_V(const int& nt,
+                std::shared_ptr<psi::IntegralFactory> f_pppt,
+                std::shared_ptr<psi::Matrix> ca, std::shared_ptr<psi::Matrix> da);
+
+
+
 
 /** @}*/
 

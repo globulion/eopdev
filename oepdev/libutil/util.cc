@@ -543,4 +543,48 @@ std::shared_ptr<psi::Matrix> calculate_DFI_Vel_J(
  return _calculate_DFI_Vel(f_aabb, nullptr, db);
 }
 
+extern "C" PSI_API
+std::shared_ptr<psi::Matrix> calculate_OEP_basisopt_V(const int& nt,
+                std::shared_ptr<psi::IntegralFactory> f_pppt,
+                std::shared_ptr<psi::Matrix> ca, std::shared_ptr<psi::Matrix> da)
+{
+  std::shared_ptr<psi::Matrix> V = std::make_shared<psi::Matrix>("", nt, ca->ncol());
+  double** c = ca->pointer();
+  double** d = da->pointer();
+  double** v = V ->pointer();
+  const int nI = ca->ncol();
+
+  std::shared_ptr<oepdev::ShellCombinationsIterator> s_pppt = oepdev::ShellCombinationsIterator::build(f_pppt, "ALL");
+  std::shared_ptr<psi::TwoBodyAOInt> t_pppt(f_pppt->eri()); const double* b_pppt = t_pppt->buffer();
+
+  for (s_pppt->first(); s_pppt->is_done() == false; s_pppt->next()) {
+
+    s_pppt->compute_shell(t_pppt);
+    std::shared_ptr<oepdev::AOIntegralsIterator> ii = s_pppt->ao_iterator("ALL");
+
+    for (ii->first(); ii->is_done() == false; ii->next()) {
+
+         double eri = b_pppt[ii->index()];
+
+         if (std::abs(eri) > 0.0) {
+
+             int i = ii->i(); // P 
+             int j = ii->j(); // P
+             int k = ii->k(); // P
+             int l = ii->l(); // T
+
+             double dij = d[i][j];
+             double djk = d[j][k];
+
+             for (int I=0; I<nI; ++I) v[l][I] += eri * (2.0 * c[k][I] * dij - c[i][I] * djk);
+
+         }
+    }
+  }
+
+  return V;
+}
+
+
+
 } // EndNameSpace oepdev

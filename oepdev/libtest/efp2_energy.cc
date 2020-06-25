@@ -18,11 +18,11 @@ double oepdev::test::Test::test_efp2_energy(void) {
   if (options_.get_str("OEPDEV_TEST_MODE") != "DIMER") 
      throw psi::PSIEXCEPTION("Monomer test mode cannot be used for this test. Set the OEPDEV_TEST_MODE to DIMER");
 
-  // Reference interaction energy
-  const double ref_eint_coul = 0.0; //TODO
-  const double ref_eint_exrep= 0.0; //TODO
-  const double ref_eint_ind  = 0.0; //TODO
-  const double ref_eint_ct   = 0.0; //TODO
+  // Reference interaction energy: GAMESS-US Ver. 30 Sept 2017(R2)
+  const double ref_eint_coul = -0.0142777350; 
+  const double ref_eint_exrep=  0.0205637907; 
+  const double ref_eint_ind  = -0.0024764792; 
+  const double ref_eint_ct   = -0.0037775538; 
   const double ref_eint_disp = 0.0; //TODO
   const double ref_eint      = ref_eint_coul + ref_eint_exrep + ref_eint_ind + ref_eint_ct + ref_eint_disp;
 

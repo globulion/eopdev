@@ -146,6 +146,7 @@ class OEP(ABC):
   """
  OEP object that defines the V matrix necessary for GDF.
 """
+  read_vints = True
   def __init__(self, wfn, dfbasis):
       "Initialize"
       # wavefunction
@@ -153,19 +154,21 @@ class OEP(ABC):
       # DF basis to optimize
       self.dfbasis = dfbasis
       # Integral calculator
-      self.mints = psi4.core.MintsHelper(wfn.basisset())
+      #self.mints = psi4.core.MintsHelper(wfn.basisset())
       # Testing (T) basis (set to be RI basis)
       self.basis_test = wfn.get_basisset("BASIS_DF_INT")
+      self._nt = self.basis_test.nbf()
       # Primary (P) basis
       self.basis_prim = wfn.basisset()
       # Auxiliary (A) basis
       self.basis_aux = dfbasis.basis
       # ERI object (PP|PT) 
-      self.eri_pppt = numpy.asarray(self.mints.ao_eri(self.basis_prim, self.basis_prim, self.basis_prim, self.basis_test))
+      #self.eri_pppt = numpy.asarray(self.mints.ao_eri(self.basis_prim, self.basis_prim, self.basis_prim, self.basis_test))
       # V matrix
-      self.V   = self._compute_V()
+      self._vints_file_name = 'vints.dat'
+      self.V = None
       # Clear memory
-      del self.eri_pppt
+      #del self.eri_pppt
       #
       super(OEP, self).__init__()
 
@@ -182,27 +185,58 @@ class OEP(ABC):
       "Compute matrix representation of OEP"
       pass
 
+  def compute(self):
+      if self.V is None:
+         self.V = self._compute_V()
+      else:
+         self.V   = self._extract_V()
+
+  def compute_and_save_V(self, name='vints.dat'):
+      self._vints_file_name = name
+      V = self._compute_V()
+      V.tofile(name)
+      self.V = V
+
+  def _extract_V(self):
+      if OEP.read_vints: return self._read_V()
+      else: return self._compute_V()
+
+  def _read_V(self):
+      return numpy.fromfile(self._vints_file_name).reshape(self._nt, self._ni)
+      
+
 class OEP_FockLike(OEP):
   """
  OEP for S1 term in Murrell et al.'s theory of Pauli repulsion
  """
   def __init__(self, wfn, dfbasis):
       "Initialize"
+      self._Da= wfn.Da().to_array(dense=True)
       super(OEP_FockLike, self).__init__(wfn, dfbasis)
 
-  @abstractmethod
-  def _compute_Ca(self): pass
 
   # - implementation - #
   def _compute_V(self):
       "Compute Fock-Like OEP Matrix"
-      Ca= self._compute_Ca()
-      Da= self.wfn.Da().to_array(dense=True)
-      Vao= self.mints.ao_potential(self.basis_test, self.basis_prim).to_array(dense=True)
-      V  = numpy.dot(Vao, Ca)
+      Ca= self._Ca_xxx
+      Da= self._Da
+
+      # ---> Vao <--- #
+      # one-electron part
+      mints = psi4.core.MintsHelper(self.wfn.basisset())
+      V_nuc= mints.ao_potential(self.basis_test, self.basis_prim).to_array(dense=True)
+      V  = numpy.dot(V_nuc, Ca)
+
+      # two-electron part
+      f_pppt = psi4.core.IntegralFactory(self.basis_prim, self.basis_prim, self.basis_prim, self.basis_test)
+      Ca_ = psi4.core.Matrix.from_array(Ca.copy(), "")
+      Da_ = psi4.core.Matrix.from_array(Da.copy(), "")
+      V_2el = oepdev.calculate_OEP_basisopt_V(self._nt, f_pppt, Ca_, Da_)
+      V += V_2el.to_array(dense=True)
+      psi4.core.clean()
       #
-      V += 2.0 * numpy.einsum("bi,mn,mnba->ai", Ca, Da, self.eri_pppt)
-      V -=       numpy.einsum("mi,nb,mnba->ai", Ca, Da, self.eri_pppt)
+      #V += 2.0 * numpy.einsum("bi,mn,mnba->ai", Ca, Da, self.eri_pppt)
+      #V -=       numpy.einsum("mi,nb,mnba->ai", Ca, Da, self.eri_pppt)
       return V
 
 
@@ -212,10 +246,12 @@ class OEP_Pauli(OEP_FockLike):
  """
   def __init__(self, wfn, dfbasis):
       "Initialize"
-      super(OEP_Pauli, self).__init__(wfn, dfbasis)
+      # - implementation - #
+      self._Ca_xxx = wfn.Ca_subset("AO", "OCC").to_array(dense=True)
+      self._ni = self._Ca_xxx.shape[1]
 
-  # - implementation - #
-  def _compute_Ca(self): return self.wfn.Ca_subset("AO", "OCC").to_array(dense=True)
+
+      super(OEP_Pauli, self).__init__(wfn, dfbasis)
 
 
 class OEP_CT(OEP_FockLike):
@@ -224,10 +260,12 @@ class OEP_CT(OEP_FockLike):
  """
   def __init__(self, wfn, dfbasis):
       "Initialize"
-      super(OEP_CT, self).__init__(wfn, dfbasis)
+      # - implementation - #
+      self._Ca_xxx = wfn.Ca_subset("AO", "VIR").to_array(dense=True)
+      self._ni = self._Ca_xxx.shape[1]
 
-  # - implementation - #
-  def _compute_Ca(self): return self.wfn.Ca_subset("AO", "VIR").to_array(dense=True)
+
+      super(OEP_CT, self).__init__(wfn, dfbasis)
 
 
 # -------------------------------------------------------------------------------------------- #
@@ -241,6 +279,7 @@ class DFBasisOptimizer:
       self.oep = oep
       self.basis_fit = oep.dfbasis
       self.param = oep.dfbasis.param
+     #self.mints = psi4.core.MintsHelper(oep.basis_test)
   
   # ---> public interface <--- #
 
@@ -252,7 +291,8 @@ class DFBasisOptimizer:
 
   def compute_error(self, basis, rms=False):
       "Compute error for a given basis"
-      S = self.oep.mints.ao_overlap(self.oep.basis_test, basis).to_array(dense=True)
+      mints = psi4.core.MintsHelper(basis)
+      S = mints.ao_overlap(self.oep.basis_test, basis).to_array(dense=True)
       V = psi4.core.Matrix.from_array(self.oep.V)
       gdf = oepdev.GeneralizedDensityFit.build_double(basis, self.oep.basis_test, V)
       gdf.compute()

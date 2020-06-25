@@ -176,6 +176,9 @@ double oepdev::GenEffFrag::compute_many_body_energy_term(std::string theory, std
 {
   double energy;
 
+  // ---> Timer-on <--- //
+  clock_t t_time = -clock();
+
   if (theory == "EFP2:IND" || theory == "OEPa-EFP2:IND" || theory == "OEPb-EFP2:IND") {
        // Initialize
        oepdev::MultipoleConvergence::ConvergenceLevel clevel = oepdev::DMTPole::determine_dmtp_convergence_level("DMTP_CONVER");
@@ -296,6 +299,10 @@ double oepdev::GenEffFrag::compute_many_body_energy_term(std::string theory, std
 
        energy = -P->vector_dot(F) / 2.0;
 
+      // ---> Timer-off <--- //
+      t_time += clock(); // Clock END
+      cout << " o TIME EFP2:IND   " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+
   } else {
      throw psi::PSIEXCEPTION("Wrong manybody theory chosen.");
   }
@@ -335,13 +342,24 @@ double oepdev::GenEffFrag::compute_pairwise_energy(std::string theory, std::shar
  return e;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_efp2_coul(std::shared_ptr<GenEffFrag> other) const {
+ // ---> Timer-on <--- //
+ clock_t t_time = -clock();
+
  oepdev::MultipoleConvergence::ConvergenceLevel clevel = oepdev::DMTPole::determine_dmtp_convergence_level("DMTP_CONVER");
  oepdev::SharedDMTPole camm_1 = this->parameters.at("efp2")->dmtp("camm");
  oepdev::SharedDMTPole camm_2 =other->parameters.at("efp2")->dmtp("camm");
  double e = camm_1->energy(camm_2)->level(clevel)->get(0,0);
+
+ // ---> Timer-off <--- //
+ t_time += clock(); // Clock END
+ cout << " o TIME EFP2:COUL  " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+
  return e;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other) const {
+
+ // ---> Timer-on <--- //
+ clock_t t_time = -clock();
 
  // Initialize results
  double e_s1 = 0.0, e_s2 = 0.0, e_ex = 0.0, e_tot = 0.0;
@@ -369,7 +387,10 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_exrep(std::shared_ptr<Ge
  std::shared_ptr<psi::Matrix> Sao12 = std::make_shared<psi::Matrix>("Sao(1,2)", nbf_1, nbf_2);
  std::shared_ptr<psi::Matrix> Tao12 = std::make_shared<psi::Matrix>("Tao(1,2)", nbf_1, nbf_2);
 
+ t_time += clock();
  psi::IntegralFactory fact_12(primary_1, primary_2, primary_1, primary_2);
+ t_time -= clock();
+
  std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact_12.ao_overlap());
  std::shared_ptr<psi::OneBodyAOInt> kinInt(fact_12.ao_kinetic());
  ovlInt->compute(Sao12);
@@ -510,17 +531,34 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_exrep(std::shared_ptr<Ge
  
  e_tot = e_s1 + e_s2 + e_ex;
 //cout << e_s1 << " " << e_s2 << " " << e_ex << endl;
+
+ // ---> Timer-off <--- //
+ t_time += clock(); // Clock END
+ cout << " o TIME EFP2:EXREP " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+
  return e_tot;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ind(std::shared_ptr<GenEffFrag> other) const {
+
+ // ---> Timer-on <--- //
+ clock_t t_time = -clock();
+
  std::vector<std::shared_ptr<oepdev::GenEffFrag>> fragments;
  std::shared_ptr<oepdev::GenEffFrag> t = shared_from_this()->clone();
  fragments.push_back(t);
  fragments.push_back(other);
  double e_ind = oepdev::GenEffFrag::compute_many_body_energy_term("EFP2:IND", fragments);
+
+ // ---> Timer-off <--- //
+ t_time += clock(); // Clock END
+ cout << " o TIME EFP2:IND(P)" << ((double)t_time/CLOCKS_PER_SEC) << endl;
+
  return e_ind;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEffFrag> other) const {
+
+ // ---> Timer-on <--- //
+ clock_t t_time = -clock();
 
  // Initialize result
  double e_ct  = 0.0;
@@ -562,10 +600,12 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  const int nvir_2 = cmov_2->ncol();
 
  // IntegralFactory //
+ t_time += clock();
  psi::IntegralFactory fact_12(primary_1, primary_2, primary_1, primary_2);
  psi::IntegralFactory fact_21(primary_2, primary_1, primary_2, primary_1);
  psi::IntegralFactory fact_11(primary_1, primary_1, primary_1, primary_1);
  psi::IntegralFactory fact_22(primary_2, primary_2, primary_2, primary_2);
+ t_time -= clock();
 
  // Overlap integrals //
  std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact_12.ao_overlap());
@@ -821,12 +861,18 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  psi::Process::environment.globals["EINT CT EFP2 KCAL"] = e_ct * OEPDEV_AU_KcalPerMole;
 
  // ---> Timer-off <--- //
- //t_time += clock(); // Clock END
- //cout << " o TIME EFP2: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+ t_time += clock(); // Clock END
+ cout << " o TIME EFP2:CT    " << ((double)t_time/CLOCKS_PER_SEC) << endl;
 
  return e_ct;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_efp2_disp(std::shared_ptr<GenEffFrag> other) const {
+ // ---> Timer-on <--- //
+ //clock_t t_time = -clock();
+
+ // ---> Timer-off <--- //
+ //t_time += clock(); // Clock END
+ //cout << " o TIME EFP2:DISP  " << ((double)t_time/CLOCKS_PER_SEC) << endl;
  //TODO
  return 0.0;
 }
@@ -840,6 +886,9 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_pt
   * Theoretically, canonical orbitals could be also used for the S-1 term here with exactly the same result, 
   * but then more calculations and memory is required.
   */
+
+ // ---> Timer-on <--- //
+ clock_t t_time = -clock();
 
  // Initialize results
  double e_s1 = 0.0, e_s2 = 0.0, e_ex = 0.0, e_tot = 0.0;
@@ -872,9 +921,11 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_pt
  psi::SharedMatrix Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
  psi::SharedMatrix Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_p1, nbf_a2);
 
+ t_time += clock();
  psi::IntegralFactory fact_1p2p(  primary_1,   primary_2,   primary_1,   primary_2);
  psi::IntegralFactory fact_1a2p(auxiliary_1,   primary_2, auxiliary_1,   primary_2);
  psi::IntegralFactory fact_1p2a(  primary_1, auxiliary_2,   primary_1, auxiliary_2);
+ t_time -= clock();
 
  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
  std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
@@ -1019,9 +1070,17 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_exrep(std::shared_pt
  
  e_tot = e_s1 + e_s2 + e_ex;
 //cout << e_s1 << " " << e_s2 << " " << e_ex << endl;
+
+ // ---> Timer-off <--- //
+ t_time += clock(); // Clock END
+ cout << " o TIME OEP :EXREP " << ((double)t_time/CLOCKS_PER_SEC) << endl;
  return e_tot;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other) const {
+
+ // ---> Timer-on <--- //
+ clock_t t_time = -clock();
+
  // Initialize results
  double e_ab = 0.0, e_ba = 0.0, e_tot = 0.0;
 
@@ -1064,10 +1123,11 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
  psi::SharedMatrix Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
  psi::SharedMatrix Sao_1p2a     = std::make_shared<psi::Matrix>("Sao 1p2a", nbf_p1, nbf_a2);
 
-
+ t_time += clock();
   psi::IntegralFactory fact_1p2p(primary_1, primary_2, primary_1, primary_2);
   psi::IntegralFactory fact_1a2p(auxiliary_1, primary_2, auxiliary_1, primary_2);
   psi::IntegralFactory fact_1p2a(primary_1, auxiliary_2, primary_1, auxiliary_2);
+ t_time -= clock();
 
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2p(fact_1p2p.ao_overlap());
   ovlInt_1p2p->compute(Sao_1p2p);
@@ -1094,10 +1154,12 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
   psi::SharedVector u_2 = this->compute_u_vector(lmoc_2, lmoc_1, mol_1);
   psi::SharedMatrix w_1 = this->compute_w_matrix(mol_1, mol_2, lmoc_1);
   psi::SharedMatrix w_2 = this->compute_w_matrix(mol_2, mol_1, lmoc_2);
+  if (psi::Process::environment.options.get_int("PRINT") > 2) {
   u_1->set_name("Auxiliary calculables: Vector u_1"); u_1->print();
   w_1->set_name("Auxiliary calculables: Matrix w_1"); w_1->print();
   u_2->set_name("Auxiliary calculables: Vector u_2"); u_2->print();
   w_2->set_name("Auxiliary calculables: Matrix w_2"); w_2->print();
+  }
 
   // ---> Get distributed effective charges <--- //
   std::vector<psi::SharedMatrix> q_1 = oep_1->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
@@ -1192,6 +1254,10 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
   e_ba = e_ba_v123;
 
   e_tot = e_ab + e_ba;
+
+ // ---> Timer-off <--- //
+ t_time += clock(); // Clock END
+ cout << " o TIME OEP :CT    " << ((double)t_time/CLOCKS_PER_SEC) << endl;
 
  return e_tot;
 }
