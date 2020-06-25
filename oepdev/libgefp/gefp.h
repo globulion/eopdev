@@ -622,6 +622,9 @@ class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
    /** \name Mutators */
    //@{
 
+   /// Set the parameters
+   void set_parameters(const std::string& type, std::shared_ptr<GenEffPar> par) {this->parameters[type] = par;}
+
    /// Set the number of doubly occupied MOs
    void set_ndocc(int n) {ndocc_=n;}
 
