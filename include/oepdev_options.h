@@ -173,6 +173,7 @@ int read_options(std::string name, Options& options)
 	options.add_str    ("DMTP_CONVER"           ,  "R5"                      );
 	options.add_str    ("DMTP_CONVER_TI_CIS_E34",  "R5"                      );
 	options.add_str    ("DMTP_CONVER_TI_CIS_CT" ,  "R5"                      );
+        options.add_bool   ("COULOMB_PENETRATION"   ,  true                      );
 
         // ---> DmatPol Global Options  <--- //
 

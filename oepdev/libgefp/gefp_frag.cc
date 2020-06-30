@@ -354,6 +354,46 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_coul(std::shared_ptr<Gen
  t_time += clock(); // Clock END
  cout << " o TIME EFP2:COUL  " << ((double)t_time/CLOCKS_PER_SEC) << endl;
 
+ /* 
+   Coulomb penetration is not included in timing because overlap integrals
+   and similar loops can be performed in the EFP2-EXREP routine, which is
+   necessary in EFP2 calculations. Adding the below calculation does not
+   change the timing noticeably and is neglected here.
+  */
+ if (psi::Process::environment.options.get_bool("COULOMB_PENENTRATION")) {
+
+    const int nbf_1 = this->nbf();
+    const int nbf_2 =other->nbf();
+    const int nocc_1 = this->ndocc();
+    const int nocc_2 =other->ndocc();
+
+    psi::SharedBasisSet primary_1 = this->parameters.at("efp2")->basisset("primary");
+    psi::SharedBasisSet primary_2 =other->parameters.at("efp2")->basisset("primary");
+    psi::SharedMatrix cmoo_1 =  this->parameters.at("efp2")->matrix("lmoo");
+    psi::SharedMatrix cmoo_2 = other->parameters.at("efp2")->matrix("lmoo");
+    psi::SharedMatrix lmoc_1 =  this->parameters.at("efp2")->matrix("lmoc");
+    psi::SharedMatrix lmoc_2 = other->parameters.at("efp2")->matrix("lmoc");
+
+    psi::SharedMatrix Sao12 = std::make_shared<psi::Matrix>("Sao(1,2)", nbf_1, nbf_2); 
+    psi::IntegralFactory fact_12(primary_1, primary_2, primary_1, primary_2);
+    std::shared_ptr<psi::OneBodyAOInt> ovlInt(fact_12.ao_overlap());
+    ovlInt->compute(Sao12);
+    psi::SharedMatrix Smo12 = psi::Matrix::triplet(cmoo_1, Sao12 , cmoo_2, true, false, false);
+
+    double** S = Smo12->pointer();
+    for (int i=0; i<nocc_1; ++i) {
+    for (int j=0; j<nocc_2; ++j) {
+         double s = S[i][j];
+         double t = 2.0 * log(abs(s));
+         double r = sqrt(pow(lmoc_1->get(i,0)-lmoc_2->get(j,0), 2.0) + 
+                         pow(lmoc_1->get(i,1)-lmoc_2->get(j,1), 2.0) + 
+                         pow(lmoc_1->get(i,2)-lmoc_2->get(j,2), 2.0) );
+         e -= 2.0 * sqrt(-1.0 / t) * s*s / r ;
+    }
+    }
+       
+ }
+
  return e;
 }
 double oepdev::GenEffFrag::compute_pairwise_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other) const {
