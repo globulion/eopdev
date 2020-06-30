@@ -360,7 +360,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_coul(std::shared_ptr<Gen
    necessary in EFP2 calculations. Adding the below calculation does not
    change the timing noticeably and is neglected here.
   */
- if (psi::Process::environment.options.get_bool("COULOMB_PENENTRATION")) {
+ if (psi::Process::environment.options.get_bool("COULOMB_PENETRATION")) {
 
     const int nbf_1 = this->nbf();
     const int nbf_2 =other->nbf();
