@@ -27,6 +27,8 @@ void export_util(py::module &m) {
     m.def("matrix_power_derivative", &oepdev::matrix_power_derivative, "Calculate derivative of matrix power", py::return_value_policy::take_ownership);
     m.def("calculate_DFI_Vel_JK", &oepdev::calculate_DFI_Vel_JK, "Compute DFI electronic interaction matrix with J and K contributions", py::return_value_policy::take_ownership);
     m.def("calculate_DFI_Vel_J", &oepdev::calculate_DFI_Vel_J, "Compute DFI electronic interaction matrix with J contribution only", py::return_value_policy::take_ownership);
+    m.def("calculate_OEP_basisopt_V", &oepdev::calculate_OEP_basisopt_V, "Calculate V matrix for OEP auxiliary basis set optimization", py::return_value_policy::take_ownership);
+
 
     /* Class oepdev::CISComputer */
     typedef psi::SharedMatrix (oepdev::CISComputer::*m_i)(int) const;

@@ -1,0 +1,45 @@
+#!/usr/bin/python
+sys.path.insert(0, './..')
+import oepdev
+
+# test molecule
+molecule h2o {
+0 1
+O         -1.64478        1.04397        0.00000
+H         -0.42892        0.94552        0.00074
+H         -1.96811        0.90238        0.90350
+units angstrom
+symmetry c1
+noreorient
+nocom
+--
+0 1
+O         -3.80522       -1.29156        0.36991
+H         -2.64733       -1.34409        0.75011
+H         -3.88689       -0.57415       -0.27782
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+set {
+    # ==> OEPDEV Routine Specification <== #
+    oepdev_target                 test
+    oepdev_test_name              basis_rotation
+    oepdev_test_mode              dimer
+    oepdev_localize               False
+    oepdev_enable_trial           False
+    # ==> General Psi4 Options <== #
+    basis                         6-311G(2df)
+    scf_type                      direct 
+    guess                         core
+    e_convergence                 1e-6
+    d_convergence                 1e-6
+    print                         1
+    puream                        False
+}
+
+
+# run oepdev
+energy('oepdev', molecule=h2o)

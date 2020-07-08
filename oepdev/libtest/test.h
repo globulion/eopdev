@@ -59,6 +59,9 @@ class Test
    /// Test the basic functionalities of OEPDev
    double test_basic(void);
 
+   /// Test the AO basis set rotation from oepdev::ao_rotation_matrix
+   double test_basis_rotation(void);
+
    /// Test the CIS(RHF) method
    double test_cis_rhf(void);
 
@@ -101,8 +104,23 @@ class Test
    /// Test the oepdev::CAMM class
    double test_camm(void);
 
+   /// Test the oepdev::MultipoleConvergence class: potential and field calculations
+   double test_dmtp_pot_field(void);
+
    /// Test the oepdev::DMTP class for energy calculations
    double test_dmtp_energy(void);
+
+   /// Test the oepdev::EFP2_GenEffPar and oepdev::EFP2_Computer classes
+   double test_efp2_energy(void);
+
+   /// Test the oepdev::EFP2_GenEffPar and oepdev::EFP2_Computer classes
+   double test_oep_efp2_energy(void);
+
+   /// Test the oepdev::KabschSuperimposer
+   double test_kabsch_superimposition(void);
+
+   /// Test the oepdev::DMTP class for superimposition
+   double test_dmtp_superimposition(void);
 
    /// Test the oepdev::ESPSolver
    double test_esp_solver(void);

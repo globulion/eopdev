@@ -54,7 +54,7 @@ std::shared_ptr<psi::Matrix> SingleGeneralizedDensityFit::compute(void)
   // Compute overlap integrals between auxiliary basis functions
   ints_aa_ = std::make_shared<oepdev::IntegralFactory>(bs_a_, bs_a_);
   std::shared_ptr<psi::Matrix> S = std::make_shared<psi::Matrix>("S", n_a_, n_a_);
-  ints_aa_->ao_overlap()->compute(S);
+  std::shared_ptr<psi::OneBodyAOInt> p(ints_aa_->ao_overlap()); p->compute(S); // ints_aa_->ao_overlap()->compute(S);--> mem leak?
   this->invert_matrix(S);
   // Perform GDF
   G_ = psi::Matrix::doublet(S, V_, false, false); 
@@ -82,7 +82,7 @@ std::shared_ptr<psi::Matrix> DoubleGeneralizedDensityFit::compute(void)
   // Compute overlap integrals between intermediate basis functions
   ints_ii_ = std::make_shared<oepdev::IntegralFactory>(bs_i_);
   std::shared_ptr<psi::Matrix> S = std::make_shared<psi::Matrix>("S", n_i_, n_i_);
-  ints_ii_->ao_overlap()->compute(S);
+  std::shared_ptr<psi::OneBodyAOInt> p(ints_ii_->ao_overlap()) ; p->compute(S); // ints_ii_->ao_overlap()->compute(S);--> mem leak?
   this->invert_matrix(S);
 
   // Perform 1st GDF
@@ -91,12 +91,12 @@ std::shared_ptr<psi::Matrix> DoubleGeneralizedDensityFit::compute(void)
   // Compute \f$ \left( \xi \vert\vert \epsilon \right) \f$ integrals
   ints_ai_ = std::make_shared<oepdev::IntegralFactory>(bs_a_, bs_i_);
   std::shared_ptr<psi::Matrix> R = std::make_shared<psi::Matrix>("R Matrix", n_a_, n_i_);
-  ints_ai_->eri_1_1()->compute(R, 0, 1);
+  std::shared_ptr<oepdev::TwoBodyAOInt> pai(ints_ai_->eri_1_1()); pai->compute(R, 0, 1); // ints_ai_->eri_1_1()->compute(R, 0, 1);
 
   // Compute \f$ \left( \xi \vert\vert \xi' \right) \f$ integrals
   ints_aa_ = std::make_shared<oepdev::IntegralFactory>(bs_a_);
   std::shared_ptr<psi::Matrix> A = std::make_shared<psi::Matrix>("A", n_a_, n_a_);
-  ints_aa_->eri_1_1()->compute(A);
+  std::shared_ptr<oepdev::TwoBodyAOInt> paa(ints_aa_->eri_1_1()); paa->compute(A); // ints_aa_->eri_1_1()->compute(A);
   this->invert_matrix(A);
 
   // Perform 2nd GDF

@@ -1,0 +1,49 @@
+#!/usr/bin/python
+sys.path.insert(0, './..')
+import oepdev
+
+# test molecule
+molecule test {
+0 1
+O         -2.33024        0.96021       -1.57488
+N         -3.34898        1.37013       -2.36650
+H         -2.04903        0.09109       -1.95576
+H         -3.19364        2.38168       -2.57706
+H         -4.23051        1.28446       -1.81257
+units angstrom
+symmetry c1
+noreorient
+nocom
+--
+0 1
+O         -3.38549        4.06322        1.39433
+N         -3.00281        2.80807        1.06290
+H         -3.21064        4.12879        2.36716
+H         -2.21009        2.89181        0.38781
+H         -3.80689        2.35535        0.57320
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+set {
+    # ==> OEPDEV Routine Specification <== #
+    oepdev_target                 test
+    oepdev_test_name              kabsch_superimposition
+    oepdev_test_mode              dimer
+    oepdev_localize               False
+    cphf_localize                 False
+    oepdev_enable_trial           False
+    # ==> General Psi4 Options <== #
+    basis                         sto-3g
+    scf_type                      pk
+    guess                         core
+    e_convergence                 1e-6
+    print                         1
+    puream                        False
+}
+
+
+# run oepdev
+energy('oepdev', molecule=test)

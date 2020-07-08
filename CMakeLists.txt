@@ -87,6 +87,8 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libutil/cis_uhf_explicit.cc
                        oepdev/libutil/cis_uhf_dl.cc
 		       oepdev/libutil/cis_rhf_direct.cc
+                       oepdev/libutil/kabsch_superimposer.cc
+                       oepdev/libutil/basis_rotation.cc
 		       # lib3d
                        oepdev/lib3d/space3d.cc
                        oepdev/lib3d/esp.cc
@@ -107,6 +109,9 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/liboep/oep_gdf.cc
 		       # libgefp  
                        oepdev/libgefp/gefp.cc
+                       oepdev/libgefp/gefp_frag.cc
+                       oepdev/libgefp/gefp_efp2.cc
+                       oepdev/libgefp/gefp_oep_efp2.cc
                        oepdev/libgefp/gefp_polar_base.cc
                        oepdev/libgefp/gefp_polar_uniform_base.cc
                        oepdev/libgefp/gefp_polar_uniform_field_1.cc
@@ -118,6 +123,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libgefp/gefp_polar_nonuniform_field_2_grad_1.cc
                        oepdev/libgefp/gefp_polar_abinitio.cc
                        oepdev/libgefp/gefp_polar_ffabinitio.cc
+                       oepdev/libgefp/fragmented_system.cc
 		       # libsolver
                        oepdev/libsolver/solver_base.cc
                        oepdev/libsolver/solver_energy_coul.cc
@@ -128,13 +134,19 @@ add_psi4_plugin(oepdev main.cc
 		       # libtest
                        oepdev/libtest/test.cc
 		       oepdev/libtest/basic.cc
+		       oepdev/libtest/basis_rotation.cc
                        oepdev/libtest/cis_rhf_explicit.cc
                        oepdev/libtest/cis_rhf_dl.cc
                        oepdev/libtest/cis_uhf_explicit.cc
                        oepdev/libtest/cis_uhf_dl.cc
 		       oepdev/libtest/cphf.cc
 		       oepdev/libtest/camm.cc
+                       oepdev/libtest/dmtp_pot_field.cc
 		       oepdev/libtest/dmtp_energy.cc
+		       oepdev/libtest/efp2_energy.cc
+		       oepdev/libtest/oep_efp2_energy.cc
+                       oepdev/libtest/kabsch_superimposition.cc
+                       oepdev/libtest/dmtp_superimposition.cc
 		       oepdev/libtest/eri_2_2.cc
 		       oepdev/libtest/eri_3_1.cc
 		       oepdev/libtest/eri_1_1.cc

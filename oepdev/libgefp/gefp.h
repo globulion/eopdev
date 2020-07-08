@@ -6,6 +6,7 @@
 #include <string>
 #include <random>
 #include <cmath>
+#include <map>
 #include "psi4/libpsi4util/PsiOutStream.h"
 #include "psi4/libpsi4util/process.h"
 #include "psi4/libmints/wavefunction.h"
@@ -20,6 +21,9 @@
 namespace oepdev{
 
 using namespace std;
+using SharedOEPotential = std::shared_ptr<OEPotential>;
+
+class EFP2_GEFactory;
 
 /** \addtogroup OEPDEV_GEFP
  * @{
@@ -27,19 +31,119 @@ using namespace std;
 
 /** \brief Generalized Effective Fragment Parameters. Container Class.
  *
+ * \see GenEffFrag, GenEffParFactory
  */
 class GenEffPar
 {
+
   public:
-   /// Create with name of this parameter type
+   /** \name Constructor and Destructor */
+   //@{
+
+
+   /// Create with name of this parameter
    GenEffPar(std::string name) : name_(name), hasDensityMatrixDipolePolarizability_(false), 
                                               hasDensityMatrixDipoleDipoleHyperpolarizability_(false),
-                                              hasDensityMatrixQuadrupolePolarizability_(false) {};
+                                              hasDensityMatrixQuadrupolePolarizability_(false),
+                                 type_(name),
+                                 data_vector_({}), data_matrix_({}), data_dmtp_({}), data_oep_({}), data_dpol_({}) {};
+   /// Copy Constructor
+   GenEffPar(const GenEffPar*);
+   /// Make a deep copy
+   std::shared_ptr<GenEffPar> clone(void) const {
+       auto temp = std::make_shared<GenEffPar>(this);
+       return temp;
+   }
    /// Destruct
   ~GenEffPar() {};
 
+  protected:
+   /// Deep-copy the matrix and DMTP data
+   virtual void copy_from(const GenEffPar*);
+   //@}
 
-   // ---> Mutators <--- //
+  public:
+   /** \name Transformators */
+   //@{
+
+   /** \brief Rotate the parameters in 3D Euclidean space
+    *
+    *  @param R              - the rotation matrix
+    */
+   void rotate(psi::SharedMatrix R);
+
+   /** \brief Translate the parameters in 3D Euclidean space
+    *
+    *  @param t              - the translation vector
+    */
+   void translate(psi::SharedVector t);
+ 
+   /** \brief Superimpose the parameters in 3D Euclidean space onto a target geometry
+    *
+    *  @param targetXYZ      - the target geometry   
+    *  @param suplist        - the superimposition list
+    */
+   void superimpose(psi::SharedMatrix targetXYZ, std::vector<int> supList);
+   //@}
+
+
+
+   /** \name Mutators */
+   //@{
+
+   /** \brief Set the vector data
+    *
+    *  @param key      - keyword for a vector
+    *  @param mat      - vector
+    *
+    *  This sets the item in the map `data_vector_`.
+    */
+   void set_vector(std::string key, psi::SharedVector mat) {data_vector_[key] = mat;}
+
+   /** \brief Set the matrix data
+    *
+    *  @param key      - keyword for a matrix
+    *  @param mat      - matrix
+    *
+    *  This sets the item in the map `data_matrix_`.
+    */
+   void set_matrix(std::string key, psi::SharedMatrix mat) {data_matrix_[key] = mat;}
+
+   /** \brief Set the DMTP data
+    *
+    *  @param key      - keyword for a DMTP
+    *  @param dmtp     - DMTP object  
+    *
+    *  This sets the item in the map `data_dmtp_`.
+    */
+   void set_dmtp(std::string key, std::shared_ptr<oepdev::DMTPole> mat) {data_dmtp_[key] = mat;} 
+
+   /** \brief Set the OEP data
+    *
+    *  @param key      - keyword for a OEP
+    *  @param oep      - OEP object  
+    *
+    *  This sets the item in the map `data_oep_`.
+    */
+   void set_oep(std::string key, oepdev::SharedOEPotential oep) {data_oep_[key] = oep;} 
+
+   /** \brief Set the DPOL data
+    *
+    *  @param key      - keyword for a DPOL
+    *  @param dmtp     - DPOL object  
+    *
+    *  This sets the item in the map `data_dpol_`.
+    */
+   void set_dpol(std::string key, std::vector<psi::SharedMatrix> mats) {data_dpol_[key] = mats;} 
+
+   /** \brief Set the basis set data
+    *
+    *  @param key      - keyword for a matrix
+    *  @param mat      - matrix
+    *
+    *  This sets the item in the map `data_basisset_`.
+    */
+   void set_basisset(std::string key, psi::SharedBasisSet basis) {data_basisset_[key] = basis;}
 
 
    /** \brief Set the Density Matrix Susceptibility
@@ -82,9 +186,12 @@ class GenEffPar
 
    /// Set the distributed centres' positions
    void set_centres(const std::vector<std::shared_ptr<psi::Vector>>& centres) {distributedCentres_=centres;}
+   //@}
 
-   // ---> Allocators <--- //
 
+
+   /** \name Allocators */
+   //@{
 
    /** \brief Allocate the Density Matrix Susceptibility
     *
@@ -124,14 +231,71 @@ class GenEffPar
 
    /// Allocate The Density Matrix Quadrupole Polarizability
    void allocate_quadrupole_polarizability(int nsites, int nbf);
+   //@}
 
 
-   // ---> Descriptors <--- //
+
+   /** \name Descriptors */
+   //@{
+
+   /// Type of Parameters
+   std::string type() const {return type_;}
+   /// Name of Parameters
+   std::string name() const {return name_;}
+   /// Does it has dipole polarizability DMS?
    bool hasDensityMatrixDipolePolarizability() const {return hasDensityMatrixDipolePolarizability_;}
+   /// Does it has dipole-dipole hyperpolarizability DMS?
    bool hasDensityMatrixDipoleDipoleHyperpolarizability () const {return hasDensityMatrixDipoleDipoleHyperpolarizability_;}
+   /// Does it has quadrupole polarizability DMS?
    bool hasDensityMatrixQuadrupolePolarizability() const {return hasDensityMatrixQuadrupolePolarizability_;}
+   //@}
 
-   // ---> Accessors <--- //
+
+
+   /** \name Accessors */
+   //@{
+
+   /** \brief Get the vector data
+    *
+    *  @param key      - keyword for a vector
+    *  @return vector data type
+    */
+   psi::SharedVector vector(std::string key) const {return data_vector_.at(key);} 
+
+   /** \brief Get the matrix data
+    *
+    *  @param key      - keyword for a matrix
+    *  @return matrix data type
+    */
+   psi::SharedMatrix matrix(std::string key) const {return data_matrix_.at(key);} 
+
+   /** \brief Get the DMTP data
+    *
+    *  @param key      - keyword for a DMTP
+    *  @return DMTP data type
+    */
+   std::shared_ptr<oepdev::DMTPole> dmtp(std::string key) const {return data_dmtp_.at(key);} 
+
+   /** \brief Get the OEP data
+    *
+    *  @param key      - keyword for a OEP
+    *  @return OEP data type
+    */
+   oepdev::SharedOEPotential oep(std::string key) const {return data_oep_.at(key);} 
+
+   /** \brief Get the DPOL data
+    *
+    *  @param key      - keyword for a DPOL
+    *  @return DPOL data type
+    */
+   std::vector<psi::SharedMatrix> dpol(std::string key) const {return data_dpol_.at(key);} 
+
+   /** \brief Get the basis set data
+    *
+    *  @param key      - keyword for a basis set
+    *  @return basis set data type
+    */
+   psi::SharedBasisSet basisset(std::string key) const {return data_basisset_.at(key);} 
 
 
    /** \brief Grab the Density Matrix Susceptibility
@@ -261,8 +425,12 @@ class GenEffPar
    /// Grab the position of the *i*-th distributed site
    std::shared_ptr<psi::Vector> centre(int i) const {return distributedCentres_[i];}
 
-   // ---> Computers <--- //
+   //@}
 
+
+
+   /** \name DMS Computers */
+   //@{
 
    /** \brief Compute the density matrix due to the uniform electric field perturbation.
    *
@@ -289,11 +457,66 @@ class GenEffPar
    std::shared_ptr<psi::Matrix> compute_density_matrix(std::vector<std::shared_ptr<psi::Vector>> fields,
                                                        std::vector<std::shared_ptr<psi::Matrix>> grads);
 
+   //@}
+
+   /** \name EFP2 Computers */
+   //@{
+
+   /** \brief Compute the interaction energy between this and other EFP2 fragment.
+   *
+   *  @param par - other parameters object
+   */
+   //double compute_interaction_energy(std::shared_ptr<GenEffPar> other); --> for now moved to separate class
+   // due to difficult handling of the BasisSet object (cannot be rotated in currently used version of psi4-1.2.1)
+   //@}
+
 
 
   protected:
-   /// The Name of Parameter Type
+   /** \name Qualifiers */
+   //@{
+
+   /// The Name of Parameter
    std::string name_;
+
+   /// The Type of Parameter
+   std::string type_;
+
+   bool hasDensityMatrixDipolePolarizability_;
+   bool hasDensityMatrixDipoleDipoleHyperpolarizability_;
+   bool hasDensityMatrixQuadrupolePolarizability_;
+
+   //@}
+
+
+   /** \name Matrices and Multipoles */
+   //@{
+
+   /// The Positions of the Distributed Centres
+   std::vector<std::shared_ptr<psi::Vector>> distributedCentres_;
+
+   /// Data for Vector Types by Keyword
+   std::map<std::string, psi::SharedVector> data_vector_;
+
+   /// Data for Matrix Types by Keyword
+   std::map<std::string, psi::SharedMatrix> data_matrix_;
+
+   /// Data for DMTP Types by Keyword
+   std::map<std::string, std::shared_ptr<oepdev::DMTPole>> data_dmtp_;
+
+   /// Data for OEP Types by Keyword
+   std::map<std::string, oepdev::SharedOEPotential> data_oep_;
+
+   /// Data for DMTP Types by Keyword
+   std::map<std::string, std::vector<psi::SharedMatrix>> data_dpol_;
+
+   /// Data for AO Basis Set by Keyword
+   std::map<std::string, psi::SharedBasisSet> data_basisset_;
+   //@}
+
+
+   /** \name Density Matrix Susceptibility */
+   //@{
 
    /// The Density Matrix Dipole Polarizability
    std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixDipolePolarizability_;
@@ -303,40 +526,81 @@ class GenEffPar
 
    /// The Density Matrix Quadrupole Polarizability
    std::vector<std::vector<std::shared_ptr<psi::Matrix>>> densityMatrixQuadrupolePolarizability_;
+   //@}
 
-   /// The Positions of the Distributed Centres
-   std::vector<std::shared_ptr<psi::Vector>> distributedCentres_;
-
-   /// 
-   bool hasDensityMatrixDipolePolarizability_;
-   bool hasDensityMatrixDipoleDipoleHyperpolarizability_;
-   bool hasDensityMatrixQuadrupolePolarizability_;
 };
 
 /** \brief Generalized Effective Fragment. Container Class.
  *
  * Describes the GEFP fragment that is in principle designed to work
  * at correlated levels of theory.
+ * \see GenEffPar, GenEffParFactory
  */
-class GenEffFrag
+class GenEffFrag : public std::enable_shared_from_this<GenEffFrag>
 {
   protected: 
    /// Name of GEFP
    std::string name_;
+   /// Structure
+   psi::SharedMolecule frag_;
+   /// Number of primary basis functions
+   int nbf_;
+   /// Number of atoms
+   int natom_;
+   /// Number of doubly occupied MOs
+   int ndocc_;
+
+   /// Extract XYZ
+   psi::SharedVector extract_xyz(psi::SharedMolecule) const;
+   /// Extract DMTP
+   psi::SharedVector extract_dmtp(std::shared_ptr<oepdev::DMTPole>) const;
+   /// Compute u vector for OEP-CT calculations
+   psi::SharedVector compute_u_vector(psi::SharedMatrix rmo_1, psi::SharedMatrix rmo_2, psi::SharedMolecule mol_2) const;
+   /// Compute w matrix for OEP-CT calculations
+   psi::SharedMatrix compute_w_matrix(psi::SharedMolecule mol_1, psi::SharedMolecule mol_2, psi::SharedMatrix rmo_1) const;
+   /// Compute OEP-CT energy component
+   double compute_ct_component(psi::SharedVector eps_occ_X, psi::SharedVector eps_vir_Y, psi::SharedMatrix V) const;
+
+
+
+
 
   public:
+   /** \name Constructors and Destructor */ 
+   //@{
+
    /// Initialize with default name of GEFP (Default)
    GenEffFrag();
    /// Initialize with custom name of GEFP
    GenEffFrag(std::string name);
+   /// Copy Constructor
+   GenEffFrag(const GenEffFrag*);
+   /// Make a deep copy
+   std::shared_ptr<GenEffFrag> clone(void) const {
+       auto temp = std::make_shared<GenEffFrag>(this);
+       return temp;
+   }
+   /// Create an empty fragment
+   static std::shared_ptr<GenEffFrag> build(std::string name) {
+       auto temp = std::make_shared<GenEffFrag>(name);
+       return temp;
+   }
    /// Destruct
   ~GenEffFrag();
+   //@}
+
+   /** \name Parameters */ 
+   //@{
 
    /// Dictionary of All GEF Parameters
    std::map<std::string, std::shared_ptr<GenEffPar>> parameters;
+   /// Dictionary of All Basis Sets
+   std::map<std::string, psi::SharedBasisSet> basissets; 
+   //@}
 
 
-   // ---> Mutators <--- //
+   /** \name Transformators */
+   //@{
 
    /// Rotate
    void rotate(std::shared_ptr<psi::Matrix> R);
@@ -346,6 +610,40 @@ class GenEffFrag
 
    /// Superimpose
    void superimpose(std::shared_ptr<psi::Matrix> targetXYZ, std::vector<int> supList);
+
+   /// Superimpose
+   void superimpose(psi::SharedMolecule targetMol, std::vector<int> supList);
+
+   /// Superimpose to the structure held in `frag_`
+   void superimpose(void);  
+   //@}
+
+
+   /** \name Mutators */
+   //@{
+
+   /// Set the parameters
+   void set_parameters(const std::string& type, std::shared_ptr<GenEffPar> par) {this->parameters[type] = par;}
+
+   /// Set the number of doubly occupied MOs
+   void set_ndocc(int n) {ndocc_=n;}
+
+   /// Set the number of primary basis functions
+   void set_nbf(int n) {nbf_=n;}
+
+   /// Set the fragment molecule
+   void set_molecule(const psi::SharedMolecule mol) {
+        //std::vector<int> real_list = {};
+        //std::vector<int> ghost_list= {};
+        //cout << "!!!! " << mol->nfragments() << endl;
+        //for (int i=0; i<mol->nfragments(); ++i) real_list.push_back(i);
+        //frag_ = mol->extract_subsets(real_list, ghost_list);
+        frag_ = mol;
+        natom_= mol->natom();
+   }
+ 
+   /// Set the basis set
+   void set_basisset(std::string key, psi::SharedBasisSet basis);
 
    /// Set the Density Matrix Susceptibility Tensor Object
    void set_gefp_polarization(const std::shared_ptr<GenEffPar>& par) {densityMatrixSusceptibilityGEF_=par;}
@@ -364,13 +662,23 @@ class GenEffFrag
    void set_dmat_quadrupole_polarizability(const std::vector<std::vector<std::shared_ptr<psi::Matrix>>>& susc)
         { if (densityMatrixSusceptibilityGEF_)
               densityMatrixSusceptibilityGEF_->set_quadrupole_polarizability(susc); }
+   //@}
 
 
-   //void set_lmo_centroids();
+   /** \name Accessors */ 
+   //@{
 
+   /// Grab the number of primary basis functions
+   int nbf(void) const {return nbf_;}
 
-   // --> Accessors <-- //
+   /// Grab the number of atoms
+   int natom(void) const {return natom_;}
 
+   /// Grab the number of doubly occupied molecular orbitals
+   int ndocc(void) const {return ndocc_;}
+
+   /// Grab the molecule attached to this fragment
+   psi::SharedMolecule molecule(void) const {return frag_;}
 
    /** \brief Grab the Density Matrix Susceptibility
     *
@@ -404,26 +712,80 @@ class GenEffFrag
    {
        return densityMatrixSusceptibilityGEF_->susceptibility(fieldRank, fieldGradientRank);
    }
+   //@}
+
+
+   /** \name Computers */
+   //@{
+   /** \brief Compute interaction energy between this and other fragment.
+    *
+    *  @param theory - theory used to compute energy
+    *  @param other  - other fragment
+    *  @return interaction energy in [A.U.]
+    */
+   double energy_term(std::string theory, std::shared_ptr<GenEffFrag> other) const;
+
+   /** \brief Compute the total interaction energy term in a cluster of fragments.
+    *
+    *  @param theory     - theory used to compute energy
+    *  @param fragments  - list of fragments in the system
+    *  @return interaction energy in [A.U.]
+    */
+   static double compute_energy(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments);
+
+   /** \brief Compute a single interaction energy term in a cluster of fragments.
+    *
+    *  @param theory     - theory used to compute energy
+    *  @param fragments  - list of fragments in the system
+    *  @param manybody   - use the manybody routine? If not, pairwise routine is utilized.
+    *  @return interaction energy in [A.U.]
+    */
+   static double compute_energy_term(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments, bool manybody);
+
+   /** \brief Compute a single interaction energy term in a cluster of fragments by using manybody routine.
+    *
+    *  @param theory     - theory used to compute energy
+    *  @param fragments  - list of fragments in the system
+    *  @return interaction energy in [A.U.]
+    */
+   static double compute_many_body_energy_term(std::string theory, std::vector<std::shared_ptr<GenEffFrag>> fragments);
+   //@}
+
+  protected:
+   /** \name Interface Computers */
+   //@{
+   double compute_pairwise_energy(std::string theory, std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_efp2_coul(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_efp2_exrep(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_efp2_ind(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_efp2_disp(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_oep_efp2_exrep(std::shared_ptr<GenEffFrag> other) const;
+   double compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<GenEffFrag> other) const;
+   //@}
+
+
+
 
 
 
   protected:
-   // ===> Generalized Fragment Parameters <=== //
+   //-// ===> Generalized Fragment Parameters <=== //
 
-   /// Density Matrix Susceptibility Tensor
+   //-/// Density Matrix Susceptibility Tensor
    std::shared_ptr<GenEffPar> densityMatrixSusceptibilityGEF_;
 
-   /// Electrostatic Energy Effective One-Electron Potential
-   std::shared_ptr<GenEffPar> electrostaticEnergyGEF_;
+   //-/// Electrostatic Energy Effective One-Electron Potential
+   //std::shared_ptr<GenEffPar> electrostaticEnergyGEF_;
 
-   /// Exchange-Repulsion Effective One-Electron Potential
-   std::shared_ptr<GenEffPar> repulsionEnergyGEF_;
+   //-/// Exchange-Repulsion Effective One-Electron Potential
+   //std::shared_ptr<GenEffPar> repulsionEnergyGEF_;
 
-   /// Charge-Transfer Effective One-Electron Potential
-   std::shared_ptr<GenEffPar> chargeTransferEnergyGEF_;
+   //-/// Charge-Transfer Effective One-Electron Potential
+   //std::shared_ptr<GenEffPar> chargeTransferEnergyGEF_;
 
-   /// EET Coupling Effective One-Electron Potential
-   std::shared_ptr<GenEffPar> EETCouplingConstantGEF_;
+   //-/// EET Coupling Effective One-Electron Potential
+   //std::shared_ptr<GenEffPar> EETCouplingConstantGEF_;
 };
 
 
@@ -431,9 +793,14 @@ class GenEffFrag
  *
  * Describes the GEFP fragment that is in principle designed to work
  * at correlated levels of theory.
+ * \see GenEffPar, GenEffFrag
  */
 class GenEffParFactory
 {
+
+   /** \name Constructors and Desctructor */
+   //@{
+
   public: 
    /** \brief Build Density Matrix Susceptibility Generalized Factory.
     *
@@ -464,14 +831,29 @@ class GenEffParFactory
    static std::shared_ptr<GenEffParFactory> build(const std::string& type, 
                                                   std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
 
+   static std::shared_ptr<GenEffParFactory> build(const std::string& type, 
+                                                  std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt,
+                                                  psi::SharedBasisSet aux, psi::SharedBasisSet intermed);
+
+
+
    /// Construct from wavefunction and Psi4 options
    GenEffParFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
 
    /// Destruct
    virtual ~GenEffParFactory();
+   //@}
+
+
+   /** \name Executor of the Factory */
+   //@{
 
    /// Compute the fragment parameters
    virtual std::shared_ptr<GenEffPar> compute(void) = 0;
+   //@}
+
+   /** \name Accessors */
+   //@{
 
    /// Grab wavefunction
    virtual std::shared_ptr<psi::Wavefunction> wfn(void) const {return wfn_;}
@@ -480,16 +862,31 @@ class GenEffParFactory
    virtual psi::Options& options(void) const {return options_;}
 
    /// Grab the CPHF object
-   std::shared_ptr<CPHF> cphf_solver() const {return cphfSolver_;}
+   std::shared_ptr<oepdev::CPHF> cphf_solver() const {return cphfSolver_;}
+
+   /// Grab the DMTP object
+   std::shared_ptr<oepdev::DMTPole> dmtp() const {return dmtp_;}
+
+   //@}
+
 
   protected:
+
+   /** \name Basic data */
+   //@{
    /// Wavefunction
    std::shared_ptr<psi::Wavefunction> wfn_;
 
    /// Psi4 Options
    psi::Options& options_;
 
-   /// Random number generators
+   /// Number of basis functions
+   const int nbf_;
+   //@}
+
+
+   /** \name Random number generation */
+   //@{
    std::default_random_engine randomNumberGenerator_;
    std::uniform_real_distribution<double> randomDistribution_;
 
@@ -498,7 +895,11 @@ class GenEffParFactory
 
    /// Draw random point in 3D space, excluding the vdW region
    virtual std::shared_ptr<psi::Vector> draw_random_point();
+   //@}
 
+
+   /** \name Van der Waals region */
+   //@{
    /// Is the point inside a vdW region?
    virtual bool is_in_vdWsphere(double x, double y, double z) const;
 
@@ -507,22 +908,106 @@ class GenEffParFactory
 
    /// Map with vdW radii
    std::map<std::string, double> vdwRadius_;
+   //@}
 
+
+   /** \name Padding of box */
+   //@{
    /// Centre-of-mass coordinates
    double cx_, cy_, cz_;
 
    /// Radius of padding sphere around the molecule
    double radius_;
+   //@}
 
-   /// Number of basis functions
-   const int nbf_;
 
+   /** \name Container objects */
+   //@{
    /// The CPHF object
-   std::shared_ptr<CPHF> cphfSolver_;
+   std::shared_ptr<oepdev::CPHF> cphfSolver_;
 
+   /// The DMTP object
+   std::shared_ptr<oepdev::DMTPole> dmtp_;
+   //@}
+
+
+   /** \name Other Factories */
+   //@{
    /// Ab initio polarization susceptibility factory
    std::shared_ptr<oepdev::GenEffParFactory> abInitioPolarizationSusceptibilitiesFactory_;
+   //@}
+
 };
+
+/** \brief EFP2 GEFP Factory. 
+ * 
+ *  Basic interface for the EFP2 parameters.
+ */
+class EFP2_GEFactory : public GenEffParFactory
+{
+
+  public:
+   /// Construct from Psi4 options
+   EFP2_GEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+
+   /// Destruct
+   virtual ~EFP2_GEFactory();
+
+   /// Compute the EFP2 parameters
+   virtual std::shared_ptr<GenEffPar> compute(void);
+
+  protected:
+
+    virtual std::shared_ptr<oepdev::DMTPole> compute_dmtp(void);
+    virtual void compute_lmoc(void);
+    virtual std::shared_ptr<oepdev::CPHF> compute_cphf(void);
+    virtual void assemble_efp2_parameters(void);
+
+    virtual void assemble_geometry_data(void);
+    virtual void assemble_dmtp_data(void);
+    virtual void assemble_lmo_centroids(void);
+    virtual void assemble_fock_matrix(void);
+    virtual void assemble_distributed_polarizabilities(void);
+
+  protected:
+    std::shared_ptr<oepdev::GenEffPar> EFP2Parameters_;
+
+};
+
+/** \brief OEP-EFP2 GEFP Factory. 
+ * 
+ *  Basic interface for the OEP-EFP2 parameters.
+ */
+class OEP_EFP2_GEFactory : public EFP2_GEFactory
+{
+  public:
+   /// Construct from Psi4 options
+   OEP_EFP2_GEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt);
+   /// Construct from Psi4 options and additional basis sets
+   OEP_EFP2_GEFactory(std::shared_ptr<psi::Wavefunction> wfn, psi::Options& opt, psi::SharedBasisSet aux, psi::SharedBasisSet intermed);
+
+
+
+   /// Destruct
+   virtual ~OEP_EFP2_GEFactory();
+
+   /// Compute the OEP-EFP2 parameters
+   virtual std::shared_ptr<GenEffPar> compute(void);
+
+  protected:
+
+   virtual void assemble_oep_efp2_parameters(void);
+
+   virtual void assemble_oep_lmo_centroids(void);
+
+   psi::SharedBasisSet auxiliary_;
+   psi::SharedBasisSet intermediate_;
+   oepdev::SharedOEPotential oep_rep_;
+   oepdev::SharedOEPotential oep_ct_;
+};
+
+
+
 
 /** \brief Polarization GEFP Factory. Abstract Base.
  * 
@@ -1157,6 +1642,189 @@ class UnitaryTransformedMOPolarGEFactory : public AbInitioPolarGEFactory
    std::shared_ptr<GenEffPar> compute(void);
 
 };
+
+/** \brief Molecular System for Fragment-Based Calculations.
+ *
+ * Implements interface of running fragment-based calculations
+ * on molecular systems defined in terms of independent but
+ * interacting fragments.
+ */
+class FragmentedSystem
+{
+   public:
+    /** \name Constructors and Destructor.
+     */
+    //@{
+
+    /** \brief Build from the list of base molecules (BSM) and fragment assignment vector.
+     * 
+     * @param bsm - list of base molecules
+     * @param ind - list of fragment assignments indices
+     * @return system of fragments
+     *
+     * After initialization, the list of fragments \f$ f_i \f$ is created within the object, where
+     * the *i*-th fragment is given by
+     * \f[
+     *    f_i = {\rm copy}\left( m_{d_i} \right)
+     * \f]
+     * In the above, *m* and *d* denote the lists of BSMs and fragment assignment indices, respectively.
+     */
+     static std::shared_ptr<FragmentedSystem> build(std::vector<std::shared_ptr<GenEffFrag>> bsm, std::vector<int> ind);
+
+     /// Constructor
+     FragmentedSystem(std::vector<std::shared_ptr<GenEffFrag>> bsm, std::vector<int> ind);
+
+     /// Destructor
+     virtual ~FragmentedSystem();
+     //@}
+
+    /** \name Mutators
+     */
+    //@{
+
+    /** \brief Set the current atomic coordinates of the system.
+     * 
+     * @param aggregate - list of all molecules in the system
+     */
+     void set_geometry(std::vector<psi::SharedMolecule> aggregate) {aggregate_=aggregate;}
+
+ // /** \brief Set the current atomic coordinates of the system.
+ //  * 
+ //  * @param aggregate - molecule object of the whole system
+ //  */
+ //  void set_geometry(psi::SharedMolecule aggregate) {throw psi::PSIEXCEPTION("Not implemented yet");}
+
+ // /** \brief Set the current atomic coordinates of the system.
+ //  * 
+ //  * @param aggregate - molecule object of the whole system
+ //  */
+ //  void set_geometry(psi::SharedMatrix positions) {throw psi::PSIEXCEPTION("Not implemented yet");}
+
+
+    /** \brief Set the primary basis sets (TO BE DEPRECATED)
+     * 
+     * @param p - list of all primary basis sets in the system
+     * \note
+     *   This will be deprecated once basis sets can be rotated and embedded in oepdev::GenEffFrag.
+     */
+     void set_primary(std::vector<psi::SharedBasisSet> p) {basis_prim_=p;}
+
+    /** \brief Set the auxiliary basis sets (TO BE DEPRECATED)
+     * 
+     * @param a - list of all auxiliary basis sets in the system
+     * \note
+     *   This will be deprecated once basis sets can be rotated and embedded in oepdev::GenEffFrag.
+     */
+     void set_auxiliary(std::vector<psi::SharedBasisSet> a) {basis_aux_=a;}
+     //@}
+
+
+    /** \name Transformators
+     */
+    //@{
+     /// Superimpose all the fragments onto the current atomic coordinates
+     void superimpose();
+     //@}
+
+
+    /** \name Computers
+     */
+    //@{
+
+    /** \brief Compute a total energy
+     * 
+     * @param theory - theory to use for calculations
+     * @return energy in a.u.
+     */
+     double compute_energy(std::string theory);
+
+
+    /** \brief Compute a single energy term
+     * 
+     * @param theory - theory to use for calculations
+     * @param manybody - whether to use many body routines.
+     * @return energy in a.u.
+     */
+     double compute_energy_term(std::string theory, bool manybody);
+     //@}
+
+   protected:
+
+    /** \name Working Attributes
+     */
+    //@{
+
+     /// List of Base Fragments (BSMs)
+     std::vector<std::shared_ptr<GenEffFrag>> bsm_;
+     /// List of fragment assignment indices
+     std::vector<int> ind_;
+
+     /// Number of all fragments in the system
+     const int nfrag_;
+     /// List of all fragments in the system
+     std::vector<std::shared_ptr<GenEffFrag>> fragments_;
+
+     /// List of molecules currently representing all fragments in the system
+     std::vector<psi::SharedMolecule> aggregate_;
+     /// List of current primary basis sets (TO BE DEPRECATED)
+     std::vector<psi::SharedBasisSet> basis_prim_;
+     /// List of current auxiliary basis sets (TO BE DEPRECATED)
+     std::vector<psi::SharedBasisSet> basis_aux_;
+     //@}
+
+};
+
+
+/// GEFP Parameters container
+using SharedGenEffPar = std::shared_ptr<GenEffPar>;
+/// GEFP Parameter factory
+using SharedGenEffParFactory = std::shared_ptr<GenEffParFactory>;
+/// GEFP Fragment container
+using SharedGenEffFrag = std::shared_ptr<GenEffFrag>;
+/// Fragmented system
+using SharedFragmentedSystem = std::shared_ptr<FragmentedSystem>;
+
+
+/** \example example_gefp.cc
+ *  ## Working with GenEffFrag objects
+ *  
+ *  At the moment, `psi::Molecule` and `psi::BasisSet` objects do not have
+ *  Cartesian rotation implemented which prohibits using them as containers
+ *  in OEPDev. On the other hand, many calculations in FB approaches require
+ *  molecule and basis set rotation. Therefore, to temporarily overcome this
+ *  technical difficulty, molecule and basis set objects need to be supplied
+ *  for each fragment in the system by building them from scratch. Below, 
+ *  the guideline for fragment generation and manipulation is given:
+ *  \code{cpp}
+ *  // Create empty fragment
+ *  SharedGenEffFrag fragment = oepdev::GenEffFrag::build("Ethylene");
+ *  // Set the parameters
+ *  fragment->parameters["efp2"] = par_efp2;
+ *  fragment->parameters["eet"] = par_eet;
+ *  // Set the number of doubly occupied MOs and number of primary basis functions at the end
+ *  fragment->set_ndocc(ndocc);
+ *  fragment->set_nbf(nbf);
+ *  // Set the current molecule and basis set
+ *  fragment->set_molecule(mol);
+ *  fragment->set_basisset("primary", basis_prim);
+ *  fragment->set_basisset("auxiliary", basis_aux);
+ *  \endcode
+ *  Creating the parameters can be done by using an appropriate factory
+ *  \code{cpp}
+ *   SharedGenEffParFactory factory = GenEffParFactory::build("OEP-EFP2", wfn, options, auxiliary, intermediate);
+ *   SharedGenEffPar parameters = factory->compute();
+ *  \endcode
+ *  Currently, parameters are not created with allocated basis set objects
+ *  due to the above mentioned problem in Psi4 regarding lack of functionality of basis set rotation.
+ *  Therefore, **it is important to first set the parameters before setting the basis set**
+ *  when constructing the fragments.
+ *  It is because using the `set_basisset` method for the fragment sets the basis set
+ *  for all parameters as well, and if the parameters were set after the basis set, 
+ *  they would not have any basis sets allocated leading to errors in FB calculations.
+ *  This problem will not emerge once a rotation of `psi::BasisSet` is implemented (either
+ *  in Psi4 or in OEPDev).
+ */
+
 
 
 /** @}*/

@@ -15,6 +15,7 @@ double oepdev::test::Test::run(void)
 {
   double result;
   if      (options_.get_str("OEPDEV_TEST_NAME")=="BASIC"  ) result = test_basic  ();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="BASIS_ROTATION") result = test_basis_rotation();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CIS_RHF") result = test_cis_rhf();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CIS_UHF") result = test_cis_uhf();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CIS_RHF_DL") result = test_cis_rhf_dl();
@@ -29,7 +30,12 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="UNITARY_OPTIMIZER_4_2") result = test_unitaryOptimizer_4_2();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="SCF_PERTURB") result = test_scf_perturb();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CAMM") result = test_camm();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_POT_FIELD") result = test_dmtp_pot_field();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_ENERGY") result = test_dmtp_energy();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="EFP2_ENERGY") result = test_efp2_energy();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="OEP_EFP2_ENERGY") result = test_oep_efp2_energy();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="KABSCH_SUPERIMPOSITION") result = test_kabsch_superimposition();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_SUPERIMPOSITION") result = test_dmtp_superimposition();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="ESP_SOLVER") result = test_esp_solver();  
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CUSTOM") result = test_custom();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="POINTS_COLLECTION3D") result = test_points_collection3d();

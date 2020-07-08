@@ -152,6 +152,8 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::FFAbInitioPolarGEFactory::compute()
   com->set(2, wfn_->molecule()->center_of_mass().get(2));
   centres.push_back(com);
   par->set_centres(centres);
+  psi::SharedMatrix geom = std::make_shared<psi::Matrix>(wfn_->molecule()->geometry());
+  par->set_matrix("pos", geom);
 
   // Return
   return par;

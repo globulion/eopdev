@@ -11,7 +11,12 @@ using SharedField3D = std::shared_ptr<oepdev::Field3D>;
 using SharedDMTPole = std::shared_ptr<oepdev::DMTPole>;
 
 // <============== CT Energy ===============> //
-
+SharedOEPotential ChargeTransferEnergyOEPotential::clone(void) const {
+    SharedOEPotential temp = std::make_shared<ChargeTransferEnergyOEPotential>(this);
+    return temp;
+}
+ChargeTransferEnergyOEPotential::ChargeTransferEnergyOEPotential(const ChargeTransferEnergyOEPotential* f) 
+ : OEPotential(f) {}
 ChargeTransferEnergyOEPotential::ChargeTransferEnergyOEPotential(SharedWavefunction wfn, Options& options) 
  : OEPotential(wfn, options)
 { 
@@ -40,9 +45,9 @@ void ChargeTransferEnergyOEPotential::common_init()
   //SharedMatrix mat_2 = std::make_shared<psi::Matrix>("Q1", n3, n1);
     SharedMatrix mat_3 = std::make_shared<psi::Matrix>("Q2", n3, 1);
 
-    OEPType type_1 = {"Otto-Ladik.V1.GDF", true , n1, mat_1};
+    OEPType type_1 = {"Otto-Ladik.V1.GDF", true , n1, mat_1, nullptr, nullptr};
   //OEPType type_2 = {"Otto-Ladik.V2", false, n1, mat_2};
-    OEPType type_3 = {"Otto-Ladik.V3.CAMM-nj", false, n1, std::make_shared<psi::Matrix>()};
+    OEPType type_3 = {"Otto-Ladik.V3.CAMM-nj", false, n1, std::make_shared<psi::Matrix>(), nullptr, nullptr};
 
     oepTypes_[type_1.name] = type_1;
   //oepTypes_[type_2.name] = type_2;
@@ -116,7 +121,7 @@ void ChargeTransferEnergyOEPotential::compute_otto_ladik_v1_gdf()
    std::shared_ptr<psi::Matrix> G = gdf->compute();
    
    // ===> Save and Finish <=== //
-   oepTypes_.at("Otto-Ladik.V1.GDF").matrix->copy(G);
+   oepTypes_.at("Otto-Ladik.V1.GDF").matrix = G;
    if (options_.get_int("PRINT") > 1) G->print();
 }
 void ChargeTransferEnergyOEPotential::compute_otto_ladik_v3_camm_nj()
@@ -165,4 +170,22 @@ void ChargeTransferEnergyOEPotential::compute_otto_ladik_v3_camm_nj()
 void ChargeTransferEnergyOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
 void ChargeTransferEnergyOEPotential::print_header(void) const {}
 
+void ChargeTransferEnergyOEPotential::rotate_oep(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
 
+  // Potential "Otto-Ladik.V1.GDF"
+  psi::SharedMatrix Ri = R_aux->clone(); Ri->invert(); Ri->transpose_this();
+  psi::SharedMatrix new_matrix = psi::Matrix::doublet(Ri, oepTypes_.at("Otto-Ladik.V1.GDF").matrix, true, false);
+  oepTypes_.at("Otto-Ladik.V1.GDF").matrix = new_matrix;
+
+  // Potential "Otto-Ladik.V3.CAMM-nj"
+  oepTypes_.at("Otto-Ladik.V3.CAMM-nj").dmtp->rotate(r);
+
+  this->rotate_basic(r, R_prim, R_aux);
+
+}
+void ChargeTransferEnergyOEPotential::translate_oep(psi::SharedVector t) {
+
+  // Potential "Otto-Ladik.V3.CAMM-nj"
+  oepTypes_.at("Otto-Ladik.V3.CAMM-nj").dmtp->translate(t);
+  this->translate_basic(t);
+}

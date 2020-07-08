@@ -1531,10 +1531,10 @@ std::shared_ptr<psi::Vector> ChargeTransferEnergySolver::extract_xyz(std::shared
 std::shared_ptr<psi::Vector> ChargeTransferEnergySolver::extract_dmtp(std::shared_ptr<oepdev::DMTPole> camm)
 {
   auto mult= std::make_shared<psi::Vector>((1 + 3 + 6 + 10) * camm->n_sites());
-  psi::SharedMatrix m_0 = camm->charges(0);
-  psi::SharedMatrix m_1 = camm->dipoles(0);
-  psi::SharedMatrix m_2 = camm->quadrupoles(0);
-  psi::SharedMatrix m_3 = camm->octupoles(0);
+  psi::SharedMatrix m_0 = camm->charges(0)->clone();
+  psi::SharedMatrix m_1 = camm->dipoles(0)->clone();
+  psi::SharedMatrix m_2 = camm->quadrupoles(0)->clone();
+  psi::SharedMatrix m_3 = camm->octupoles(0)->clone();
   //m_1->zero();
   //m_2->zero(); 
   if (options_.get_bool("EFP2_CT_NO_OCTUPOLES")) m_3->zero();

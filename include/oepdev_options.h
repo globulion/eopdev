@@ -66,6 +66,8 @@ int read_options(std::string name, Options& options)
         /*- MO Localizer for OEP-Based CT Solver -*/
         options.add_str    ("WFN_UNION_LOCALIZER"   , "BOYS"                     );
         options.add_str    ("SOLVER_CT_LOCALIZER"   , "BOYS"                     );
+        options.add_int    ("OEPDEV_LOCALIZER_MAXITER", 1000                     );
+      //options.add_bool   ("OEPDEV_OEP_REP_LOCALIZE", false                     ); -> not sure if to introduce this
 
         /*- Type of EFP potential integrals used in CT energy calculations -*/
         options.add_str    ("EFP2_CT_POTENTIAL_INTS", "DMTP"                     );
@@ -171,6 +173,7 @@ int read_options(std::string name, Options& options)
 	options.add_str    ("DMTP_CONVER"           ,  "R5"                      );
 	options.add_str    ("DMTP_CONVER_TI_CIS_E34",  "R5"                      );
 	options.add_str    ("DMTP_CONVER_TI_CIS_CT" ,  "R5"                      );
+        options.add_bool   ("COULOMB_PENETRATION"   ,  true                      );
 
         // ---> DmatPol Global Options  <--- //
 

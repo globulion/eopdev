@@ -1,0 +1,12 @@
+# HF/sto-3g mtp=camm hexadecapoles=true save=w2.par units=angs
+
+&MOL
+H2O
+
+0 1
+O          0.67961       -3.28639        0.35954
+H          1.28440       -2.98969        1.06083
+H         -0.15242       -2.83702        0.58835
+
+&END
+

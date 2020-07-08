@@ -372,6 +372,9 @@ class WavefunctionUnion : public Wavefunction
 		);
 };
 
+/// WavefunctionUnion
+using SharedWavefunctionUnion = std::shared_ptr<WavefunctionUnion>;
+
 /** @}*/
 }      // EndNameSpace oepdev
 #endif //_oepdev_libutil_wavefunction_union_h

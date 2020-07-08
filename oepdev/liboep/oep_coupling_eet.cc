@@ -9,7 +9,12 @@ using namespace oepdev;
 using SharedField3D = std::shared_ptr<oepdev::Field3D>;
 
 // <============== EET Coupling ==============> //
-
+SharedOEPotential EETCouplingOEPotential::clone(void) const {
+    SharedOEPotential temp = std::make_shared<EETCouplingOEPotential>(this);
+    return temp;
+}
+EETCouplingOEPotential::EETCouplingOEPotential(const EETCouplingOEPotential* f) 
+ : OEPotential(f) {} 
 EETCouplingOEPotential::EETCouplingOEPotential(SharedWavefunction wfn, Options& options) 
  : OEPotential(wfn, options)
 { 
@@ -37,10 +42,10 @@ void EETCouplingOEPotential::common_init()
     SharedMatrix mat_ct_m= std::make_shared<psi::Matrix>("R(HL)", 1, 1);
 
     // Provide correct classes (DF- or ESP-based) and number of OEP's involved in each type
-    OEPType type_1 = {"Fujimoto.GDF", true, 4, mat_gdf};
+    OEPType type_1 = {"Fujimoto.GDF", true, 4, mat_gdf, nullptr, nullptr};
     OEPType type_2 = {"Fujimoto.CIS", false,1, std::make_shared<psi::Matrix>(), nullptr, nullptr};
-    OEPType type_3 = {"Fujimoto.EXCH", false, n1, mat_exch};
-    OEPType type_4 = {"Fujimoto.CT_M", false, 1, mat_ct_m};
+    OEPType type_3 = {"Fujimoto.EXCH", false, n1, mat_exch, nullptr, nullptr};
+    OEPType type_4 = {"Fujimoto.CT_M", false, 1, mat_ct_m, nullptr, nullptr};
 
     // Register OEPType's
     oepTypes_[type_1.name] = type_1;
@@ -165,7 +170,7 @@ void EETCouplingOEPotential::compute_fujimoto_gdf()
    std::shared_ptr<psi::Matrix> G = gdf->compute();
    
    // ===> Save and Finish <=== //
-   oepTypes_.at("Fujimoto.GDF").matrix->copy(G);
+   oepTypes_.at("Fujimoto.GDF").matrix = G;
    if (options_.get_int("PRINT") > 1) G->print();
 
 }
@@ -199,7 +204,7 @@ void EETCouplingOEPotential::compute_fujimoto_exch()
    }
 
    // ===> Save and Finish <=== //
-   oepTypes_.at("Fujimoto.EXCH").matrix->copy(G);
+   oepTypes_.at("Fujimoto.EXCH").matrix = G;
    if (options_.get_int("PRINT") > 1) G->print();
 }
 void EETCouplingOEPotential::compute_fujimoto_ct_m()
@@ -246,3 +251,34 @@ void EETCouplingOEPotential::compute_fujimoto_ct_m()
 
 void EETCouplingOEPotential::compute_3D(const std::string& oepType, const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) {}
 void EETCouplingOEPotential::print_header(void) const {}
+
+void EETCouplingOEPotential::rotate_oep(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
+
+  // Potential "Fujimoto.GDF"
+  psi::SharedMatrix Rj = R_aux->clone(); Rj->invert(); Rj->transpose_this();
+  psi::SharedMatrix new_matrix = psi::Matrix::doublet(Rj, oepTypes_.at("Fujimoto.GDF").matrix, true, false);
+  oepTypes_.at("Fujimoto.GDF").matrix = new_matrix;
+
+  // Potential "Fujimoto.EXCH" -> TODO
+  // add this to rotate oepTypes_.at("Fujimoto.CIS").matrix !
+
+  // Potential "Fujimoto.CIS"
+  psi::SharedMatrix Ri = R_prim->clone(); Ri->invert(); Ri->transpose_this();
+  psi::SharedMatrix new_Pe = psi::Matrix::triplet(Ri, oepTypes_.at("Fujimoto.CIS").cis_data->Pe , Ri, true, false, false);
+  psi::SharedMatrix new_Peg= psi::Matrix::triplet(Ri, oepTypes_.at("Fujimoto.CIS").cis_data->Peg, Ri, true, false, false);
+  oepTypes_.at("Fujimoto.CIS").cis_data->Pe = new_Pe;
+  oepTypes_.at("Fujimoto.CIS").cis_data->Peg = new_Peg;
+  oepTypes_.at("Fujimoto.CIS").cis_data->trcamm->rotate(r);
+  oepTypes_.at("Fujimoto.CIS").cis_data->camm_homo->rotate(r);
+  oepTypes_.at("Fujimoto.CIS").cis_data->camm_lumo->rotate(r);
+
+  this->rotate_basic(r, R_prim, R_aux);
+}
+void EETCouplingOEPotential::translate_oep(psi::SharedVector t) {
+  // Potential "Fujimoto.CIS"
+  oepTypes_.at("Fujimoto.CIS").cis_data->trcamm->translate(t);
+  oepTypes_.at("Fujimoto.CIS").cis_data->camm_homo->translate(t);
+  oepTypes_.at("Fujimoto.CIS").cis_data->camm_lumo->translate(t);
+
+  this->translate_basic(t);
+}

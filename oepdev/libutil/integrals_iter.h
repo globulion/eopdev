@@ -102,7 +102,7 @@ class ShellCombinationsIterator
    virtual bool is_done(void) {return done;}
 
    /// Return number of shells this iterator is for
-   virtual const int nshell(void) const {return nshell_;}
+   virtual int nshell(void) const {return nshell_;}
 
    /** Make an AO integral iterator based on current shell
     * @param mode - either "ALL" or "UNIQUE" (iterate over all or unique integrals)

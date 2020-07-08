@@ -58,13 +58,14 @@ class MultipoleConvergence
     enum ConvergenceLevel {R1, R2, R3, R4, R5};
 
     /** 
-     * Property to be evaluated from interacting DMTP's:
+     * Property to be evaluated from DMTP's:
      *
      * @param Energy    - generalized energy
+     * @param Field     - generalized field
      * @param Potential - generalized potential
      *
      */
-    enum Property {Energy, Potential};
+    enum Property {Energy, Potential, Field};
 
     /** \brief Construct from two shared DMTPole objects.
      *
@@ -79,11 +80,21 @@ class MultipoleConvergence
     virtual ~MultipoleConvergence();
 
 
-    /** Compute the generalized property
+    /** Compute the generalized interaction property
      * 
      *  @param property - generalized Property
      */
     void compute(Property property = Energy);
+
+    /** Compute the generalized generator property
+     * 
+     *  @param x        - location *x*-th Cartesian component
+     *  @param y        - location *y*-th Cartesian component
+     *  @param z        - location *z*-th Cartesian component
+     *  @param property - generalized Property
+     */
+    void compute(const double& x, const double& y, const double& z, Property property = Potential);
+
 
     /** Grab the generalized property at specified level of convergence
      * 
@@ -103,11 +114,15 @@ class MultipoleConvergence
     std::shared_ptr<DMTPole> dmtp_2_;
     /// Dictionary of available convergence level results
     std::map<std::string, std::shared_ptr<psi::Matrix>> convergenceList_;
+    /// Dictionary of available energy convergence pairs
+    std::map<std::string, std::shared_ptr<psi::Matrix>> energyConvergencePairs_;
 
     /// Compute the generalized energy
     void compute_energy();
-    /// Void compute the generalized potential
-    void compute_potential();
+    /// Compute the generalized potential
+    void compute_potential(const double& x, const double& y, const double& z);
+    /// Compute the generalized field potential
+    void compute_field(const double& x, const double& y, const double& z);
 };
 
 /** \brief Distributed Multipole Analysis Container and Computer. Abstract Base.
@@ -140,9 +155,8 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 
   public:
 
-    // <--- Constructors and Destructor ---> //
-
-
+    /** \name Constructors and Destructor */
+    //@{
     /** \brief Build an empty DMTP object from the wavefunction.
      *
      *  @param type - DMTP method. Available: `CAMM`.
@@ -154,6 +168,29 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
                                           std::shared_ptr<psi::Wavefunction> wfn, 
                                           int n = 1);
 
+    /** \brief Build an empty DMTP object of no type.
+     *
+     *  @return Blank DMTP distribution with memory allocated by no data.
+     */
+    static std::shared_ptr<DMTPole> empty(std::string type);
+
+
+    /** \brief Construct an empty DMTP object of no type.
+     *
+     *  Do not use this constructor. Use the DMTPole::empty method.
+     */
+    DMTPole(void);
+
+    /// Copy constructor
+    DMTPole(const DMTPole*);
+
+    /// Make a deep copy (`wfn_`, `mol_`, and `primary_` are shallow-copied)
+    virtual std::shared_ptr<DMTPole> clone(void) const = 0;
+
+    /// Destructor
+    virtual ~DMTPole();
+    //@}
+
     /** 
      * Determine the CAMM convergence for a given global option
      *
@@ -161,13 +198,10 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
      */
     static MultipoleConvergence::ConvergenceLevel determine_dmtp_convergence_level(const std::string& option);
 
-
-    /// Destructor
-    virtual ~DMTPole();
-  
  
-    // <--- Accessors ---> //
-
+ 
+    /** \name Accessors */
+    //@{
     /// Has distributed charges?
     virtual bool has_charges()       const {return hasCharges_;      }
     /// Has distributed dipoles?
@@ -215,10 +249,11 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     virtual int n_sites() const {return nSites_;}
     /// Get the number of distributions
     virtual int n_dmtp() const {return nDMTPs_;}
+    //@}
 
 
-    // <--- Mutators ---> //
-
+    /** \name Mutators */
+    //@{
     /// Set the distributed charges
     void set_charges(std::vector<psi::SharedMatrix> M) {charges_ = M;}
     /// Set the distributed dipoles
@@ -240,9 +275,13 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     void set_octupoles(psi::SharedMatrix M, int i) {octupoles_[i] = std::make_shared<psi::Matrix>(M);}
     /// Set the distributed hexadecapoles for the \f$ i \f$th distribution
     void set_hexadecapoles(psi::SharedMatrix M, int i) {hexadecapoles_[i] = std::make_shared<psi::Matrix>(M);}
+    //@}
 
+
+    /** \name Transformators */
+    //@{
     /** 
-     *  Change origins of the distributed multipole moments of all sets
+     *  \brief Change origins of the distributed multipole moments of all sets
      *
      *  @param new_origins - matrix with coordinates of the new origins \f$ \{ {\bf r}_{\rm new} \}\f$.
      *  \note The number of origins has to be equal to the number of distributed centres.
@@ -317,24 +356,52 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 
     /// Translate the DMTP sets
     void translate(psi::SharedVector transl);
-    /// Rotate the DMTP sets
-    void rotate(psi::SharedMatrix rotmat);
-    /// Superimpose the DMTP sets
-    void superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist);
-
-
-    // <--- Computers ---> //
-
     /** 
-     * Compute DMTP's from the set of the one-particle density matrices.
+     *  \brief Rotate the DMTP sets
+     *
+     *  @param rotmat - Cartesian rotation matrix \f$ {\bf r} \f$
+     *
+     *  Centers and origins, as well as dipole, quadrupole, octupole and hexadecapole moments
+     *  are transformed according to:
+     *  \f{align*}{
+     *     x_{a}^{(i)}      &\rightarrow \sum_{a'}        x_{a'}^{(i)}          r_{a'a}                             \\
+     *     o_{a}^{(i)}      &\rightarrow \sum_{a'}        o_{a'}^{(i)}          r_{a'a}                             \\
+     *     \mu_{a}^{(i)}    &\rightarrow \sum_{a'}        \mu_{a'}^{(i)}        r_{a'a}                             \\
+     *     \Theta_{a}^{(i)} &\rightarrow \sum_{a'b'}      \Theta_{a'b'}^{(i)}   r_{a'a} r_{b'b}                     \\
+     *     \Omega_{a}^{(i)} &\rightarrow \sum_{a'b'c'}    \Omega_{a'b'c'}^{(i)} r_{a'a} r_{b'b} r_{c'c}             \\
+     *     \Xi_{a}^{(i)}    &\rightarrow \sum_{a'b'c'd'}  \Xi_{a'b'c'd'}^{(i)}  r_{a'a} r_{b'b} r_{c'c} r_{d'd}
+     *  \f}
+     *  where the definition of \f$ r_{a'a} \f$ is consistent with the Kabsch algorithm
+     *  implemented in KabschSuperimposer.
+     *  \see KabschSuperimposer
+     */
+    void rotate(psi::SharedMatrix rotmat);
+    /**
+     * \brief Superimpose the DMTP sets.
+     *
+     *  @param ref_xyz - target geometry to superimpose
+     *  @param suplist - superimposition list
+     *  @return the RMS of superimposition
+     *  Kabsch algorithm is used for superimposition.
+     *  \see KabschSuperimposer
+     */
+    double superimpose(psi::SharedMatrix ref_xyz, std::vector<int> suplist = {});
+    //@}
+
+
+    /** \name Computers */
+    //@{
+    /** 
+     * \brief Compute DMTP's from the set of the one-particle density matrices.
      *
      * @param D - list of one-particle density matrices
      * @param t - list of flags determining if density is of transition type or not
      */
     void compute(std::vector<psi::SharedMatrix> D, std::vector<bool> t);
     /** 
-     * Compute DMTP's from the *sum* of the ground-state alpha and beta one-particle density matrices (t=false, i=0).
+     * \brief Compute ground state DMTP.
      *
+     * Compute DMTP's from the *sum* of the ground-state alpha and beta one-particle density matrices (t=false, i=0).
      * Results in a usual DMTP analysis of a molecule's charge density distribution.
      */
     void compute(void);
@@ -355,9 +422,11 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     std::shared_ptr<MultipoleConvergence> energy(std::shared_ptr<DMTPole> other, 
                                                  MultipoleConvergence::ConvergenceLevel max_clevel = MultipoleConvergence::R5);
 
-    /** \brief Evaluate the generalized potential.
+    /** \brief Evaluate the generalized potential at a given point.
      *
-     *  @param other       - interacting DMTP distribution. 
+     *  @param x           - location *x*-th Cartesian component
+     *  @param y           - location *y*-th Cartesian component
+     *  @param z           - location *z*-th Cartesian component
      *  @param max_clevel  - maximum convergence level (see below).
      *  @return The generalized potential convergence (A.U. units)
      *
@@ -368,20 +437,42 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
      *    - `MultipoleConvergence::R4`: includes qO, dQ terms and above. 
      *    - `MultipoleConvergence::R5`: includes qH, dO, QQ terms and above.
      */
-     std::shared_ptr<MultipoleConvergence> potential(std::shared_ptr<DMTPole> other,
+     std::shared_ptr<MultipoleConvergence> potential(const double& x, const double& y, const double& z,
                                                  MultipoleConvergence::ConvergenceLevel max_clevel = MultipoleConvergence::R5);
 
+    /** \brief Evaluate the generalized field at a given point.
+     *
+     *  @param x           - location *x*-th Cartesian component
+     *  @param y           - location *y*-th Cartesian component
+     *  @param z           - location *z*-th Cartesian component
+     *  @param max_clevel  - maximum convergence level (see below).
+     *  @return The generalized field convergence (A.U. units)
+     *
+     *  The following convergence levels are available:
+     *    - `MultipoleConvergence::R1`: includes qq terms.
+     *    - `MultipoleConvergence::R2`: includes dq terms and above.
+     *    - `MultipoleConvergence::R3`: includes qQ, dd terms and above.
+     *    - `MultipoleConvergence::R4`: includes qO, dQ terms and above. 
+     *    - `MultipoleConvergence::R5`: includes qH, dO, QQ terms and above.
+     */
+     std::shared_ptr<MultipoleConvergence> field(const double& x, const double& y, const double& z,
+                                                 MultipoleConvergence::ConvergenceLevel max_clevel = MultipoleConvergence::R5);
+     //@}
 
-    // <--- Printers ---> //
 
+    /** \name Printers */
+    //@{
     /// Print the header
     virtual void print_header() const = 0;
 
     /// Print the contents
     void print() const;
+    //@}
 
   protected:
 
+    /** \name Protected Interface */
+    //@{
     /** \brief Construct an empty DMTP object from the wavefunction.
      *
      *  @param wfn - wavefunction
@@ -393,7 +484,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 
 
     /// Compute DMTP's from the one-particle density matrix
-    virtual void compute(psi::SharedMatrix D, bool transition, int i) = 0;
+    virtual void compute(psi::SharedMatrix D, bool transition, int i);
     /// Compute multipole integrals
     void compute_integrals();
     /// Compute maximum order of the integrals
@@ -402,6 +493,17 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     /// Change origins of the distributed multipole moments of ith set
     virtual void recenter(psi::SharedMatrix new_origins, int i);
 
+    /// Initialize and allocate memory
+    virtual void allocate();
+
+    /// Deep-copy the matrix and DMTP data
+    virtual void copy_from(const DMTPole*);
+    //@}
+
+
+
+    /** \name Basic */
+    //@{
     /// Name of the distribution method
     std::string name_;
     /// Molecule associated with this DMTP
@@ -410,7 +512,12 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     psi::SharedWavefunction wfn_;
     /// Basis set (primary)
     psi::SharedBasisSet primary_;
+    /// Multipole integrals
+    std::vector<psi::SharedMatrix> mpInts_;
+    //@}
 
+    /** \name Sizing */
+    //@{
     /// Number of DMTP's
     int nDMTPs_;
     /// Number of DMTP sites
@@ -418,10 +525,10 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 
     /// Maximum order of the multipole
     int order_;
+    //@}
 
-    /// Multipole integrals
-    std::vector<psi::SharedMatrix> mpInts_;
-
+    /** \name Descriptors */
+    //@{
     /// Has distributed charges?
     bool hasCharges_;
     /// Has distributed dipoles?
@@ -432,12 +539,18 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     bool hasOctupoles_;
     /// Has distributed hexadecapoles?
     bool hasHexadecapoles_;
+    //@}
 
+    /** \name Geometry */
+    //@{
     /// DMTP centres
     psi::SharedMatrix centres_;
     /// DMTP origins
     psi::SharedMatrix origins_;
+    //@}
 
+    /** \name Multipoles */
+    //@{
     /// DMTP charges
     std::vector<psi::SharedMatrix> charges_;
     /// DMTP dipoles
@@ -448,9 +561,7 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
     std::vector<psi::SharedMatrix> octupoles_;
     /// DMTP hexadecapoles
     std::vector<psi::SharedMatrix> hexadecapoles_;
-
-    /// Initialize and allocate memory
-    virtual void allocate();
+    //@}
 };
 
 /** 
@@ -484,15 +595,24 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
 class CAMM : public DMTPole 
 {
  public:
-   /// Construct CAMM DMTPole object
+   CAMM(void) : DMTPole() {};
    CAMM(psi::SharedWavefunction wfn, int n);
+   CAMM(const CAMM* other) : DMTPole(other) {};
    virtual ~CAMM();
    virtual void compute(psi::SharedMatrix D, bool transition, int n);
    virtual void print_header(void) const;
+   virtual std::shared_ptr<DMTPole> clone(void) const override {
+      auto temp = std::make_shared<CAMM>(this);
+      return temp;
+   }
  private:
    /// Set the distribution sites to atoms
    void initialize_sites(void);
 };
+
+/// DMTPole object
+using SharedDMTPole = std::shared_ptr<DMTPole>;
+
 
 /** @}*/
 

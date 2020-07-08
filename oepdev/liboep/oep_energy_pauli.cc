@@ -11,7 +11,12 @@ using SharedField3D = std::shared_ptr<oepdev::Field3D>;
 using SharedDMTPole = std::shared_ptr<oepdev::DMTPole>;
 
 // <============== Repulsion Energy ==============> //
-
+SharedOEPotential RepulsionEnergyOEPotential::clone(void) const {
+    SharedOEPotential temp = std::make_shared<RepulsionEnergyOEPotential>(this);
+    return temp;
+}
+RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(const RepulsionEnergyOEPotential* f) 
+ : OEPotential(f)  {vec_otto_ladik_s2_ = new double[1];}
 RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(SharedWavefunction wfn, Options& options) 
  : OEPotential(wfn, options)
 { 
@@ -27,7 +32,9 @@ RepulsionEnergyOEPotential::RepulsionEnergyOEPotential(SharedWavefunction wfn,
 
 RepulsionEnergyOEPotential::~RepulsionEnergyOEPotential() 
 {
-  delete[] vec_otto_ladik_s2_;
+  if (vec_otto_ladik_s2_) {
+     delete[] vec_otto_ladik_s2_;
+   }
 }
 void RepulsionEnergyOEPotential::common_init() 
 {
@@ -40,10 +47,10 @@ void RepulsionEnergyOEPotential::common_init()
    SharedMatrix mat_1 = std::make_shared<psi::Matrix>("G(S^{-1})", n2, n1);
    SharedMatrix mat_2 = std::make_shared<psi::Matrix>("G(S^{-2})", n3, n1);
 
-   OEPType type_1 = {"Murrell-etal.S1"       , true , n1, mat_1};
-   OEPType type_2 = {"Otto-Ladik.S2.ESP"     , false, n1, mat_2};
-   OEPType type_3 = {"Otto-Ladik.S2.CAMM.a"  , false, n1, std::make_shared<psi::Matrix>()};
-   OEPType type_4 = {"Otto-Ladik.S2.CAMM.A"  , false, n1, std::make_shared<psi::Matrix>()};
+   OEPType type_1 = {"Murrell-etal.S1"       , true , n1, mat_1, nullptr, nullptr};
+   OEPType type_2 = {"Otto-Ladik.S2.ESP"     , false, n1, mat_2, nullptr, nullptr};
+   OEPType type_3 = {"Otto-Ladik.S2.CAMM.a"  , false, n1, std::make_shared<psi::Matrix>(), nullptr, nullptr};
+   OEPType type_4 = {"Otto-Ladik.S2.CAMM.A"  , false, n1, std::make_shared<psi::Matrix>(), nullptr, nullptr};
 
    oepTypes_[type_1.name] = type_1; 
    oepTypes_[type_2.name] = type_2;
@@ -72,7 +79,13 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
 
    // ===> Allocate <=== //
    std::shared_ptr<psi::Matrix> Vao = std::make_shared<psi::Matrix>("Vao" , primary_->nbf(), target->nbf());
-   std::shared_ptr<psi::Matrix> Ca_occ = wfn_->Ca_subset("AO","OCC");
+   std::shared_ptr<psi::Matrix> Ca_occ;
+   //if (options_.get_bool("OEPDEV_OEP_REP_LOCALIZE")) {
+   if (this->use_localized_orbitals) {
+       if (!localizer_) this->localize();
+       Ca_occ = this->lOcc_;
+   }
+   else {Ca_occ = this->cOcc_;} //wfn_->Ca_subset("AO","OCC");
 
    psi::IntegralFactory fact_1(primary_, target, primary_, target);
    psi::IntegralFactory fact_2(primary_, primary_, primary_, target);
@@ -124,7 +137,7 @@ void RepulsionEnergyOEPotential::compute_murrell_etal_s1()
    std::shared_ptr<psi::Matrix> G = gdf->compute();
    
    // ===> Save and Finish <=== //
-   oepTypes_.at("Murrell-etal.S1").matrix->copy(G);
+   oepTypes_.at("Murrell-etal.S1").matrix = G;
    if (options_.get_int("PRINT") > 1) G->print();
    //psi::timer_off("OEP    E(Paul) Murrell-etal S1  ");
 }
@@ -153,6 +166,15 @@ void RepulsionEnergyOEPotential::compute_otto_ladik_s2_camm_a()
    // ==> Initialize CAMM object <== //
    SharedDMTPole camm = oepdev::DMTPole::build("CAMM", wfn_, nocc);
 
+   // ==> Choose which orbitals to use <== //
+   psi::SharedMatrix Ca_occ;
+   //if (options_.get_bool("OEPDEV_OEP_REP_LOCALIZE")) {
+   if (this->use_localized_orbitals) {
+       if (!localizer_) this->localize();
+       Ca_occ = this->lOcc_;
+   }
+   else {Ca_occ = this->cOcc_;} 
+
    // ==> Compute the vector of OED's <== //
    std::vector<psi::SharedMatrix> oeds;
    std::vector<bool> trans;
@@ -167,7 +189,7 @@ void RepulsionEnergyOEPotential::compute_otto_ladik_s2_camm_a()
 
 	for (int a=0; a<nbf; ++a) {
         for (int b=0; b<nbf; ++b) {
-	     oed_p[a][b] = cOcc_->get(a,i) * cOcc_->get(b,i);
+	     oed_p[a][b] = Ca_occ->get(a,i) * Ca_occ->get(b,i);
         }
 	}
 	oeds.push_back(oed);
@@ -190,6 +212,15 @@ void RepulsionEnergyOEPotential::compute_otto_ladik_s2_camm_A()
    SharedDMTPole camm = oepdev::DMTPole::build("CAMM", wfn_, nocc);
    SharedMatrix Da = wfn_->Da()->clone();
 
+   // ==> Choose which orbitals to use <== //
+   psi::SharedMatrix Ca_occ;
+   //if (options_.get_bool("OEPDEV_OEP_REP_LOCALIZE")) {
+   if (this->use_localized_orbitals) {
+       if (!localizer_) this->localize();
+       Ca_occ = this->lOcc_;
+   }
+   else {Ca_occ = this->cOcc_;} 
+
    // ==> Compute the vector of OED's <== //
    std::vector<psi::SharedMatrix> oeds;
    std::vector<bool> trans;
@@ -204,7 +235,7 @@ void RepulsionEnergyOEPotential::compute_otto_ladik_s2_camm_A()
 
 	for (int a=0; a<nbf; ++a) {
         for (int b=0; b<nbf; ++b) {
-	     oed_p[a][b] = cOcc_->get(a,i) * cOcc_->get(b,i);
+	     oed_p[a][b] = Ca_occ->get(a,i) * Ca_occ->get(b,i);
         }
 	}
 	oed->scale(-0.5);
@@ -246,7 +277,17 @@ void RepulsionEnergyOEPotential::compute_3D_otto_ladik_s2(const double& x, const
   potInt_->set_charge_field(x, y, z);
   OEInt_ = potInt_;
   OEInt_->compute(potMat_);
-  std::shared_ptr<psi::Matrix> potMO = psi::Matrix::triplet(cOcc_, potMat_, cOcc_, true, false, false);
+
+  // ==> Choose which orbitals to use <== //
+  psi::SharedMatrix Ca_occ;
+  //if (options_.get_bool("OEPDEV_OEP_REP_LOCALIZE")) {
+  if (this->use_localized_orbitals) {
+      if (!localizer_) this->localize();
+      Ca_occ = this->lOcc_;
+  }
+  else {Ca_occ = this->cOcc_;} 
+
+  psi::SharedMatrix potMO = psi::Matrix::triplet(Ca_occ, potMat_, Ca_occ, true, false, false);
   potMat_->zero();
   //for (int o=0; o<oepTypes_["Otto-Ladik.S2.ESP"].n; ++o) val += 2.0 * potMO->get(o, o);
   val += 2.0 * potMO->trace();
@@ -261,4 +302,30 @@ void RepulsionEnergyOEPotential::print_header(void) const
 	psi::outfile->Printf(  " ===>           HF level           <=== \n\n");
         psi::outfile->Printf(  "      S-1 term: Murrell et.al\n");
         psi::outfile->Printf(  "      S-2 term: Otto and Ladik\n");
+}
+void RepulsionEnergyOEPotential::rotate_oep(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
+
+  // Potential "Murrell-etal.S1"
+  psi::SharedMatrix Ri = R_aux->clone(); Ri->invert(); Ri->transpose_this();
+  psi::SharedMatrix new_matrix = psi::Matrix::doublet(Ri, oepTypes_.at("Murrell-etal.S1").matrix, true, false);
+  oepTypes_.at("Murrell-etal.S1").matrix = new_matrix;
+//oepTypes_.at("Murrell-etal.S1").matrix->copy(new_matrix); --> wrong!!! why???
+//oepTypes_["Murrell-etal.S1"].matrix->copy(new_matrix.get()); ---> wrong!!! why???
+
+  // Potential "Otto-Ladik.S2.CAMM.a"
+  oepTypes_.at("Otto-Ladik.S2.CAMM.a").dmtp->rotate(r);
+
+  // Potential "Otto-Ladik.S2.CAMM.A"
+  oepTypes_.at("Otto-Ladik.S2.CAMM.A").dmtp->rotate(r);
+
+  this->rotate_basic(r, R_prim, R_aux);
+}
+void RepulsionEnergyOEPotential::translate_oep(psi::SharedVector t) {
+
+  // Potential "Otto-Ladik.S2.CAMM.a"
+  oepTypes_.at("Otto-Ladik.S2.CAMM.a").dmtp->translate(t);
+  // Potential "Otto-Ladik.S2.CAMM.A"
+  oepTypes_.at("Otto-Ladik.S2.CAMM.A").dmtp->translate(t);
+
+  this->translate_basic(t);
 }

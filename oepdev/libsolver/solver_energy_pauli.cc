@@ -1032,8 +1032,10 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
   ovlInt_1p2a->compute(Sao_1p2a);
   t_time += clock(); // Clock END
 
-  std::shared_ptr<psi::Matrix> Ca_occ_1 = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_occ_2 = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
+//std::shared_ptr<psi::Matrix> Ca_occ_1 = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
+//std::shared_ptr<psi::Matrix> Ca_occ_2 = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
+  std::shared_ptr<psi::Matrix> Ca_occ_1 = oep_1->cOcc(); // Those are localized if OEPDEV_LOCALIZE is true!
+  std::shared_ptr<psi::Matrix> Ca_occ_2 = oep_2->cOcc(); // Those are localized if OEPDEV_LOCALIZE is true!
 
   t_time -= clock(); // Clock BEGIN
   std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(Ca_occ_1, Sao_1p2p, Ca_occ_2, true, false, false);
@@ -1101,6 +1103,12 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
 double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
   double e = 0.0, e_s1 = 0.0, e_s2 = 0.0;
 
+  // OEPDEV_LOCALIZE must be set to True!
+  if (!(wfn_union_->options().get_bool("OEPDEV_LOCALIZE"))) {
+      throw psi::PSIEXCEPTION(" WARNING!!! You are not localizing orbitals in WFN_UNION but OEP-REP with ESP S-2 term requires this!\n This will inevitably generate invalid result!!\n Set OEPDEV_LOCALIZE to True and rerun.\n\n");
+  //    psi::outfile->Printf(" WARNING!!! You are not localizing orbitals in WFN_UNION but OEP-REP with ESP S-2 term requires this!\n This will inevitably generate invalid result!!\n\n");
+  }
+
   SharedOEPotential oep_1 = oepdev::OEPotential::build("REPULSION ENERGY",
                                                        wfn_union_->l_wfn(0), 
                                                        wfn_union_->l_auxiliary(0), 
@@ -1139,8 +1147,8 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
   ovlInt_1a2p->compute(Sao_1a2p);
   ovlInt_1p2a->compute(Sao_1p2a);
 
-  std::shared_ptr<psi::Matrix> Ca_occ_1 = oep_1->cOcc(); //wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_occ_2 = oep_2->cOcc(); //wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
+  std::shared_ptr<psi::Matrix> Ca_occ_1 = oep_1->cOcc(); //same as wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");  // Those are localized if OEPDEV_LOCALIZE is true!
+  std::shared_ptr<psi::Matrix> Ca_occ_2 = oep_2->cOcc(); //same as wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");  // Those are localized if OEPDEV_LOCALIZE is true!
 
   std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(Ca_occ_1, Sao_1p2p, Ca_occ_2, true, false, false);
   std::shared_ptr<psi::Matrix> Sba = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true);
@@ -1158,39 +1166,6 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
   std::vector<std::shared_ptr<psi::Matrix>> V2_set;
   psi::IntegralFactory fact_1p1p(wfn_union_->l_primary(0));
   psi::IntegralFactory fact_2p2p(wfn_union_->l_primary(1));
-
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(0, 0,-0.30558914568899);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(1, 0, 0.40346544329158);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(2, 0, 0.40212370239742);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(0, 1,-0.17962202761815);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(1, 1, 0.34288286239939);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(2, 1, 0.33673916521875);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(0, 2,-0.58404489902692);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(1, 2, 0.41059592891563);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(2, 2, 0.67344897011129);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(0, 3,-0.72767846747461);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(1, 3, 0.44363688358910);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(2, 3, 0.28404158388551);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(0, 4,-1.13637602091007);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(1, 4, 0.78173489859418);
-  //oep_1->oep("Otto-Ladik.S2.ESP").matrix->set(2, 4, 0.35464112231589);
-
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(0, 0,-0.30654857659501);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(1, 0, 0.40362563011190);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(2, 0, 0.40292294648310);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(0, 1,-0.16810612028310);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(1, 1, 0.33439889231491);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(2, 1, 0.33370722796819);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(0, 2,-0.58442425569207);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(1, 2, 0.41056913223828);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(2, 2, 0.67385512345376);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(0, 3,-0.52959692380999);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(1, 3, 0.25836199584353);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(2, 3, 0.27123492796645);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(0, 4,-0.92719214545242);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(1, 4, 0.58893475972445);
-  //oep_2->oep("Otto-Ladik.S2.ESP").matrix->set(2, 4, 0.33825738572797);
-
 
   for (int nx=0; nx<oep_1->oep("Otto-Ladik.S2.ESP").n; ++nx) {
        std::shared_ptr<psi::Matrix> V2 = std::make_shared<psi::Matrix>("V2", nbf_p2, nbf_p2);
