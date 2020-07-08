@@ -1233,30 +1233,70 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
   v_ba_v2->gemm(false, false, 1.0, U_2, v_ba_v2_copy, 0.0);
 
   // ===> Compute V3 term <=== //
+  const bool old_implementation = true;
   psi::SharedMatrix v_ab_v3 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
   psi::SharedMatrix v_ba_v3 = std::make_shared<psi::Matrix>("", nocc_2, nvir_1);
-  for (int i=0; i<nocc_1; ++i) {
-       for (int n=0; n<nvir_2; ++n) {
-            double v = 0;
-            for (int j=0; j<nocc_2; ++j) {              
-                 for (int y=0; y<mol_2->natom(); ++y) {
-                      v += S12->get(i,j) * w_1->get(i, y) * q_2[nvir_2*j+n]->get(y, 0);
-                 }
-            }
-            v_ab_v3->set(i, n, v);
-       }
-  }
-  //
-  for (int i=0; i<nocc_2; ++i) {
-       for (int n=0; n<nvir_1; ++n) {
-            double v = 0;
-            for (int j=0; j<nocc_1; ++j) {              
-                 for (int y=0; y<mol_1->natom(); ++y) {
-                      v += S12->get(j,i) * w_2->get(i, y) * q_1[nvir_1*j+n]->get(y, 0);
-                 }
-            }
-            v_ba_v3->set(i, n, v);
-       }
+
+  if (old_implementation) {
+      for (int i=0; i<nocc_1; ++i) {                                                        
+           for (int n=0; n<nvir_2; ++n) {
+                double v = 0;
+                for (int j=0; j<nocc_2; ++j) {              
+                     for (int y=0; y<mol_2->natom(); ++y) {
+                          v += S12->get(i,j) * w_1->get(i, y) * q_2[nvir_2*j+n]->get(y, 0);
+                     }
+                }
+                v_ab_v3->set(i, n, v);
+           }
+      }
+      //
+      for (int i=0; i<nocc_2; ++i) {
+           for (int n=0; n<nvir_1; ++n) {
+                double v = 0;
+                for (int j=0; j<nocc_1; ++j) {              
+                     for (int y=0; y<mol_1->natom(); ++y) {
+                          v += S12->get(j,i) * w_2->get(i, y) * q_1[nvir_1*j+n]->get(y, 0);
+                     }
+                }
+                v_ba_v3->set(i, n, v);
+           }
+      }
+  } else {
+      double** ss = S12->pointer();
+      double** w1p= w_1->pointer();
+      double** w2p= w_2->pointer();
+      for (int i=0; i<nocc_1; ++i) {                                                        
+           for (int n=0; n<nvir_2; ++n) {
+                double v = 0;
+                for (int j=0; j<nocc_2; ++j) {                                              
+                     double Q2 = q_2[nvir_2*j+n]->sum_of_squares();
+                     if (Q2 > 0.0001) {
+                         double** qq = q_2[nvir_2*j+n]->pointer();
+                         for (int y=0; y<mol_2->natom(); ++y) {
+                              v += ss[i][j] * w1p[i][y] * qq[y][0];
+                         }
+                     }
+                }
+                v_ab_v3->set(i, n, v);
+           }
+      }
+      //
+      for (int i=0; i<nocc_2; ++i) {
+           for (int n=0; n<nvir_1; ++n) {
+                double v = 0;
+                for (int j=0; j<nocc_1; ++j) {                                    
+                     double Q2 = q_1[nvir_1*j+n]->sum_of_squares();
+                     if (Q2 > 0.0001) {
+                         double** qq = q_1[nvir_1*j+n]->pointer();
+                         for (int y=0; y<mol_1->natom(); ++y) {
+                              v += ss[j][i] * w2p[i][y] * qq[y][0];
+                         }
+                     }
+                }
+                v_ba_v3->set(i, n, v);
+           }
+      }
+
   }
   psi::SharedMatrix v_ab_v3_copy = v_ab_v3->clone(); v_ab_v3->zero();
   psi::SharedMatrix v_ba_v3_copy = v_ba_v3->clone(); v_ba_v3->zero();
@@ -1265,14 +1305,21 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
 
 
   // ---> Add coupling constant contributions <--- //
-  std::shared_ptr<psi::Matrix> v_ab_v12 = v_ab_v1->clone(); v_ab_v12->add(v_ab_v2);
-  std::shared_ptr<psi::Matrix> v_ba_v12 = v_ba_v1->clone(); v_ba_v12->add(v_ba_v2);
+//std::shared_ptr<psi::Matrix> v_ab_v12 = v_ab_v1->clone(); v_ab_v12->add(v_ab_v2);
+//std::shared_ptr<psi::Matrix> v_ba_v12 = v_ba_v1->clone(); v_ba_v12->add(v_ba_v2);
 //std::shared_ptr<psi::Matrix> v_ab_v13 = v_ab_v1->clone(); v_ab_v13->add(v_ab_v3);
 //std::shared_ptr<psi::Matrix> v_ba_v13 = v_ba_v1->clone(); v_ba_v13->add(v_ba_v3);
 //std::shared_ptr<psi::Matrix> v_ab_v23 = v_ab_v2->clone(); v_ab_v23->add(v_ab_v3);
 //std::shared_ptr<psi::Matrix> v_ba_v23 = v_ba_v2->clone(); v_ba_v23->add(v_ba_v3);
-  std::shared_ptr<psi::Matrix> v_ab_v123= v_ab_v12->clone(); v_ab_v123->add(v_ab_v3);
-  std::shared_ptr<psi::Matrix> v_ba_v123= v_ba_v12->clone(); v_ba_v123->add(v_ba_v3);
+//std::shared_ptr<psi::Matrix> v_ab_v123= v_ab_v12->clone(); v_ab_v123->add(v_ab_v3);
+//std::shared_ptr<psi::Matrix> v_ba_v123= v_ba_v12->clone(); v_ba_v123->add(v_ba_v3);
+
+  v_ab_v1->add(v_ab_v2);
+  v_ab_v1->add(v_ab_v3);
+
+  v_ba_v1->add(v_ba_v2);
+  v_ba_v1->add(v_ba_v3);
+
 
   // ===> Compute CT Energy <=== //
 //double e_ab_v1  = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v1);
@@ -1287,8 +1334,11 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
 //double e_ba_v13 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v13);
 //double e_ab_v23 = this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v23);
 //double e_ba_v23 = this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v23);
-  double e_ab_v123= this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v123);
-  double e_ba_v123= this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v123);
+//double e_ab_v123= this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v123);
+//double e_ba_v123= this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v123);
+
+  double e_ab_v123= this->compute_ct_component(e_occ_1, e_vir_2, v_ab_v1  );
+  double e_ba_v123= this->compute_ct_component(e_occ_2, e_vir_1, v_ba_v1  );
 
   e_ab = e_ab_v123;
   e_ba = e_ba_v123;
