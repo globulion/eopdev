@@ -89,6 +89,7 @@ add_psi4_plugin(oepdev main.cc
 		       oepdev/libutil/cis_rhf_direct.cc
                        oepdev/libutil/kabsch_superimposer.cc
                        oepdev/libutil/basis_rotation.cc
+                       oepdev/libutil/quambo.cc
 		       # lib3d
                        oepdev/lib3d/space3d.cc
                        oepdev/lib3d/esp.cc
