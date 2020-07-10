@@ -303,6 +303,7 @@ class QUAMBO:
 
       # [6] Calculate normalization
       Dj = (a_occ_set**2).sum(axis=0) + numpy.diag(a_vir_set.T @ R @ a_vir_set)
+      Dj[numpy.where(Dj<0.0)] = 1.0
       Djm = 1./numpy.sqrt(Dj)
      
       # [7] Calculate non-orthogonal QUAMBOs 
