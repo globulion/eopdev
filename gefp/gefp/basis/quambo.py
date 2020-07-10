@@ -6,6 +6,7 @@
 """
 import psi4
 import numpy
+from ..math.matrix import matrix_power
 
 __all__ = ["QUAMBO"]
 
@@ -21,6 +22,11 @@ class QUAMBO:
  e_all = solve.eps(space='all')
  quambo_b_nonorthogonal = solve.quambo(type='nonorthogonal', spin='beta')
 
+ Notes:
+  o first argument to QUAMBO constructor can also be Wavefunction object
+    with the SCF solution of a molecule. In this case, SCF is not run 
+    for the molecule.
+
  References: 
 
   [1] W. C. Lu, C. Z. Wang, M.W. Schmidt, L. Bytautas, K. M. Ho, K. Reudenberg, 
@@ -29,7 +35,6 @@ class QUAMBO:
       of QUAMBO in EFP2 CT term]
 """
   def __init__(self, mol, options, acbs=False):
-      self._mol = mol
       self._options = options
       if isinstance(options, dict): 
          psi4.core.set_options(options)
@@ -46,8 +51,8 @@ class QUAMBO:
 
       # numbers of unpaired electrons in free atoms
       self._unpe_atom     = { "H": 1, "He": 0, 
-                             "Li": 1, "Be": 0, "B": 1, "C": 4, "N": 3, "O": 2, "F": 1, "Ne": 0,
-                             "Na": 1, "Mg": 0,"Al": 1,"Si": 2, "P": 3, "S": 2,"Cl": 1, "Ar": 0, 
+                             "Li": 1, "Be": 0, "B": 1, "C": 4, "N": 3, "O": 2, "F": 1, "Ne": 0, # assume C* state
+                             "Na": 1, "Mg": 0,"Al": 1,"Si": 4, "P": 3, "S": 2,"Cl": 1, "Ar": 0,  
                              "K" : 1, "Ca": 0, }
 
 
@@ -80,6 +85,17 @@ class QUAMBO:
       # Energies of All Molecular Orbitals (Beta)
       self._e_b_mini = None
 
+      # Determine the molecule
+      if isinstance(mol, psi4.core.Molecule):
+         self._mol = mol
+         # Run SCF of a molecule
+         en, self._wfn = psi4.energy('scf', molecule=self._mol, return_wfn = True); psi4.core.clean()
+
+      elif isinstance(mol, psi4.core.Wavefunction):
+         self._mol = mol.molecule()
+         self._wfn = mol
+
+      else: raise TypeError("Wrong data type provided to QUAMBO constructor first argument")
 
 
   def quambo(self, spin="alpha", type="orthogonal"):
@@ -133,33 +149,31 @@ class QUAMBO:
 
       psi4.core.print_out("\n ===> Computing QUAMBOs <===\n\n")
 
-      # [1] Run SCF of a molecule
-      en, wfn = psi4.energy('scf', molecule=self._mol, return_wfn = True); psi4.core.clean()
+      # [1] Read the orbitals and Fock matrix
+      ca_occ = self._wfn.Ca_subset("AO","OCC").to_array(dense=True)
+      ca_vir = self._wfn.Ca_subset("AO","VIR").to_array(dense=True)
+      cb_occ = self._wfn.Cb_subset("AO","OCC").to_array(dense=True)
+      cb_vir = self._wfn.Cb_subset("AO","VIR").to_array(dense=True)
 
-      ca_occ = wfn.Ca_subset("AO","OCC").to_array(dense=True)
-      ca_vir = wfn.Ca_subset("AO","VIR").to_array(dense=True)
-      cb_occ = wfn.Cb_subset("AO","OCC").to_array(dense=True)
-      cb_vir = wfn.Cb_subset("AO","VIR").to_array(dense=True)
+      bfs = self._wfn.basisset()
 
-      bfs = wfn.basisset()
-
-      eps_a_occ = wfn.epsilon_a_subset("MO", "OCC").to_array(dense=True)
-      eps_a_vir = wfn.epsilon_a_subset("MO", "VIR").to_array(dense=True)
-      eps_a_all = wfn.epsilon_a_subset("MO", "ALL").to_array(dense=True)
-      eps_b_occ = wfn.epsilon_b_subset("MO", "OCC").to_array(dense=True)
-      eps_b_vir = wfn.epsilon_b_subset("MO", "VIR").to_array(dense=True)
-      eps_b_all = wfn.epsilon_b_subset("MO", "ALL").to_array(dense=True)
+      eps_a_occ = self._wfn.epsilon_a_subset("MO", "OCC").to_array(dense=True)
+      eps_a_vir = self._wfn.epsilon_a_subset("MO", "VIR").to_array(dense=True)
+      eps_a_all = self._wfn.epsilon_a_subset("MO", "ALL").to_array(dense=True)
+      eps_b_occ = self._wfn.epsilon_b_subset("MO", "OCC").to_array(dense=True)
+      eps_b_vir = self._wfn.epsilon_b_subset("MO", "VIR").to_array(dense=True)
+      eps_b_all = self._wfn.epsilon_b_subset("MO", "ALL").to_array(dense=True)
      
-      Fa = wfn.Fa().to_array(dense=True)
-      Fb = wfn.Fb().to_array(dense=True)
+      Fa = self._wfn.Fa().to_array(dense=True)
+      Fb = self._wfn.Fb().to_array(dense=True)
 
-      Sao= wfn.S ().to_array(dense=True); self._Sao = Sao
-      #X  = gefp.math.matrix.matrix_power(Sao, -0.5); self._X = X
-      #Y  = gefp.math.matrix.matrix_power(Sao,  0.5); self._Y = Y
+      Sao= self._wfn.S ().to_array(dense=True); self._Sao = Sao
+      #X  = matrix_power(Sao, -0.5); self._X = X
+      #Y  = matrix_power(Sao,  0.5); self._Y = Y
 
       # sizing
-      ndocc = wfn.doccpi()[0]
-      nsocc = wfn.soccpi()[0]
+      ndocc = self._wfn.doccpi()[0]
+      nsocc = self._wfn.soccpi()[0]
 
       naocc = ca_occ.shape[1]
       navir = ca_vir.shape[1]
@@ -169,8 +183,8 @@ class QUAMBO:
      #nocc_mini = ndocc + nsocc               ; self._nocc_mini = nocc_mini
      #nvir_mini = nbas_mini - nocc_mini       ; self._nvir_mini = nvir_mini
 
-      naocc_mini= wfn.nalpha()                ; self._naocc_mini = naocc_mini
-      nbocc_mini= wfn.nbeta()                 ; self._nbocc_mini = nbocc_mini
+      naocc_mini= self._wfn.nalpha()          ; self._naocc_mini = naocc_mini
+      nbocc_mini= self._wfn.nbeta()           ; self._nbocc_mini = nbocc_mini
       nbas_mini = self._calculate_nbas_mini() ; self. _nbas_mini =  nbas_mini
       navir_mini= nbas_mini - naocc_mini      ; self._navir_mini = navir_mini
       nbvir_mini= nbas_mini - nbocc_mini      ; self._nbvir_mini = nbvir_mini
@@ -204,8 +218,8 @@ class QUAMBO:
           en_a, wfn_a = psi4.energy('hf', molecule=atom, return_wfn = True); psi4.core.clean()
          
           # A* orbitals (free-atom minimal basis occupied valence+core orbitals)
-         #ca_a  = wfn_a.Ca_subset("AO","ALL").to_array(dense=True)[:,:self._nbas_atom_mini[atom.symbol(0)]]
-          ca_a  = wfn_a.Ca_subset("AO","OCC").to_array(dense=True) 
+          ca_a  = wfn_a.Ca_subset("AO","ALL").to_array(dense=True)[:,:self._nbas_atom_mini[atom.symbol(0)]]
+         #ca_a  = wfn_a.Ca_subset("AO","OCC").to_array(dense=True) 
 
           # a* coefficients (projections of A* onto molecule's occupied and virtual orbitals)
           if self.acbs:
@@ -300,7 +314,7 @@ class QUAMBO:
       # [8] Calculate orthogonal QUAMBOs
       S = a_occ_set_nonorthogonal.T @ a_occ_set_nonorthogonal 
       S+= a_vir_set_nonorthogonal.T @ a_vir_set_nonorthogonal
-      Sm12 = gefp.math.matrix.matrix_power(S, -0.5)
+      Sm12 = matrix_power(S, -0.5)
       a_occ_set_orthogonal = a_occ_set_nonorthogonal @ Sm12                      # a_nj' from Ref. [1]
       a_vir_set_orthogonal = a_vir_set_nonorthogonal @ Sm12                      # a_vj' from Ref. [1]
       quambo_orthogonal = c_occ @ a_occ_set_orthogonal 
