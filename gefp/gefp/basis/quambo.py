@@ -74,7 +74,7 @@ class QUAMBO:
       self._c_b_mini_vir = None
       # VVO Energies (Alpha)
       self._e_a_mini_vir = None
-      # VVO Energies (Alpha)
+      # VVO Energies (Beta)
       self._e_b_mini_vir = None
       # All Molecular orbitals (Alpha, OCC + VVO)
       self._c_a_mini = None 
@@ -179,9 +179,6 @@ class QUAMBO:
       navir = ca_vir.shape[1]
       nbocc = cb_occ.shape[1]
       nbvir = cb_vir.shape[1]
-
-     #nocc_mini = ndocc + nsocc               ; self._nocc_mini = nocc_mini
-     #nvir_mini = nbas_mini - nocc_mini       ; self._nvir_mini = nvir_mini
 
       naocc_mini= self._wfn.nalpha()          ; self._naocc_mini = naocc_mini
       nbocc_mini= self._wfn.nbeta()           ; self._nbocc_mini = nbocc_mini
