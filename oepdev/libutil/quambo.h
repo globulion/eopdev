@@ -105,7 +105,7 @@ class QUAMBO
 
     double compute_error_between_two_vectors_(psi::SharedVector a, psi::SharedVector b);
     int calculate_nbas_mini_(void);
-    psi::SharedMolecule atomize_(int i);
+    std::vector<psi::SharedMolecule> atomize_(void);
     SharedQUAMBOData compute_quambo_data_(psi::SharedMatrix, psi::SharedMatrix, psi::SharedVector, psi::SharedVector,
                                           psi::SharedMatrix, psi::SharedMatrix, psi::SharedMatrix, int, int, std::string);
 

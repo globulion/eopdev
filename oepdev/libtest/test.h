@@ -101,6 +101,9 @@ class Test
    /// Test the oepdev::RHFPerturbed class
    double test_scf_perturb(void);
 
+   /// Test the oepdev::QUAMBO class
+   double test_quambo(void);
+
    /// Test the oepdev::CAMM class
    double test_camm(void);
 

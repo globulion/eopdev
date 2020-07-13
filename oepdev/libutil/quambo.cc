@@ -1,6 +1,10 @@
 #include "quambo.h"
 #include "psi4/libqt/qt.h"
 #include "psi4/libpsi4util/PsiOutStream.h"
+#include "psi4/libmints/mintshelper.h"
+#include "util.h"
+#include "psi4/libscf_solver/rohf.h"
+
 
 namespace psi {
  using SharedBasisSet = std::shared_ptr<BasisSet>;
@@ -102,23 +106,55 @@ void QUAMBO::compute(void) {
  psi::outfile->Printf  (" Na_vir = %5d    Na_vir_mini = %5d\n", navir, navir_mini);
  psi::outfile->Printf  (" Nb_vir = %5d    Nb_vir_mini = %5d\n", nbvir, nbvir_mini);
  psi::outfile->Printf  (" There are %5d minimal basis molecular orbitals (QUAMBOs) for alpha and beta spin\n", nbas_mini);
- psi::outfile->Printf  (" Looking for %5d virtual ALPHA valence orbitals (VVOs)\n\n", navir_mini);
+ psi::outfile->Printf  (" Looking for %5d virtual ALPHA valence orbitals (VVOs)\n"  , navir_mini);
  psi::outfile->Printf  (" Looking for %5d virtual BETA  valence orbitals (VVOs)\n\n", nbvir_mini);
 
  // [2] Run ROHF for all free atoms
- //psi::SharedMatrix a_occ_a_set = std::make_shared<psi::Matrix>("", naocc, 0); //TODO
- //psi::SharedMatrix a_vir_a_set = std::make_shared<psi::Matrix>("", navir, 0); //TODO
- //psi::SharedMatrix a_occ_b_set = std::make_shared<psi::Matrix>("", nbocc, 0); //TODO
- //psi::SharedMatrix a_vir_b_set = std::make_shared<psi::Matrix>("", nbvir, 0); //TODO
  std::vector<psi::SharedMatrix> a_occ_a_list, a_vir_a_list, a_occ_b_list, a_vir_b_list;
 
+ std::vector<psi::SharedMolecule> atoms = this->atomize_();
+ 
  for (int i=0; i<this->mol_->natom(); ++i) {
       // Solve ROHF for free atom
-      psi::SharedMolecule free_atom = this->atomize_(i);
-      //TODO
+      psi::SharedMolecule free_atom = atoms[i];
+
+    //psi::SharedMolecule mol_bck = std::make_shared<psi::Molecule>(this->mol_->clone());
 
       // Extract A* orbitals (free-atom minimal basis occupied valence+core orbitals)
-      psi::SharedMatrix ca_a = std::make_shared<psi::Matrix>(); // TODO
+    //psi::SharedMolecule mol1 = this->wfn_->molecule(); mol1 = free_atom;
+    //psi::SharedMolecule mol2 = this->wfn_->basisset()->molecule(); mol2 = free_atom;
+     
+      psi::SharedWavefunction scf_base = std::make_shared<psi::Wavefunction>(free_atom, this->wfn_->basisset(), this->options_);
+      scf_base->set_basisset("DF_BASIS_SCF", this->wfn_->get_basisset("DF_BASIS_SCF"));
+      std::shared_ptr<psi::SuperFunctional> functional = oepdev::create_superfunctional("HF", this->options_);
+      bool compute_mints = false;
+      if (compute_mints) {
+         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(this->wfn_->basisset());
+         mints->integrals();
+       }
+      std::shared_ptr<psi::scf::ROHF> scf = std::make_shared<psi::scf::ROHF>(scf_base, functional);
+      bool hydrogen = (free_atom->multiplicity()==2) ? true: false;
+      hydrogen = false;
+      if (hydrogen) {
+          const int nbf = this->wfn_->basisset()->nbf();
+          int ao_s1;
+          for (int k=0; k<nbf; ++k) {
+               ao_s1 = k;
+               if (i==this->wfn_->basisset()->function_to_center(k)) break;
+          }
+          cout << "HEEEEEE  "<< ao_s1 << endl;
+          psi::SharedMatrix pCa = std::make_shared<psi::Matrix>("", nbf, 1); 
+          pCa->set(0,ao_s1  ,0.42);
+          pCa->set(0,ao_s1+1,0.63);
+          psi::SharedMatrix pCb = std::make_shared<psi::Matrix>("", nbf, 0);
+          scf->guess_Ca(pCa);
+          scf->guess_Cb(pCb);
+      }
+      scf->compute_energy();
+      psi::SharedMatrix ca_a = scf->Ca_subset("AO", "OCC");
+    //mol1 = mol_bck;
+    //mol2 = mol_bck;
+    //psi::PSIOManager::shared_object()->psiclean();//TODO
 
       // Compute a* coefficients (projections of A* onto molecule's occupied and virtual orbitals)
       psi::SharedMatrix a_occ_a = psi::Matrix::triplet(ca_occ, this->Sao_, ca_a, true, false, false);
@@ -132,24 +168,6 @@ void QUAMBO::compute(void) {
       a_occ_b_list.push_back(a_occ_b);
       a_vir_b_list.push_back(a_vir_b);
  }
- //for atom in this->atomize():
- //    en_a, wfn_a = psi4.energy('hf', molecule=atom, return_wfn = True); psi4.core.clean()
- //   
- //    # A* orbitals (free-atom minimal basis occupied valence+core orbitals)
- //    ca_a  = wfn_a.Ca_subset("AO","ALL");[:,:this->nbas_atom_mini[atom.symbol(0)]]
- //   #ca_a  = wfn_a.Ca_subset("AO","OCC"); 
-
- //    # a* coefficients (projections of A* onto molecule's occupied and virtual orbitals)
- //    a_occ_a = ca_occ.T  @ Sao @ ca_a  ; a_occ_b = cb_occ.T  @ Sao @ ca_a 
- //    a_vir_a = ca_vir.T  @ Sao @ ca_a  ; a_vir_b = cb_vir.T  @ Sao @ ca_a
-
- //   #atom.print_out()
-
- //    a_occ_a_set = numpy.hstack((a_occ_a_set.copy(), a_occ_a.copy()))
- //    a_vir_a_set = numpy.hstack((a_vir_a_set.copy(), a_vir_a.copy()))
- //    a_occ_b_set = numpy.hstack((a_occ_b_set.copy(), a_occ_b.copy()))
- //    a_vir_b_set = numpy.hstack((a_vir_b_set.copy(), a_vir_b.copy()))
-
  psi::SharedMatrix a_occ_a_set = psi::Matrix::horzcat(a_occ_a_list);
  psi::SharedMatrix a_vir_a_set = psi::Matrix::horzcat(a_vir_a_list);
  psi::SharedMatrix a_occ_b_set = psi::Matrix::horzcat(a_occ_b_list);
@@ -191,7 +209,7 @@ int QUAMBO::calculate_nbas_mini_(void) {
        int nb = this->nbas_atom_mini_.at(atom);
        nbf += nb;
   }
-  return 0;
+  return nbf;
 }
 
 double QUAMBO::compute_error_between_two_vectors_(psi::SharedVector a, psi::SharedVector b) {
@@ -202,8 +220,45 @@ double QUAMBO::compute_error_between_two_vectors_(psi::SharedVector a, psi::Shar
  return error;
 }
 
-psi::SharedMolecule QUAMBO::atomize_(int i) {
- //TODO
+std::vector<psi::SharedMolecule> QUAMBO::atomize_(void) {
+ std::vector<psi::SharedMolecule> atoms;
+
+ std::string log;
+ std::string s;
+ std::string ghost_prefix = "@";
+ std::string endline = "symmetry c1\nunits bohr\nno_reorient\nno_com\n";
+
+ int m;
+
+ int I = 0;
+ for (int i=0; i<this->mol_->natom(); ++i) {
+      std::string coord_log = "";
+      for (int j=0; j<this->mol_->natom(); ++j) {
+           double x = this->mol_->x(j);
+           double y = this->mol_->y(j);
+           double z = this->mol_->z(j);
+           if (i==j) { 
+               s = this->mol_->symbol(j);
+               m = this->unpe_atom_.at(s);
+           }
+           else {
+               s = ghost_prefix + this->mol_->symbol(j);
+           }
+           coord_log += oepdev::string_sprintf("%4s %14.8f %14.8f %14.8f\n", s.c_str(), x, y, z);
+      }
+      log  = oepdev::string_sprintf("\n0 %i\n", m+1);
+      log += coord_log + endline;
+
+      cout << log;
+      psi::SharedMolecule atom = psi::Molecule::create_molecule_from_string(log);
+      atom->set_molecular_charge(0);
+      atom->set_multiplicity(m+1);
+      atom->update_geometry();
+      atoms.push_back(atom);
+
+      I += 1;
+ }
+ return atoms;
 }
 
 SharedQUAMBOData QUAMBO::compute_quambo_data_(
@@ -221,10 +276,10 @@ SharedQUAMBOData QUAMBO::compute_quambo_data_(
 {
   // [3] Compute B matrix
   psi::SharedMatrix B = psi::Matrix::doublet(a_vir_set, a_vir_set, false, true);
-  const int dim = B->ncol(); // number of QUAMBOs
+  const int dim = B->ncol(); // number of all Virtual MOs
   const int nquambo= a_vir_set->ncol(); // number of QUAMBOs
   const int nbf = c_occ->nrow(); // number of AOs
-     
+ 
   // [4] Diagonalize to find transformation matrix T 
   psi::SharedMatrix U = std::make_shared<psi::Matrix>("", dim, dim);
   psi::SharedVector E = std::make_shared<psi::Vector>("", dim);
@@ -255,8 +310,8 @@ SharedQUAMBOData QUAMBO::compute_quambo_data_(
   psi::SharedMatrix a_occ_set_nonorthogonal = a_occ_set->clone();
   psi::SharedMatrix a_vir_set_nonorthogonal =         r->clone();
   for (int i=0; i<nquambo; ++i) {
-       a_occ_set_nonorthogonal->scale_row(0, i, Dj->get(i)); // a_nj from Ref. [1]
-       a_vir_set_nonorthogonal->scale_row(0, i, Dj->get(i)); // a_vj from Ref. [1]
+       a_occ_set_nonorthogonal->scale_column(0, i, Dj->get(i)); // a_nj from Ref. [1]
+       a_vir_set_nonorthogonal->scale_column(0, i, Dj->get(i)); // a_vj from Ref. [1]
   }
   psi::SharedMatrix quambo_nonorthogonal = std::make_shared<psi::Matrix>("", nbf, nquambo);
   quambo_nonorthogonal->gemm(false, false, 1.0, c_occ, a_occ_set_nonorthogonal, 1.0);
@@ -266,6 +321,7 @@ SharedQUAMBOData QUAMBO::compute_quambo_data_(
   psi::SharedMatrix S = std::make_shared<psi::Matrix>("", nquambo, nquambo);
   S->gemm(true, false, 1.0, a_occ_set_nonorthogonal, a_occ_set_nonorthogonal, 1.0);
   S->gemm(true, false, 1.0, a_vir_set_nonorthogonal, a_vir_set_nonorthogonal, 1.0);
+  S->print();
   psi::SharedMatrix Sm12 = S->clone(); Sm12->power(-0.5);
   psi::SharedMatrix a_occ_set_orthogonal = psi::Matrix::doublet(a_occ_set_nonorthogonal, Sm12, false, false);// a_nj' from Ref. [1]
   psi::SharedMatrix a_vir_set_orthogonal = psi::Matrix::doublet(a_vir_set_nonorthogonal, Sm12, false, false);// a_vj' from Ref. [1]
@@ -279,6 +335,8 @@ SharedQUAMBOData QUAMBO::compute_quambo_data_(
   psi::SharedVector e_quambo = std::make_shared<psi::Vector>("", nquambo);
   psi::SharedMatrix c_quambo = std::make_shared<psi::Matrix>("", nquambo, nquambo);
   F_quambo->diagonalize(c_quambo, e_quambo, psi::diagonalize_order::ascending);
+  e_quambo->print();
+  eps_occ->print();
 
   // [9a] Test whether occupied orbital energies are correctly obtained
   psi::SharedVector e_quambo_occ = std::make_shared<psi::Vector>("", nocc_mini); 
@@ -286,7 +344,7 @@ SharedQUAMBOData QUAMBO::compute_quambo_data_(
     e_quambo_occ->set(i, e_quambo->get(i));
   }
   double error = this->compute_error_between_two_vectors_(e_quambo_occ, eps_occ);
-  if (error < 0.0001) { 
+  if (error > 0.0001) { 
      psi::outfile->Printf("Error in QUAMBO calculations = %14.5f", error);
      std::cout << "Error in QUAMBO calculations = " << error << std::endl;
      throw psi::PSIEXCEPTION("Error in QUAMBO calculations!"); 

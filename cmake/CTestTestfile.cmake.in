@@ -18,6 +18,7 @@ add_test (NAME ERI_3_1               COMMAND "psi4" "tests/oepdev/eri_3_1.inp"  
 add_test (NAME UNITARY_OPTIMIZER     COMMAND "psi4" "tests/oepdev/unitaryOptimizer.inp"     "tests/oepdev/unitaryOptimizer.out")
 add_test (NAME UNITARY_OPTIMIZER_4_2 COMMAND "psi4" "tests/oepdev/unitaryOptimizer_4_2.inp" "tests/oepdev/unitaryOptimizer_4_2.out")
 add_test (NAME SCF_PERTURB           COMMAND "psi4" "tests/oepdev/scf_perturb.inp"          "tests/oepdev/scf_perturb.out")
+add_test (NAME QUAMBO                COMMAND "psi4" "tests/oepdev/quambo.inp"               "tests/oepdev/quambo.out"     )
 add_test (NAME CAMM                  COMMAND "psi4" "tests/oepdev/camm.inp"                 "tests/oepdev/camm.out"       )
 add_test (NAME DMTP_POT_FIELD        COMMAND "psi4" "tests/oepdev/dmtp_pot_field.inp"       "tests/oepdev/dmtp_pot_field.out")
 add_test (NAME DMTP_ENERGY           COMMAND "psi4" "tests/oepdev/dmtp_energy.inp"          "tests/oepdev/dmtp_energy.out")

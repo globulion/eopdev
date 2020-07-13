@@ -1,0 +1,37 @@
+#!/usr/bin/python
+sys.path.insert(0, './..')
+import oepdev
+
+# test molecule
+molecule h2o {
+0 1
+O         -3.08471        1.12313        0.00396
+H         -2.11791        0.90877        0.01763
+H         -3.12325        2.07922       -0.24921
+
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+set {
+    # ==> OEPDEV Routine Specification <== #
+    oepdev_target                 test
+    oepdev_test_name              quambo
+    oepdev_test_mode              monomer
+    oepdev_localize               False
+    oepdev_enable_trial           False
+    # ==> General Psi4 Options <== #
+    basis                         6-31++G**
+    scf_type                      direct 
+    guess                         gwh
+    e_convergence                 1e-6
+    print                         1
+    puream                        False
+    reference rhf
+}
+
+
+# run oepdev
+energy('oepdev', molecule=h2o)

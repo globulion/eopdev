@@ -49,6 +49,24 @@ create_superfunctional(std::string name, Options& options) {
 }
 
 extern "C" PSI_API
+SharedBasisSet
+create_basisset_by_copy(SharedBasisSet basis_ref) {
+//TODO
+  for (int si=0; si<basis_ref->nshell(); ++si) {
+       const psi::GaussianShell& s = basis_ref->shell(si);
+       std::vector<double> c, e;
+       std::string atom;
+       for (int pi=0; pi<s.nprimitive(); ++pi) {
+            c.push_back(s.coef(pi));
+            e.push_back(s.exp (pi));
+       }
+  }
+  //return basis;
+}
+
+
+
+extern "C" PSI_API
 std::shared_ptr<Molecule>
 extract_monomer(std::shared_ptr<const Molecule> molecule_dimer, int id) {
     std::vector<int> real_list; real_list.push_back(id-1);

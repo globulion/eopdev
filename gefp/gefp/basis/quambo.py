@@ -192,7 +192,7 @@ class QUAMBO:
       psi4.core.print_out  (" Na_vir = %5d    Na_vir_mini = %5d\n" % (navir,navir_mini))
       psi4.core.print_out  (" Nb_vir = %5d    Nb_vir_mini = %5d\n" % (nbvir,nbvir_mini))
       psi4.core.print_out  (" There are %5d minimal basis molecular orbitals (QUAMBOs) for alpha and beta spin\n" % nbas_mini)
-      psi4.core.print_out  (" Looking for %5d virtual ALPHA valence orbitals (VVOs)\n\n" % navir_mini)
+      psi4.core.print_out  (" Looking for %5d virtual ALPHA valence orbitals (VVOs)\n"   % navir_mini)
       psi4.core.print_out  (" Looking for %5d virtual BETA  valence orbitals (VVOs)\n\n" % nbvir_mini)
       # 
       #Fa = X @ Fa @ X
@@ -215,8 +215,8 @@ class QUAMBO:
           en_a, wfn_a = psi4.energy('hf', molecule=atom, return_wfn = True); psi4.core.clean()
          
           # A* orbitals (free-atom minimal basis occupied valence+core orbitals)
-          ca_a  = wfn_a.Ca_subset("AO","ALL").to_array(dense=True)[:,:self._nbas_atom_mini[atom.symbol(0)]]
-         #ca_a  = wfn_a.Ca_subset("AO","OCC").to_array(dense=True) 
+         #ca_a  = wfn_a.Ca_subset("AO","ALL").to_array(dense=True)[:,:self._nbas_atom_mini[atom.symbol(0)]]
+          ca_a  = wfn_a.Ca_subset("AO","OCC").to_array(dense=True) 
 
           # a* coefficients (projections of A* onto molecule's occupied and virtual orbitals)
           if self.acbs:

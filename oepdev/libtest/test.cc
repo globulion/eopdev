@@ -29,6 +29,7 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="UNITARY_OPTIMIZER") result = test_unitaryOptimizer();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="UNITARY_OPTIMIZER_4_2") result = test_unitaryOptimizer_4_2();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="SCF_PERTURB") result = test_scf_perturb();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="QUAMBO") result = test_quambo();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CAMM") result = test_camm();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_POT_FIELD") result = test_dmtp_pot_field();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_ENERGY") result = test_dmtp_energy();
