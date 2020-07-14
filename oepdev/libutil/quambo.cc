@@ -367,7 +367,7 @@ SharedQUAMBOData QUAMBO::compute_quambo_data_(
     e_quambo_occ->set(i, e_quambo->get(i));
   }
   double error = this->compute_error_between_two_vectors_(e_quambo_occ, eps_occ);
-  if (error > 0.0001) { 
+  if (error > this->options_.get_double("QUAMBO_EPS_THRESHOLD_CHECK")) { 
      psi::outfile->Printf("Error in QUAMBO calculations = %14.5f", error);
      std::cout << "Error in QUAMBO calculations = " << error << std::endl;
      throw psi::PSIEXCEPTION("Error in QUAMBO calculations!"); 

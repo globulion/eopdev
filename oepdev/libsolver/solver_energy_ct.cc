@@ -95,9 +95,19 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
   oneInt->compute(VaoA22);
   ovlInt->compute(Sao12);
 
-  std::shared_ptr<psi::Matrix> Ca_occ_A = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_occ_B = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_vir_B = wfn_union_->l_wfn(1)->Ca_subset("AO","VIR");
+  psi::SharedMatrix Ca_occ_A = wfn_union_->l_ca_occ(0);  
+  psi::SharedMatrix Ca_occ_B = wfn_union_->l_ca_occ(1);
+  psi::SharedMatrix Ca_vir_A = wfn_union_->l_ca_vir(0);
+  psi::SharedMatrix Ca_vir_B = wfn_union_->l_ca_vir(1);
+  psi::SharedVector eps_a_occ_A = wfn_union_->l_eps_a_occ(0);
+  psi::SharedVector eps_a_occ_B = wfn_union_->l_eps_a_occ(1);
+  psi::SharedVector eps_a_vir_A = wfn_union_->l_eps_a_vir(0);
+  psi::SharedVector eps_a_vir_B = wfn_union_->l_eps_a_vir(1);
+
+  const int nocc_A = Ca_occ_A->ncol();
+  const int nocc_B = Ca_occ_B->ncol();
+  const int nvir_A = Ca_vir_A->ncol();
+  const int nvir_B = Ca_vir_B->ncol();
 
   std::shared_ptr<psi::Matrix> Smo12  = psi::Matrix::triplet(Ca_occ_A, Sao12 , Ca_occ_B, true, false, false);
   std::shared_ptr<psi::Matrix> Smo1Y  = psi::Matrix::triplet(Ca_occ_A, Sao12 , Ca_vir_B, true, false, false);  
@@ -149,8 +159,6 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
   oneInt_2->compute(VaoB11_2);
   ovlInt_2->compute(Sao21);
   
-
-  std::shared_ptr<psi::Matrix> Ca_vir_A = wfn_union_->l_wfn(0)->Ca_subset("AO","VIR");
 
   std::shared_ptr<psi::Matrix> Smo21  = psi::Matrix::triplet(Ca_occ_B, Sao21 , Ca_occ_A, true, false, false);
   std::shared_ptr<psi::Matrix> Smo2X  = psi::Matrix::triplet(Ca_occ_B, Sao21 , Ca_vir_A, true, false, false);
@@ -214,9 +222,9 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
   //Term 1//
   //ERI I // Group: I
   double int_1 = 0.0;
-  double ERI1[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];
-  for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(1); ++n) {
+  double ERI1[nocc_A][nvir_B];
+  for (int i=0; i<nocc_A; ++i) {
+       for (int n=0; n<nvir_B; ++n) {
             for (int h = 0; h < wfn_union_->nirrep(); ++h) {
                  global_dpd_->buf4_mat_irrep_init(&buf_Y122, h);
                  global_dpd_->buf4_mat_irrep_rd(&buf_Y122, h);
@@ -238,9 +246,9 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //ERI II // Group II
   double int_2 = 0.0;
-  double ERI2[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];
-  for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(1); ++n) {
+  double ERI2[nocc_A][nvir_B];
+  for (int i=0; i<nocc_A; ++i) {
+       for (int n=0; n<nvir_B; ++n) {
             for (int h = 0; h < wfn_union_->nirrep(); ++h) {
                  global_dpd_->buf4_mat_irrep_init(&buf_1122, h);
                  global_dpd_->buf4_mat_irrep_rd(&buf_1122, h);
@@ -262,9 +270,9 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //ERI III // Group III
   double int_3 = 0.0;
-  double ERI3[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];
-  for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(1); ++n) {
+  double ERI3[nocc_A][nvir_B];
+  for (int i=0; i<nocc_A; ++i) {
+       for (int n=0; n<nvir_B; ++n) {
             for (int h = 0; h < wfn_union_->nirrep(); ++h) {
                  global_dpd_->buf4_mat_irrep_init(&buf_Y211, h);
                  global_dpd_->buf4_mat_irrep_rd(&buf_Y211, h);
@@ -286,9 +294,9 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //ERI IV // Group I
   double int_4 = 0.0;
-  double ERI4[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];
-  for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(1); ++n) {
+  double ERI4[nocc_A][nvir_B];
+  for (int i=0; i<nocc_A; ++i) {
+       for (int n=0; n<nvir_B; ++n) {
             for (int h = 0; h < wfn_union_->nirrep(); ++h) {
                  global_dpd_->buf4_mat_irrep_init(&buf_Y212, h);
                  global_dpd_->buf4_mat_irrep_rd(&buf_Y212, h);
@@ -310,9 +318,9 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //ERI V // Group III
   double int_5 = 0.0;
-  double ERI5[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];
-  for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(1); ++n) {
+  double ERI5[nocc_A][nvir_B];
+  for (int i=0; i<nocc_A; ++i) {
+       for (int n=0; n<nvir_B; ++n) {
             for (int h = 0; h < wfn_union_->nirrep(); ++h) {
                  global_dpd_->buf4_mat_irrep_init(&buf_Y211, h);
                  global_dpd_->buf4_mat_irrep_rd(&buf_Y211, h);
@@ -336,9 +344,9 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
   //Term 2//
   //ERI I // Group I
   double int_6 = 0.0;
-  double ERI6[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
-  for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(0); ++n) {
+  double ERI6[nocc_B][nvir_A];
+  for (int i=0; i<nocc_B; ++i) {
+       for (int n=0; n<nvir_A; ++n) {
             for (int h = 0; h < wfn_union_->nirrep(); ++h) {
                  global_dpd_->buf4_mat_irrep_init(&buf_X211, h);
                  global_dpd_->buf4_mat_irrep_rd(&buf_X211, h);
@@ -360,9 +368,9 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //ERI II // Group II
   double int_7 = 0.0;
-  double ERI7[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
-  for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(0); ++n) {
+  double ERI7[nocc_B][nvir_A];
+  for (int i=0; i<nocc_B; ++i) {
+       for (int n=0; n<nvir_A; ++n) {
             for (int h = 0; h < wfn_union_->nirrep(); ++h) {
                  global_dpd_->buf4_mat_irrep_init(&buf_1122, h);
                  global_dpd_->buf4_mat_irrep_rd(&buf_1122, h);
@@ -384,9 +392,9 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //ERI III // Group III
   double int_8 = 0.0;
-  double ERI8[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
-  for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(0); ++n) {
+  double ERI8[nocc_B][nvir_A];
+  for (int i=0; i<nocc_B; ++i) {
+       for (int n=0; n<nvir_A; ++n) {
             for (int h = 0; h < wfn_union_->nirrep(); ++h) {
                  global_dpd_->buf4_mat_irrep_init(&buf_X122, h);
                  global_dpd_->buf4_mat_irrep_rd(&buf_X122, h);
@@ -408,9 +416,9 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //ERI IV // Group I
   double int_9 = 0.0;
-  double ERI9[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
-  for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(0); ++n) {
+  double ERI9[nocc_B][nvir_A];
+  for (int i=0; i<nocc_B; ++i) {
+       for (int n=0; n<nvir_A; ++n) {
             for (int h = 0; h < wfn_union_->nirrep(); ++h) {
                  global_dpd_->buf4_mat_irrep_init(&buf_X121, h);
                  global_dpd_->buf4_mat_irrep_rd(&buf_X121, h);
@@ -432,9 +440,9 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
   //ERI V // Group III
   double int_10 = 0.0;
-  double ERI10[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
-  for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(0); ++n) {
+  double ERI10[nocc_B][nvir_A];
+  for (int i=0; i<nocc_B; ++i) {
+       for (int n=0; n<nvir_A; ++n) {
             for (int h = 0; h < wfn_union_->nirrep(); ++h) {
                  global_dpd_->buf4_mat_irrep_init(&buf_X122, h);
                  global_dpd_->buf4_mat_irrep_rd(&buf_X122, h);
@@ -470,12 +478,12 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
 
   //Term 1: Sum of ERIs//
-  double ERI_1[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];
-  double ERI_1_group_1[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];   // debug for OEP
-  double ERI_1_group_2[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];   // debug for OEP
-  double ERI_1_group_3[wfn_union_->l_ndocc(0)][wfn_union_->l_nvir(1)];   // debug for OEP
-  for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(1); ++n) {
+  double ERI_1        [nocc_A][nvir_B];
+  double ERI_1_group_1[nocc_A][nvir_B];   // debug for OEP
+  double ERI_1_group_2[nocc_A][nvir_B];   // debug for OEP
+  double ERI_1_group_3[nocc_A][nvir_B];   // debug for OEP
+  for (int i=0; i<nocc_A; ++i) {
+       for (int n=0; n<nvir_B; ++n) {
             ERI_1[i][n] = ERI1[i][n] - ERI2[i][n] - ERI3[i][n] - ERI4[i][n] + ERI5[i][n];  // All Groups
             ERI_1_group_1[i][n] = ERI1[i][n] - ERI4[i][n]; // Group I: debug for OEP
             ERI_1_group_2[i][n] =-ERI2[i][n]             ; // Group II: debug for OEP
@@ -485,12 +493,12 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
 
 
   //Term 2: Sum of ERIs//
-  double ERI_2[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];
-  double ERI_2_group_1[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];   // debug for OEP
-  double ERI_2_group_2[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];   // debug for OEP
-  double ERI_2_group_3[wfn_union_->l_ndocc(1)][wfn_union_->l_nvir(0)];   // debug for OEP
-  for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(0); ++n) {
+  double ERI_2        [nocc_B][nvir_A];
+  double ERI_2_group_1[nocc_B][nvir_A];   // debug for OEP
+  double ERI_2_group_2[nocc_B][nvir_A];   // debug for OEP
+  double ERI_2_group_3[nocc_B][nvir_A];   // debug for OEP
+  for (int i=0; i<nocc_B; ++i) {
+       for (int n=0; n<nvir_A; ++n) {
             ERI_2[i][n] = ERI6[i][n] - ERI7[i][n] - ERI8[i][n] - ERI9[i][n] + ERI10[i][n];  // All Groups
             ERI_2_group_1[i][n] = ERI6[i][n] - ERI9[i][n]; // Group I: debug for OEP
             ERI_2_group_2[i][n] =-ERI7[i][n]             ; // Group II: debug for OEP
@@ -499,23 +507,15 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
   }
 
 
-  //Term 1//
-  std::shared_ptr<psi::Vector> Eps_occ_A = wfn_union_->l_wfn(0)->epsilon_a_subset("MO","OCC");
-  std::shared_ptr<psi::Vector> Eps_vir_B = wfn_union_->l_wfn(1)->epsilon_a_subset("MO","VIR");
-
-  //Term 2//
-  std::shared_ptr<psi::Vector> Eps_occ_B = wfn_union_->l_wfn(1)->epsilon_a_subset("MO","OCC");
-  std::shared_ptr<psi::Vector> Eps_vir_A = wfn_union_->l_wfn(0)->epsilon_a_subset("MO","VIR");
-
 
   //Term 1: CT Energy A ---> B //
   double E_ct_1 = 0.0;
   double E_ct_1_12 = 0.0, E_ct_1_13 = 0.0, E_ct_1_23 = 0.0;
   double E_ct_1_1 = 0.0, E_ct_1_2 = 0.0, E_ct_1_3 = 0.0;
-  for (int i=0; i<wfn_union_->l_ndocc(0); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(1); ++n) {
+  for (int i=0; i<nocc_A; ++i) {
+       for (int n=0; n<nvir_B; ++n) {
 	    double v = ERI_1[i][n] + VmoB1Y->get(i,n);
-            E_ct_1 += (v*v)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
+            E_ct_1 += (v*v)/(eps_a_occ_A->get(i) - eps_a_vir_B->get(n));
             //
 	    double v1= ERI_1_group_1[i][n] + VmoB1Y_group_1->get(i,n);
 	    double v2= ERI_1_group_2[i][n] + VmoB1Y_group_2->get(i,n);
@@ -524,12 +524,12 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
             double v12  = v1 + v2;
             double v13  = v1 + v3;
             double v23  = v2 + v3;
-            E_ct_1_1 += (v1*v1)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
-            E_ct_1_2 += (v2*v2)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
-            E_ct_1_3 += (v3*v3)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
-            E_ct_1_12 += (v12*v12)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
-            E_ct_1_13 += (v13*v13)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
-            E_ct_1_23 += (v23*v23)/(Eps_occ_A->get(i) - Eps_vir_B->get(n));
+            E_ct_1_1 += (v1*v1)/(eps_a_occ_A->get(i) - eps_a_vir_B->get(n));
+            E_ct_1_2 += (v2*v2)/(eps_a_occ_A->get(i) - eps_a_vir_B->get(n));
+            E_ct_1_3 += (v3*v3)/(eps_a_occ_A->get(i) - eps_a_vir_B->get(n));
+            E_ct_1_12 += (v12*v12)/(eps_a_occ_A->get(i) - eps_a_vir_B->get(n));
+            E_ct_1_13 += (v13*v13)/(eps_a_occ_A->get(i) - eps_a_vir_B->get(n));
+            E_ct_1_23 += (v23*v23)/(eps_a_occ_A->get(i) - eps_a_vir_B->get(n));
        }
   }
   E_ct_1 *= 2.0; 
@@ -545,10 +545,10 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
   double E_ct_2 = 0.0;
   double E_ct_2_12 = 0.0, E_ct_2_13 = 0.0, E_ct_2_23 = 0.0;
   double E_ct_2_1 = 0.0, E_ct_2_2 = 0.0, E_ct_2_3 = 0.0;
-  for (int i=0; i<wfn_union_->l_ndocc(1); ++i) {
-       for (int n=0; n<wfn_union_->l_nvir(0); ++n) {
+  for (int i=0; i<nocc_B; ++i) {
+       for (int n=0; n<nvir_A; ++n) {
             double v = ERI_2[i][n] + VmoA2X->get(i,n);
-            E_ct_2 += (v*v)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
+            E_ct_2 += (v*v)/(eps_a_occ_B->get(i) - eps_a_vir_A->get(n));
             //
             double v1= ERI_2_group_1[i][n] + VmoA2X_group_1->get(i,n);
             double v2= ERI_2_group_2[i][n] + VmoA2X_group_2->get(i,n);
@@ -557,12 +557,12 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
             double v12  = v1 + v2;
             double v13  = v1 + v3;
             double v23  = v2 + v3;
-            E_ct_2_1 += (v1*v1)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
-            E_ct_2_2 += (v2*v2)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
-            E_ct_2_3 += (v3*v3)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
-            E_ct_2_12 += (v12*v12)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
-            E_ct_2_13 += (v13*v13)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
-            E_ct_2_23 += (v23*v23)/(Eps_occ_B->get(i) - Eps_vir_A->get(n));
+            E_ct_2_1 += (v1*v1)/(eps_a_occ_B->get(i) - eps_a_vir_A->get(n));
+            E_ct_2_2 += (v2*v2)/(eps_a_occ_B->get(i) - eps_a_vir_A->get(n));
+            E_ct_2_3 += (v3*v3)/(eps_a_occ_B->get(i) - eps_a_vir_A->get(n));
+            E_ct_2_12 += (v12*v12)/(eps_a_occ_B->get(i) - eps_a_vir_A->get(n));
+            E_ct_2_13 += (v13*v13)/(eps_a_occ_B->get(i) - eps_a_vir_A->get(n));
+            E_ct_2_23 += (v23*v23)/(eps_a_occ_B->get(i) - eps_a_vir_A->get(n));
        }
   }
   E_ct_2 *= 2.0;
@@ -638,13 +638,24 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
 
   // ---> Timer-on <--- //
   psi::timer_on("Solver E(CT) EFP2 MO-Expanded");
+
+  // Ca matrices //
+  psi::SharedMatrix Ca_occ_A = wfn_union_->l_ca_occ(0);  
+  psi::SharedMatrix Ca_occ_B = wfn_union_->l_ca_occ(1);
+  psi::SharedMatrix Ca_vir_A = wfn_union_->l_ca_vir(0);
+  psi::SharedMatrix Ca_vir_B = wfn_union_->l_ca_vir(1);
+  // Eps vectors //
+  psi::SharedVector eps_a_occ_A = wfn_union_->l_eps_a_occ(0);
+  psi::SharedVector eps_a_occ_B = wfn_union_->l_eps_a_occ(1);
+  psi::SharedVector eps_a_vir_A = wfn_union_->l_eps_a_vir(0);
+  psi::SharedVector eps_a_vir_B = wfn_union_->l_eps_a_vir(1);
   
   int nbf_1     = wfn_union_->l_nbf(0);
   int nbf_2	= wfn_union_->l_nbf(1);  
-  int ndocc_1	= wfn_union_->l_ndocc(0);
-  int ndocc_2   = wfn_union_->l_ndocc(1);
-  int nvir_1	= wfn_union_->l_nvir(0);
-  int nvir_2	= wfn_union_->l_nvir(1);
+  int ndocc_1	= Ca_occ_A->ncol();
+  int ndocc_2   = Ca_occ_B->ncol();
+  int nvir_1	= Ca_vir_A->ncol();
+  int nvir_2	= Ca_vir_B->ncol();
 
   // ===> ONE-ELECTRON PART <=== //
 
@@ -665,12 +676,6 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   // F matrices //
   std::shared_ptr<psi::Matrix> Fao11     = wfn_union_->l_wfn(0)->Fa();
   std::shared_ptr<psi::Matrix> Fao22     = wfn_union_->l_wfn(1)->Fa();
-
-  // Ca matrices //
-  std::shared_ptr<psi::Matrix> Ca_occ_A = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_occ_B = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_vir_A = wfn_union_->l_wfn(0)->Ca_subset("AO","VIR");
-  std::shared_ptr<psi::Matrix> Ca_vir_B = wfn_union_->l_wfn(1)->Ca_subset("AO","VIR");
 
   // IntegralFactory //
   psi::IntegralFactory fact_12(wfn_union_->l_primary(0), wfn_union_->l_primary(1), wfn_union_->l_primary(0), wfn_union_->l_primary(1));
@@ -1221,10 +1226,10 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   int nbf_p2 = wfn_union_->l_nbf(1);
   int nbf_a1 = wfn_union_->l_auxiliary(0)->nbf();
   int nbf_a2 = wfn_union_->l_auxiliary(1)->nbf();
-  int nocc_1 = wfn_union_->l_ndocc(0);
-  int nocc_2 = wfn_union_->l_ndocc(1);
-  int nvir_1 = wfn_union_->l_nvir(0);
-  int nvir_2 = wfn_union_->l_nvir(1);
+  int nocc_1 = oep_1->cOcc()->ncol();
+  int nocc_2 = oep_2->cOcc()->ncol();
+  int nvir_1 = oep_1->cVir()->ncol();
+  int nvir_2 = oep_2->cVir()->ncol();
 
   std::shared_ptr<psi::Matrix> Sao_1p2p     = std::make_shared<psi::Matrix>("Sao 1p2p", nbf_p1, nbf_p2);
   std::shared_ptr<psi::Matrix> Sao_1a2p     = std::make_shared<psi::Matrix>("Sao 1a2p", nbf_a1, nbf_p2);
@@ -1243,14 +1248,14 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
 
 
   // ---> Canonical MO's: LCAO and energies <--- //
-  std::shared_ptr<psi::Matrix> Ca_occ_1 = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_occ_2 = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_vir_1 = wfn_union_->l_wfn(0)->Ca_subset("AO","VIR");
-  std::shared_ptr<psi::Matrix> Ca_vir_2 = wfn_union_->l_wfn(1)->Ca_subset("AO","VIR");
-  std::shared_ptr<psi::Vector> e_occ_1  = wfn_union_->l_wfn(0)->epsilon_a_subset("MO","OCC");
-  std::shared_ptr<psi::Vector> e_occ_2  = wfn_union_->l_wfn(1)->epsilon_a_subset("MO","OCC");
-  std::shared_ptr<psi::Vector> e_vir_1  = wfn_union_->l_wfn(0)->epsilon_a_subset("MO","VIR");
-  std::shared_ptr<psi::Vector> e_vir_2  = wfn_union_->l_wfn(1)->epsilon_a_subset("MO","VIR");
+  std::shared_ptr<psi::Matrix> Ca_occ_1 = oep_1->cOcc(); //wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
+  std::shared_ptr<psi::Matrix> Ca_occ_2 = oep_2->cOcc(); //wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
+  std::shared_ptr<psi::Matrix> Ca_vir_1 = oep_1->cVir(); //wfn_union_->l_wfn(0)->Ca_subset("AO","VIR");
+  std::shared_ptr<psi::Matrix> Ca_vir_2 = oep_2->cVir(); //wfn_union_->l_wfn(1)->Ca_subset("AO","VIR");
+  std::shared_ptr<psi::Vector> e_occ_1  = oep_1->epsOcc(); //wfn_union_->l_wfn(0)->epsilon_a_subset("MO","OCC");
+  std::shared_ptr<psi::Vector> e_occ_2  = oep_2->epsOcc(); //wfn_union_->l_wfn(1)->epsilon_a_subset("MO","OCC");
+  std::shared_ptr<psi::Vector> e_vir_1  = oep_1->epsVir(); //wfn_union_->l_wfn(0)->epsilon_a_subset("MO","VIR");
+  std::shared_ptr<psi::Vector> e_vir_2  = oep_2->epsVir(); //wfn_union_->l_wfn(1)->epsilon_a_subset("MO","VIR");
 
   clock_t t_time = -clock(); // Clock BEGIN
   ovlInt_1a2p->compute(Sao_1a2p);

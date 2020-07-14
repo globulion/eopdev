@@ -326,7 +326,8 @@ class QUAMBO:
       # [9a] Test whether occupied orbital energies are correctly obtained
       e_quambo_occ = e_quambo[:nocc_mini]
       error = self._error(e_quambo_occ, eps_occ)
-      assert (error < 0.0001), "Error in QUAMBO calculations! Error=%f" % error
+      assert (error < self._options.get_double("QUAMBO_EPS_THRESHOLD_CHECK")), \
+                "Error in QUAMBO calculations! Error=%f" % error
 
       # [10] Compute virtual minimal MOs (VMO)
       e_quambo_vir = e_quambo[nocc_mini:]

@@ -68,7 +68,7 @@ void ChargeTransferEnergyOEPotential::compute_otto_ladik_v1_gdf()
 
    // ===> Allocate <=== //
    std::shared_ptr<psi::Matrix> Vao = std::make_shared<psi::Matrix>("Vao" , primary_->nbf(), target->nbf());
-   std::shared_ptr<psi::Matrix> Ca_vir = wfn_->Ca_subset("AO","VIR");
+   std::shared_ptr<psi::Matrix> Ca_vir = this->cVir_->clone(); //wfn_->Ca_subset("AO","VIR");
    const int nvir = Ca_vir->ncol();
 
    psi::IntegralFactory fact_1(primary_, target, primary_, target);

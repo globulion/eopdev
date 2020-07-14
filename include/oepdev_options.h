@@ -75,6 +75,10 @@ int read_options(std::string name, Options& options)
         /*- Exclude octupoles in CT energy calculations? (relevant if above is "DMTP") -*/
         options.add_bool   ("EFP2_CT_NO_OCTUPOLES"  , true                       );
 
+        /*- For EFP2-CT term use Virtual Valence Orbitals from diagonalization in QUAMBO basis -*/
+        options.add_bool   ("EFP2_CT_VVO"           , false                      );
+
+
         /*- Which methods of interaction energy are to be used? -*/
         options.add_bool   ("OEPDEV_SOLVER_EINT_COUL_AO"  , true                 );
         options.add_bool   ("OEPDEV_SOLVER_EINT_COUL_MO"  , true                 );
@@ -123,6 +127,11 @@ int read_options(std::string name, Options& options)
         options.add_int    ("DAVIDSON_LIU_SPACE_MAX"      , 200                  );
         options.add_int    ("DAVIDSON_LIU_SPACE_START"    ,-1                    );
         options.add_bool   ("DAVIDSON_LIU_STOP_WHEN_UNCONVERGED", true           );
+
+        // ---> QUAMBO  <--- //
+
+        options.add_str    ("QUAMBO_MODE"                 , "ACBS"                     );
+        options.add_double ("QUAMBO_EPS_THRESHOLD_CHECK"  , 0.0001                     );
 
 
         // ---> CPHF Global Options  <--- //

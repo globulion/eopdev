@@ -1,5 +1,6 @@
 #include "oep.h"
 #include "../lib3d/space3d.h"
+#include "../libutil/quambo.h"
 
 using namespace oepdev;
 
@@ -49,6 +50,8 @@ OEPotential::OEPotential(const OEPotential* f) {
   use_localized_orbitals = f->use_localized_orbitals;
   if (f->cOcc_) {cOcc_ = f->cOcc_->clone();} else {cOcc_ = f->cOcc_;}
   if (f->cVir_) {cVir_ = f->cVir_->clone();} else {cVir_ = f->cVir_;}
+  if (f->epsOcc_) {epsOcc_ = std::make_shared<psi::Vector>(*(f->epsOcc_));} else {epsOcc_ = f->epsOcc_;}
+  if (f->epsVir_) {epsVir_ = std::make_shared<psi::Vector>(*(f->epsVir_));} else {epsVir_ = f->epsVir_;}
   if (f->potMat_) {potMat_= f->potMat_->clone();} else {potMat_=f->potMat_;}
   if (f->lOcc_) {lOcc_ = f->lOcc_->clone();} else {lOcc_=f->lOcc_;}
   if (f->T_) {T_ = f->T_->clone();} else {T_=f->T_;}
@@ -84,13 +87,26 @@ void OEPotential::common_init(void)
    intsFactory_ = std::make_shared<psi::IntegralFactory>(primary_);
    potMat_      = std::make_shared<psi::Matrix>("Potential Integrals", primary_->nbf(), primary_->nbf());
    potInt_      = std::make_shared<oepdev::PotentialInt>(intsFactory_->spherical_transform(), primary_, primary_, 0);
-   cOcc_        = wfn_->Ca_subset("AO","OCC");
-   cVir_        = wfn_->Ca_subset("AO","VIR");
    lOcc_        = nullptr; //std::make_shared<psi::Matrix>();
    localizer_   = nullptr; //psi::Localizer::build(options_.get_str("SOLVER_CT_LOCALIZER"), primary_, cOcc_, options_);
    T_           = nullptr;
    lmoc_        = {nullptr, nullptr, nullptr};
    use_localized_orbitals = false;
+
+   if (options_.get_bool("EFP2_CT_VVO")) {
+       std::shared_ptr<QUAMBO> solver = std::make_shared<QUAMBO>(wfn_, true);
+       solver->compute();
+       cOcc_ = solver->Ca_subset("AO","OCC");
+       cVir_ = solver->Ca_subset("AO","VIR");
+       epsOcc_ = solver->epsilon_a_subset("MO","OCC");
+       epsVir_ = solver->epsilon_a_subset("MO","VIR");
+   }
+   else {
+       cOcc_   = wfn_->Ca_subset("AO","OCC");
+       cVir_   = wfn_->Ca_subset("AO","VIR");
+       epsOcc_ = wfn_->epsilon_a_subset("MO","OCC");
+       epsVir_ = wfn_->epsilon_a_subset("MO","VIR");
+   }
 }
 std::vector<psi::SharedVector> OEPotential::mo_centroids(psi::SharedMatrix C){
    std::vector<std::shared_ptr<psi::Matrix>> Rao;                                                                  
