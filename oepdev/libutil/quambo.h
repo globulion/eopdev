@@ -59,10 +59,39 @@ class QUAMBO
    /// Constructor
    QUAMBO(psi::SharedWavefunction wfn, bool acbs = true);
    /// Destructor
-  ~QUAMBO();
+   virtual ~QUAMBO();
 
+   /// Is ACBS mode selected?
    const bool acbs;
+   /// Compute QUAMBOs and VVOs
    void compute(void);
+
+
+   /// Get the QUAMBOs in AO representation (AOs: rows, QUAMBOs: columns)
+   psi::SharedMatrix quambo(const std::string& spin, const std::string& type = "ORTHOGONAL");
+
+   /// Get SCF alpha orbital energies in minimal MO basis
+   psi::SharedVector epsilon_a_subset(const std::string& space, const std::string& subset);
+   /// Get SCF beta orbital energies in minimal MO basis
+   psi::SharedVector epsilon_b_subset(const std::string& space, const std::string& subset);
+
+   /// Get SCF alpha orbitals in minimal MO basis
+   psi::SharedMatrix Ca_subset(const std::string& space, const std::string& subset);
+   /// Get SCF beta orbitals in minimal MO basis
+   psi::SharedMatrix Cb_subset(const std::string& space, const std::string& subset);
+
+
+   /// Size of QUAMBO basis
+   int nbas() const {return this->nbas_mini_;}
+   /// Number of Alpha occupied MOs in minimal basis (same as in original basis)
+   int naocc() const {return this->naocc_mini_;}
+   /// Number of Beta occupied MOs in minimal basis (same as in original basis)
+   int nbocc() const {return this->nbocc_mini_;}
+   /// Number of Alpha virtual MOs in minimal basis (number of Alpha VVOs)
+   int navir() const {return this->navir_mini_;}
+   /// Number of Beta virtual MOs in minimal basis (number of Beta VVOs)
+   int nbvir() const {return this->nbvir_mini_;}
+
 
   protected:
 
@@ -102,12 +131,28 @@ class QUAMBO
     psi::SharedVector e_a_mini_;
     /// Energies of All Molecular Orbitals (Beta)
     psi::SharedVector e_b_mini_;
+    /// Size of QUAMBO basis per orbital group (Alpha, Beta)
+    int nbas_mini_;
+    /// Number of Alpha occupied MOs
+    int naocc_mini_;
+    /// Number of Beta occupied MOs
+    int nbocc_mini_;
+    /// Number of Alpha virtual MOs
+    int navir_mini_;
+    /// Number of Beta virtual MOs
+    int nbvir_mini_;
+    /// Number of AO basis functions
+    int nbf_; 
 
     double compute_error_between_two_vectors_(psi::SharedVector a, psi::SharedVector b);
     int calculate_nbas_mini_(void);
     std::vector<psi::SharedMolecule> atomize_(void);
     SharedQUAMBOData compute_quambo_data_(psi::SharedMatrix, psi::SharedMatrix, psi::SharedVector, psi::SharedVector,
                                           psi::SharedMatrix, psi::SharedMatrix, psi::SharedMatrix, int, int, std::string);
+    psi::SharedVector epsilon_subset_helper_(psi::SharedVector C_full, const std::string& label, 
+                                       const int& n, const std::string& space, const std::string& subset);
+    psi::SharedMatrix C_subset_helper_(psi::SharedMatrix C_full, const std::string& label, 
+                                       const int& n, const std::string& space, const std::string& subset);
 
 };
 

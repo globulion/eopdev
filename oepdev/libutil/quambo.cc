@@ -30,7 +30,13 @@ QUAMBO::QUAMBO(psi::SharedWavefunction wfn, bool acbs) :
  c_a_mini_(nullptr),
  c_b_mini_(nullptr),
  e_a_mini_(nullptr),
- e_b_mini_(nullptr) 
+ e_b_mini_(nullptr),
+ nbas_mini_(-1),
+ naocc_mini_(-1),
+ nbocc_mini_(-1),
+ navir_mini_(-1),
+ nbvir_mini_(-1),
+ nbf_(-1)
 {
  // Sanity checks
  if (!this->acbs) throw psi::PSIEXCEPTION("MCBS is not possible to implement for QUAMBO routine yet!");
@@ -59,6 +65,7 @@ QUAMBO::QUAMBO(psi::SharedWavefunction wfn, bool acbs) :
  //                                    
  this->nbas_atom_mini_[ "K"] =13;    this->unpe_atom_[ "K"] = 1;
  this->nbas_atom_mini_["Ca"] =13;    this->unpe_atom_["Ca"] = 0;
+ //TODO Add more atoms here!
 
 }
 QUAMBO::~QUAMBO() {}
@@ -113,47 +120,53 @@ void QUAMBO::compute(void) {
  std::vector<psi::SharedMatrix> a_occ_a_list, a_vir_a_list, a_occ_b_list, a_vir_b_list;
 
  std::vector<psi::SharedMolecule> atoms = this->atomize_();
- 
+
+ std::string reference_stash = this->options_.get_str("REFERENCE");
+ double e_conver_stash = this->options_.get_double("E_CONVERGENCE");
+ double d_conver_stash = this->options_.get_double("D_CONVERGENCE");
+ int maxiter_stash = this->options_.get_int("MAXITER");
+ this->options_.set_global_str("REFERENCE", "ROHF");
+ this->options_.set_global_double("E_CONVERGENCE", 1.0E-05);
+ this->options_.set_global_double("D_CONVERGENCE", 1.0E-05);
+ this->options_.set_global_int("MAXITER", 200);
+
  for (int i=0; i<this->mol_->natom(); ++i) {
       // Solve ROHF for free atom
       psi::SharedMolecule free_atom = atoms[i];
-
-    //psi::SharedMolecule mol_bck = std::make_shared<psi::Molecule>(this->mol_->clone());
+    //psi::PSIOManager::shared_object()->psiclean();//TODO
 
       // Extract A* orbitals (free-atom minimal basis occupied valence+core orbitals)
-    //psi::SharedMolecule mol1 = this->wfn_->molecule(); mol1 = free_atom;
-    //psi::SharedMolecule mol2 = this->wfn_->basisset()->molecule(); mol2 = free_atom;
-     
-      psi::SharedWavefunction scf_base = std::make_shared<psi::Wavefunction>(free_atom, this->wfn_->basisset(), this->options_);
-      scf_base->set_basisset("DF_BASIS_SCF", this->wfn_->get_basisset("DF_BASIS_SCF"));
+      psi::SharedBasisSet atom_primary = oepdev::create_basisset_by_copy(this->wfn_->basisset(), free_atom);
+      psi::SharedBasisSet atom_auxiliary = oepdev::create_basisset_by_copy(this->wfn_->get_basisset("DF_BASIS_SCF"), free_atom);
+
+    //bool compute_mints = false;
+    //if (compute_mints) {
+    //   std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(atom_primary);
+    //   mints->integrals();
+    // }
+
+      psi::SharedWavefunction scf_base = std::make_shared<psi::Wavefunction>(free_atom, atom_primary, this->options_);
+      scf_base->set_basisset("DF_BASIS_SCF", atom_auxiliary);
       std::shared_ptr<psi::SuperFunctional> functional = oepdev::create_superfunctional("HF", this->options_);
-      bool compute_mints = false;
-      if (compute_mints) {
-         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(this->wfn_->basisset());
-         mints->integrals();
-       }
       std::shared_ptr<psi::scf::ROHF> scf = std::make_shared<psi::scf::ROHF>(scf_base, functional);
-      bool hydrogen = (free_atom->multiplicity()==2) ? true: false;
-      hydrogen = false;
-      if (hydrogen) {
-          const int nbf = this->wfn_->basisset()->nbf();
-          int ao_s1;
-          for (int k=0; k<nbf; ++k) {
-               ao_s1 = k;
-               if (i==this->wfn_->basisset()->function_to_center(k)) break;
-          }
-          cout << "HEEEEEE  "<< ao_s1 << endl;
-          psi::SharedMatrix pCa = std::make_shared<psi::Matrix>("", nbf, 1); 
-          pCa->set(0,ao_s1  ,0.42);
-          pCa->set(0,ao_s1+1,0.63);
-          psi::SharedMatrix pCb = std::make_shared<psi::Matrix>("", nbf, 0);
-          scf->guess_Ca(pCa);
-          scf->guess_Cb(pCb);
-      }
+      //bool hydrogen = (free_atom->multiplicity()==2) ? true: false;
+      //hydrogen = false;
+      //if (hydrogen) {
+      //    const int nbf = this->wfn_->basisset()->nbf();
+      //    int ao_s1;
+      //    for (int k=0; k<nbf; ++k) {
+      //         ao_s1 = k;
+      //         if (i==this->wfn_->basisset()->function_to_center(k)) break;
+      //    }
+      //    psi::SharedMatrix pCa = std::make_shared<psi::Matrix>("", nbf, 1); 
+      //    pCa->set(0,ao_s1  ,0.42);
+      //    pCa->set(0,ao_s1+1,0.63);
+      //    psi::SharedMatrix pCb = std::make_shared<psi::Matrix>("", nbf, 0);
+      //    scf->guess_Ca(pCa);
+      //    scf->guess_Cb(pCb);
+      //}
       scf->compute_energy();
       psi::SharedMatrix ca_a = scf->Ca_subset("AO", "OCC");
-    //mol1 = mol_bck;
-    //mol2 = mol_bck;
     //psi::PSIOManager::shared_object()->psiclean();//TODO
 
       // Compute a* coefficients (projections of A* onto molecule's occupied and virtual orbitals)
@@ -172,7 +185,6 @@ void QUAMBO::compute(void) {
  psi::SharedMatrix a_vir_a_set = psi::Matrix::horzcat(a_vir_a_list);
  psi::SharedMatrix a_occ_b_set = psi::Matrix::horzcat(a_occ_b_list);
  psi::SharedMatrix a_vir_b_set = psi::Matrix::horzcat(a_vir_b_list);
-
 
  // [3] Compute QUAMBOs 
  SharedQUAMBOData q_a = 
@@ -199,7 +211,21 @@ void QUAMBO::compute(void) {
  this->e_a_mini_ = q_a->e_mini;
  this->e_b_mini_ = q_b->e_mini;
 
+ this->nbas_mini_ = nbas_mini;
+ this->naocc_mini_= naocc_mini;
+ this->nbocc_mini_= nbocc_mini;
+ this->navir_mini_= navir_mini;
+ this->nbvir_mini_= nbvir_mini;
+ this->nbf_       = this->wfn_->basisset()->nbf();
+
+ // [5] Restore initial options
+ this->options_.set_global_str("REFERENCE", reference_stash);
+ this->options_.set_global_double("E_CONVERGENCE", e_conver_stash);
+ this->options_.set_global_double("D_CONVERGENCE", d_conver_stash);
+ this->options_.set_global_int("MAXITER", maxiter_stash);
+
  psi::outfile->Printf(" @QUAMBO: Done.\n");
+
 }
 
 int QUAMBO::calculate_nbas_mini_(void) {
@@ -321,7 +347,6 @@ SharedQUAMBOData QUAMBO::compute_quambo_data_(
   psi::SharedMatrix S = std::make_shared<psi::Matrix>("", nquambo, nquambo);
   S->gemm(true, false, 1.0, a_occ_set_nonorthogonal, a_occ_set_nonorthogonal, 1.0);
   S->gemm(true, false, 1.0, a_vir_set_nonorthogonal, a_vir_set_nonorthogonal, 1.0);
-  S->print();
   psi::SharedMatrix Sm12 = S->clone(); Sm12->power(-0.5);
   psi::SharedMatrix a_occ_set_orthogonal = psi::Matrix::doublet(a_occ_set_nonorthogonal, Sm12, false, false);// a_nj' from Ref. [1]
   psi::SharedMatrix a_vir_set_orthogonal = psi::Matrix::doublet(a_vir_set_nonorthogonal, Sm12, false, false);// a_vj' from Ref. [1]
@@ -335,8 +360,6 @@ SharedQUAMBOData QUAMBO::compute_quambo_data_(
   psi::SharedVector e_quambo = std::make_shared<psi::Vector>("", nquambo);
   psi::SharedMatrix c_quambo = std::make_shared<psi::Matrix>("", nquambo, nquambo);
   F_quambo->diagonalize(c_quambo, e_quambo, psi::diagonalize_order::ascending);
-  e_quambo->print();
-  eps_occ->print();
 
   // [9a] Test whether occupied orbital energies are correctly obtained
   psi::SharedVector e_quambo_occ = std::make_shared<psi::Vector>("", nocc_mini); 
@@ -359,6 +382,7 @@ SharedQUAMBOData QUAMBO::compute_quambo_data_(
     vir_mini_mo->set_column(0, i, col);
   }
   psi::SharedMatrix vir_mini = psi::Matrix::doublet(quambo, vir_mini_mo, false, false);
+  psi::SharedMatrix vir      = psi::Matrix::doublet(quambo, c_quambo, false, false);
 
   psi::outfile->Printf("\n Eigenvalues of %6s Fock Operator in QUAMBO Basis\n\n", label.c_str());
   psi::outfile->Printf  (" Occupied\n");
@@ -376,17 +400,123 @@ SharedQUAMBOData QUAMBO::compute_quambo_data_(
   }
   psi::outfile->Printf("\n");
 
+
   // Save And Return
   SharedQUAMBOData data = std::make_shared<QUAMBOData>();
   data->quambo_nonorthogonal = quambo_nonorthogonal;
   data->quambo_orthogonal = quambo_orthogonal;
   data->c_mini_vir = vir_mini;
   data->e_mini_vir = e_quambo_vir;
-  data->c_mini = c_quambo;
+  data->c_mini = vir;
   data->e_mini = e_quambo;
 
   return data;
 }
+
+psi::SharedMatrix QUAMBO::quambo(const std::string& spin, const std::string& type) {
+  psi::SharedMatrix q;
+  std::string name;
+  if (spin == "ALPHA") {
+      if (type == "ORTHOGONAL") { 
+          name = "QUAMBOs Alpha, orthogonal";
+          q = this->quambo_a_orthogonal_->clone();
+      } else
+      if (type == "NONORTHOGONAL") {
+          name = "QUAMBOs Alpha, non-orthogonal";
+          q = this->quambo_a_nonorthogonal_->clone();
+      } else {throw psi::PSIEXCEPTION("Unknown QUAMBO type chosen! Only ORTHOGONAL and NONORTHOGONAL keywords work.");} 
+  } else 
+  if (spin == "BETA") {
+      if (type == "ORTHOGONAL") { 
+          name = "QUAMBOs Beta, orthogonal";
+          q = this->quambo_b_orthogonal_->clone();
+      } else
+      if (type == "NONORTHOGONAL") {
+          name = "QUAMBOs Beta, non-orthogonal";
+          q = this->quambo_b_nonorthogonal_->clone();
+      } else {throw psi::PSIEXCEPTION("Unknown QUAMBO type chosen! Only ORTHOGONAL and NONORTHOGONAL keywords work.");} 
+  } else {throw psi::PSIEXCEPTION("Unknown electron spin chosen for QUAMBO! Only ALPHA and BETA keywords work.");}
+  q->set_name(name);
+  return q;
+}
+
+psi::SharedVector QUAMBO::epsilon_a_subset(const std::string& space, const std::string& subset) {
+  psi::SharedVector C = this->epsilon_subset_helper_(this->e_a_mini_, "Alpha", this->naocc_mini_, space, subset);
+  return C;
+}
+
+psi::SharedVector QUAMBO::epsilon_b_subset(const std::string& space, const std::string& subset) {
+  psi::SharedVector C = this->epsilon_subset_helper_(this->e_b_mini_, "Beta", this->nbocc_mini_, space, subset);
+  return C;
+}
+
+psi::SharedMatrix QUAMBO::Ca_subset(const std::string& space, const std::string& subset) {
+  psi::SharedMatrix C = this->C_subset_helper_(this->c_a_mini_, "Alpha", this->naocc_mini_, space, subset);
+  return C;
+}
+
+psi::SharedMatrix QUAMBO::Cb_subset(const std::string& space, const std::string& subset) {
+  psi::SharedMatrix C = this->C_subset_helper_(this->c_b_mini_, "Beta", this->nbocc_mini_, space, subset);
+  return C;
+}
+
+psi::SharedVector QUAMBO::epsilon_subset_helper_(
+  psi::SharedVector full_eps, const std::string& label, const int& nocc, const std::string& space, const std::string& subset)
+{
+  if (space != "MO") throw psi::PSIEXCEPTION("Only MO space is now supported!");
+
+  psi::SharedVector C;
+  std::string name;
+  if (subset == "OCC") {
+      name = oepdev::string_sprintf("Occupied %6s MO energies from diagonalization of Fock matrix in QUAMBO basis", label.c_str() );
+      C = std::make_shared<psi::Vector>(label, nocc);
+      for (int i=0; i<nocc; ++i) {
+           C->set(i, full_eps->get(i));
+      }
+  } else 
+  if (subset == "VIR") {
+      name = oepdev::string_sprintf("Virtual %6s MO energies from diagonalization of Fock matrix in QUAMBO basis", label.c_str() );
+      C = std::make_shared<psi::Vector>(label, this->nbas_mini_-nocc);
+      for (int i=0; i<this->nbas_mini_-nocc; ++i) {
+           C->set(i, full_eps->get(nocc+i));
+      }
+  } else 
+  if (subset == "ALL") {
+    C = std::make_shared<psi::Vector>(*full_eps);
+  } else {throw psi::PSIEXCEPTION("Wrong subset chosen!");}  
+  C->set_name(name);
+  return C;
+}
+psi::SharedMatrix QUAMBO::C_subset_helper_(
+  psi::SharedMatrix full_C, const std::string& label, const int& nocc, const std::string& space, const std::string& subset) 
+{
+  if (space != "AO") throw psi::PSIEXCEPTION("Only AO space is now supported!");
+
+  psi::SharedMatrix C;
+  std::string name;
+  if (subset == "OCC") {
+      name = oepdev::string_sprintf("Occupied %6s MOs from diagonalization of Fock matrix in QUAMBO basis", label.c_str() );
+      C = std::make_shared<psi::Matrix>(label, this->nbf_, nocc);
+      for (int i=0; i<nocc; ++i) {
+           psi::SharedVector ci = full_C->get_column(0, i);
+           C->set_column(0, i, ci);
+      }
+  } else 
+  if (subset == "VIR") {
+      name = oepdev::string_sprintf("Virtual %6s MOs from diagonalization of Fock matrix in QUAMBO basis", label.c_str() );
+      C = std::make_shared<psi::Matrix>(label, this->nbf_, this->nbas_mini_-nocc);
+      for (int i=0; i<this->nbas_mini_-nocc; ++i) {
+           psi::SharedVector ci = full_C->get_column(0, nocc+i);
+           C->set_column(0, i, ci);
+      }
+  } else 
+  if (subset == "ALL") {
+    C = full_C->clone();
+  } else {throw psi::PSIEXCEPTION("Wrong subset chosen!");}  
+  C->set_name(name);
+  return C;
+}
+
 
 
 } // EndNameSpace oepdev

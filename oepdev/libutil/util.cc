@@ -50,18 +50,53 @@ create_superfunctional(std::string name, Options& options) {
 
 extern "C" PSI_API
 SharedBasisSet
-create_basisset_by_copy(SharedBasisSet basis_ref) {
-//TODO
-  for (int si=0; si<basis_ref->nshell(); ++si) {
-       const psi::GaussianShell& s = basis_ref->shell(si);
-       std::vector<double> c, e;
-       std::string atom;
-       for (int pi=0; pi<s.nprimitive(); ++pi) {
-            c.push_back(s.coef(pi));
-            e.push_back(s.exp (pi));
+create_basisset_by_copy(SharedBasisSet basis_ref, SharedMolecule molecule_target) {
+
+  std::map<std::string, std::map<std::string, std::vector<psi::ShellInfo>>> shellmap;
+  std::map<std::string, std::map<std::string, std::vector<psi::ShellInfo>>> ecp_shellmap;
+
+  std::string name = basis_ref->name();
+  std::string key  = basis_ref->key();
+  std::string label= name; // ? this is just assumed, but should be a 'blend'
+
+  molecule_target->set_basis_all_atoms(name, key);
+
+  if (molecule_target->nallatom() != basis_ref->molecule()->natom()) throw psi::PSIEXCEPTION("ERRORRRR!!!");
+  for (int a=0; a<molecule_target->nallatom(); ++a) {
+       std::vector<psi::ShellInfo> shellinfos;
+       int is = basis_ref->shell_on_center(a, 0);
+       int in = basis_ref->nshell_on_center(a);
+       for (int iis = 0; iis < in; ++iis) {
+            int si = is + iis;
+            const psi::GaussianShell& s = basis_ref->shell(si);
+
+            std::vector<double> c, e;
+            for (int pi=0; pi<s.nprimitive(); ++pi) {
+                 c.push_back(s.original_coef(pi));
+                 e.push_back(s.exp (pi));
+            }
+
+            psi::ShellInfo infos(s.am(), c, e, psi::GaussianType::Cartesian, psi::PrimitiveType::Unnormalized);
+            shellinfos.push_back(infos);
        }
+
+       std::string atomlabel = molecule_target->fsymbol(a);
+       std::string hash = ""; // ? it is a comment of an atom I guess...
+
+       molecule_target->set_shell_by_label(atomlabel, hash, key);
+
+       shellmap[name][atomlabel] = shellinfos;
   }
-  //return basis;
+
+  molecule_target->update_geometry();
+
+  SharedBasisSet basis_target = std::make_shared<BasisSet>(key, molecule_target, shellmap, ecp_shellmap);
+
+  basis_target->set_name(name);
+  basis_target->set_key(key);
+  basis_target->set_target(label);
+
+  return basis_target;
 }
 
 
