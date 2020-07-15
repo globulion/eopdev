@@ -143,7 +143,7 @@ void WavefunctionUnion::common_init(
    psi::SharedMatrix Ca_occ_1, Ca_occ_2, Ca_vir_1, Ca_vir_2;
    psi::SharedVector eps_a_occ_1, eps_a_occ_2, eps_a_vir_1, eps_a_vir_2;
 
-   if (options_.get_bool("EFP2_CT_VVO")) {
+   if (options_.get_bool("OEPDEV_USE_VVO")) {
        // VVOs
        std::shared_ptr<QUAMBO> solver_1 = std::make_shared<QUAMBO>(wfn_1, true);
        solver_1->compute();

@@ -93,7 +93,7 @@ void OEPotential::common_init(void)
    lmoc_        = {nullptr, nullptr, nullptr};
    use_localized_orbitals = false;
 
-   if (options_.get_bool("EFP2_CT_VVO")) {
+   if (options_.get_bool("OEP_WITH_VVO")) {
        std::shared_ptr<QUAMBO> solver = std::make_shared<QUAMBO>(wfn_, true);
        solver->compute();
        cOcc_ = solver->Ca_subset("AO","OCC");

@@ -33,7 +33,7 @@ set {
     oepdev_localizer_maxiter      1000
     efp2_ct_potential_ints        dmtp
     efp2_ct_no_octupoles          True
-    efp2_ct_vvo                   False
+    oepdev_use_vvo                False
     quambo_mode                   acbs
     # ==> General Psi4 Options <== #
     basis                         6-311++G**

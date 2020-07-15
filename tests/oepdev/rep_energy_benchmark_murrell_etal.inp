@@ -28,7 +28,7 @@ set {
     oepdev_test_mode              dimer
     oepdev_localize               False
     oepdev_enable_trial           False
-    efp2_ct_vvo                   False
+    oepdev_use_vvo                False
     quambo_mode                   acbs
     # ==> General Psi4 Options <== #
     basis                         6-311++G**
