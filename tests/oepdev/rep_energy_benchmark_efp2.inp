@@ -28,6 +28,13 @@ set {
     oepdev_test_mode              dimer
     oepdev_localize               True
     oepdev_enable_trial           False
+    wfn_union_localizer           boys
+    solver_ct_localizer           boys
+    oepdev_localizer_maxiter      1000
+    efp2_ct_potential_ints        dmtp
+    efp2_ct_no_octupoles          True
+    efp2_ct_vvo                   False
+    quambo_mode                   acbs
     # ==> General Psi4 Options <== #
     basis                         6-311++G**
     scf_type                      direct 

@@ -1,0 +1,18 @@
+ $contrl scftyp=rhf runtyp=makefp icharg=0 mult=1 units=angstrom
+         coord=cart ispher=-1 local=boys
+         icut=20 itol=30 aimpac=.f. mplevl=0 cctyp=none $end
+ $scf    dirscf=.t. fdiff=.f. diis=.t. soscf=.f.
+         conv=1d-11  $end
+ $system mwords=125 $end
+ $guess  guess=huckel $end
+!$basis  gbasis=n31 ngauss=6 ndfunc=1 npfunc=1 diffsp=.true. diffs=.true. $end
+ $basis  gbasis=newnew extfil=.true. $end
+ $local  fcore=.false. maxloc=10000 $end
+ $makefp ctvvo=.false. $end
+ $data
+ FRAG1
+ c1
+  O  8.0    0.96943962   -4.30611830   -2.18131914
+  H  1.0    1.33484947   -5.15964797   -1.90563925
+  H  1.0    0.84645967   -3.85900848   -1.31465948
+ $end

@@ -1,0 +1,429 @@
+----- GAMESS execution script 'rungms' -----
+This job is running on host fermi
+under operating system Linux at Wed Jul 15 10:38:03 CEST 2020
+PBS has assigned the following compute nodes to this run:
+fermi.ch.pwr.wroc.pl
+Available scratch disk space (Kbyte units) at beginning of the job is
+Filesystem      1K-blocks     Used  Available Use% Mounted on
+/dev/sdb1      3844101144 99087908 3744996852   3% /scratch
+GAMESS temporary binary files will be written to /scratch/blasiak/
+GAMESS supplementary output files will be written to /scratch/blasiak/
+Copying input file water-dimer._eint_._noquambo_.inp to your run's scratch directory...
+
+ Distributed Data Interface kickoff program.
+ Initiating 1 compute processes on 1 nodes to run the following command:
+ /opt/gamess/gamess-2017.09.30.r2/gamess.00.x water-dimer._eint_._noquambo_ 
+
+          ******************************************************
+          *         GAMESS VERSION = 30 SEPT 2017 (R2)         *
+          *             FROM IOWA STATE UNIVERSITY             *
+          * M.W.SCHMIDT, K.K.BALDRIDGE, J.A.BOATZ, S.T.ELBERT, *
+          *   M.S.GORDON, J.H.JENSEN, S.KOSEKI, N.MATSUNAGA,   *
+          *          K.A.NGUYEN, S.J.SU, T.L.WINDUS,           *
+          *       TOGETHER WITH M.DUPUIS, J.A.MONTGOMERY       *
+          *         J.COMPUT.CHEM.  14, 1347-1363(1993)        *
+          **************** 64 BIT INTEL VERSION ****************
+
+  SINCE 1993, STUDENTS AND POSTDOCS WORKING AT IOWA STATE UNIVERSITY
+  AND ALSO IN THEIR VARIOUS JOBS AFTER LEAVING ISU HAVE MADE IMPORTANT
+  CONTRIBUTIONS TO THE CODE:
+     IVANA ADAMOVIC, CHRISTINE AIKENS, YURI ALEXEEV, POOJA ARORA,
+     ANDREY ASADCHEV, ROB BELL, PRADIPTA BANDYOPADHYAY, JONATHAN BENTZ,
+     BRETT BODE, KURT BRORSEN, CALEB CARLIN, GALINA CHABAN, WEI CHEN,
+     CHEOL HO CHOI, PAUL DAY, ALBERT DEFUSCO, NUWAN DESILVA, TIM DUDLEY,
+     DMITRI FEDOROV, ALEX FINDLATER, GRAHAM FLETCHER, MARK FREITAG,
+     KURT GLAESEMANN, ANASTASIA GUININA,
+     DAN KEMP, GRANT MERRILL, NORIYUKI MINEZAWA, JONATHAN MULLIN,
+     TAKESHI NAGATA, SEAN NEDD, HEATHER NETZLOFF, BOSILJKA NJEGIC, RYAN OLSON,
+     MIKE PAK, BUU PHAM,
+     SPENCER PRUITT, LUKE ROSKOP, JIM SHOEMAKER, LYUDMILA SLIPCHENKO,
+     TONY SMITH, SAROM SOK LEANG, JIE SONG, TETSUYA TAKETSUGU, SIMON WEBB,
+     PENG XU, SOOHAENG YOO, FEDERICO ZAHARIEV
+
+  ADDITIONAL CODE HAS BEEN PROVIDED BY COLLABORATORS IN OTHER GROUPS:
+     IOWA STATE UNIVERSITY:
+          JOE IVANIC, AARON WEST, LAIMUTIS BYTAUTAS, KLAUS RUEDENBERG
+     UNIVERSITY OF TOKYO: KIMIHIKO HIRAO, TAKAHITO NAKAJIMA,
+          TAKAO TSUNEDA, MUNEAKI KAMIYA, SUSUMU YANAGISAWA,
+          KIYOSHI YAGI, MAHITO CHIBA, SEIKEN TOKURA, NAOAKI KAWAKAMI
+     UNIVERSITY OF AARHUS: FRANK JENSEN
+     UNIVERSITY OF IOWA: VISVALDAS KAIRYS, HUI LI
+     NATIONAL INST. OF STANDARDS AND TECHNOLOGY: WALT STEVENS, DAVID GARMER
+     UNIVERSITY OF PISA: BENEDETTA MENNUCCI, JACOPO TOMASI
+     UNIVERSITY OF MEMPHIS: HENRY KURTZ, PRAKASHAN KORAMBATH
+     UNIVERSITY OF ALBERTA: TOBY ZENG, MARIUSZ KLOBUKOWSKI
+     UNIVERSITY OF NEW ENGLAND: MARK SPACKMAN
+     MIE UNIVERSITY: HIROAKI UMEDA
+     NAT. INST. OF ADVANCED INDUSTRIAL SCIENCE AND TECHNOLOGY: KAZUO KITAURA
+     MICHIGAN STATE UNIVERSITY:
+          KAROL KOWALSKI, MARTA WLOCH, JEFFREY GOUR, JESSE LUTZ,
+          WEI LI, PIOTR PIECUCH
+     UNIVERSITY OF SILESIA: MONIKA MUSIAL, STANISLAW KUCHARSKI
+     FACULTES UNIVERSITAIRES NOTRE-DAME DE LA PAIX:
+          OLIVIER QUINET, BENOIT CHAMPAGNE
+     UNIVERSITY OF CALIFORNIA - SANTA BARBARA: BERNARD KIRTMAN
+     INSTITUTE FOR MOLECULAR SCIENCE:
+          KAZUYA ISHIMURA, MICHIO KATOUDA, AND SHIGERU NAGASE
+     UNIVERSITY OF NOTRE DAME: ANNA POMOGAEVA, DAN CHIPMAN
+     KYUSHU UNIVERSITY:
+          HARUYUKI NAKANO,
+          FENG LONG GU, JACEK KORCHOWIEC, MARCIN MAKOWSKI, AND YURIKO AOKI,
+          HIROTOSHI MORI AND EISAKU MIYOSHI
+     PENNSYLVANIA STATE UNIVERSITY:
+          TZVETELIN IORDANOV, CHET SWALINA, JONATHAN SKONE,
+          SHARON HAMMES-SCHIFFER
+     WASEDA UNIVERSITY:
+          MASATO KOBAYASHI, TOMOKO AKAMA, TSUGUKI TOUMA,
+          TAKESHI YOSHIKAWA, YASUHIRO IKABATA, JUNJI SEINO,
+          YUYA NAKAJIMA, HIROMI NAKAI
+     NANJING UNIVERSITY: SHUHUA LI
+     UNIVERSITY OF NEBRASKA:
+          PEIFENG SU, DEJUN SI, NANDUN THELLAMUREGE, YALI WANG, HUI LI
+     UNIVERSITY OF ZURICH: ROBERTO PEVERATI, KIM BALDRIDGE
+     N. COPERNICUS UNIVERSITY AND JACKSON STATE UNIVERSITY:
+          MARIA BARYSZ
+     UNIVERSITY OF COPENHAGEN: Jimmy Kromann, CASPER STEINMANN
+     TOKYO INSTITUTE OF TECHNOLOGY: HIROYA NAKATA
+     NAGOYA UNIVERSITY: YOSHIO NISHIMOTO, STEPHAN IRLE
+     MOSCOW STATE UNIVERSITY: VLADIMIR MIRONOV
+
+ EXECUTION OF GAMESS BEGUN Wed Jul 15 10:38:03 2020
+
+            ECHO OF THE FIRST FEW INPUT CARDS -
+ INPUT CARD> $contrl scftyp=rhf runtyp=energy icharg=0 mult=1 units=angstrom                
+ INPUT CARD>         coord=fragonly ispher=-1                                               
+ INPUT CARD>         icut=20 itol=30 $end                                                   
+ INPUT CARD> $scf    dirscf=.t. fdiff=.f. diis=.t. soscf=.f.                                
+ INPUT CARD>         conv=1d-11  $end                                                       
+ INPUT CARD> $system mwords=125 $end                                                        
+ INPUT CARD> $efrag                                                                         
+ INPUT CARD>coord=cart iscrelec=1 iscrpol=1 iscrdisp=0 nodisp                               
+ INPUT CARD>fragname=FRAG1                                                                  
+ INPUT CARD>A01O    0.96943962   -4.30611830   -2.18131914                                  
+ INPUT CARD>A02H    1.33484947   -5.15964797   -1.90563925                                  
+ INPUT CARD>A03H    0.84645967   -3.85900848   -1.31465948                                  
+ INPUT CARD>fragname=FRAG1                                                                  
+ INPUT CARD>A01O    0.68566672   -3.29150751    0.35530271                                  
+ INPUT CARD>A02H    1.27681435   -2.98781302    1.05982438                                  
+ INPUT CARD>A03H   -0.15089179   -2.83377588    0.59359212                                  
+ INPUT CARD> $end                                                                           
+ INPUT CARD> $FRAG1                                                                         
+ INPUT CARD>EFP DATA FOR FRAGNAME SCFTYP=RHF     ... GENERATED WITH BASIS SET=XXX           
+ INPUT CARD> COORDINATES (BOHR)                                                             
+ INPUT CARD>A01O       0.0048611891   0.1306605128   0.0000000000  15.9949100  8.0          
+ INPUT CARD>A02H       1.3876132584  -1.0684166089   0.0000000000   1.0078250  1.0          
+ INPUT CARD>A03H      -1.4647638380  -1.0052600150   0.0000000000   1.0078250  1.0          
+ INPUT CARD>BO21       0.6962372238  -0.4688780480   0.0000000000   0.0000000  0.0          
+ INPUT CARD>BO31      -0.7299513244  -0.4372997511   0.0000000000   0.0000000  0.0          
+ INPUT CARD> STOP                                                                           
+ INPUT CARD> MONOPOLES                                                                      
+ INPUT CARD>A01O      -8.2325992403   8.00000                                               
+ INPUT CARD>A02H      -0.4259023519   1.00000                                               
+ INPUT CARD>A03H      -0.4261809383   1.00000                                               
+ INPUT CARD>BO21      -0.4706108509   0.00000                                               
+ INPUT CARD>BO31      -0.4447066186   0.00000                                               
+ INPUT CARD> STOP                                                                           
+ INPUT CARD> DIPOLES                                                                        
+ INPUT CARD>A01O       -0.0072024056   -0.5520030805    0.0000000000                        
+ INPUT CARD>A02H        0.0333605124   -0.0297980321    0.0000000000                        
+ INPUT CARD>A03H       -0.0347213954   -0.0274399038    0.0000000000                        
+ INPUT CARD>BO21       -0.2472776406    0.2570337070    0.0000000000                        
+ INPUT CARD>BO31        0.2737262879    0.2308457279    0.0000000000                        
+ INPUT CARD> STOP                                                                           
+ INPUT CARD> QUADRUPOLES                                                                    
+ INPUT CARD>A01O       -3.7562323441   -4.1576262366   -4.8700971992   -0.0141444789 >      
+ INPUT CARD>            0.0000000000    0.0000000000                                        
+ INPUT CARD>A02H       -0.2372184249   -0.2421242771   -0.2443065934    0.0016480294 >      
+ INPUT CARD>            0.0000000000    0.0000000000                                        
+ INPUT CARD>A03H       -0.2419563018   -0.2462941903   -0.2484546555   -0.0020266430 >      
+ INPUT CARD>            0.0000000000    0.0000000000                                        
+ INPUT CARD>BO21       -0.1781721718   -0.1868175527   -0.1837469682    0.0004658968 >      
+ INPUT CARD>            0.0000000000    0.0000000000                                        
+ INPUT CARD>BO31       -0.1324377992   -0.1431724197   -0.1483747585   -0.0090902753 >      
+  125000000 WORDS OF MEMORY AVAILABLE
+
+     $CONTRL OPTIONS
+     ---------------
+ SCFTYP=RHF          RUNTYP=ENERGY       EXETYP=RUN     
+ MPLEVL=       0     CITYP =NONE         CCTYP =NONE         VBTYP =NONE    
+ DFTTYP=NONE         TDDFT =NONE    
+ MULT  =       1     ICHARG=       0     NZVAR =       0     COORD =FRAGONLY
+ PP    =NONE         RELWFN=NONE         LOCAL =NONE         NUMGRD=       F
+ ISPHER=      -1     NOSYM =       0     MAXIT =      30     UNITS =ANGSTROM
+ PLTORB=       F     MOLPLT=       F     AIMPAC=       F     FRIEND=        
+ NPRINT=       7     IREST =       0     GEOM  =INPUT   
+ NORMF =       0     NORMP =       0     ITOL  =      30     ICUT  =      20
+ INTTYP=BEST         GRDTYP=BEST         QMTTOL= 1.0E-06
+
+     $SYSTEM OPTIONS
+     ---------------
+  REPLICATED MEMORY=   125000000 WORDS (ON EVERY NODE).
+ DISTRIBUTED MEMDDI=           0 MILLION WORDS IN AGGREGATE,
+ MEMDDI DISTRIBUTED OVER   1 PROCESSORS IS           0 WORDS/PROCESSOR.
+ TOTAL MEMORY REQUESTED ON EACH PROCESSOR=   125000000 WORDS.
+ TIMLIM=      525600.00 MINUTES, OR     365.0 DAYS.
+ PARALL= F  BALTYP=  DLB     KDIAG=    0  COREFL= F
+ MXSEQ2=     300 MXSEQ3=     150  mem10=         0
+
+ READING $EFRAG GROUP
+ COORD=CART      POSITION=OPTIMIZE  POLMETHD=FRGSCF   NBUFFMO=0
+ READING COORDINATES OF FRAGMENT   1 NAMED   FRAG1 
+ READING COORDINATES OF FRAGMENT   2 NAMED   FRAG1 
+ FINISHED READING $EFRAG GROUP,   2 FRAGMENTS WILL BE USED.
+
+ READING POTENTIAL PARAMETERS FOR FRAGMENT    1 FROM GROUP $FRAG1 
+ READING POTENTIAL PARAMETERS FOR FRAGMENT    2 FROM GROUP $FRAG1 
+
+
+     SUMMARY OF THE EFFECTIVE FRAGMENT POTENTIAL MODEL CHOSEN
+     --------------------------------------------------------
+ TOTAL NUMBER OF MULTIPOLE POINTS   =        10  (EFP1/EFP2 ELECTROSTATICS)
+ TOTAL NUMBER OF POLARIZABLE POINTS =        10  (EFP1/EFP2 INDUCTION)
+ TOTAL NUMBER OF L-J POINTS         =         0  (REPULSION AND DISPERSION)
+ TOTAL NUMBER OF AO CENTERS         =         6  (EFP2 PAULI REPULSION)
+ TOTAL NUMBER OF EFP MOS            =        10  (EFP2 PAULI REPULSION)
+ TOTAL NO OF DYNAMIC POLARIZABLE PTS=         0  (EFP2 DISPERSION)
+ TOTAL NUMBER OF EFP MOS            =        62  (EFP2 CHARGE TRANSFER)
+
+ THIS IS A -EFP2- TYPE RUN, INCLUDING SEPARATE FORMULAE FOR
+   PAULI REPULSION=T  DISPERSION=F  CHARGE TRANSFER=T
+
+ OPTIONS FOR EFP SCREENING:
+     ELECTROSTATIC EFP-EFP SCREENING CHOICE IS USING OVERLAP
+     POLARIZATION EFP-EFP SCREENING IS TANG-TOENNIS LIKE
+     DISPERSION EFP-EFP SCREENING CHOICE IS USING TANG-TOENNIS FORMULA
+     WITH DAMPING COEFFICIENT   1.50
+
+     $EWALD OPTIONS
+     -----------
+
+     IFEWLD   =        F         TINFOIL        =        T
+     BETA    =    0.200         ELECTRIC CONST =     1.00
+     EPSILON =     1.00         CUT_OFF        = 0.10E+04
+     CUTLIST =  1000.00         LEVEL          =    1
+     KMAX    =       10         EWLDPL         =        F
+
+            MULTIPOLE COORDINATES, ELECTRONIC AND NUCLEAR CHARGES
+
+                  X              Y              Z           ELEC.   NUC.
+ A01O       1.8319752434  -8.1373836577  -4.1220954664   -8.23260    8.0
+ A02H       2.5224997332  -9.7503208564  -3.6011360139   -0.42590    1.0
+ A03H       1.5995768360  -7.2924686115  -2.4843461844   -0.42618    1.0
+ BO21       2.1772374883  -8.9438522571  -3.8616157402   -0.47061    0.0
+ BO31       1.7157760397  -7.7149261347  -3.3032208254   -0.44471    0.0
+ A01O       1.2957222197  -6.2200472804   0.6714247646   -8.23260    8.0
+ A02H       2.4128292650  -5.6461479071   2.0027776808   -0.42590    1.0
+ A03H      -0.2851441237  -5.3550599155   1.1217264731   -0.42618    1.0
+ BO21       1.8542757424  -5.9330975938   1.3371012227   -0.47061    0.0
+ BO31       0.5052890481  -5.7875535980   0.8965756189   -0.44471    0.0
+
+   CHARGE SCREENING PARAMETERS (COEF AND ZETA)
+   ICHGP=   1 AI-FRAGMENT SCREENING= 1   FRAGMENT-FRAGMENT SCREENING= 0
+
+             GAUSSIAN DAMPING    EXPONENTIAL DAMPING
+ A01O       1.00000   0.96442      1.00000   1.88404
+ A02H       1.00000   0.87412      1.00000   2.32753
+ A03H       1.00000   0.87649      1.00000   2.25700
+ BO21       1.00000  10.00000      1.00000  10.00000
+ BO31       1.00000  10.00000      1.00000  10.00000
+ A01O       1.00000   0.96442      1.00000   1.88404
+ A02H       1.00000   0.87412      1.00000   2.32753
+ A03H       1.00000   0.87649      1.00000   2.25700
+ BO21       1.00000  10.00000      1.00000  10.00000
+ BO31       1.00000  10.00000      1.00000  10.00000
+
+   SCREENING FOR POLARIZATION WITH EXPONENTIAL FORMULA  OFF
+
+   SCREENING FOR POLARIZATION WITH TANG-TOENNIS FORMULA   ON
+
+    WITH COEFFICIENTS 
+
+     FRAG1   0.60
+
+                  DIPOLE MOMENTS AND THE SECOND MOMENT TENSOR
+
+                  X        Y        Z           XX/XY    YY/XZ    ZZ/YZ
+ A01O          0.11256 -0.19295  0.50484     -4.72406 -3.95691 -4.10298
+                                             -0.36090 -0.00858  0.14894
+ A02H          0.01684 -0.03923  0.01336     -0.24371 -0.23987 -0.24007
+                                             -0.00161 -0.00085  0.00281
+ A03H         -0.00537  0.01974  0.03924     -0.24743 -0.24219 -0.24708
+                                             -0.00252 -0.00003  0.00030
+ BO21         -0.13235  0.30381 -0.13190     -0.18337 -0.18037 -0.18499
+                                             -0.00115 -0.00141  0.00326
+ BO31          0.03928 -0.15042 -0.32256     -0.14532 -0.13049 -0.14818
+                                             -0.00739  0.00075 -0.00181
+ A01O         -0.09697  0.33862  0.42508     -3.85132 -4.59043 -4.34221
+                                             -0.18496  0.22824  0.30109
+ A02H          0.02681  0.01438  0.03279     -0.23735 -0.24316 -0.24314
+                                             -0.00198  0.00056  0.00065
+ A03H         -0.03745  0.02080  0.01111     -0.24317 -0.24785 -0.24569
+                                              0.00029  0.00292  0.00098
+ BO21         -0.19282 -0.12870 -0.27106     -0.17866 -0.18476 -0.18532
+                                             -0.00058  0.00161 -0.00168
+ BO31          0.29759 -0.17290 -0.09879     -0.13669 -0.14750 -0.13980
+                                              0.00318  0.01000  0.00274
+
+                  THE THIRD MOMENT TENSOR
+
+               XXX/XYY  YYY/YYZ  ZZZ/XZZ  XXY/YZZ  XXZ/XYZ
+ A01O          0.29784 -0.49601  1.35062 -0.16740  0.45015
+               0.09308  0.44184  0.10594 -0.18596  0.00256
+ A02H          0.00895 -0.01179  0.02066 -0.00526  0.00712
+              -0.00008  0.00715  0.00247 -0.00504  0.00013
+ A03H          0.00223 -0.00401  0.02389 -0.00054  0.00950
+               0.00207  0.00703  0.00131 -0.00253  0.00098
+ BO21         -0.31708  0.75578 -0.39542  0.24441 -0.13417
+              -0.12611 -0.14862 -0.10699  0.24109  0.00761
+ BO31          0.09006 -0.36995 -0.85567 -0.12001 -0.26722
+               0.03604 -0.27662  0.03734 -0.14554  0.00205
+ A01O         -0.25281  0.90801  1.13506  0.28933  0.36640
+              -0.08625  0.38195 -0.09838  0.30564 -0.00316
+ A02H         -0.00023  0.01581  0.02216  0.00510  0.00518
+               0.00158  0.00759 -0.00054  0.00390 -0.00062
+ A03H         -0.00700  0.01709  0.01726  0.00340  0.00627
+              -0.00380  0.00522 -0.00417  0.00528  0.00056
+ BO21         -0.41806 -0.35424 -0.71133 -0.12603 -0.24681
+              -0.13877 -0.23302 -0.15838 -0.13056 -0.01064
+ BO31          0.77058 -0.44039 -0.25372 -0.16835 -0.09609
+               0.25598 -0.08961  0.24986 -0.14415  0.01029
+
+                  POLARIZABLE POINTS AND THE POLARIZABILITY TENSOR
+
+              X       Y       Z       XX/YZ    YY/YX    ZZ/ZX    XY/ZY     XZ
+ CT1       1.8321 -8.1376 -4.1216   0.00510  0.00421  0.00576  0.00036  0.00035
+                                   -0.00077  0.00036  0.00037 -0.00083
+ CT2       2.2040 -9.0045 -3.8309   0.89099  3.25771  0.77158 -1.21918  0.36293
+                                   -0.82665 -1.22864  0.30618 -0.68693
+ CT3       1.7112 -7.6929 -3.2384   0.47385  1.37454  3.25876 -0.30731 -0.44445
+                                    1.57380 -0.29788 -0.38788  1.43454
+ CT4       1.3038 -8.2323 -4.3520   2.45401  1.05422  1.17731  0.17641  0.77343
+                                    0.26232  0.22349  0.66384  0.22043
+ CT5       2.2463 -7.8494 -4.4158   1.80171  1.49994  1.38389  0.63953 -0.84025
+                                   -0.43616  0.59251 -0.73027 -0.39522
+ CT1       1.2956 -6.2197  0.6718   0.00390  0.00555  0.00562  0.00003 -0.00059
+                                    0.00049  0.00006 -0.00054  0.00047
+ CT2       1.8905 -5.9047  1.3939   1.94025  0.73953  2.24049  0.64456  1.64520
+                                    0.77956  0.55963  1.52698  0.82006
+ CT3       0.4525 -5.7515  0.9216   3.24858  1.18455  0.67402 -1.48733 -0.70219
+                                    0.45240 -1.40267 -0.58435  0.41204
+ CT4       1.2125 -6.7938  0.7397   1.09326  2.77065  0.82163  0.25336  0.06705
+                                   -0.14780  0.21259  0.05618 -0.26697
+ CT5       1.4856 -5.9963  0.1667   1.28046  1.04776  2.35732  0.19052 -0.50662
+                                   -0.71666  0.23187 -0.49494 -0.59777
+
+                    AO EXPANSION POINTS                             LMO CENTROIDS
+
+                X          Y          Z                         X          Y          Z
+
+  A01O        1.83198   -8.13738   -4.12210       CT1         1.83208   -8.13755   -4.12164
+  A02H        2.52250   -9.75032   -3.60114       CT2         2.20395   -9.00449   -3.83087
+  A03H        1.59958   -7.29247   -2.48435       CT3         1.71122   -7.69291   -3.23839
+  A01O        1.29572   -6.22005    0.67142       CT4         1.30379   -8.23230   -4.35199
+  A02H        2.41283   -5.64615    2.00278       CT5         2.24629   -7.84941   -4.41578
+  A03H       -0.28514   -5.35506    1.12173       CT1         1.29563   -6.21974    0.67181
+                                                  CT2         1.89045   -5.90472    1.39385
+                                                  CT3         0.45255   -5.75150    0.92162
+                                                  CT4         1.21246   -6.79384    0.73972
+                                                  CT5         1.48563   -5.99632    0.16673
+
+          ----------------
+          PROPERTIES INPUT
+          ----------------
+
+     MOMENTS            FIELD           POTENTIAL          DENSITY
+ IEMOM =       1   IEFLD =       0   IEPOT =       0   IEDEN =       0
+ WHERE =COMASS     WHERE =NUCLEI     WHERE =NUCLEI     WHERE =NUCLEI  
+ OUTPUT=BOTH       OUTPUT=BOTH       OUTPUT=BOTH       OUTPUT=BOTH    
+ IEMINT=       0   IEFINT=       0                     IEDINT=       0
+                                                       MORB  =       0
+          EXTRAPOLATION IN EFFECT
+ ORBITAL PRINTING OPTION: NPREO=     1     0     2     1
+
+     -------------------------------
+     INTEGRAL TRANSFORMATION OPTIONS
+     -------------------------------
+     NWORD  =            0
+     CUTOFF = 1.0E-09     MPTRAN =       0
+     DIRTRF =       T     AOINTS =DUP     
+
+          ----------------------
+          INTEGRAL INPUT OPTIONS
+          ----------------------
+ NOPK  =       1 NORDER=       0 SCHWRZ=       T
+
+ ..... DONE SETTING UP THE RUN .....
+ STEP CPU TIME =     0.07 TOTAL CPU TIME =        0.1 (    0.0 MIN)
+ TOTAL WALL CLOCK TIME=        0.1 SECONDS, CPU UTILIZATION IS 100.00%
+
+                 INDUCED DIPOLE    ATOMIC UNITS   DEBYE
+                 --------------    ------------   -----
+                     X(IND)         -0.04240   -0.10776
+                     Y(IND)          0.10718    0.27243
+                     Z(IND)          0.23257    0.59113
+
+                 --------------------------------------
+                 FRAGMENT-FRAGMENT INTERACTION ENERGIES
+                 --------------------------------------
+
+                 CHARGE-CHARGE         =  -0.0108069538
+                 CHARGE-DIPOLE         =  -0.0035279710
+                 CHARGE-QUADRUPOLE     =  -0.0004950266
+                 CHARGE-OCTUPOLE       =   0.0000494017
+                 DIPOLE-DIPOLE         =  -0.0000020298
+                 DIPOLE-QUADRUPOLE     =  -0.0001505446
+                 QUADRUPOLE-QUADRUPOLE =  -0.0000967019
+                 OVERLAP PEN. ENERGY   =  -0.0021215138
+                                         --------------
+                 ELECTROSTATIC ENERGY  =  -0.0171513398
+                 REPULSION ENERGY      =   0.0211206100
+                 POLARIZATION ENERGY   =  -0.0023666178
+                 CHARGE TRANSFER ENRGY =  -0.0028507410
+                 --------------------------------------
+                 FINAL EFP ENERGY      =  -0.0012480887
+ 
+
+          ----------------------------------------
+          EFFECTIVE FRAGMENT ELECTROSTATIC MOMENTS
+          ----------------------------------------
+
+ FRAGMENT   1  FRAG1 
+          X           Y           Z (BOHR)    CHARGE
+     1.857611   -8.180360   -4.001300       -0.00 (A.U.)
+         DX          DY          DZ         /D/  (DEBYE)
+     0.428761   -0.619745    2.466269    2.578838
+
+ FRAGMENT   2  FRAG1 
+          X           Y           Z (BOHR)    CHARGE
+     1.269771   -6.139531    0.771122       -0.00 (A.U.)
+         DX          DY          DZ         /D/  (DEBYE)
+    -0.528309    1.558392    2.099017    2.667127
+
+          ----------------------------
+          SYSTEM ELECTROSTATIC MOMENTS
+          ----------------------------
+
+ CENTER              X           Y           Z (BOHR)    CHARGE
+                1.563691   -7.159946   -1.615089       -0.00 (A.U.)
+         DX          DY          DZ         /D/  (DEBYE)
+    -0.099548    0.938647    4.565286    4.661845
+ 
+                 15581  WORDS OF DYNAMIC MEMORY USED
+ EXECUTION OF GAMESS TERMINATED NORMALLY Wed Jul 15 10:38:03 2020
+ DDI: 263640 bytes (0.3 MB / 0 MWords) used by master data server.
+
+ ----------------------------------------
+ CPU timing information for all processes
+ ========================================
+ 0: 0.84 + 0.04 = 0.88
+ ----------------------------------------
+ ddikick.x: exited gracefully.
+----- accounting info -----
+Files used on the master node fermi were:
+-rw------- 1 blasiak blasiak 136069 Jul 15 10:38 /scratch/blasiak//water-dimer._eint_._noquambo_.F05
+-rw------- 1 blasiak blasiak 130880 Jul 15 10:38 /scratch/blasiak//water-dimer._eint_._noquambo_.F10
+-rw------- 1 blasiak blasiak      0 Jul 15 10:38 /scratch/blasiak//water-dimer._eint_._noquambo_.F25
+-rw------- 1 blasiak blasiak    341 Jul 15 10:38 /scratch/blasiak//water-dimer._eint_._noquambo_.dat
+-rw------- 1 blasiak blasiak  23612 Jul 15 10:38 /scratch/blasiak//water-dimer._eint_._noquambo_.log
+Wed Jul 15 10:38:06 CEST 2020
+0.112u 0.028s 0:03.33 3.9%	0+0k 0+280io 0pf+0w
