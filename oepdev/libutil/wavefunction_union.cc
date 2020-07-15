@@ -161,9 +161,9 @@ void WavefunctionUnion::common_init(
        eps_a_vir_2 = solver_2->epsilon_a_subset("MO","VIR");
                                                                                  
        nmo_ = solver_1->nbas() + solver_2->nbas();
-       nso_ = nmo_;
+     //nso_ = this->basisset()->nbf(); --> no need to change this
        nmopi_[0] = nmo_;
-       nsopi_[0] = nso_;
+     //nsopi_[0] = nso_; --> no need to change this
 
    } else {
        // RHF canonical orbitals
@@ -176,7 +176,6 @@ void WavefunctionUnion::common_init(
        eps_a_vir_1 = wfn_1->epsilon_a_subset("MO","VIR");
        eps_a_vir_2 = wfn_2->epsilon_a_subset("MO","VIR");
    }
-
 
    // Sizing of the union
    SharedSuperFunctional functional = create_superfunctional("HF", options_);
@@ -242,8 +241,6 @@ void WavefunctionUnion::common_init(
 
    // <---- Wavefunction Coefficients (LCAO-MO Matrices) ----> //
    // <---- Orbital Energies                             ----> //
- //epsilon_a_->zero() ; epsilon_b_->zero();
- //Ca_->zero() ; Cb_->zero();
    epsilon_a_ = std::make_shared<psi::Vector>("Union Alpha Orbital Energies", nmo_union);
    epsilon_b_ = std::make_shared<psi::Vector>("Union Beta Orbital Energies", nmo_union);
    Ca_ = std::make_shared<psi::Matrix>("Union Alpha Orbitals", nbf_union, nmo_union);
@@ -337,6 +334,7 @@ void WavefunctionUnion::common_init(
    /* as for now for two fragments only */
    if (nIsolatedMolecules_>2) throw 
        PSIEXCEPTION(" OEPDEV: NotImplementedError Wavefunction init. So far only DIMERS (nfrag=2) are supported!\n");
+
    SharedMOSpace space_1_occ = std::make_shared<MOSpace>('I', orbitals_occ[0], dummy);
    SharedMOSpace space_2_occ = std::make_shared<MOSpace>('J', orbitals_occ[1], dummy);
    SharedMOSpace space_1_vir = std::make_shared<MOSpace>('X', orbitals_vir[0], dummy);
@@ -442,6 +440,14 @@ void WavefunctionUnion::transform_integrals()
     spaces.push_back(space_2v);
     spaces.push_back(space_12o);
     integrals_ = std::make_shared<IntegralTransform>(shared_from_this(), 
+    //int nbf = this->basisset()->nbf();
+    //psi::SharedMatrix c = std::make_shared<psi::Matrix>("", nbf, 0); // -> frozen core
+    //psi::SharedMatrix v = std::make_shared<psi::Matrix>("", nbf, 0); // -> frozen virtuals
+    //psi::SharedMatrix i = this->Ca_subset("AO","OCC");               // -> active occupied
+    //psi::SharedMatrix a = this->Ca_subset("AO","VIR");               // -> active virtual
+    //cout << "WW " << c->ncol() << " " << i->ncol() << " " << a->ncol() << " " << v->ncol() << " " << Ca_->ncol() << endl;
+    //cout << "WW " << c->nrow() << " " << i->nrow() << " " << a->nrow() << " " << v->nrow() << " " << Ca_->nrow() << endl;
+  //integrals_ = std::make_shared<IntegralTransform>(this->H_, c, i, a, v,
                                                      spaces,
                                                      IntegralTransform::TransformationType::Restricted,
                                                      IntegralTransform::OutputType::DPDOnly,

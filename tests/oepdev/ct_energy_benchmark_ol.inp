@@ -93,6 +93,13 @@ set {
     oepdev_localize               False
     oepdev_enable_trial           False
     oepdev_basis_guess            True
+    wfn_union_localizer           boys
+    solver_ct_localizer           boys
+    oepdev_localizer_maxiter      1000
+    efp2_ct_potential_ints        dmtp
+    efp2_ct_no_octupoles          True
+    oepdev_use_vvo                False
+    quambo_mode                   acbs
     # ==> General Psi4 Options <== #
     scf_type                      direct 
     guess                         core
