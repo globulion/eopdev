@@ -17,6 +17,7 @@
 #include "../libutil/util.h"
 #include "../libutil/cphf.h"
 #include "../libutil/scf_perturb.h"
+#include "../libutil/quambo.h"
 
 namespace oepdev{
 
@@ -928,6 +929,9 @@ class GenEffParFactory
 
    /// The DMTP object
    std::shared_ptr<oepdev::DMTPole> dmtp_;
+
+   /// The QUAMBO object
+   std::shared_ptr<oepdev::QUAMBO> quamboSolver_;
    //@}
 
 
@@ -961,6 +965,7 @@ class EFP2_GEFactory : public GenEffParFactory
     virtual std::shared_ptr<oepdev::DMTPole> compute_dmtp(void);
     virtual void compute_lmoc(void);
     virtual std::shared_ptr<oepdev::CPHF> compute_cphf(void);
+    virtual std::shared_ptr<oepdev::QUAMBO> compute_quambo(void);
     virtual void assemble_efp2_parameters(void);
 
     virtual void assemble_geometry_data(void);

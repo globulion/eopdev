@@ -156,7 +156,8 @@ class QUAMBO
 
 };
 
-
+/// Shared QUAMBO object
+using SharedQUAMBO = std::shared_ptr<QUAMBO>;
 
 
 /** @}*/

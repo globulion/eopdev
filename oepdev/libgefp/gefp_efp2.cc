@@ -19,9 +19,11 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::EFP2_GEFactory::compute()
 {
    oepdev::SharedDMTPole camm = this->compute_dmtp();
    oepdev::SharedCPHF cphf = this->compute_cphf();
+   oepdev::SharedQUAMBO quambo = this->compute_quambo(); 
 
    dmtp_ = camm;
    cphfSolver_ = cphf;
+   quamboSolver_ = quambo;
 
    this->assemble_efp2_parameters();
 
@@ -37,6 +39,7 @@ oepdev::SharedDMTPole oepdev::EFP2_GEFactory::compute_dmtp() {
 }
 
 void oepdev::EFP2_GEFactory::compute_lmoc() {}
+
 oepdev::SharedCPHF oepdev::EFP2_GEFactory::compute_cphf() {
   psi::outfile->Printf(" @EFP2_GEFactory: Solving CPHF Equations...\n");
   oepdev::SharedCPHF cphf = std::make_shared<oepdev::CPHF>(wfn_, options_);
@@ -44,6 +47,15 @@ oepdev::SharedCPHF oepdev::EFP2_GEFactory::compute_cphf() {
   psi::outfile->Printf(" @EFP2_GEFactory: CPHF Done.\n");
   return cphf;
 }
+
+oepdev::SharedQUAMBO oepdev::EFP2_GEFactory::compute_quambo() {
+  psi::outfile->Printf(" @EFP2_GEFactory: Computing QUAMBO and VVO...\n");
+  oepdev::SharedQUAMBO solver = std::make_shared<QUAMBO>(this->wfn_, true);
+  solver->compute();
+  psi::outfile->Printf(" @EFP2_GEFactory: QUAMBO and VVO Done.\n");
+  return solver;
+}
+
 void oepdev::EFP2_GEFactory::assemble_efp2_parameters() {
   psi::outfile->Printf(" @EFP2_GEFactory: Assembling Geometry data...\n");
   this->assemble_geometry_data();
@@ -89,10 +101,23 @@ void oepdev::EFP2_GEFactory::assemble_fock_matrix() {
   this->EFP2Parameters_->set_matrix("fock_lmo", Fa_mo);
   this->EFP2Parameters_->set_matrix("fock_ao", Fa_ao);
 
-  psi::SharedMatrix Ca_occ_canonical = cphfSolver_->Cocc();
-  psi::SharedMatrix Ca_vir_canonical = cphfSolver_->Cvir();
-  psi::SharedVector eps_a_occ_canonical = cphfSolver_->epsocc();
-  psi::SharedVector eps_a_vir_canonical = cphfSolver_->epsvir();
+  psi::SharedMatrix Ca_occ_canonical;
+  psi::SharedMatrix Ca_vir_canonical;
+  psi::SharedVector eps_a_occ_canonical;
+  psi::SharedVector eps_a_vir_canonical;
+  if (!this->options_.get_bool("OEPDEV_USE_VVO")) {
+       // Original HF canonical orbitals
+       Ca_occ_canonical = cphfSolver_->Cocc();      
+       Ca_vir_canonical = cphfSolver_->Cvir();
+       eps_a_occ_canonical = cphfSolver_->epsocc();
+       eps_a_vir_canonical = cphfSolver_->epsvir();
+  } else {
+       // Original HF canonical Occupied Orbitals + VVOs from QUAMBO
+       Ca_occ_canonical = quamboSolver_->Ca_subset("AO","OCC");
+       Ca_vir_canonical = quamboSolver_->Ca_subset("AO","VIR");
+       eps_a_occ_canonical = quamboSolver_->epsilon_a_subset("MO","OCC");
+       eps_a_vir_canonical = quamboSolver_->epsilon_a_subset("MO","VIR");
+  }
 
   this->EFP2Parameters_->set_matrix("cmoo", Ca_occ_canonical);
   this->EFP2Parameters_->set_matrix("cmov", Ca_vir_canonical);
