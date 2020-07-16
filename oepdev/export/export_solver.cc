@@ -63,6 +63,10 @@ void export_solver(py::module &m) {
          .def("l_intermediate", &oepdev::WavefunctionUnion::l_intermediate, "")
          .def("l_guess", &oepdev::WavefunctionUnion::l_guess, "")
          .def("l_wfn", &oepdev::WavefunctionUnion::l_wfn, "")
+         .def("l_ca_occ", &oepdev::WavefunctionUnion::l_ca_occ, "")
+         .def("l_ca_vir", &oepdev::WavefunctionUnion::l_ca_vir, "")
+         .def("l_eps_a_occ", &oepdev::WavefunctionUnion::l_eps_a_occ, "")
+         .def("l_eps_a_vir", &oepdev::WavefunctionUnion::l_eps_a_vir, "")
          .def("l_localizer", &oepdev::WavefunctionUnion::l_localizer, "")
          .def("integrals", &oepdev::WavefunctionUnion::integrals, "")
          .def("has_localized_orbitals", &oepdev::WavefunctionUnion::has_localized_orbitals, "")
@@ -73,6 +77,7 @@ void export_solver(py::module &m) {
          .def("epsilon_subset_helper", &oepdev::WavefunctionUnion::epsilon_subset_helper, "")
          .def("print_header", &oepdev::WavefunctionUnion::print_header, "")
          .def("print_mo_integrals", &oepdev::WavefunctionUnion::print_mo_integrals, "")
+         .def("basisset", &oepdev::WavefunctionUnion::basisset, "")
         ;
 }
 

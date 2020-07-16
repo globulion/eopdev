@@ -32,13 +32,17 @@ set {
     cphf_localize                 True
     efp2_ct_no_octupoles          True
     solver_ct_localizer           boys
+    wfn_union_localizer           boys
     df_basis_oep                  aug-cc-pVDZ-jkfit
     df_basis_int                  aug-cc-pVDZ-jkfit
     oepdev_df_type                single
     oepdev_enable_trial           False
-    #wfn_union_localizer           boys
+    oepdev_localizer_maxiter      1000
+    efp2_with_vvo                 False
+    quambo_mode                   acbs
     # ==> General Psi4 Options <== #
-    basis                         6-311++G(2df)
+   #basis                         6-311++G(2df)
+    basis                         6-31++G**
     scf_type                      pk
     guess                         core
     e_convergence                 1e-11

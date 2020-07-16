@@ -105,14 +105,21 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     std::shared_ptr<oepdev::PotentialInt> potInt_;
     /// Occupied orbitals: Canonical (CMO)
     psi::SharedMatrix cOcc_;
-    /// Virtual orbitals
+    /// Virtual orbitals (Canonical or Valence)
     psi::SharedMatrix cVir_;
+    /// Occupied orbital energies: Canonical (CMO)
+    psi::SharedVector epsOcc_;
+    /// Virtual orbital energies (Canonical or Valence)
+    psi::SharedVector epsVir_;
     /// Occupied orbitals: Localized (LMO)
     psi::SharedMatrix lOcc_;
     /// Canonical to Occupied orbitals transformation
     psi::SharedMatrix T_;
     /// LMO Centroids
     std::vector<psi::SharedVector> lmoc_;
+
+    /// Is the object initialized? (MOs computed)
+    bool initialized_;
 
   public:
 
@@ -225,6 +232,11 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     SharedMatrix cOcc() const {return cOcc_;}
     /// Retrieve Canonical virtual MOs
     SharedMatrix cVir() const {return cVir_;}
+    /// Retrieve Canonical occupied MO energies
+    SharedVector epsOcc() const {return epsOcc_;}
+    /// Retrieve Canonical virtual MO energies
+    SharedVector epsVir() const {return epsVir_;}
+
     /// Retrieve Localized occupied MOs
     SharedMatrix lOcc() const {return lOcc_;}
     /// Retrieve Canonical to Localized occupied MO transformation matrix
@@ -248,8 +260,15 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
     /// Set the localized molecular orbitals in OEP calculation
     void set_localized_orbitals(std::shared_ptr<OEPotential> oep) {if (oep->localizer_) set_localized_orbitals(oep->localizer_);}
 
+    /// Set the occupied canonical orbitals in OEP calculations
+    void set_occupied_canonical_orbitals(std::shared_ptr<OEPotential> oep);
+
     /// Whether to use localized molecular orbitals in OEP calculation; Default: False
     bool use_localized_orbitals;
+
+    /// Whether to use QUAMBO orbitals to construct VVOs; Default: False
+    bool use_quambo_orbitals;
+
 
     // <--- Printers ---> //
 
@@ -258,6 +277,9 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
     /// Print the contents (OEP data)
     void print() const;
+
+    /// Initialize the object (expert) 
+    virtual void initialize() = 0;
 
   protected:
    /// Deep-copy the data
@@ -269,6 +291,9 @@ class OEPotential : public std::enable_shared_from_this<OEPotential>
 
    virtual void rotate_oep(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux);
    virtual void translate_oep(psi::SharedVector t);
+
+   /// Compute MOs (used in initialization stage)
+   virtual void compute_molecular_orbitals();
 
 
   private:
@@ -298,6 +323,7 @@ class ElectrostaticEnergyOEPotential : public OEPotential
                             const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) override;
     virtual void print_header() const override;
     virtual std::shared_ptr<OEPotential> clone(void) const override;
+    virtual void initialize() override;
 
   protected:
     virtual void rotate_oep(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) override;
@@ -332,6 +358,8 @@ class RepulsionEnergyOEPotential : public OEPotential
                             const double& x, const double& y, const double& z, std::shared_ptr<psi::Vector>& v) override;
     virtual void print_header() const override;
     virtual std::shared_ptr<OEPotential> clone(void) const override;
+
+    virtual void initialize() override;
 
 
   protected:
@@ -376,6 +404,8 @@ class ChargeTransferEnergyOEPotential : public OEPotential
     virtual void print_header() const override;
     virtual std::shared_ptr<OEPotential> clone(void) const override;
 
+    virtual void initialize() override;
+
   protected:
     virtual void rotate_oep(psi::SharedMatrix, psi::SharedMatrix, psi::SharedMatrix) override;
     virtual void translate_oep(psi::SharedVector) override;
@@ -414,6 +444,7 @@ class EETCouplingOEPotential : public OEPotential
     virtual void print_header() const override;
     virtual std::shared_ptr<OEPotential> clone(void) const override; 
 
+    virtual void initialize() override;
 
   protected:
     virtual void rotate_oep(psi::SharedMatrix, psi::SharedMatrix, psi::SharedMatrix) override;

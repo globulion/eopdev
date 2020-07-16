@@ -2,6 +2,8 @@
 #include "psi4/libpsi4util/PsiOutStream.h"
 #include "psi4/libmints/mintshelper.h"
 #include "../libutil/integrals_iter.h"
+#include "psi4/libiwl/iwl.hpp"
+
 
 namespace oepdev{
 
@@ -49,6 +51,60 @@ create_superfunctional(std::string name, Options& options) {
 }
 
 extern "C" PSI_API
+SharedBasisSet
+create_basisset_by_copy(SharedBasisSet basis_ref, SharedMolecule molecule_target) {
+
+  std::map<std::string, std::map<std::string, std::vector<psi::ShellInfo>>> shellmap;
+  std::map<std::string, std::map<std::string, std::vector<psi::ShellInfo>>> ecp_shellmap;
+
+  std::string name = basis_ref->name();
+  std::string key  = basis_ref->key();
+  std::string label= name; // ? this is just assumed, but should be a 'blend'
+
+  molecule_target->set_basis_all_atoms(name, key);
+
+  //cout << molecule_target->natom() << " " << basis_ref->molecule()->natom() << " " << endl;
+  if (molecule_target->nallatom() != basis_ref->molecule()->natom()) throw psi::PSIEXCEPTION("ERROR: Copy basis has different number of atoms than target molecule!!!");
+  for (int a=0; a<molecule_target->nallatom(); ++a) {
+       std::vector<psi::ShellInfo> shellinfos;
+       int is = basis_ref->shell_on_center(a, 0);
+       int in = basis_ref->nshell_on_center(a);
+       for (int iis = 0; iis < in; ++iis) {
+            int si = is + iis;
+            const psi::GaussianShell& s = basis_ref->shell(si);
+
+            std::vector<double> c, e;
+            for (int pi=0; pi<s.nprimitive(); ++pi) {
+                 c.push_back(s.original_coef(pi));
+                 e.push_back(s.exp (pi));
+            }
+
+            psi::ShellInfo infos(s.am(), c, e, psi::GaussianType::Cartesian, psi::PrimitiveType::Unnormalized);
+            shellinfos.push_back(infos);
+       }
+
+       std::string atomlabel = molecule_target->fsymbol(a);
+       std::string hash = ""; // ? it is a comment of an atom I guess...
+
+       molecule_target->set_shell_by_label(atomlabel, hash, key);
+
+       shellmap[name][atomlabel] = shellinfos;
+  }
+
+  molecule_target->update_geometry();
+
+  SharedBasisSet basis_target = std::make_shared<BasisSet>(key, molecule_target, shellmap, ecp_shellmap);
+
+  basis_target->set_name(name);
+  basis_target->set_key(key);
+  basis_target->set_target(label);
+
+  return basis_target;
+}
+
+
+
+extern "C" PSI_API
 std::shared_ptr<Molecule>
 extract_monomer(std::shared_ptr<const Molecule> molecule_dimer, int id) {
     std::vector<int> real_list; real_list.push_back(id-1);
@@ -78,6 +134,15 @@ solve_scf(std::shared_ptr<Molecule> molecule,
           std::shared_ptr<PSIO> psio, 
 	  bool compute_mints) 
 {
+   /* 
+      Important Note:
+
+         compute_mints temporarily denotes psiclean routine to be performed between basis_guess and primary scf runs
+         to solve SCF. This is used for WavefunctionUnions created via second constructor (by providing externally 
+         wavefunctions for monomers). This is only a temporary solution, because this issue needs to be resolved in
+         the future at the psi4 scratch file management level.
+
+    */
 
     psi::SharedWavefunction scf;
     //psi::PSIOManager::shared_object()->psiclean();//TODO
@@ -89,11 +154,11 @@ solve_scf(std::shared_ptr<Molecule> molecule,
        outfile->Printf("\n @solve_scf: Starting SCF in Guess Basis... \n\n");
 
        //compute_mints = true; 
-       if (compute_mints) {
-         //psi::PSIOManager::shared_object()->psiclean();//TODO
-         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(guess);
-         mints->integrals();
-       }
+       //if (compute_mints) {
+       //  //psi::PSIOManager::shared_object()->psiclean();//TODO
+       //  std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(guess);
+       //  mints->integrals();
+       //}
        SharedWavefunction scf_base_guess(new Wavefunction(molecule, guess, options));                     
        //bool opt_stash = options.get_bool("DF_SCF_GUESS");
        //options.set_bool("SCF", "DF_SCF_GUESS", false);
@@ -109,16 +174,22 @@ solve_scf(std::shared_ptr<Molecule> molecule,
        psi::SharedMatrix pCb = scf_guess->basis_projection(scf_guess->Cb_subset("AO","OCC"),scf_guess->nbetapi(),
                                                            guess, primary);
        //options.set_bool("SCF", "DF_SCF_GUESS", opt_stash);
-       //psi::PSIOManager::shared_object()->psiclean();//TODO --> this needs to be set when calling from Python level! ???
+     //psi::PSIOManager::shared_object()->print();
+       if (compute_mints) psi::PSIOManager::shared_object()->psiclean();//TODO --> this needs to be set when calling from Python level! ??? --> i.e., when using second constructor of WavefunctionUnion
+     //std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary); mints->one_electron_integrals();
+    //IWL ERIOUT(psio.get(), PSIF_SO_TEI, 0.0, 0, 0);
+    //ERIOUT.flush(1);
+    //ERIOUT.set_keep_flag(true);
+    //ERIOUT.close();
 
        // ===> Step 3: Target SCF <=== //
        outfile->Printf("\n @solve_scf: Starting SCF in Target Basis... \n\n");
 
-       if (compute_mints) {
-         //psi::PSIOManager::shared_object()->psiclean();//TODO
-         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
-         mints->integrals();
-       }
+       //if (compute_mints) {
+       //  //psi::PSIOManager::shared_object()->psiclean();//TODO
+       //  std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
+       //  mints->integrals();
+       //}
        SharedWavefunction scf_base(new Wavefunction(molecule, primary, options));                     
        scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
                                                                                                      
@@ -136,10 +207,10 @@ solve_scf(std::shared_ptr<Molecule> molecule,
        scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
                                                                                                       
        // Compute integrals (write IWL entry to PSIO)
-       if (compute_mints) {
-         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
-         mints->integrals();
-       }
+       //if (compute_mints) {
+       //  std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
+       //  mints->integrals();
+       //}
        scf = std::make_shared<psi::scf::RHF>(scf_base, functional, options, psio);
        scf->compute_energy();
 

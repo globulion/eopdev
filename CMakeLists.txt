@@ -89,6 +89,7 @@ add_psi4_plugin(oepdev main.cc
 		       oepdev/libutil/cis_rhf_direct.cc
                        oepdev/libutil/kabsch_superimposer.cc
                        oepdev/libutil/basis_rotation.cc
+                       oepdev/libutil/quambo.cc
 		       # lib3d
                        oepdev/lib3d/space3d.cc
                        oepdev/lib3d/esp.cc
@@ -141,6 +142,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libtest/cis_uhf_dl.cc
 		       oepdev/libtest/cphf.cc
 		       oepdev/libtest/camm.cc
+                       oepdev/libtest/quambo.cc
                        oepdev/libtest/dmtp_pot_field.cc
 		       oepdev/libtest/dmtp_energy.cc
 		       oepdev/libtest/efp2_energy.cc
@@ -159,6 +161,7 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/libtest/test_custom.cc
 		       oepdev/libtest/points_collection3d.cc
 		       oepdev/libtest/ct_energy_benchmark_ol.cc
+		       oepdev/libtest/ct_energy_oep_based_ol.cc
 		       oepdev/libtest/rep_energy_benchmark_hs.cc
 		       oepdev/libtest/rep_energy_benchmark_dds.cc
 		       oepdev/libtest/rep_energy_benchmark_efp2.cc

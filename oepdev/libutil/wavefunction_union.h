@@ -162,6 +162,14 @@ class WavefunctionUnion : public Wavefunction
     std::vector<int> l_nbeta_; 
     /// List of numbers of frozen-core orbitals per isolated molecule
     std::vector<int> l_nfrzc_;
+    /// List of occupied orbitals
+    std::vector<psi::SharedMatrix> l_ca_occ_;
+    /// List of virtual orbitals
+    std::vector<psi::SharedMatrix> l_ca_vir_;
+    /// List of occupied orbital energies
+    std::vector<psi::SharedVector> l_eps_a_occ_;
+    /// List of virtual orbital energies
+    std::vector<psi::SharedVector> l_eps_a_vir_;
     /// List of orbital localizers
     std::vector<SharedLocalizer> l_localizer_;
     /// List of dictionaries of MO spaces
@@ -177,6 +185,8 @@ class WavefunctionUnion : public Wavefunction
      *  Provide wavefunction with molecule containing at least 2 fragments.
      *  @param ref_wfn - reference wavefunction
      *  @param options - Psi4 options
+     *
+     *  This constructor is used for C++ internal interface.
      */
     WavefunctionUnion(SharedWavefunction ref_wfn, Options& options);
 
@@ -200,6 +210,8 @@ class WavefunctionUnion : public Wavefunction
      *  @param wfn_1          - unperturbed wavefunction object
      *  @param wfn_2          - unperturbed wavefunction object
      *  @param options        - Psi4 options
+     *
+     *  This constructor is for interface with Python level.
      */
      WavefunctionUnion(
 //		SharedWavefunction ref_wfn,
@@ -298,6 +310,19 @@ class WavefunctionUnion : public Wavefunction
 
     /// Get the orbital localizer object of the *n*th fragment
     SharedLocalizer l_localizer (int n) const;
+
+    /// Get the occupied molecular orbitals of the *n*th fragment
+    psi::SharedMatrix l_ca_occ(int n) const {return l_ca_occ_[n];}
+
+    /// Get the virtual molecular orbitals of the *n*th fragment
+    psi::SharedMatrix l_ca_vir(int n) const {return l_ca_vir_[n];}
+
+    /// Get the occupied molecular orbital energies of the *n*th fragment
+    psi::SharedVector l_eps_a_occ(int n) const {return l_eps_a_occ_[n];}
+
+    /// Get the virtual molecular orbital energies of the *n*th fragment
+    psi::SharedVector l_eps_a_vir(int n) const {return l_eps_a_vir_[n];}
+
 
     // ---> Properties of Entire Union <--- //
 

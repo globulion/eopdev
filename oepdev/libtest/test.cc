@@ -29,6 +29,7 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="UNITARY_OPTIMIZER") result = test_unitaryOptimizer();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="UNITARY_OPTIMIZER_4_2") result = test_unitaryOptimizer_4_2();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="SCF_PERTURB") result = test_scf_perturb();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="QUAMBO") result = test_quambo();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CAMM") result = test_camm();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_POT_FIELD") result = test_dmtp_pot_field();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="DMTP_ENERGY") result = test_dmtp_energy();
@@ -40,6 +41,7 @@ double oepdev::test::Test::run(void)
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CUSTOM") result = test_custom();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="POINTS_COLLECTION3D") result = test_points_collection3d();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="CT_ENERGY_BENCHMARK_OL") result = test_ct_energy_benchmark_ol();
+  else if (options_.get_str("OEPDEV_TEST_NAME")=="CT_ENERGY_OEP_BASED_OL") result = test_ct_energy_oep_based_ol();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="REP_ENERGY_BENCHMARK_HS") result = test_rep_energy_benchmark_hs();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="REP_ENERGY_BENCHMARK_DDS") result = test_rep_energy_benchmark_dds();
   else if (options_.get_str("OEPDEV_TEST_NAME")=="REP_ENERGY_BENCHMARK_MURRELL_ETAL") result = test_rep_energy_benchmark_murrell_etal();

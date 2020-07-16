@@ -1,0 +1,2 @@
+These inputs were not optimized with OEPDev options (i.e., default GAMESS
+options and basis sets were used)

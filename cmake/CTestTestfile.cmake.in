@@ -18,6 +18,7 @@ add_test (NAME ERI_3_1               COMMAND "psi4" "tests/oepdev/eri_3_1.inp"  
 add_test (NAME UNITARY_OPTIMIZER     COMMAND "psi4" "tests/oepdev/unitaryOptimizer.inp"     "tests/oepdev/unitaryOptimizer.out")
 add_test (NAME UNITARY_OPTIMIZER_4_2 COMMAND "psi4" "tests/oepdev/unitaryOptimizer_4_2.inp" "tests/oepdev/unitaryOptimizer_4_2.out")
 add_test (NAME SCF_PERTURB           COMMAND "psi4" "tests/oepdev/scf_perturb.inp"          "tests/oepdev/scf_perturb.out")
+add_test (NAME QUAMBO                COMMAND "psi4" "tests/oepdev/quambo.inp"               "tests/oepdev/quambo.out"     )
 add_test (NAME CAMM                  COMMAND "psi4" "tests/oepdev/camm.inp"                 "tests/oepdev/camm.out"       )
 add_test (NAME DMTP_POT_FIELD        COMMAND "psi4" "tests/oepdev/dmtp_pot_field.inp"       "tests/oepdev/dmtp_pot_field.out")
 add_test (NAME DMTP_ENERGY           COMMAND "psi4" "tests/oepdev/dmtp_energy.inp"          "tests/oepdev/dmtp_energy.out")
@@ -28,6 +29,7 @@ add_test (NAME DMTP_SUPERIMPOSITION COMMAND "psi4" "tests/oepdev/dmtp_superimpos
 add_test (NAME ESP_SOLVER            COMMAND "psi4" "tests/oepdev/esp_solver.inp"           "tests/oepdev/esp_solver.out" )
 add_test (NAME POINTS_COLLECTION3D   COMMAND "psi4" "tests/oepdev/points_collection3d.inp"  "tests/oepdev/points_collection3d.out" )
 add_test (NAME CT_ENERGY_BENCHMARK_OL   COMMAND "psi4" "tests/oepdev/ct_energy_benchmark_ol.inp"  "tests/oepdev/ct_energy_benchmark_ol.out" )
+add_test (NAME CT_ENERGY_OEP_BASED_OL   COMMAND "psi4" "tests/oepdev/ct_energy_oep_based_ol.inp"  "tests/oepdev/ct_energy_oep_based_ol.out" )
 add_test (NAME REP_ENERGY_BENCHMARK_HS   COMMAND "psi4" "tests/oepdev/rep_energy_benchmark_hs.inp"  "tests/oepdev/rep_energy_benchmark_hs.out" )
 add_test (NAME REP_ENERGY_BENCHMARK_DDS  COMMAND "psi4" "tests/oepdev/rep_energy_benchmark_dds.inp"  "tests/oepdev/rep_energy_benchmark_dds.out" )
 add_test (NAME REP_ENERGY_BENCHMARK_EFP2 COMMAND "psi4" "tests/oepdev/rep_energy_benchmark_efp2.inp"  "tests/oepdev/rep_energy_benchmark_efp2.out" )
@@ -54,19 +56,21 @@ set_tests_properties (ERI_3_1               PROPERTIES PASS_REGULAR_EXPRESSION "
 set_tests_properties (UNITARY_OPTIMIZER     PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000"     )
 set_tests_properties (UNITARY_OPTIMIZER_4_2 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00"      )
 set_tests_properties (SCF_PERTURB           PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
+set_tests_properties (QUAMBO                PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00007922")
 set_tests_properties (CAMM                  PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000531")
 set_tests_properties (DMTP_POT_FIELD        PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
 set_tests_properties (DMTP_ENERGY           PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000006")
-set_tests_properties (EFP2_ENERGY           PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000100")
-set_tests_properties (OEP_EFP2_ENERGY       PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000116")
+set_tests_properties (EFP2_ENERGY           PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000495")
+set_tests_properties (OEP_EFP2_ENERGY       PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000659")
 set_tests_properties (KABSCH_SUPERIMPOSITION PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000000")
 set_tests_properties (DMTP_SUPERIMPOSITION PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00001115")
 set_tests_properties (ESP_SOLVER            PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.1344"    )
 set_tests_properties (POINTS_COLLECTION3D   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.03804657")
 set_tests_properties (CT_ENERGY_BENCHMARK_OL   PROPERTIES PASS_REGULAR_EXPRESSION " CT Energy Otto-Ladik= -0.00050753") # Revise
+set_tests_properties (CT_ENERGY_OEP_BASED_OL   PROPERTIES PASS_REGULAR_EXPRESSION " CT Energy Otto-Ladik= -0.00054115") # Revise
 set_tests_properties (REP_ENERGY_BENCHMARK_HS   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000000") # Revise
 set_tests_properties (REP_ENERGY_BENCHMARK_DDS  PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000000") # Revise
 set_tests_properties (REP_ENERGY_BENCHMARK_EFP2 PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000000") # Revise
 set_tests_properties (REP_ENERGY_BENCHMARK_MURRELL_ETAL PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000000") # Revise
-set_tests_properties (REP_ENERGY_OEP_BASED_MURRELL_ETAL PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00000") # Revise
+set_tests_properties (REP_ENERGY_OEP_BASED_MURRELL_ETAL PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.00213") # Revise!
 set_tests_properties (REP_ENERGY_BENCHMARK_OL   PROPERTIES PASS_REGULAR_EXPRESSION " Test result= 0.000000") # Revise

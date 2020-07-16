@@ -386,8 +386,8 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   std::shared_ptr<psi::Matrix> VaoA12 = VaoA21->transpose();
   VaoA21.reset();
 
-  std::shared_ptr<psi::Matrix> Ca_occ_A = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_occ_B = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
+  std::shared_ptr<psi::Matrix> Ca_occ_A = wfn_union_->l_ca_occ(0);
+  std::shared_ptr<psi::Matrix> Ca_occ_B = wfn_union_->l_ca_occ(1);
 
   std::shared_ptr<psi::Matrix> Smo12  = psi::Matrix::triplet(Ca_occ_A, Sao12 , Ca_occ_B, true, false, false);
   std::shared_ptr<psi::Matrix> VmoA12 = psi::Matrix::triplet(Ca_occ_A, VaoA12, Ca_occ_B, true, false, false);
@@ -584,8 +584,8 @@ double RepulsionEnergySolver::compute_benchmark_otto_ladik() {
   std::shared_ptr<psi::Matrix> VaoA12 = VaoA21->transpose();
   VaoA21.reset();
 
-  std::shared_ptr<psi::Matrix> Ca_occ_A = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_occ_B = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
+  std::shared_ptr<psi::Matrix> Ca_occ_A = wfn_union_->l_ca_occ(0);
+  std::shared_ptr<psi::Matrix> Ca_occ_B = wfn_union_->l_ca_occ(1);
 
   std::shared_ptr<psi::Matrix> Smo12  = psi::Matrix::triplet(Ca_occ_A, Sao12 , Ca_occ_B, true, false, false);
   std::shared_ptr<psi::Matrix> VmoA12 = psi::Matrix::triplet(Ca_occ_A, VaoA12, Ca_occ_B, true, false, false);
@@ -798,8 +798,8 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
   dipInt1->compute(R1ao);
   dipInt2->compute(R2ao);
 
-  std::shared_ptr<psi::Matrix> Ca_occ_A = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_occ_B = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
+  std::shared_ptr<psi::Matrix> Ca_occ_A = wfn_union_->l_ca_occ(0); // localized if requested in options
+  std::shared_ptr<psi::Matrix> Ca_occ_B = wfn_union_->l_ca_occ(1); // localized if requested in options
   for (int z=0; z<3; ++z) {
        R1ao[z]->scale(-1.0);
        R2ao[z]->scale(-1.0);
@@ -1003,6 +1003,10 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
                                                        wfn_union_->l_auxiliary(1), 
                                                        wfn_union_->l_intermediate(1), 
                                                        wfn_union_->options());
+  oep_1->use_quambo_orbitals = false;
+  oep_2->use_quambo_orbitals = false;
+  oep_1->use_localized_orbitals = options_.get_bool("OEPDEV_LOCALIZE");
+  oep_2->use_localized_orbitals = options_.get_bool("OEPDEV_LOCALIZE");
   oep_1->compute();
   oep_2->compute();
 
@@ -1032,12 +1036,13 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
   ovlInt_1p2a->compute(Sao_1p2a);
   t_time += clock(); // Clock END
 
-//std::shared_ptr<psi::Matrix> Ca_occ_1 = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
-//std::shared_ptr<psi::Matrix> Ca_occ_2 = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_occ_1 = oep_1->cOcc(); // Those are localized if OEPDEV_LOCALIZE is true!
-  std::shared_ptr<psi::Matrix> Ca_occ_2 = oep_2->cOcc(); // Those are localized if OEPDEV_LOCALIZE is true!
+  psi::SharedMatrix Ca_occ_1 = oep_1->cOcc(); 
+  psi::SharedMatrix Ca_occ_2 = oep_2->cOcc(); 
+  if (oep_1->use_localized_orbitals) Ca_occ_1 = oep_1->lOcc();
+  if (oep_2->use_localized_orbitals) Ca_occ_2 = oep_2->lOcc();
 
   t_time -= clock(); // Clock BEGIN
+  Ca_occ_1->set_name("NAMA");Ca_occ_1->print();
   std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(Ca_occ_1, Sao_1p2p, Ca_occ_2, true, false, false);
   std::shared_ptr<psi::Matrix> Sba = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true);
   std::shared_ptr<psi::Matrix> Sab = psi::Matrix::doublet(Ca_occ_1, Sao_1p2a, true, false);
@@ -1119,6 +1124,10 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
                                                        wfn_union_->l_auxiliary(1), 
                                                        wfn_union_->l_intermediate(1), 
                                                        wfn_union_->options());
+  oep_1->use_quambo_orbitals = false;
+  oep_2->use_quambo_orbitals = false;
+  oep_1->use_localized_orbitals = options_.get_bool("OEPDEV_LOCALIZE");
+  oep_2->use_localized_orbitals = options_.get_bool("OEPDEV_LOCALIZE");
   oep_1->compute();
   oep_2->compute();
 
@@ -1147,8 +1156,10 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_esp() {
   ovlInt_1a2p->compute(Sao_1a2p);
   ovlInt_1p2a->compute(Sao_1p2a);
 
-  std::shared_ptr<psi::Matrix> Ca_occ_1 = oep_1->cOcc(); //same as wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");  // Those are localized if OEPDEV_LOCALIZE is true!
-  std::shared_ptr<psi::Matrix> Ca_occ_2 = oep_2->cOcc(); //same as wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");  // Those are localized if OEPDEV_LOCALIZE is true!
+  std::shared_ptr<psi::Matrix> Ca_occ_1 = oep_1->cOcc();
+  std::shared_ptr<psi::Matrix> Ca_occ_2 = oep_2->cOcc();
+  if (oep_1->use_localized_orbitals) Ca_occ_1 = oep_1->lOcc();
+  if (oep_2->use_localized_orbitals) Ca_occ_2 = oep_2->lOcc();
 
   std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(Ca_occ_1, Sao_1p2p, Ca_occ_2, true, false, false);
   std::shared_ptr<psi::Matrix> Sba = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true);

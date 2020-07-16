@@ -39,8 +39,12 @@ RepulsionEnergyOEPotential::~RepulsionEnergyOEPotential()
 void RepulsionEnergyOEPotential::common_init() 
 {
    name_ = "HF Repulsion Energy";
+}
+void RepulsionEnergyOEPotential::initialize()
+{
+   this->compute_molecular_orbitals();
 
-   int n1 = wfn_->Ca_subset("AO","OCC")->ncol();
+   int n1 = cOcc_->ncol();
    int n2 = auxiliary_->nbf();
    int n3 = wfn_->molecule()->natom();
 
@@ -59,10 +63,14 @@ void RepulsionEnergyOEPotential::common_init()
 
    //
    vec_otto_ladik_s2_ = new double[n1];
+ 
+   initialized_ = true;
 }
 
 void RepulsionEnergyOEPotential::compute(const std::string& oepType) 
 {
+  if (!initialized_) this->initialize();
+
   if      (oepType == "Murrell-etal.S1"     ) compute_murrell_etal_s1()      ;
   else if (oepType == "Otto-Ladik.S2.ESP"   ) compute_otto_ladik_s2_esp()    ;
   else if (oepType == "Otto-Ladik.S2.CAMM.a") compute_otto_ladik_s2_camm_a() ;

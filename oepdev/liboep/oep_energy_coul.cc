@@ -29,9 +29,15 @@ void ElectrostaticEnergyOEPotential::common_init()
    OEPType type = OEPType("V", false, 1, mat, nullptr, nullptr);
    oepTypes_["V"] = type;
 }
+void ElectrostaticEnergyOEPotential::initialize() {
+   this->compute_molecular_orbitals(); 
+   initialized_ = true;
+}
 
 void ElectrostaticEnergyOEPotential::compute(const std::string& oepType) 
 {
+  if (!initialized_) this->initialize();
+
   if (oepType == "V" || oepType == "TOTAL") {
 
       //psi::timer_on("OEP    E(Coul)                  ");

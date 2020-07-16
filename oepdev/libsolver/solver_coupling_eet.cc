@@ -147,15 +147,15 @@ double EETCouplingSolver::compute_benchmark_fujimoto_ti_cis() { //TODO
   const double na_AB= na_A + na_B;
 
   // 
-  SharedMatrix Ca_occ_A = wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
-  SharedMatrix Ca_occ_B = wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
-  SharedMatrix Ca_vir_A = wfn_union_->l_wfn(0)->Ca_subset("AO","VIR");
-  SharedMatrix Ca_vir_B = wfn_union_->l_wfn(1)->Ca_subset("AO","VIR");
+  SharedMatrix Ca_occ_A = wfn_union_->l_ca_occ(0);
+  SharedMatrix Ca_occ_B = wfn_union_->l_ca_occ(1);
+  SharedMatrix Ca_vir_A = wfn_union_->l_ca_vir(0);
+  SharedMatrix Ca_vir_B = wfn_union_->l_ca_vir(1);
   //
-  SharedVector eps_a_occ_A = wfn_union_->l_wfn(0)->epsilon_a_subset("MO","OCC");
-  SharedVector eps_a_occ_B = wfn_union_->l_wfn(1)->epsilon_a_subset("MO","OCC");
-  SharedVector eps_a_vir_A = wfn_union_->l_wfn(0)->epsilon_a_subset("MO","VIR");
-  SharedVector eps_a_vir_B = wfn_union_->l_wfn(1)->epsilon_a_subset("MO","VIR");
+  SharedVector eps_a_occ_A = wfn_union_->l_eps_a_occ(0);
+  SharedVector eps_a_occ_B = wfn_union_->l_eps_a_occ(1);
+  SharedVector eps_a_vir_A = wfn_union_->l_eps_a_vir(0);
+  SharedVector eps_a_vir_B = wfn_union_->l_eps_a_vir(1);
   // 
   SharedMatrix Da_A = wfn_union_->l_wfn(0)->Da();
   SharedMatrix Da_B = wfn_union_->l_wfn(1)->Da();

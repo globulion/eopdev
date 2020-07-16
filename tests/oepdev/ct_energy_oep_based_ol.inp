@@ -88,7 +88,7 @@ nocom
 set {
     # ==> OEPDEV Routine Specification <== #
     oepdev_target                 test
-    oepdev_test_name              ct_energy_benchmark_ol
+    oepdev_test_name              ct_energy_oep_based_ol
     oepdev_test_mode              dimer
     oepdev_localize               False
     oepdev_enable_trial           False
@@ -100,6 +100,9 @@ set {
     efp2_ct_no_octupoles          True
     oepdev_use_vvo                False
     quambo_mode                   acbs
+    df_basis_oep                  aug-cc-pVDZ-jkfit
+    df_basis_int                  aug-cc-pVDZ-jkfit
+    oepdev_df_type                single
     # ==> General Psi4 Options <== #
     scf_type                      direct 
     guess                         core

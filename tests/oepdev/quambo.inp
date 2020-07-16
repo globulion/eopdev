@@ -1,0 +1,52 @@
+#!/usr/bin/python
+sys.path.insert(0, './..')
+import oepdev
+
+# test molecule
+molecule test_molecule {
+0 1
+#   O            0.000000000000     0.000000000000     0.065328645199
+#   H           -0.000000000000     0.766223420484    -0.518406503572
+#   H            0.000000000000    -0.766223420484    -0.518406503572
+#
+#    S            0.031234393203    -0.383048056132    -0.229863819843
+#    O            1.436273171737    -0.183649809533     0.318329027542
+#    C           -0.435790216432     1.163456014058    -1.041510655864
+#    C           -1.102084017343    -0.217072866102     1.169034244052
+#    H            0.196252303144     1.269928193556    -1.919871872994
+#    H           -0.252069132510     1.989628636804    -0.355581528289
+#    H           -1.482606941617     1.123257983684    -1.341121573432
+#    H           -2.132262809383    -0.222153321639     0.814225429441
+#    H           -0.871314304882     0.705686292353     1.700163137952
+#    H           -0.932366200844    -1.068362248795     1.823833191518
+#
+C         -1.47981       -1.30880       -0.00000
+H         -0.28795       -1.29252        0.04014
+H         -2.02561       -1.78585       -0.96162
+H         -1.80913       -0.29458       -0.22113
+H         -1.84961       -1.60475        1.00321
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+set {
+    # ==> OEPDEV Routine Specification <== #
+    oepdev_target                 test
+    oepdev_test_name              quambo
+    oepdev_test_mode              monomer
+    oepdev_localize               False
+    oepdev_enable_trial           False
+    # ==> General Psi4 Options <== #
+    basis                         6-31++G**
+    scf_type                      direct 
+    guess                         core
+    e_convergence                 1e-6
+    print                         1
+    puream                        False
+}
+
+
+# run oepdev
+energy('oepdev', molecule=test_molecule)

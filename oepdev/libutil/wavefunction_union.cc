@@ -1,4 +1,5 @@
 #include "util.h"
+#include "quambo.h"
 #include "wavefunction_union.h"
 #include "psi4/libpsi4util/PsiOutStream.h"
 
@@ -43,8 +44,8 @@ WavefunctionUnion::WavefunctionUnion(SharedWavefunction ref_wfn, Options& option
    SharedBasisSet intermediate_2  = basissets_["BASIS_INT_OEP_2"];
    SharedBasisSet guess_1  = basissets_["BASIS_GUESS_1"];
    SharedBasisSet guess_2  = basissets_["BASIS_GUESS_2"];
-   SharedWavefunction wfn_1  = solve_scf(molecule_1, primary_1, auxiliary_df_1, guess_1, functional, options_, psi::PSIO::shared_object());
-   SharedWavefunction wfn_2  = solve_scf(molecule_2, primary_2, auxiliary_df_2, guess_2, functional, options_, psi::PSIO::shared_object());
+   SharedWavefunction wfn_1  = solve_scf(molecule_1, primary_1, auxiliary_df_1, guess_1, functional, options_, psi::PSIO::shared_object(), false);
+   SharedWavefunction wfn_2  = solve_scf(molecule_2, primary_2, auxiliary_df_2, guess_2, functional, options_, psi::PSIO::shared_object(), false);
 
    // Finish initialize
    common_init(ref_wfn, molecule_1, molecule_2, 
@@ -93,9 +94,10 @@ WavefunctionUnion::WavefunctionUnion(
    if (dimer->nfragments()>2) throw
        PSIEXCEPTION(" OEPDEV: NotImplementedError Wavefunction init. So far only DIMERS (nfrag=2) are supported!\n");
 
-   // Create full dimer wavefunction
+   // Create full dimer wavefunction: compute_mints is set to true to clean-up scratch because this constructor
+   // is used only for interfacing with Python (building WavefunctionUnion from Python level)
    SharedWavefunction ref_wfn = oepdev::solve_scf(dimer, primary, auxiliary_df, guess,
-   		                create_superfunctional("HF", options_), options_, psi::PSIO::shared_object(), false);
+   		                create_superfunctional("HF", options_), options_, psi::PSIO::shared_object(), true);
    shallow_copy(ref_wfn);
    set_basisset("BASIS_DF_SCF", auxiliary_df);
    set_basisset("BASIS_GUESS", guess);
@@ -138,9 +140,54 @@ void WavefunctionUnion::common_init(
 		SharedWavefunction wfn_2
 		)
 {
+   // Compute QUAMBOs if required                                                
+   psi::SharedMatrix Ca_occ_1, Ca_occ_2, Ca_vir_1, Ca_vir_2;
+   psi::SharedVector eps_a_occ_1, eps_a_occ_2, eps_a_vir_1, eps_a_vir_2;
+
+   if (options_.get_bool("OEPDEV_USE_VVO")) {
+       // VVOs
+       std::shared_ptr<QUAMBO> solver_1 = std::make_shared<QUAMBO>(wfn_1, true);
+       solver_1->compute();
+       std::shared_ptr<QUAMBO> solver_2 = std::make_shared<QUAMBO>(wfn_2, true);
+       solver_2->compute();
+                                                                                 
+       Ca_occ_1 = solver_1->Ca_subset("AO","OCC");
+       Ca_vir_1 = solver_1->Ca_subset("AO","VIR");
+       eps_a_occ_1 = solver_1->epsilon_a_subset("MO","OCC");
+       eps_a_vir_1 = solver_1->epsilon_a_subset("MO","VIR");
+                                                                                 
+       Ca_occ_2 = solver_2->Ca_subset("AO","OCC");
+       Ca_vir_2 = solver_2->Ca_subset("AO","VIR");
+       eps_a_occ_2 = solver_2->epsilon_a_subset("MO","OCC");
+       eps_a_vir_2 = solver_2->epsilon_a_subset("MO","VIR");
+                                                                                 
+       nmo_ = solver_1->nbas() + solver_2->nbas();
+     //nso_ = this->basisset()->nbf(); --> no need to change this
+       nmopi_[0] = nmo_;
+     //nsopi_[0] = nso_; --> no need to change this
+
+   } else {
+       // RHF canonical orbitals
+       Ca_occ_1 = wfn_1->Ca_subset("AO","OCC");  
+       Ca_occ_2 = wfn_2->Ca_subset("AO","OCC");
+       Ca_vir_1 = wfn_1->Ca_subset("AO","VIR");
+       Ca_vir_2 = wfn_2->Ca_subset("AO","VIR");
+       eps_a_occ_1 = wfn_1->epsilon_a_subset("MO","OCC");
+       eps_a_occ_2 = wfn_2->epsilon_a_subset("MO","OCC");
+       eps_a_vir_1 = wfn_1->epsilon_a_subset("MO","VIR");
+       eps_a_vir_2 = wfn_2->epsilon_a_subset("MO","VIR");
+   }
+
+   // Sizing of the union
    SharedSuperFunctional functional = create_superfunctional("HF", options_);
-   int nvir_1                = wfn_1->nmo() - wfn_1->doccpi()[0];
-   int nvir_2                = wfn_2->nmo() - wfn_2->doccpi()[0];
+   const int nocc_1                = Ca_occ_1->ncol();
+   const int nocc_2                = Ca_occ_2->ncol();
+   const int nvir_1                = Ca_vir_1->ncol();
+   const int nvir_2                = Ca_vir_2->ncol();
+   const int nmo_1                 = nocc_1 + nvir_1;
+   const int nmo_2                 = nocc_2 + nvir_2;
+   const int nbf_union             = this->basisset()->nbf();
+   const int nmo_union             = nmo_1 + nmo_2;
 
    // Properties of the union
    nIsolatedMolecules_ = ref_wfn->molecule()->nfragments();
@@ -157,9 +204,9 @@ void WavefunctionUnion::common_init(
    l_guess_         .push_back(guess_1                  ); l_guess_         .push_back(guess_2                     );
    l_name_          .push_back(wfn_1->name()            ); l_name_          .push_back(wfn_2->name()               );
    l_nbf_           .push_back(primary_1->nbf()         ); l_nbf_           .push_back(primary_2->nbf()            );
-   l_nmo_           .push_back(wfn_1->nmo()             ); l_nmo_           .push_back(wfn_2->nmo()                );
-   l_nso_           .push_back(wfn_1->nso()             ); l_nso_           .push_back(wfn_2->nso()                );
-   l_ndocc_         .push_back(wfn_1->doccpi()[0]       ); l_ndocc_         .push_back(wfn_2->doccpi()[0]          );
+   l_nmo_           .push_back(nmo_1                    ); l_nmo_           .push_back(nmo_2                       );
+   l_nso_           .push_back(nmo_1                    ); l_nso_           .push_back(nmo_2                       );
+   l_ndocc_         .push_back(nocc_1                   ); l_ndocc_         .push_back(nocc_2                      );
    l_nvir_          .push_back(nvir_1                   ); l_nvir_          .push_back(nvir_2                      );
    l_efzc_          .push_back(wfn_1->efzc()            ); l_efzc_          .push_back(wfn_2->efzc()               );
    l_density_fitted_.push_back(wfn_1->density_fitted()  ); l_density_fitted_.push_back(wfn_2->density_fitted()     );
@@ -167,6 +214,11 @@ void WavefunctionUnion::common_init(
    l_nbeta_         .push_back(wfn_1->nbeta()           ); l_nbeta_         .push_back(wfn_2->nbeta()              );
    l_nfrzc_         .push_back(wfn_1->nfrzc()           ); l_nfrzc_         .push_back(wfn_2->nfrzc()              );
    l_noffs_ao_      .push_back(0                        ); l_noffs_ao_      .push_back(primary_1->nbf()            );
+   l_ca_occ_        .push_back(Ca_occ_1                 ); l_ca_occ_        .push_back(Ca_occ_2                    );
+   l_ca_vir_        .push_back(Ca_vir_1                 ); l_ca_vir_        .push_back(Ca_vir_2                    );
+   l_eps_a_occ_     .push_back(eps_a_occ_1              ); l_eps_a_occ_     .push_back(eps_a_occ_2                 );
+   l_eps_a_vir_     .push_back(eps_a_vir_1              ); l_eps_a_vir_     .push_back(eps_a_vir_2                 );
+
 
   
    //dimer_wavefunction_     = ...; // store the original wavefunction
@@ -190,8 +242,11 @@ void WavefunctionUnion::common_init(
 
    // <---- Wavefunction Coefficients (LCAO-MO Matrices) ----> //
    // <---- Orbital Energies                             ----> //
-   epsilon_a_->zero() ; epsilon_b_->zero();
-   Ca_->zero() ; Cb_->zero();
+   epsilon_a_ = std::make_shared<psi::Vector>("Union Alpha Orbital Energies", nmo_union);
+   epsilon_b_ = std::make_shared<psi::Vector>("Union Beta Orbital Energies", nmo_union);
+   Ca_ = std::make_shared<psi::Matrix>("Union Alpha Orbitals", nbf_union, nmo_union);
+   Cb_ = std::make_shared<psi::Matrix>("Union Beta Orbitals", nbf_union, nmo_union);
+
    double** pCa = Ca_->pointer(); 
    double** pCb = Cb_->pointer();
    double*  pea = epsilon_a_->pointer();
@@ -202,27 +257,27 @@ void WavefunctionUnion::common_init(
    std::vector<int> dummy;
    /* implementation below is for CLOSED SHELLS only! */
    int nbf, nmo, nmo_occ, nmo_vir;
-   int nmo_occ_all = 0; for (int nf=0;nf<nIsolatedMolecules_;++nf) nmo_occ_all += l_wfn_[nf]->doccpi()[0];
+   int nmo_occ_all = 0; for (int nf=0;nf<nIsolatedMolecules_;++nf) nmo_occ_all += l_ndocc_[nf];
    int nOffsetAO = 0, nOffsetMOOcc = 0, nOffsetMOVir = nmo_occ_all;
    //
    for (int nf=0; nf<nIsolatedMolecules_; nf++) {
         nbf      = l_wfn_[nf]->basisset()->nbf();
-        nmo      = l_wfn_[nf]->nmo();
-        nmo_occ  = l_wfn_[nf]->doccpi()[0];
+        nmo      = l_nmo_[nf];
+        nmo_occ  = l_ndocc_[nf];
         nmo_vir  = nmo - nmo_occ;
         for (int i=0; i<nbf; i++) {      
              // <--- Occupied Orbitals ---> //
              for (int jo=0; jo<nmo_occ; jo++) {
-                  pCa[i+nOffsetAO][jo+nOffsetMOOcc] = l_wfn_[nf]->Ca_subset("AO", "OCC")->get(0, i, jo);
+                  pCa[i+nOffsetAO][jo+nOffsetMOOcc] = l_ca_occ_[nf]->get(0, i, jo);
              }
              // <--- Virtual Orbitals ---> //
              for (int jv=0; jv<nmo_vir; jv++) {
-                  pCa[i+nOffsetAO][jv+nOffsetMOVir] = l_wfn_[nf]->Ca_subset("AO", "VIR")->get(0, i, jv);
+                  pCa[i+nOffsetAO][jv+nOffsetMOVir] = l_ca_vir_[nf]->get(0, i, jv);
              }
         }
         // <--- Occupied orbital Energies and Indices ---> //
         for (int jo=0; jo<nmo_occ; jo++) {
-             pea[jo+nOffsetMOOcc] = l_wfn_[nf]->epsilon_a_subset("AO", "OCC")->get(0, jo);
+             pea[jo+nOffsetMOOcc] = l_eps_a_occ_[nf]->get(0, jo);
              dummy.push_back(jo+nOffsetMOOcc);
              orbitals_occ_all.push_back(jo+nOffsetMOOcc);
         }
@@ -230,7 +285,7 @@ void WavefunctionUnion::common_init(
 
         // <--- Virtual orbital Energies and Indices ---> //
         for (int jv=0; jv<nmo_vir; jv++) {
-             pea[jv+nOffsetMOVir] = l_wfn_[nf]->epsilon_a_subset("AO", "VIR")->get(0, jv);
+             pea[jv+nOffsetMOVir] = l_eps_a_vir_[nf]->get(0, jv);
              dummy.push_back(jv+nOffsetMOVir);
              orbitals_vir_all.push_back(jv+nOffsetMOVir);
         }
@@ -280,6 +335,7 @@ void WavefunctionUnion::common_init(
    /* as for now for two fragments only */
    if (nIsolatedMolecules_>2) throw 
        PSIEXCEPTION(" OEPDEV: NotImplementedError Wavefunction init. So far only DIMERS (nfrag=2) are supported!\n");
+
    SharedMOSpace space_1_occ = std::make_shared<MOSpace>('I', orbitals_occ[0], dummy);
    SharedMOSpace space_2_occ = std::make_shared<MOSpace>('J', orbitals_occ[1], dummy);
    SharedMOSpace space_1_vir = std::make_shared<MOSpace>('X', orbitals_vir[0], dummy);
@@ -343,21 +399,21 @@ void WavefunctionUnion::localize_orbitals() {
   int nOffsetAO = 0, nOffsetMOOcc = 0;
   for (int nf = 0; nf < nIsolatedMolecules_; ++nf) {
        l_localizer_.push_back(Localizer::build(options_.get_str("WFN_UNION_LOCALIZER"), 
-                           l_primary_[nf], l_wfn_[nf]->Ca_subset("AO", "OCC"), options_));
+                           l_primary_[nf], l_ca_occ_[nf], options_));
        l_localizer_[nf]->set_maxiter(options_.get_int("OEPDEV_LOCALIZER_MAXITER"));
        l_localizer_[nf]->localize();
        //
        nbf      = l_wfn_[nf]->basisset()->nbf();
-       nmo_occ  = l_wfn_[nf]->doccpi()[0];
+       nmo_occ  = l_ndocc_[nf];
        //
-       double** pca = l_wfn_[nf]->Ca()->pointer();
-       double** pcb = l_wfn_[nf]->Cb()->pointer();
+       double** pca = l_ca_occ_[nf]->pointer();
+     //double** pcb = l_ca->pointer();
        // 
        for (int i=0; i<nbf; ++i) {
             for (int jo=0; jo<nmo_occ; ++jo) {
                  pCa[i+nOffsetAO][jo+nOffsetMOOcc] = l_localizer_[nf]->L()->get(0, i, jo);
                  pca[i][jo] = l_localizer_[nf]->L()->get(0, i, jo);
-                 pcb[i][jo] = pca[i][jo];
+               //pcb[i][jo] = pca[i][jo];
             }
        }
        nOffsetAO    += nbf;
@@ -385,6 +441,14 @@ void WavefunctionUnion::transform_integrals()
     spaces.push_back(space_2v);
     spaces.push_back(space_12o);
     integrals_ = std::make_shared<IntegralTransform>(shared_from_this(), 
+    //int nbf = this->basisset()->nbf();
+    //psi::SharedMatrix c = std::make_shared<psi::Matrix>("", nbf, 0); // -> frozen core
+    //psi::SharedMatrix v = std::make_shared<psi::Matrix>("", nbf, 0); // -> frozen virtuals
+    //psi::SharedMatrix i = this->Ca_subset("AO","OCC");               // -> active occupied
+    //psi::SharedMatrix a = this->Ca_subset("AO","VIR");               // -> active virtual
+    //cout << "WW " << c->ncol() << " " << i->ncol() << " " << a->ncol() << " " << v->ncol() << " " << Ca_->ncol() << endl;
+    //cout << "WW " << c->nrow() << " " << i->nrow() << " " << a->nrow() << " " << v->nrow() << " " << Ca_->nrow() << endl;
+  //integrals_ = std::make_shared<IntegralTransform>(this->H_, c, i, a, v,
                                                      spaces,
                                                      IntegralTransform::TransformationType::Restricted,
                                                      IntegralTransform::OutputType::DPDOnly,

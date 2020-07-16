@@ -40,6 +40,7 @@ using namespace std;
 
 using SharedMolecule           = std::shared_ptr<Molecule>;        
 using SharedSuperFunctional    = std::shared_ptr<SuperFunctional>;
+using SharedBasisSet           = std::shared_ptr<BasisSet>;       
 using SharedWavefunction       = std::shared_ptr<Wavefunction>;
 using SharedVector             = std::shared_ptr<Vector>;
 using SharedMatrix             = std::shared_ptr<Matrix>;
@@ -83,6 +84,16 @@ std::string string_sprintf( const char* format, Args... args ) {
 extern "C" PSI_API
 std::shared_ptr<SuperFunctional> 
 create_superfunctional(std::string name, Options& options);
+
+/** \brief Build BasisSet by Copy.
+ *
+    @param basis_ref - reference basis set
+    @param molecule_target - target molecule
+ *  @return psi::SharedBasisSet object.
+ */
+extern "C" PSI_API
+SharedBasisSet
+create_basisset_by_copy(SharedBasisSet basis_ref, SharedMolecule molecule_target);
 
 
 /** \brief Extract molecule from dimer.

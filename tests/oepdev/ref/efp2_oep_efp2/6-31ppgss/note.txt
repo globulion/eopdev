@@ -1,0 +1,2 @@
+These options were optimized to OEPDev (i.e., localizer, use of core orbitals,
+and basis set were appropriately set to match GAMESS and OEPDev)
