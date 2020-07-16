@@ -44,8 +44,8 @@ WavefunctionUnion::WavefunctionUnion(SharedWavefunction ref_wfn, Options& option
    SharedBasisSet intermediate_2  = basissets_["BASIS_INT_OEP_2"];
    SharedBasisSet guess_1  = basissets_["BASIS_GUESS_1"];
    SharedBasisSet guess_2  = basissets_["BASIS_GUESS_2"];
-   SharedWavefunction wfn_1  = solve_scf(molecule_1, primary_1, auxiliary_df_1, guess_1, functional, options_, psi::PSIO::shared_object());
-   SharedWavefunction wfn_2  = solve_scf(molecule_2, primary_2, auxiliary_df_2, guess_2, functional, options_, psi::PSIO::shared_object());
+   SharedWavefunction wfn_1  = solve_scf(molecule_1, primary_1, auxiliary_df_1, guess_1, functional, options_, psi::PSIO::shared_object(), false);
+   SharedWavefunction wfn_2  = solve_scf(molecule_2, primary_2, auxiliary_df_2, guess_2, functional, options_, psi::PSIO::shared_object(), false);
 
    // Finish initialize
    common_init(ref_wfn, molecule_1, molecule_2, 
@@ -94,9 +94,10 @@ WavefunctionUnion::WavefunctionUnion(
    if (dimer->nfragments()>2) throw
        PSIEXCEPTION(" OEPDEV: NotImplementedError Wavefunction init. So far only DIMERS (nfrag=2) are supported!\n");
 
-   // Create full dimer wavefunction
+   // Create full dimer wavefunction: compute_mints is set to true to clean-up scratch because this constructor
+   // is used only for interfacing with Python (building WavefunctionUnion from Python level)
    SharedWavefunction ref_wfn = oepdev::solve_scf(dimer, primary, auxiliary_df, guess,
-   		                create_superfunctional("HF", options_), options_, psi::PSIO::shared_object(), false);
+   		                create_superfunctional("HF", options_), options_, psi::PSIO::shared_object(), true);
    shallow_copy(ref_wfn);
    set_basisset("BASIS_DF_SCF", auxiliary_df);
    set_basisset("BASIS_GUESS", guess);

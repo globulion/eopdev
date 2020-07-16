@@ -2,6 +2,8 @@
 #include "psi4/libpsi4util/PsiOutStream.h"
 #include "psi4/libmints/mintshelper.h"
 #include "../libutil/integrals_iter.h"
+#include "psi4/libiwl/iwl.hpp"
+
 
 namespace oepdev{
 
@@ -132,6 +134,15 @@ solve_scf(std::shared_ptr<Molecule> molecule,
           std::shared_ptr<PSIO> psio, 
 	  bool compute_mints) 
 {
+   /* 
+      Important Note:
+
+         compute_mints temporarily denotes psiclean routine to be performed between basis_guess and primary scf runs
+         to solve SCF. This is used for WavefunctionUnions created via second constructor (by providing externally 
+         wavefunctions for monomers). This is only a temporary solution, because this issue needs to be resolved in
+         the future at the psi4 scratch file management level.
+
+    */
 
     psi::SharedWavefunction scf;
     //psi::PSIOManager::shared_object()->psiclean();//TODO
@@ -143,11 +154,11 @@ solve_scf(std::shared_ptr<Molecule> molecule,
        outfile->Printf("\n @solve_scf: Starting SCF in Guess Basis... \n\n");
 
        //compute_mints = true; 
-       if (compute_mints) {
-         //psi::PSIOManager::shared_object()->psiclean();//TODO
-         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(guess);
-         mints->integrals();
-       }
+       //if (compute_mints) {
+       //  //psi::PSIOManager::shared_object()->psiclean();//TODO
+       //  std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(guess);
+       //  mints->integrals();
+       //}
        SharedWavefunction scf_base_guess(new Wavefunction(molecule, guess, options));                     
        //bool opt_stash = options.get_bool("DF_SCF_GUESS");
        //options.set_bool("SCF", "DF_SCF_GUESS", false);
@@ -163,16 +174,22 @@ solve_scf(std::shared_ptr<Molecule> molecule,
        psi::SharedMatrix pCb = scf_guess->basis_projection(scf_guess->Cb_subset("AO","OCC"),scf_guess->nbetapi(),
                                                            guess, primary);
        //options.set_bool("SCF", "DF_SCF_GUESS", opt_stash);
-       //psi::PSIOManager::shared_object()->psiclean();//TODO --> this needs to be set when calling from Python level! ???
+     //psi::PSIOManager::shared_object()->print();
+       if (compute_mints) psi::PSIOManager::shared_object()->psiclean();//TODO --> this needs to be set when calling from Python level! ??? --> i.e., when using second constructor of WavefunctionUnion
+     //std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary); mints->one_electron_integrals();
+    //IWL ERIOUT(psio.get(), PSIF_SO_TEI, 0.0, 0, 0);
+    //ERIOUT.flush(1);
+    //ERIOUT.set_keep_flag(true);
+    //ERIOUT.close();
 
        // ===> Step 3: Target SCF <=== //
        outfile->Printf("\n @solve_scf: Starting SCF in Target Basis... \n\n");
 
-       if (compute_mints) {
-         //psi::PSIOManager::shared_object()->psiclean();//TODO
-         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
-         mints->integrals();
-       }
+       //if (compute_mints) {
+       //  //psi::PSIOManager::shared_object()->psiclean();//TODO
+       //  std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
+       //  mints->integrals();
+       //}
        SharedWavefunction scf_base(new Wavefunction(molecule, primary, options));                     
        scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
                                                                                                      
@@ -190,10 +207,10 @@ solve_scf(std::shared_ptr<Molecule> molecule,
        scf_base->set_basisset("DF_BASIS_SCF", auxiliary);
                                                                                                       
        // Compute integrals (write IWL entry to PSIO)
-       if (compute_mints) {
-         std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
-         mints->integrals();
-       }
+       //if (compute_mints) {
+       //  std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(primary);
+       //  mints->integrals();
+       //}
        scf = std::make_shared<psi::scf::RHF>(scf_base, functional, options, psio);
        scf->compute_energy();
 
