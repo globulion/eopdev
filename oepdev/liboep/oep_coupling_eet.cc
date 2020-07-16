@@ -32,6 +32,12 @@ EETCouplingOEPotential::EETCouplingOEPotential(SharedWavefunction wfn,
 EETCouplingOEPotential::~EETCouplingOEPotential() {}
 void EETCouplingOEPotential::common_init() 
 {
+    name_ = "";
+}
+void EETCouplingOEPotential::initialize() {
+
+    this->compute_molecular_orbitals();
+
     int n1 = primary_->nbf();
     int n2 = auxiliary_->nbf();
     int n3 = wfn_->molecule()->natom();
@@ -52,10 +58,14 @@ void EETCouplingOEPotential::common_init()
     oepTypes_[type_2.name] = type_2;
     oepTypes_[type_3.name] = type_3;
     oepTypes_[type_4.name] = type_4;
+
+    initialized_ = true;
 }
 
 void EETCouplingOEPotential::compute(const std::string& oepType) 
 {
+  if (!initialized_) this->initialize();
+
   if      (oepType == "Fujimoto.GDF"   ) compute_fujimoto_gdf();
   else if (oepType == "Fujimoto.CIS"   ) compute_fujimoto_cis();
   else if (oepType == "Fujimoto.EXCH"  ) compute_fujimoto_exch();

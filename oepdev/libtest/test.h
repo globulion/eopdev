@@ -134,6 +134,9 @@ class Test
    ///Test the Charge-transfer Energy Solver (benchmark method Otto-Ladik)
    double test_ct_energy_benchmark_ol(void);
 
+   ///Test the Charge-transfer Energy Solver (oep-based method Otto-Ladik)
+   double test_ct_energy_oep_based_ol(void);
+
    ///Test the Repulsion Energy Solver: (benchmark method Hayes-Stone)
    double test_rep_energy_benchmark_hs(void);
 

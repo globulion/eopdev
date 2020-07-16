@@ -17,13 +17,9 @@ oepdev::EFP2_GEFactory::~EFP2_GEFactory() { }
 
 std::shared_ptr<oepdev::GenEffPar> oepdev::EFP2_GEFactory::compute()
 {
-   oepdev::SharedDMTPole camm = this->compute_dmtp();
-   oepdev::SharedCPHF cphf = this->compute_cphf();
-   oepdev::SharedQUAMBO quambo = this->compute_quambo(); 
-
-   dmtp_ = camm;
-   cphfSolver_ = cphf;
-   quamboSolver_ = quambo;
+   dmtpSolver_   = this->compute_dmtp();
+   cphfSolver_   = this->compute_cphf(); if (options_.get_bool("EFP2_WITH_VVO"))
+   quamboSolver_ = this->compute_quambo(); 
 
    this->assemble_efp2_parameters();
 
@@ -57,14 +53,16 @@ oepdev::SharedQUAMBO oepdev::EFP2_GEFactory::compute_quambo() {
 }
 
 void oepdev::EFP2_GEFactory::assemble_efp2_parameters() {
-  psi::outfile->Printf(" @EFP2_GEFactory: Assembling Geometry data...\n");
+  psi::outfile->Printf(" @EFP2_GEFactory: Assembling Geometry Data...\n");
   this->assemble_geometry_data();
-  psi::outfile->Printf(" @EFP2_GEFactory: Assembling DMTP data...\n");
+  psi::outfile->Printf(" @EFP2_GEFactory: Assembling DMTP Data...\n");
   this->assemble_dmtp_data();
-  psi::outfile->Printf(" @EFP2_GEFactory: Assembling LMO centroids...\n");
+  psi::outfile->Printf(" @EFP2_GEFactory: Assembling LMO Dentroids...\n");
   this->assemble_lmo_centroids();
   psi::outfile->Printf(" @EFP2_GEFactory: Assembling Fock Matrix...\n");
   this->assemble_fock_matrix();
+  psi::outfile->Printf(" @EFP2_GEFactory: Assembling HF Canonical Orbitals...\n");
+  this->assemble_canonical_orbitals();
   psi::outfile->Printf(" @EFP2_GEFactory: Assembling Distributed Polarizabilities...\n");
   this->assemble_distributed_polarizabilities();
 }
@@ -80,7 +78,7 @@ void oepdev::EFP2_GEFactory::assemble_geometry_data() {
   this->EFP2Parameters_->set_vector("atno", Z);
 }
 void oepdev::EFP2_GEFactory::assemble_dmtp_data() {
-  this->EFP2Parameters_->set_dmtp("camm", dmtp_);
+  this->EFP2Parameters_->set_dmtp("camm", dmtpSolver_);
 }
 void oepdev::EFP2_GEFactory::assemble_lmo_centroids() {
   psi::SharedMatrix C = cphfSolver_->localizer()->L()->clone();
@@ -92,7 +90,6 @@ void oepdev::EFP2_GEFactory::assemble_lmo_centroids() {
   }
   this->EFP2Parameters_->set_matrix("lmoc", lmoc);
 }
-
 void oepdev::EFP2_GEFactory::assemble_fock_matrix() {
   psi::SharedMatrix C = cphfSolver_->localizer()->L();
   psi::SharedMatrix Fa_ao = wfn_->Fa()->clone();
@@ -100,12 +97,13 @@ void oepdev::EFP2_GEFactory::assemble_fock_matrix() {
 
   this->EFP2Parameters_->set_matrix("fock_lmo", Fa_mo);
   this->EFP2Parameters_->set_matrix("fock_ao", Fa_ao);
-
+}
+void oepdev::EFP2_GEFactory::assemble_canonical_orbitals() {
   psi::SharedMatrix Ca_occ_canonical;
   psi::SharedMatrix Ca_vir_canonical;
   psi::SharedVector eps_a_occ_canonical;
   psi::SharedVector eps_a_vir_canonical;
-  if (!this->options_.get_bool("OEPDEV_USE_VVO")) {
+  if (!this->options_.get_bool("EFP2_WITH_VVO")) {
        // Original HF canonical orbitals
        Ca_occ_canonical = cphfSolver_->Cocc();      
        Ca_vir_canonical = cphfSolver_->Cvir();
@@ -125,7 +123,6 @@ void oepdev::EFP2_GEFactory::assemble_fock_matrix() {
   this->EFP2Parameters_->set_vector("epso", eps_a_occ_canonical);
   this->EFP2Parameters_->set_vector("epsv", eps_a_vir_canonical);
 }
-
 void oepdev::EFP2_GEFactory::assemble_distributed_polarizabilities() {
   std::vector<psi::SharedMatrix> dpol;
   for (int i=0; i<cphfSolver_->nocc(); ++i) {

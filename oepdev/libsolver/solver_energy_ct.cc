@@ -1209,8 +1209,14 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
                                                        wfn_union_->l_auxiliary(1), 
                                                        wfn_union_->l_intermediate(1), 
                                                        wfn_union_->options());
+  oep_1->use_localized_orbitals = false;
+  oep_2->use_localized_orbitals = false;
+  oep_1->use_quambo_orbitals = options_.get_bool("OEPDEV_USE_VVO");
+  oep_2->use_quambo_orbitals = options_.get_bool("OEPDEV_USE_VVO");
   oep_1->compute("Otto-Ladik.V1.GDF");
   oep_2->compute("Otto-Ladik.V1.GDF");
+  oep_1->use_localized_orbitals = true;
+  oep_2->use_localized_orbitals = true;
   oep_1->localize();
   oep_2->localize();
   oep_1->compute("Otto-Ladik.V3.CAMM-nj");
@@ -1248,14 +1254,14 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
 
 
   // ---> Canonical MO's: LCAO and energies <--- //
-  std::shared_ptr<psi::Matrix> Ca_occ_1 = oep_1->cOcc(); //wfn_union_->l_wfn(0)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_occ_2 = oep_2->cOcc(); //wfn_union_->l_wfn(1)->Ca_subset("AO","OCC");
-  std::shared_ptr<psi::Matrix> Ca_vir_1 = oep_1->cVir(); //wfn_union_->l_wfn(0)->Ca_subset("AO","VIR");
-  std::shared_ptr<psi::Matrix> Ca_vir_2 = oep_2->cVir(); //wfn_union_->l_wfn(1)->Ca_subset("AO","VIR");
-  std::shared_ptr<psi::Vector> e_occ_1  = oep_1->epsOcc(); //wfn_union_->l_wfn(0)->epsilon_a_subset("MO","OCC");
-  std::shared_ptr<psi::Vector> e_occ_2  = oep_2->epsOcc(); //wfn_union_->l_wfn(1)->epsilon_a_subset("MO","OCC");
-  std::shared_ptr<psi::Vector> e_vir_1  = oep_1->epsVir(); //wfn_union_->l_wfn(0)->epsilon_a_subset("MO","VIR");
-  std::shared_ptr<psi::Vector> e_vir_2  = oep_2->epsVir(); //wfn_union_->l_wfn(1)->epsilon_a_subset("MO","VIR");
+  std::shared_ptr<psi::Matrix> Ca_occ_1 = oep_1->cOcc(); 
+  std::shared_ptr<psi::Matrix> Ca_occ_2 = oep_2->cOcc(); 
+  std::shared_ptr<psi::Matrix> Ca_vir_1 = oep_1->cVir(); 
+  std::shared_ptr<psi::Matrix> Ca_vir_2 = oep_2->cVir(); 
+  std::shared_ptr<psi::Vector> e_occ_1  = oep_1->epsOcc(); 
+  std::shared_ptr<psi::Vector> e_occ_2  = oep_2->epsOcc(); 
+  std::shared_ptr<psi::Vector> e_vir_1  = oep_1->epsVir(); 
+  std::shared_ptr<psi::Vector> e_vir_2  = oep_2->epsVir(); 
 
   clock_t t_time = -clock(); // Clock BEGIN
   ovlInt_1a2p->compute(Sao_1a2p);

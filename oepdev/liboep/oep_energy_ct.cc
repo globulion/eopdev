@@ -36,8 +36,12 @@ ChargeTransferEnergyOEPotential::~ChargeTransferEnergyOEPotential() {}
 void ChargeTransferEnergyOEPotential::common_init() 
 {
     name_ = "HF Charge-Transfer Energy";
+}
+void ChargeTransferEnergyOEPotential::initialize() {
 
-    int n1 = primary_->nbf();
+    this->compute_molecular_orbitals();
+
+    int n1 = cVir_->ncol(); //n1 =  primary_->nbf();
     int n2 = auxiliary_->nbf();
     int n3 = wfn_->molecule()->natom();
 
@@ -52,10 +56,14 @@ void ChargeTransferEnergyOEPotential::common_init()
     oepTypes_[type_1.name] = type_1;
   //oepTypes_[type_2.name] = type_2;
     oepTypes_[type_3.name] = type_3;
+
+    initialized_ = true;
 }
 
 void ChargeTransferEnergyOEPotential::compute(const std::string& oepType) 
 {
+  if (!initialized_) this->initialize();
+
   if      (oepType == "Otto-Ladik.V1.GDF"    ) compute_otto_ladik_v1_gdf    ();
   else if (oepType == "Otto-Ladik.V3.CAMM-nj") compute_otto_ladik_v3_camm_nj();
   else throw psi::PSIEXCEPTION("OEPDEV: Error. Incorrect OEP type specified!\n");

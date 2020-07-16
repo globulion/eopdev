@@ -128,8 +128,8 @@ int read_options(std::string name, Options& options)
         // ---> QUAMBO  <--- //
 
         /*- For EFP2-CT term use Virtual Valence Orbitals from diagonalization in QUAMBO basis -*/
-        options.add_bool   ("OEPDEV_USE_VVO"           , false                    );
-        options.add_bool   ("OEP_WITH_VVO"             , false                    );
+        options.add_bool   ("OEPDEV_USE_VVO"              , false                 ); // only WavefunctionUnion -> change name?
+        options.add_bool   ("EFP2_WITH_VVO"               , false                 ); // only EFP2 routines
         options.add_str    ("QUAMBO_MODE"                 , "ACBS"                );
         options.add_double ("QUAMBO_EPS_THRESHOLD_CHECK"  , 0.0001                );
 

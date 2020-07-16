@@ -48,6 +48,8 @@ OEPotential::OEPotential(const OEPotential* f) {
   // Do deep-copy on those:
   name_ = f->name_;
   use_localized_orbitals = f->use_localized_orbitals;
+  use_quambo_orbitals = f->use_quambo_orbitals;
+  initialized_ = f->initialized_;
   if (f->cOcc_) {cOcc_ = f->cOcc_->clone();} else {cOcc_ = f->cOcc_;}
   if (f->cVir_) {cVir_ = f->cVir_->clone();} else {cVir_ = f->cVir_;}
   if (f->epsOcc_) {epsOcc_ = std::make_shared<psi::Vector>(*(f->epsOcc_));} else {epsOcc_ = f->epsOcc_;}
@@ -92,8 +94,12 @@ void OEPotential::common_init(void)
    T_           = nullptr;
    lmoc_        = {nullptr, nullptr, nullptr};
    use_localized_orbitals = false;
+   use_quambo_orbitals = false;
+   initialized_ = false;
+}
+void OEPotential::compute_molecular_orbitals() {
 
-   if (options_.get_bool("OEP_WITH_VVO")) {
+   if (this->use_quambo_orbitals) {
        std::shared_ptr<QUAMBO> solver = std::make_shared<QUAMBO>(wfn_, true);
        solver->compute();
        cOcc_ = solver->Ca_subset("AO","OCC");
@@ -136,6 +142,10 @@ void OEPotential::set_localized_orbitals(std::shared_ptr<psi::Localizer> localiz
    // 
    localizer_ = localizer;
 }
+void OEPotential::set_occupied_canonical_orbitals(psi::shared_ptr<oepdev::OEPotential> oep) {
+   cOcc_ = oep->cOcc()->clone();
+   epsOcc_ = std::make_shared<psi::Vector>(*(oep->epsOcc()));
+}
 void OEPotential::localize(void) 
 {
    std::string o_loc = options_.get_str("SOLVER_CT_LOCALIZER");
@@ -172,8 +182,11 @@ std::shared_ptr<OEPotential> OEPotential::build(const std::string& category, Sha
    return oep;
 }
 OEPotential::~OEPotential() {}
+void OEPotential::initialize() {}
 void OEPotential::compute(const std::string& oepType) {}
-void OEPotential::compute(void) { for ( auto const& oepType : oepTypes_ ) this->compute(oepType.second.name); }
+void OEPotential::compute(void) { 
+  for ( auto const& oepType : oepTypes_ ) this->compute(oepType.second.name); 
+}
 void OEPotential::write_cube(const std::string& oepType, const std::string& fileName) 
 {
    OEPotential3D<OEPotential> oeps3d(oepTypes_[oepType].n, 60, 60, 60, 10.0, 10.0, 10.0, shared_from_this(), oepType, options_);

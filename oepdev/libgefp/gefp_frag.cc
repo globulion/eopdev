@@ -1175,7 +1175,6 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1a2p(fact_1a2p.ao_overlap());
   std::shared_ptr<psi::OneBodyAOInt> ovlInt_1p2a(fact_1p2a.ao_overlap());
 
-
   ovlInt_1a2p->compute(Sao_1a2p);
   ovlInt_1p2a->compute(Sao_1p2a);
 
@@ -1204,6 +1203,9 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
   // ---> Get distributed effective charges <--- //
   std::vector<psi::SharedMatrix> q_1 = oep_1->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
   std::vector<psi::SharedMatrix> q_2 = oep_2->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
+  cout << q_1.size() << endl;
+  cout << q_1[0]->nrow() << " " << q_1[0]->ncol() << endl;
+
 
   // ===> Compute V1 term <=== //
   psi::SharedMatrix v_ab_v1 = psi::Matrix::doublet(S1, oep_2->matrix("Otto-Ladik.V1.GDF"), false, false);
@@ -1236,6 +1238,13 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
   const bool old_implementation = true;
   psi::SharedMatrix v_ab_v3 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
   psi::SharedMatrix v_ba_v3 = std::make_shared<psi::Matrix>("", nocc_2, nvir_1);
+
+  cout << S12->ncol() << " " << S12->nrow() << endl;
+  cout << w_1->ncol() << " " << w_1->nrow() << endl;
+
+  cout << nvir_1*nocc_1 + nvir_1 << " " << q_1.size() << endl;
+  cout << nvir_2*nocc_2 + nvir_2 << " " << q_2.size() << endl;
+  cout << nvir_1 << " " << nocc_1 << " a" << endl;
 
   if (old_implementation) {
       for (int i=0; i<nocc_1; ++i) {                                                        
@@ -1298,6 +1307,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
       }
 
   }
+
   psi::SharedMatrix v_ab_v3_copy = v_ab_v3->clone(); v_ab_v3->zero();
   psi::SharedMatrix v_ba_v3_copy = v_ba_v3->clone(); v_ba_v3->zero();
   v_ab_v3->gemm(false, false, 1.0, U_1, v_ab_v3_copy, 0.0);

@@ -866,7 +866,7 @@ class GenEffParFactory
    std::shared_ptr<oepdev::CPHF> cphf_solver() const {return cphfSolver_;}
 
    /// Grab the DMTP object
-   std::shared_ptr<oepdev::DMTPole> dmtp() const {return dmtp_;}
+   std::shared_ptr<oepdev::DMTPole> dmtp() const {return dmtpSolver_;}
 
    //@}
 
@@ -928,7 +928,7 @@ class GenEffParFactory
    std::shared_ptr<oepdev::CPHF> cphfSolver_;
 
    /// The DMTP object
-   std::shared_ptr<oepdev::DMTPole> dmtp_;
+   std::shared_ptr<oepdev::DMTPole> dmtpSolver_;
 
    /// The QUAMBO object
    std::shared_ptr<oepdev::QUAMBO> quamboSolver_;
@@ -972,6 +972,7 @@ class EFP2_GEFactory : public GenEffParFactory
     virtual void assemble_dmtp_data(void);
     virtual void assemble_lmo_centroids(void);
     virtual void assemble_fock_matrix(void);
+    virtual void assemble_canonical_orbitals(void);
     virtual void assemble_distributed_polarizabilities(void);
 
   protected:
@@ -1001,6 +1002,7 @@ class OEP_EFP2_GEFactory : public EFP2_GEFactory
 
   protected:
 
+   virtual void assemble_canonical_orbitals(void) override;
    virtual void assemble_oep_efp2_parameters(void);
 
    virtual void assemble_oep_lmo_centroids(void);
