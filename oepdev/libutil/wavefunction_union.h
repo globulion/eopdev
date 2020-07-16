@@ -185,6 +185,8 @@ class WavefunctionUnion : public Wavefunction
      *  Provide wavefunction with molecule containing at least 2 fragments.
      *  @param ref_wfn - reference wavefunction
      *  @param options - Psi4 options
+     *
+     *  This constructor is used for C++ internal interface.
      */
     WavefunctionUnion(SharedWavefunction ref_wfn, Options& options);
 
@@ -208,6 +210,8 @@ class WavefunctionUnion : public Wavefunction
      *  @param wfn_1          - unperturbed wavefunction object
      *  @param wfn_2          - unperturbed wavefunction object
      *  @param options        - Psi4 options
+     *
+     *  This constructor is for interface with Python level.
      */
      WavefunctionUnion(
 //		SharedWavefunction ref_wfn,
