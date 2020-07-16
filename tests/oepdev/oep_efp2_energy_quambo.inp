@@ -1,0 +1,56 @@
+#!/usr/bin/python
+sys.path.insert(0, './..')
+import oepdev
+
+# test molecule
+molecule h2o {
+0 1
+O        0.96943961786810    -4.30611830262234    -2.18131914017170
+H        1.33484947383153    -5.15964796617962    -1.90563924883869
+H        0.84645966634411    -3.85900847886326    -1.31465948178998
+units angstrom
+symmetry c1
+noreorient
+nocom
+--
+0 1
+O        0.68566672315223    -3.29150750855330     0.35530270510247
+H        1.27681434828307    -2.98781301762830     1.05982438211231
+H       -0.15089178552417    -2.83377588163511     0.59359212099204
+units angstrom
+symmetry c1
+noreorient
+nocom
+}
+
+set {
+    # ==> OEPDEV Routine Specification <== #
+    oepdev_target                 test
+    oepdev_test_name              oep_efp2_energy
+    oepdev_test_mode              dimer
+    oepdev_localize               False
+    cphf_localize                 True
+    efp2_ct_no_octupoles          True
+    solver_ct_localizer           boys
+    wfn_union_localizer           boys
+    df_basis_oep                  aug-cc-pVDZ-jkfit
+    df_basis_int                  aug-cc-pVDZ-jkfit
+    oepdev_df_type                single
+    oepdev_enable_trial           False
+    oepdev_localizer_maxiter      1000
+    efp2_with_vvo                 True
+    quambo_mode                   acbs
+    # ==> General Psi4 Options <== #
+   #basis                         6-311++G(2df)
+    basis                         6-31++G**
+    scf_type                      pk
+    guess                         core
+    e_convergence                 1e-11
+    d_convergence                 1e-10
+    print                         1
+    puream                        False
+}
+
+
+# run oepdev
+energy('oepdev', molecule=h2o)
