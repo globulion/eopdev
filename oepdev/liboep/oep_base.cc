@@ -185,6 +185,7 @@ OEPotential::~OEPotential() {}
 void OEPotential::initialize() {}
 void OEPotential::compute(const std::string& oepType) {}
 void OEPotential::compute(void) { 
+  if (!initialized_) this->initialize();
   for ( auto const& oepType : oepTypes_ ) this->compute(oepType.second.name); 
 }
 void OEPotential::write_cube(const std::string& oepType, const std::string& fileName) 
@@ -204,7 +205,7 @@ std::shared_ptr<OEPotential3D<OEPotential>> OEPotential::make_oeps3d(const std::
 void OEPotential::rotate(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
  this->rotate_oep(r, R_prim, R_aux);
 }
-void OEPotential::rotate_oep(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {cout<<"EEE\n";}
+void OEPotential::rotate_oep(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {cout<<"Cannot!\n";}
 void OEPotential::rotate_basic(psi::SharedMatrix r, psi::SharedMatrix R_prim, psi::SharedMatrix R_aux) {
   // Rotate orbitals
   psi::SharedMatrix Ri = R_prim->clone(); Ri->invert(); Ri->transpose_this();

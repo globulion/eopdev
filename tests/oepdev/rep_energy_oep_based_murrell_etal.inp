@@ -31,6 +31,7 @@ set {
     df_basis_oep                  aug-cc-pVDZ-jkfit
     df_basis_int                  aug-cc-pVDZ-jkfit
     wfn_union_localizer           pipek_mezey
+    oepdev_df_type                single
     # ==> General Psi4 Options <== #
     basis                         6-311++G**
     scf_type                      direct 

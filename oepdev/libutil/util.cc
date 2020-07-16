@@ -61,7 +61,8 @@ create_basisset_by_copy(SharedBasisSet basis_ref, SharedMolecule molecule_target
 
   molecule_target->set_basis_all_atoms(name, key);
 
-  if (molecule_target->nallatom() != basis_ref->molecule()->natom()) throw psi::PSIEXCEPTION("ERRORRRR!!!");
+  //cout << molecule_target->natom() << " " << basis_ref->molecule()->natom() << " " << endl;
+  if (molecule_target->nallatom() != basis_ref->molecule()->natom()) throw psi::PSIEXCEPTION("ERROR: Copy basis has different number of atoms than target molecule!!!");
   for (int a=0; a<molecule_target->nallatom(); ++a) {
        std::vector<psi::ShellInfo> shellinfos;
        int is = basis_ref->shell_on_center(a, 0);
