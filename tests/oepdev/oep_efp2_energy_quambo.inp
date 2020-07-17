@@ -39,7 +39,7 @@ set {
     oepdev_enable_trial           False
     oepdev_localizer_maxiter      1000
     efp2_with_vvo                 True
-    quambo_mode                   acbs
+    quambo_acbs                   True
     # ==> General Psi4 Options <== #
    #basis                         6-311++G(2df)
     basis                         6-31++G**

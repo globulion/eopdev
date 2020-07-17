@@ -99,7 +99,7 @@ set {
     efp2_ct_potential_ints        dmtp
     efp2_ct_no_octupoles          True
     oepdev_use_vvo                False
-    quambo_mode                   acbs
+    quambo_acbs                   True
     # ==> General Psi4 Options <== #
     scf_type                      direct 
     guess                         core

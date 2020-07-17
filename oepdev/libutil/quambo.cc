@@ -145,12 +145,6 @@ void QUAMBO::compute(void) {
           atom_auxiliary = oepdev::create_atom_basisset_by_copy(this->wfn_->get_basisset("DF_BASIS_SCF"), free_atom, i);
       }
 
-    //bool compute_mints = false;
-    //if (compute_mints) {
-    //   std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(atom_primary);
-    //   mints->integrals();
-    // }
-
       psi::SharedWavefunction scf_base = std::make_shared<psi::Wavefunction>(free_atom, atom_primary, this->options_);
       scf_base->set_basisset("DF_BASIS_SCF", atom_auxiliary);
       std::shared_ptr<psi::SuperFunctional> functional = oepdev::create_superfunctional("HF", this->options_);

@@ -32,7 +32,7 @@ set {
     solver_ct_localizer           boys
     oepdev_localizer_maxiter      1000
     oepdev_use_vvo                False
-    quambo_mode                   acbs
+    quambo_acbs                   True
     # ==> General Psi4 Options <== #
     basis                         6-311++G**
     scf_type                      direct 

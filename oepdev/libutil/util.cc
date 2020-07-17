@@ -105,8 +105,52 @@ create_basisset_by_copy(SharedBasisSet basis_ref, SharedMolecule molecule_target
 extern "C" PSI_API
 SharedBasisSet
 create_atom_basisset_by_copy(SharedBasisSet basis_ref, SharedMolecule molecule_target, int idx_atom) {
- //TODO
- throw psi::PSIEXCEPTION("Not implemented yet!");
+
+  std::map<std::string, std::map<std::string, std::vector<psi::ShellInfo>>> shellmap;
+  std::map<std::string, std::map<std::string, std::vector<psi::ShellInfo>>> ecp_shellmap;
+
+  std::string name = basis_ref->name();
+  std::string key  = basis_ref->key();
+  std::string label= name; // ? this is just assumed, but should be a 'blend'
+
+  molecule_target->set_basis_all_atoms(name, key);
+
+  int a = idx_atom;
+
+  // only for a-th atom
+       std::vector<psi::ShellInfo> shellinfos;
+       int is = basis_ref->shell_on_center(a, 0);
+       int in = basis_ref->nshell_on_center(a);
+       for (int iis = 0; iis < in; ++iis) {
+            int si = is + iis;
+            const psi::GaussianShell& s = basis_ref->shell(si);
+
+            std::vector<double> c, e;
+            for (int pi=0; pi<s.nprimitive(); ++pi) {
+                 c.push_back(s.original_coef(pi));
+                 e.push_back(s.exp (pi));
+            }
+
+            psi::ShellInfo infos(s.am(), c, e, psi::GaussianType::Cartesian, psi::PrimitiveType::Unnormalized);
+            shellinfos.push_back(infos);
+       }
+
+       std::string atomlabel = molecule_target->fsymbol(0);
+       std::string hash = ""; // ? it is a comment of an atom I guess...
+
+       molecule_target->set_shell_by_label(atomlabel, hash, key);
+
+       shellmap[name][atomlabel] = shellinfos;
+
+  molecule_target->update_geometry();
+
+  SharedBasisSet basis_target = std::make_shared<BasisSet>(key, molecule_target, shellmap, ecp_shellmap);
+
+  basis_target->set_name(name);
+  basis_target->set_key(key);
+  basis_target->set_target(label);
+
+  return basis_target;
 }
 
 
