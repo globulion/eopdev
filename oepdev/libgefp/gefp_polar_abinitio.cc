@@ -381,7 +381,7 @@ std::shared_ptr<oepdev::GenEffPar> oepdev::UnitaryTransformedMOPolarGEFactory::c
        }
        v /= 16.0;
        R[IDX_6(i,j,k,l,m,n)] = v;
-       cout << " R= "<< i << j << k << l << m << n << "   " << v << endl;
+     //cout << " R= "<< i << j << k << l << m << n << "   " << v << endl;
   }}}}}}
   psi::timer_off(" Computation of R tensor");
 

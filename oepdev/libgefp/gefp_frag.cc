@@ -1203,8 +1203,8 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
   // ---> Get distributed effective charges <--- //
   std::vector<psi::SharedMatrix> q_1 = oep_1->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
   std::vector<psi::SharedMatrix> q_2 = oep_2->oep("Otto-Ladik.V3.CAMM-nj").dmtp->charges();
-  cout << q_1.size() << endl;
-  cout << q_1[0]->nrow() << " " << q_1[0]->ncol() << endl;
+//cout << q_1.size() << endl;
+//cout << q_1[0]->nrow() << " " << q_1[0]->ncol() << endl;
 
 
   // ===> Compute V1 term <=== //
@@ -1239,12 +1239,12 @@ double oepdev::GenEffFrag::compute_pairwise_energy_oep_efp2_ct(std::shared_ptr<G
   psi::SharedMatrix v_ab_v3 = std::make_shared<psi::Matrix>("", nocc_1, nvir_2);
   psi::SharedMatrix v_ba_v3 = std::make_shared<psi::Matrix>("", nocc_2, nvir_1);
 
-  cout << S12->ncol() << " " << S12->nrow() << endl;
-  cout << w_1->ncol() << " " << w_1->nrow() << endl;
+//cout << S12->ncol() << " " << S12->nrow() << endl;
+//cout << w_1->ncol() << " " << w_1->nrow() << endl;
 
-  cout << nvir_1*nocc_1 + nvir_1 << " " << q_1.size() << endl;
-  cout << nvir_2*nocc_2 + nvir_2 << " " << q_2.size() << endl;
-  cout << nvir_1 << " " << nocc_1 << " a" << endl;
+//cout << nvir_1*nocc_1 + nvir_1 << " " << q_1.size() << endl;
+//cout << nvir_2*nocc_2 + nvir_2 << " " << q_2.size() << endl;
+//cout << nvir_1 << " " << nocc_1 << " a" << endl;
 
   if (old_implementation) {
       for (int i=0; i<nocc_1; ++i) {                                                        
