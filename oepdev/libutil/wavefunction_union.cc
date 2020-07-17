@@ -146,9 +146,9 @@ void WavefunctionUnion::common_init(
 
    if (options_.get_bool("OEPDEV_USE_VVO")) {
        // VVOs
-       std::shared_ptr<QUAMBO> solver_1 = std::make_shared<QUAMBO>(wfn_1, true);
+       std::shared_ptr<QUAMBO> solver_1 = std::make_shared<QUAMBO>(wfn_1, options_.get_bool("QUAMBO_ACBS"));
        solver_1->compute();
-       std::shared_ptr<QUAMBO> solver_2 = std::make_shared<QUAMBO>(wfn_2, true);
+       std::shared_ptr<QUAMBO> solver_2 = std::make_shared<QUAMBO>(wfn_2, options_.get_bool("QUAMBO_ACBS"));
        solver_2->compute();
                                                                                  
        Ca_occ_1 = solver_1->Ca_subset("AO","OCC");

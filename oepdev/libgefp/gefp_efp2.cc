@@ -46,7 +46,7 @@ oepdev::SharedCPHF oepdev::EFP2_GEFactory::compute_cphf() {
 
 oepdev::SharedQUAMBO oepdev::EFP2_GEFactory::compute_quambo() {
   psi::outfile->Printf(" @EFP2_GEFactory: Computing QUAMBO and VVO...\n");
-  oepdev::SharedQUAMBO solver = std::make_shared<QUAMBO>(this->wfn_, true);
+  oepdev::SharedQUAMBO solver = std::make_shared<QUAMBO>(this->wfn_, options_.get_bool("QUAMBO_ACBS"));
   solver->compute();
   psi::outfile->Printf(" @EFP2_GEFactory: QUAMBO and VVO Done.\n");
   return solver;

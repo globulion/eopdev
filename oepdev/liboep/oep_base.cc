@@ -100,7 +100,7 @@ void OEPotential::common_init(void)
 void OEPotential::compute_molecular_orbitals() {
 
    if (this->use_quambo_orbitals) {
-       std::shared_ptr<QUAMBO> solver = std::make_shared<QUAMBO>(wfn_, true);
+       std::shared_ptr<QUAMBO> solver = std::make_shared<QUAMBO>(wfn_, options_.get_bool("QUAMBO_ACBS"));
        solver->compute();
        cOcc_ = solver->Ca_subset("AO","OCC");
        cVir_ = solver->Ca_subset("AO","VIR");
