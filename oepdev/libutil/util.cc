@@ -102,6 +102,13 @@ create_basisset_by_copy(SharedBasisSet basis_ref, SharedMolecule molecule_target
   return basis_target;
 }
 
+extern "C" PSI_API
+SharedBasisSet
+create_atom_basisset_by_copy(SharedBasisSet basis_ref, SharedMolecule molecule_target, int idx_atom) {
+ //TODO
+ throw psi::PSIEXCEPTION("Not implemented yet!");
+}
+
 
 
 extern "C" PSI_API

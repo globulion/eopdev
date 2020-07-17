@@ -87,14 +87,24 @@ create_superfunctional(std::string name, Options& options);
 
 /** \brief Build BasisSet by Copy.
  *
-    @param basis_ref - reference basis set
-    @param molecule_target - target molecule
+ *  @param basis_ref - reference basis set
+ *  @param molecule_target - target molecule
  *  @return psi::SharedBasisSet object.
  */
 extern "C" PSI_API
 SharedBasisSet
 create_basisset_by_copy(SharedBasisSet basis_ref, SharedMolecule molecule_target);
 
+/** \brief Build BasisSet by Copy for a Particular Atom.
+ *
+ *  @param basis_ref - reference basis set
+ *  @param molecule_target - target molecule (atom in this case)
+ *  @param idx_atom - index of an atom in basis_ref->molecule()
+ *  @return psi::SharedBasisSet object.
+ */
+extern "C" PSI_API
+SharedBasisSet
+create_atom_basisset_by_copy(SharedBasisSet basis_ref, SharedMolecule molecule_target, int idx_atom);
 
 /** \brief Extract molecule from dimer.
  *

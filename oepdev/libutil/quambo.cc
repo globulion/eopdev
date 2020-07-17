@@ -39,7 +39,7 @@ QUAMBO::QUAMBO(psi::SharedWavefunction wfn, bool acbs) :
  nbf_(-1)
 {
  // Sanity checks
- if (!this->acbs) throw psi::PSIEXCEPTION("MCBS is not possible to implement for QUAMBO routine yet!");
+ //if (!this->acbs) throw psi::PSIEXCEPTION("MCBS is not possible to implement for QUAMBO routine yet!");
 
  // Populate the maps
  this->nbas_atom_mini_[ "H"] = 1;    this->unpe_atom_[ "H"] = 1;   
@@ -136,8 +136,14 @@ void QUAMBO::compute(void) {
     //psi::PSIOManager::shared_object()->psiclean();//TODO
 
       // Extract A* orbitals (free-atom minimal basis occupied valence+core orbitals)
-      psi::SharedBasisSet atom_primary = oepdev::create_basisset_by_copy(this->wfn_->basisset(), free_atom);
-      psi::SharedBasisSet atom_auxiliary = oepdev::create_basisset_by_copy(this->wfn_->get_basisset("DF_BASIS_SCF"), free_atom);
+      psi::SharedBasisSet atom_primary, atom_auxiliary;
+      if (this->acbs) {
+          atom_primary = oepdev::create_basisset_by_copy(this->wfn_->basisset(), free_atom);
+          atom_auxiliary = oepdev::create_basisset_by_copy(this->wfn_->get_basisset("DF_BASIS_SCF"), free_atom);
+      } else {
+          atom_primary = oepdev::create_atom_basisset_by_copy(this->wfn_->basisset(), free_atom, i);
+          atom_auxiliary = oepdev::create_atom_basisset_by_copy(this->wfn_->get_basisset("DF_BASIS_SCF"), free_atom, i);
+      }
 
     //bool compute_mints = false;
     //if (compute_mints) {
@@ -149,31 +155,31 @@ void QUAMBO::compute(void) {
       scf_base->set_basisset("DF_BASIS_SCF", atom_auxiliary);
       std::shared_ptr<psi::SuperFunctional> functional = oepdev::create_superfunctional("HF", this->options_);
       std::shared_ptr<psi::scf::ROHF> scf = std::make_shared<psi::scf::ROHF>(scf_base, functional);
-      //bool hydrogen = (free_atom->multiplicity()==2) ? true: false;
-      //hydrogen = false;
-      //if (hydrogen) {
-      //    const int nbf = this->wfn_->basisset()->nbf();
-      //    int ao_s1;
-      //    for (int k=0; k<nbf; ++k) {
-      //         ao_s1 = k;
-      //         if (i==this->wfn_->basisset()->function_to_center(k)) break;
-      //    }
-      //    psi::SharedMatrix pCa = std::make_shared<psi::Matrix>("", nbf, 1); 
-      //    pCa->set(0,ao_s1  ,0.42);
-      //    pCa->set(0,ao_s1+1,0.63);
-      //    psi::SharedMatrix pCb = std::make_shared<psi::Matrix>("", nbf, 0);
-      //    scf->guess_Ca(pCa);
-      //    scf->guess_Cb(pCb);
-      //}
       scf->compute_energy();
       psi::SharedMatrix ca_a = scf->Ca_subset("AO", "OCC");
     //psi::PSIOManager::shared_object()->psiclean();//TODO
 
       // Compute a* coefficients (projections of A* onto molecule's occupied and virtual orbitals)
-      psi::SharedMatrix a_occ_a = psi::Matrix::triplet(ca_occ, this->Sao_, ca_a, true, false, false);
-      psi::SharedMatrix a_vir_a = psi::Matrix::triplet(ca_vir, this->Sao_, ca_a, true, false, false);
-      psi::SharedMatrix a_occ_b = psi::Matrix::triplet(cb_occ, this->Sao_, ca_a, true, false, false);
-      psi::SharedMatrix a_vir_b = psi::Matrix::triplet(cb_vir, this->Sao_, ca_a, true, false, false);
+      psi::SharedMatrix a_occ_a;
+      psi::SharedMatrix a_vir_a;
+      psi::SharedMatrix a_occ_b;
+      psi::SharedMatrix a_vir_b;
+
+      // ACBS mode
+      if (this->acbs) {
+          a_occ_a = psi::Matrix::triplet(ca_occ, this->Sao_, ca_a, true, false, false); 
+          a_vir_a = psi::Matrix::triplet(ca_vir, this->Sao_, ca_a, true, false, false);
+          a_occ_b = psi::Matrix::triplet(cb_occ, this->Sao_, ca_a, true, false, false);
+          a_vir_b = psi::Matrix::triplet(cb_vir, this->Sao_, ca_a, true, false, false);
+      // MCBS mode
+      } else {
+          std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(this->wfn_->basisset());
+          psi::SharedMatrix S_a = mints->ao_overlap(this->wfn_->basisset(), atom_primary);
+          a_occ_a = psi::Matrix::triplet(ca_occ, S_a, ca_a, true, false, false); 
+          a_vir_a = psi::Matrix::triplet(ca_vir, S_a, ca_a, true, false, false);
+          a_occ_b = psi::Matrix::triplet(cb_occ, S_a, ca_a, true, false, false);
+          a_vir_b = psi::Matrix::triplet(cb_vir, S_a, ca_a, true, false, false);
+      }
 
       // Append to the lists
       a_occ_a_list.push_back(a_occ_a);
@@ -256,33 +262,58 @@ std::vector<psi::SharedMolecule> QUAMBO::atomize_(void) {
 
  int m;
 
- int I = 0;
- for (int i=0; i<this->mol_->natom(); ++i) {
-      std::string coord_log = "";
-      for (int j=0; j<this->mol_->natom(); ++j) {
-           double x = this->mol_->x(j);
-           double y = this->mol_->y(j);
-           double z = this->mol_->z(j);
-           if (i==j) { 
-               s = this->mol_->symbol(j);
-               m = this->unpe_atom_.at(s);
-           }
-           else {
-               s = ghost_prefix + this->mol_->symbol(j);
-           }
-           coord_log += oepdev::string_sprintf("%4s %14.8f %14.8f %14.8f\n", s.c_str(), x, y, z);
-      }
-      log  = oepdev::string_sprintf("\n0 %i\n", m+1);
-      log += coord_log + endline;
+ if (this->acbs) {
+ 
+     int I = 0;                                                                                       
+     for (int i=0; i<this->mol_->natom(); ++i) {
+          std::string coord_log = "";
+          for (int j=0; j<this->mol_->natom(); ++j) {
+               double x = this->mol_->x(j);
+               double y = this->mol_->y(j);
+               double z = this->mol_->z(j);
+               if (i==j) { 
+                   s = this->mol_->symbol(j);
+                   m = this->unpe_atom_.at(s);
+               }
+               else {
+                   s = ghost_prefix + this->mol_->symbol(j);
+               }
+               coord_log += oepdev::string_sprintf("%4s %14.8f %14.8f %14.8f\n", s.c_str(), x, y, z);
+          }
+          log  = oepdev::string_sprintf("\n0 %i\n", m+1);
+          log += coord_log + endline;
+                                                                                                      
+          cout << log;
+          psi::SharedMolecule atom = psi::Molecule::create_molecule_from_string(log);
+          atom->set_molecular_charge(0);
+          atom->set_multiplicity(m+1);
+          atom->update_geometry();
+          atoms.push_back(atom);
+                                                                                                      
+          I += 1;
+     }
+ } else {
+     // MCBS mode
+     for (int i=0; i<this->mol_->natom(); ++i) {
+          double x = this->mol_->x(i);
+          double y = this->mol_->y(i);
+          double z = this->mol_->z(i);
+          s = this->mol_->symbol(i);
+          m = this->unpe_atom_.at(s);
 
-      cout << log;
-      psi::SharedMolecule atom = psi::Molecule::create_molecule_from_string(log);
-      atom->set_molecular_charge(0);
-      atom->set_multiplicity(m+1);
-      atom->update_geometry();
-      atoms.push_back(atom);
+          log  = oepdev::string_sprintf("\n0 %i\n", m+1);
+          log += oepdev::string_sprintf("%4s %14.8f %14.8f %14.8f\n", s.c_str(), x, y, z);
+          log += endline;
 
-      I += 1;
+          cout << log;
+
+          psi::SharedMolecule atom = psi::Molecule::create_molecule_from_string(log);
+          atom->set_molecular_charge(0);
+          atom->set_multiplicity(m+1);
+          atom->update_geometry();
+          atoms.push_back(atom);
+     }
+
  }
  return atoms;
 }
