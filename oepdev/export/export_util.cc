@@ -4,6 +4,7 @@
 #include "psi4/libmints/integral.h"
 #include "../libutil/util.h"
 #include "../libutil/cis.h"
+#include "../libutil/quambo.h"
 #include "../lib3d/dmtp.h"
 
 #include <pybind11/pybind11.h>
@@ -67,6 +68,23 @@ void export_util(py::module &m) {
         .def("transition_dipole", d_ij(&oepdev::CISComputer::transition_dipole), "", py::return_value_policy::take_ownership)
         .def("oscillator_strength", f_i( &oepdev::CISComputer::oscillator_strength), "", py::return_value_policy::take_ownership)
         .def("oscillator_strength", f_ij(&oepdev::CISComputer::oscillator_strength), "", py::return_value_policy::take_ownership)
+        ;
+
+    /* Class oepdev::QUAMBO */
+    py::class_<oepdev::QUAMBO, std::shared_ptr<oepdev::QUAMBO>> QUAMBO(m, "QUAMBO", "Implements the QUAMBO method.");
+    QUAMBO
+	.def_static("build", &oepdev::QUAMBO::build, "Build a chosen QUAMBO solver", py::return_value_policy::take_ownership)
+	.def("compute", &oepdev::QUAMBO::compute, "Run the QUAMBO calculations")
+	.def("quambo", &oepdev::QUAMBO::quambo, "Return the QUAMBOs", py::return_value_policy::take_ownership)
+	.def("epsilon_a_subset", &oepdev::QUAMBO::epsilon_a_subset, "", py::return_value_policy::take_ownership)
+	.def("epsilon_b_subset", &oepdev::QUAMBO::epsilon_b_subset, "", py::return_value_policy::take_ownership)
+	.def("Ca_subset", &oepdev::QUAMBO::Ca_subset, "", py::return_value_policy::take_ownership)
+	.def("Ca_subset", &oepdev::QUAMBO::Cb_subset, "", py::return_value_policy::take_ownership)
+        .def("nbas" , &oepdev::QUAMBO::nbas, "")
+        .def("naocc", &oepdev::QUAMBO::naocc, "")
+        .def("nbocc", &oepdev::QUAMBO::nbocc, "")
+        .def("navir", &oepdev::QUAMBO::navir, "")
+        .def("nbvir", &oepdev::QUAMBO::nbvir, "")
         ;
 
 }

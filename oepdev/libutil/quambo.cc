@@ -542,6 +542,10 @@ psi::SharedMatrix QUAMBO::C_subset_helper_(
   return C;
 }
 
+std::shared_ptr<QUAMBO> QUAMBO::build(psi::SharedWavefunction wfn, bool acbs) {
+  std::shared_ptr<QUAMBO> quambo = std::make_shared<QUAMBO>(wfn, acbs);
+  return quambo;
+}
 
 
 } // EndNameSpace oepdev

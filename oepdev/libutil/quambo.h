@@ -56,6 +56,9 @@ using SharedQUAMBOData = std::shared_ptr<QUAMBOData>;
 class QUAMBO
 {
   public:
+   /// Static factory method
+   static std::shared_ptr<QUAMBO> build(psi::SharedWavefunction wfn, bool acbs = true);
+
    /// Constructor
    QUAMBO(psi::SharedWavefunction wfn, bool acbs = true);
    /// Destructor
