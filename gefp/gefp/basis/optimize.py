@@ -7,12 +7,16 @@
 """
 from abc import ABC, abstractmethod
 import re
+import os
+import time
 import psi4
 import numpy
 import scipy.optimize
 import oepdev
+from . import edf
+from . import _util
 
-__all__ = ["DFBasis", "DFBasisOptimizer", "OEP"]
+__all__ = ["DFBasis", "oep_ao_basis_set_optimizer", "DFBasisOptimizer", "OEP"]
 
 def make_bastempl(templ, param): return templ % tuple(param)
 
@@ -85,7 +89,7 @@ class DFBasis:
       if param is None: param = self.param
       oepfitbasis.param = param
       oepfitbasis.templ = self.templ
-      basis = psi4.core.BasisSet.build(self.mol, 'BASIS', oepfitbasis)
+      basis = psi4.core.BasisSet.build(self.mol, 'BASIS', oepfitbasis, quiet=True)
       self.basis = basis
       return basis
 
@@ -103,6 +107,11 @@ class DFBasis:
       o.write(self.print(param))
       o.close()
       return
+
+  def __repr__(self):
+      "Print the Basis Set in Psi4 Format"
+      log = self.print()
+      return str(log)
   
   # - protected 
 
@@ -138,7 +147,189 @@ class DFBasis:
           bounds.append(bound)
       return bounds
   
+# -------------------------------------------------------------------------------------------- #
 
+def oep_ao_basis_set_optimizer(wfn, interm, 
+                  test=None, exemplary=None, target="OCC", cpp=False, more_info=False, quambo=False,
+                  templ_file='templ.dat', param_file='param.dat', outname='basis.gbs'):
+    """
+ Method that optimizes DF basis set.
+ This is currently the state-of-the-art and recommended.
+"""
+
+    # set up
+    if test is None:
+       test = wfn.basisset()
+    if exemplary is None:
+       exemplary = wfn.basisset()
+
+    if quambo:
+       raise NotImplementedError #TODO
+    
+
+    print("\n ===> Auxiliary Basis Set Optimization Routine <===\n")
+
+    # Notation:
+    # T - target (MO)
+    # p - primary (AO)
+    # i - intermediate (AO)
+    # m - minimal auxiliary (AO) - to be optimized
+    # M - minimal auxiliary (MO)
+    # t - test (AO)
+    # e - example AO basis
+
+    Ca = wfn.Ca_subset("AO", target).to_array(dense=True)                  # Here are the target orbitals
+
+    primary = wfn.basisset()
+
+    no = Ca.shape[1]                                                       # number of target orbitals
+    np = primary.nbf()
+
+    Da   = wfn.Da().to_array(dense=True)                                   # (p, p)
+    S_pp = wfn.S().to_array(dense=True)                                    # (p, p)
+
+    mints = psi4.core.MintsHelper(interm)
+    S_ii = mints.ao_overlap().to_array(dense=True)                         # (i, i)
+    V_iT = edf.compute_v(Ca, Da, prim=primary, left_axis=interm)           # (i, T)
+
+    G = numpy.linalg.inv(S_ii) @ V_iT                                      # (i, T)
+    T = edf.find_aux_mo_mini(G, S_ii, I=None)                              # (i, M)
+
+    GM= T.T @ S_ii @ G                                                     # (M, T) #OK
+
+    g = T @ GM # = G                                                       # (i, T) #OK
+
+   # these are true:
+   # T.T @ S_ii @ T ===> identity matrix
+   # g = G
+
+    # optimize aux_mini (AO)
+    dfbasis = DFBasis(wfn.molecule(), templ_file, param_file)
+    param_0 = dfbasis.param
+
+    TIME = -time.time()
+    dfbasis = edf.optimize_ao_mini(T, interm, dfbasis, cpp)
+    TIME += time.time()
+
+    auxiliary = dfbasis.basisset()
+    param = dfbasis.param
+    dfbasis.save(outname)
+
+    z_opt = -edf.obj_numpy(param, T, interm, dfbasis)
+    z_max = T.shape[1]
+
+    mints = psi4.core.MintsHelper(interm)
+    s_im  = mints.ao_overlap(interm, auxiliary).to_array(dense=True)
+    s_mm  = mints.ao_overlap(auxiliary, auxiliary).to_array(dense=True)
+    o_mi  = edf.projection(T, s_im, s_mm)
+    Tm    = edf.projected_t(T, s_im, s_mm)
+
+    print(" Optimized Overlaps:")
+    for i in range(len(o_mi.diagonal())):
+        print(" %3d %14.7f" % (i+1, o_mi.diagonal()[i])) 
+
+   #Gm = Tm @ numpy.linalg.inv(o_mi) @ T.T @ S_ii @ G # approximate Gm -> this is just guess
+   #Gm = Tm @ Tm.T @ s_im.T @ G                       # approximate Gm -> this is derived from 1 = |m) Tm Tm.T (m|
+    Gm = Tm @ numpy.linalg.inv(o_mi) @ Tm.T @ s_im.T @ G   # approximate Gm -> above but corrected by the overlap in B
+
+    print(" Optimized AO Basis Set in Psi4 Format:")
+    print(dfbasis)
+    print(" Inital and final parameters in working order:")
+    #
+    print("          Initial           Fitted")
+    for i in range(len(param)):
+        print("%15.3f %15.3f" % (param_0[i], param[i]))
+
+
+    print(" Running Tests")
+    # test 1 
+    print(" Test 1: Computed from approximate Gm")
+    mints = psi4.core.MintsHelper(test)
+    V_= edf.compute_v(Ca, Da, prim=primary, left_axis=test)                  # (t, T)
+    S_= mints.ao_overlap(test, auxiliary).to_array(dense=True)           # (t, m)
+    Vtest_ = S_ @ Gm                                                     # (t, m) @ (m, T) -> (t, T)
+    if more_info: _util.COMPARE(V_, Vtest_, 0)
+    Err = Vtest_ - V_
+    Err = Err**2
+    Err = numpy.sqrt(Err.sum())
+    Err_out = Err
+    S__ = S_
+    Err_1 = Err
+    print(" Total error 1 = %14.5f\n" % Err)
+
+    # test 2
+    print(" Test 2: Computed from exact GB")
+    mints = psi4.core.MintsHelper(test)
+    S_= mints.ao_overlap(test, interm).to_array(dense=True) @ T          # (t, i)
+    Vtest_ = S_ @ GM                                                     # (t, m) @ (m, T) -> (t, T)
+    if more_info: _util.COMPARE(V_, Vtest_, 0)
+    Err = Vtest_ - V_
+    Err = Err**2
+    Err = numpy.sqrt(Err.sum())
+    Err_2 = Err
+    print(" Total error 2 = %14.5f\n" % Err)
+
+    # test 3 - EDF-2 with auxiliary basis
+    print(" Test 3: Computed from optimal Gm from EDF-2")
+    V__= edf.compute_v(Ca, Da, prim=primary, left_axis=interm)                  
+    V = psi4.core.Matrix.from_array(V__)
+    gdf = oepdev.GeneralizedDensityFit.build_double(auxiliary, interm, V)
+    gdf.compute()
+    G3 = gdf.G().to_array(dense=True)                                   # (m, T) from EDF-2
+    Vtest2_ = S__ @ G3
+    if more_info: _util.COMPARE(V_, Vtest2_, 0)
+    Err = Vtest2_ - V_
+    Err = Err**2
+    Err = numpy.sqrt(Err.sum())
+    Err_3 = Err
+    print(" Total error 3 = %14.5f\n" % Err)
+
+    # test 4 - EDF-2 with example basis
+    print(" Test 4: Computed from exemplary Gm from EDF-2")
+    mints = psi4.core.MintsHelper(test)
+    S_= mints.ao_overlap(test, exemplary).to_array(dense=True)              # (t, e)
+    gdf = oepdev.GeneralizedDensityFit.build_double(exemplary, interm, V)
+    gdf.compute()
+    G4 = gdf.G().to_array(dense=True)                                   # (e, T) from EDF-2
+    Vtest3_ = S_ @ G4
+    if more_info: _util.COMPARE(V_, Vtest3_, 0)
+    Err = Vtest3_ - V_
+    Err = Err**2
+    Err = numpy.sqrt(Err.sum())
+    Err_4 = Err
+    print(" Total error 4 = %14.5f\n" % Err)
+
+    print(" Summary:")
+    print(" ========")
+    print()
+    print(" AO Basis Sets                               Name    Nbf.")
+    print(" -------------")
+    print(" Primary           %30s  %4d" % (primary  .name(), primary  .nbf()))
+    print(" Intermediate      %30s  %4d" % (interm   .name(), interm   .nbf()))
+    print(" Test              %30s  %4d" % (test     .name(), test     .nbf()))
+    print(" Example           %30s  %4d" % (exemplary.name(), exemplary.nbf()))
+    print(" Optimized         %30s  %4d" % (auxiliary.name(), auxiliary.nbf()))
+    print()
+    print(" Objective Function")
+    print(" ------------------")
+    print(" Z_max = %14.8f" %   z_max)
+    print(" Z_opt = %14.8f" %   z_opt)
+    print(" Error = %14.8f" % ( z_max - z_opt))
+    print(" NrmEr = %14.8f" % ((z_max - z_opt)/z_max))
+    print()
+    print(" Cumulative Errors")
+    print(" -----------------")
+    print()
+    print(" Fit(EDF-2)   Fit(Approx)  Fit(Exact)   Fit(Example)")
+    print(" %8.5f     %8.5f     %8.5f     %8.5f" % (Err_3, Err_1, Err_2, Err_4))
+    print()
+    print(" Overall AO Basis Set Optimization Time = %f sec" % TIME)
+    print()
+    print(" Basis set saved to file < %s >" % os.path.abspath(outname))
+    print(" AO Basis Optimization Finished Successfully.")
+    print()
+
+    return dfbasis, Err_out, Gm
 
 # ------------------------------------------------------------------------ #
      
@@ -273,6 +464,7 @@ class OEP_CT(OEP_FockLike):
 class DFBasisOptimizer:
   """
  Method that optimizes DF basis set.
+ This is currently not recommended.
 """
   def __init__(self, oep):
       "Initialize"

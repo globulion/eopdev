@@ -21,6 +21,7 @@
 #include "psi4/libmints/writer.h"
 #include "psi4/libmints/writer_file_prefix.h"
 #include "psi4/libmints/wavefunction.h"
+#include "psi4/libmints/mintshelper.h"
 #include "psi4/libmints/basisset.h"
 #include "psi4/libmints/vector.h"
 #include "psi4/libmints/matrix.h"
@@ -341,6 +342,20 @@ extern "C" PSI_API
 std::shared_ptr<psi::Matrix> calculate_OEP_basisopt_V(const int& nt,
                 std::shared_ptr<psi::IntegralFactory> f_pppt,
                 std::shared_ptr<psi::Matrix> ca, std::shared_ptr<psi::Matrix> da);
+
+
+/** \brief Compute the objective function value for auxiliary basis set optimization of OEPs
+ *
+ *  @param ti - Ti matrix
+ *  @param mints - integral helper (instantiated with bsf_i)
+ *  @param bsf_m - auxiliary AO basis to optimize
+ *  @param bsf_i - intermediate AO basis
+ *  @returns value of objective function equal to negative trace of overlap matrix
+ */
+extern "C" PSI_API
+double bs_optimize_projection(std::shared_ptr<psi::Matrix> ti,
+                std::shared_ptr<psi::MintsHelper> mints,
+                std::shared_ptr<psi::BasisSet> bsf_m, std::shared_ptr<psi::BasisSet> bsf_i);
 
 
 

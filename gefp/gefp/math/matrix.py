@@ -22,6 +22,7 @@ import math
 import numpy
 import psi4
 import scipy.spatial.transform
+import scipy.linalg
 
 class Superimposer:
     """\
@@ -570,3 +571,5 @@ def rearrange_eigenpairs(u, u_ref, n=None, return_sim=False):
     else:
        if return_sim: return u_new, sim
        else: return u_new
+
+#matrix_power = scipy.linalg.fractional_matrix_power

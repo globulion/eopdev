@@ -7,6 +7,7 @@
 import numpy
 import psi4
 import oepdev
+import operator
 
 __all__ = ["psi_molecule_from_file", 
            "psi_molecule_to_file",
@@ -15,7 +16,7 @@ __all__ = ["psi_molecule_from_file",
            "wavefunction_union_from_dfi_solver",
            "substitute_matrices_in_psi4_wavefunction"]
 
-__all__+= ["UnitaryOptimizer", "UnitaryOptimizer_4_2"]
+__all__+= ["UnitaryOptimizer", "UnitaryOptimizer_4_2", "UnitaryOptimizer_2_2"]
 
 
 
@@ -764,7 +765,7 @@ class UnitaryOptimizer(object):
       Xmax = list()
       for x in X:
           F = self._f (x,A,B,C,D)
-          g = self._fg(x,A,B,C,D)
+          g = self._fh(x,A,B,C,D)
           if   g> 0.0: Xmin.append(x)
           elif g< 0.0: Xmax.append(x)
           #else: raise ValueError("The Hessian of objective function is zero at X=%15.5f" % x)
@@ -816,6 +817,241 @@ class UnitaryOptimizer(object):
       ii = numpy.setdiff1d(numpy.arange(P.size), [i,j])
       dZ-= (1-numpy.cos(g))*(R[j,ii].sum() + R[i,ii].sum() + R[ii,j].sum() + R[ii,i].sum())
       dZ+=    numpy.sin(g) *(R[j,ii].sum() - R[i,ii].sum() + R[ii,j].sum() - R[ii,i].sum())
+      return dZ
+
+  def _form_X(self, i, j, gamma):
+      """Form unitary matrix X"""                                        
+      X = numpy.identity(self._d)
+      T = numpy.cos(gamma)
+      g = numpy.sin(gamma)
+      X[i,i] = T
+      X[j,j] = T
+      X[i,j] = g
+      X[j,i] =-g
+      return X
+ 
+  # private
+  def __same(self, x, X, tol=0.0001):
+      """Check if the solution was already obtained"""
+      #pipi = 2*numpy.pi
+      result = False
+      for xp in X:
+          dx = x-xp
+          if (numpy.abs(dx) < tol) or (numpy.abs(dx+2*numpy.pi) < tol) or (numpy.abs(dx-2*numpy.pi) < tol): 
+          #if not (numpy.abs(dx)%pipi):
+             result = True
+             break
+      return result
+
+
+class UnitaryOptimizer_2_2(object):
+  """
+ ---------------------------------------------------------------------------------
+
+ Finds the unitary matrix X that optimizes the following function:
+ 
+ Z(X) = \sum_{ijk} X_{ij}X_{ik} A_{jk} - \sum_{ij} X_{ij}B_{ji} 
+ 
+ where 
+   * X is a square unitary matrix of size N x N
+   * A is a square, in general non-symmetric matrix of size N x N
+   * B is a square, in general non-symmetric matrix of size N x N
+ 
+ Usage:
+   optimizer = UnitaryOptimizer_2_2(A, B, conv=1.0e-8, maxiter=100, verbose=True)
+   optimizer.maximize() #or minimize()
+   X = optimizer.X
+   Z = optimizer.Z
+ 
+ ---------------------------------------------------------------------------------
+                                                       Last Revision: 25.03.2018
+ """
+  def __init__(self, R, P, conv=1.0e-8, maxiter=100, verbose=True):
+      """Initialize with R and P matrix, as well as optimization options"""
+      self._R   = R.copy()
+      self._P   = P.copy()
+      self._R0  = R.copy()
+      self._P0  = P.copy()
+      self.X    = None
+      self._d   = P.shape[0]
+      # optimization options
+      self.conv   = conv
+      self.maxiter=maxiter
+      self.verbose=verbose
+      # initial Z value
+      self._Zinit = self._eval_Z(numpy.identity(self._d), self._R0, self._P0)
+      # functions do find roots in 2D unitary optimization step
+      self._f = lambda x, a, b, c:   c+ a*numpy.sin(x)+ b*numpy.cos(x)
+      self._fg= lambda x, a, b, c:      a*numpy.cos(x)- b*numpy.sin(x)
+      self._fh= lambda x, a, b, c:     -a*numpy.sin(x)- b*numpy.cos(x)
+
+  def maximize(self):
+      """Maximize the Z function under unitary constraint for X""" 
+      self.run('max')
+
+  def minimize(self):
+      """Minimize the Z function under unitary constraint for X"""
+      self.run('min')
+
+  def run(self, opt='minimize'):
+      """Perform the optimization"""
+      assert (opt.lower().startswith('min') or opt.lower().startswith('max')), 'Unrecognized optimization mode < %s >' % opt
+      self._refresh()
+      self._run(opt.lower())
+
+  @property
+  def Z(self):
+      """Return the current value of objective function"""
+      z = self._eval_Z(self.X, self._R0, self._P0)
+      return z
+
+  # -- protected
+  def _run(self, opt):
+      """Perform the optimization (protected interface)"""
+      conv = 1e8
+      Xold = numpy.identity(self._d)
+      Zold = self._Zinit
+      Xacc = numpy.identity(self._d)
+      success = False
+      if self.verbose: 
+         print    (" Start  : Z[1] = %15.6f" % Zold)
+      niter = 0
+      while (conv > self.conv):
+         i, j, gamma = self._find_next(opt)
+         Xnew = self._form_X(i, j, gamma)
+         self._uptade_RP(Xnew)
+         Znew = self._eval_Z(numpy.identity(self._d), self._R, self._P)
+         conv = abs(Znew-Zold)
+         Xold = Xnew.copy()
+         Zold = Znew
+         niter += 1
+         Xacc = numpy.dot(Xnew, Xacc)
+         if self.verbose:
+            print (" Iter %2d: Z[X] = %15.6f  Conv= %15.6f" % (niter, Znew, conv))
+         if niter > self.maxiter: 
+            print(" Optimization unsuccesfull! Maximum iteration number exceeded!")
+            success = False
+            break
+      success = True if niter <= self.maxiter else False
+      self.X = Xacc
+      if (self.verbose and success):
+         print(" Optimization succesfull!\n")
+         print(" Optimized Z[X] value: %15.6f" % self.Z)
+
+  def _uptade_RP(self, X):
+     #self._P = numpy.dot(X, self._P)
+     #self._R = numpy.dot(X, numpy.dot(self._R, X.T))
+      self._P = X @ self._P
+      self._R = X @ self._R @ X.T
+
+  def _refresh(self):
+      """Restore the initial state of the optimizer"""
+      self._R = self._R0.copy()
+      self._P = self._P0.copy()
+      self.X  = None
+
+  def _find_next(self, opt):
+      """Determine next pair of degrees of freedom for 2D rotation"""
+      optfunc = operator.lt if opt.startswith('min') else operator.gt
+      I, J = 0, 1
+      Gamma = 0.0
+      dZold = 1e8 if opt.startswith('min') else -1e8
+      for j in range(self._d):
+          for i in range(j):
+              a,b,c = self._get_abc(i, j)
+              gamma   = self._find_x(a, b, c, i, j, opt)
+              dZ = self._eval_dZ(gamma, self._P, self._R, i, j)
+              if optfunc(dZ, dZold):
+                 Gamma = gamma
+                 I = i
+                 J = j
+                 dZold = dZ
+      return I, J, Gamma
+
+  def _find_x(self, a, b, c, i, j, opt):
+      """Find the optimal 2D rotation angle"""
+      # Boyd's method in 2 dimensions: Boyd, J.P.; J. Eng. Math. (2006) 56:203-219
+      d = b - 1.0j * a                        
+      K = numpy.zeros((2,2), numpy.complex64)
+      K[0,1] = 1.0
+      K[1,0] = -(b + 1.0j * a)/d
+      E, X = numpy.linalg.eig(K)
+      X   = -1.0j * numpy.log(E)
+      X[numpy.where(X<0.0)] += 2.0 * numpy.pi
+      X = X.real
+
+      D = numpy.sqrt(a*a+b*b)
+      D = numpy.array([D,-D])
+      X = numpy.zeros(2)
+      for i in range(2):
+          if abs(a)>1.e-10:
+             X[i] = 2.0 * (numpy.arctan((D[i]-b)/a))
+          else:
+             if i==0: # non-vanishing gamma(+) limit for a --> 0
+                if b<0.0: X[i] = numpy.pi/2.0
+             else:    # non-vanishing gamma(-) limit for a --> 0
+                if b<0.0: X[i] =-numpy.pi/2.0
+     #l = lambda x: a*numpy.cos(x) - b*numpy.sin(x)
+     #print(l(x1), l(x2))
+      for i, x in enumerate(X):
+          I = int(abs(x)/(2.0*numpy.pi)) * numpy.sign(x)
+          X[i]+= I * 2.0*numpy.pi
+      X[numpy.where(X<0.0)] += 2.0 * numpy.pi
+     #print(X)
+     
+
+      # discriminate between minima and maxima
+      Xmin = list()
+      Xmax = list()
+      for x in X:
+          h = self._fh(x,a,b,c)
+         #print("Hessian = ", h)
+          if   h> 0.0: Xmin.append(x)
+          elif h< 0.0: Xmax.append(x)
+          else:
+               Xmin.append(x)
+               Xmax.append(x)
+          #else: raise ValueError("The Hessian of objective function is zero at X=%15.5f" % x)
+      Xmin = numpy.array(Xmin)
+      Xmax = numpy.array(Xmax)
+     #print(Xmin, Xmax)
+    
+      # Find optimal gamma 
+      gamma = None
+      if opt.startswith('min'):
+         Zold = 1.0e8
+         for x in Xmin:
+             Z = self._eval_Z(self._form_X(i, j, x), self._R, self._P)
+             if Z < Zold:
+                gamma = x
+             Zold = Z
+      else:
+         Zold = -1e8
+         for x in Xmax:
+             Z = self._eval_Z(self._form_X(i, j, x), self._R, self._P)
+             if Z > Zold:
+                gamma = x
+             Zold = Z
+     #assert gamma is not None, "Error while searching for optimum!"
+      if gamma is None: gamma = 0.0
+      return gamma
+
+  def _get_abc(self, i, j):
+      """Retrieve ABCD parameters for root search"""
+      a = self._P[j,i]-self._P[i,j]
+      b = self._P[i,i]+self._P[j,j] 
+      c = self._P.trace() + self._R.trace() - b
+      return a, b, c
+
+  def _eval_Z(self, X, R, P):
+      """Evaluate the objective Z function"""            
+      z1 = X @ R @ X.T # numpy.dot(X, numpy.dot(R,X.T))
+      z2 = X @ P       # numpy.dot(X, P)
+      return z1.trace() + z2.trace()
+
+  def _eval_dZ(self, g, P, R, i, j):
+      """Compute the change in Z"""
+      dZ = (P[j,i]-P[i,j]) * numpy.sin(g) + (P[i,i]+P[j,j])*(numpy.cos(g)-1.0)
       return dZ
 
   def _form_X(self, i, j, gamma):
