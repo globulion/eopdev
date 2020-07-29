@@ -12,7 +12,7 @@ import numpy
 import psi4
 from ..density.dmft import DMFT
 from ..density.functional import XCFunctional
-from ..basis.optimize import *
+from ..basis.optimize import OEP, DFBasis, DFBasisOptimizer, oep_ao_basis_set_optimizer
 
 __all__ = ["dmft_solver", "gdf_basisset_optimizer"]
 
@@ -280,7 +280,8 @@ def gdf_basisset_optimizer(mol, oep_type,
                            templ_file='templ.dat', param_file='param.dat', 
                            bounds_file=None, constraints=(),
                            exp_lower_bound=None, exp_upper_bound=None, 
-                           ctr_lower_bound=None, ctr_upper_bound=None):
+                           ctr_lower_bound=None, ctr_upper_bound=None,
+                           old_interface=False, use_standardized_inputs=True):
     """
  ---------------------------------------------------------------------------------------------
  Fit the auxiliary basis set for GDF-OEP purposes.
@@ -387,8 +388,8 @@ def gdf_basisset_optimizer(mol, oep_type,
 
     # extract the intermediate basis set
     puream = psi4.core.get_global_option("PUREAM")
-    basis_gdf_int = psi4.core.BasisSet.build(mol, "BASIS", basis_int, fitrole='ORBITAL', puream=puream)
-    basis_gdf_xpl = psi4.core.BasisSet.build(mol, "BASIS", basis_xpl, fitrole='ORBITAL', puream=puream)
+    basis_gdf_int = psi4.core.BasisSet.build(mol, "BASIS", basis_int, fitrole='ORBITAL', puream=puream, quiet=True)
+    basis_gdf_xpl = psi4.core.BasisSet.build(mol, "BASIS", basis_xpl, fitrole='ORBITAL', puream=puream, quiet=True)
     
     # prepare the system
     if basis is None: basis = psi4.core.get_global_option("BASIS")
@@ -402,32 +403,45 @@ def gdf_basisset_optimizer(mol, oep_type,
     if ctr_upper_bound is not None: DFBasis.ctr_upper_bound = ctr_upper_bound
  
     # fit the auxiliary basis
-    dfbasis = DFBasis(w_hf.molecule(), templ_file=templ_file, param_file=param_file,
-                                       bounds_file=bounds_file, constraints=constraints)
+    if old_interface:
+       dfbasis = DFBasis(w_hf.molecule(), templ_file=templ_file, param_file=param_file,                         
+                                          bounds_file=bounds_file, constraints=constraints)
+                                                                                                                
+       OEP.read_vints = True
+       oep     = OEP.create(oep_type, w_hf, dfbasis)
+       #oep.compute()
+       oep.compute_and_save_V()
+       opt     = DFBasisOptimizer(oep)
+                                                                                                                
+       success = opt.fit(maxiter, tolerance, method, opt_global, temperature, stepsize, take_step, accept_test)
+       
+       # fetch the optimal basis
+       basis_gdf_aux = opt.oep.dfbasis.basis
+       
+       # compute error for intermediate basis
+       Z_aux = opt.compute_error(basis_gdf_aux, rms=True)
+       Z_xpl = opt.compute_error(basis_gdf_xpl, rms=True)
+       Z_int = opt.compute_error(basis_gdf_int, rms=True)
+                                                                                                                
+       # print the test results
+       print(" Error for auxiliary    basis = %14.6f  Size: %6d" % (Z_aux, basis_gdf_aux.nbf()))
+       print(" Error for example      basis = %14.6f  Size: %6d" % (Z_xpl, basis_gdf_xpl.nbf()))
+       print(" Error for intermediate basis = %14.6f  Size: %6d" % (Z_int, basis_gdf_int.nbf()))
+       print(opt.oep.dfbasis.print())
+                                                                                                                
+       # save
+       if out is not None: opt.oep.dfbasis.save(out)
 
-    OEP.read_vints = True
-    oep     = OEP.create(oep_type, w_hf, dfbasis)
-    #oep.compute()
-    oep.compute_and_save_V()
-    opt     = DFBasisOptimizer(oep)
+       dfbasis_opt = opt.oep.dfbasis
 
-    success = opt.fit(maxiter, tolerance, method, opt_global, temperature, stepsize, take_step, accept_test)
-    
-    # fetch the optimal basis
-    basis_gdf_aux = opt.oep.dfbasis.basis
-    
-    # compute error for intermediate basis
-    Z_aux = opt.compute_error(basis_gdf_aux, rms=True)
-    Z_xpl = opt.compute_error(basis_gdf_xpl, rms=True)
-    Z_int = opt.compute_error(basis_gdf_int, rms=True)
+    else:
 
-    # print the test results
-    print(" Error for auxiliary    basis = %14.6f  Size: %6d" % (Z_aux, basis_gdf_aux.nbf()))
-    print(" Error for example      basis = %14.6f  Size: %6d" % (Z_xpl, basis_gdf_xpl.nbf()))
-    print(" Error for intermediate basis = %14.6f  Size: %6d" % (Z_int, basis_gdf_int.nbf()))
-    print(opt.oep.dfbasis.print())
+       target = "OCC" if oep_type.lower() == "pauli" else "VIR"
+       if use_standardized_inputs: raise NotImplementedError
 
-    # save
-    if out is not None: opt.oep.dfbasis.save(out)
+       dfbasis_opt, err, GB = gefp.basis.optimize.oep_ao_basis_set_optimizer(\
+           w_hf, interm=basis_gdf_int, test=basis_gdf_int, exemplary=basis_gdf_xpl, target=target, cpp=True, more_info=True,
+              templ_file=templ_file, param_file=param_file,
+              opt_global=opt_global) # bounds_file = 
 
-    return opt.oep.dfbasis
+    return dfbasis_opt

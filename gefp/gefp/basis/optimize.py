@@ -150,8 +150,9 @@ class DFBasis:
 # -------------------------------------------------------------------------------------------- #
 
 def oep_ao_basis_set_optimizer(wfn, interm, 
-                  test=None, exemplary=None, target="OCC", cpp=False, more_info=False, quambo=False,
-                  templ_file='templ.dat', param_file='param.dat', outname='basis.gbs'):
+                  test=None, exemplary=None, target="OCC", cpp=False, more_info=False, 
+                  templ_file='templ.dat', param_file='param.dat', outname='basis.gbs',
+                  opt_global=False):
     """
  Method that optimizes DF basis set.
  This is currently the state-of-the-art and recommended.
@@ -163,7 +164,23 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     if exemplary is None:
        exemplary = wfn.basisset()
 
-    if quambo:
+    do_quambo = bool(psi4.core.get_global_option("EFP2_WITH_VVO"))
+    if do_quambo:
+       quambo_solver = oepdev.QUAMBO.build(wfn, bool(psi4.core.get_global_option("QUAMBO_ACBS")))
+       quambo_solver.compute()
+       Ca = quambo_solver.Ca_subset("AO", target).to_array(dense=True)        # Here are the target orbitals
+       localize = False
+    else:
+       localize = bool(psi4.core.get_global_option("OEPDEV_LOCALIZE"))
+       if localize:
+          localizer = psi4.core.Localizer.build("BOYS", wfn.basisset(), wfn.Ca_subset("AO", target))
+          localizer.localize()
+          Ca = localizer.L.to_array(dense=True)
+       else:
+          Ca = wfn.Ca_subset("AO", target).to_array(dense=True)                  # Here are the target orbitals
+          
+
+    if opt_global:
        raise NotImplementedError #TODO
     
 
@@ -178,7 +195,6 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     # t - test (AO)
     # e - example AO basis
 
-    Ca = wfn.Ca_subset("AO", target).to_array(dense=True)                  # Here are the target orbitals
 
     primary = wfn.basisset()
 
@@ -309,6 +325,12 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     print(" Test              %30s  %4d" % (test     .name(), test     .nbf()))
     print(" Example           %30s  %4d" % (exemplary.name(), exemplary.nbf()))
     print(" Optimized         %30s  %4d" % (auxiliary.name(), auxiliary.nbf()))
+    print()
+    print(" Settings")
+    print(" --------")
+    print(" Target              %s" % target)
+    print(" Use QUAMBO?         %r" % do_quambo)
+    print(" Localized?          %r" % localize)
     print()
     print(" Objective Function")
     print(" ------------------")
