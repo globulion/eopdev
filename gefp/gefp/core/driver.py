@@ -441,7 +441,7 @@ def gdf_basisset_optimizer(mol, oep_type,
 
        dfbasis_opt, err, GB = gefp.basis.optimize.oep_ao_basis_set_optimizer(\
            w_hf, interm=basis_gdf_int, test=basis_gdf_int, exemplary=basis_gdf_xpl, target=target, cpp=True, more_info=True,
-              templ_file=templ_file, param_file=param_file,
-              opt_global=opt_global) # bounds_file = 
+              templ_file=templ_file, param_file=param_file, bound_file=bounds_file, constraints=constraints,
+              opt_global=opt_global, use_standardized_inputs=use_standardized_inputs) 
 
     return dfbasis_opt

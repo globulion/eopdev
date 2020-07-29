@@ -151,8 +151,8 @@ class DFBasis:
 
 def oep_ao_basis_set_optimizer(wfn, interm, 
                   test=None, exemplary=None, target="OCC", cpp=False, more_info=False, 
-                  templ_file='templ.dat', param_file='param.dat', outname='basis.gbs',
-                  opt_global=False):
+                  templ_file='templ.dat', param_file='param.dat', bound_file=None, constraints=(), outname='basis.gbs',
+                  opt_global=False, use_standardized_inputs=True):
     """
  Method that optimizes DF basis set.
  This is currently the state-of-the-art and recommended.
@@ -182,7 +182,9 @@ def oep_ao_basis_set_optimizer(wfn, interm,
 
     if opt_global:
        raise NotImplementedError #TODO
-    
+    if use_standardized_inputs:
+       raise NotImplementedError #TODO
+   
 
     print("\n ===> Auxiliary Basis Set Optimization Routine <===\n")
 
@@ -220,7 +222,7 @@ def oep_ao_basis_set_optimizer(wfn, interm,
    # g = G
 
     # optimize aux_mini (AO)
-    dfbasis = DFBasis(wfn.molecule(), templ_file, param_file)
+    dfbasis = DFBasis(wfn.molecule(), templ_file, param_file, bounds_file=bound_file, constraints=constraints)
     param_0 = dfbasis.param
 
     TIME = -time.time()
@@ -331,6 +333,7 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     print(" Target              %s" % target)
     print(" Use QUAMBO?         %r" % do_quambo)
     print(" Localized?          %r" % localize)
+    print(" Global opt?         %r" % opt_global)
     print()
     print(" Objective Function")
     print(" ------------------")
