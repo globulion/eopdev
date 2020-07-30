@@ -107,6 +107,7 @@ standard_bounds_codes_by_row[4] =(7*b1).split()
 
 standard_guess_parameters_by_atom = {}
 reference_symbol_by_row = {}
+s = 0.3
 
 # EFP2-OEP (Repulsion)
 reference_symbol_by_row["efp2-rep"] = {}
@@ -114,23 +115,43 @@ reference_symbol_by_row["efp2-rep"][1] = "H"
 reference_symbol_by_row["efp2-rep"][2] = "O"
 reference_symbol_by_row["efp2-rep"][3] = "S"
 reference_symbol_by_row["efp2-rep"][4] = "K"
+standard_scales_by_row = {}
+standard_scales_by_row["efp2-rep"] = {}
+standard_scales_by_row["efp2-rep"][1] = \
+  [3.00, s, 
+   2.00, s, 
+   1.00, s]
+standard_scales_by_row["efp2-rep"][2] = \
+  [300.00, s, 
+    60.00, s, 
+    10.00, s,
+   
+    30.00, s,
+     5.00, s,
+     1.00, s,
+
+    30.00, s,
+     5.00, s,
+     1.00, s,]
+standard_scales_by_row["efp2-rep"][3] = []
+standard_scales_by_row["efp2-rep"][4] = []
 standard_guess_parameters_by_atom["efp2-rep"] = {}
 standard_guess_parameters_by_atom["efp2-rep"]["H"] = [\
 12.8   ,          0.43, 
  1.23  ,          0.48, 
- 0.24  ,          0.09,]
+ 0.24  ,          1.00-0.43-0.48,]
 standard_guess_parameters_by_atom["efp2-rep"]["O"] = [\
-1266.6 ,          0.42         , 
-123.55 ,          0.36         ,
-22.41  ,          0.22         ,
-10.21  ,          0.19         ,
-3.13   ,          0.50         ,
-0.83   ,          0.31         ,
-62.8   ,          0.24         ,
-9.91   ,          0.45         ,
-1.79   ,          0.31         ,]
-standard_guess_parameters_by_atom["efp2-rep"]["C"] = []
-standard_guess_parameters_by_atom["efp2-rep"]["N"] = []
+1266.6 ,          0.42, 
+123.55 ,          0.36,
+22.41  ,          1.00-0.42-0.36,
+10.21  ,          0.19,
+3.13   ,          0.50,
+0.83   ,          1.00-0.19-0.50,
+62.8   ,          0.24,
+9.91   ,          0.45,
+1.79   ,          1.00-0.24-0.45,]
+standard_guess_parameters_by_atom["efp2-rep"]["C"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
+standard_guess_parameters_by_atom["efp2-rep"]["N"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
 standard_guess_parameters_by_atom["efp2-rep"]["S"] = []
 
 # EFP2-OEP (Charge Transfer)
@@ -139,11 +160,16 @@ reference_symbol_by_row["efp2-ct"][1] = "H"
 reference_symbol_by_row["efp2-ct"][2] = "O"
 reference_symbol_by_row["efp2-ct"][3] = "S"
 reference_symbol_by_row["efp2-ct"][4] = "K"
+standard_scales_by_row["efp2-ct"] = {}
+standard_scales_by_row["efp2-ct"][1] = standard_scales_by_row["efp2-rep"][1]
+standard_scales_by_row["efp2-ct"][2] = standard_scales_by_row["efp2-rep"][2]
+standard_scales_by_row["efp2-ct"][3] = standard_scales_by_row["efp2-rep"][3]
+standard_scales_by_row["efp2-ct"][4] = standard_scales_by_row["efp2-rep"][4]
 standard_guess_parameters_by_atom["efp2-ct"] = {}
-standard_guess_parameters_by_atom["efp2-ct"]["H"] = []
-standard_guess_parameters_by_atom["efp2-ct"]["O"] = []
-standard_guess_parameters_by_atom["efp2-ct"]["C"] = []
-standard_guess_parameters_by_atom["efp2-ct"]["N"] = []
+standard_guess_parameters_by_atom["efp2-ct"]["H"] = standard_guess_parameters_by_atom["efp2-rep"]["H"]
+standard_guess_parameters_by_atom["efp2-ct"]["O"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
+standard_guess_parameters_by_atom["efp2-ct"]["C"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
+standard_guess_parameters_by_atom["efp2-ct"]["N"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
 standard_guess_parameters_by_atom["efp2-ct"]["S"] = []
 
 # EET
@@ -162,6 +188,7 @@ class StandardizedInput:
       self.parameters = None
       self.constraints = None
       self.bounds_codes = None
+      self.scales = None
       self.prepare_standard_template_and_starting_parameters()
 
   def prepare_standard_template_and_starting_parameters(self):
@@ -173,6 +200,7 @@ class StandardizedInput:
       template = "cartesian\n****\n"
       parameters = []
       bounds_codes = []
+      scales = []
 
       for symbol in atoms:
           I = self.get_row(symbol)
@@ -187,11 +215,33 @@ class StandardizedInput:
              parameters += standard_guess_parameters_by_atom[self.oep_type][reference_symbol]
 
           bounds_codes += standard_bounds_codes_by_row[I]
+          scales += standard_scales_by_row[self.oep_type][I]
   
       self.parameters = numpy.array(parameters)
       self.template = template
       self.bounds_codes = numpy.array(bounds_codes, dtype=str)
-      self.constraints = ()
+      self.scales = numpy.array(scales)
+      self.constraints = self.get_constraints(scales)
+
+  def get_constraints(self, scales):
+      constraints = []
+      #idx = list(range(1,len(scales),2))
+      #n_constraints = int(len(idx)/3)
+      def const(x):
+          i = int(x.size/6)
+         #t = (x[1::2].reshape(i,3).sum(axis=1) - 1.0).prod()
+          t = (x[1::2].reshape(i,3).sum(axis=1) - 1.0)
+          t = t * t
+          return t.sum()
+          
+      #for n in range(n_constraints):
+      #    i = idx[3*n]
+      #    print(i)
+      #    constraint = {'type':'eq', 'fun': lambda x: x[i+0] + x[i+2] + x[i+4] - 1.0}
+      #    constraints.append(constraint)
+      #exit()
+      constraints.append({'type':'eq', 'fun': const})
+      return constraints
 
   def get_row(self, symbol):
       I = None
@@ -212,38 +262,26 @@ class StandardizedInput:
 
 
     
-class TakeMyStep(object):
-   def __init__(self, stepsize=1.0):
+class TakeMyStandardSteps(object):
+   def __init__(self, scales, stepsize=1.0):
        self.stepsize = stepsize
+       self.__scales = scales
    def __call__(self, x):
        s = self.stepsize
-       #x[0] += numpy.random.uniform(-2.*s, 2.*s)
-       #x[1:] += numpy.random.uniform(-s, s, x[1:].shape)
-       x[ 0] += self._b(1.00    )   # H  1s
-       x[ 1] += self._b(4.00    )   # H  1p
-       x[ 2] += self._b(200.0   )   # N  1s
-       x[ 3] += self._b(30.0    )   # N  2s
-       x[ 4] += self._b(10.0    )   # N  2p.1
-       x[ 5] += self._b(10.0    )   # N  2p.2
-       x[ 6] += self._b(10.0    )   # N  3d
+       for i in range(len(self.__scales)):
+           x[i] += self._b(self.__scales[i])
        return x
    def _b(self, a):
        return numpy.random.uniform(-a*self.stepsize, a*self.stepsize)
 
-class MyBounds(object):
-    def __init__(self):
-        xmin = [0.02]*7
-        xmax = [2500.0]*7
-        self.xmax = numpy.array(xmax)
-        self.xmin = numpy.array(xmin)
-    def __call__(self, **kwargs):
-        x = kwargs["x_new"]
-        tmax = bool(numpy.all(x <= self.xmax))
-        tmin = bool(numpy.all(x >= self.xmin))
-        return tmax and tmin
-
-
-mystep = TakeMyStep()
-mytest = MyBounds()
-
-
+#class MyBounds(object):
+#    def __init__(self):
+#        xmin = [0.02]*7
+#        xmax = [2500.0]*7
+#        self.xmax = numpy.array(xmax)
+#        self.xmin = numpy.array(xmin)
+#    def __call__(self, **kwargs):
+#        x = kwargs["x_new"]
+#        tmax = bool(numpy.all(x <= self.xmax))
+#        tmin = bool(numpy.all(x >= self.xmin))
+#        return tmax and tmin

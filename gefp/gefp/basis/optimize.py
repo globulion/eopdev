@@ -85,11 +85,15 @@ class DFBasis:
          # parameter constraints
          self.constraints = constraints
 
+         # scales for TakeMyStep
+         self.scales = numpy.ones(self.n_param)
+
       else:
          self.templ = standardized_input.template
          self.param = standardized_input.parameters
          self.bounds = self._make_bounds(standardized_input.bounds_codes)
          self.constraints = standardized_input.constraints
+         self.scales = standardized_input.scales
          self.n_param = len(self.param)
 
       # current basis set
@@ -196,7 +200,7 @@ def oep_ao_basis_set_optimizer(wfn, interm,
           
     # Optimization type
     if opt_global:
-       raise NotImplementedError #TODO
+       pass
 
     # Auxiliary AO basis set structure
     if standardized_input is not None:
@@ -242,7 +246,7 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     # ---> optimize < --- #
 
     TIME = -time.time()
-    dfbasis = edf.optimize_ao_mini(T, interm, dfbasis, cpp)
+    dfbasis = edf.optimize_ao_mini(T, interm, dfbasis, opt_global, cpp)
     TIME += time.time()
 
 
