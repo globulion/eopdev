@@ -15,6 +15,7 @@ import scipy.optimize
 import oepdev
 from . import edf
 from . import _util
+from . import parameters
 
 __all__ = ["DFBasis", "oep_ao_basis_set_optimizer", "DFBasisOptimizer", "OEP"]
 
@@ -57,7 +58,7 @@ class DFBasis:
 
   def __init__(self, mol, 
                      templ_file='templ.dat', param_file='param.dat', bounds_file=None, 
-                     constraints=()):
+                     constraints=(), standardized_input=None):
       "Initialize"
       # ensure physical values are set
       assert(self.exp_lower_bound > 0.0), "Orbital exponents cannot be negative or zero!"
@@ -65,21 +66,31 @@ class DFBasis:
       # bound molecule to this basis set
       self.mol= mol
 
-      # template for Psi4 input
-      self.templ = open(templ_file).read()
+      # read from standardized input?
+      if standardized_input is None:
 
-      # initial parameters input
-      self.param = self._read_input(param_file, dtype=numpy.float64)
-      self.n_param = len(self.param)
+         # template for Psi4 input                                                                    
+         self.templ = open(templ_file).read()
+                                                                                                      
+         # initial parameters input
+         self.param = self._read_input(param_file, dtype=numpy.float64)
+         self.n_param = len(self.param)
+                                                                                                      
+         # parameter bounds: if not provided assume only exponents
+         if bounds_file is None: 
+            self.bounds = [(self.exp_lower_bound, self.exp_upper_bound) for x in range(self.n_param)]
+         else: 
+            self.bounds= self._make_bounds(self._read_input(bounds_file, dtype=str))
+                                                                                                      
+         # parameter constraints
+         self.constraints = constraints
 
-      # parameter bounds: if not provided assume only exponents
-      if bounds_file is None: 
-         self.bounds = [(self.exp_lower_bound, self.exp_upper_bound) for x in range(self.n_param)]
-      else: 
-         self.bounds= self._make_bounds(self._read_input(bounds_file, dtype=str))
-
-      # parameter constraints
-      self.constraints = constraints
+      else:
+         self.templ = standardized_input.template
+         self.param = standardized_input.parameters
+         self.bounds = self._make_bounds(standardized_input.bounds_codes)
+         self.constraints = standardized_input.constraints
+         self.n_param = len(self.param)
 
       # current basis set
       self.basis = self.basisset()
@@ -126,7 +137,7 @@ class DFBasis:
       "Make list of bounds appropriate for optimization"
       bounds = []
       for item in bounds_codes:
-          print(item,bounds_codes)
+         #print(item,bounds_codes)
           item = item.lower()
           if item.startswith('e'):
                if len(item)==1:
@@ -152,18 +163,22 @@ class DFBasis:
 def oep_ao_basis_set_optimizer(wfn, interm, 
                   test=None, exemplary=None, target="OCC", cpp=False, more_info=False, 
                   templ_file='templ.dat', param_file='param.dat', bound_file=None, constraints=(), outname='basis.gbs',
-                  opt_global=False, use_standardized_inputs=True):
+                  opt_global=False, standardized_input=None):
     """
  Method that optimizes DF basis set.
  This is currently the state-of-the-art and recommended.
 """
 
-    # set up
+    # ---> set up < --- #
+
+    # Primary, test and exemplary AO basis sets
+    primary = wfn.basisset()
     if test is None:
        test = wfn.basisset()
     if exemplary is None:
        exemplary = wfn.basisset()
 
+    # Target orbitals
     do_quambo = bool(psi4.core.get_global_option("EFP2_WITH_VVO"))
     if do_quambo:
        quambo_solver = oepdev.QUAMBO.build(wfn, bool(psi4.core.get_global_option("QUAMBO_ACBS")))
@@ -173,22 +188,29 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     else:
        localize = bool(psi4.core.get_global_option("OEPDEV_LOCALIZE"))
        if localize:
-          localizer = psi4.core.Localizer.build("BOYS", wfn.basisset(), wfn.Ca_subset("AO", target))
+          localizer = psi4.core.Localizer.build("BOYS", primary, wfn.Ca_subset("AO", target))
           localizer.localize()
           Ca = localizer.L.to_array(dense=True)
        else:
           Ca = wfn.Ca_subset("AO", target).to_array(dense=True)                  # Here are the target orbitals
           
-
+    # Optimization type
     if opt_global:
        raise NotImplementedError #TODO
-    if use_standardized_inputs:
-       raise NotImplementedError #TODO
+
+    # Auxiliary AO basis set structure
+    if standardized_input is not None:
+       dfbasis = DFBasis(wfn.molecule(), standardized_input=standardized_input)
+    else:
+       dfbasis = DFBasis(wfn.molecule(), templ_file, param_file, bounds_file=bound_file, constraints=constraints)
+    param_0 = dfbasis.param
+
    
+    # ---> start < --- #
 
     print("\n ===> Auxiliary Basis Set Optimization Routine <===\n")
 
-    # Notation:
+    # Notation in comments:
     # T - target (MO)
     # p - primary (AO)
     # i - intermediate (AO)
@@ -196,9 +218,6 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     # M - minimal auxiliary (MO)
     # t - test (AO)
     # e - example AO basis
-
-
-    primary = wfn.basisset()
 
     no = Ca.shape[1]                                                       # number of target orbitals
     np = primary.nbf()
@@ -213,21 +232,21 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     G = numpy.linalg.inv(S_ii) @ V_iT                                      # (i, T)
     T = edf.find_aux_mo_mini(G, S_ii, I=None)                              # (i, M)
 
-    GM= T.T @ S_ii @ G                                                     # (M, T) #OK
-
-    g = T @ GM # = G                                                       # (i, T) #OK
+    GM= T.T @ S_ii @ G                                                     # (M, T)
 
    # these are true:
    # T.T @ S_ii @ T ===> identity matrix
-   # g = G
+   # g = T @ GM # = G                                                      # (i, T)
 
-    # optimize aux_mini (AO)
-    dfbasis = DFBasis(wfn.molecule(), templ_file, param_file, bounds_file=bound_file, constraints=constraints)
-    param_0 = dfbasis.param
+
+    # ---> optimize < --- #
 
     TIME = -time.time()
     dfbasis = edf.optimize_ao_mini(T, interm, dfbasis, cpp)
     TIME += time.time()
+
+
+    # ---> print solution < --- #
 
     auxiliary = dfbasis.basisset()
     param = dfbasis.param
@@ -258,6 +277,8 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     for i in range(len(param)):
         print("%15.3f %15.3f" % (param_0[i], param[i]))
 
+
+    # ---> tests < --- #
 
     print(" Running Tests")
     # test 1 
@@ -316,6 +337,9 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     Err = numpy.sqrt(Err.sum())
     Err_4 = Err
     print(" Total error 4 = %14.5f\n" % Err)
+
+
+    # ---> summary < --- #
 
     print(" Summary:")
     print(" ========")

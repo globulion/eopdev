@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """
  Local utilities (protected interface)
+
  BB, 29.07.2020, Gundelfingen
 """
 

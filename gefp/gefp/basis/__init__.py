@@ -7,6 +7,7 @@ Bartosz Błasiak, Dresden, 9 Jul 2019
 from . import optimize
 from . import quambo
 from . import edf
+from . import parameters
 
-__all__ = ["optimize", "quambo", "edf"]
+__all__ = ["optimize", "quambo", "edf", "parameters"]
 __author__="Bartosz Błasiak"

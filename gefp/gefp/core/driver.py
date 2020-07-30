@@ -13,6 +13,7 @@ import psi4
 from ..density.dmft import DMFT
 from ..density.functional import XCFunctional
 from ..basis.optimize import OEP, DFBasis, DFBasisOptimizer, oep_ao_basis_set_optimizer
+from ..basis.parameters import StandardizedInput
 
 __all__ = ["dmft_solver", "gdf_basisset_optimizer"]
 
@@ -281,7 +282,7 @@ def gdf_basisset_optimizer(mol, oep_type,
                            bounds_file=None, constraints=(),
                            exp_lower_bound=None, exp_upper_bound=None, 
                            ctr_lower_bound=None, ctr_upper_bound=None,
-                           old_interface=False, use_standardized_inputs=True):
+                           old_interface=False, use_standardized_input=True):
     """
  ---------------------------------------------------------------------------------------------
  Fit the auxiliary basis set for GDF-OEP purposes.
@@ -436,12 +437,16 @@ def gdf_basisset_optimizer(mol, oep_type,
 
     else:
 
-       target = "OCC" if oep_type.lower() == "pauli" else "VIR"
-       if use_standardized_inputs: raise NotImplementedError
+       # Updated procedure
 
-       dfbasis_opt, err, GB = gefp.basis.optimize.oep_ao_basis_set_optimizer(\
+       target = "OCC" if oep_type.lower() == "efp2-rep" else "VIR"
+       standardized_input = None
+       if use_standardized_input: 
+          standardized_input = StandardizedInput(mol, oep_type)
+
+       dfbasis_opt, err, GB = oep_ao_basis_set_optimizer(\
            w_hf, interm=basis_gdf_int, test=basis_gdf_int, exemplary=basis_gdf_xpl, target=target, cpp=True, more_info=True,
-              templ_file=templ_file, param_file=param_file, bound_file=bounds_file, constraints=constraints,
-              opt_global=opt_global, use_standardized_inputs=use_standardized_inputs) 
+              templ_file=templ_file, param_file=param_file, bound_file=bounds_file, constraints=constraints, outname=out,
+              opt_global=opt_global, standardized_input=standardized_input) 
 
     return dfbasis_opt
