@@ -124,8 +124,9 @@ void ChargeTransferEnergyOEPotential::compute_otto_ladik_v1_gdf()
 
    // ===> Perform The Generalized Density Fitting <=== // 
    std::shared_ptr<oepdev::GeneralizedDensityFit> gdf;
-   if (options_.get_str("OEPDEV_DF_TYPE") == "SINGLE") {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, V);}
-   else                                                {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, intermediate_, V);}
+   if      (options_.get_str("OEPDEV_DF_TYPE") == "SINGLE") {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, V);}
+   else if (options_.get_str("OEPDEV_DF_TYPE") == "DOUBLE") {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, intermediate_, V);}
+   else                                                     {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, intermediate_, V, 1);}
    std::shared_ptr<psi::Matrix> G = gdf->compute();
    
    // ===> Save and Finish <=== //

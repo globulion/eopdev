@@ -69,6 +69,7 @@ def obj_numpy(param, t_i, bsf_i, dfbasis):
     s_im = mints.ao_overlap(bsf_i, bsf_m).to_array(dense=True)
     s_mm = mints.ao_overlap(bsf_m, bsf_m).to_array(dense=True)
     t = projection(t_i, s_im, s_mm)
+   #o_mi = matrix_power(t,  1.0).real
     o_mi = matrix_power(t,  0.5).real
     return -o_mi.trace()
 
@@ -169,11 +170,11 @@ def optimize_ao_mini(t_i, bsf_i, dfbasis, opt_global, cpp=False):
                    options=options, bounds=dfbasis.bounds)
     else:
        take_step = parameters.TakeMyStandardSteps(dfbasis.scales)
-       res = scipy.optimize.basinhopping(OBJ, param_0, niter=30, 
+       res = scipy.optimize.basinhopping(OBJ, param_0, niter=10, 
                               T=0.02, stepsize=0.5,
                               minimizer_kwargs={"method": 'slsqp', "options": options,
                                   "bounds": dfbasis.bounds, "args": ARGS, "constraints": dfbasis.constraints},
-                              callback=None, interval=3, disp=True, niter_success=None,
+                              callback=None, interval=3 , disp=True, niter_success=None,
                               take_step=take_step ).lowest_optimization_result #, accept_test=accept_test)
        print(res.message)
        print(" Optimal Z = %14.6f" % res.fun)  

@@ -122,15 +122,15 @@ standard_scales_by_row["efp2-rep"][1] = \
    2.00, s, 
    1.00, s]
 standard_scales_by_row["efp2-rep"][2] = \
-  [300.00, s, 
-    60.00, s, 
-    10.00, s,
+  [ 80.00, s, 
+    10.00, s, 
+     2.00, s,
    
-    30.00, s,
+    24.00, s,
      5.00, s,
      1.00, s,
 
-    30.00, s,
+    20.00, s,
      5.00, s,
      1.00, s,]
 standard_scales_by_row["efp2-rep"][3] = []
@@ -171,6 +171,23 @@ standard_guess_parameters_by_atom["efp2-ct"]["O"] = standard_guess_parameters_by
 standard_guess_parameters_by_atom["efp2-ct"]["C"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
 standard_guess_parameters_by_atom["efp2-ct"]["N"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
 standard_guess_parameters_by_atom["efp2-ct"]["S"] = []
+
+# test
+standard_guess_parameters_by_atom["efp2-ct"]["H"] = [\
+12.8   ,          0.43, 
+1.323  ,          0.48, 
+ 6.24  ,          1.00-0.43-0.48,]
+standard_guess_parameters_by_atom["efp2-ct"]["N"] = [\
+ 800.6 ,          0.42, 
+ 67.55 ,          0.36,
+  2.1  ,          1.00-0.42-0.36,
+143.1  ,          0.19,
+66.3   ,          0.50,
+9.83   ,          1.00-0.19-0.50,
+40.8   ,          0.24,
+9.91   ,          0.45,
+1.79   ,          1.00-0.24-0.45,]
+
 
 # EET
 reference_symbol_by_row["eet"] = {}

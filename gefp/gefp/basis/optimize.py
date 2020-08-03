@@ -108,18 +108,20 @@ class DFBasis:
       self.basis = basis
       return basis
 
-  def print(self, param=None):
+  def print(self, param=None, misc=None):
       "Print basis set in Psi4 format"
       if param is None: param = self.param
       basis_str = make_bastempl(self.templ, param)
+      if misc is not None:
+         basis_str = "#%s\n" % misc + basis_str
       return basis_str
 
-  def save(self, out='oepfit.gbs', param=None):
+  def save(self, out='oepfit.gbs', param=None, misc=None):
       "Save basis set in Psi4 format to a file"
       nm = out[:-4]
       o  = open(out, 'w')
       o.write("[ %s ]\n" % nm)
-      o.write(self.print(param))
+      o.write(self.print(param, misc))
       o.close()
       return
 
@@ -254,10 +256,10 @@ def oep_ao_basis_set_optimizer(wfn, interm,
 
     auxiliary = dfbasis.basisset()
     param = dfbasis.param
-    dfbasis.save(outname)
 
     z_opt = -edf.obj_numpy(param, T, interm, dfbasis)
     z_max = T.shape[1]
+    dfbasis.save(outname, misc=" Z_opt = %14.6f / %14.6f" % (z_opt, z_max))
 
     mints = psi4.core.MintsHelper(interm)
     s_im  = mints.ao_overlap(interm, auxiliary).to_array(dense=True)

@@ -711,14 +711,14 @@ extern "C" PSI_API
 double bs_optimize_projection(std::shared_ptr<psi::Matrix> ti,
                 std::shared_ptr<psi::MintsHelper> mints, 
                 std::shared_ptr<psi::BasisSet> bsf_m, std::shared_ptr<psi::BasisSet> bsf_i) {
- psi::SharedMatrix s_im = mints->ao_overlap(bsf_i, bsf_m);
- psi::SharedMatrix s_mm = mints->ao_overlap(bsf_m, bsf_m); s_mm->invert();
- psi::SharedMatrix A = psi::Matrix::doublet(ti, s_im, true, false);
- psi::SharedMatrix B = psi::Matrix::doublet(A, s_mm, false, false);
- psi::SharedMatrix t = psi::Matrix::doublet(B, A, false, true);
- t->power(0.50000000000000);
- double z = -t->trace();
- return z;
+   psi::SharedMatrix s_im = mints->ao_overlap(bsf_i, bsf_m);                 
+   psi::SharedMatrix s_mm = mints->ao_overlap(bsf_m, bsf_m); s_mm->invert();
+   psi::SharedMatrix A = psi::Matrix::doublet(ti, s_im, true, false);
+   psi::SharedMatrix B = psi::Matrix::doublet(A, s_mm, false, false);
+   psi::SharedMatrix t = psi::Matrix::doublet(B, A, false, true);
+   t->power(0.50000000000000);
+   double z = -t->trace();
+   return z;
 }
 
 

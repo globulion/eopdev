@@ -66,7 +66,7 @@ int read_options(std::string name, Options& options)
         /*- MO Localizer for OEP-Based CT Solver -*/
         options.add_str    ("WFN_UNION_LOCALIZER"   , "BOYS"                     );
         options.add_str    ("SOLVER_CT_LOCALIZER"   , "BOYS"                     );
-        options.add_int    ("OEPDEV_LOCALIZER_MAXITER", 1000                     );
+        options.add_int    ("OEPDEV_LOCALIZER_MAXITER", 10000                    );
       //options.add_bool   ("OEPDEV_OEP_REP_LOCALIZE", false                     ); -> not sure if to introduce this
 
         /*- Type of EFP potential integrals used in CT energy calculations -*/

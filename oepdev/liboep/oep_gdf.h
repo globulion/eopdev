@@ -55,6 +55,18 @@ class GeneralizedDensityFit
                                                         std::shared_ptr<psi::BasisSet> bs_intermediate,
                                                         std::shared_ptr<psi::Matrix> v_vector);
 
+    /**\brief Factory for Overlap GDF Computer.
+     * @param bs_auxiliary    - auxiliary basis set
+     * @param bs_intermediate - intermediate basis set
+     * @param v_vector        - the matrix with \f$ V_{\epsilon i} \f$ elements
+     * @param dummy           - a dummy variable (not used)
+     * @return Generalized Density Fit Computer.
+     */
+    static std::shared_ptr<GeneralizedDensityFit> build(std::shared_ptr<psi::BasisSet> bs_auxiliary,
+                                                        std::shared_ptr<psi::BasisSet> bs_intermediate,
+                                                        std::shared_ptr<psi::Matrix> v_vector, int dummy);
+
+
     /// Constructor. Initializes the pointers
     GeneralizedDensityFit();
 
@@ -224,6 +236,47 @@ class DoubleGeneralizedDensityFit : public GeneralizedDensityFit
     virtual ~DoubleGeneralizedDensityFit();
     std::shared_ptr<psi::Matrix> compute(void);
 };
+
+
+/**\brief Generalized Density Fitting Scheme - Single Fit Based on Minimal Overlap in MO Basis.
+ * 
+ * The density fitting map projects the OEP onto an arbitrary (not necessarily complete) auxiliary
+ * basis set space through application of the basis projection technique.
+ * Refer to \ref pdensityfitting "density fitting specialized for OEP's" for more details.
+ *
+ * \section overlapgdf Determination of the OEP matrix
+ *
+ * Coefficients \f$ {\bf G} \f$ are computed by using the following relation
+ * \f[
+ *   {\bf G} = {\bf T}_{{\rm m}\tilde{\rm B}}  \cdot
+ *             {\bf S}_{\tilde{\rm B}\tilde{\rm B}}^{-1} \cdot {\bf T}_{{\rm m}\tilde{\rm B}}^\dagger 
+ *             \cdot {\bf S}_{\rm mi}
+ *             \cdot {\bf G}_{\rm i}
+ * \f]
+ * where the intermediate projection matrix is given by
+ * \f[
+ *  {\bf G}_{\rm i} = {\bf S}_{\rm ii}^{-1} \cdot {\bf V}_{\rm i}
+ * \f]
+ * In the above equations,
+ * TODO
+ *
+ * The spatial form of the potential operator \f$ \hat{v} \f$ can be expressed by
+ * \f[
+ *    v({\bf r}) \equiv  \int d{\bf r}' \frac{\rho({\bf r}')}{\vert {\bf r}' - {\bf r} \vert}
+ * \f]
+ * with \f$ \rho({\bf r}) \f$ being the effective one-electron density associated with \f$ \hat{v} \f$.
+ * 
+ */
+class OverlapGeneralizedDensityFit : public GeneralizedDensityFit
+{
+  public: 
+    OverlapGeneralizedDensityFit(std::shared_ptr<psi::BasisSet> bs_auxiliary,
+                                 std::shared_ptr<psi::BasisSet> bs_intermediate,
+                                 std::shared_ptr<psi::Matrix> v_vector);
+    virtual ~OverlapGeneralizedDensityFit();
+    std::shared_ptr<psi::Matrix> compute(void);
+};
+
 /** @}*/
 } // EndNameSpace oepdev
 

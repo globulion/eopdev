@@ -175,8 +175,9 @@ void EETCouplingOEPotential::compute_fujimoto_gdf()
 
    // ===> Perform The Generalized Density Fitting <=== // 
    std::shared_ptr<oepdev::GeneralizedDensityFit> gdf;
-   if (options_.get_str("OEPDEV_DF_TYPE") == "SINGLE") {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, vao);}
-   else                                                {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, intermediate_,vao);}
+   if      (options_.get_str("OEPDEV_DF_TYPE") == "SINGLE") {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, vao);}
+   else if (options_.get_str("OEPDEV_DF_TYPE") == "DOUBLE") {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, intermediate_, vao);}
+   else                                                     {gdf = oepdev::GeneralizedDensityFit::build(auxiliary_, intermediate_, vao, 1);}
    std::shared_ptr<psi::Matrix> G = gdf->compute();
    
    // ===> Save and Finish <=== //

@@ -1426,7 +1426,7 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
      psi::outfile->Printf("     E (A-->B)   = %13.6f\n", e_ab                           );
      psi::outfile->Printf("     E (B-->A)   = %13.6f\n", e_ba                           );
    //psi::outfile->Printf("     -------------------------------\n"                      );
-     psi::outfile->Printf("     E_TOT       = %13.6f\n", e_tot                          );
+     psi::outfile->Printf("     E_CT        = %13.6f\n", e_tot                          );
      psi::outfile->Printf("     -------------------------------\n"                      );
      psi::outfile->Printf("\n");
 }

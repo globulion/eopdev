@@ -1,6 +1,9 @@
 #include "oep_gdf.h"
 #include <iostream>
 
+#include "psi4/libmints/vector.h"
+#include "psi4/libmints/mintshelper.h"
+
 using namespace oepdev;
 
 // GeneralizedDensityFit - Abstract Base
@@ -105,6 +108,76 @@ std::shared_ptr<psi::Matrix> DoubleGeneralizedDensityFit::compute(void)
   // Return
   return G_;
 }
+// OverlapGeneralizedDensityFit
+OverlapGeneralizedDensityFit::OverlapGeneralizedDensityFit(
+  std::shared_ptr<psi::BasisSet> bs_auxiliary,
+  std::shared_ptr<psi::BasisSet> bs_intermediate,
+  std::shared_ptr<psi::Matrix> v_vector)
+ : GeneralizedDensityFit()
+{
+  n_i_ = v_vector->nrow();
+  n_o_ = v_vector->ncol();
+  n_a_ = bs_auxiliary->nbf();
+  bs_a_= bs_auxiliary;
+  bs_i_= bs_intermediate;
+  if (n_i_ != bs_i_->nbf()) throw psi::PSIEXCEPTION("The size of intermediate basis set must be equal to the number of rows of V matrix!");
+  V_   = std::make_shared<psi::Matrix>(v_vector);
+}
+OverlapGeneralizedDensityFit::~OverlapGeneralizedDensityFit() {}
+std::shared_ptr<psi::Matrix> OverlapGeneralizedDensityFit::compute(void)
+{
+  // Compute overlap integrals between intermediate basis functions
+  ints_ii_ = std::make_shared<oepdev::IntegralFactory>(bs_i_);
+  std::shared_ptr<psi::Matrix> S_ii = std::make_shared<psi::Matrix>("S", n_i_, n_i_);
+  std::shared_ptr<psi::OneBodyAOInt> p(ints_ii_->ao_overlap()) ; p->compute(S_ii); 
+  psi::SharedMatrix S_ii_copy = S_ii->clone();
+  this->invert_matrix(S_ii);
+
+  // Perform 1st GDF
+  H_ = psi::Matrix::doublet(S_ii, V_, false, false); 
+
+  // Find matrix T_i
+  psi::SharedMatrix x = S_ii_copy->clone(); x->power(-0.5000000);
+  psi::SharedMatrix y = S_ii_copy->clone(); y->power( 0.5000000);
+  psi::SharedMatrix h = psi::Matrix::doublet(y, H_, false, false);
+  psi::SharedMatrix c = psi::Matrix::doublet(h, h, false, true);
+  const int n = c->nrow();
+  psi::SharedVector l = std::make_shared<psi::Vector>("", n);
+  psi::SharedMatrix u = std::make_shared<psi::Matrix>("", n, n);
+  c->diagonalize(u, l, psi::diagonalize_order::descending);
+  const double eps = 1.0e-7;
+  int I = 0;
+  for (int i=0; i<n; ++i) {
+       if (l->get(i) < eps) break;
+       I += 1;
+  }
+  psi::SharedMatrix T_i_ = std::make_shared<psi::Matrix>("", n, I);
+  for (int i=0; i<I; ++i) {
+       psi::SharedVector col = u->get_column(0, i);
+       T_i_->set_column(0, i, col);
+  }
+  psi::SharedMatrix T_i = psi::Matrix::doublet(x, T_i_, false, false);
+  T_i_.reset(); l.reset(); u.reset();
+
+  // Find matrix T_m
+  std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(bs_i_);
+  psi::SharedMatrix s_im = mints->ao_overlap(bs_i_, bs_a_);                 
+  psi::SharedMatrix s_mm = mints->ao_overlap(bs_a_, bs_a_); s_mm->invert();
+  psi::SharedMatrix A = psi::Matrix::doublet(T_i, s_im, true, false);
+  psi::SharedMatrix B = psi::Matrix::doublet(A, s_mm, false, false);
+  psi::SharedMatrix S_BBm = psi::Matrix::doublet(B, A, false, true);
+  S_BBm->power(-0.50000000000000);
+  psi::SharedMatrix Y = psi::Matrix::triplet(s_mm, s_im, T_i, false, true, false);
+  psi::SharedMatrix T_m = psi::Matrix::doublet(Y, S_BBm, false, false);
+
+  // Find approximate G
+  psi::SharedMatrix C = psi::Matrix::triplet(T_m, S_BBm, T_m, false, false, true);
+  G_ = psi::Matrix::triplet(C, s_im, H_, false, true, false);
+
+  // Return
+  return G_;
+}
+
 // Static Factory Methods
 std::shared_ptr<GeneralizedDensityFit> 
 GeneralizedDensityFit::build(std::shared_ptr<psi::BasisSet> bs_auxiliary,
@@ -119,4 +192,11 @@ GeneralizedDensityFit::build(std::shared_ptr<psi::BasisSet> bs_auxiliary,
 {
   return std::make_shared<DoubleGeneralizedDensityFit>(bs_auxiliary, bs_intermediate, v_vector);
 }
-
+std::shared_ptr<GeneralizedDensityFit>
+GeneralizedDensityFit::build(std::shared_ptr<psi::BasisSet> bs_auxiliary,
+                             std::shared_ptr<psi::BasisSet> bs_intermediate,
+                             std::shared_ptr<psi::Matrix> v_vector,
+                             int dummy)
+{
+  return std::make_shared<OverlapGeneralizedDensityFit>(bs_auxiliary, bs_intermediate, v_vector);
+}

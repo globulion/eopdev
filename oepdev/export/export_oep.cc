@@ -18,12 +18,14 @@ void export_oep(py::module &m) {
     using SharedMatrix   = std::shared_ptr<psi::Matrix>;
     typedef std::shared_ptr<oepdev::GeneralizedDensityFit> (*build_gdf_single)(                SharedBasisSet, SharedMatrix);
     typedef std::shared_ptr<oepdev::GeneralizedDensityFit> (*build_gdf_double)(SharedBasisSet, SharedBasisSet, SharedMatrix);
+    typedef std::shared_ptr<oepdev::GeneralizedDensityFit> (*build_gdf_ovrlap)(SharedBasisSet, SharedBasisSet, SharedMatrix, int);
 
     /* Class oepdev::GeneralizedDensityFit */
     py::class_<oepdev::GeneralizedDensityFit, std::shared_ptr<oepdev::GeneralizedDensityFit>> GDF(m, "GeneralizedDensityFit", "Generalized Density Fitting Method");
     GDF
 	.def_static("build_single", build_gdf_single(&oepdev::GeneralizedDensityFit::build), "Build GDF calculator. Single GDF scheme.", py::return_value_policy::take_ownership)
 	.def_static("build_double", build_gdf_double(&oepdev::GeneralizedDensityFit::build), "Build GDF calculator. Double GDF scheme.", py::return_value_policy::take_ownership)
+	.def_static("build_overlap", build_gdf_ovrlap(&oepdev::GeneralizedDensityFit::build), "Build GDF calculator. Double GDF scheme.", py::return_value_policy::take_ownership)
         .def("compute", &oepdev::GeneralizedDensityFit::compute, "Compute GDF matrix")
         .def("G", &oepdev::GeneralizedDensityFit::G, "Return GDF matrix", py::return_value_policy::take_ownership)
     ;
