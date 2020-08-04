@@ -174,7 +174,7 @@ def optimize_ao_mini(t_i, bsf_i, dfbasis, opt_global, cpp=False):
                               T=0.02, stepsize=0.5,
                               minimizer_kwargs={"method": 'slsqp', "options": options,
                                   "bounds": dfbasis.bounds, "args": ARGS, "constraints": dfbasis.constraints},
-                              callback=None, interval=3 , disp=True, niter_success=None,
+                              callback=None, interval=30, disp=True, niter_success=None,
                               take_step=take_step ).lowest_optimization_result #, accept_test=accept_test)
        print(res.message)
        print(" Optimal Z = %14.6f" % res.fun)  

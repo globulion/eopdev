@@ -8,6 +8,7 @@ from . import optimize
 from . import quambo
 from . import edf
 from . import parameters
+from . import template
 
 __all__ = ["optimize", "quambo", "edf", "parameters"]
 __author__="Bartosz Błasiak"

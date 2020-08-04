@@ -160,8 +160,9 @@ void ChargeTransferEnergyOEPotential::compute_otto_ladik_v3_camm_nj()
             double** oed_p = oed->pointer();
             for (int a=0; a<nbf; ++a) {
             for (int b=0; b<nbf; ++b) {
-               //oed_p[a][b] =(lOcc_->get(a,j) * cVir_->get(b,n) + lOcc_->get(b,j) * cVir_->get(a,n)) / 2.0;
-                 oed_p[a][b] = lOcc_->get(a,j) * cVir_->get(b,n);
+                 oed_p[a][b] =(lOcc_->get(a,j) * cVir_->get(b,n) + lOcc_->get(b,j) * cVir_->get(a,n)) / 2.0;
+               //oed_p[a][b] = lOcc_->get(a,j) * cVir_->get(b,n);
+               //oed_p[a][b] = lOcc_->get(b,j) * cVir_->get(a,n);
             }}
             oeds.push_back(oed);
        }

@@ -277,7 +277,7 @@ std::vector<psi::SharedMolecule> QUAMBO::atomize_(void) {
           log  = oepdev::string_sprintf("\n0 %i\n", m+1);
           log += coord_log + endline;
                                                                                                       
-          cout << log;
+        //cout << log;
           psi::SharedMolecule atom = psi::Molecule::create_molecule_from_string(log);
           atom->set_molecular_charge(0);
           atom->set_multiplicity(m+1);
@@ -299,7 +299,7 @@ std::vector<psi::SharedMolecule> QUAMBO::atomize_(void) {
           log += oepdev::string_sprintf("%4s %14.8f %14.8f %14.8f\n", s.c_str(), x, y, z);
           log += endline;
 
-          cout << log;
+        //cout << log;
 
           psi::SharedMolecule atom = psi::Molecule::create_molecule_from_string(log);
           atom->set_molecular_charge(0);

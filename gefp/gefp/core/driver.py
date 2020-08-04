@@ -282,7 +282,7 @@ def gdf_basisset_optimizer(mol, oep_type,
                            bounds_file=None, constraints=(),
                            exp_lower_bound=None, exp_upper_bound=None, 
                            ctr_lower_bound=None, ctr_upper_bound=None,
-                           old_interface=False, use_standardized_input=True):
+                           old_interface=False, use_standardized_input='standard'):
     """
  ---------------------------------------------------------------------------------------------
  Fit the auxiliary basis set for GDF-OEP purposes.
@@ -442,7 +442,7 @@ def gdf_basisset_optimizer(mol, oep_type,
        target = "OCC" if oep_type.lower() == "efp2-rep" else "VIR"
        standardized_input = None
        if use_standardized_input: 
-          standardized_input = StandardizedInput(mol, oep_type)
+          standardized_input = StandardizedInput(mol, oep_type, use_standardized_input)
 
        dfbasis_opt, err, GB = oep_ao_basis_set_optimizer(\
            w_hf, interm=basis_gdf_int, test=basis_gdf_int, exemplary=basis_gdf_xpl, target=target, cpp=True, more_info=True,

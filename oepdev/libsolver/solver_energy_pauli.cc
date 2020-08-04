@@ -1042,7 +1042,6 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
   if (oep_2->use_localized_orbitals) Ca_occ_2 = oep_2->lOcc();
 
   t_time -= clock(); // Clock BEGIN
-  Ca_occ_1->set_name("NAMA");Ca_occ_1->print();
   std::shared_ptr<psi::Matrix> Smo = psi::Matrix::triplet(Ca_occ_1, Sao_1p2p, Ca_occ_2, true, false, false);
   std::shared_ptr<psi::Matrix> Sba = psi::Matrix::doublet(Ca_occ_2, Sao_1a2p, true, true);
   std::shared_ptr<psi::Matrix> Sab = psi::Matrix::doublet(Ca_occ_1, Sao_1p2a, true, false);

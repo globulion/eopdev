@@ -169,6 +169,7 @@ std::shared_ptr<psi::Matrix> OverlapGeneralizedDensityFit::compute(void)
   S_BBm->power(-0.50000000000000);
   psi::SharedMatrix Y = psi::Matrix::triplet(s_mm, s_im, T_i, false, true, false);
   psi::SharedMatrix T_m = psi::Matrix::doublet(Y, S_BBm, false, false);
+  S_BBm->identity();
 
   // Find approximate G
   psi::SharedMatrix C = psi::Matrix::triplet(T_m, S_BBm, T_m, false, false, true);
