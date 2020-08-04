@@ -267,7 +267,7 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     o_mi  = edf.projection(T, s_im, s_mm)
     Tm    = edf.projected_t(T, s_im, s_mm)
 
-    print(" Optimized Overlaps:")
+    psi4.core.print_out(" Optimized Overlaps:\n")
     for i in range(len(o_mi.diagonal())):
         print(" %3d %14.7f" % (i+1, o_mi.diagonal()[i])) 
 
@@ -275,20 +275,20 @@ def oep_ao_basis_set_optimizer(wfn, interm,
    #Gm = Tm @ Tm.T @ s_im.T @ G                       # approximate Gm -> this is derived from 1 = |m) Tm Tm.T (m|
     Gm = Tm @ numpy.linalg.inv(o_mi) @ Tm.T @ s_im.T @ G   # approximate Gm -> above but corrected by the overlap in B
 
-    print(" Optimized AO Basis Set in Psi4 Format:")
-    print(dfbasis)
-    print(" Inital and final parameters in working order:")
+    psi4.core.print_out(" Optimized AO Basis Set in Psi4 Format:\n")
+    psi4.core.print_out(str(dfbasis))
+    psi4.core.print_out(" Inital and final parameters in working order:\n")
     #
-    print("          Initial           Fitted")
+    psi4.core.print_out("          Initial           Fitted\n")
     for i in range(len(param)):
-        print("%15.3f %15.3f" % (param_0[i], param[i]))
+        psi4.core.print_out("%15.3f %15.3f\n" % (param_0[i], param[i]))
 
 
     # ---> tests < --- #
 
-    print(" Running Tests")
+    psi4.core.print_out(" Running Tests\n")
     # test 1 
-    print(" Test 1: Computed from approximate Gm")
+    psi4.core.print_out(" Test 1: Computed from approximate Gm\n")
     mints = psi4.core.MintsHelper(test)
     V_= edf.compute_v(Ca, Da, prim=primary, left_axis=test)                  # (t, T)
     S_= mints.ao_overlap(test, auxiliary).to_array(dense=True)           # (t, m)
@@ -300,10 +300,10 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     Err_out = Err
     S__ = S_
     Err_1 = Err
-    print(" Total error 1 = %14.5f\n" % Err)
+    psi4.core.print_out(" Total error 1 = %14.5f\n\n" % Err)
 
     # test 2
-    print(" Test 2: Computed from exact GB")
+    psi4.core.print_out(" Test 2: Computed from exact GB\n")
     mints = psi4.core.MintsHelper(test)
     S_= mints.ao_overlap(test, interm).to_array(dense=True) @ T          # (t, i)
     Vtest_ = S_ @ GM                                                     # (t, m) @ (m, T) -> (t, T)
@@ -312,10 +312,10 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     Err = Err**2
     Err = numpy.sqrt(Err.sum())
     Err_2 = Err
-    print(" Total error 2 = %14.5f\n" % Err)
+    psi4.core.print_out(" Total error 2 = %14.5f\n\n" % Err)
 
     # test 3 - EDF-2 with auxiliary basis
-    print(" Test 3: Computed from optimal Gm from EDF-2")
+    psi4.core.print_out(" Test 3: Computed from optimal Gm from EDF-2\n")
     V__= edf.compute_v(Ca, Da, prim=primary, left_axis=interm)                  
     V = psi4.core.Matrix.from_array(V__)
     gdf = oepdev.GeneralizedDensityFit.build_double(auxiliary, interm, V)
@@ -327,10 +327,10 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     Err = Err**2
     Err = numpy.sqrt(Err.sum())
     Err_3 = Err
-    print(" Total error 3 = %14.5f\n" % Err)
+    psi4.core.print_out(" Total error 3 = %14.5f\n\n" % Err)
 
     # test 4 - EDF-2 with example basis
-    print(" Test 4: Computed from exemplary Gm from EDF-2")
+    psi4.core.print_out(" Test 4: Computed from exemplary Gm from EDF-2\n")
     mints = psi4.core.MintsHelper(test)
     S_= mints.ao_overlap(test, exemplary).to_array(dense=True)              # (t, e)
     gdf = oepdev.GeneralizedDensityFit.build_double(exemplary, interm, V)
@@ -342,47 +342,47 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     Err = Err**2
     Err = numpy.sqrt(Err.sum())
     Err_4 = Err
-    print(" Total error 4 = %14.5f\n" % Err)
+    psi4.core.print_out(" Total error 4 = %14.5f\n\n" % Err)
 
 
     # ---> summary < --- #
 
-    print(" Summary:")
-    print(" ========")
-    print()
-    print(" AO Basis Sets                               Name    Nbf.")
-    print(" -------------")
-    print(" Primary           %30s  %4d" % (primary  .name(), primary  .nbf()))
-    print(" Intermediate      %30s  %4d" % (interm   .name(), interm   .nbf()))
-    print(" Test              %30s  %4d" % (test     .name(), test     .nbf()))
-    print(" Example           %30s  %4d" % (exemplary.name(), exemplary.nbf()))
-    print(" Optimized         %30s  %4d" % (auxiliary.name(), auxiliary.nbf()))
-    print()
-    print(" Settings")
-    print(" --------")
-    print(" Target              %s" % target)
-    print(" Use QUAMBO?         %r" % do_quambo)
-    print(" Localized?          %r" % localize)
-    print(" Global opt?         %r" % opt_global)
-    print()
-    print(" Objective Function")
-    print(" ------------------")
-    print(" Z_max = %14.8f" %   z_max)
-    print(" Z_opt = %14.8f" %   z_opt)
-    print(" Error = %14.8f" % ( z_max - z_opt))
-    print(" NrmEr = %14.8f" % ((z_max - z_opt)/z_max))
-    print()
-    print(" Cumulative Errors")
-    print(" -----------------")
-    print()
-    print(" Fit(EDF-2)   Fit(Approx)  Fit(Exact)   Fit(Example)")
-    print(" %8.5f     %8.5f     %8.5f     %8.5f" % (Err_3, Err_1, Err_2, Err_4))
-    print()
-    print(" Overall AO Basis Set Optimization Time = %f sec" % TIME)
-    print()
-    print(" Basis set saved to file < %s >" % os.path.abspath(outname))
-    print(" AO Basis Optimization Finished Successfully.")
-    print()
+    psi4.core.print_out(" Summary:\n")
+    psi4.core.print_out(" ========\n")
+    psi4.core.print_out("\n")
+    psi4.core.print_out(" AO Basis Sets                               Name    Nbf.\n")
+    psi4.core.print_out(" -------------\n")
+    psi4.core.print_out(" Primary           %30s  %4d\n" % (primary  .name(), primary  .nbf()))
+    psi4.core.print_out(" Intermediate      %30s  %4d\n" % (interm   .name(), interm   .nbf()))
+    psi4.core.print_out(" Test              %30s  %4d\n" % (test     .name(), test     .nbf()))
+    psi4.core.print_out(" Example           %30s  %4d\n" % (exemplary.name(), exemplary.nbf()))
+    psi4.core.print_out(" Optimized         %30s  %4d\n" % (auxiliary.name(), auxiliary.nbf()))
+    psi4.core.print_out("\n")
+    psi4.core.print_out(" Settings\n")
+    psi4.core.print_out(" --------\n")
+    psi4.core.print_out(" Target              %s\n" % target)
+    psi4.core.print_out(" Use QUAMBO?         %r\n" % do_quambo)
+    psi4.core.print_out(" Localized?          %r\n" % localize)
+    psi4.core.print_out(" Global opt?         %r\n" % opt_global)
+    psi4.core.print_out("\n")
+    psi4.core.print_out(" Objective Function\n")
+    psi4.core.print_out(" ------------------\n")
+    psi4.core.print_out(" Z_max = %14.8f\n" %   z_max)
+    psi4.core.print_out(" Z_opt = %14.8f\n" %   z_opt)
+    psi4.core.print_out(" Error = %14.8f\n" % ( z_max - z_opt))
+    psi4.core.print_out(" NrmEr = %14.8f\n" % ((z_max - z_opt)/z_max))
+    psi4.core.print_out("\n")
+    psi4.core.print_out(" Cumulative Errors\n")
+    psi4.core.print_out(" -----------------\n")
+    psi4.core.print_out("\n")
+    psi4.core.print_out(" Fit(EDF-2)   Fit(Approx)  Fit(Exact)   Fit(Example)\n")
+    psi4.core.print_out(" %8.5f     %8.5f     %8.5f     %8.5f\n" % (Err_3, Err_1, Err_2, Err_4))
+    psi4.core.print_out("\n")
+    psi4.core.print_out(" Overall AO Basis Set Optimization Time = %f sec\n" % TIME)
+    psi4.core.print_out("\n")
+    psi4.core.print_out(" Basis set saved to file < %s >\n" % os.path.abspath(outname))
+    psi4.core.print_out(" AO Basis Optimization Finished Successfully.\n")
+    psi4.core.print_out("\n")
 
     return dfbasis, Err_out, Gm
 

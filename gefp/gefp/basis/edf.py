@@ -92,9 +92,9 @@ def find_aux_mo_mini(G, S, I=None, eps=0.0001):
     i = numpy.argsort(l)[::-1]
     l = l[i]
     u = u[:,i]
-    print(" Largest Eigenvalues of GG Covariance in orthogonal |i> basis")
+    psi4.core.print_out(" Largest Eigenvalues of GG Covariance in orthogonal |i> basis\n")
     for i in range(len(l)):
-        if l[i]>= 0.00000001: print(" %4d %14.8f" % (i+1, l[i]))
+        if l[i]>= 0.00000001: psi4.core.print_out(" %4d %14.8f\n" % (i+1, l[i]))
 
     if I is None:
        I = 0;
@@ -102,7 +102,7 @@ def find_aux_mo_mini(G, S, I=None, eps=0.0001):
            if l[i]< eps: break
            I+=1
 
-    print(" Optimal OEP basis size = %d out of %d all basis set"% (I, G.shape[0]) )
+    psi4.core.print_out(" Optimal OEP basis size = %d out of %d all basis set\n"% (I, G.shape[0]) )
  
     T_= u[:,:I]                                                        # (aux, new_crop)
 
@@ -144,16 +144,16 @@ def find_aux_mo_mini(G, S, I=None, eps=0.0001):
 #   def _b(self, a):
 #       return numpy.random.uniform(-a*self.stepsize, a*self.stepsize)
 #
-c1 = {'type':'eq', 'fun': lambda x: x[ 1]+x[ 3]+x[ 5]-1.0}
-c2 = {'type':'eq', 'fun': lambda x: x[ 7]+x[ 9]+x[11]-1.0}
-c3 = {'type':'eq', 'fun': lambda x: x[13]+x[15]+x[17]-1.0}
-c4 = {'type':'eq', 'fun': lambda x: x[19]+x[21]+x[23]-1.0}
-c = [c1, c2, c3, c4]
+#c1 = {'type':'eq', 'fun': lambda x: x[ 1]+x[ 3]+x[ 5]-1.0}
+#c2 = {'type':'eq', 'fun': lambda x: x[ 7]+x[ 9]+x[11]-1.0}
+#c3 = {'type':'eq', 'fun': lambda x: x[13]+x[15]+x[17]-1.0}
+#c4 = {'type':'eq', 'fun': lambda x: x[19]+x[21]+x[23]-1.0}
+#c = [c1, c2, c3, c4]
 
 def optimize_ao_mini(t_i, bsf_i, dfbasis, opt_global, cpp=False):
     "Target routine for AO basis set optimization"
     param_0 = dfbasis.param
-    print(" Initial Z = %14.6f" % obj_numpy(param_0, t_i, bsf_i, dfbasis))
+    psi4.core.print_out(" Initial Z = %14.6f\n" % obj_numpy(param_0, t_i, bsf_i, dfbasis))
 
     options = {"disp": True, "maxiter": 2000, "ftol": 1.e-9, "iprint": 8}
     if cpp:
@@ -176,8 +176,8 @@ def optimize_ao_mini(t_i, bsf_i, dfbasis, opt_global, cpp=False):
                                   "bounds": dfbasis.bounds, "args": ARGS, "constraints": dfbasis.constraints},
                               callback=None, interval=30, disp=True, niter_success=None,
                               take_step=take_step ).lowest_optimization_result #, accept_test=accept_test)
-       print(res.message)
-       print(" Optimal Z = %14.6f" % res.fun)  
+       psi4.core.print_out(res.message+"\n")
+       psi4.core.print_out(" Optimal Z = %14.6f\n" % res.fun)  
     if not res.success: 
        raise ValueError("Optimization is not succesfull!")
     else: 
