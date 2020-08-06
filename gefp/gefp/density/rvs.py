@@ -126,13 +126,13 @@ class RVS:
       conv = psi4.constants.hartree2kcalmol
 
       # compute monomers
-      print(" @RVS-SCF. Start.")
+      psi4.core.print_out(" @RVS-SCF. Start.\n")
       self._isolated_monomers()
 
       e = sum(self._e_0)
       e1, e2 = self._e_0
-      print(" E(1) = %16.6f [AU]" % (e1))
-      print(" E(2) = %16.6f [AU]" % (e2))
+      psi4.core.print_out(" E(1) = %16.6f [AU]\n" % (e1))
+      psi4.core.print_out(" E(2) = %16.6f [AU]\n" % (e2))
 
       # RVS energy components    -Focc-  -Avir-  -Xocc-
 
@@ -150,13 +150,13 @@ class RVS:
       E_Ao_Av_Bv        = self._scf([ ], [0,1], [1], conver, maxiter, damp=0.0, ndamp=ndamp, label=' Ao  Av Bv')
       E_Bo_Av_Bv        = self._scf([ ], [0,1], [0], conver, maxiter, damp=0.0, ndamp=ndamp, label=' Bo  Av Bv')
 
-      print(" DE( Ao  Bo         ) = %16.6f [kcal/mol]" % ((E_Ao_Bo       -e) * conv))
-      print(" DE([Ao] Bo Bv      ) = %16.6f [kcal/mol]" % ((E_fAo_Bo_Bv   -e) * conv))
-      print(" DE([Ao] Bo Bv Av   ) = %16.6f [kcal/mol]" % ((E_fAo_Bo_Bv_Av-e) * conv))
-      print(" DE([Bo] Ao Av      ) = %16.6f [kcal/mol]" % ((E_fBo_Ao_Av   -e) * conv))
-      print(" DE([Bo] Ao Av Bv   ) = %16.6f [kcal/mol]" % ((E_fBo_Ao_Av_Bv-e) * conv))
-      print(" DE( Ao  Av Bv      ) = %16.6f [kcal/mol]" % ((E_Ao_Av_Bv    -e1) * conv))
-      print(" DE( Bo  Av Bv      ) = %16.6f [kcal/mol]" % ((E_Bo_Av_Bv    -e2) * conv))
+      psi4.core.print_out(" DE( Ao  Bo         ) = %16.6f [kcal/mol]\n" % ((E_Ao_Bo       -e) * conv))
+      psi4.core.print_out(" DE([Ao] Bo Bv      ) = %16.6f [kcal/mol]\n" % ((E_fAo_Bo_Bv   -e) * conv))
+      psi4.core.print_out(" DE([Ao] Bo Bv Av   ) = %16.6f [kcal/mol]\n" % ((E_fAo_Bo_Bv_Av-e) * conv))
+      psi4.core.print_out(" DE([Bo] Ao Av      ) = %16.6f [kcal/mol]\n" % ((E_fBo_Ao_Av   -e) * conv))
+      psi4.core.print_out(" DE([Bo] Ao Av Bv   ) = %16.6f [kcal/mol]\n" % ((E_fBo_Ao_Av_Bv-e) * conv))
+      psi4.core.print_out(" DE( Ao  Av Bv      ) = %16.6f [kcal/mol]\n" % ((E_Ao_Av_Bv    -e1) * conv))
+      psi4.core.print_out(" DE( Bo  Av Bv      ) = %16.6f [kcal/mol]\n" % ((E_Bo_Av_Bv    -e2) * conv))
 
       # BSSE-uncorrected interaction energy
       INT = self._wfn.energy() - e
@@ -193,7 +193,7 @@ class RVS:
       self.vars["tot"  ] = TOT
       self.vars["int"  ] = INT
 
-      print(self)
+      psi4.core.print_out(str(self)+'\n')
 
   def __repr__(self):
       "Print the contents. Now programmed only for dimer"
@@ -277,7 +277,7 @@ class RVS:
         
       # [2] Iteration cycles
       if label is not None:
-         print(" @RVS-SCF: Starting iterations of %s" % label)
+         psi4.core.print_out(" @RVS-SCF: Starting iterations of %s\n" % label)
       E_old = 1.0e+10
       H = self._H_core_ao(exclude_occ)
       F = self._Fock_ao(H, C_occ_all)                   # Fock matrix (AO x AO)         
@@ -285,7 +285,7 @@ class RVS:
       E = self._energy(H, F, D, exclude_occ)
       E_new = E
       F_new = F
-      print(" @RVS-SCF Iter %3i.   E= %16.8E" % (0, E_new))
+      psi4.core.print_out(" @RVS-SCF Iter %3i.   E= %16.8E\n" % (0, E_new))
 
       Iter = 1
       while (abs(E_old-E_new) > conver):
@@ -305,7 +305,7 @@ class RVS:
              F_new = damp * F_old + (1.0 - damp) * F_new
           E_new = self._energy(H, F_new, D_new, exclude_occ)
 
-          print(" @RVS-SCF Iter %3i.   E= %16.8E  Delta= %16.8E" % (Iter, E_new, E_new - E_old))
+          psi4.core.print_out(" @RVS-SCF Iter %3i.   E= %16.8E  Delta= %16.8E\n" % (Iter, E_new, E_new - E_old))
           Iter += 1
 
           if (Iter >= maxiter):
@@ -313,7 +313,7 @@ class RVS:
               break
 
       if label is not None:
-         print(" @RVS-SCF: Done with iterations of %s" % label)
+         psi4.core.print_out(" @RVS-SCF: Done with iterations of %s\n" % label)
 
       return E_new
 
@@ -326,7 +326,7 @@ class RVS:
 
       off = 0
       for i in range(self._nfrag):
-          print(" Calculation of isolated monomer %i" % (i+1))
+          psi4.core.print_out(" Calculation of isolated monomer %i\n" % (i+1))
 
           mol = self._mol.extract_subsets(i+1)
           e, w = psi4.energy('scf', molecule=mol, return_wfn=True)

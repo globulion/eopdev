@@ -1351,8 +1351,8 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   }
   psi::SharedMatrix v_ab_v3_copy = v_ab_v3->clone(); v_ab_v3->zero();
   psi::SharedMatrix v_ba_v3_copy = v_ba_v3->clone(); v_ba_v3->zero();
-  v_ab_v3->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v3_copy, 0.0);
-  v_ba_v3->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v3_copy, 0.0);
+  v_ab_v3->gemm(false, false, 1.0, oep_1->localizer()->U(), v_ab_v3_copy, 1.0);
+  v_ba_v3->gemm(false, false, 1.0, oep_2->localizer()->U(), v_ba_v3_copy, 1.0);
 
 
   // ---> Add coupling constant contributions <--- //

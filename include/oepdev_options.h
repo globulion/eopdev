@@ -21,14 +21,14 @@ int read_options(std::string name, Options& options)
         options.add_int    ("PRINT"                 , 1                          );
 
         /*- Auxiliary basis set for OEP density fitting -*/                                   
-        options.add_str    ("DF_BASIS_OEP"          , "sto-3g"                   );
+        options.add_str    ("DF_BASIS_OEP"          , "aug-cc-pvdz-jkfit"        );
         /*- Auxiliary basis set for OEP density fitting: Molecule A -*/                                   
         options.add_str    ("DF_BASIS_OEP_A"        , ""                         );
         /*- Auxiliary basis set for OEP density fitting: Molecule B -*/                                   
         options.add_str    ("DF_BASIS_OEP_B"        , ""                         );
 
         /*- Intermediate basis set for OEP density fitting -*/                                   
-        options.add_str    ("DF_BASIS_INT"          , ""                         );
+        options.add_str    ("DF_BASIS_INT"          , "aug-cc-pvdz-jkfit"        );
 
         /*- Basis set for guess in OEPDEV SCF routine driver -*/
         options.add_bool   ("OEPDEV_BASIS_GUESS"    , true                       );

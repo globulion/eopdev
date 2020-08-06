@@ -214,7 +214,12 @@ def oep_ao_basis_set_optimizer(wfn, interm,
    
     # ---> start < --- #
 
-    print("\n ===> Auxiliary Basis Set Optimization Routine <===\n")
+    psi4.core.print_out("\n ===> Auxiliary Basis Set Optimization Routine <===\n\n")
+
+    psi4.core.print_out(" Auxiliary Basis Set Template\n")
+    psi4.core.print_out(dfbasis.templ + "\n")
+    psi4.core.print_out(" Initial Auxiliary Basis Set\n")
+    psi4.core.print_out(str(dfbasis) + "\n")
 
     # Notation in comments:
     # T - target (MO)
@@ -269,7 +274,7 @@ def oep_ao_basis_set_optimizer(wfn, interm,
 
     psi4.core.print_out(" Optimized Overlaps:\n")
     for i in range(len(o_mi.diagonal())):
-        print(" %3d %14.7f" % (i+1, o_mi.diagonal()[i])) 
+        psi4.core.print_out(" %3d %14.7f\n" % (i+1, o_mi.diagonal()[i])) 
 
    #Gm = Tm @ numpy.linalg.inv(o_mi) @ T.T @ S_ii @ G # approximate Gm -> this is just guess
    #Gm = Tm @ Tm.T @ s_im.T @ G                       # approximate Gm -> this is derived from 1 = |m) Tm Tm.T (m|
