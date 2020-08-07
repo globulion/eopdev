@@ -544,22 +544,40 @@ void WavefunctionUnion::print_mo_integrals(void) {
     std::shared_ptr<PSIO> psio = PSIO::shared_object();
 
     dpd_set_default(integrals_->get_dpd_id());
-    dpdbuf4 buf_IIJJ, buf_IJJJ, buf_IIIJ, buf_IJIJ;
+    dpdbuf4 buf_IIJJ, buf_IJJJ, buf_IIIJ, buf_IJIJ, buf_YIJJ, buf_XIJJ, buf_YJII, buf_XJII;
     psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
     if (options_.get_int("PRINT") > 2) psio->tocprint(PSIF_LIBTRANS_DPD);
 
     global_dpd_->buf4_init(&buf_IIIJ, PSIF_LIBTRANS_DPD, 0, 
-                           integrals_->DPD_ID("[1,1]"  ), integrals_->DPD_ID("[1,2]"  ),
-                           integrals_->DPD_ID("[1>=1]+"), integrals_->DPD_ID("[1,2]"  ), 0, "MO Ints (II|IJ)");
+                           integrals_->DPD_ID("[I,I]"  ), integrals_->DPD_ID("[I,J]"  ),
+                           integrals_->DPD_ID("[I>=I]+"), integrals_->DPD_ID("[I,J]"  ), 0, "MO Ints (II|IJ)");
     global_dpd_->buf4_init(&buf_IIJJ, PSIF_LIBTRANS_DPD, 0, 
-                           integrals_->DPD_ID("[1,1]"  ), integrals_->DPD_ID("[2,2]"  ),
-                           integrals_->DPD_ID("[1>=1]+"), integrals_->DPD_ID("[2>=2]+"), 0, "MO Ints (II|JJ)");
+                           integrals_->DPD_ID("[I,I]"  ), integrals_->DPD_ID("[J,J]"  ),
+                           integrals_->DPD_ID("[I>=I]+"), integrals_->DPD_ID("[J>=J]+"), 0, "MO Ints (II|JJ)");
     global_dpd_->buf4_init(&buf_IJIJ, PSIF_LIBTRANS_DPD, 0, 
-                           integrals_->DPD_ID("[1,2]"  ), integrals_->DPD_ID("[1,2]"  ),
-                           integrals_->DPD_ID("[1,2]"  ), integrals_->DPD_ID("[1,2]"  ), 0, "MO Ints (IJ|IJ)");
+                           integrals_->DPD_ID("[I,J]"  ), integrals_->DPD_ID("[I,J]"  ),
+                           integrals_->DPD_ID("[I,J]"  ), integrals_->DPD_ID("[I,J]"  ), 0, "MO Ints (IJ|IJ)");
     global_dpd_->buf4_init(&buf_IJJJ, PSIF_LIBTRANS_DPD, 0,
-                           integrals_->DPD_ID("[1,2]"  ), integrals_->DPD_ID("[2,2]"  ),
-                           integrals_->DPD_ID("[1,2]"  ), integrals_->DPD_ID("[2>=2]+"), 0, "MO Ints (IJ|JJ)");
+                           integrals_->DPD_ID("[I,J]"  ), integrals_->DPD_ID("[J,J]"  ),
+                           integrals_->DPD_ID("[I,J]"  ), integrals_->DPD_ID("[J>=J]+"), 0, "MO Ints (IJ|JJ)");
+
+    // YIJJ = (V_2 O_1 | O_2 O_2) = (ni|jj)
+    global_dpd_->buf4_init(&buf_YIJJ, PSIF_LIBTRANS_DPD, 0,
+                           integrals_->DPD_ID("[Y,I]"  ), integrals_->DPD_ID("[J,J]"  ),
+                           integrals_->DPD_ID("[Y,I]"  ), integrals_->DPD_ID("[J>=J]+"), 0, "MO Ints (YI|JJ)");
+    // XIJJ = (V_1 O_1 | O_2 O_2) = (mi|jj)
+    global_dpd_->buf4_init(&buf_XIJJ, PSIF_LIBTRANS_DPD, 0,
+          	         integrals_->DPD_ID("[X,I]"  ), integrals_->DPD_ID("[J,J]"  ),
+          		 integrals_->DPD_ID("[X,I]"  ), integrals_->DPD_ID("[J>=J]+"), 0, "MO Ints (XI|JJ)");
+    // YJII = (V_2 O_2 | O_1 O_1) = (nj|kk)
+    global_dpd_->buf4_init(&buf_YJII, PSIF_LIBTRANS_DPD, 0,
+                           integrals_->DPD_ID("[Y,J]"  ), integrals_->DPD_ID("[I,I]"  ),
+                           integrals_->DPD_ID("[Y,J]"  ), integrals_->DPD_ID("[I>=I]+"), 0, "MO Ints (YJ|II)");
+    // XJII = (V_1 O_2 | O_1 O_1) = (mj|kk)
+    global_dpd_->buf4_init(&buf_XJII, PSIF_LIBTRANS_DPD, 0,
+          	         integrals_->DPD_ID("[X,J]"  ), integrals_->DPD_ID("[I,I]"  ),
+          		 integrals_->DPD_ID("[X,J]"  ), integrals_->DPD_ID("[I>=I]+"), 0, "MO Ints (XJ|II)");
+
 
     psi::outfile->Printf("\n <=== buf_IIIJ MO Integrals ===>\n\n");
     for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
@@ -609,26 +627,92 @@ void WavefunctionUnion::print_mo_integrals(void) {
          global_dpd_->buf4_mat_irrep_close(&buf_IJJJ, h);
     }
 
-    psi::outfile->Printf("\n <=== buf_IJJJ MO Integrals ===>\n\n");
+    psi::outfile->Printf("\n <=== buf_IJIJ MO Integrals ===>\n\n");
     for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
-         global_dpd_->buf4_mat_irrep_init(&buf_IJJJ, h);
-         global_dpd_->buf4_mat_irrep_rd(&buf_IJJJ, h);
-         for (int pq = 0; pq < buf_IJJJ.params->rowtot[h]; ++pq) {
-              int p = buf_IJJJ.params->roworb[h][pq][0];
-              int q = buf_IJJJ.params->roworb[h][pq][1];
-              for (int rs = 0; rs < buf_IJJJ.params->coltot[h]; ++rs) {
-                   int r = buf_IJJJ.params->colorb[h][rs][0];
-                   int s = buf_IJJJ.params->colorb[h][rs][1];
-                   psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_IJJJ.matrix[h][pq][rs]);
+         global_dpd_->buf4_mat_irrep_init(&buf_IJIJ, h);
+         global_dpd_->buf4_mat_irrep_rd(&buf_IJIJ, h);
+         for (int pq = 0; pq < buf_IJIJ.params->rowtot[h]; ++pq) {
+              int p = buf_IJIJ.params->roworb[h][pq][0];
+              int q = buf_IJIJ.params->roworb[h][pq][1];
+              for (int rs = 0; rs < buf_IJIJ.params->coltot[h]; ++rs) {
+                   int r = buf_IJIJ.params->colorb[h][rs][0];
+                   int s = buf_IJIJ.params->colorb[h][rs][1];
+                   psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_IJIJ.matrix[h][pq][rs]);
               }
          }
-         global_dpd_->buf4_mat_irrep_close(&buf_IJJJ, h);
+         global_dpd_->buf4_mat_irrep_close(&buf_IJIJ, h);
+    }
+
+    psi::outfile->Printf("\n <=== buf_XIJJ MO Integrals ===>\n\n");
+    for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
+         global_dpd_->buf4_mat_irrep_init(&buf_XIJJ, h);
+         global_dpd_->buf4_mat_irrep_rd(&buf_XIJJ, h);
+         for (int pq = 0; pq < buf_XIJJ.params->rowtot[h]; ++pq) {
+              int p = buf_XIJJ.params->roworb[h][pq][0];
+              int q = buf_XIJJ.params->roworb[h][pq][1];
+              for (int rs = 0; rs < buf_XIJJ.params->coltot[h]; ++rs) {
+                   int r = buf_XIJJ.params->colorb[h][rs][0];
+                   int s = buf_XIJJ.params->colorb[h][rs][1];
+                   psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_XIJJ.matrix[h][pq][rs]);
+              }
+         }
+         global_dpd_->buf4_mat_irrep_close(&buf_XIJJ, h);
+    }
+    psi::outfile->Printf("\n <=== buf_YIJJ MO Integrals ===>\n\n");
+    for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
+         global_dpd_->buf4_mat_irrep_init(&buf_YIJJ, h);
+         global_dpd_->buf4_mat_irrep_rd(&buf_YIJJ, h);
+         for (int pq = 0; pq < buf_YIJJ.params->rowtot[h]; ++pq) {
+              int p = buf_YIJJ.params->roworb[h][pq][0];
+              int q = buf_YIJJ.params->roworb[h][pq][1];
+              for (int rs = 0; rs < buf_YIJJ.params->coltot[h]; ++rs) {
+                   int r = buf_YIJJ.params->colorb[h][rs][0];
+                   int s = buf_YIJJ.params->colorb[h][rs][1];
+                   psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_YIJJ.matrix[h][pq][rs]);
+              }
+         }
+         global_dpd_->buf4_mat_irrep_close(&buf_YIJJ, h);
+    }
+    psi::outfile->Printf("\n <=== buf_XJII MO Integrals ===>\n\n");
+    for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
+         global_dpd_->buf4_mat_irrep_init(&buf_XJII, h);
+         global_dpd_->buf4_mat_irrep_rd(&buf_XJII, h);
+         for (int pq = 0; pq < buf_XJII.params->rowtot[h]; ++pq) {
+              int p = buf_XJII.params->roworb[h][pq][0];
+              int q = buf_XJII.params->roworb[h][pq][1];
+              for (int rs = 0; rs < buf_XJII.params->coltot[h]; ++rs) {
+                   int r = buf_XJII.params->colorb[h][rs][0];
+                   int s = buf_XJII.params->colorb[h][rs][1];
+                   psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_XJII.matrix[h][pq][rs]);
+              }
+         }
+         global_dpd_->buf4_mat_irrep_close(&buf_XJII, h);
+    }
+    psi::outfile->Printf("\n <=== buf_YJII MO Integrals ===>\n\n");
+    for (int h = 0; h < shared_from_this()->nirrep(); ++h) {
+         global_dpd_->buf4_mat_irrep_init(&buf_YJII, h);
+         global_dpd_->buf4_mat_irrep_rd(&buf_YJII, h);
+         for (int pq = 0; pq < buf_YJII.params->rowtot[h]; ++pq) {
+              int p = buf_YJII.params->roworb[h][pq][0];
+              int q = buf_YJII.params->roworb[h][pq][1];
+              for (int rs = 0; rs < buf_YJII.params->coltot[h]; ++rs) {
+                   int r = buf_YJII.params->colorb[h][rs][0];
+                   int s = buf_YJII.params->colorb[h][rs][1];
+                   psi::outfile->Printf("(%2d %2d | %2d %2d) = %16.10f\n", p, q, r, s, buf_YJII.matrix[h][pq][rs]);
+              }
+         }
+         global_dpd_->buf4_mat_irrep_close(&buf_YJII, h);
     }
 
     //
     global_dpd_->buf4_close(&buf_IIJJ);
     global_dpd_->buf4_close(&buf_IJJJ);
     global_dpd_->buf4_close(&buf_IIIJ);
+    global_dpd_->buf4_close(&buf_IJIJ);
+    global_dpd_->buf4_close(&buf_XIJJ);
+    global_dpd_->buf4_close(&buf_YIJJ);
+    global_dpd_->buf4_close(&buf_XJII);
+    global_dpd_->buf4_close(&buf_YJII);
 
     psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
 }
