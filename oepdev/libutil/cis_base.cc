@@ -51,7 +51,7 @@ CISComputer::~CISComputer() {}
 
 void CISComputer::common_init(void) {
  ndets_ = naocc_ * navir_ + nbocc_ * nbvir_;
- if (true) {
+ if (false) {
      std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(ref_wfn_->basisset());
      mints->integrals();
  }
