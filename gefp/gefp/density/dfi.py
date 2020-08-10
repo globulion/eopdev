@@ -65,7 +65,7 @@ class SCF:
       self._bfs = bfs
       if bfs is None:
          self._bfs = psi4.core.BasisSet.build(mol, "BASIS", psi4.core.get_global_option("BASIS"), 
-                                                   puream=psi4.core.get_global_option("PUREAM"))
+                                                   puream=psi4.core.get_global_option("PUREAM"), quiet=True)
       # Wavefunction
       self._wfn = psi4.core.Wavefunction(mol, self._bfs)
       # Number of alpha electrons

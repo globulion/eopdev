@@ -178,7 +178,7 @@ class DensityDecomposition(Density):
 
         # basis set and JK object for entire aggregate
         self.bfs = psi4.core.BasisSet.build(aggregate, "ORBITAL", psi4.core.get_global_option("BASIS"), 
-                    puream=psi4.core.get_global_option("PUREAM"))
+                    puream=psi4.core.get_global_option("PUREAM"), quiet=True)
         self.global_jk = psi4.core.JK.build(self.bfs, jk_type=jk_type)
         self.global_jk.set_memory(int(5e8))
         self.global_jk.initialize()

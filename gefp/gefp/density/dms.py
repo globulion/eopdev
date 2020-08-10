@@ -167,7 +167,7 @@ class Computer(ABC):
        self._natom_offsets_by_fragment = numpy.hstack(([0],t[:-1]))
 
    def _build_bfs(self):#OK
-       self._bfs       = psi4.core.BasisSet.build(self._aggregate.all, "BASIS", psi4.core.get_global_option("BASIS"), puream=False)
+       self._bfs       = psi4.core.BasisSet.build(self._aggregate.all, "BASIS", psi4.core.get_global_option("BASIS"), puream=False, quiet=True)
        self._mints     = psi4.core.MintsHelper(self._bfs)
        self._jk        = psi4.core.JK.build(self._bfs, jk_type="direct")
        self._jk.set_memory(int(5e8))
@@ -4091,7 +4091,7 @@ class Translation_DMSFit(ExternalField_EFP_DMSFit):
              I = numpy.identity(2*n)
              #bfs_dimer = self._bfs_dimer_set[s]
              dimer = psi_molecule_from_file("geom_%03d.xyz" % self._i)
-             bfs_dimer = psi4.core.BasisSet.build(dimer, "BASIS",psi4.core.get_global_option("BASIS"), puream=False)
+             bfs_dimer = psi4.core.BasisSet.build(dimer, "BASIS",psi4.core.get_global_option("BASIS"), puream=False, quiet=True)
              jk = psi4.core.JK.build(bfs_dimer, jk_type="direct")
              jk.set_memory(int(5e8))
              jk.initialize()

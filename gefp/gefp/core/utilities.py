@@ -87,12 +87,12 @@ def _get_wavefunction_union_basis_sets(dimer):
     molecule_B     = dimer.extract_subsets(2)
 
     # --- primary                                                                                                                 
-    basis_A        = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("BASIS"), puream=pam)
-    basis_B        = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS"), puream=pam)
+    basis_A        = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("BASIS"), puream=pam, quiet=True)
+    basis_B        = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("BASIS"), puream=pam, quiet=True)
 
     # --- auxiliary (DF-SCF)
-    basis_df_scf_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"), puream=pam)
-    basis_df_scf_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"), puream=pam)
+    basis_df_scf_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"), puream=pam, quiet=True)
+    basis_df_scf_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"), puream=pam, quiet=True)
 
     # --- auxiliary (OEP)
     opt_basis_df_oep_A = psi4.core.get_global_option("DF_BASIS_OEP_A")
@@ -100,8 +100,8 @@ def _get_wavefunction_union_basis_sets(dimer):
     opt_basis_df_oep   = psi4.core.get_global_option("DF_BASIS_OEP")
     if not opt_basis_df_oep_A: opt_basis_df_oep_A = opt_basis_df_oep
     if not opt_basis_df_oep_B: opt_basis_df_oep_B = opt_basis_df_oep
-    basis_df_oep_A = psi4.core.BasisSet.build(molecule_A, "BASIS", opt_basis_df_oep_A, puream=pam)
-    basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", opt_basis_df_oep_B, puream=pam)
+    basis_df_oep_A = psi4.core.BasisSet.build(molecule_A, "BASIS", opt_basis_df_oep_A, puream=pam, quiet=True)
+    basis_df_oep_B = psi4.core.BasisSet.build(molecule_B, "BASIS", opt_basis_df_oep_B, puream=pam, quiet=True)
 
     # --- intermediate (OEP)
     if psi4.core.get_global_option("DF_BASIS_INT") == "":
@@ -109,19 +109,19 @@ def _get_wavefunction_union_basis_sets(dimer):
     else:
        b_int = psi4.core.get_global_option("DF_BASIS_INT")
 
-    basis_int_oep_A= psi4.core.BasisSet.build(molecule_A, "BASIS", b_int, puream=pam)
-    basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", b_int, puream=pam)
+    basis_int_oep_A= psi4.core.BasisSet.build(molecule_A, "BASIS", b_int, puream=pam, quiet=True)
+    basis_int_oep_B= psi4.core.BasisSet.build(molecule_B, "BASIS", b_int, puream=pam, quiet=True)
 
     # --- guess (OEP)
     basis_guess_A = psi4.core.BasisSet.build(molecule_A, "BASIS", psi4.core.get_global_option("OEPDEV_BASIS_GUESS_SET"),
-                                             puream=pam)
+                                             puream=pam, quiet=True)
     basis_guess_B = psi4.core.BasisSet.build(molecule_B, "BASIS", psi4.core.get_global_option("OEPDEV_BASIS_GUESS_SET"),
-                                             puream=pam)
+                                             puream=pam, quiet=True)
 
 
-    basis        = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("BASIS"       ), puream=pam)
-    basis_df_scf = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"), puream=pam)
-    basis_guess  = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("OEPDEV_BASIS_GUESS_SET"), puream=pam)
+    basis        = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("BASIS"       ), puream=pam, quiet=True)
+    basis_df_scf = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("DF_BASIS_SCF"), puream=pam, quiet=True)
+    basis_guess  = psi4.core.BasisSet.build(dimer, "BASIS", psi4.core.get_global_option("OEPDEV_BASIS_GUESS_SET"), puream=pam, quiet=True)
     #
     return molecule_A, molecule_B, \
            basis, basis_df_scf, basis_guess, basis_A, basis_B, basis_df_oep_A, basis_df_oep_B, \

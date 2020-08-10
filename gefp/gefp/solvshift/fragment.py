@@ -548,7 +548,7 @@ class Fragment(UNITS):
         #mol = libbbg.utilities.MakeMol(self.__atno, self.__pos, name=self.__name)
         #bfs = PyQuante.Ints.getbasis(mol, self.__basis)
         mol = self._make_molecule()
-        bfs = psi4.core.BasisSet.build(mol, "BASIS", self.__basis, puream=False)
+        bfs = psi4.core.BasisSet.build(mol, "BASIS", self.__basis, puream=False, quiet=True)
         return bfs
 
     def get_property(self, key, **kwargs):
