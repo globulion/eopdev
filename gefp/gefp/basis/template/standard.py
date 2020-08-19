@@ -147,7 +147,7 @@ standard_guess_parameters_by_atom["efp2-rep"]["O"] = [\
 1.79   ,          1.00-0.24-0.45,]
 standard_guess_parameters_by_atom["efp2-rep"]["C"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
 standard_guess_parameters_by_atom["efp2-rep"]["N"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
-standard_guess_parameters_by_atom["efp2-rep"]["S"] = []
+standard_guess_parameters_by_atom["efp2-rep"]["S"] = [] #TODO
 
 # EFP2-OEP (Charge Transfer)
 reference_symbol_by_row["efp2-ct"] = {}
@@ -165,7 +165,7 @@ standard_guess_parameters_by_atom["efp2-ct"]["H"] = standard_guess_parameters_by
 standard_guess_parameters_by_atom["efp2-ct"]["O"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
 standard_guess_parameters_by_atom["efp2-ct"]["C"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
 standard_guess_parameters_by_atom["efp2-ct"]["N"] = standard_guess_parameters_by_atom["efp2-rep"]["O"]
-standard_guess_parameters_by_atom["efp2-ct"]["S"] = []
+standard_guess_parameters_by_atom["efp2-ct"]["S"] = standard_guess_parameters_by_atom["efp2-rep"]["S"]
 
 
 # EET TODO

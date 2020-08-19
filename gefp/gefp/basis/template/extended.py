@@ -161,9 +161,29 @@ extended_guess_parameters_by_atom["efp2-rep"]["O"] = [\
 42.8   ,          0.24,
 7.91   ,          0.45,
 0.79   ,          1.00-0.24-0.45,]
+extended_guess_parameters_by_atom["efp2-rep"]["S"] = [\
+1266.6 ,          0.42, 
+123.55 ,          0.36,
+22.41  ,          1.00-0.42-0.36,
+100.21 ,          0.19,
+30.13  ,          0.50,
+1.83   ,          1.00-0.19-0.50,
+62.8   ,          0.24,
+9.91   ,          0.45,
+1.79   ,          1.00-0.24-0.45,
+12.8   ,          0.24,
+7.91   ,          0.45,
+0.79   ,          1.00-0.24-0.45,
+40.8   ,          0.24,
+2.91   ,          0.45,
+0.79   ,          1.00-0.24-0.45,
+10.8   ,          0.24,
+2.91   ,          0.45,
+0.79   ,          1.00-0.24-0.45,]
 extended_guess_parameters_by_atom["efp2-rep"]["C"] = extended_guess_parameters_by_atom["efp2-rep"]["O"]
 extended_guess_parameters_by_atom["efp2-rep"]["N"] = extended_guess_parameters_by_atom["efp2-rep"]["O"]
-extended_guess_parameters_by_atom["efp2-rep"]["S"] = []
+#extended_guess_parameters_by_atom["efp2-rep"]["P"] = extended_guess_parameters_by_atom["efp2-rep"]["S"]
+
 
 # EFP2-OEP (Charge Transfer)
 extended_scales_by_row["efp2-ct"] = {}
@@ -176,7 +196,14 @@ extended_guess_parameters_by_atom["efp2-ct"]["H"] = extended_guess_parameters_by
 extended_guess_parameters_by_atom["efp2-ct"]["O"] = extended_guess_parameters_by_atom["efp2-rep"]["O"]
 extended_guess_parameters_by_atom["efp2-ct"]["C"] = extended_guess_parameters_by_atom["efp2-rep"]["O"]
 extended_guess_parameters_by_atom["efp2-ct"]["N"] = extended_guess_parameters_by_atom["efp2-rep"]["O"]
-extended_guess_parameters_by_atom["efp2-ct"]["S"] = []
+#extended_guess_parameters_by_atom["efp2-ct"]["Na"] = extended_guess_parameters_by_atom["efp2-rep"]["Na"]
+#extended_guess_parameters_by_atom["efp2-ct"]["Mg"] = extended_guess_parameters_by_atom["efp2-rep"]["Mg"]
+#extended_guess_parameters_by_atom["efp2-ct"]["Al"] = extended_guess_parameters_by_atom["efp2-rep"]["Al"]
+#extended_guess_parameters_by_atom["efp2-ct"]["Si"] = extended_guess_parameters_by_atom["efp2-rep"]["Si"]
+#extended_guess_parameters_by_atom["efp2-ct"]["P"] = extended_guess_parameters_by_atom["efp2-rep"]["P"]
+extended_guess_parameters_by_atom["efp2-ct"]["S"] = extended_guess_parameters_by_atom["efp2-rep"]["S"]
+#extended_guess_parameters_by_atom["efp2-ct"]["Cl"] = extended_guess_parameters_by_atom["efp2-rep"]["Cl"]
+#extended_guess_parameters_by_atom["efp2-ct"]["Ar"] = extended_guess_parameters_by_atom["efp2-rep"]["Ar"]
 
 
 # EET TODO
