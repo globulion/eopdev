@@ -264,7 +264,7 @@ double RepulsionEnergySolver::compute_benchmark_hayes_stone() {
   e_ex = compute_pure_exchange_energy();
 
   t_time += clock(); // Clock END
-  cout << " o TIME HS       : " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
+  cout << " o TIME SOLVER REP HS       : " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
 
   // ---> Save <--- //
   psi::Process::environment.globals["EINT REP HAYES-STONE KCAL"] =(e_1+e_2)     *OEPDEV_AU_KcalPerMole;
@@ -495,7 +495,7 @@ double RepulsionEnergySolver::compute_benchmark_murrell_etal() {
   psi::timer_off("Solver E(Paul) Murrell-etal     ");
 
   t_time += clock(); // Clock END
-  cout << " o TIME MRL      : " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
+  cout << " o TIME SOLVER REP MRL      : " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
 
   // ===> Compute the Exchange Energy <=== //
   double e_exch = compute_pure_exchange_energy();
@@ -827,7 +827,7 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
 
   e_s1 = SF1S->trace() + SF2S->trace() - 2.0 * Smo12->vector_dot(Tmo12);
   t_time += clock(); // Clock END
-  cout << " o TIME EFP2 (S1): " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
+  cout << " o TIME SOLVER REP EFP2 (S1): " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
 
   SF1S.reset();
   SF2S.reset();
@@ -934,7 +934,7 @@ double RepulsionEnergySolver::compute_benchmark_efp2() {
   t_time_rest -= clock(); // Clock BEGIN
   double e_exch_efp2 = compute_efp2_exchange_energy(Smo12, R1mo, R2mo);
   t_time_rest += clock(); // Clock END
-  cout << " o TIME EFP2 (RS): " << ((double)t_time_rest/CLOCKS_PER_SEC * 1000.0) << endl;
+  cout << " o TIME SOLVER REP EFP2 (RS): " << ((double)t_time_rest/CLOCKS_PER_SEC * 1000.0) << endl;
 
   // ===> Finish <=== //
   e = e_s1 + e_s2;
@@ -1054,7 +1054,7 @@ double RepulsionEnergySolver::compute_oep_based_murrell_etal_gdf_camm() {
   e_s1  = SSG1->trace() + SSG2->trace();
   e_s1 *= -2.0;
   t_time += clock(); // Clock END
-  cout << " o TIME OEP  (S1): " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
+  cout << " o TIME SOLVER REP OEP  (S1): " << ((double)t_time/CLOCKS_PER_SEC * 1000.0) << endl;
 
   // ===> Compute S^-2 term <=== //
   SharedMTPConv conv_aB = oep_1->oep("Otto-Ladik.S2.CAMM.a").dmtp->energy(oep_2->oep("Otto-Ladik.S2.CAMM.A").dmtp);

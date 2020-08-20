@@ -574,7 +574,7 @@ double ChargeTransferEnergySolver::compute_benchmark_murrell_etal(){
   E_ct_2_23 *= 2.0;
 
   t_time += clock(); // Clock END
-  cout << " o TIME OL  : " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+  cout << " o TIME SOLVER CT OL  : " << ((double)t_time/CLOCKS_PER_SEC) << endl;
 
   //Whole CT Energy E_CT(A+B-) + E_CT(A-B+)//
   double E_ct = E_ct_1 + E_ct_2;
@@ -1181,7 +1181,7 @@ double ChargeTransferEnergySolver::compute_benchmark_efp2()
   // ---> Timer-off <--- //
   psi::timer_off("Solver E(CT) EFP2 MO-Expanded");
   t_time += clock(); // Clock END
-  cout << " o TIME EFP2: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+  cout << " o TIME SOLVER CT EFP2: " << ((double)t_time/CLOCKS_PER_SEC) << endl;
     
   // ---> Print results <--- //
   if (wfn_union_->options().get_int("PRINT") > -1) 
@@ -1390,7 +1390,7 @@ double ChargeTransferEnergySolver::compute_oep_based_murrell_etal()
   double e_tot = e_ab + e_ba;
   psi::Process::environment.globals["EINT CT OEP-OTTO-LADIK KCAL"] = e_tot*OEPDEV_AU_KcalPerMole;
 
-  cout << " o TIME OEP : " << ((double)t_time/CLOCKS_PER_SEC) << endl;
+  cout << " o TIME SOLVER CT OEP : " << ((double)t_time/CLOCKS_PER_SEC) << endl;
   //cout << " Time OEP : " << t_end - t_begin - (t2 - t1) << endl;
 
   // ---> Print <--- //

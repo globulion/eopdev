@@ -641,10 +641,10 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
 
  // IntegralFactory //
  t_time += clock();
- psi::IntegralFactory fact_12(primary_1, primary_2, primary_1, primary_2);
- psi::IntegralFactory fact_21(primary_2, primary_1, primary_2, primary_1);
- psi::IntegralFactory fact_11(primary_1, primary_1, primary_1, primary_1);
- psi::IntegralFactory fact_22(primary_2, primary_2, primary_2, primary_2);
+ oepdev::IntegralFactory fact_12(primary_1, primary_2, primary_1, primary_2);
+ oepdev::IntegralFactory fact_21(primary_2, primary_1, primary_2, primary_1);
+ oepdev::IntegralFactory fact_11(primary_1, primary_1, primary_1, primary_1);
+ oepdev::IntegralFactory fact_22(primary_2, primary_2, primary_2, primary_2);
  t_time -= clock();
 
  // Overlap integrals //
@@ -695,13 +695,19 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  auto mult_1= this->extract_dmtp(camm_1);
  auto mult_2= this->extract_dmtp(camm_2);
  //
+ int max_k = 3; int kdim = 20;
+ if (psi::Process::environment.options.get_bool("EFP2_CT_NO_OCTUPOLES")) { max_k = 2; kdim = 20; }
  std::shared_ptr<psi::OneBodyAOInt> efp_ints_12(fact_12.ao_efp_multipole_potential());
  std::shared_ptr<psi::OneBodyAOInt> efp_ints_11(fact_11.ao_efp_multipole_potential());
  std::shared_ptr<psi::OneBodyAOInt> efp_ints_21(fact_21.ao_efp_multipole_potential());
  std::shared_ptr<psi::OneBodyAOInt> efp_ints_22(fact_22.ao_efp_multipole_potential());
+ //std::shared_ptr<psi::OneBodyAOInt> efp_ints_12(fact_12.ao_efp_multipole_potential_new(max_k,0));
+ //std::shared_ptr<psi::OneBodyAOInt> efp_ints_11(fact_11.ao_efp_multipole_potential_new(max_k,0));
+ //std::shared_ptr<psi::OneBodyAOInt> efp_ints_21(fact_21.ao_efp_multipole_potential_new(max_k,0));
+ //std::shared_ptr<psi::OneBodyAOInt> efp_ints_22(fact_22.ao_efp_multipole_potential_new(max_k,0));
  //
  std::vector<psi::SharedMatrix> mats_12, mats_11, mats_21, mats_22;
- for (int i = 0; i < 20; ++i) {
+ for (int i = 0; i < kdim; ++i) {
       psi::SharedMatrix mm12 = std::make_shared<psi::Matrix>("", nbf_1, nbf_2);
       psi::SharedMatrix mm11 = std::make_shared<psi::Matrix>("", nbf_1, nbf_1);
       psi::SharedMatrix mm21 = std::make_shared<psi::Matrix>("", nbf_2, nbf_1);
@@ -724,7 +730,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  // Molecule B CAMM
  for (size_t n2 = 0; n2 < n_multipole_2; n2++) {
 
-      for (int i = 0; i < 20; ++i) {
+      for (int i = 0; i < kdim; ++i) {
            mats_12[i]->zero();
            mats_11[i]->zero();
       }
@@ -734,7 +740,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
       efp_ints_12->compute(mats_12);
       efp_ints_11->compute(mats_11);
 
-      for (int i = 0; i < 20; ++i) {                            
+      for (int i = 0; i < kdim; ++i) {                            
            mats_12[i]->scale(-prefacs[i] * mult_2_p[20 * n2 + i]);
            mats_11[i]->scale(-prefacs[i] * mult_2_p[20 * n2 + i]);
            VaoB12->add(mats_12[i]);
@@ -745,7 +751,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  // Molecule A CAMM
  for (size_t n1 = 0; n1 < n_multipole_1; n1++) {
 
-      for (int i = 0; i < 20; ++i) {
+      for (int i = 0; i < kdim; ++i) {
            mats_21[i]->zero();
            mats_22[i]->zero();
       }
@@ -755,7 +761,7 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
       efp_ints_21->compute(mats_21);
       efp_ints_22->compute(mats_22);
 
-      for (int i = 0; i < 20; ++i) {                            
+      for (int i = 0; i < kdim; ++i) {                            
            mats_21[i]->scale(-prefacs[i] * mult_1_p[20 * n1 + i]);
            mats_22[i]->scale(-prefacs[i] * mult_1_p[20 * n1 + i]);
            VaoA21->add(mats_21[i]);

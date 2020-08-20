@@ -18,6 +18,7 @@
 #include "../libutil/cphf.h"
 #include "../libutil/scf_perturb.h"
 #include "../libutil/quambo.h"
+#include "../libpsi/integral.h"
 
 namespace oepdev{
 

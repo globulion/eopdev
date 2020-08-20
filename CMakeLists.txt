@@ -96,7 +96,9 @@ add_psi4_plugin(oepdev main.cc
                        oepdev/lib3d/dmtp_base.cc
                        oepdev/lib3d/dmtp_camm.cc
 		       # libpsi
+                       oepdev/libpsi/osrecur.cc
                        oepdev/libpsi/potential.cc
+                       oepdev/libpsi/multipole_potential.cc
                        oepdev/libpsi/integral.cc
 		       # libints
                        oepdev/libints/recurr.cc

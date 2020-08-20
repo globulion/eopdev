@@ -5,11 +5,14 @@
  *
  * BARTOSZ BŁASIAK (blasiak.bartosz@gmail.com)
  * Extension of psi::IntegralFactory
- * from original version from Psi4-1.1.
+ * from original version from Psi4-1.2.1.
  * Modification log:
  *   19.02.2018     - Creation of ERI_2_2, ERI_3_1, ERI_2_1 and ERI_1_1 objects
  *                    was added. The constructors are the same as in original
  *                    psi::IntegralFactory.
+ *
+ *   20.08.2020     - Adding calculation of improved EFP multipole potential
+ *                    integrals with specifying maximum multipole order.
  *
  * @END LICENSE
  */
@@ -21,6 +24,7 @@
 #include "psi4/libmints/integral.h"
 #include "psi4/libmints/basisset.h"
 #include "psi4/libmints/matrix.h"
+#include "multipole_potential.h"
 
 namespace oepdev{
 
@@ -100,6 +104,9 @@ class IntegralFactory : public psi::IntegralFactory
 
 
   // ---> Computers <--- //
+
+  /// Returns an improved EFPMultipolePotentialInt
+  virtual psi::OneBodyAOInt* ao_efp_multipole_potential_new(int max_k=3, int deriv=0);
 
   /// Returns an ERI_1_1 integral object
   virtual oepdev::TwoBodyAOInt* eri_1_1(int deriv=0, bool use_shell_pairs=false);

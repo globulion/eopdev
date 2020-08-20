@@ -87,6 +87,10 @@ oepdev::IntegralFactory::IntegralFactory(std::shared_ptr<psi::BasisSet> bs1) :
 oepdev::IntegralFactory::~IntegralFactory() 
 {
 }
+psi::OneBodyAOInt* oepdev::IntegralFactory::ao_efp_multipole_potential_new(int max_k, int deriv)
+{
+  return new oepdev::EFPMultipolePotentialInt(spherical_transforms_, bs1_, bs2_, max_k, deriv); 
+}
 oepdev::TwoBodyAOInt* oepdev::IntegralFactory::eri_1_1(int deriv, bool use_shell_pairs)
 {
   return new oepdev::ERI_1_1(this, deriv, use_shell_pairs);
