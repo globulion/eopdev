@@ -150,12 +150,12 @@ def find_aux_mo_mini(G, S, I=None, eps=0.0001):
 #c4 = {'type':'eq', 'fun': lambda x: x[19]+x[21]+x[23]-1.0}
 #c = [c1, c2, c3, c4]
 
-def optimize_ao_mini(t_i, bsf_i, dfbasis, opt_global, cpp=False):
+def optimize_ao_mini(t_i, bsf_i, dfbasis,opt_global, cpp=False, maxiter_micro=2000, maxiter_macro=10):
     "Target routine for AO basis set optimization"
     param_0 = dfbasis.param
     psi4.core.print_out(" Initial Z = %14.6f\n" % obj_numpy(param_0, t_i, bsf_i, dfbasis))
 
-    options = {"disp": True, "maxiter": 2000, "ftol": 1.e-9, "iprint": 8}
+    options = {"disp": True, "maxiter": maxiter_micro, "ftol": 1.e-9, "iprint": 8}
     if cpp:
        mints = psi4.core.MintsHelper(bsf_i)
        T_i = psi4.core.Matrix.from_array(t_i)
@@ -170,7 +170,7 @@ def optimize_ao_mini(t_i, bsf_i, dfbasis, opt_global, cpp=False):
                    options=options, bounds=dfbasis.bounds)
     else:
        take_step = parameters.TakeMyStandardSteps(dfbasis.scales)
-       res = scipy.optimize.basinhopping(OBJ, param_0, niter=10, 
+       res = scipy.optimize.basinhopping(OBJ, param_0, niter=maxiter_macro, 
                               T=0.02, stepsize=0.5,
                               minimizer_kwargs={"method": 'slsqp', "options": options,
                                   "bounds": dfbasis.bounds, "args": ARGS, "constraints": dfbasis.constraints},
@@ -178,6 +178,9 @@ def optimize_ao_mini(t_i, bsf_i, dfbasis, opt_global, cpp=False):
                               take_step=take_step ).lowest_optimization_result #, accept_test=accept_test)
        psi4.core.print_out(res.message+"\n")
        psi4.core.print_out(" Optimal Z = %14.6f\n" % res.fun)  
+       if not res.success:
+          psi4.core.print_out(" Local optimization is not successful but the result will be passed to the output file.\n")
+          res.success = True
     if not res.success: 
        raise ValueError("Optimization is not succesfull!")
     else: 

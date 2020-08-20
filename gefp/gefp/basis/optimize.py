@@ -167,9 +167,10 @@ class DFBasis:
 # -------------------------------------------------------------------------------------------- #
 
 def oep_ao_basis_set_optimizer(wfn, interm, 
-                  test=None, exemplary=None, target="OCC", cpp=False, more_info=False, 
-                  templ_file='templ.dat', param_file='param.dat', bound_file=None, constraints=(), outname='basis.gbs',
-                  opt_global=False, standardized_input=None):
+                  test=None, exemplary=None, target="OCC", cpp=False, more_info=False, maxiter=2000, 
+                  templ_file='templ.dat', param_file='param.dat', bound_file=None, constraints=(), outname='oepfit.gbs',
+                  opt_global=False, global_iter=10, 
+                  standardized_input=None):
     """
  Method that optimizes DF basis set.
  This is currently the state-of-the-art and recommended.
@@ -253,7 +254,7 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     # ---> optimize < --- #
 
     TIME = -time.time()
-    dfbasis = edf.optimize_ao_mini(T, interm, dfbasis, opt_global, cpp)
+    dfbasis = edf.optimize_ao_mini(T, interm, dfbasis, opt_global, cpp, maxiter, global_iter)
     TIME += time.time()
 
 
@@ -369,6 +370,7 @@ def oep_ao_basis_set_optimizer(wfn, interm,
     psi4.core.print_out(" Use QUAMBO?         %r\n" % do_quambo)
     psi4.core.print_out(" Localized?          %r\n" % localize)
     psi4.core.print_out(" Global opt?         %r\n" % opt_global)
+    psi4.core.print_out(" MaxIterMicro        %d\n" % maxiter)
     psi4.core.print_out("\n")
     psi4.core.print_out(" Objective Function\n")
     psi4.core.print_out(" ------------------\n")
