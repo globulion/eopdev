@@ -48,10 +48,13 @@ using namespace std;
 class EFPMultipolePotentialInt : public psi::OneBodyAOInt {
    protected:
     // OS Recursion for this type of potential integral
-    oepdev::ObaraSaikaTwoCenterMultipolePotentialRecursion mvi_recur_;
+    oepdev::ObaraSaikaTwoCenterEFPRecursion_New mvi_recur_;
 
     // maximum multipole order to compute
     int max_k_;
+    //
+    bool do_octupoles_;
+    int nchunk_;
 
     //! Computes the electric field between two gaussian shells.
     void compute_pair(const psi::GaussianShell&, const psi::GaussianShell&) override;

@@ -690,21 +690,23 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  size_t n_multipole_2 = mol_2->natom();
  assert (n_multipole_1 == camm_1->n_sites());
  assert (n_multipole_2 == camm_2->n_sites());
+ t_time += clock();
  auto xyz_1 = this->extract_xyz(mol_1);
  auto xyz_2 = this->extract_xyz(mol_2);
  auto mult_1= this->extract_dmtp(camm_1);
  auto mult_2= this->extract_dmtp(camm_2);
+ t_time -= clock();
  //
  int max_k = 3; int kdim = 20;
- if (psi::Process::environment.options.get_bool("EFP2_CT_NO_OCTUPOLES")) { max_k = 2; kdim = 20; }
- std::shared_ptr<psi::OneBodyAOInt> efp_ints_12(fact_12.ao_efp_multipole_potential());
- std::shared_ptr<psi::OneBodyAOInt> efp_ints_11(fact_11.ao_efp_multipole_potential());
- std::shared_ptr<psi::OneBodyAOInt> efp_ints_21(fact_21.ao_efp_multipole_potential());
- std::shared_ptr<psi::OneBodyAOInt> efp_ints_22(fact_22.ao_efp_multipole_potential());
- //std::shared_ptr<psi::OneBodyAOInt> efp_ints_12(fact_12.ao_efp_multipole_potential_new(max_k,0));
- //std::shared_ptr<psi::OneBodyAOInt> efp_ints_11(fact_11.ao_efp_multipole_potential_new(max_k,0));
- //std::shared_ptr<psi::OneBodyAOInt> efp_ints_21(fact_21.ao_efp_multipole_potential_new(max_k,0));
- //std::shared_ptr<psi::OneBodyAOInt> efp_ints_22(fact_22.ao_efp_multipole_potential_new(max_k,0));
+ if (psi::Process::environment.options.get_bool("EFP2_CT_NO_OCTUPOLES")) { max_k = 2; kdim = 10; }
+ //std::shared_ptr<psi::OneBodyAOInt> efp_ints_12(fact_12.ao_efp_multipole_potential());
+ //std::shared_ptr<psi::OneBodyAOInt> efp_ints_11(fact_11.ao_efp_multipole_potential());
+ //std::shared_ptr<psi::OneBodyAOInt> efp_ints_21(fact_21.ao_efp_multipole_potential());
+ //std::shared_ptr<psi::OneBodyAOInt> efp_ints_22(fact_22.ao_efp_multipole_potential());
+ std::shared_ptr<psi::OneBodyAOInt> efp_ints_12(fact_12.ao_efp_multipole_potential_new(max_k,0));
+ std::shared_ptr<psi::OneBodyAOInt> efp_ints_11(fact_11.ao_efp_multipole_potential_new(max_k,0));
+ std::shared_ptr<psi::OneBodyAOInt> efp_ints_21(fact_21.ao_efp_multipole_potential_new(max_k,0));
+ std::shared_ptr<psi::OneBodyAOInt> efp_ints_22(fact_22.ao_efp_multipole_potential_new(max_k,0));
  //
  std::vector<psi::SharedMatrix> mats_12, mats_11, mats_21, mats_22;
  for (int i = 0; i < kdim; ++i) {
