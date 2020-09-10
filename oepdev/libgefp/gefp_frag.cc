@@ -690,12 +690,12 @@ double oepdev::GenEffFrag::compute_pairwise_energy_efp2_ct(std::shared_ptr<GenEf
  size_t n_multipole_2 = mol_2->natom();
  assert (n_multipole_1 == camm_1->n_sites());
  assert (n_multipole_2 == camm_2->n_sites());
- t_time += clock();
+// t_time += clock();
  auto xyz_1 = this->extract_xyz(mol_1);
  auto xyz_2 = this->extract_xyz(mol_2);
  auto mult_1= this->extract_dmtp(camm_1);
  auto mult_2= this->extract_dmtp(camm_2);
- t_time -= clock();
+// t_time -= clock();
  //
  int max_k = 3; int kdim = 20;
  if (psi::Process::environment.options.get_bool("EFP2_CT_NO_OCTUPOLES")) { max_k = 2; kdim = 10; }
