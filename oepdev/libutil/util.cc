@@ -4,6 +4,9 @@
 #include "../libutil/integrals_iter.h"
 #include "psi4/libiwl/iwl.hpp"
 
+#include "psi4/libpsi4util/process.h"
+#include "psi4/libfock/jk.h"
+
 
 namespace oepdev{
 
@@ -394,6 +397,91 @@ std::vector<std::shared_ptr<psi::Matrix>> calculate_JK(std::shared_ptr<psi::Wave
   //Kij->print();
   return JK;
 }
+
+extern "C" PSI_API
+double calculate_idf_ex_energy(
+  std::shared_ptr<psi::Wavefunction> wfn, 
+  std::shared_ptr<psi::Matrix> D,
+  std::vector<std::shared_ptr<psi::Matrix>> f,
+  std::vector<std::shared_ptr<psi::Matrix>> g,
+  std::shared_ptr<psi::Vector> w, // weights from Gauss-Legendre quadrature
+  std::shared_ptr<psi::Vector> o, // omega values from Gauss-Legendre quadrature
+  double N, double aN, double xiN, double AN)
+{
+
+  const int n_quadrature = w->dim();
+  const double xiNinv = 1.0/xiN;
+  const double aNinv = 1.0/aN;
+  const double kN = aN*(N-1.0)/N;
+  const double eknm = exp(kN) - 1.0;
+
+  double e = 0.0;
+
+  // Compute ERI's
+  //std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(wfn->basisset());
+  //mints->integrals();
+
+  // Compute J and K matrices in AO basis
+  std::shared_ptr<psi::JK> jk;
+  if (wfn->basisset_exists("BASIS_DF_SCF")) {
+    jk = psi::JK::build_JK(wfn->basisset(), wfn->get_basisset("BASIS_DF_SCF"), wfn->options());
+  } else {
+    jk = psi::JK::build_JK(wfn->basisset(), psi::BasisSet::zero_ao_basis_set(), wfn->options());
+  }
+
+  jk->set_memory(psi::Process::environment.get_memory() / 8L); 
+  jk->initialize();
+//jk->print_header();
+  
+  std::vector<psi::SharedMatrix>& Cl = jk->C_left();
+  std::vector<psi::SharedMatrix>& Cr = jk->C_right();
+
+  const std::vector<psi::SharedMatrix>& J = jk->J();
+  const std::vector<psi::SharedMatrix>& K = jk->K();
+
+  psi::SharedMatrix II = f[0]->clone(); II->identity();
+  psi::SharedMatrix DI = D->clone();
+  psi::SharedMatrix IV = II->clone();
+
+  Cl.push_back(DI);
+  Cr.push_back(IV);
+ 
+  for (int I=0; I<n_quadrature; ++I) {
+       psi::SharedMatrix fI = f[I]->clone();
+       psi::SharedMatrix III = II->clone();
+
+       Cl.push_back(fI);
+       Cr.push_back(III);
+  }
+  for (int I=0; I<n_quadrature; ++I) {
+       psi::SharedMatrix gI = g[I]->clone();
+       psi::SharedMatrix III = II->clone();
+
+       Cl.push_back(gI);
+       Cr.push_back(III);
+  }
+  jk->compute();
+
+  // Hartree Correction Term
+  e = xiNinv * 2.0 * AN * D->vector_dot(J[0]);
+
+  // Pure-Exchange Correction Term
+  e-= xiNinv * (-1.0 + eknm/ (aN * log(1.0 + eknm/aN) ) ) * D->vector_dot(K[0]);
+
+  // Remainder XC Term
+  for (int I=0; I<n_quadrature; ++I) {
+       double wI = w->get(I);
+       double oI = o->get(I);
+       double vI = 2.0 * f[I]->vector_dot(J[I+1]) - N * g[I]->vector_dot(K[I+1]);
+       double hI = (1.0 - sqrt(oI)) * (exp(kN*oI) - 1.0) / (oI*sqrt(oI));
+       e += 0.5 * xiNinv * aNinv * wI * hI * vI;
+  }
+
+  jk->finalize();
+  return e;
+}
+
+
 
 extern "C" PSI_API
 std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_r(std::shared_ptr<psi::Wavefunction> wfn, 

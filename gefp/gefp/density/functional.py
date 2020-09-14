@@ -74,6 +74,7 @@ class XCFunctional(ABC, Density):
 """
         if   name.lower() == 'hf'   : xc_functional =        HF_XCFunctional()
         elif name.lower() == 'mbb'  : xc_functional =       MBB_XCFunctional()
+        elif name.lower() == 'mbb-1': xc_functional =     MBB_1_XCFunctional()
         elif name.lower() == 'gu'   : xc_functional =        GU_XCFunctional()
         elif name.lower() == 'bbc1' : xc_functional =      BBC1_XCFunctional()
         elif name.lower() == 'bbc2' : xc_functional =      BBC2_XCFunctional()
@@ -105,9 +106,19 @@ class XCFunctional(ABC, Density):
         raise NotImplementedError("Derivatives of fij for %s functional were not implemented since they are unnecessary." %\
                                   self.abbr.upper())
 
-    def energy_D(self, x, mode): 
+    def energy_D(self, x, mode):
         "Exchange-correlation energy"
         raise NotImplementedError("%s energy is not implemented for D sets." % self.abbr.upper())
+
+    def energy_D_add(self, x): #ADD
+        "Exchange-correlation energy"
+        n, c = x.unpack()
+        f = self.fij(n)
+        psi_f = psi4.core.Matrix.from_array(f, "")
+        psi_c = psi4.core.Matrix.from_array(c, "")
+        xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
+        return xc_energy
+
 
     def energy_P(self, x):
         "Exchange-correlation energy"
@@ -147,6 +158,20 @@ class XCFunctional(ABC, Density):
                 if i!=j: Der[j, i] = d
         return Guess.create(matrix=Der)
 
+    def gradient_D_numerical(self, x): #ADD
+        "Numerical gradient with respect to P matrix"
+        E0 = self.energy_D_add(x)
+        D  = x.matrix()
+        N  = D.shape[0]
+        Der = numpy.zeros((N,N), numpy.float64)
+        for i in range(N):
+            for j in range(i+1):
+                d = self._compute_deriv_D(i, j, D, E0)
+                Der[i, j] = d
+                if i!=j: Der[j, i] = d
+        return Guess.create(matrix=Der)
+
+
     def gradient_nc(self, x): 
         "Gradient with respect to N and C"
         raise NotImplementedError("Gradient of %s energy is not implemented for NC sets." % self.abbr.upper())
@@ -175,6 +200,17 @@ class XCFunctional(ABC, Density):
         E1 = self.energy_P(guess)
         der = (E1 - E0) / h
         return der
+
+    def _compute_deriv_D(self, n, m, D, E0): #ADD
+        step = 0.000008; h = 2.0*step
+        D1= D.copy()
+        D1[m,n] += step; D1[n,m] += step
+
+        guess = Guess.create(matrix=D1)
+        guess.update()
+        E1 = self.energy_D_add(guess)
+        der = (E1 - E0) / h
+        return der / 2.0
 
 
 
@@ -334,6 +370,53 @@ class MBB_XCFunctional(XCFunctional):
         else: raise ValueError("Only mode=ao or scf-mo is supported as for now. Mistyped?")
         return xc_energy
 
+class MBB_1_XCFunctional(MBB_XCFunctional):
+    """
+ The Muller-Buijse-Baerends Exchange-Correlation Functional + first term from unfolding
+"""
+    def __init__(self):
+        super(MBB_1_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "Muller-Buijse-Baerends XC Functional for closed-shell systems + 1st unfolding term"
+
+    @property
+    def abbr(self): return "MBB-1"
+
+    @staticmethod
+    def fij(n, eps=1e-20): 
+        a = 0.8 # MBB part in the functional: adjust manually
+        b = 1.0 - a
+        s2 = math.sqrt(2.0)
+        fij_mbb = MBB_XCFunctional.fij(n)
+        f2 = n*n
+        fij_hf = numpy.outer(n,n)
+        d = numpy.sqrt( f2[:,numpy.newaxis] + f2[numpy.newaxis,:] )
+        f = fij_hf.copy()
+        for i in range(len(n)):
+            for j in range(len(n)):
+                d_ij = d[i,j]
+                if d_ij < eps: f[i,j] = a*fij_mbb[i,j]
+                else: f[i,j] = a*fij_mbb[i,j] + b*s2 * f[i,j] / d_ij
+        return f
+
+    def energy_P(self, x):
+        "Exchange-correlation energy"
+        p, c = x.unpack()
+        f = self.fij(p*p)
+        psi_f = psi4.core.Matrix.from_array(f, "")
+        psi_c = psi4.core.Matrix.from_array(c, "")
+        xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
+        return xc_energy
+
+    def gradient_P(self, x):
+        "Gradient with respect to P matrix"
+        raise NotImplementedError
+
+    def gradient_pc(self, x):
+        "Gradient with respect to PC matrix"
+        raise NotImplementedError
+
 
 class GU_XCFunctional(XCFunctional):
     """
@@ -472,6 +555,9 @@ class Interpolating_XCFunctional(XCFunctional):
         super(Interpolating_XCFunctional, self).__init__()
         self.parameters = parameters
 
+    @staticmethod 
+    def phi(n):
+        return (n*n).sum()
     @staticmethod
     def fij(n, z, eps=1.0e-20): 
         "z - unfolding parameter"
@@ -506,6 +592,31 @@ class IDF1_XCFunctional(Interpolating_XCFunctional):
 
     @property
     def abbr(self): return "IDF1"
+
+    @staticmethod
+    def aN(phi, N):
+        x = 2.0 * phi / N
+        a0 = (0.0417644 * N - 0.00223544 * N*N) / (1.0 -1.04842 * N + 0.292082 * N*N)
+        a1 = (1.71556   * N + 0.00409398 * N*N) / (1.0 -1.42459 * N + 1.02131  * N*N)
+        a2 = (0.00024548* N - 0.00000168 * N*N) / (1.0 -0.923738* N + 0.215108 * N*N)
+        a = a0 + a1 * x + a2 * x*x
+        return a
+    @staticmethod
+    def xiN(an):
+        kn = an * (N-1.0)/N
+        xi = (2.0 + 2.0*math.exp(kn)*(2.0*math.sqrt(kn) * dawson(kn) - 1.0) ) / an
+        return xi
+    
+    def energy_P(self, x):
+        "Exchange-correlation energy"
+        p, c = x.unpack()
+        n    = p*p
+        N    = n.sum()
+        Phi  = Interpolating_XCFunctional.phi(n)
+        a_n  = IDF1_XCFunctional.aN(Phi, N)
+        xi_n = IDF1_XCFunctional.xiN(a_n)
+        xc_energy = 0.0 #TODO
+        return xc_energy
 
 
 
