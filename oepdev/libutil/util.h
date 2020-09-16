@@ -215,14 +215,14 @@ std::vector<std::shared_ptr<psi::Matrix>> calculate_JK(std::shared_ptr<psi::Wave
  *  Provide matrices in AO basis!
  */
 extern "C" PSI_API
-double calculate_idf_ex_energy(
+double calculate_idf_xc_energy(
   std::shared_ptr<psi::Wavefunction> wfn, 
   std::shared_ptr<psi::Matrix> D,
   std::vector<std::shared_ptr<psi::Matrix>> f,
   std::vector<std::shared_ptr<psi::Matrix>> g,
   std::shared_ptr<psi::Vector> w, // weights from Gauss-Legendre quadrature
   std::shared_ptr<psi::Vector> o, // omega values from Gauss-Legendre quadrature
-  double N, double aN, double xiN, double AN);
+  double N, double aN, double xiN, double AN, double wnorm);
 
 
 /** \brief Compute the Coulomb and exchange integral matrices in MO basis. 

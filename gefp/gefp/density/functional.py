@@ -561,6 +561,7 @@ class Interpolating_XCFunctional(XCFunctional):
     @staticmethod
     def fij(n, z, eps=1.0e-20): 
         "z - unfolding parameter"
+        raise NotImplementedError
         k = z
         W = 1.0/float(k+1.0)
         K = float(k*(k+1.0))
@@ -600,25 +601,93 @@ class IDF1_XCFunctional(Interpolating_XCFunctional):
         a1 = (1.71556   * N + 0.00409398 * N*N) / (1.0 -1.42459 * N + 1.02131  * N*N)
         a2 = (0.00024548* N - 0.00000168 * N*N) / (1.0 -0.923738* N + 0.215108 * N*N)
         a = a0 + a1 * x + a2 * x*x
+       #print("a= ",a)
         return a
     @staticmethod
-    def xiN(an):
-        kn = an * (N-1.0)/N
-        xi = (2.0 + 2.0*math.exp(kn)*(2.0*math.sqrt(kn) * dawson(kn) - 1.0) ) / an
+    def xiN(an, N):
+        kn = abs(an * (N-1.0)/N)
+        kns= math.sqrt(kn)
+        xi = (2.0 + 2.0*math.exp(kn)*(2.0*kns * scipy.special.dawsn(kns) - 1.0) ) / an
+       #print(kn, kns, scipy.special.dawsn(kns), an, math.exp(kn))
+       #print("xi= ",xi)
+       #exit()
         return xi
-    
-    def energy_P(self, x):
+
+    def energy_D_add(self, x): #ADD
         "Exchange-correlation energy"
-        p, c = x.unpack()
-        n    = p*p
-        N    = n.sum()
-        Phi  = Interpolating_XCFunctional.phi(n)
-        a_n  = IDF1_XCFunctional.aN(Phi, N)
-        xi_n = IDF1_XCFunctional.xiN(a_n)
-        xc_energy = 0.0 #TODO
+        n, c = x.unpack()
+        p    = numpy.sqrt(n)
+        P    = c @ p @ c.T
+        y    = Guess.create(p, c, P, "matrix")
+        xc_energy = self.energy_P(y)
         return xc_energy
 
+    
+    def energy_P(self, x, n_quad=12, eps=1.0e-9):
+        "Exchange-correlation energy of IDF functional"
+        p, c = x.unpack()
+       #print("p= ",p)
+        n    = p*p ; n[numpy.where(n < 0.0)] = 0.0
+        N    = n.sum()*2.0
+        Phi  = Interpolating_XCFunctional.phi(n)
+        a_n  = IDF1_XCFunctional.aN(Phi, N)
+        xi_n = IDF1_XCFunctional.xiN(a_n, N)
 
+        kn   = abs(a_n * (N-1.0)/N)
+        si, ci = scipy.special.shichi(kn)
+        A = (si + ci -numpy.log(kn) -numpy.euler_gamma - xi_n*a_n) / a_n
+
+       #print("N= ", N)
+        x, w = scipy.special.roots_legendre(n_quad); wnorm = 1./w.sum()
+        o    = 0.5*(1.0 + x)
+        o    = psi4.core.Vector.from_array(o)
+        w    = psi4.core.Vector.from_array(w)
+
+        # f and g matrices
+        f = []
+        g = []
+        zeta = 0.000001 # adjust!!!
+
+        L = numpy.dot(self._Ca.T, self._S)                        
+        R = numpy.dot(numpy.linalg.inv(numpy.dot(L.T, L)), L.T).T
+       #R = L.copy()
+
+        for i in range(n_quad):
+            omega = o.get(i)
+            z = -zeta * numpy.log(omega)
+           #print("Quad: ", i+1, omega, z)
+            fx = n**(z*(z+1.0))
+            vij = (fx[numpy.newaxis,:] + fx[:,numpy.newaxis])**(1.0/(z+1.0))
+            wij = (2.0)**(1.0/(z+1.0)) * numpy.outer(n,n)**((z+1.0)/2.0)
+            Fmo = vij.copy()
+           #print(n)
+           #print(vij, wij)
+            for I in range(len(wij)):
+                for J in range(len(wij)):
+                    if I==J: Fmo[I,J] = n[I]
+                    else:
+                      dv_ij = vij[I,J]
+                      if abs(dv_ij) < eps: Fmo[I,J] = 0.0
+                      else: Fmo[I,J] = wij[I,J] / dv_ij
+
+            Gmo = scipy.linalg.fractional_matrix_power(Fmo, 0.5)
+            
+            Fao = psi4.core.Matrix.from_array(R.T @ Fmo @ R)
+            Gao = psi4.core.Matrix.from_array(R.T @ Gmo @ R)
+            f.append(Fao)
+            g.append(Gao)
+
+        # current density matrix (AO)
+        Dmo = c @ numpy.diag(n) @ c.T
+
+        if 0:
+           Dao = numpy.linalg.multi_dot([R.T, Dmo, R])
+        else:
+           Dao = self._Ca.T @ self._S @ Dmo @ self._S @ self._Ca
+        Dao = psi4.core.Matrix.from_array(Dao)
+        
+        xc_energy = oepdev.calculate_idf_xc_energy(self._wfn, Dao, f, g, w, o, N, a_n, xi_n, A, wnorm)
+        return xc_energy
 
 
 class JKOnly_Interpolating_XCFunctional(Interpolating_XCFunctional):
