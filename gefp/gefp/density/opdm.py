@@ -328,13 +328,13 @@ class DensityProjection(ABC):
         #a, b = scipy.linalg.eig(A, S)
         a, phi = numpy.linalg.eigh(A)
         #a = a.real; b = b.real
-        #print(" Init sum = %14.6f" % (a**2).sum()) 
+       #print(" Init sum = %14.6f" % (a**2).sum()) 
                                                                                                             
         muORnu = self._find_coef(a)
                                                                                                            
         # compute the projected density matrix
         n_new = self._eval_coef(a, muORnu)
-        #print((n_new**2).sum())
+       #print("OptSum= ", (n_new**2).sum())
         C_new = phi
                                                                                                             
         # sort (descending order)
@@ -421,6 +421,8 @@ class Pset_DensityProjection(DensityProjection):
            bounds = [[0.0, None],]
            R = scipy.optimize.minimize(obj, nu, args=(n,), method='slsqp', tol=1.0e-50, bounds=bounds, options=options)
            nu = R.x
+       #print("Here? Opt: Z= ", obj(nu, n), "nu= ", nu)
+
         return nu
 
     def _eval_coef(self, b, nu):

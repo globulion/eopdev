@@ -75,7 +75,10 @@ class XCFunctional(ABC, Density):
         if   name.lower() == 'hf'   : xc_functional =        HF_XCFunctional()
         elif name.lower() == 'mbb'  : xc_functional =       MBB_XCFunctional()
         elif name.lower() == 'mbb-1': xc_functional =     MBB_1_XCFunctional()
+        elif name.lower() == 'mbb-2': xc_functional =     MBB_2_XCFunctional()
         elif name.lower() == 'gu'   : xc_functional =        GU_XCFunctional()
+        elif name.lower() == 'chf'  : xc_functional =       CHF_XCFunctional()
+        elif name.lower() == 'ohf'  : xc_functional =       OHF_XCFunctional()
         elif name.lower() == 'bbc1' : xc_functional =      BBC1_XCFunctional()
         elif name.lower() == 'bbc2' : xc_functional =      BBC2_XCFunctional()
         elif name.lower() == 'idf1' : xc_functional =      IDF1_XCFunctional(kwargs['parameters']) #TODO
@@ -191,7 +194,7 @@ class XCFunctional(ABC, Density):
         return ns
 
     def _compute_deriv_P(self, n, m, P, E0):
-        step = 0.000008; h = 2.0*step
+        step = 0.0000002; h = 2.0*step
         P1= P.copy()
         P1[m,n] += step; P1[n,m] += step
 
@@ -199,10 +202,10 @@ class XCFunctional(ABC, Density):
         guess.update()
         E1 = self.energy_P(guess)
         der = (E1 - E0) / h
-        return der
+        return der 
 
     def _compute_deriv_D(self, n, m, D, E0): #ADD
-        step = 0.000008; h = 2.0*step
+        step = 0.0000002; h = 2.0*step
         D1= D.copy()
         D1[m,n] += step; D1[n,m] += step
 
@@ -210,7 +213,7 @@ class XCFunctional(ABC, Density):
         guess.update()
         E1 = self.energy_D_add(guess)
         der = (E1 - E0) / h
-        return der / 2.0
+        return der 
 
 
 
@@ -259,7 +262,8 @@ class HF_XCFunctional(XCFunctional):
     def gradient_D(self, x): 
         "Gradient with respect to density matrix: MO-SCF basis"
         D = Density.generalized_density(*x.unpack())
-        gradient_K  = -oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
+        gradient_K  = -2.0 * oepdev.calculate_JK_r(self._wfn, self._ints, 
+                                                   psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
         gradient = Guess.create(matrix=gradient_K)
         return gradient
 
@@ -385,18 +389,18 @@ class MBB_1_XCFunctional(MBB_XCFunctional):
 
     @staticmethod
     def fij(n, eps=1e-20): 
-        a = 0.8 # MBB part in the functional: adjust manually
+        a = 0.2 # MBB part in the functional: adjust manually
         b = 1.0 - a
         s2 = math.sqrt(2.0)
         fij_mbb = MBB_XCFunctional.fij(n)
-        f2 = n*n
+        f2 = n*n 
         fij_hf = numpy.outer(n,n)
         d = numpy.sqrt( f2[:,numpy.newaxis] + f2[numpy.newaxis,:] )
         f = fij_hf.copy()
         for i in range(len(n)):
             for j in range(len(n)):
                 d_ij = d[i,j]
-                if d_ij < eps: f[i,j] = a*fij_mbb[i,j]
+                if abs(d_ij) < eps: f[i,j] = a*fij_mbb[i,j]
                 else: f[i,j] = a*fij_mbb[i,j] + b*s2 * f[i,j] / d_ij
         return f
 
@@ -417,6 +421,35 @@ class MBB_1_XCFunctional(MBB_XCFunctional):
         "Gradient with respect to PC matrix"
         raise NotImplementedError
 
+class MBB_2_XCFunctional(MBB_1_XCFunctional):
+    """
+ The Muller-Buijse-Baerends Exchange-Correlation Functional + first and second terms from unfolding
+"""
+    def __init__(self):
+        super(MBB_2_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "Muller-Buijse-Baerends XC Functional for closed-shell systems + 1st unfolding term"
+
+    @property
+    def abbr(self): return "MBB-2"
+
+    @staticmethod
+    def fij(n, eps=1e-20): 
+        a = 0.2 # MBB_1 part in the functional: adjust manually
+        b = 1.0 - a
+        s2 = 2.0**(1./3.)
+        fij_mbb_1 = MBB_1_XCFunctional.fij(n)
+        f6 = n**6
+        fij_q = numpy.outer(n,n)**(3./2.)
+        d = ( f6[:,numpy.newaxis] + f6[numpy.newaxis,:] )**(1./3.)
+        f = fij_q.copy()
+        for i in range(len(n)):
+            for j in range(len(n)):
+                d_ij = d[i,j]
+                if abs(d_ij) < eps: f[i,j] = a*fij_mbb_1[i,j]
+                else: f[i,j] = a*fij_mbb_1[i,j] + b*s2 * f[i,j] / d_ij
+        return f
 
 class GU_XCFunctional(XCFunctional):
     """
@@ -486,6 +519,75 @@ class GU_XCFunctional(XCFunctional):
         s = numpy.einsum("ijkl,ia,ja,ka,la->a", self._ao_eri, C, C, C, C) * s
         gradient -= Density.generalized_density(s, c)
         return Guess.create(matrix=gradient)
+
+class CHF_XCFunctional(XCFunctional):
+    """
+ The Corrected Hartree-Fock Exchange-Correlation Functional.
+"""
+    def __init__(self):
+        super(CHF_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "Corrected Hartree-Fock XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "CHF"
+
+    @staticmethod
+    def fij(n): 
+        x = n*(1.0 - n)
+        f = numpy.outer(n,n)
+        f+= numpy.sqrt(abs(numpy.outer(x,x)))
+        return f
+
+class OHF_XCFunctional(XCFunctional):
+    """
+ The Overrepulsive Hartree-Fock Exchange-Correlation Functional.
+"""
+    def __init__(self):
+        super(OHF_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "Overrepulsive Hartree-Fock XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "OHF"
+
+    @staticmethod
+    def fij(n): 
+        raise NotImplementedError
+ 
+    def energy_D_add(self, x): #ADD
+        "Exchange-correlation energy"
+        n, c = x.unpack()
+        p    = numpy.sqrt(abs(n))
+        P    = c @ numpy.diag(p) @ c.T
+      # P = self.generalized_density(n, c, 0.5)
+        y    = Guess.create(p, c, P, "matrix")
+        xc_energy = self.energy_P(y)
+        return xc_energy
+    
+    def energy_P(self, x):
+        "Exchange-correlation energy of OHF functional"
+        p, c = x.unpack()
+        n = p*p
+        D = c @ numpy.diag(n) @ c.T
+        P = x.matrix()
+        Kd= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
+        Jd= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[0].to_array(dense=True)
+        Jp= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[0].to_array(dense=True)
+        
+       #f = numpy.outer(n,n)
+       #psi_f = psi4.core.Matrix.from_array(f, "")
+       #psi_c = psi4.core.Matrix.from_array(c, "")
+       #xc_energy_hf_test = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
+
+        xc_energy =      -numpy.dot(Kd, D).trace()
+       #print("Test= ", xc_energy, xc_energy_hf_test)
+        xc_energy-= 2.0 * numpy.dot(Jd, D).trace()
+        xc_energy+= 2.0 * numpy.dot(Jp, P).trace()
+        return xc_energy
+       
 
 class BBC1_XCFunctional(XCFunctional):
     """
@@ -558,8 +660,13 @@ class Interpolating_XCFunctional(XCFunctional):
     @staticmethod 
     def phi(n):
         return (n*n).sum()
+
     @staticmethod
-    def fij(n, z, eps=1.0e-20): 
+    def fij(n): 
+        raise NotImplementedError
+
+    @staticmethod
+    def fij_deprecate(n, z, eps=1.0e-20): 
         "z - unfolding parameter"
         raise NotImplementedError
         k = z
@@ -617,18 +724,19 @@ class IDF1_XCFunctional(Interpolating_XCFunctional):
         "Exchange-correlation energy"
         n, c = x.unpack()
         p    = numpy.sqrt(n)
-        P    = c @ p @ c.T
+        P    = c @ numpy.diag(p) @ c.T
+        # P = self.generalized_density(n, c, 0.5)
         y    = Guess.create(p, c, P, "matrix")
         xc_energy = self.energy_P(y)
         return xc_energy
 
     
-    def energy_P(self, x, n_quad=12, eps=1.0e-9):
+    def energy_P(self, x, n_quad=12, eps=1.0e-19):
         "Exchange-correlation energy of IDF functional"
         p, c = x.unpack()
-       #print("p= ",p)
+       #print("p= ",p*p)
         n    = p*p ; n[numpy.where(n < 0.0)] = 0.0
-        N    = n.sum()*2.0
+        N    = n.sum().round()*2.0
         Phi  = Interpolating_XCFunctional.phi(n)
         a_n  = IDF1_XCFunctional.aN(Phi, N)
         xi_n = IDF1_XCFunctional.xiN(a_n, N)
@@ -646,7 +754,7 @@ class IDF1_XCFunctional(Interpolating_XCFunctional):
         # f and g matrices
         f = []
         g = []
-        zeta = 0.000001 # adjust!!!
+        zeta = 0.00001 # adjust!!!
 
         L = numpy.dot(self._Ca.T, self._S)                        
         R = numpy.dot(numpy.linalg.inv(numpy.dot(L.T, L)), L.T).T
@@ -656,9 +764,9 @@ class IDF1_XCFunctional(Interpolating_XCFunctional):
             omega = o.get(i)
             z = -zeta * numpy.log(omega)
            #print("Quad: ", i+1, omega, z)
-            fx = n**(z*(z+1.0))
-            vij = (fx[numpy.newaxis,:] + fx[:,numpy.newaxis])**(1.0/(z+1.0))
-            wij = (2.0)**(1.0/(z+1.0)) * numpy.outer(n,n)**((z+1.0)/2.0)
+            fx = abs(n**(z*(z+1.0)))
+            vij = abs( (fx[numpy.newaxis,:] + fx[:,numpy.newaxis])**(1.0/(z+1.0)) )
+            wij = abs( (2.0)**(1.0/(z+1.0)) * numpy.outer(n,n)**((z+1.0)/2.0) )
             Fmo = vij.copy()
            #print(n)
            #print(vij, wij)
@@ -670,17 +778,17 @@ class IDF1_XCFunctional(Interpolating_XCFunctional):
                       if abs(dv_ij) < eps: Fmo[I,J] = 0.0
                       else: Fmo[I,J] = wij[I,J] / dv_ij
 
-            Gmo = scipy.linalg.fractional_matrix_power(Fmo, 0.5)
-            
-            Fao = psi4.core.Matrix.from_array(R.T @ Fmo @ R)
-            Gao = psi4.core.Matrix.from_array(R.T @ Gmo @ R)
+            Gmo = scipy.linalg.fractional_matrix_power(Fmo.real, 0.5)
+
+            Fao = psi4.core.Matrix.from_array(R.T @ Fmo.real @ R)
+            Gao = psi4.core.Matrix.from_array(R.T @ Gmo.real @ R)
             f.append(Fao)
             g.append(Gao)
 
         # current density matrix (AO)
         Dmo = c @ numpy.diag(n) @ c.T
 
-        if 0:
+        if 1:
            Dao = numpy.linalg.multi_dot([R.T, Dmo, R])
         else:
            Dao = self._Ca.T @ self._S @ Dmo @ self._S @ self._Ca

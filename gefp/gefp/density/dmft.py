@@ -429,9 +429,9 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         "1-electron and Hartree part of gradient wrt D. Returned in SCF-MO basis."
         D = self._current_density.matrix() # Must be in MO-SCF basis!
         #D = x.matrix()
-        gradient_H  = self._H_mo
-        gradient_J  = oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[0].to_array(dense=True)
-        gradient  = Guess.create(matrix = gradient_H + 2.0 * gradient_J)
+        gradient_H  = 2.0* self._H_mo
+        gradient_J  = 4.0* oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[0].to_array(dense=True)
+        gradient  = Guess.create(matrix = gradient_H + gradient_J)
         return gradient
 
     def _compute_no_exchange_gradient_P(self, x):
