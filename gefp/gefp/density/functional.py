@@ -265,6 +265,10 @@ class HF_XCFunctional(XCFunctional):
         gradient_K  = -2.0 * oepdev.calculate_JK_r(self._wfn, self._ints, 
                                                    psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
         gradient = Guess.create(matrix=gradient_K)
+       #Dp = numpy.linalg.pinv(D)
+       #print(D.diagonal())
+       #print(Dp.diagonal())
+       #print("Łojojoj!! ", self.energy_D(x), (0.5*Dp @ gradient_K).trace())
         return gradient
 
     def gradient_nc(self, x):
