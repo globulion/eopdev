@@ -185,6 +185,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._current_orbitals         = None         # Natural Orbitals
         self._current_occupancies      = None         # Natural Orbital Occupation Numbers
         self._current_density          = None         # 1-Particle Density Matrix in AO Basis
+        self._current_xc_potential     = None         # XC Potential Matrix in AO Basis #TODO
                                                                                                             
         self._xc_functional            = None         # XC Functional Object
         self._mol                      = None         # Molecule Object
@@ -309,6 +310,11 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
     def N(self): 
         "NO Occupations"
         return self._current_occupancies
+
+    @property
+    def xc_potential(self):
+        "XC Potential Matrix in MO Basis"
+        return self._current_xc_potential
 
 
     @property
@@ -620,6 +626,9 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._density_projector = self._setup_density_projector()
         # H_core + V_ext in MO-SCF basis
         self._H_mo = numpy.linalg.multi_dot([self._Ca.T, self._H, self._Ca])
+
+        # load miscellanea for XC Functional
+        self._xc_functional.load()
         return
 
     def __grad_n_no_exchange(self, n, c):
