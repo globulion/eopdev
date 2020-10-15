@@ -86,13 +86,21 @@ class XCFunctional(ABC, Density):
         elif name.lower() == 'mbb'  : xc_functional =       MBB_XCFunctional()
         elif name.lower() == 'mbb-1': xc_functional =     MBB_1_XCFunctional()
         elif name.lower() == 'mbb-2': xc_functional =     MBB_2_XCFunctional()
+        elif name.lower() == 'mbb-anti': xc_functional =     MBB_ANTI_XCFunctional()
         elif name.lower() == 'gu'   : xc_functional =        GU_XCFunctional()
         elif name.lower() == 'chf'  : xc_functional =       CHF_XCFunctional()
         elif name.lower() == 'ohf'  : xc_functional =       OHF_XCFunctional()
+        elif name.lower() == 'hf-mbb' : xc_functional =       HF_MBB_XCFunctional()
+        elif name.lower() == 'ohf-mbb' : xc_functional =     OHF_MBB_XCFunctional()
+        elif name.lower() == 'smbb-up' : xc_functional =     SMBB_UP_XCFunctional()
         elif name.lower() == 'bbc1' : xc_functional =      BBC1_XCFunctional()
         elif name.lower() == 'bbc2' : xc_functional =      BBC2_XCFunctional()
         elif name.lower() == 'idf1' : xc_functional =      IDF1_XCFunctional(kwargs['parameters']) #TODO
         elif name.lower() == 'idfw' : xc_functional =      IDFW_XCFunctional(kwargs['omega']) #TODO
+        elif name.lower() == 'idf-jk' : xc_functional =      IDF_JK_XCFunctional() #TODO
+        elif name.lower() == 'idf-jk+' : xc_functional =      IDF_JKPlus_XCFunctional(kwargs['omega']) #TODO
+        elif name.lower() == 'idf-jk-di' : xc_functional =      IDF_JK_Di_XCFunctional(kwargs['ngrid'], kwargs['constant']) #TODO
+        elif name.lower() == 'idf-alpha' : xc_functional =      IDF_Alpha_XCFunctional(kwargs['alpha'], kwargs['ngrid']) #TODO
         elif name.lower() == 'a1medi': xc_functional =    A_V1_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         elif name.lower() == 'a2medi': xc_functional =    A_V2_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
         elif name.lower() == 'p2medi': xc_functional =    P_V2_MEDI_XCFunctional(kwargs['coeff'], kwargs['kmax'])
@@ -578,6 +586,25 @@ class CHF_XCFunctional(XCFunctional):
         f+= numpy.sqrt(abs(numpy.outer(x,x)))
         return f
 
+class HF_MBB_XCFunctional(XCFunctional):
+    """
+ The Corrected Hartree-Fock Exchange-Correlation Functional.
+"""
+    def __init__(self):
+        super(HF_MBB_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "50-50 Mix of Hartree-Fock and MBB XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "HF-MBB"
+
+    @staticmethod
+    def fij(n): 
+        f = 0.5 * (HF_XCFunctional.fij(n) + MBB_XCFunctional.fij(n))
+        return f
+
+
 class OHF_XCFunctional(XCFunctional):
     """
  The Overrepulsive Hartree-Fock Exchange-Correlation Functional.
@@ -625,7 +652,150 @@ class OHF_XCFunctional(XCFunctional):
         xc_energy-= 2.0 * numpy.dot(Jd, D).trace()
         xc_energy+= 2.0 * numpy.dot(Jp, P).trace()
         return xc_energy
-       
+
+class OHF_MBB_XCFunctional(XCFunctional):
+    """
+ The 50-50 Mix of Overrepulsive Hartree-Fock and MBB Exchange-Correlation Functional.
+"""
+    def __init__(self):
+        super(OHF_MBB_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "50-50 Overrepulsive Hartree-Fock MBB XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "OHF-MBB"
+
+    @staticmethod
+    def fij(n): 
+        raise NotImplementedError
+ 
+    def energy_D_add(self, x): #ADD
+        "Exchange-correlation energy"
+        n, c = x.unpack()
+        p    = numpy.sqrt(abs(n))
+        P    = c @ numpy.diag(p) @ c.T
+      # P = self.generalized_density(n, c, 0.5)
+        y    = Guess.create(p, c, P, "matrix")
+        xc_energy = self.energy_P(y)
+        return xc_energy
+    
+    def energy_P(self, x):
+        "Exchange-correlation energy of OHF functional"
+        p, c = x.unpack()
+        n = p*p; # print("N= %14.5f"%n.sum())
+        D = c @ numpy.diag(n) @ c.T
+        P = x.matrix()
+        Kd= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
+        Jd= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[0].to_array(dense=True)
+        Jp= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[0].to_array(dense=True)
+        
+        xc_energy =      -numpy.dot(Kd, D).trace()
+       #print("Test= ", xc_energy, xc_energy_hf_test)
+        xc_energy-= 2.0 * numpy.dot(Jd, D).trace()
+        xc_energy+= 2.0 * numpy.dot(Jp, P).trace()
+
+        # MBB part
+        f = MBB_XCFunctional.fij(n)
+        psi_f = psi4.core.Matrix.from_array(f, "")
+        psi_c = psi4.core.Matrix.from_array(c, "")
+        xc_energy += oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
+        xc_energy*= 0.5
+        return xc_energy
+
+class MBB_ANTI_XCFunctional(XCFunctional):
+    """
+Antisymmetrized MBB XC Functional
+"""
+    def __init__(self):
+        super(MBB_ANTI_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "Antisymmetrized MBB XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "MBB-ANTI"
+
+    @staticmethod
+    def fij(n): 
+        raise NotImplementedError
+ 
+    def energy_D_add(self, x): #ADD
+        "Exchange-correlation energy"
+        n, c = x.unpack()
+        p    = numpy.sqrt(abs(n))
+        P    = c @ numpy.diag(p) @ c.T
+      # P = self.generalized_density(n, c, 0.5)
+        y    = Guess.create(p, c, P, "matrix")
+        xc_energy = self.energy_P(y)
+        return xc_energy
+    
+    def energy_P(self, x):
+        "Exchange-correlation energy of MBB-ANTI functional"
+        p, c = x.unpack()
+        n = p*p; # print("N= %14.5f"%n.sum())
+        D = c @ numpy.diag(n) @ c.T
+        P = x.matrix()
+
+        Jd= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[0].to_array(dense=True)
+        Kd= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[1].to_array(dense=True)
+        Jp= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[0].to_array(dense=True)
+        Kp= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P, ""))[1].to_array(dense=True)
+
+        xc_energy = (Jp @ P).trace() - (Jd @ D).trace() - (Kd @ D).trace() - (Kp @ P).trace()
+        xc_energy*= 0.5
+
+        return xc_energy
+
+
+class SMBB_UP_XCFunctional(XCFunctional):
+    """
+"""
+    def __init__(self):
+        super(SMBB_UP_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "Upper Bound for SMBB XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "SMBB-UP"
+
+    @staticmethod
+    def fij(n): 
+        raise NotImplementedError
+ 
+    def energy_D_add(self, x): #ADD
+        "Exchange-correlation energy"
+        n, c = x.unpack()
+        p    = numpy.sqrt(abs(n))
+        P    = c @ numpy.diag(p) @ c.T
+      # P = self.generalized_density(n, c, 0.5)
+        y    = Guess.create(p, c, P, "matrix")
+        xc_energy = self.energy_P(y)
+        return xc_energy
+    
+    def energy_P(self, x):
+        "Exchange-correlation energy of OHF functional"
+        p, c = x.unpack()
+        n = p*p; # print("N= %14.5f"%n.sum())
+        D = c @ numpy.diag(n) @ c.T
+        P = x.matrix()
+
+        # 2xMBB part
+        f = MBB_XCFunctional.fij(n)
+        psi_f = psi4.core.Matrix.from_array(f, "")
+        psi_c = psi4.core.Matrix.from_array(c, "")
+        xc_energy = 2.0*oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
+
+        # 4-rank tensor part
+        f = numpy.sqrt(f)        
+        F = c @ f @ c.T
+        Kf= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(F, ""))[1].to_array(dense=True)
+        
+        xc_energy+= numpy.dot(Kf, F).trace()
+
+        return xc_energy
+      
 
 class BBC1_XCFunctional(XCFunctional):
     """
@@ -720,28 +890,34 @@ class IDFW_XCFunctional(XCFunctional):
         xc_energy = self.energy_P(y)
         return xc_energy
 
-    def _make_unit(self, w, i, j):
-        N = self._wfn.nmo()
-        U = numpy.identity(N)        
-        c = numpy.cos(w); s = numpy.sin(w)
-        U[i,i] = U[j,j] = c
-        U[i,j] = s
-        U[j,i] =-s 
-        return U
+   #def _make_unit(self, w, i, j):
+   #    N = self._wfn.nmo()
+   #    U = numpy.identity(N)        
+   #    c = numpy.cos(w); s = numpy.sin(w)
+   #    U[i,i] = U[j,j] = c
+   #    U[i,j] = s
+   #    U[j,i] =-s 
+   #    return U
 
     def _make_U(self, w):
-        a = 0.00001 * 100
+        a = 0.001 * 10000
+        a = 0.0
         N = self._wfn.nmo()
+        na= self._wfn.nalpha()
         A = numpy.zeros((N,N))
         s = numpy.sin(w/2.)
         v = a * s*s
         for i in range(N):
+         #if i >= na:
             for j in range(i):
+             #if ((i <na) and (j <na)):
                 A[i,j] = v
                 A[j,i] =-v
        #f = numpy.linalg.det(A)
        #print(f)
+       #print(A); exit()
         U = scipy.linalg.expm(A)
+       #print(U); exit()
         return U
         #c = numpy.cos(w); s = numpy.sin(w)
         #u = numpy.array([c, s, -s, c]).reshape(2,2)
@@ -766,8 +942,8 @@ class IDFW_XCFunctional(XCFunctional):
         P = x.matrix()
         P2= P @ P
 
-       #U = self._U @ c
-        U = c @ self._U
+        U = self._U @ c # OK
+       #U = c @ self._U
 
         Q1 = scipy.linalg.fractional_matrix_power(P, 2.*self._p - 1.0).real
         Q2 = scipy.linalg.fractional_matrix_power(P, 2.*self._q - 1.0).real
@@ -788,7 +964,7 @@ class IDFW_XCFunctional(XCFunctional):
         Jx= c.T @ Jx @ c
         Ky= c.T @ Ky @ c
 
-        U = c @ self._U
+       #U = c @ self._U
 
         W1= U @ Jx @ U.T
         W2= U @ Ky @ U.T
@@ -833,7 +1009,8 @@ class IDFW_XCFunctional(XCFunctional):
        #X = c @ X @ c.T
        #Y = c @ Y @ c.T
 
-        U = self._U @ c
+        U = self._U @ c # OK
+       #U = c @ self._U
 
         X = U @ numpy.diag(n**self._p) @ U.T
         Y = U @ numpy.diag(n**self._q) @ U.T
@@ -865,11 +1042,11 @@ class IDFW_XCFunctional(XCFunctional):
         n = p*p
         D = c @ numpy.diag(n) @ c.T
         y = Guess.create(n, c, D, "matrix")
-        V = -(self._gradient_D_numerical_unfolding_part_p(y).matrix()) * pref_p
-        V+= -(self._gradient_D_numerical_unfolding_part_q(y).matrix()) * pref_q
+        V =  (self._gradient_D_numerical_unfolding_part_p(y).matrix()) * pref_p
+        V+=  (self._gradient_D_numerical_unfolding_part_q(y).matrix()) * pref_q
 
         Jd= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[0].to_array(dense=True)
-        V+= Jd * 2.
+        V-= Jd * 2.
         return Guess.create(matrix=V)  
 
     def _gradient_D_numerical_unfolding_part_p(self, x):
@@ -962,6 +1139,744 @@ class IDFW_XCFunctional(XCFunctional):
         Ky= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(Y, ""))[1].to_array(dense=True)
        
         energy =      -numpy.dot(Ky, Y).trace()
+        return energy
+
+class IDF_JKPlus_XCFunctional(XCFunctional):
+    """
+"""
+    BOUNDS  = [[0.00001,None],]
+    TOL = 1.e-7
+    MAXITER = 1000
+    OPTIONS = {"disp": False, "maxiter": MAXITER, "ftol": TOL, "iprint": 0}
+
+    def __init__(self, omega):
+        super(IDF_JKPlus_XCFunctional, self).__init__()
+        self._omega = omega
+
+    def load(self):
+        "Load miscellanea"
+        n = self._wfn.nmo()
+        self._DIM_N  = n
+        self._DIM_N2 = n*n
+        self._DIM_N4 = n*n*n*n
+        self._N      = self._wfn.nalpha()*2.
+        self._u      = numpy.linalg.pinv(self._Ca.T @ self._S) # D_ao = u @ D_mo_scf @ u.T
+
+       #L = numpy.dot(self._Ca.T, self._S)
+       #R = numpy.dot(numpy.linalg.inv(numpy.dot(L.T, L)), L.T).T
+       #self._u = R.T
+
+       #print(self._u-self._Ca)
+       #self._u =self._Ca
+        r = numpy.ones((n,n)) - numpy.identity(n)
+        self._excl_ijkl = 1*1.*numpy.einsum("ij,kl,ik,jl,il,jk->ijkl",r,r,r,r,r,r)
+        print("Calculating AO ERIs in memory")
+        self._eri_ao = numpy.array( psi4.core.MintsHelper(self._wfn.basisset()).ao_eri() )
+
+        return
+
+    @staticmethod
+    def name(): return "IDF JKPlus XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "IDF-JKPlus"
+
+    def energy_P(self, x):
+        "Exchange-correlation energy"
+        p, c = x.unpack()
+
+        # JK-Only part
+        f = self.fij(p*p)
+        psi_f = psi4.core.Matrix.from_array(f, "")
+        psi_c = psi4.core.Matrix.from_array(c, "")
+        xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
+
+        # Plus part
+        C = self._Ca @ c
+        eri_NO = numpy.einsum("ijkl,ia,jb,kc,ld->abcd",self._eri_ao,C,C,C,C)
+        phases =-numpy.sign(eri_NO).transpose(0,2,1,3)
+
+        zw=     p**(self._omega+1.0)
+        U = numpy.einsum("i,j,k,l->ijkl",zw,zw,zw,zw) - numpy.einsum("i,j,k,l->ijkl",p,p,p,p)
+        dg=-0.5*self._excl_ijkl*U
+        dg = phases * dg
+        dg = self.antisymmetrize_4(dg)
+
+        xc_energy += numpy.einsum("ijkl,ikjl", dg, eri_NO)
+        return xc_energy
+
+    @staticmethod
+    def antisymmetrize_4(t): return 0.5*(t - t.transpose(1,0,2,3))
+
+    def fij(self, n): 
+       #f = n.copy() #/n.sum(); f*= self._N / 2.
+        F = self.unfold_2(n, self._omega)
+
+       # # modes
+       # mode = 0   # antisym
+       ##mode = 1   # antisym_a
+       ##mode = 2   # mix
+
+       # if 0:
+       #    x_0 = (0.02,)
+       #    if mode == 1:
+       #       obj = self.obj_antisymmetry_a
+       #    elif mode == 0:
+       #       obj = self.obj_antisymmetry
+       #    else:
+       #       obj = self.obj_mix
+
+       #    res = scipy.optimize.minimize(obj, x_0, args=(f,), tol=IDF_JK_XCFunctional.TOL, method='slsqp',
+       #                options=IDF_JK_XCFunctional.OPTIONS, bounds=IDF_JK_XCFunctional.BOUNDS, constraints=())
+
+       #    if res.success: 
+       #       x = res.x 
+       #    else: raise ValueError("Minimization has an error!")
+       # else: x = self._omega
+
+       # if 0:
+       #    npoints = 1000
+       #    a = 0.29
+       #    F = numpy.zeros((self._DIM_N, self._DIM_N))
+       #    x = numpy.linspace(0.0,10.0,npoints)
+       #    w = numpy.exp(-a*x); w/= w.sum()
+       #    for i in range(npoints):
+       #        F += w[i] * self.unfold_2(n, x[i])
+       # else:
+       #    if mode == 0 or mode == 2:
+       #      #scale = numpy.sqrt(self._DIM_N ) * 0.83
+       #      #x/=scale
+       #       F = self.unfold_2(n, x)
+       #    else:
+       #       F = self.unfold_exp(n, x*4)
+       ##print(x)
+        return F
+
+    def unfold_2(self, f, x, eps=1.e-20):
+        "Pseudo 2-rank unfolding function"
+        K = f.size
+        ff = numpy.outer(f,f) ** ((x+1.)/2.)
+        s  = f**(x*(x+1.))
+        d  = s[:,numpy.newaxis] + s[numpy.newaxis,:]
+        d  = d**(1./(x+1.))
+        pref = 2.**(1./(x+1.))
+        dbs= abs(d)
+    
+        F = numpy.zeros(ff.shape)
+        for i in range(K):
+            F[i,i] = f[i]
+            for j in range(i):
+               #pref = 1.0
+               #if i==j: pref = 2.0**(1./(x+1.))
+                if dbs[i,j] > eps:
+                   F[i,j] = ff[i,j] / d[i,j]  * pref
+                else: F[i,j] = 0.0
+                F[j,i] = F[i,j]
+       #F *= pref
+        return F
+ 
+    def energy_D_add(self, x): #ADD
+        "Exchange-correlation energy"
+        n, c = x.unpack()
+        p    = numpy.sqrt(abs(n))
+        P    = c @ numpy.diag(p) @ c.T
+      # P = self.generalized_density(n, c, 0.5)
+        y    = Guess.create(p, c, P, "matrix")
+        xc_energy = self.energy_P(y)
+        return xc_energy
+
+
+class IDF_JK_XCFunctional(XCFunctional):
+    """
+"""
+    BOUNDS  = [[0.00001,None],]
+    TOL = 1.e-7
+    MAXITER = 1000
+    OPTIONS = {"disp": False, "maxiter": MAXITER, "ftol": TOL, "iprint": 0}
+
+    def __init__(self):
+        super(IDF_JK_XCFunctional, self).__init__()
+
+    def load(self):
+        "Load miscellanea"
+        n = self._wfn.nmo()
+        self._DIM_N  = n
+        self._DIM_N2 = n*n
+        self._DIM_N4 = n*n*n*n
+        self._N      = self._wfn.nalpha()*2.
+        self._u      = numpy.linalg.pinv(self._Ca.T @ self._S) # D_ao = u @ D_mo_scf @ u.T
+       #L = numpy.dot(self._Ca.T, self._S)
+       #R = numpy.dot(numpy.linalg.inv(numpy.dot(L.T, L)), L.T).T
+       #self._u = R.T
+
+       #print(self._u-self._Ca)
+       #self._u =self._Ca
+        return
+
+    @staticmethod
+    def name(): return "IDF JK-Only XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "IDF-JK"
+
+    def obj_antisymmetry(self, param, f):
+        x = param[0]
+        D = numpy.diag(f); I = numpy.identity(len(f))
+        F2= self.unfold_2(f, x)
+        g_H = numpy.einsum("ik,jl->ijkl",D,D)
+        g_X = numpy.einsum("ij,il,jk->ijkl",F2,I,I)
+        g_ijkl  = g_H - g_X
+        g_ijlk  = g_ijkl.transpose(0,1,3,2)
+        error = (g_ijkl + g_ijlk)**2
+        return error.sum()
+
+    def obj_antisymmetry_and_positivity(self, param, f):
+        x = param[0]
+        D = numpy.diag(f); I = numpy.identity(len(f))
+        F2= self.unfold_2(f, x)
+        g_H = numpy.einsum("ik,jl->ijkl",D,D)
+        g_X = numpy.einsum("ij,il,jk->ijkl",F2,I,I)
+        # antisymmetry
+        g_ijkl  = g_H - g_X
+        g_ijlk  = g_ijkl.transpose(0,1,3,2)
+        error_antisymmetry  = ( (g_ijkl + g_ijlk)**2 ).sum()
+        # positivity
+        E, U = numpy.linalg.eigh(g_ijkl.reshape(self._DIM_N2,self._DIM_N2))
+        error_positivity = -E.min()
+        return error_antisymmetry, error_positivity
+
+
+    def unfold_exp(self, f, a):
+        npoints = 100
+        F2= numpy.zeros((self._DIM_N, self._DIM_N))
+        x = numpy.linspace(0.0,10.0,npoints)
+        w = numpy.exp(-a*x*x); w/= w.sum()
+        for i in range(npoints):
+            F2+= w[i] * self.unfold_2(f, x[i])
+        return F2
+
+    def obj_antisymmetry_a(self, param, f):
+        x = param[0]
+        D = numpy.diag(f); I = numpy.identity(len(f))
+        F2 = self.unfold_exp(f, x)
+        g_H = numpy.einsum("ik,jl->ijkl",D,D)
+        g_X = numpy.einsum("ij,il,jk->ijkl",F2,I,I)
+        g_ijkl  = g_H - g_X
+        g_ijlk  = g_ijkl.transpose(0,1,3,2)
+        error = (g_ijkl + g_ijlk)**2
+        return error.sum()
+
+    def obj_mix(self, param, f):
+        w_max = [6.0]
+        Z_1    , Z_2     = self.obj_antisymmetry_and_positivity(param, f)
+        Z_1_max, Z_2_max = self.obj_antisymmetry_and_positivity(w_max, f)
+       #print(Z_1_max, Z_2_max)
+
+        z_1 = Z_1/Z_1_max
+        z_2 = Z_2/Z_2_max
+
+        error = z_1 + z_2
+        return error
+
+
+    def fij(self, n): 
+        f = n.copy() #/n.sum(); f*= self._N / 2.
+
+        # modes
+        mode = 0   # antisym
+       #mode = 1   # antisym_a
+       #mode = 2   # mix
+
+        if 0:
+           x_0 = (0.02,)
+           if mode == 1:
+              obj = self.obj_antisymmetry_a
+           elif mode == 0:
+              obj = self.obj_antisymmetry
+           else:
+              obj = self.obj_mix
+
+           res = scipy.optimize.minimize(obj, x_0, args=(f,), tol=IDF_JK_XCFunctional.TOL, method='slsqp',
+                       options=IDF_JK_XCFunctional.OPTIONS, bounds=IDF_JK_XCFunctional.BOUNDS, constraints=())
+
+           if res.success: 
+              x = res.x 
+           else: raise ValueError("Minimization has an error!")
+        else: x = 0.8
+
+        if 0:
+           npoints = 1000
+           a = 0.29
+           F = numpy.zeros((self._DIM_N, self._DIM_N))
+           x = numpy.linspace(0.0,10.0,npoints)
+           w = numpy.exp(-a*x); w/= w.sum()
+           for i in range(npoints):
+               F += w[i] * self.unfold_2(n, x[i])
+        else:
+           if mode == 0 or mode == 2:
+             #scale = numpy.sqrt(self._DIM_N ) * 0.83
+             #x/=scale
+              F = self.unfold_2(n, x)
+           else:
+              F = self.unfold_exp(n, x*4)
+       #print(x)
+        return F
+
+    def unfold_2(self, f, x, eps=1.e-20):
+        "Pseudo 2-rank unfolding function"
+        K = f.size
+        ff = numpy.outer(f,f) ** ((x+1.)/2.)
+        s  = f**(x*(x+1.))
+        d  = s[:,numpy.newaxis] + s[numpy.newaxis,:]
+        d  = d**(1./(x+1.))
+        pref = 2.**(1./(x+1.))
+        dbs= abs(d)
+    
+        F = numpy.zeros(ff.shape)
+        for i in range(K):
+            F[i,i] = f[i]
+            for j in range(i):
+               #pref = 1.0
+               #if i==j: pref = 2.0**(1./(x+1.))
+                if dbs[i,j] > eps:
+                   F[i,j] = ff[i,j] / d[i,j]  * pref
+                else: F[i,j] = 0.0
+                F[j,i] = F[i,j]
+       #F *= pref
+        return F
+ 
+    def energy_D_add(self, x): #ADD
+        "Exchange-correlation energy"
+        n, c = x.unpack()
+        p    = numpy.sqrt(abs(n))
+        P    = c @ numpy.diag(p) @ c.T
+      # P = self.generalized_density(n, c, 0.5)
+        y    = Guess.create(p, c, P, "matrix")
+        xc_energy = self.energy_P(y)
+        return xc_energy
+
+
+
+class IDF_JK_Di_XCFunctional(XCFunctional):
+    """
+ Discrete
+"""
+    def __init__(self, ngrid, constant):
+        super(IDF_JK_Di_XCFunctional, self).__init__()
+        self._ngrid = ngrid
+        self._omega_domain = numpy.linspace(0.0, 2.*numpy.pi, ngrid)
+        self._weights = None
+        self._constant_weights = constant
+        if constant:
+           data = numpy.mafromtxt('weights.dat').data
+           self._omega_domain = data[:,0]
+           self._weights = abs(data[:,1]); self._weights/=self._weights.sum()
+           self._ngrid = len(data)
+        self._Q = self._q(self._omega_domain)
+
+    def _p(self, omega): return (3.+numpy.cos(omega/2.))/4.
+    def _q(self, omega): return (3.-numpy.cos(omega/2.))/4.
+
+    def load(self):
+        "Load miscellanea"
+        n = self._wfn.nmo()
+        self._DIM_N  = n
+        self._DIM_N2 = n*n
+        self._DIM_N4 = n*n*n*n
+        self._DIM_W  = self._ngrid
+        self._N      = self._wfn.nalpha()*2.
+        self._u      = numpy.linalg.pinv(self._Ca.T @ self._S) # D_ao = u @ D_mo_scf @ u.T
+       #L = numpy.dot(self._Ca.T, self._S)
+       #R = numpy.dot(numpy.linalg.inv(numpy.dot(L.T, L)), L.T).T
+       #self._u = R.T
+
+       #print(self._u-self._Ca)
+       #self._u =self._Ca
+        return
+
+    @staticmethod
+    def name(): return "IDF JK-Only Discrete XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "IDF-JK-Di"
+
+    @staticmethod
+    def fij(n): 
+        raise NotImplementedError
+ 
+    def energy_D_add(self, x): #ADD
+        "Exchange-correlation energy"
+        n, c = x.unpack()
+        p    = numpy.sqrt(abs(n))
+        P    = c @ numpy.diag(p) @ c.T
+      # P = self.generalized_density(n, c, 0.5)
+        y    = Guess.create(p, c, P, "matrix")
+        xc_energy = self.energy_P(y)
+        return xc_energy
+
+    def weights(self, n, c):
+        "Discretized spectral density - normalized to 1.0"
+        n_ = n/n.sum(); n_*= self._N/2.
+        D = c @ numpy.diag(n_) @ c.T
+
+        f = numpy.zeros((self._DIM_W, self._DIM_N, self._DIM_N))
+        for i in range(self._DIM_W):
+            f[i] = c @ numpy.diag(n_**self._Q[i]) @ c.T
+            
+        F = numpy.einsum("aij,ajk->aik",f,f)                                                       
+       #F = f
+                                                                                             
+        # Dimensions
+        K = self._DIM_N
+        W = self._DIM_W
+
+        l = numpy.zeros(K*K*K*K + 1); l[-1] = 1.0
+                                                                                             
+        l[:  -1] = ( (1./2.)*(numpy.einsum("ik,jl->ijkl",D,D)+numpy.einsum("il,jk->ijkl",D,D)) ).ravel()
+        H        = numpy.einsum("aik,ajl->aijkl",f, f)+numpy.einsum("ail,ajk->aijkl",f, f) \
+                -(1./4.)*(numpy.einsum("aik,jl->aijkl", F, D) + numpy.einsum("ik,ajl->aijkl", D, F) + \
+                          numpy.einsum("ail,jk->aijkl", F, D) + numpy.einsum("il,ajk->aijkl", D, F) )
+                                                                                             
+        h = numpy.zeros((W, K*K*K*K+1))
+        for i in range(W):
+            h[i,:-1] = H[i].ravel()
+        h[:,-1] = 1.0
+       #print(linalg.det(h))
+                                                                                             
+        # Compute w_i
+        hi = numpy.linalg.pinv(h)
+        w  = l @ hi
+
+        self._weights = w
+        if 1:
+           out = open('weights.dat', 'w')                      
+           for i in range(self._ngrid):
+               out.write("%14.5f %13.5f\n" % (self._omega_domain[i],self._weights[i]))
+           out.close()
+          #print("Sum = ", self._weights.sum())
+          #exit()
+
+        return w
+
+    def weights_old(self, n, c):
+        "Discretized spectral density - normalized to 1.0"
+        n_ = n/n.sum(); n_*= self._N/2.
+        D = c @ numpy.diag(n_) @ c.T
+
+        f = numpy.zeros((self._DIM_W, self._DIM_N, self._DIM_N))
+        for i in range(self._DIM_W):
+            f[i] = c @ numpy.diag(n_**self._Q[i]) @ c.T
+            
+        F = numpy.einsum("aij,ajk->aik",f,f)                                                       
+
+        # Dimensions
+        K = self._DIM_N
+        W = self._DIM_W
+
+        l = numpy.zeros(K*K + 1); l[-1] = 1.0
+                                                                                             
+        l[:  -1] = D.ravel()
+
+        h = numpy.zeros((W, K*K+1))
+        for i in range(W):
+            h[i,:-1] = F[i].ravel()
+        h[:,-1] = 1.0
+       #print(linalg.det(h))
+                                                                                             
+        # Compute w_i
+        hi = numpy.linalg.pinv(h)
+        w  = l @ hi
+
+        self._weights = w
+        if 1:
+           out = open('weights.dat', 'w')                      
+           for i in range(self._ngrid):
+               out.write("%14.5f %13.5f\n" % (self._omega_domain[i],self._weights[i]))
+           out.close()
+          #print("Sum = ", self._weights.sum())
+          #exit()
+
+        return w
+   
+    def energy_P(self, x):
+        "Exchange-correlation energy"
+        p, c = x.unpack()
+        n = p*p;
+       #D = c @ numpy.diag(n) @ c.T
+       #P = x.matrix()
+
+        # weights
+        if not self._constant_weights:
+           weights = self.weights(n, c)
+
+        # XC energy
+        f = numpy.zeros((len(n),len(n)))
+        for i in range(self._ngrid):
+            m = n**self._Q[i]
+            f+= numpy.outer(m,m) * self._weights[i]
+
+        psi_f = psi4.core.Matrix.from_array(f, "")
+        psi_c = psi4.core.Matrix.from_array(c, "")
+        xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
+
+        return xc_energy
+
+
+class IDF_Alpha_XCFunctional(XCFunctional):
+    """
+ The IDF test version of functional for particular alpha value.
+
+ Alpha value: Unitary transformation matrix for 4-rank tensor unfolding
+              Alpha = 0 -> JK-Only functional
+              Alpha must be larger than 0 and larger than the critical value
+              (around 1.4) in order to satisfy the N-representability contition
+              exactly.
+
+ Interpolation: 1-D domain of omega from 0.0 to 2PI.
+                Number of points for interpolation is controlled.
+"""
+    def __init__(self, alpha, ngrid):
+        super(IDF_Alpha_XCFunctional, self).__init__()
+        self._alpha = alpha
+        self._ngrid = ngrid
+        self._ngrid_half = int(ngrid/2)
+        self._omega_domain = numpy.linspace(0.0, 2.*numpy.pi, ngrid)
+        self._weights = None
+
+    def _p(self, omega): return (3.+numpy.cos(omega/2.))/4.
+    def _q(self, omega): return (3.-numpy.cos(omega/2.))/4.
+    def _U(self, omega):
+        R = self._wfn.nmo()
+        a = self._alpha ** R
+        na= self._wfn.nalpha()
+        A = numpy.zeros((R,R))
+        s = numpy.sin(omega/2.)
+        v = a * s*s
+        for i in range(R):
+         #if i >= na:
+            for j in range(i):
+             #if ((i <na) and (j <na)):
+                A[i,j] = v
+                A[j,i] =-v
+        U = scipy.linalg.expm(A)
+       #print(U); exit()
+        return U
+
+
+    @staticmethod
+    def name(): return "IDF-Alpha Test Version of XC Functional"
+
+    @property
+    def abbr(self): return "IDF-Alpha"
+
+    @staticmethod
+    def fij(n): 
+        raise NotImplementedError
+ 
+    def load(self):
+        "Load miscellanea"
+        n = self._wfn.nmo()
+        self._DIM_N2 = n*n
+        self._DIM_W  = self._ngrid_half
+        self._N      = self._wfn.nalpha()*2.
+        self._u      = numpy.linalg.pinv(self._Ca.T @ self._S) # D_ao = u @ D_mo_scf @ u.T
+       #L = numpy.dot(self._Ca.T, self._S)
+       #R = numpy.dot(numpy.linalg.inv(numpy.dot(L.T, L)), L.T).T
+       #self._u = R.T
+
+       #print(self._u-self._Ca)
+       #self._u =self._Ca
+        return
+   
+    def gradient_P(self, x):
+        "Analytical gradient"
+        p, c = x.unpack()
+        P = x.matrix()
+        P2= P @ P
+        raise NotImplementedError
+
+    def weights_P(self, x):
+        "Discretized Spectral Density over Interpolating Domain"
+        p, c = x.unpack()
+        n = p*p
+        D = c @ numpy.diag(n) @ c.T
+
+        # allocate
+        F = numpy.ones ((self._DIM_W, self._DIM_N2+1))
+        g = numpy.zeros(              self._DIM_N2+1 )
+       #print(F.shape); exit()
+
+        # populate g vector
+        d = (self._N - 1.0) * n
+        g[:-1] = numpy.diag(d).ravel()
+       #g[:-1] = D.ravel() * (self._N -1.0)
+        g[ -1] = 1./2.
+
+        # populate F matrix
+        Al = []; Bl = []
+        for i in range(self._ngrid_half):
+            omega = self._omega_domain[i]
+            p     = self._p(omega)
+            q     = self._q(omega)
+
+            U = self._U(omega) @ c
+
+            A = U @ numpy.diag(n**p) @ U.T
+            B = U @ numpy.diag(n**q) @ U.T
+
+            Al.append(A.copy())
+            Bl.append(B.copy())
+
+            A = c.T @ A @ c
+            B = c.T @ B @ c
+
+            f = 2.0 * (A * A.trace() + B * B.trace()) - (A@A + B@B)
+
+            F[i,:-1] = f.ravel()
+
+        # compute weights
+        Fi = numpy.linalg.pinv(F)
+        w  = g @ Fi
+
+        # glue with the mirror weights
+        wall = numpy.concatenate((w, w[::-1]))
+
+       #wall.fill(0.0); wall[0] = wall[-1] = 0.5
+       #wall.fill(0.0); wall[0] = 1.0            
+        return wall, Al, Bl
+
+    def energy_P(self, x):
+        "Exchange-correlation energy"
+        p, c = x.unpack()
+        n = p*p
+        D = c @ numpy.diag(n) @ c.T
+
+        weights, Al, Bl = self.weights_P(x)
+        if 0:
+           out = open('weights.dat', 'w')                      
+           for i in range(self._ngrid):
+               out.write("%14.3d %13.5f\n" % (i+1,weights[i]))
+           out.close()
+           exit()
+
+        # transform to non-orthogonal AO basis (from orthogonal SCF-MO basis)
+       #self._u = numpy.identity(len(n))
+        D_ao = self._u @ D @ self._u.T
+        for i in range(self._ngrid_half):
+            A_ao = self._u @ Al[i] @ self._u.T
+            B_ao = self._u @ Bl[i] @ self._u.T
+           #if i==0:
+           #   print(A_ao);
+            Al[i] = psi4.core.Matrix.from_array(A_ao, "")
+            Bl[i] = psi4.core.Matrix.from_array(B_ao, "")
+
+        D_ao_psi = psi4.core.Matrix.from_array(D_ao, "")
+
+        xc_energy = oepdev.calculate_idf_alpha_xc_energy(self._wfn, weights[:self._ngrid_half], D_ao_psi, Al, Bl)
+        return xc_energy
+
+    def potential_P(self, x):
+        "Exchange-Correlation Potential in MO basis"
+        p, c = x.unpack()
+        n = p*p
+        D = c @ numpy.diag(n) @ c.T
+
+        weights, Al, Bl = self.weights_P(x)
+
+        Jd= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D, ""))[0].to_array(dense=True)
+        V =-Jd * 2.
+
+        for i in range(self._ngrid):
+            omega = self._omega_domain[i]
+            p     = self._p(omega)
+            q     = self._q(omega)
+            Uw    = self._U(omega)
+
+            weight= weights[i]
+
+            pref_p = 1./(2.*p)
+            pref_q = 1./(2.*q)
+
+            y = Guess.create(n, c, D, "matrix")
+            V+=  (self._gradient_D_numerical_unfolding_part_p(y, p, omega, Uw).matrix()) * pref_p * weight
+            V+=  (self._gradient_D_numerical_unfolding_part_q(y, q, omega, Uw).matrix()) * pref_q * weight
+
+        self._weights = weights
+        out = open('weights.dat', 'w')
+        for i in range(self._ngrid):
+            out.write("%14.3d %13.5f\n" % (i+1,weights[i]))
+        out.close()
+
+        return Guess.create(matrix=V)  
+
+    def _gradient_D_numerical_unfolding_part_p(self, x, p, omega, Uw):
+        "Numerical gradient with respect to P matrix"
+        E0 = self.energy_D_part_p(x, p, omega, Uw)
+        D  = x.matrix()
+        N  = D.shape[0]
+        Der = numpy.zeros((N,N), numpy.float64)
+        for i in range(N):
+            for j in range(i+1):
+                d = self._compute_deriv_D_part_p(i, j, D, E0, p, omega, Uw)
+                Der[i, j] = d
+                if i!=j: Der[j, i] = d
+        return Guess.create(matrix=Der)
+
+    def _gradient_D_numerical_unfolding_part_q(self, x, q, omega, Uw):
+        "Numerical gradient with respect to P matrix"
+        E0 = self.energy_D_part_q(x, q, omega, Uw)
+        D  = x.matrix()
+        N  = D.shape[0]
+        Der = numpy.zeros((N,N), numpy.float64)
+        for i in range(N):
+            for j in range(i+1):
+                d = self._compute_deriv_D_part_q(i, j, D, E0, q, omega, Uw)
+                Der[i, j] = d
+                if i!=j: Der[j, i] = d
+        return Guess.create(matrix=Der)
+
+    def _compute_deriv_D_part_p(self, n, m, D, E0, p, omega, Uw): #ADD
+        step = self._ffstep; h = 2.0*step
+        D1= D.copy()
+        D1[m,n] += step; D1[n,m] += step
+
+        guess = Guess.create(matrix=D1)
+        guess.update()
+        E1 = self.energy_D_part_p(guess, p, omega, Uw)
+        der = (E1 - E0) / h
+        return der 
+
+    def _compute_deriv_D_part_q(self, n, m, D, E0, q, omega, Uw): #ADD
+        step = self._ffstep; h = 2.0*step
+        D1= D.copy()
+        D1[m,n] += step; D1[n,m] += step
+
+        guess = Guess.create(matrix=D1)
+        guess.update()
+        E1 = self.energy_D_part_q(guess, q, omega, Uw)
+        der = (E1 - E0) / h
+        return der 
+
+    def energy_D_part_p(self, x, p, omega, Uw):
+        n, c = x.unpack()
+        U = Uw @ c
+
+        A = U @ numpy.diag(n**p) @ U.T
+
+        Ja= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(A, ""))[0].to_array(dense=True)
+       
+        energy = 2.0 * numpy.dot(Ja, A).trace()
+        return energy
+
+    def energy_D_part_q(self, x, q, omega, Uw):
+        n, c = x.unpack()
+        U = Uw @ c
+
+        B = U @ numpy.diag(n**q) @ U.T
+
+        Kb= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(B, ""))[1].to_array(dense=True)
+       
+        energy =      -numpy.dot(Kb, B).trace()
         return energy
 
 

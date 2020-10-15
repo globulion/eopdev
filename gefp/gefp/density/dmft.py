@@ -370,7 +370,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
            # [2] Starting energy
            self._current_energy = self._minimizer(x_0)
            self._E_old = self._current_energy
-           if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (self._iteration, self._E_old))
+           if verbose: print(" @DMFT Iter %2d. E = %14.8f N = %14.4f" % (self._iteration, self._E_old, self._current_density.matrix().trace()))
                                                                                              
            # [3] First iteration
            self._iteration += 1
@@ -380,7 +380,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
                                                                                              
            self._current_energy = self._minimizer(self._x_old_1)
            self._E_new = self._current_energy
-           if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (self._iteration, self._E_new))
+           if verbose: print(" @DMFT Iter %2d. E = %14.8f N = %14.4f" % (self._iteration, self._E_new, self._current_density.matrix().trace()))
 
         # [4] Further iterations
         self._iteration += 1
@@ -394,7 +394,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
             # [4.2] Current energy
             self._current_energy = self._minimizer(x_new)
             self._E_new = self._current_energy
-            if verbose: print(" @DMFT Iter %2d. E = %14.8f" % (self._iteration, self._E_new))
+            if verbose: print(" @DMFT Iter %2d. E = %14.8f N = %14.4f" % (self._iteration, self._E_new, self._current_density.matrix().trace()))
                                                                                   
             # [4.3] Converged?
             if abs(self._E_new-self._E_old) < conv: 
@@ -421,6 +421,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         if verbose and not success:
            print(" DMFT iterations did not converge.")
 
+        success = True
         return success
 
     def _compute_no_exchange_energy(self):

@@ -215,6 +215,19 @@ std::vector<std::shared_ptr<psi::Matrix>> calculate_JK(std::shared_ptr<psi::Wave
  *  Provide matrices in AO basis!
  */
 extern "C" PSI_API
+double calculate_idf_alpha_xc_energy(
+  std::shared_ptr<psi::Wavefunction> wfn, 
+  std::vector<double> w,
+  psi::SharedMatrix D,
+  std::vector<psi::SharedMatrix> Al,
+  std::vector<psi::SharedMatrix> Bl);
+
+/** \brief Compute the IDF exchange-correlation energy.
+ *
+ *  TODO
+ *  Provide matrices in AO basis!
+ */
+extern "C" PSI_API
 double calculate_idf_xc_energy(
   std::shared_ptr<psi::Wavefunction> wfn, 
   std::shared_ptr<psi::Matrix> D,

@@ -399,6 +399,79 @@ std::vector<std::shared_ptr<psi::Matrix>> calculate_JK(std::shared_ptr<psi::Wave
 }
 
 extern "C" PSI_API
+double calculate_idf_alpha_xc_energy(
+  std::shared_ptr<psi::Wavefunction> wfn, 
+  std::vector<double> w,
+  std::shared_ptr<psi::Matrix> D,
+  std::vector<std::shared_ptr<psi::Matrix>> Al,
+  std::vector<std::shared_ptr<psi::Matrix>> Bl)
+{
+
+  const int ngrid_half = w.size();
+
+  // Compute ERI's
+  //std::shared_ptr<psi::MintsHelper> mints = std::make_shared<psi::MintsHelper>(wfn->basisset());
+  //mints->integrals();
+
+  // Compute J and K matrices in AO basis
+  std::shared_ptr<psi::JK> jk;
+  if (wfn->basisset_exists("BASIS_DF_SCF")) {
+    jk = psi::JK::build_JK(wfn->basisset(), wfn->get_basisset("BASIS_DF_SCF"), wfn->options());
+  } else {
+    jk = psi::JK::build_JK(wfn->basisset(), psi::BasisSet::zero_ao_basis_set(), wfn->options());
+  }
+
+  jk->set_memory(psi::Process::environment.get_memory() / 8L); 
+  jk->initialize();
+//jk->print_header();
+  
+  std::vector<psi::SharedMatrix>& Cl = jk->C_left();
+  std::vector<psi::SharedMatrix>& Cr = jk->C_right();
+
+  const std::vector<psi::SharedMatrix>& J = jk->J();
+  const std::vector<psi::SharedMatrix>& K = jk->K();
+
+  psi::SharedMatrix II = Al[0]->clone(); II->identity();
+  psi::SharedMatrix DI = D->clone();
+  psi::SharedMatrix IV = II->clone();
+
+  Cl.push_back(DI);
+  Cr.push_back(IV);
+ 
+  for (int I=0; I<ngrid_half; ++I) {
+       psi::SharedMatrix AI = Al[I]->clone();
+       psi::SharedMatrix III = II->clone();
+
+       Cl.push_back(AI);
+       Cr.push_back(III);
+  }
+  for (int I=0; I<ngrid_half; ++I) {
+       psi::SharedMatrix BI = Bl[I]->clone();
+       psi::SharedMatrix III = II->clone();
+
+       Cl.push_back(BI);
+       Cr.push_back(III);
+  }
+  jk->compute();
+
+  // Hartree Correction Term
+  double e =-2.0 * D->vector_dot(J[0]);
+
+  // Remainder XC Term
+  for (int I=0; I<ngrid_half; ++I) {
+       double wI = w[I];
+       double vI = Al[I]->vector_dot(J[I+1]) + Bl[I]->vector_dot(J[1+ngrid_half+I]); // Generalized Hartree  (+Correlation)
+       double hI = Al[I]->vector_dot(K[I+1]) + Bl[I]->vector_dot(K[1+ngrid_half+I]); // Generalized Exchange (+Correlation)
+       e += wI * (2.0*vI - hI);
+  }
+
+  jk->finalize();
+  return e;
+}
+
+
+
+extern "C" PSI_API
 double calculate_idf_xc_energy(
   std::shared_ptr<psi::Wavefunction> wfn, 
   std::shared_ptr<psi::Matrix> D,
