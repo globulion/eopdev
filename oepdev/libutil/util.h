@@ -238,6 +238,11 @@ double calculate_idf_xc_energy(
   double N, double aN, double xiN, double AN, double wnorm);
 
 
+extern "C" PSI_API
+std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_ints(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr);
+
+
 /** \brief Compute the Coulomb and exchange integral matrices in MO basis. 
  *
  *  Reads the existing MO ERI's.
@@ -249,6 +254,10 @@ double calculate_idf_xc_energy(
  */
 extern "C" PSI_API
 std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_r(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, std::shared_ptr<psi::Matrix> Dij);
+
+extern "C" PSI_API
+std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_rb(std::shared_ptr<psi::Wavefunction> wfn, 
 		std::shared_ptr<psi::IntegralTransform> tr, std::shared_ptr<psi::Matrix> Dij);
 
 
@@ -283,6 +292,15 @@ double calculate_e_xc(std::shared_ptr<psi::Wavefunction> wfn,
 		std::shared_ptr<psi::IntegralTransform> tr, 
 		std::shared_ptr<psi::Matrix> f,
 		std::shared_ptr<psi::Matrix> C);
+
+extern "C" PSI_API
+double calculate_e_apsg(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, 
+		std::shared_ptr<psi::Matrix> fJ,
+		std::shared_ptr<psi::Matrix> fK,
+		std::shared_ptr<psi::Matrix> C);
+
+
 
 /** \brief Compute the contracted derivative of power of a square and symmetric matrix.
  *

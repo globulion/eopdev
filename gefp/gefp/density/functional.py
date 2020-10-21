@@ -95,9 +95,10 @@ class XCFunctional(ABC, Density):
         elif name.lower() == 'smbb-up' : xc_functional =     SMBB_UP_XCFunctional()
         elif name.lower() == 'bbc1' : xc_functional =      BBC1_XCFunctional()
         elif name.lower() == 'bbc2' : xc_functional =      BBC2_XCFunctional()
+        elif name.lower() == 'apsg' : xc_functional =      APSG_XCFunctional()
         elif name.lower() == 'idf1' : xc_functional =      IDF1_XCFunctional(kwargs['parameters']) #TODO
         elif name.lower() == 'idfw' : xc_functional =      IDFW_XCFunctional(kwargs['omega']) #TODO
-        elif name.lower() == 'idf-jk' : xc_functional =      IDF_JK_XCFunctional() #TODO
+        elif name.lower() == 'idf-jk' : xc_functional =      IDF_JK_XCFunctional(kwargs['omega']) #TODO
         elif name.lower() == 'idf-jk+' : xc_functional =      IDF_JKPlus_XCFunctional(kwargs['omega']) #TODO
         elif name.lower() == 'idf-jk-di' : xc_functional =      IDF_JK_Di_XCFunctional(kwargs['ngrid'], kwargs['constant']) #TODO
         elif name.lower() == 'idf-alpha' : xc_functional =      IDF_Alpha_XCFunctional(kwargs['alpha'], kwargs['ngrid']) #TODO
@@ -785,14 +786,15 @@ class SMBB_UP_XCFunctional(XCFunctional):
         f = MBB_XCFunctional.fij(n)
         psi_f = psi4.core.Matrix.from_array(f, "")
         psi_c = psi4.core.Matrix.from_array(c, "")
-        xc_energy = 2.0*oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
+        xc_energy = 1.0*oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
 
         # 4-rank tensor part
-        f = numpy.sqrt(f)        
+       #f = numpy.sqrt(f)        
         F = c @ f @ c.T
-        Kf= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(F, ""))[1].to_array(dense=True)
+        Kf= oepdev.calculate_JK_rb(self._wfn, self._ints, psi4.core.Matrix.from_array(F, ""))[1].to_array(dense=True)
         
-        xc_energy+= numpy.dot(Kf, F).trace()
+        de = numpy.dot(Kf, F).trace()
+        xc_energy += de
 
         return xc_energy
       
@@ -856,6 +858,81 @@ class BBC2_XCFunctional(BBC1_XCFunctional):
                    if m[i] > 0 and m[j] > 0:
                       f[i,j] = f_hf[i,j]
         return f
+
+class APSG_XCFunctional(XCFunctional):
+    """
+ The APSG Exchange-Correlation Functional.
+"""
+    def __init__(self):
+        super(APSG_XCFunctional, self).__init__()
+
+    @staticmethod
+    def name(): return "APSG XC Functional for closed-shell systems"
+
+    @property
+    def abbr(self): return "APSG"
+
+    @staticmethod
+    def fij(n): raise NotImplementedError
+
+    @staticmethod
+    def fij_JK(n): 
+        ns = abs(n); s = numpy.sqrt(ns)
+        ng = ns[numpy.where(n>0.5)]
+        na = ns[numpy.where(n<=0.5)]
+        NG = len(ng) # number of geminals
+        NA = len(na) # number of unoccupied orbitals
+
+        ph = -numpy.ones(na.size+1); ph[0] = 1.0 # phases
+
+        f_J = numpy.zeros((n.size,n.size))
+        f_K = numpy.zeros((n.size,n.size))
+
+        # sqrt part
+        for P in range(NG):
+            nP = numpy.concatenate(([ ng[P] ], na))
+            sP = numpy.sqrt(nP) * ph
+            for i in range(NA+1):
+                I = P if not i else NG + i - 1
+                for j in range(NA+1):
+                    J = P if not j else NG + j - 1
+                    f_K[I,J] += sP[i] * sP[j]   # (IJ|JI) contribution
+
+        for P in range(NG):
+            nP = numpy.concatenate(([ ng[P] ], na))
+            for i in range(NA+1):
+                I = P if not i else NG + i - 1
+                for Q in range(NG):
+                 if P != Q:
+                    nQ = numpy.concatenate(([ ng[Q] ], na))
+                    for j in range(NA+1):
+                        J = Q if not j else NG + j - 1
+                        nij = nP[i] * nQ[j]
+                        f_K[I,J] -=       nij   # (IJ|JI) contribution
+                        f_J[I,J] +=       nij   # (II|JJ) contribution
+
+        f_J *= 2.0
+        return f_J, f_K
+
+    def energy_P(self, x):
+        "Exchange-correlation energy of APSG functional"
+        p, c = x.unpack()
+        n = p*p
+        D = c @ numpy.diag(n) @ c.T
+
+        f_J, f_K = self.fij_JK(n)
+
+        Jd= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D,""))[0].to_array(dense=True)
+
+        psi_fJ = psi4.core.Matrix.from_array(f_J, "")
+        psi_fK = psi4.core.Matrix.from_array(f_K, "")
+        psi_c  = psi4.core.Matrix.from_array(c  , "")
+
+        xc_energy = oepdev.calculate_e_apsg(self._wfn, self._ints, psi_fJ, psi_fK, psi_c)
+        xc_energy-= 2.0 * numpy.dot(Jd, D).trace()
+
+        return xc_energy
+
 
 
 class IDFW_XCFunctional(XCFunctional):
@@ -1160,16 +1237,22 @@ class IDF_JKPlus_XCFunctional(XCFunctional):
         self._DIM_N2 = n*n
         self._DIM_N4 = n*n*n*n
         self._N      = self._wfn.nalpha()*2.
-        self._u      = numpy.linalg.pinv(self._Ca.T @ self._S) # D_ao = u @ D_mo_scf @ u.T
+       #self._u      = numpy.linalg.pinv(self._Ca.T @ self._S) # D_ao = u @ D_mo_scf @ u.T
 
        #L = numpy.dot(self._Ca.T, self._S)
        #R = numpy.dot(numpy.linalg.inv(numpy.dot(L.T, L)), L.T).T
        #self._u = R.T
+        self._u = self._Ca.copy()
 
        #print(self._u-self._Ca)
        #self._u =self._Ca
         r = numpy.ones((n,n)) - numpy.identity(n)
-        self._excl_ijkl = 1*1.*numpy.einsum("ij,kl,ik,jl,il,jk->ijkl",r,r,r,r,r,r)
+        T = numpy.ones((n,n))
+        for i in range(n):
+            T[i,i] = 0.0
+            for j in range(i): T[i,j] = -1.0
+        t = numpy.einsum("ij,kl->ijkl",T,T)
+        self._excl_ijkl = 1*1.*numpy.einsum("ij,kl,ik,jl,il,jk->ijkl",r,r,r,r,r,r) #* t
         print("Calculating AO ERIs in memory")
         self._eri_ao = numpy.array( psi4.core.MintsHelper(self._wfn.basisset()).ao_eri() )
 
@@ -1183,7 +1266,7 @@ class IDF_JKPlus_XCFunctional(XCFunctional):
 
     def energy_P(self, x):
         "Exchange-correlation energy"
-        p, c = x.unpack()
+        p, c = x.unpack(); p = abs(p)
 
         # JK-Only part
         f = self.fij(p*p)
@@ -1192,21 +1275,37 @@ class IDF_JKPlus_XCFunctional(XCFunctional):
         xc_energy = oepdev.calculate_e_xc(self._wfn, self._ints, psi_f, psi_c);
 
         # Plus part
-        C = self._Ca @ c
+        C = self._u @ c
         eri_NO = numpy.einsum("ijkl,ia,jb,kc,ld->abcd",self._eri_ao,C,C,C,C)
-        phases =-numpy.sign(eri_NO).transpose(0,2,1,3)
+
+        phases =-numpy.sign(eri_NO.round(9)) #.transpose(0,2,1,3)
+        phases = numpy.einsum("ikjl->ijkl", phases)
+       #phases = 0.5*(phases + phases.transpose(1,0,2,3)) # symmetrization
 
         zw=     p**(self._omega+1.0)
         U = numpy.einsum("i,j,k,l->ijkl",zw,zw,zw,zw) - numpy.einsum("i,j,k,l->ijkl",p,p,p,p)
         dg=-0.5*self._excl_ijkl*U
-        dg = phases * dg
-        dg = self.antisymmetrize_4(dg)
+       #dg = self.antisymmetrize_4(dg)
+       #dg = 0.5*(dg+numpy.einsum("ijkl->klij",dg))
 
-        xc_energy += numpy.einsum("ijkl,ikjl", dg, eri_NO)
+       # phases =-numpy.sign(eri_NO.transpose(0,2,1,3)*dg)
+       # phases = 0.5 * (phases + phases.transpose(1,0,2,3))
+       # phases = 0.5 * (phases + phases.transpose(2,3,0,1))
+
+       #dg = phases * dg
+
+       #xc_energy += numpy.einsum("ijkl,ikjl", dg, eri_NO)
+
+        t = dg * numpy.einsum("ikjl->ijkl", eri_NO)
+        t = -abs(t) 
+        xc_energy += t.sum()
+       #print(t.sum())
         return xc_energy
 
     @staticmethod
-    def antisymmetrize_4(t): return 0.5*(t - t.transpose(1,0,2,3))
+    def antisymmetrize_4(t): 
+        return 0.25*( ( t - t.transpose(1,0,2,3) ) + (-t.transpose(0,1,3,2) + t.transpose(1,0,3,2)) )
+       #return 0.5*(t - t.transpose(1,0,2,3))
 
     def fij(self, n): 
        #f = n.copy() #/n.sum(); f*= self._N / 2.
@@ -1294,8 +1393,9 @@ class IDF_JK_XCFunctional(XCFunctional):
     MAXITER = 1000
     OPTIONS = {"disp": False, "maxiter": MAXITER, "ftol": TOL, "iprint": 0}
 
-    def __init__(self):
+    def __init__(self, omega):
         super(IDF_JK_XCFunctional, self).__init__()
+        self._omega = omega
 
     def load(self):
         "Load miscellanea"
@@ -1402,7 +1502,7 @@ class IDF_JK_XCFunctional(XCFunctional):
            if res.success: 
               x = res.x 
            else: raise ValueError("Minimization has an error!")
-        else: x = 0.8
+        else: x = self._omega
 
         if 0:
            npoints = 1000

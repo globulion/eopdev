@@ -554,6 +554,64 @@ double calculate_idf_xc_energy(
   return e;
 }
 
+extern "C" PSI_API
+std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_ints(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr){
+
+  // Initialize the J_ij and K_ij matrix
+  const int n = wfn->nmo();
+  std::shared_ptr<psi::Matrix> Jij = std::make_shared<psi::Matrix>("Coulomb Integrals in MO basis", n, n);
+  std::shared_ptr<psi::Matrix> Kij = std::make_shared<psi::Matrix>("Exchange Integrals in MO basis", n, n);
+  double** pJij = Jij->pointer();
+  double** pKij = Kij->pointer();
+
+  std::vector<std::shared_ptr<psi::Matrix>> JK;
+  JK.push_back(Jij);
+  JK.push_back(Kij);
+
+  // Read integrals and save
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+
+  dpd_set_default(tr->get_dpd_id());
+  dpdbuf4 buf;
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
+                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+
+  // J and K
+  for (int h = 0; h < wfn->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+       for (int pq = 0; pq < buf.params->rowtot[h]; ++pq) {
+            int p = buf.params->roworb[h][pq][0];
+            int q = buf.params->roworb[h][pq][1];
+	    double vj_pq = 0.0;
+            for (int rs = 0; rs < buf.params->coltot[h]; ++rs) {
+         	   int r = buf.params->colorb[h][rs][0];
+        	   int s = buf.params->colorb[h][rs][1];
+                   double pqrs = buf.matrix[h][pq][rs];
+
+		   /* J */
+		   if ((p==q) && (r==s)) {
+		       pJij[p][r] = pqrs;
+	           }
+		   /* K */
+        	   if ((p==r) && (q==s)) {
+        	       pKij[p][q] = pqrs;
+      	           }
+            }
+       }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  //Kij->print();
+  return JK;
+}
 
 
 extern "C" PSI_API
@@ -595,8 +653,68 @@ std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_r(std::shared_ptr<psi::Wa
             for (int rs = 0; rs < buf.params->coltot[h]; ++rs) {
          	   int r = buf.params->colorb[h][rs][0];
         	   int s = buf.params->colorb[h][rs][1];
-		   vj_pq      += buf.matrix[h][pq][rs] * pD[r][s];
-		   pKij[p][r] += buf.matrix[h][pq][rs] * pD[q][s];
+                   double pqrs = buf.matrix[h][pq][rs];
+		   vj_pq      += pqrs * pD[r][s];
+		   pKij[p][r] += pqrs * pD[q][s];
+            }
+	    pJij[p][q] = vj_pq;
+       }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  //Kij->print();
+  return JK;
+}
+
+extern "C" PSI_API
+std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_rb(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, std::shared_ptr<psi::Matrix> Dij){
+
+  // Initialize the J_ij and K_ij matrix
+  int n = Dij->ncol();
+  std::shared_ptr<psi::Matrix> Jij = std::make_shared<psi::Matrix>("Coulomb Integrals in MO basis", n, n);
+  std::shared_ptr<psi::Matrix> Kij = std::make_shared<psi::Matrix>("Exchange Integrals in MO basis", n, n);
+  double** pJij = Jij->pointer();
+  double** pKij = Kij->pointer();
+  double** pD   = Dij->pointer();
+
+  std::vector<std::shared_ptr<psi::Matrix>> JK;
+  JK.push_back(Jij);
+  JK.push_back(Kij);
+
+  // Read integrals and save
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+
+  dpd_set_default(tr->get_dpd_id());
+  dpdbuf4 buf;
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
+                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+
+  // J and K
+  for (int h = 0; h < wfn->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+       for (int pq = 0; pq < buf.params->rowtot[h]; ++pq) {
+            int p = buf.params->roworb[h][pq][0];
+            int q = buf.params->roworb[h][pq][1];
+	    double vj_pq = 0.0;
+            for (int rs = 0; rs < buf.params->coltot[h]; ++rs) {
+         	   int r = buf.params->colorb[h][rs][0];
+        	   int s = buf.params->colorb[h][rs][1];
+                   double pqrs = buf.matrix[h][pq][rs];
+                 //if ( !( (p==q) && (r==s) ) or  !( (p==r) && (q==s) )  or !( (p==s) && (q==r) )  ) {
+                   if ( (p!=q) && (r!=s) && (p!=r) && (q!=s) && (p!=s) && (q!=r) ) {
+                       if (pqrs > 0.0) pqrs *= -1.0;
+                     //cout << p << q << r << s << endl;
+		   vj_pq      += pqrs * pD[r][s];
+		   pKij[p][r] += pqrs * pD[q][s];
+                   }
             }
 	    pJij[p][q] = vj_pq;
        }
@@ -719,6 +837,62 @@ double calculate_e_xc(std::shared_ptr<psi::Wavefunction> wfn,
 
   return -E;
 }
+
+extern "C" PSI_API
+double calculate_e_apsg(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, 
+		std::shared_ptr<psi::Matrix> fJ,
+		std::shared_ptr<psi::Matrix> fK,
+		std::shared_ptr<psi::Matrix> C){
+
+
+  // Initialize derivatives
+  double E = 0.0;
+  int M = C->nrow(); /* MO-SCF */
+  int N = C->ncol(); /* MO-NEW */
+  double** pfJ  = fJ->pointer();
+  double** pfK  = fK->pointer();
+  double** pC   = C->pointer();
+
+  // Read integrals and save
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+
+  dpd_set_default(tr->get_dpd_id());
+  dpdbuf4 buf;
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
+                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+
+  for (int h = 0; h < wfn->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+	for (int ab = 0; ab < buf.params->rowtot[h]; ++ab) {
+	     int a = buf.params->roworb[h][ab][0];
+	     int b = buf.params->roworb[h][ab][1];
+	     for (int cd = 0; cd < buf.params->coltot[h]; ++cd) {
+	          int c = buf.params->colorb[h][cd][0];
+	          int d = buf.params->colorb[h][cd][1];
+	          double abcd = buf.matrix[h][ab][cd];
+                  for (int i = 0; i < N; ++i) {
+		  for (int j = 0; j < N; ++j) {
+		       E += abcd * pC[a][i] * pC[b][j] * pC[c][i] * pC[d][j] * pfK[i][j];
+		       E += abcd * pC[a][i] * pC[b][i] * pC[c][j] * pC[d][j] * pfJ[i][j];
+	          }
+		  }
+             }
+        }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  return E;
+}
+
+
 
 extern "C" PSI_API
 std::shared_ptr<psi::Matrix>
