@@ -171,6 +171,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
     default_algorithm     = 'proj-p'                  # Projected Gradient Algorithm Abbreviation            
     default_convergence   =  0.00001                  # Convergence in total energy [A.U.]
     default_maxiter       =  100                      # Maximum number of iterations
+    default_miniter       =  10                       # Minimum number of iterations
     default_verbose_run   =  True                     # Show additional information?
     default_g0            =  0.0001                   # Steepest-descents step scale in the first iteration
     default_v_ext         =  None                     # External 1-electron potential
@@ -249,6 +250,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
 
     def run(self, conv    = default_convergence, 
                   maxit   = default_maxiter    , 
+                  minit   = default_miniter    ,
                   verbose = default_verbose_run, 
                   g_0     = default_g0         , 
                   g       = default_g          ,
@@ -257,7 +259,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
  Run the DMFT calculations.
 """
         # Run!
-        success = self._run_dmft(conv, maxit, verbose, g_0, g, restart, **kwargs)
+        success = self._run_dmft(conv, maxit, minit, verbose, g_0, g, restart, **kwargs)
 
         # Crash?
         if not success: 
@@ -350,7 +352,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
 
     # --- Protected Interface --- #
 
-    def _run_dmft(self, conv, maxit, verbose, g_0, g, restart, **kwargs):
+    def _run_dmft(self, conv, maxit, minit, verbose, g_0, g, restart, **kwargs):
         "DMFT Iterations"
 
         if verbose and not restart: 
@@ -397,7 +399,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
             if verbose: print(" @DMFT Iter %2d. E = %14.8f N = %14.4f" % (self._iteration, self._E_new, self._current_density.matrix().trace()))
                                                                                   
             # [4.3] Converged?
-            if abs(self._E_new-self._E_old) < conv: 
+            if abs(self._E_new-self._E_old) < conv and self._iteration > minit: 
                stop    = True
                success = True
                                                                                   

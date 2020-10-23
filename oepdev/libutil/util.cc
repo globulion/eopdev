@@ -892,6 +892,120 @@ double calculate_e_apsg(std::shared_ptr<psi::Wavefunction> wfn,
   return E;
 }
 
+extern "C" PSI_API
+psi::SharedMatrix
+calculate_de_apsg(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::IntegralTransform> tr, 
+		std::shared_ptr<psi::Vector> P,
+		std::shared_ptr<psi::Matrix> AJ,
+		std::shared_ptr<psi::Matrix> AKL,
+		std::shared_ptr<psi::Matrix> aJ,
+		std::shared_ptr<psi::Matrix> aKL,
+		std::shared_ptr<psi::Matrix> C){
+
+
+  // Initialize derivatives
+  int M = C->nrow(); /* MO-SCF */
+  int N = C->ncol(); /* MO-NEW */
+
+  psi::SharedMatrix Gradient = std::make_shared<psi::Matrix>("APSG EE Gradient", N, N);
+
+  psi::SharedMatrix Amn = std::make_shared<psi::Matrix>("Temp", N, N);
+  psi::SharedVector Bm  = std::make_shared<psi::Vector>("Temp", N);
+
+  double** pAJ  = AJ ->pointer();
+  double** pAKL = AKL->pointer();
+  double** paJ  = aJ ->pointer();
+  double** paKL = aKL->pointer();
+  double** pC   = C  ->pointer();
+
+  double** pgrad= Gradient->pointer();
+  double** pAmn = Amn->pointer();
+  double*  pBm  = Bm ->pointer();
+
+  double*  pP   = P->pointer();
+
+  // Read integrals and save
+  std::shared_ptr<psi::PSIO> psio = psi::PSIO::shared_object();
+
+  dpd_set_default(tr->get_dpd_id());
+  dpdbuf4 buf;
+  psio->open(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+  //psio->tocprint(PSIF_LIBTRANS_DPD);
+
+  global_dpd_->buf4_init(&buf, PSIF_LIBTRANS_DPD, 0, 
+                         tr->DPD_ID("[A,A]"  ), tr->DPD_ID("[A,A]"  ),
+                         tr->DPD_ID("[A>=A]+"), tr->DPD_ID("[A>=A]+"  ), 0, "MO Ints (AA|AA)");
+
+  for (int h = 0; h < wfn->nirrep(); ++h) {
+       global_dpd_->buf4_mat_irrep_init(&buf, h);
+       global_dpd_->buf4_mat_irrep_rd(&buf, h);
+	for (int ab = 0; ab < buf.params->rowtot[h]; ++ab) {
+	     int a = buf.params->roworb[h][ab][0];
+	     int b = buf.params->roworb[h][ab][1];
+	     for (int cd = 0; cd < buf.params->coltot[h]; ++cd) {
+	          int c = buf.params->colorb[h][cd][0];
+	          int d = buf.params->colorb[h][cd][1];
+	          double abcd = buf.matrix[h][ab][cd];
+
+                  for (int m = 0; m < N; ++m) {
+
+                       double cam = pC[a][m];
+                       double ccm = pC[c][m];
+                       double cbm = pC[b][m];
+
+		  for (int n = 0; n < N; ++n) {
+
+                       double cbn = pC[b][n];
+                       double cdn = pC[d][n];
+                       double ccn = pC[c][n];
+
+                       double mnmn = abcd * cam * cbn * ccm * cdn;
+                       double mmnn = abcd * cam * cbm * ccn * cdn;
+
+                       pBm [m] += paKL[n][m] * mnmn + paJ[n][m] * mmnn;
+
+                       for (int j = 0; j < N; ++j) {
+                            double cbj = pC[b][j];
+                            double ccj = pC[c][j];
+                            double cdj = pC[d][j];
+
+                            double mjjn = abcd * cam * cbj * ccj * cdn;
+                            double mnjj = abcd * cam * cbn * ccj * cdj;
+
+                            pAmn[m][n] += pAKL[j][m] * mjjn + pAJ[j][m] * mnjj;
+                       }
+
+	          }
+		  }
+             }
+        }
+       global_dpd_->buf4_mat_irrep_close(&buf, h);
+  }
+  global_dpd_->buf4_close(&buf);
+  psio->close(PSIF_LIBTRANS_DPD, PSIO_OPEN_OLD);
+
+  // Finish with the derivative
+  psi::SharedMatrix Anm = Amn->transpose(); //Anm->transpose_this();
+  Amn->subtract(Anm);
+  Amn->scale(2.0);
+  for (int i=0; i<N; ++i) {
+       pgrad[i][i] = pBm[i];
+       for (int j=0; j<N; ++j) {
+            if (i!=j) {
+                double dij =      pP[i]  -      pP[j] ;
+                if (abs(dij) > 1.0E-30) {
+                    pgrad[i][j] =  pAmn[i][j] / dij;
+                }
+            }
+       }
+  }
+
+  return Gradient;
+}
+
+
+
 
 
 extern "C" PSI_API

@@ -531,6 +531,93 @@ class GU_XCFunctional(XCFunctional):
                 if j==m: d[i,j] += n[i]
         return d
 
+    def load(self):
+        print(" Computing AO ERIs")
+        self._ao_eri = numpy.array(psi4.core.MintsHelper(self._wfn.basisset()).ao_eri())
+
+    def gradient_P  (self, x):
+        ""
+        p, c = x.unpack()
+       # for i in range(p.size):
+       #     if p[i]   > 0.99999999999:
+       #        p[i] = p[i] - (i+1)*0.0000000000000000000006
+       #     elif p[i] < 0.00000000001:
+       #        p[i] = p[i] + (i+1)*0.0000000000000000000006
+
+        P_psi = psi4.core.Matrix.from_array(x.matrix(), "")
+
+        KP = oepdev.calculate_JK_r(self._wfn, self._ints, P_psi)[1].to_array(dense=True)
+        KP = c.T @ KP @ c # NO basis
+
+        s = 2.*p*(1.0 - 2.*p*p)
+
+        AJ = numpy.zeros((p.size,p.size))
+        aJ = numpy.zeros((p.size,p.size))
+        AKL=-self.fij(p*p)
+       #aKL=-numpy.diag(2.*KP.diagonal() - s)
+        aKL= numpy.diag(s) - 2.0* p[:,numpy.newaxis] 
+
+        psi_p  = psi4.core.Vector.from_array(p  , "")
+        psi_c  = psi4.core.Matrix.from_array(c  , "")
+        psi_AJ = psi4.core.Matrix.from_array(AJ , "")
+        psi_AKL= psi4.core.Matrix.from_array(AKL, "")
+        psi_aJ = psi4.core.Matrix.from_array(aJ , "")
+        psi_aKL= psi4.core.Matrix.from_array(aKL, "")
+
+        gradient   = oepdev.calculate_de_apsg(self._wfn, self._ints, psi_p, psi_AJ, psi_AKL, psi_aJ, psi_aKL, psi_c).to_array(dense=True)
+
+        # transform to MO basis
+        gradient = c @ gradient @ c.T
+
+        return Guess.create(matrix=gradient)
+
+
+    def gradient_P_i  (self, x):
+        ""
+        p, c = x.unpack()
+       # for i in range(p.size):
+       #     if p[i] > 0.999999:
+       #        p[i] = p[i] - (i+1)*0.000000006
+       #     elif p[i] < 0.00001:
+       #        p[i] = p[i] + (i+1)*0.000000006
+
+       #P_psi = psi4.core.Matrix.from_array(x.matrix(), "")
+
+       #KP = oepdev.calculate_JK_r(self._wfn, self._ints, P_psi)[1].to_array(dense=True)
+       #KP = c.T @ KP @ c # NO basis
+
+        s = 2.*p*(1.0 - 2.*p*p)
+
+        C = self._Ca @ c
+
+        eri_no = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", self._ao_eri, C, C, C, C)
+        t = numpy.einsum("mmmm->m", eri_no) * s
+
+        f = self.fij(p*p)
+
+        A = numpy.einsum("mjjn,mj->mn", eri_no, f); A -= A.T
+        A*=-2.0
+
+        kp = numpy.einsum("mjjm,j->m", eri_no, p)
+
+        # gradient in NO basis
+        gradient = numpy.zeros((p.size,p.size))
+        for i in range(p.size):
+           #gradient[i,i] = -2.0*KP[i,i] + t[i]
+            gradient[i,i] = -2.0*kp[i  ] + t[i]
+            for j in range(p.size): 
+                if i!=j:
+                   dp = p[i] - p[j]
+                   if abs(dp) > 1.e-80:
+                      gradient[i,j] = A[i,j] / dp 
+                      gradient[j,i] = gradient[i,j]
+
+        # transform to MO basis
+        gradient = c @ gradient @ c.T
+
+        return Guess.create(matrix=gradient)
+
+
     def gradient_P_approximate_old(self, x):#deprecate!
         "Gradient with respect to P matrix"
         p, c = x.unpack() # C: MO(SCF)-MO(new)
@@ -862,6 +949,8 @@ class BBC2_XCFunctional(BBC1_XCFunctional):
 class APSG_XCFunctional(XCFunctional):
     """
  The APSG Exchange-Correlation Functional.
+
+ Perfect pairing (PP) is assumed.
 """
     def __init__(self):
         super(APSG_XCFunctional, self).__init__()
@@ -875,13 +964,234 @@ class APSG_XCFunctional(XCFunctional):
     @staticmethod
     def fij(n): raise NotImplementedError
 
+    def load(self):
+        self._NG= self._wfn.nalpha()
+        self._N = self._NG * 2
+        r1 = numpy.arange(self._NG)
+        r2 = self._N - r1  - 1
+        self._geminal_idx = numpy.array(list(zip(r1,r2)), int)
+
+
     @staticmethod
-    def fij_JK(n): 
+    def geminals(n):
+        ns = abs(n); nmo = n.size
+        n_strong = ns[numpy.where(ns>=0.5)]
+
+        NG = n_strong.size
+        geminal_idx = []
+        for i in range(NG):
+            J = 2*NG - i - 1
+            indices = [i,J]
+            geminal_idx.append(numpy.array(indices,int))
+
+        print(geminal_idx[0])
+        return geminal_idx
+            
+
+
+    @staticmethod
+    def geminals_old(n):
+        ns = abs(n); nmo = n.size
+        n_strong = ns[numpy.where(n>=0.50)]
+        n_weak   = ns[numpy.where(n< 0.50)]
+
+        NG = n_strong.size
+        geminal_idx = []
+        J = nmo - 1
+        for i in range(NG):
+            indices = [i,]
+            Di = 1.0 - ns[i]
+            for j in range(i,nmo-NG):
+                indices.append(J)
+                nj = ns[J]
+                if (Di - nj) < -1.e-4: 
+                    break
+                Di -= nj
+                J  -= 1
+                
+            geminal_idx.append(numpy.array(indices,int))
+
+       #print(geminal_idx[0])
+
+        return geminal_idx
+            
+    def fij_JKL_older(self, n): 
+        ns = abs(n); #s = numpy.sqrt(ns)
+
+       #geminal_idx = APSG_XCFunctional.geminals(n)
+        geminal_idx = self._geminal_idx
+
+        NG = len(geminal_idx) # number of geminals
+
+        f_J = numpy.zeros((n.size,n.size))
+        f_K = numpy.zeros((n.size,n.size))
+        f_L = numpy.zeros((n.size,n.size))
+
+        # L part
+        for P in range(NG):
+            tP = geminal_idx[P]
+            nP = ns[tP]
+            sP = numpy.sqrt(nP)
+            sP[1:] *= -1.0
+            for i in range(tP.size):
+                I = tP[i]
+                for j in range(tP.size):
+                    J = tP[j]
+                    f_L[I,J] += sP[i] * sP[j]   # (IJ|IJ) contribution
+
+        # J and K part
+        for P in range(NG):
+            tP = geminal_idx[P]
+            nP = ns[tP]
+            for i in range(tP.size):
+                I = tP[i]
+                for Q in range(NG):
+                 if P != Q:
+                    tQ = geminal_idx[Q]
+                    nQ = ns[tQ]
+                    for j in range(tQ.size):
+                        J = tQ[j]
+                        nij = nP[i] * nQ[j]
+                        f_J[I,J] +=       nij   # (II|JJ) contribution
+                        f_K[I,J] -=       nij   # (IJ|JI) contribution
+
+        f_J *= 2.0
+        f_K *= 1.0
+        return f_J, f_K, f_L
+
+
+    def geminal_index(self, i):
+        G = -1
+        for g in range(self._NG):
+            idx = self._geminal_idx[g]
+            if i in idx:
+               G = g 
+               break
+        return G
+    def fij_JKL(self, n):  #!!!!!!!!!!!!!!!!!!!!!!
+        ns = abs(n); p = numpy.sqrt(ns)
+
+        geminal_idx = self._geminal_idx
+
+        f_J = numpy.zeros((n.size,n.size))
+        f_K = numpy.zeros((n.size,n.size))
+        f_L = numpy.zeros((n.size,n.size))
+
+        for i in range(n.size):
+          G_i = self.geminal_index(i)
+          if G_i >= 0:
+            I_G_i = self._geminal_idx[G_i]
+
+            phase_i = 1.0 if i == I_G_i[0] else -1.0
+
+            for j in range(n.size):
+              G_j = self.geminal_index(j)
+              if G_j >= 0:
+                 I_G_j = self._geminal_idx[G_j]
+
+                 phase_j = 1.0 if j == I_G_j[0] else -1.0
+
+                 if G_i != G_j:
+                    f_J[i,j]+= ns[i] * ns[j]
+                    f_K[i,j]-= ns[i] * ns[j]
+                 if G_i == G_j:
+                    f_L[i,j]+= p[i] * p[j] * phase_i * phase_j
+
+        f_J *= 2.0
+        f_K *= 1.0
+        return f_J, f_K, f_L
+
+    def fj_JKL(self, p): 
+        "a,b,c coefficients for diagonal derivative of XC energy wrt P set"
+       #geminal_idx = APSG_XCFunctional.geminals(n)
+        geminal_idx = self._geminal_idx
+
+       #NG = len(geminal_idx) # number of geminals
+        NG = self._NG
+
+        f_J = numpy.zeros((p.size,p.size))
+        f_K = numpy.zeros((p.size,p.size))
+        f_L = numpy.zeros((p.size,p.size))
+
+        # L part
+        for M in range(p.size):
+            for P in range(NG):
+                tP = geminal_idx[P]
+                pP = p[tP].copy()
+                pP[1:] *= -1.0
+                if M in tP: 
+                   M0 = tP[0]
+                   for j in range(tP.size):
+                       J = tP[j]
+                       pm = 1.0 if M==M0 else -1.0
+                       f_L[J,M] += pP[j] * pm
+
+
+        #for P in range(NG):
+        #    tP = geminal_idx[P]
+        #    pP = p[tP].copy()
+        #    pP[1:] *= -1.0
+
+        #    M0= tP[0]
+        #    for j in range(tP.size):
+        #        J = tP[j]
+        #        for m in range(tP.size):
+        #            M = tP[m]
+        #            pm = 1.0 if M==M0 else -1.0
+        #            f_L[J,M] += pP[j] * pm  # (IJ|IJ) contribution
+
+
+        # J and K parts
+        for M in range(p.size):
+            for P in range(NG):
+                tP = geminal_idx[P]
+                if M in tP:
+                   pP = p[tP]
+                   for Q in range(NG):
+                     if P != Q:
+                        tQ = geminal_idx[Q]
+                        pQ = p[tQ]
+                        for j in range(tQ.size):
+                            J = tQ[j]
+                            hmj = p[M] * pQ[j]**2
+                            f_J[J,M] += hmj
+                            f_K[J,M] -= hmj
+
+        #for P in range(NG):
+        #    tP = geminal_idx[P]
+        #    pP = p[tP]
+
+        #    for m in range(tP.size):
+        #        M = tP[m]
+        #        for Q in range(NG):
+        #         if P != Q: 
+        #            tQ = geminal_idx[Q]
+        #            pQ = p[tQ]
+        #            for j in range(tQ.size):
+        #                J = tQ[j]
+        #                hmj = pP[m] * pQ[j]**2
+        #                f_J[J,M] +=   hmj   # (II|JJ) contribution
+        #                f_K[J,M] -=   hmj   # (IJ|JI) contribution
+
+
+        f_J *= 8.0
+        f_K *= 4.0
+        f_L *= 2.0
+
+        return f_J, f_K, f_L
+
+
+
+
+    @staticmethod
+    def fij_JK_old(n): 
         ns = abs(n); s = numpy.sqrt(ns)
-        ng = ns[numpy.where(n>0.5)]
-        na = ns[numpy.where(n<=0.5)]
+        ng = ns[numpy.where(n>=0.50)]
+        na = ns[numpy.where(n< 0.50)]
         NG = len(ng) # number of geminals
         NA = len(na) # number of unoccupied orbitals
+
+        NG = self._NG
 
         ph = -numpy.ones(na.size+1); ph[0] = 1.0 # phases
 
@@ -920,20 +1230,65 @@ class APSG_XCFunctional(XCFunctional):
         n = p*p
         D = c @ numpy.diag(n) @ c.T
 
-        f_J, f_K = self.fij_JK(n)
+        f_J, f_K, f_L = self.fij_JKL(n)
 
         Jd= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(D,""))[0].to_array(dense=True)
 
-        psi_fJ = psi4.core.Matrix.from_array(f_J, "")
-        psi_fK = psi4.core.Matrix.from_array(f_K, "")
-        psi_c  = psi4.core.Matrix.from_array(c  , "")
+        psi_fJ  = psi4.core.Matrix.from_array(f_J      , "")
+        psi_fKL = psi4.core.Matrix.from_array(f_K + f_L, "")
+        psi_c   = psi4.core.Matrix.from_array(c        , "")
 
-        xc_energy = oepdev.calculate_e_apsg(self._wfn, self._ints, psi_fJ, psi_fK, psi_c)
+        xc_energy = oepdev.calculate_e_apsg(self._wfn, self._ints, psi_fJ, psi_fKL, psi_c)
         xc_energy-= 2.0 * numpy.dot(Jd, D).trace()
 
         return xc_energy
 
+    def gradient_P(self, x):
+        "Analytical gradient"
+        p, c = x.unpack()
+        P = x.matrix()
+        P2= P @ P
 
+        A_J, A_K, A_L = self.fij_JKL(p*p)
+        a_J, a_K, a_L = self.fj_JKL(p)
+
+       # A_J /= 2.0
+       # a_J /= 2.0
+       # A_K /= 2.0
+       # a_K /= 2.0
+       # A_L /= 1.0
+       # a_L /= 1.0
+
+        A_KL = A_K + A_L
+        a_KL =-a_K + a_L
+
+       # A_KL /= 4.0
+       # a_KL /= 4.0
+       # A_J  /= 4.0
+       # a_J  /= 4.0
+
+        psi_AJ  = psi4.core.Matrix.from_array( A_J      , "")
+        psi_AKL = psi4.core.Matrix.from_array( A_KL     , "")
+        psi_aJ  = psi4.core.Matrix.from_array(-a_J      , "")
+        psi_aKL = psi4.core.Matrix.from_array(a_KL     , "")
+        psi_c   = psi4.core.Matrix.from_array(c        , "")
+        psi_p   = psi4.core.Vector.from_array(p        , "")
+
+        JP= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P2, ""))[0].to_array(dense=True)
+
+
+        gradient   = oepdev.calculate_de_apsg(self._wfn, self._ints, psi_p, psi_AJ, psi_AKL, psi_aJ, psi_aKL, psi_c).to_array(dense=True)
+
+        gradient   = c @ gradient @ c.T
+
+        gradient_H = JP @ P
+        gradient_H+= gradient_H.T
+        gradient_H*= 4.0
+
+        gradient-= gradient_H
+
+        return Guess.create(matrix=gradient)
+ 
 
 class IDFW_XCFunctional(XCFunctional):
     """
