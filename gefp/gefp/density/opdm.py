@@ -5,6 +5,7 @@
  Bartosz Błasiak, Gundelfingen, May 2019
 """
 
+import oepdev
 import numpy
 import psi4
 import scipy.optimize
@@ -311,13 +312,13 @@ class DensityProjection(ABC):
         elif dtype.lower() == 'd': return Dset_DensityProjection(np, S)
         else: raise ValueError("Only projections onto D and P sets are possible.")
 
-    def compute(self, n, c):
-        return self._density_matrix_projection(n, c)
+    def compute(self, n, c, perfect_pairing=False):
+        return self._density_matrix_projection(n, c, perfect_pairing)
 
 
     # --> Protected Interface <-- #
 
-    def _density_matrix_projection(self, n, c):
+    def _density_matrix_projection(self, n, c, perfect_pairing):
         "Find n_new and C_new such that new density matrix is N-representable"                              
         if self._S is None: pass # S = numpy.identity(len(n))
         else              : S = self._S.copy()
@@ -342,6 +343,10 @@ class DensityProjection(ABC):
         n_new = n_new [  idx]
         C_new = C_new [:,idx]
         if self._S is not None: C_new = numpy.dot(Density.orthogonalizer(S), C_new)
+
+        # perfect-pairing projection (sorting will be changed to pp-descending)
+        if perfect_pairing:
+           n_new, C_new = self._perfect_pair_projection(n_new, C_new)
         return n_new.real, C_new.real
 
     @abstractmethod
@@ -351,6 +356,11 @@ class DensityProjection(ABC):
     @abstractmethod
     def _eval_coef(self, x, coeff):
         pass
+
+    @abstractmethod
+    def _perfect_pair_projection(self, n, c):
+        pass
+
            
 class Dset_DensityProjection(DensityProjection):
     """\
@@ -386,6 +396,10 @@ class Dset_DensityProjection(DensityProjection):
             elif u >= 1.0: a_[i] = 1.0
             else: a_[i] = u
         return a_
+
+    def _perfect_pair_projection(self, n, c):
+        raise NotImplementedError("Perfect Pairing scheme is not implemented for D-set optimization!")
+
 
 class Pset_DensityProjection(DensityProjection):
     """\
@@ -434,3 +448,65 @@ class Pset_DensityProjection(DensityProjection):
             elif u >= 1.0: b_[i] = 1.0
             else: b_[i] = u
         return b_
+
+    def __construct_p_from_g(self, g, dim):
+        p_ = numpy.zeros(dim)
+        sg = numpy.sin(g); sg = abs(sg)
+        cg = numpy.cos(g); cg = abs(cg)
+        for i in range(self._np):
+            p_[           i] = sg[i]
+            p_[self._np + i] = cg[i]
+        return p_
+
+
+    def _perfect_pair_projection(self, n, c): #TODO
+        po = n
+        Po = c @ numpy.diag(po) @ c.T
+
+        def obj(g, P, dim):
+            # construct perfect-pair occupancies
+           # p_ = numpy.zeros(dim)
+           # sg = numpy.sin(g); sg = abs(sg)
+           # cg = numpy.cos(g); cg = abs(cg)
+           # for i in range(self._np):
+           #     p_[           i] = sg[i]
+           #     p_[self._np + i] = cg[i]
+            p_ = self.__construct_p_from_g(g, dim)
+           
+            # calculate orbitals 
+            Q = psi4.core.Vector.from_array( numpy.einsum("i,jk->ijk", p_, P).ravel(), "")
+            X = oepdev.calculate_unitary_uo_2(Q, dim).to_array(dense=True)
+
+            # objective function value
+            r = numpy.einsum("ai,bi,ab->i", X, X, P)
+            Z = - r @ p_
+
+            return Z
+
+        # solve optimization problem for p_
+        g_0 = numpy.zeros(self._np)
+        bounds = None
+        options = {'disp': False, 'maxiter':2000, 'ftol': 1.0e-10}
+        R = scipy.optimize.minimize(obj, g_0, args=(Po, po.size), 
+                                         method='slsqp', tol=1.0e-10, bounds=bounds, options=options)
+        g = R.x
+        p_new = self.__construct_p_from_g(g, po.size)
+
+        # compute orbitals from p_
+        Q = psi4.core.Vector.from_array( numpy.einsum("i,jk->ijk", p_new, Po).ravel(), "")
+        c_new = oepdev.calculate_unitary_uo_2(Q, po.size).to_array(dense=True)
+
+        # sort according to perfect-pair-dencending order
+        idx = numpy.argsort(p_new[:self._np])[::-1]  # -> descending
+        p_occ = p_new[  idx]
+        p_vir = p_new[  idx[::-1] + self._np ]
+        p_uno = p_new[  (2*self._np):]
+        p_new = numpy.concatenate((p_occ, p_vir, p_uno))
+        c_occ = c_new[:,idx]
+        c_vir = c_new[:,idx[::-1] + self._np ]
+        c_uno = c_new[:,(2*self._np):]
+        c_new = numpy.concatenate((c_occ, c_vir, c_uno), axis=1)
+        return p_new, c_new
+
+
+

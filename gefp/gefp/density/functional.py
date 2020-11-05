@@ -970,6 +970,9 @@ class APSG_XCFunctional(XCFunctional):
         r1 = numpy.arange(self._NG)
         r2 = self._N - r1  - 1
         self._geminal_idx = numpy.array(list(zip(r1,r2)), int)
+        #
+        mints = psi4.core.MintsHelper(self._wfn.basisset())
+        self._eri_ao = numpy.array(mints.ao_eri(), numpy.float64)
 
 
     @staticmethod
@@ -988,78 +991,6 @@ class APSG_XCFunctional(XCFunctional):
         return geminal_idx
             
 
-
-    @staticmethod
-    def geminals_old(n):
-        ns = abs(n); nmo = n.size
-        n_strong = ns[numpy.where(n>=0.50)]
-        n_weak   = ns[numpy.where(n< 0.50)]
-
-        NG = n_strong.size
-        geminal_idx = []
-        J = nmo - 1
-        for i in range(NG):
-            indices = [i,]
-            Di = 1.0 - ns[i]
-            for j in range(i,nmo-NG):
-                indices.append(J)
-                nj = ns[J]
-                if (Di - nj) < -1.e-4: 
-                    break
-                Di -= nj
-                J  -= 1
-                
-            geminal_idx.append(numpy.array(indices,int))
-
-       #print(geminal_idx[0])
-
-        return geminal_idx
-            
-    def fij_JKL_older(self, n): 
-        ns = abs(n); #s = numpy.sqrt(ns)
-
-       #geminal_idx = APSG_XCFunctional.geminals(n)
-        geminal_idx = self._geminal_idx
-
-        NG = len(geminal_idx) # number of geminals
-
-        f_J = numpy.zeros((n.size,n.size))
-        f_K = numpy.zeros((n.size,n.size))
-        f_L = numpy.zeros((n.size,n.size))
-
-        # L part
-        for P in range(NG):
-            tP = geminal_idx[P]
-            nP = ns[tP]
-            sP = numpy.sqrt(nP)
-            sP[1:] *= -1.0
-            for i in range(tP.size):
-                I = tP[i]
-                for j in range(tP.size):
-                    J = tP[j]
-                    f_L[I,J] += sP[i] * sP[j]   # (IJ|IJ) contribution
-
-        # J and K part
-        for P in range(NG):
-            tP = geminal_idx[P]
-            nP = ns[tP]
-            for i in range(tP.size):
-                I = tP[i]
-                for Q in range(NG):
-                 if P != Q:
-                    tQ = geminal_idx[Q]
-                    nQ = ns[tQ]
-                    for j in range(tQ.size):
-                        J = tQ[j]
-                        nij = nP[i] * nQ[j]
-                        f_J[I,J] +=       nij   # (II|JJ) contribution
-                        f_K[I,J] -=       nij   # (IJ|JI) contribution
-
-        f_J *= 2.0
-        f_K *= 1.0
-        return f_J, f_K, f_L
-
-
     def geminal_index(self, i):
         G = -1
         for g in range(self._NG):
@@ -1068,7 +999,8 @@ class APSG_XCFunctional(XCFunctional):
                G = g 
                break
         return G
-    def fij_JKL(self, n):  #!!!!!!!!!!!!!!!!!!!!!!
+
+    def fij_JKL(self, n): 
         ns = abs(n); p = numpy.sqrt(ns)
 
         geminal_idx = self._geminal_idx
@@ -1101,128 +1033,41 @@ class APSG_XCFunctional(XCFunctional):
         f_K *= 1.0
         return f_J, f_K, f_L
 
-    def fj_JKL(self, p): 
-        "a,b,c coefficients for diagonal derivative of XC energy wrt P set"
-       #geminal_idx = APSG_XCFunctional.geminals(n)
+    def fj_JKL(self, n): 
+        ns = abs(n); p = numpy.sqrt(ns)
+
         geminal_idx = self._geminal_idx
-
-       #NG = len(geminal_idx) # number of geminals
-        NG = self._NG
-
-        f_J = numpy.zeros((p.size,p.size))
-        f_K = numpy.zeros((p.size,p.size))
-        f_L = numpy.zeros((p.size,p.size))
-
-        # L part
-        for M in range(p.size):
-            for P in range(NG):
-                tP = geminal_idx[P]
-                pP = p[tP].copy()
-                pP[1:] *= -1.0
-                if M in tP: 
-                   M0 = tP[0]
-                   for j in range(tP.size):
-                       J = tP[j]
-                       pm = 1.0 if M==M0 else -1.0
-                       f_L[J,M] += pP[j] * pm
-
-
-        #for P in range(NG):
-        #    tP = geminal_idx[P]
-        #    pP = p[tP].copy()
-        #    pP[1:] *= -1.0
-
-        #    M0= tP[0]
-        #    for j in range(tP.size):
-        #        J = tP[j]
-        #        for m in range(tP.size):
-        #            M = tP[m]
-        #            pm = 1.0 if M==M0 else -1.0
-        #            f_L[J,M] += pP[j] * pm  # (IJ|IJ) contribution
-
-
-        # J and K parts
-        for M in range(p.size):
-            for P in range(NG):
-                tP = geminal_idx[P]
-                if M in tP:
-                   pP = p[tP]
-                   for Q in range(NG):
-                     if P != Q:
-                        tQ = geminal_idx[Q]
-                        pQ = p[tQ]
-                        for j in range(tQ.size):
-                            J = tQ[j]
-                            hmj = p[M] * pQ[j]**2
-                            f_J[J,M] += hmj
-                            f_K[J,M] -= hmj
-
-        #for P in range(NG):
-        #    tP = geminal_idx[P]
-        #    pP = p[tP]
-
-        #    for m in range(tP.size):
-        #        M = tP[m]
-        #        for Q in range(NG):
-        #         if P != Q: 
-        #            tQ = geminal_idx[Q]
-        #            pQ = p[tQ]
-        #            for j in range(tQ.size):
-        #                J = tQ[j]
-        #                hmj = pP[m] * pQ[j]**2
-        #                f_J[J,M] +=   hmj   # (II|JJ) contribution
-        #                f_K[J,M] -=   hmj   # (IJ|JI) contribution
-
-
-        f_J *= 8.0
-        f_K *= 4.0
-        f_L *= 2.0
-
-        return f_J, f_K, f_L
-
-
-
-
-    @staticmethod
-    def fij_JK_old(n): 
-        ns = abs(n); s = numpy.sqrt(ns)
-        ng = ns[numpy.where(n>=0.50)]
-        na = ns[numpy.where(n< 0.50)]
-        NG = len(ng) # number of geminals
-        NA = len(na) # number of unoccupied orbitals
-
-        NG = self._NG
-
-        ph = -numpy.ones(na.size+1); ph[0] = 1.0 # phases
 
         f_J = numpy.zeros((n.size,n.size))
         f_K = numpy.zeros((n.size,n.size))
+        f_L = numpy.zeros((n.size,n.size))
 
-        # sqrt part
-        for P in range(NG):
-            nP = numpy.concatenate(([ ng[P] ], na))
-            sP = numpy.sqrt(nP) * ph
-            for i in range(NA+1):
-                I = P if not i else NG + i - 1
-                for j in range(NA+1):
-                    J = P if not j else NG + j - 1
-                    f_K[I,J] += sP[i] * sP[j]   # (IJ|JI) contribution
+        for i in range(n.size):
+          G_i = self.geminal_index(i)
+          if G_i >= 0:
+            I_G_i = self._geminal_idx[G_i]
 
-        for P in range(NG):
-            nP = numpy.concatenate(([ ng[P] ], na))
-            for i in range(NA+1):
-                I = P if not i else NG + i - 1
-                for Q in range(NG):
-                 if P != Q:
-                    nQ = numpy.concatenate(([ ng[Q] ], na))
-                    for j in range(NA+1):
-                        J = Q if not j else NG + j - 1
-                        nij = nP[i] * nQ[j]
-                        f_K[I,J] -=       nij   # (IJ|JI) contribution
-                        f_J[I,J] +=       nij   # (II|JJ) contribution
+            phase_i = 1.0 if i == I_G_i[0] else -1.0
 
-        f_J *= 2.0
-        return f_J, f_K
+            for j in range(n.size):
+              G_j = self.geminal_index(j)
+              if G_j >= 0:
+                 I_G_j = self._geminal_idx[G_j]
+
+                 phase_j = 1.0 if j == I_G_j[0] else -1.0
+
+                 if G_i != G_j:
+                    f_J[i,j]+= p[i] * ns[j]
+                    f_K[i,j]-= p[i] * ns[j]
+                 if G_i == G_j:
+                    f_L[i,j]+= p[j] * phase_i * phase_j
+
+        f_L *= 2.0
+        f_J *= 4.0
+        f_K *= 2.0
+        return f_J.T, f_K.T, f_L.T
+
+
 
     def energy_P(self, x):
         "Exchange-correlation energy of APSG functional"
@@ -1238,8 +1083,17 @@ class APSG_XCFunctional(XCFunctional):
         psi_fKL = psi4.core.Matrix.from_array(f_K + f_L, "")
         psi_c   = psi4.core.Matrix.from_array(c        , "")
 
-        xc_energy = oepdev.calculate_e_apsg(self._wfn, self._ints, psi_fJ, psi_fKL, psi_c)
-        xc_energy-= 2.0 * numpy.dot(Jd, D).trace()
+        if 1:
+
+           xc_energy = oepdev.calculate_e_apsg(self._wfn, self._ints, psi_fJ, psi_fKL, psi_c)
+           xc_energy-= 2.0 * numpy.dot(Jd, D).trace()
+
+        else:
+           C = self._Ca @ c
+           eri_no = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", self._eri_ao, C, C, C, C)
+
+           xc_energy = numpy.einsum("ijij,ij", eri_no, f_K+f_L) + numpy.einsum("iijj,ij", eri_no, f_J)
+           xc_energy-= 2.0 * numpy.dot(Jd, D).trace()
 
         return xc_energy
 
@@ -1250,7 +1104,7 @@ class APSG_XCFunctional(XCFunctional):
         P2= P @ P
 
         A_J, A_K, A_L = self.fij_JKL(p*p)
-        a_J, a_K, a_L = self.fj_JKL(p)
+        a_J, a_K, a_L = self.fj_JKL(p*p)
 
        # A_J /= 2.0
        # a_J /= 2.0
@@ -1260,26 +1114,47 @@ class APSG_XCFunctional(XCFunctional):
        # a_L /= 1.0
 
         A_KL = A_K + A_L
-        a_KL =-a_K + a_L
+        a_KL = a_K + a_L
 
        # A_KL /= 4.0
        # a_KL /= 4.0
        # A_J  /= 4.0
        # a_J  /= 4.0
 
-        psi_AJ  = psi4.core.Matrix.from_array( A_J      , "")
-        psi_AKL = psi4.core.Matrix.from_array( A_KL     , "")
-        psi_aJ  = psi4.core.Matrix.from_array(-a_J      , "")
+        psi_AJ  = psi4.core.Matrix.from_array(A_J      , "")                                                                              
+        psi_AKL = psi4.core.Matrix.from_array(A_KL     , "")
+        psi_aJ  = psi4.core.Matrix.from_array( a_J      , "")
         psi_aKL = psi4.core.Matrix.from_array(a_KL     , "")
         psi_c   = psi4.core.Matrix.from_array(c        , "")
         psi_p   = psi4.core.Vector.from_array(p        , "")
-
+                                                                                                                                          
         JP= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P2, ""))[0].to_array(dense=True)
 
+        if 1:
+           gradient   = oepdev.calculate_de_apsg(self._wfn, self._ints, psi_p, psi_AJ, psi_AKL, psi_aJ, psi_aKL, psi_c).to_array(dense=True)
+           gradient   = c @ gradient @ c.T
 
-        gradient   = oepdev.calculate_de_apsg(self._wfn, self._ints, psi_p, psi_AJ, psi_AKL, psi_aJ, psi_aKL, psi_c).to_array(dense=True)
+        else:
+           C = self._Ca @ c
+           eri_no = numpy.einsum("ijkl,ia,jb,kc,ld->abcd", self._eri_ao, C, C, C, C)
 
-        gradient   = c @ gradient @ c.T
+           g_mm = numpy.einsum("mjmj,jm->m", eri_no, a_KL)
+           g_mm+= numpy.einsum("mmjj,jm->m", eri_no, a_J)
+
+           t_mn = numpy.einsum("mjnj,mj->mn", eri_no, A_KL)
+           t_mn+= numpy.einsum("mnjj,mj->mn", eri_no, A_J )
+           t_mn-= t_mn.T
+           g_mn = numpy.zeros((p.size, p.size))
+           for i in range(p.size):
+               g_mn[i,i] = g_mm[i]
+               for j in range(i):
+                 d_ij = p[i] - p[j]
+                 if abs(d_ij) > 1.e-20:
+                   g_mn[i,j] = 2./d_ij * t_mn[i,j]
+                   g_mn[j,i] = g_mn[i,j]
+
+           gradient = c @ g_mn @ c.T
+          
 
         gradient_H = JP @ P
         gradient_H+= gradient_H.T

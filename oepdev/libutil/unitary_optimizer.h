@@ -38,6 +38,15 @@ struct ABCD
   double D;
 };
 
+/**\brief Simple structure to hold the Fourier series expansion coefficients for *N*=2.
+ *
+ */
+struct Fourier5
+{
+  double a0, a1, a2, b1, b2;
+};
+
+
 /**\brief Simple structure to hold the Fourier series expansion coefficients for *N*=4.
  *
  */
@@ -521,6 +530,226 @@ class UnitaryOptimizer_4_2
      double b_(int i, int k, int I, int J) {return KroneckerDelta_(i,k)*(KroneckerDelta_(I,k)+KroneckerDelta_(J,i));}
      double c_(int i, int k, int I, int J) {return KroneckerDelta_(i,k)*(1.0-KroneckerDelta_(I,k))*(1.0-KroneckerDelta_(J,i));}
 };
+
+/**\brief Find the optimim unitary matrix for quadratic matrix equation with trace.
+ *
+ * The objective function of the orthogonal matrix \f$ {\bf X} \f$ 
+ * \f[
+ *   Z({\bf X}) \equiv \sum_{ijk} X_{ji} X_{ki} P_{ijk}
+ * \f]
+ * is optimized by using the Jacobi iteration algorithm.
+ * In the above equation, \f$ {\bf P} \f$ is a general real third-rank tensor of size
+ * \f$ N^3 \f$. The solver is equivalent to UnitaryOptimizer_4_2 in mathematical sense,
+ * in which the sixth-rank tensor is zero, hence costly \f$ N^6 \f$
+ * memory alocation is avoided.
+ *
+ * ## Algorithm.
+ * Optimization of \f$ {\bf X} \f$ is factorized into a sequence of 
+ * 2-dimensional rotations with one real parameter \f$ \gamma \f$:
+ * \f[
+ *   {\bf X}^{\rm New} = {\bf X}^{\rm Old} \cdot {\bf U}(\gamma)
+ * \f]
+ * where
+ * \f[
+ * {\bf U}(\gamma) \equiv
+ * \begin{pmatrix}
+ * \ddots  &  &  & & \\ 
+ *  & \cos(\gamma) & \cdots  & \sin(\gamma)& \\ 
+ *  & \vdots  & \ddots & \vdots & \\ 
+ *  & -\sin(\gamma) & \cdots  & \cos(\gamma) & \\
+ *  &  &   &  &  & \ddots 
+ * \end{pmatrix}
+ * \f]
+ * is the Jacobi transformation matrix constructed for the \f$ I\f$th and \f$ J\f$th
+ * element from the entire \f$ N\f$-dimensional set.
+ * For the sake of algorithmic simplicity,
+ * every iteration after \f$ {\bf U}(\gamma) \f$ has been formed, \f$ {\bf X}^{\rm Old} \f$ is for a while assumed to be an 
+ * identity matrix and
+ * the \f$ {\bf P} \f$ tensor
+ * are transformed according to the following formulae
+ * \f{align*}{
+ *   P_{ijk}    &\rightarrow \sum_{j'k'}     P_{ij'k'}      X_{j'j} X_{k'k}
+ * \f}
+ * The full transformation matrix is accumulated in the memory buffer until convergence.
+ *
+ * In each iteration, the optimum angle \f$ \gamma \f$ is found as follows: First, the roots of
+ * the finite Fourier series 
+ * \f[
+ *  a_0 + \sum_{p=1}^2 \left\{ a_p \cos(px) + b_p \sin(px) \right\} = 0
+ * \f]
+ * are found. In the above equations, the expansion coefficients are calculated analytically
+ * as a function of \f$ I,J \f$ - the chosen indices in the Jacobi iteration subspace.
+ * The roots are evaluated by applying the Boyd's method[1], in which they are given as 
+ * \f[
+ *   \gamma_n = \Re\left[-i\ln(\lambda_n)\right]
+ * \f]
+ * where \f$ \lambda_n \f$ is an eivenvalue of the following 4 by 4 complex matrix:
+ * \f[
+ * \begin{pmatrix}
+ * 0 & 1 & 0 & 0 \\
+ * 0 & 0 & 1 & 0 \\
+ * 0 & 0 & 0 & 1 \\
+ * -\frac{a_2+ib_2}{a_2-ib_2} &
+ * -\frac{a_1+ib_1}{a_2-ib_2} & 
+ * -\frac{2a_0}    {a_2-ib_2} &
+ * -\frac{a_1-ib_1}{a_2-ib_2} &
+ * \end{pmatrix}
+ * \f]
+ * Once the four roots of the Fourier series equation are found, one solution out of four
+ * is chosen which satisfies the global optimum condition, i.e., the largest increase/decrease
+ * in the objective function given by
+ * \f[
+ *  \delta Z = Z\left({\bf U}(\gamma)\right) - Z({\bf 1})
+ * \f]
+ * The Hessian is not computed.
+ * All the \f$ N(N-1)/2 \f$ unique pairs of molecular orbitals are checked
+ * and the optimal set of \f$ \gamma, I, J\f$ is chosen to construct \f$ {\bf X}^{\rm New} \f$.
+ *  
+ * ## References:
+ * [1] Boyd, J.P.; J. Eng. Math. (2006) 56, pp. 203-219
+ */
+class UnitaryOptimizer_2
+{
+   public:
+     /**\brief Create from P tensor and optimization options
+      * @param P - \f$ {\bf P} \f$ tensor (flattened row-wise)
+      * @param n - dimensionality of the problem (\f$ N \f$)
+      * @param conv - convergence in the \f$ Z \f$ function
+      * @param maxiter - maximum number of iterations
+      * @param verbose - whether print information of iteration process or not
+      * Sets up the optimizer.
+      */
+     UnitaryOptimizer_2(double* P, int n, double conv = 1.0e-6, int maxiter = 100, bool verbose = true);
+
+     /// Clear memory
+    ~UnitaryOptimizer_2();
+
+     /// Run the minimization
+     bool maximize();
+
+     /// Run the maximization
+     bool minimize();
+
+     /// Get the unitary matrix (solution)
+     std::shared_ptr<psi::Matrix> X() {return this->psi_X_();}
+
+     /// Get the unitary matrix (pointer to solution)
+     double* get_X() const {return this->X_;}
+
+     /// Get the actual value of Z function
+     double  Z() {return this->eval_Z_();}
+
+     /// Get the status of the optimization
+     bool success() const {return success_;}
+
+   protected:
+     /**\brief Initialize the basic memory
+      * @param n - dimensionality of the problem (\f$ N \f$)
+      * @param conv - convergence in the \f$ Z \f$ function
+      * @param maxiter - maximum number of iterations
+      * @param verbose - whether print information of iteration process or not
+      * Sets up the optimizer.
+      */
+     UnitaryOptimizer_2(int n, double conv, int maxiter, bool verbose);
+
+     /// Dimension of the problem
+     const int n_;
+     /// Convergence
+     const double conv_;
+     /// Maximum number of iterations
+     const int maxiter_;
+     /// Verbose mode
+     const bool verbose_;
+
+     /// P tensor
+     double*  P_;
+     /// Reference P tensor
+     double*  P0_;
+     /// X Matrix (accumulated solution)
+     double*  X_;
+     /// Work place
+     double*  W_;
+     /// Temporary X matrix
+     double*  Xold_;
+     /// Temporary X matrix
+     double*  Xnew_;
+     /// Current number of iterations
+     int niter_;
+     /// Current solutions
+     double S_[4];
+     /// Initial Z value
+     double Zinit_;
+     /// Old Z value
+     double Zold_;
+     /// New Z value
+     double Znew_;
+     /// Current convergence
+     double conv_current_;
+     /// Status of optimization
+     bool success_;
+
+     /// Prepare the optimizer
+     void common_init_();
+     /// Run the optimization (intermediate interface)
+     void run_(const std::string& opt);
+     /// Run the optimization (inner interface)
+     void optimize_(const std::string& opt);
+     /// Restore the initial state of the optimizer
+     void refresh_();
+
+     /// Update the convergence
+     void update_conv_();
+     /// Update the iterates
+     void update_iter_();
+     /// Update Z value
+     void update_Z_();
+     /// Uptade P tensor
+     void update_P_();
+     /// Update the solution matrix X
+     void update_X_();
+
+     /// Evaluate the objective Z function
+     double eval_Z_(double* X, double* P);
+     double eval_Z_();
+     /// Evaluate the change in Z
+     double eval_dZ_(double g, double* P, int I, int J);
+     /// Evaluate the trial Z value
+     double eval_Z_trial_(int I, int J, double gamma);
+
+     /// Create identity matrix
+     void form_X0_();
+     /// Form unitary matrix X (store in buffer Xnew_)
+     void form_X_(int I, int J, double gamma);
+     /// Form the next unitary matrix X
+     void form_next_X_(const std::string& opt);
+
+     /// Retrieve ABCD parameters for root search
+     Fourier5 get_fourier_(int I, int J);
+     /// Solve for all roots of equation A*sin(g) + B*cos(g) + C*sin(2*g) + D*cos(2*g) + E = 0 -> implements Boyd's method
+     void find_roots_boyd_(const Fourier5& abcd);
+     /// Solve for root of equation A*sin(g) + B*cos(g) + C*sin(2*g) + D*cos(2*g) = 0 -> implements Halley's method
+     double find_root_halley_(double x0, const Fourier5& abcd);
+     /// Compute gamma from roots of base equations
+     double find_gamma_(const Fourier5& abcd, int i, int j, const std::string& opt);
+
+     /// less-than function
+     bool lt_(double a, double b);
+     /// greater-than function
+     bool gt_(double a, double b);
+
+     /// Form the Psi4 matrix with the transformation matrix
+     std::shared_ptr<psi::Matrix> psi_X_();
+
+ private:
+     const int n3_;
+     const int n2_;
+     inline double KroneckerDelta_(int i, int j) {if (i==j) {return 1.0;} else {return 0.0;}}
+     double a_(int i, int k, int I, int J) {return (-KroneckerDelta_(I,i)*KroneckerDelta_(J,k)+KroneckerDelta_(I,k)*KroneckerDelta_(J,i))*(1.0-KroneckerDelta_(i,k));}
+     double b_(int i, int k, int I, int J) {return KroneckerDelta_(i,k)*(KroneckerDelta_(I,k)+KroneckerDelta_(J,i));}
+     double c_(int i, int k, int I, int J) {return KroneckerDelta_(i,k)*(1.0-KroneckerDelta_(I,k))*(1.0-KroneckerDelta_(J,i));}
+};
+
+
 
 
 /** @}*/

@@ -208,12 +208,13 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._step_mode                = None         # Mode of Steepest-Descents Minimization Steps
         self._mode_xc_gradient         = None         # Mode of E_XC gradient
         self._density_projector        = None         # Projector of 1-Particle Density Matrix
+        self._do_perfect_pairing       = None         # Project towards perfectly paired NOs
 
         self._iteration                = None         # Current Iteration Number
         self._E_new                    = None         # Current Total Energy
         self._E_old                    = None         # Total Energy from Previous Iteration
         self._x_old_1                  = None         # Current Density Guess
-        self._x_old_2                  = None         # Density Guess from Previous Iteration
+        self._x_old_2                  = None         # Density Guess from Previous Iteration 
 
         # Initialize all variables
         self.__common_init(wfn, xc_functional, v_ext, guess, step_mode)
@@ -372,7 +373,8 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
            # [2] Starting energy
            self._current_energy = self._minimizer(x_0)
            self._E_old = self._current_energy
-           if verbose: print(" @DMFT Iter %2d. E = %14.8f N = %14.4f" % (self._iteration, self._E_old, self._current_density.matrix().trace()))
+           if verbose: print(" @DMFT Iter %2d. E = %14.8f Na = %14.4f" % (self._iteration, 
+                               self._E_old, self._current_density.matrix().trace()))
                                                                                              
            # [3] First iteration
            self._iteration += 1
@@ -382,7 +384,8 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
                                                                                              
            self._current_energy = self._minimizer(self._x_old_1)
            self._E_new = self._current_energy
-           if verbose: print(" @DMFT Iter %2d. E = %14.8f N = %14.4f" % (self._iteration, self._E_new, self._current_density.matrix().trace()))
+           if verbose: print(" @DMFT Iter %2d. E = %14.8f Na = %14.4f" % (self._iteration, 
+                               self._E_new, self._current_density.matrix().trace()))
 
         # [4] Further iterations
         self._iteration += 1
@@ -396,7 +399,8 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
             # [4.2] Current energy
             self._current_energy = self._minimizer(x_new)
             self._E_new = self._current_energy
-            if verbose: print(" @DMFT Iter %2d. E = %14.8f N = %14.4f" % (self._iteration, self._E_new, self._current_density.matrix().trace()))
+            if verbose: print(" @DMFT Iter %2d. E = %14.8f Na = %14.4f" % (self._iteration, 
+                                self._E_new, self._current_density.matrix().trace()))
                                                                                   
             # [4.3] Converged?
             if abs(self._E_new-self._E_old) < conv and self._iteration > minit: 
@@ -585,6 +589,8 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._Y = Density.deorthogonalizer(self._S)
         # Hcore matrix
         self._H = self._wfn.H().to_array(dense=True)
+        # OEI in SCF-MO basis
+        self._oei_dipole_mo = numpy.array([ self._Ca.T @ x.to_array(dense=True) @ self._Ca for x in self._mints.ao_dipole()])
         # External potential
         self._V_ext = V_ext
         if V_ext is not None and guess == 'current':
@@ -605,12 +611,12 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         # ---->  Current OPDM and total energy <---- #
 
         # Guess based on current density matrix from the input wavefunction
-        if guess == 'current':
+        if guess in ('current', 0):
            assert self._V_ext is None, "External potential cannot be set with guess=current!"
            E = self._wfn.energy()
            D = self._wfn.Da().to_array(dense=True)
         # Guess based on the one-electron Hamiltonian
-        elif guess == 'hcore':
+        elif guess in ('hcore', 1):
            if self._V_ext is not None: self._H += self._V_ext
            e, c = numpy.linalg.eigh(numpy.linalg.multi_dot([self._X, self._H, self._X]))
            c = c[:,::-1]
@@ -627,6 +633,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._current_occupancies, self._current_orbitals = self._compute_initial_NOs() # it also changes _current_density
         # Density Matrix Projector
         self._density_projector = self._setup_density_projector()
+        self._do_perfect_pairing = True
         # H_core + V_ext in MO-SCF basis
         self._H_mo = numpy.linalg.multi_dot([self._Ca.T, self._H, self._Ca])
 
@@ -1102,7 +1109,9 @@ class DMFT_ProjP(DMFT_MO):
     def _density(self, x):
         "1-particle density matrix in MO basis: P-projection"
         p, c = x.unpack()
-        p, c = self._density_projector.compute(p, c)
+        p, c = self._density_projector.compute(p, c, perfect_pairing=self._do_perfect_pairing)
+       #p, c = self._perfect_pairing(p, c)
+
         self._current_occupancies = p**2
         self._current_orbitals    = c
         D = self._current_density.generalized_density(p, c, 2.0)

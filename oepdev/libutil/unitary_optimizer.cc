@@ -1048,5 +1048,406 @@ std::shared_ptr<psi::Matrix> UnitaryOptimizer_4_2::psi_X_() // same
   }
   return X;
 }
+//-------------------------------------------------------------------------------------------------------------
+UnitaryOptimizer_2::UnitaryOptimizer_2(int n, double conv, int maxiter, bool verbose) : // same
+ n_(n),
+ P_(nullptr),
+ P0_(nullptr),
+ X_(nullptr),
+ W_(nullptr),
+ Xold_(nullptr),
+ Xnew_(nullptr),
+ conv_(conv),
+ maxiter_(maxiter),
+ verbose_(verbose),
+ niter_(0),
+ conv_current_(1.0e+18),
+ success_(false),
+ n2_(n*n),
+ n3_(n*n*n)
+{
+}
+UnitaryOptimizer_2::UnitaryOptimizer_2(double* P, int n, double conv, int maxiter, bool verbose) 
+ : UnitaryOptimizer_2::UnitaryOptimizer_2(n, conv, maxiter, verbose) // override
+{
+  this->common_init_();
+
+  for (int i = 0; i < n_*n_*n_; ++i) {
+      P0_[i] = P[i];
+      P_ [i] = P[i];
+  }
+
+  this->Zinit_ = this->eval_Z_(X_, P0_);
+  this->Zold_  = this->Zinit_;
+}
+void UnitaryOptimizer_2::common_init_() // override
+{
+  // Allocate and initialize
+  std::memset(S_, 0, 4*sizeof(double));
+  size_t n2 = n_*n_;
+  size_t n3 = n_*n_*n_;
+  P_  = new double[n3];
+  P0_ = new double[n3];
+  X_  = new double[n2];
+  W_  = new double[n3];
+  Xold_ = new double[n2];
+  Xnew_ = new double[n2];
+
+  for (int i = 0; i < n_; ++i) {
+       X_[IDX(i,i,n_)] = 1.0;
+       for (int j = 0; j < n_; ++j) {
+            if (i!=j) X_[IDX(i,j,n_)] = 0.0;
+       }
+  }
+}
+UnitaryOptimizer_2::~UnitaryOptimizer_2() // same
+{
+  delete[] P_;
+  delete[] P0_;
+  delete[] X_;
+  delete[] W_;
+  delete[] Xold_;
+  delete[] Xnew_;
+}
+bool UnitaryOptimizer_2::maximize() {this->run_("max"); return success_;} // same
+bool UnitaryOptimizer_2::minimize() {this->run_("min"); return success_;} // same
+void UnitaryOptimizer_2::run_(const std::string& opt) // same
+{
+  this->refresh_();
+  this->optimize_(opt);
+}
+void UnitaryOptimizer_2::optimize_(const std::string& opt) // same
+{
+  if (verbose_) 
+     psi::outfile->Printf("\n\n Start  : Z[1] = %15.6E\n", Zold_);
+  while (conv_current_ > conv_) {
+     this->form_next_X_(opt);
+     this->update_P_();
+     this->update_Z_();
+     this->update_X_();
+     this->update_conv_();
+     this->update_iter_();
+     if (verbose_) 
+         psi::outfile->Printf(" Iter %2d: Z[X] = %15.6E  Conv= %15.6f\n", niter_, Znew_, conv_current_);
+     if (niter_ > maxiter_) {
+         psi::outfile->Printf(" Optimization unsuccesfull! Maximum iteration number %d exceeded!\n", maxiter_);
+         success_ = false;
+         break;
+     }
+  }
+  success_ = ((niter_ <= maxiter_) ? true : false );
+  if (verbose_ && success_) {
+      psi::outfile->Printf(" Optimization succesfull!\n");
+      psi::outfile->Printf(" Optimized Z[X] value: %15.6E\n", this->Z());
+  }
+  
+}
+void UnitaryOptimizer_2::refresh_() // override (can be same if introducing nr_, np_ and ns_ dimensions)
+{
+   for (int i = 0; i < n3_   ; ++i) P_[i] = P0_[i];
+   for (int i = 0; i < n_   ; ++i) {
+        X_[IDX(i,i,n_)] = 1.0; 
+        for (int j = 0; j < n_; ++j) {
+             if (i!=j) X_[IDX(i,j,n_)] = 0.0;
+        }
+   }
+   std::memset(S_, 0, 4*sizeof(double));
+   // Compute initial Z value
+   this->Zinit_ = this->eval_Z_(X_, P0_);
+   this->Zold_  = this->Zinit_;
+   this->niter_ = 0;
+   this->conv_current_ = 1.0e+18;
+   this->success_ = false;
+}
+void UnitaryOptimizer_2::update_conv_() // same
+{
+  conv_current_ = std::abs(Znew_-Zold_);
+}
+void UnitaryOptimizer_2::update_iter_() // same
+{
+  for (int i = 0; i < n_*n_; ++i) Xold_[i] = Xnew_[i];
+  Zold_ = Znew_;
+  niter_ += 1;
+}
+void UnitaryOptimizer_2::update_Z_() // override
+{
+   double Z = 0.0;
+   for (int i = 0; i < n_; ++i) {
+        Z += P_[IDX3(i,i,i)];
+   }
+   Znew_ = Z;
+}
+void UnitaryOptimizer_2::update_P_() // override
+{
+  // P tensor
+  for (int i = 0; i < n_; ++i) {
+       for (int J = 0; J < n_; ++J) {
+            for (int K = 0; K < n_; ++K) {
+                 double v = 0.0;
+                 for (int j = 0; j < n_; ++j) {
+                      for (int k = 0; k < n_; ++k) {
+                           v += Xnew_[IDX(j,J,n_)] * Xnew_[IDX(k,K,n_)] * P_[IDX3(i,j,k)];
+                      }
+                 }
+                 W_[IDX3(i,J,K)] = v;
+            }
+       }
+  }
+  for (int i = 0; i < n3_; ++i) P_[i] = W_[i];
+
+}
+void UnitaryOptimizer_2::update_X_() // override (can be same if adding argument 'left'==bool true/false)
+{
+   for (int i = 0; i < n_; ++i) {
+        for (int j = 0; j < n_; ++j) {
+             double v = 0.0;
+             for (int k = 0; k < n_; ++k) {
+                  v += X_[IDX(i,k,n_)] * Xnew_[IDX(k,j,n_)]; // here - left or right multiplication (depends on the problem)
+             }
+             W_[IDX(i,j,n_)] = v;
+        }
+   }
+   for (int i = 0; i < n_*n_; ++i) X_[i] = W_[i];
+}
+double UnitaryOptimizer_2::eval_Z_(double* X, double* P) // override
+{
+  double Z = 0.0;
+  for (int i = 0; i < n_; ++i) {
+       for (int j = 0; j < n_; ++j) {
+            for (int k = 0; k < n_; ++k) {
+                Z += X[IDX(j,i,n_)] * X[IDX(k,i,n_)] * P[IDX3(i,j,k)];
+            }
+       }
+  }
+  return Z;
+}
+double UnitaryOptimizer_2::eval_Z_() // same
+{
+   return this->eval_Z_(X_, P0_);
+}
+double UnitaryOptimizer_2::eval_dZ_(double gamma, double* P, int I, int J) // override
+{
+  // New Z
+  for (int i = 0; i < n_; ++i) {
+       W_[IDX(i,i,n_)] = 1.0;
+       for (int j = 0; j < n_; ++j) {
+           if (i!=j) W_[IDX(i,j,n_)] = 0.0;
+       }
+  }
+  double c = cos(gamma);
+  double s = sin(gamma);
+  W_[IDX(I,I,n_)] = c;
+  W_[IDX(J,J,n_)] = c;
+  W_[IDX(I,J,n_)] = s;
+  W_[IDX(J,I,n_)] =-s;
+
+  double Znew = this->eval_Z_(W_, P);
+
+  // Old Z
+  for (int i = 0; i < n_; ++i) {
+       W_[IDX(i,i,n_)] = 1.0;
+       for (int j = 0; j < n_; ++j) {
+           if (i!=j) W_[IDX(i,j,n_)] = 0.0;
+       }
+  }
+
+  double Zold = this->eval_Z_(W_, P);
+
+  double dZ = Znew - Zold;
+  return dZ;
+}
+double UnitaryOptimizer_2::eval_Z_trial_(int I, int J, double gamma) // override
+{
+  double Z = 0.0; 
+  for (int i = 0; i < n_; ++i) {
+       W_[IDX(i,i,n_)] = 1.0;
+       for (int j = 0; j < n_; ++j) {
+           if (i!=j) W_[IDX(i,j,n_)] = 0.0;
+       }
+  }
+  double c = cos(gamma);
+  double s = sin(gamma);
+  W_[IDX(I,I,n_)] = c;
+  W_[IDX(J,J,n_)] = c;
+  W_[IDX(I,J,n_)] = s;
+  W_[IDX(J,I,n_)] =-s;
+
+  for (int i = 0; i < n_; ++i) {
+       for (int j = 0; j < n_; ++j) {
+            for (int k = 0; k < n_; ++k) {
+                Z += W_[IDX(j,i,n_)] * W_[IDX(k,i,n_)] * P_[IDX3(i,j,k)];
+            }
+       }
+  }
+  return Z;
+}
+void UnitaryOptimizer_2::form_X0_() // same
+{
+   for (int i = 0; i < n_; ++i) {
+        Xold_[IDX(i,i,n_)] = 1.0;
+        for (int j = 0; j < n_; ++j) {
+             if (i != j) Xold_[IDX(i,j,n_)] = 0.0;
+        }
+   }
+}
+void UnitaryOptimizer_2::form_X_(int I, int J, double gamma) // same
+{
+  for (int i = 0; i < n_; ++i) {
+       Xnew_[IDX(i,i,n_)] = 1.0;
+       for (int j = 0; j < n_; ++j) {
+            if (i != j) Xnew_[IDX(i,j,n_)] = 0.0;
+       }
+  }
+  double c = cos(gamma);
+  double s = sin(gamma);
+  Xnew_[IDX(I,I,n_)] = c;
+  Xnew_[IDX(J,J,n_)] = c;
+  Xnew_[IDX(I,J,n_)] = s;
+  Xnew_[IDX(J,I,n_)] =-s;
+}
+void UnitaryOptimizer_2::form_next_X_(const std::string& opt) // override (can be same if generalized ABCD to FourierN template)
+{
+  bool (UnitaryOptimizer_2::*optfunc)(double, double) = (opt == "min" ? &UnitaryOptimizer_2::lt_ : &UnitaryOptimizer_2::gt_);
+
+  int I = 0;
+  int J = 1;
+  double Gamma = 0.0;
+  double dZold = 1.0e+18; if (opt == "max") dZold = -1.0e+18;
+  for (int j = 0; j < n_; ++j) {
+       for (int i = 0; i < j; ++i) {
+            Fourier5 abcd = this->get_fourier_(i, j);
+            this->find_roots_boyd_(abcd);
+            double gamma = this->find_gamma_(abcd, i, j, opt);
+            double dZ = this->eval_dZ_(gamma, P_, i, j);
+            if ((this->*optfunc)(dZ, dZold)) {
+                Gamma = gamma;
+                I = i; J = j;
+                dZold = dZ;
+            }
+       }
+  }
+  this->form_X_(I, J, Gamma);
+}
+Fourier5 UnitaryOptimizer_2::get_fourier_(int I, int J) // override
+{
+  // Initialize
+  double a0 = 0.0, a1 = 0.0, a2 = 0.0, 
+                   b1 = 0.0, b2 = 0.0;
+  // P-contribution
+  for (int i = 0; i < n_; ++i) {
+       for (int j = 0; j < n_; ++j) {
+            for (int k = 0; k < n_; ++k) {
+                 double p = P_[IDX3(i,j,k)];
+                 double A =   (KroneckerDelta_(I,j)*KroneckerDelta_(J,i) - KroneckerDelta_(I,i)*KroneckerDelta_(J,j)) * (1.0-KroneckerDelta_(i,j));
+                 double B =   -KroneckerDelta_(i,j)*(KroneckerDelta_(I,j)+KroneckerDelta_(J,i));
+                 double C =    KroneckerDelta_(i,k)*(1.0-KroneckerDelta_(I,k))*(1.0-KroneckerDelta_(J,i));
+                 double D =    KroneckerDelta_(i,k)*(KroneckerDelta_(I,k)+KroneckerDelta_(J,i));
+                 double E =   -KroneckerDelta_(I,i)*KroneckerDelta_(J,k)*(1.0-KroneckerDelta_(i,k));
+                 double F =    KroneckerDelta_(I,k)*KroneckerDelta_(J,i)*(1.0-KroneckerDelta_(i,k));
+                 double G =    (1.0-KroneckerDelta_(i,k))*(KroneckerDelta_(I,k)*KroneckerDelta_(J,i) - KroneckerDelta_(I,i)*KroneckerDelta_(J,k));
+                 double H =   -KroneckerDelta_(i,k)*(KroneckerDelta_(I,k)+KroneckerDelta_(J,i));
+                 double II=    KroneckerDelta_(i,j)*(1.0-KroneckerDelta_(I,j))*(1.0-KroneckerDelta_(J,i));
+                 double JJ=    KroneckerDelta_(i,j)*(KroneckerDelta_(I,j)+KroneckerDelta_(J,i));
+                 double K =   -KroneckerDelta_(I,i)*KroneckerDelta_(J,j)*(1.0-KroneckerDelta_(i,j));
+                 double L =    KroneckerDelta_(I,j)*KroneckerDelta_(J,i)*(1.0-KroneckerDelta_(i,j));
+
+                 a0 += p * (A*D+G*JJ+B*(E+F)+H*(K+L)) / 2.0;
+                 a1 += p * (A*C+G*II);
+                 a2 += p * (A*D+G*JJ-B*(E+F)-H*(K+L)) / 2.0;
+                 b1 += p * (B*C+H*II);
+                 b2 += p * (H*JJ+B*D+G*(K+L)+A*(E+F)) / 2.0;
+            }
+       }
+  }
+
+  // Save
+  Fourier5 fourier = {a0, a1, a2, b1, b2};
+
+  // Return
+  return fourier;
+}
+void UnitaryOptimizer_2::find_roots_boyd_(const Fourier5& abcd) // override (can be same if generalized to FourierN)
+{
+    // Allocate
+    
+    Eigen::Matrix<std::complex<double>,4,4> B;
+    Eigen::ComplexEigenSolver<Eigen::Matrix<std::complex<double>,4,4>> eigen;
+
+    // Build up B matrix
+    std::complex<double> c1= -(abcd.a2 + abcd.b2 * 1_i);
+    std::complex<double> c2= -(abcd.a1 + abcd.b1 * 1_i);
+    std::complex<double> c3= -(abcd.a0 * 2.0          );
+    std::complex<double> c4= -(abcd.a1 - abcd.b1 * 1_i);
+
+    std::complex<double> d =   abcd.a2 - abcd.b2 * 1_i ;
+
+    B(0,0) = 0.0; B(0,1) = 1.0; B(0,2) = 0.0; B(0,3) = 0.0; 
+    B(1,0) = 0.0; B(1,1) = 0.0; B(1,2) = 1.0; B(1,3) = 0.0; 
+    B(2,0) = 0.0; B(2,1) = 0.0; B(2,2) = 0.0; B(2,3) = 1.0; 
+    B(3,0) =  c1/ d;
+    B(3,1) =  c2/ d;
+    B(3,2) =  c3/ d;
+    B(3,3) =  c4/ d;
+   
+    // Compute all the roots
+    eigen.compute(B);
+    Eigen::Matrix<std::complex<double>,4,1> roots = -1_i * eigen.eigenvalues().array().log();
+
+    // Save in work place
+    for (int i = 0; i < 4; ++i) {
+         //if (std::abs(roots.imag()(i)) > 1.0e-4) std::cout << " Warning! Imaginary root is non-zero = " << roots.imag()(i) << std::endl;
+         double r = roots.real()(i);
+         if (r < 0.0) r += M_PI;
+         S_[i] = r;
+    }
+}
+double UnitaryOptimizer_2::find_gamma_(const Fourier5& abcd, int I, int J, const std::string& opt) // override (can be same if adding bool for checking the Hessian or not). In this case, Fourier5 is not necessary because Hessian is not computed
+{
+   double gamma = 0.0;
+   if (opt == "min") {
+       double Zold = 1.0e+18;
+       for (int i = 0; i < 4; ++i) {
+            //if (this->func_1_(S_[i], abcd) > 0.0) {
+                double Z = this->eval_Z_trial_(I, J, S_[i]);
+                if (Z < Zold) {
+                    gamma = S_[i];
+                    Zold = Z;
+                }
+            //}
+       }
+   } else { 
+       double Zold =-1.0e+18;
+       for (int i = 0; i < 4; ++i) {
+            //if (this->func_1_(S_[i], abcd) < 0.0) {
+                double Z = this->eval_Z_trial_(I, J, S_[i]);
+                if (Z > Zold) {
+                    gamma = S_[i];
+                    Zold = Z;
+                }
+            //}
+       }
+   }
+   return gamma;
+}
+bool UnitaryOptimizer_2::lt_(double a, double b) // same
+{
+   if (a < b) return true;
+   return false;
+}
+bool UnitaryOptimizer_2::gt_(double a, double b) // same
+{
+   if (a < b) return false;
+   return true;
+}
+std::shared_ptr<psi::Matrix> UnitaryOptimizer_2::psi_X_() // same
+{
+  std::shared_ptr<psi::Matrix> X = std::make_shared<psi::Matrix>("MO-MO Transformation matrix X", n_, n_);
+  for (int i = 0; i < n_; ++i) {
+       for (int j = 0; j < n_; ++j) {
+            X->set(i, j, X_[IDX(i,j,n_)]);
+       }
+  }
+  return X;
+}
 
 } // EndNameSpace oepdev

@@ -1,4 +1,5 @@
 #include "util.h"
+#include "unitary_optimizer.h"
 #include "psi4/libpsi4util/PsiOutStream.h"
 #include "psi4/libmints/mintshelper.h"
 #include "../libutil/integrals_iter.h"
@@ -1005,7 +1006,17 @@ calculate_de_apsg(std::shared_ptr<psi::Wavefunction> wfn,
 }
 
 
+extern "C" PSI_API
+psi::SharedMatrix calculate_unitary_uo_2(psi::SharedVector Q, int n) {
 
+  double* P = Q->pointer();
+  oepdev::UnitaryOptimizer_2 optimizer(P, n, 1.0e-6, 200, false);
+
+  bool success_max = optimizer.maximize();
+  psi::SharedMatrix X_max = optimizer.X();
+
+  return X_max;
+}
 
 
 extern "C" PSI_API

@@ -95,6 +95,9 @@ class Test
    /// Test the oepdev::UnitaryOptimizer class
    double test_unitaryOptimizer(void);
 
+   /// Test the oepdev::UnitaryOptimizer_2 class
+   double test_unitaryOptimizer_2(void);
+
    /// Test the oepdev::UnitaryOptimizer_4_2 class
    double test_unitaryOptimizer_4_2(void);
 
