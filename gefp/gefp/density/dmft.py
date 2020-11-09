@@ -178,8 +178,10 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
     default_guess         = 'hcore'                   # Guess for ODPM
     default_step_mode     = 'search'                  # Steepest-Descents step (simple line search)
     default_g             =  0.01                     # Constant Steepest-Descent step (relevant if step_mode is 'constant')
+    default_perfect_pairs =  False                    # Do not constrain the OPDM to perfect pairs
 
-    def __init__(self, wfn, xc_functional, v_ext=default_v_ext, guess=default_guess, step_mode=default_step_mode):
+    def __init__(self, wfn, xc_functional, v_ext=default_v_ext, guess=default_guess, step_mode=default_step_mode,
+                                           perfect_pairs=default_perfect_pairs):
         "Initialize"
         # Protected variable namespace
         self._current_energy           = None         # Total Energy                                        
@@ -209,6 +211,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._mode_xc_gradient         = None         # Mode of E_XC gradient
         self._density_projector        = None         # Projector of 1-Particle Density Matrix
         self._do_perfect_pairing       = None         # Project towards perfectly paired NOs
+        self._gscale                   = None         # Scale the gradient descent step
 
         self._iteration                = None         # Current Iteration Number
         self._E_new                    = None         # Current Total Energy
@@ -217,7 +220,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._x_old_2                  = None         # Density Guess from Previous Iteration 
 
         # Initialize all variables
-        self.__common_init(wfn, xc_functional, v_ext, guess, step_mode)
+        self.__common_init(wfn, xc_functional, v_ext, guess, step_mode, perfect_pairs)
 
         # Sanity checks
         if self._xc_functional.abbr.lower() != 'hf' and self.abbr.lower() == 'dmft-projd':
@@ -236,11 +239,12 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
                          v_ext         = default_v_ext        ,
                          guess         = default_guess        ,
                          algorithm     = default_algorithm    ,
-                         step_mode     = default_step_mode    ,        **kwargs):
+                         step_mode     = default_step_mode    ,        
+                         perfect_pairs = default_perfect_pairs,        **kwargs):
         """\
  Create DMFT solver. 
 """
-        args = [wfn, xc_functional, v_ext, guess, step_mode]
+        args = [wfn, xc_functional, v_ext, guess, step_mode, perfect_pairs]
 
         if   algorithm.lower() == 'proj-d': solver = DMFT_ProjD(*args, **kwargs)
         elif algorithm.lower() == 'proj-p': solver = DMFT_ProjP(*args, **kwargs)
@@ -399,6 +403,21 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
             # [4.2] Current energy
             self._current_energy = self._minimizer(x_new)
             self._E_new = self._current_energy
+
+            # [4.2] Iterate descents?
+            ntrial = 0; self._gscale = 1.0
+            while self._E_new > self._E_old: 
+               x_new = self._step(self._x_old_1, self._x_old_2, g)
+               x_new = self._density(x_new)
+               self._current_energy = self._minimizer(x_new)
+               self._E_new = self._current_energy
+               ntrial += 1
+               if ntrial > 45:
+                  stop    = True
+                  success = False
+                  break
+               self._gscale *= 0.5
+              
             if verbose: print(" @DMFT Iter %2d. E = %14.8f Na = %14.4f" % (self._iteration, 
                                 self._E_new, self._current_density.matrix().trace()))
                                                                                   
@@ -476,9 +495,11 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         DX = dx.matrix().ravel()
         DG = dg.matrix().ravel()
         norm = numpy.dot(DG, DG)
-        if norm < 0.00000001: g = 1.0
+        if norm < 0.00000001: g = 1.0 #orig
+       #if norm < 0.001: g = 0.5/self._np
         else:   g    = numpy.dot(DX, DG)/ norm
         g    = abs(g)
+       #print("Norm! = ", norm, " g= ", g)
         return g
 
     def _correct_negative_occupancies(self, n):
@@ -540,10 +561,15 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         pass
 
 
+    @abstractmethod
+    def _perfect_pairing(self, p, c): 
+        "Perfect pairing scheme"
+        pass
+
 
     # --- Private Interface --- #
 
-    def __common_init(self, wfn, xc_functional, V_ext, guess, step_mode):
+    def __common_init(self, wfn, xc_functional, V_ext, guess, step_mode, perfect_pairs):
         "Initialize"
 
         # ---->  Basic Objects <---- #
@@ -578,6 +604,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._np = self._wfn.nalpha()
         # Step mode
         self._step_mode = step_mode
+        self._gscale = 1.0
                                                                                                
         # ---->  Constant AO matrices <---- #
 
@@ -633,7 +660,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._current_occupancies, self._current_orbitals = self._compute_initial_NOs() # it also changes _current_density
         # Density Matrix Projector
         self._density_projector = self._setup_density_projector()
-        self._do_perfect_pairing = True
+        self._do_perfect_pairing = perfect_pairs
         # H_core + V_ext in MO-SCF basis
         self._H_mo = numpy.linalg.multi_dot([self._Ca.T, self._H, self._Ca])
 
@@ -731,8 +758,8 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
 
 
 class DMFT_AO(DMFT):
-    def __init__(self, wfn, xc_functional, v_ext, guess, step):
-        super(DMFT_AO, self).__init__(wfn, xc_functional, v_ext, guess, step)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
+        super(DMFT_AO, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
 
     @property
     def dipole(self):
@@ -785,6 +812,7 @@ class DMFT_AO(DMFT):
                                                                                        
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x_old_1 - x_old_2, gradient_1 - gradient_2)
+        g *= self._gscale
         x_new = x_old_1 - g * gradient_1
 
         # transform back to AO basis
@@ -814,8 +842,8 @@ class DMFT_AO(DMFT):
 
 
 class DMFT_MO(DMFT):
-    def __init__(self, wfn, xc_functional, v_ext, guess, step):
-        super(DMFT_MO, self).__init__(wfn, xc_functional, v_ext, guess, step)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
+        super(DMFT_MO, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
 
     # --- Implementation (Protected Interface) --- #
 
@@ -851,6 +879,7 @@ class DMFT_MO(DMFT):
         #g = 0.0000000001
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
+        g *= self._gscale
         x_new = x1 - g * gradient_1
         x_new.update()
         return x_new
@@ -866,8 +895,8 @@ class DMFT_MO(DMFT):
 
 
 class DMFT_NC(DMFT_AO):
-    def __init__(self, wfn, xc_functional, v_ext, guess, step):
-        super(DMFT_NC, self).__init__(wfn, xc_functional, v_ext, guess, step)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
+        super(DMFT_NC, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
 
     # --- Implementation (Public) --- #
 
@@ -920,8 +949,8 @@ class DMFT_NC(DMFT_AO):
 
 class DMFT_PC(DMFT_MO):
     "This does not work well at all. -> Do not use it."
-    def __init__(self, wfn, xc_functional, v_ext, guess, step):
-        super(DMFT_PC, self).__init__(wfn, xc_functional, v_ext, guess, step)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
+        super(DMFT_PC, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
         self.g = 0.1
 
 
@@ -981,6 +1010,8 @@ class DMFT_PC(DMFT_MO):
         g = self.g
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
+        g *= self._gscale
+
         x_new = x1 - g * gradient_1
         x_new.update()
         return x_new
@@ -1007,8 +1038,8 @@ class DMFT_PC(DMFT_MO):
 
 
 class DMFT_ProjD(DMFT_MO):
-    def __init__(self, wfn, xc_functional, v_ext, guess, step):
-        super(DMFT_ProjD, self).__init__(wfn, xc_functional, v_ext, guess, step)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
+        super(DMFT_ProjD, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
 
 
     @staticmethod
@@ -1061,6 +1092,8 @@ class DMFT_ProjD(DMFT_MO):
         #g = 0.5
         if self._step_mode.lower() != 'constant': 
            g = self._estimate_step_size(x1 - x2, gradient_1 - gradient_2)
+        g *= self._gscale
+
         x_new = x1 - g * gradient_1
         x_new.update()
         return x_new
@@ -1076,8 +1109,8 @@ class DMFT_ProjD(DMFT_MO):
 
 
 class DMFT_ProjP(DMFT_MO):
-    def __init__(self, wfn, xc_functional, v_ext, guess, step):
-        super(DMFT_ProjP, self).__init__(wfn, xc_functional, v_ext, guess, step)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
+        super(DMFT_ProjP, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
 
 
     @staticmethod
@@ -1109,8 +1142,15 @@ class DMFT_ProjP(DMFT_MO):
     def _density(self, x):
         "1-particle density matrix in MO basis: P-projection"
         p, c = x.unpack()
-        p, c = self._density_projector.compute(p, c, perfect_pairing=self._do_perfect_pairing)
+        pp = True
+       #if abs((p*p).sum() - self._np) < 0.001: pp = self._do_perfect_pairing
+        p, c = self._density_projector.compute(p, c, perfect_pairing=pp)
+       #p, c = self._density_projector.compute(p, c, perfect_pairing=False)
        #p, c = self._perfect_pairing(p, c)
+       #p, c = self._density_projector.compute(p, c, False)
+       #K = (p*p).sum() ; print(K)
+       #if (abs(K - self._np) < 0.0001) and self._do_perfect_pairing:
+       #   p, c = self._density_projector.compute(p, c, True)
 
         self._current_occupancies = p**2
         self._current_orbitals    = c
@@ -1126,3 +1166,61 @@ class DMFT_ProjP(DMFT_MO):
         elif self._mode_xc_gradient == 'approximate': gradient+= self._xc_functional.gradient_P_approximate(x)
         else:                                         gradient+= self._xc_functional.gradient_P(x)
         return gradient
+
+    def _perfect_pairing(self, p, c): 
+        "Perfect pairing scheme: Hungarian algorithm"
+        n = p*p
+
+        # [1] compute weights (requires precomputed dipole moment integrals in SCF-MO basis)
+        W = numpy.einsum("xij,ia,jb->abx", self._oei_dipole_mo, c, c)
+        W = (W*W).sum(axis=2)
+
+        NG= self._np
+        Ws= W[:NG,NG:]
+
+        # [2] solve assignment problem via Hungarian algorithm
+        self._perfect_pairs = scipy.optimize.linear_sum_assignment(-Ws)
+        self._perfect_pairs =(self._perfect_pairs[0], self._perfect_pairs[1] + NG)
+
+        # [3] force perfect pairing constraint
+        idx_occ_act = self._perfect_pairs[0]
+        idx_vir_act = self._perfect_pairs[1]
+        idx_all     = range(n.size)
+        idx_unocc   = list( set(idx_all).difference(set(idx_occ_act), set(idx_vir_act)) )
+
+        # [3.1] nullify occupancies for non-geminal virtual orbitals
+
+        # [3.2] re-scale occupancies within perfect-pairs to sum to 1.0
+        q = 1./(n[idx_occ_act] + n[idx_vir_act])
+    
+        if abs(n.sum() - NG) < 0.001:
+           n[idx_unocc] = 0.0
+           for i in range(NG):        
+               i_occ = idx_occ_act[i]
+               i_vir = idx_vir_act[i]
+               qi    = q[i]
+                                      
+               n[i_occ] *= qi
+               n[i_vir] *= qi
+              #print(n[i_occ] + n[i_vir])
+                                      
+           p = numpy.sqrt(n)
+          #print(n, n.sum())
+          #print(n.sum())
+ 
+        # [3.3] re-sort the orbitals
+        p_occ_act = p[   idx_occ_act]
+        p_vir_act = p[   idx_vir_act[::-1]]
+        p_unocc   = p[   idx_unocc  ]
+
+        c_occ_act = c[:, idx_occ_act]
+        c_vir_act = c[:, idx_vir_act[::-1]]
+        c_unocc   = c[:, idx_unocc  ]
+
+        p = numpy.concatenate((p_occ_act, p_vir_act, p_unocc))
+        c = numpy.concatenate((c_occ_act, c_vir_act, c_unocc), axis=1)
+
+        return p, c
+
+
+

@@ -10,6 +10,7 @@ import numpy
 import psi4
 import scipy.optimize
 from abc import ABC, abstractmethod
+import math
 
 __all__ = ["Density"]
 
@@ -451,26 +452,105 @@ class Pset_DensityProjection(DensityProjection):
 
     def __construct_p_from_g(self, g, dim):
         p_ = numpy.zeros(dim)
-        sg = numpy.sin(g); sg = abs(sg)
-        cg = numpy.cos(g); cg = abs(cg)
+        cg = numpy.cos(g); #cg = abs(cg)
+        sg = numpy.sin(g); #sg = abs(sg)
         for i in range(self._np):
-            p_[           i] = sg[i]
-            p_[self._np + i] = cg[i]
+            p_[           i] = cg[i]
+            p_[self._np + i] = sg[i]
         return p_
+
+    def __construct_g_from_p(self, p):     
+        g = numpy.zeros(self._np)
+        for i in range(self._np):
+            g[i] = numpy.arccos(p[i])
+        return g 
+
+    def __find_X_from_p(self,p,P):
+        # calculate orbitals 
+        Q = psi4.core.Vector.from_array( numpy.einsum("i,jk->ijk", p, P).ravel(), "")
+        X = oepdev.calculate_unitary_uo_2(Q, p.size).to_array(dense=True)
+        return X
+
+    def __get_rZ(self, p, P):
+        X = self.__find_X_from_p(p, P)
+        # objective function value
+        r = numpy.einsum("ai,bi,ab->i", X, X, P)[:(2*self._np)]
+        Z = - r @ p[:(2*self._np)]
+        return r, Z
+
+    def __solutions_sin_cos(self, a,b):
+        if b==0.0: g = [0.0, ]
+        else:
+           g = []
+           D1= ( math.sqrt(a*a+b*b) - a)/b
+           D2= (-math.sqrt(a*a+b*b) - a)/b
+           g1 = 2.*numpy.mod(math.atan(D1),math.pi/4.)
+           g2 = 2.*numpy.mod(math.atan(D2),math.pi/4.)
+           if (0.0 <= g1 <= math.pi/2.) : g.append(g1)
+           if (0.0 <= g2 <= math.pi/2.) : g.append(g2)
+        return numpy.array(g)
+
+    def __find_gs(self, r):
+        ra = r[:self._np]
+        rb = r[self._np:]
+        gs = []
+        for i in range(self._np):
+            rai = ra[i]
+            rbi = rb[i]
+            gs.append(self.__solutions_sin_cos(rai,rbi))
+        return gs
+
+    def __find_g_from_p(self, p, P):
+        "Main optimization for perfect pairing"
+
+        Z_old = 1.e+20
+        Z_new = 1.e+19
+
+        p_old = p.copy()
+        p_new = p.copy()
+
+        g  = numpy.zeros(self._np)
+
+        while(abs(Z_old - Z_new) > 1.e-10):
+           print(" Z_new = %14.8f" % Z_new)
+
+           Z_old = Z_new
+           p_old = p_new.copy()
+
+           r_new, Z_new = self.__get_rZ(p_old, P)                         
+           ra = r_new[:self._np]
+           rb = r_new[self._np:]
+                                                              
+           g  = numpy.zeros(self._np)
+           gs = self.__find_gs(r_new)
+           for i in range(self._np):
+               gi = gs[i]
+
+               sg = numpy.sin(gi)
+               cg = numpy.cos(gi)
+               rai = ra[i]
+               rbi = rb[i]
+                                                              
+               J = None; Zi_min = 1.e+20
+               for j in range(gi.size):
+                   Zij = - rai * cg[j] - rbi * sg[j]
+                   if Zij < Zi_min:
+                      Zi_min = Zij
+                      J = j
+               g[i] = gi[J]
+                                                              
+           p_new = self.__construct_p_from_g(g, p.size)
+                
+        return g, p_new
 
 
     def _perfect_pair_projection(self, n, c): #TODO
+        "Apply the projection operator to the P-set fulfilling the perfect-pairing"
         po = n
         Po = c @ numpy.diag(po) @ c.T
+        TOL = 1.e-8
 
         def obj(g, P, dim):
-            # construct perfect-pair occupancies
-           # p_ = numpy.zeros(dim)
-           # sg = numpy.sin(g); sg = abs(sg)
-           # cg = numpy.cos(g); cg = abs(cg)
-           # for i in range(self._np):
-           #     p_[           i] = sg[i]
-           #     p_[self._np + i] = cg[i]
             p_ = self.__construct_p_from_g(g, dim)
            
             # calculate orbitals 
@@ -484,19 +564,35 @@ class Pset_DensityProjection(DensityProjection):
             return Z
 
         # solve optimization problem for p_
-        g_0 = numpy.zeros(self._np)
-        bounds = None
-        options = {'disp': False, 'maxiter':2000, 'ftol': 1.0e-10}
-        R = scipy.optimize.minimize(obj, g_0, args=(Po, po.size), 
-                                         method='slsqp', tol=1.0e-10, bounds=bounds, options=options)
-        g = R.x
-        p_new = self.__construct_p_from_g(g, po.size)
+        if 0:
+            g_0 = numpy.zeros(self._np)                                                               
+           #g_0 = self.__construct_g_from_p(po)
+            b = [0.0, numpy.pi/2.]
+            bounds = [b for i in range(self._np)]
+            options = {'disp': False, 'maxiter':2000, 'ftol': TOL}
+            R = scipy.optimize.minimize(obj, g_0, args=(Po, po.size), 
+                                             method='slsqp', tol=TOL, bounds=bounds, options=options)
+            g = R.x
+            p_new = self.__construct_p_from_g(g, po.size)
+        else:
+            g, p_new = self.__find_g_from_p(po, Po)
 
         # compute orbitals from p_
         Q = psi4.core.Vector.from_array( numpy.einsum("i,jk->ijk", p_new, Po).ravel(), "")
         c_new = oepdev.calculate_unitary_uo_2(Q, po.size).to_array(dense=True)
 
         # sort according to perfect-pair-dencending order
+        for i in range(self._np):
+            pi_occ = p_new[i         ]
+            pi_vir = p_new[i+self._np]
+            if (pi_occ*pi_occ) < 0.5:
+               ci_occ = c_new[:,i         ].copy()
+               ci_vir = c_new[:,i+self._np].copy()
+               p_new[i         ] = pi_vir
+               p_new[i+self._np] = pi_occ
+               c_new[:,i         ] = ci_vir
+               c_new[:,i+self._np] = ci_occ
+
         idx = numpy.argsort(p_new[:self._np])[::-1]  # -> descending
         p_occ = p_new[  idx]
         p_vir = p_new[  idx[::-1] + self._np ]
@@ -506,6 +602,8 @@ class Pset_DensityProjection(DensityProjection):
         c_vir = c_new[:,idx[::-1] + self._np ]
         c_uno = c_new[:,(2*self._np):]
         c_new = numpy.concatenate((c_occ, c_vir, c_uno), axis=1)
+
+        print(p_new**2)
         return p_new, c_new
 
 

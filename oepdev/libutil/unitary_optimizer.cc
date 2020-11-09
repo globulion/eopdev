@@ -1361,6 +1361,13 @@ Fourier5 UnitaryOptimizer_2::get_fourier_(int I, int J) // override
   }
 
   // Save
+  double a22 = P_[IDX3(J,I,J)] + P_[IDX3(J,J,I)] - P_[IDX3(I,J,I)] - P_[IDX3(I,I,J)];
+  double b22 = P_[IDX3(J,I,J)] + P_[IDX3(J,J,I)] - P_[IDX3(I,J,I)] - P_[IDX3(I,I,J)]; //TODO
+  double a11 = 2.0 * a22;
+  cout << "a1 = " << a1 << " " << a11 << endl;
+  cout << "a2 = " << a2 << " " << a22 << endl;
+  cout << "b1 = " << b1 << " " << 0.0 << endl;
+//cout << "b2 = " << b2 << " " << b22 << endl;
   Fourier5 fourier = {a0, a1, a2, b1, b2};
 
   // Return
