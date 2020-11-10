@@ -1017,7 +1017,16 @@ psi::SharedMatrix calculate_unitary_uo_2(psi::SharedVector Q, int n) {
 
   return X_max;
 }
+extern "C" PSI_API
+psi::SharedMatrix calculate_unitary_uo_2_1(psi::SharedMatrix P, psi::SharedVector p) {
 
+  oepdev::UnitaryOptimizer_2_1 optimizer(P, p, 1.0e-6, 200, false);
+
+  bool success_max = optimizer.maximize();
+  psi::SharedMatrix X_max = optimizer.X();
+
+  return X_max;
+}
 
 extern "C" PSI_API
 std::shared_ptr<psi::Matrix>

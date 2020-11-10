@@ -27,6 +27,7 @@ void export_util(py::module &m) {
     m.def("calculate_JK_ints", &oepdev::calculate_JK_ints, "Calculate J and K integral matrices in MO basis", py::return_value_policy::take_ownership);
     m.def("calculate_der_D", &oepdev::calculate_der_D, "Calculate derivatives of E_XC wrt D in MO basis", py::return_value_policy::take_ownership);
     m.def("calculate_unitary_uo_2", &oepdev::calculate_unitary_uo_2, "", py::return_value_policy::take_ownership);
+    m.def("calculate_unitary_uo_2_1", &oepdev::calculate_unitary_uo_2_1, "", py::return_value_policy::take_ownership);
     m.def("calculate_e_xc", &oepdev::calculate_e_xc, "Calculate exchange-correlation energy");
     m.def("calculate_e_apsg", &oepdev::calculate_e_apsg, "Calculate APSG energy");
     m.def("calculate_de_apsg", &oepdev::calculate_de_apsg, "Calculate APSG energy gradient", py::return_value_policy::take_ownership);

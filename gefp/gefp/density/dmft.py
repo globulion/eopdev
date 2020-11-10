@@ -177,11 +177,12 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
     default_v_ext         =  None                     # External 1-electron potential
     default_guess         = 'hcore'                   # Guess for ODPM
     default_step_mode     = 'search'                  # Steepest-Descents step (simple line search)
+    default_backtracking  =  False                    # Do the backtracking of gradient search step? (relevant if step_mode = 'search')
     default_g             =  0.01                     # Constant Steepest-Descent step (relevant if step_mode is 'constant')
     default_perfect_pairs =  False                    # Do not constrain the OPDM to perfect pairs
 
     def __init__(self, wfn, xc_functional, v_ext=default_v_ext, guess=default_guess, step_mode=default_step_mode,
-                                           perfect_pairs=default_perfect_pairs):
+                                           perfect_pairs=default_perfect_pairs, backtracking=default_backtracking):
         "Initialize"
         # Protected variable namespace
         self._current_energy           = None         # Total Energy                                        
@@ -211,7 +212,9 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
         self._mode_xc_gradient         = None         # Mode of E_XC gradient
         self._density_projector        = None         # Projector of 1-Particle Density Matrix
         self._do_perfect_pairing       = None         # Project towards perfectly paired NOs
-        self._gscale                   = None         # Scale the gradient descent step
+
+        self._backtracking             = backtracking # Backtracking mode of gradient search
+        self._gscale                   = None         # Scale the gradient descent step during backtracking
 
         self._iteration                = None         # Current Iteration Number
         self._E_new                    = None         # Current Total Energy
@@ -240,11 +243,12 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
                          guess         = default_guess        ,
                          algorithm     = default_algorithm    ,
                          step_mode     = default_step_mode    ,        
-                         perfect_pairs = default_perfect_pairs,        **kwargs):
+                         perfect_pairs = default_perfect_pairs,    
+                         backtracking  = default_backtracking ,    **kwargs):
         """\
  Create DMFT solver. 
 """
-        args = [wfn, xc_functional, v_ext, guess, step_mode, perfect_pairs]
+        args = [wfn, xc_functional, v_ext, guess, step_mode, perfect_pairs, backtracking]
 
         if   algorithm.lower() == 'proj-d': solver = DMFT_ProjD(*args, **kwargs)
         elif algorithm.lower() == 'proj-p': solver = DMFT_ProjP(*args, **kwargs)
@@ -405,18 +409,20 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
             self._E_new = self._current_energy
 
             # [4.2] Iterate descents?
-            ntrial = 0; self._gscale = 1.0
-            while self._E_new > self._E_old: 
-               x_new = self._step(self._x_old_1, self._x_old_2, g)
-               x_new = self._density(x_new)
-               self._current_energy = self._minimizer(x_new)
-               self._E_new = self._current_energy
-               ntrial += 1
-               if ntrial > 45:
-                  stop    = True
-                  success = False
-                  break
-               self._gscale *= 0.5
+            if self._backtracking:
+               ntrial = 0; self._gscale = 1.0                         
+               while self._E_new > self._E_old: 
+                  x_new = self._step(self._x_old_1, self._x_old_2, g)
+                  x_new = self._density(x_new)
+                  self._current_energy = self._minimizer(x_new)
+                  self._E_new = self._current_energy
+                  ntrial += 1
+                  print(" Trial = %3d scale = %14.4f" % (ntrial, self._gscale))
+                  if ntrial > 45:
+                     stop    = True
+                     success = False
+                     break
+                  self._gscale *= 0.2
               
             if verbose: print(" @DMFT Iter %2d. E = %14.8f Na = %14.4f" % (self._iteration, 
                                 self._E_new, self._current_density.matrix().trace()))
@@ -492,14 +498,21 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
 
     def _estimate_step_size(self, dx, dg):
         "Estimate step length of steepest descents"
-        DX = dx.matrix().ravel()
-        DG = dg.matrix().ravel()
-        norm = numpy.dot(DG, DG)
-        if norm < 0.00000001: g = 1.0 #orig
-       #if norm < 0.001: g = 0.5/self._np
-        else:   g    = numpy.dot(DX, DG)/ norm
+        if self._backtracking: return 1.0 
+       #DX = dx.matrix().ravel()
+       #DG = dg.matrix().ravel()
+       #norm2= numpy.dot(DG, DG)
+      ##D = dx.matrix() - dg.matrix()
+      ##norm2= numpy.trace(D*D)
+        norm2= numpy.trace(dg.matrix() @ dg.matrix())
+        if norm2< 0.00000001: g = 1.0 #orig
+       #if norm2< 0.001: g = 0.5/self._np
+        else:   
+          #g    = numpy.dot(DX, DG)/ norm2
+           g = numpy.trace(dx.matrix() @ dg.matrix()) / norm2
         g    = abs(g)
-       #print("Norm! = ", norm, " g= ", g)
+        if g < 0.001: g = 0.25
+       #print("Norm2! = ", norm2, " g= ", g)
         return g
 
     def _correct_negative_occupancies(self, n):
@@ -758,8 +771,8 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
 
 
 class DMFT_AO(DMFT):
-    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
-        super(DMFT_AO, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking):
+        super(DMFT_AO, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking)
 
     @property
     def dipole(self):
@@ -842,8 +855,8 @@ class DMFT_AO(DMFT):
 
 
 class DMFT_MO(DMFT):
-    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
-        super(DMFT_MO, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking):
+        super(DMFT_MO, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking)
 
     # --- Implementation (Protected Interface) --- #
 
@@ -895,8 +908,8 @@ class DMFT_MO(DMFT):
 
 
 class DMFT_NC(DMFT_AO):
-    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
-        super(DMFT_NC, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking):
+        super(DMFT_NC, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking)
 
     # --- Implementation (Public) --- #
 
@@ -949,8 +962,8 @@ class DMFT_NC(DMFT_AO):
 
 class DMFT_PC(DMFT_MO):
     "This does not work well at all. -> Do not use it."
-    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
-        super(DMFT_PC, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking):
+        super(DMFT_PC, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking)
         self.g = 0.1
 
 
@@ -1038,8 +1051,8 @@ class DMFT_PC(DMFT_MO):
 
 
 class DMFT_ProjD(DMFT_MO):
-    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
-        super(DMFT_ProjD, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking):
+        super(DMFT_ProjD, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking)
 
 
     @staticmethod
@@ -1109,8 +1122,8 @@ class DMFT_ProjD(DMFT_MO):
 
 
 class DMFT_ProjP(DMFT_MO):
-    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs):
-        super(DMFT_ProjP, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs)
+    def __init__(self, wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking):
+        super(DMFT_ProjP, self).__init__(wfn, xc_functional, v_ext, guess, step, perfect_pairs, backtracking)
 
 
     @staticmethod
@@ -1142,11 +1155,14 @@ class DMFT_ProjP(DMFT_MO):
     def _density(self, x):
         "1-particle density matrix in MO basis: P-projection"
         p, c = x.unpack()
-        pp = True
-       #if abs((p*p).sum() - self._np) < 0.001: pp = self._do_perfect_pairing
-        p, c = self._density_projector.compute(p, c, perfect_pairing=pp)
-       #p, c = self._density_projector.compute(p, c, perfect_pairing=False)
-       #p, c = self._perfect_pairing(p, c)
+        if 1:
+           pp = 0                                                                
+           pp = self._do_perfect_pairing
+          #if abs((p*p).sum() - self._np) < 0.001: pp = self._do_perfect_pairing
+           p, c = self._density_projector.compute(p, c, perfect_pairing=pp)
+        else:
+           p, c = self._density_projector.compute(p, c, perfect_pairing=False)
+           p, c = self._perfect_pairing(p, c)
        #p, c = self._density_projector.compute(p, c, False)
        #K = (p*p).sum() ; print(K)
        #if (abs(K - self._np) < 0.0001) and self._do_perfect_pairing:

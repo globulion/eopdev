@@ -313,6 +313,8 @@ calculate_de_apsg(std::shared_ptr<psi::Wavefunction> wfn,
 
 extern "C" PSI_API
 psi::SharedMatrix calculate_unitary_uo_2(psi::SharedVector Q, int n);
+extern "C" PSI_API
+psi::SharedMatrix calculate_unitary_uo_2_1(psi::SharedMatrix P, psi::SharedVector p);
 
 
 /** \brief Compute the contracted derivative of power of a square and symmetric matrix.

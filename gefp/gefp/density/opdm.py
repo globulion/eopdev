@@ -467,8 +467,11 @@ class Pset_DensityProjection(DensityProjection):
 
     def __find_X_from_p(self,p,P):
         # calculate orbitals 
-        Q = psi4.core.Vector.from_array( numpy.einsum("i,jk->ijk", p, P).ravel(), "")
-        X = oepdev.calculate_unitary_uo_2(Q, p.size).to_array(dense=True)
+       #Q = psi4.core.Vector.from_array( numpy.einsum("i,jk->ijk", p, P).ravel(), "")
+       #X = oepdev.calculate_unitary_uo_2(Q, p.size).to_array(dense=True)
+        P_psi = psi4.core.Matrix.from_array(P , "")
+        p_psi = psi4.core.Vector.from_array(p , "")
+        X = oepdev.calculate_unitary_uo_2_1(P_psi, p_psi).to_array(dense=True)
         return X
 
     def __get_rZ(self, p, P):
@@ -554,8 +557,11 @@ class Pset_DensityProjection(DensityProjection):
             p_ = self.__construct_p_from_g(g, dim)
            
             # calculate orbitals 
-            Q = psi4.core.Vector.from_array( numpy.einsum("i,jk->ijk", p_, P).ravel(), "")
-            X = oepdev.calculate_unitary_uo_2(Q, dim).to_array(dense=True)
+           #Q = psi4.core.Vector.from_array( numpy.einsum("i,jk->ijk", p_, P).ravel(), "")
+           #X = oepdev.calculate_unitary_uo_2(Q, dim).to_array(dense=True)
+            P_psi = psi4.core.Matrix.from_array(P , "")
+            p_psi = psi4.core.Vector.from_array(p_, "")
+            X = oepdev.calculate_unitary_uo_2_1(P_psi, p_psi).to_array(dense=True)
 
             # objective function value
             r = numpy.einsum("ai,bi,ab->i", X, X, P)
@@ -564,12 +570,12 @@ class Pset_DensityProjection(DensityProjection):
             return Z
 
         # solve optimization problem for p_
-        if 0:
+        if 1:
             g_0 = numpy.zeros(self._np)                                                               
            #g_0 = self.__construct_g_from_p(po)
             b = [0.0, numpy.pi/2.]
             bounds = [b for i in range(self._np)]
-            options = {'disp': False, 'maxiter':2000, 'ftol': TOL}
+            options = {'disp': True, 'maxiter':2000, 'ftol': TOL}
             R = scipy.optimize.minimize(obj, g_0, args=(Po, po.size), 
                                              method='slsqp', tol=TOL, bounds=bounds, options=options)
             g = R.x
@@ -578,8 +584,12 @@ class Pset_DensityProjection(DensityProjection):
             g, p_new = self.__find_g_from_p(po, Po)
 
         # compute orbitals from p_
-        Q = psi4.core.Vector.from_array( numpy.einsum("i,jk->ijk", p_new, Po).ravel(), "")
-        c_new = oepdev.calculate_unitary_uo_2(Q, po.size).to_array(dense=True)
+       #Q = psi4.core.Vector.from_array( numpy.einsum("i,jk->ijk", p_new, Po).ravel(), "")
+       #c_new = oepdev.calculate_unitary_uo_2(Q, po.size).to_array(dense=True)
+        P_psi = psi4.core.Matrix.from_array(Po, "")
+        p_psi = psi4.core.Vector.from_array(p_new, "")
+        c_new = oepdev.calculate_unitary_uo_2_1(P_psi, p_psi).to_array(dense=True)
+
 
         # sort according to perfect-pair-dencending order
         for i in range(self._np):
@@ -593,7 +603,7 @@ class Pset_DensityProjection(DensityProjection):
                c_new[:,i         ] = ci_vir
                c_new[:,i+self._np] = ci_occ
 
-        idx = numpy.argsort(p_new[:self._np])[::-1]  # -> descending
+        idx = numpy.argsort(p_new[:self._np])[::-1]  # -> descending for occupied, ascending for virtual
         p_occ = p_new[  idx]
         p_vir = p_new[  idx[::-1] + self._np ]
         p_uno = p_new[  (2*self._np):]
