@@ -1155,14 +1155,15 @@ class DMFT_ProjP(DMFT_MO):
     def _density(self, x):
         "1-particle density matrix in MO basis: P-projection"
         p, c = x.unpack()
-        if 1:
+        if 0:
            pp = 0                                                                
            pp = self._do_perfect_pairing
           #if abs((p*p).sum() - self._np) < 0.001: pp = self._do_perfect_pairing
            p, c = self._density_projector.compute(p, c, perfect_pairing=pp)
         else:
            p, c = self._density_projector.compute(p, c, perfect_pairing=False)
-           p, c = self._perfect_pairing(p, c)
+           if self._do_perfect_pairing:
+              p, c = self._perfect_pairing(p, c)
        #p, c = self._density_projector.compute(p, c, False)
        #K = (p*p).sum() ; print(K)
        #if (abs(K - self._np) < 0.0001) and self._do_perfect_pairing:
@@ -1209,7 +1210,7 @@ class DMFT_ProjP(DMFT_MO):
         # [3.2] re-scale occupancies within perfect-pairs to sum to 1.0
         q = 1./(n[idx_occ_act] + n[idx_vir_act])
     
-        if abs(n.sum() - NG) < 0.001:
+        if 1: #abs(n.sum() - NG) < 0.001:
            n[idx_unocc] = 0.0
            for i in range(NG):        
                i_occ = idx_occ_act[i]

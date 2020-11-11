@@ -995,7 +995,7 @@ calculate_de_apsg(std::shared_ptr<psi::Wavefunction> wfn,
        for (int j=0; j<N; ++j) {
             if (i!=j) {
                 double dij =      pP[i]  -      pP[j] ;
-                if (abs(dij) > 1.0E-30) {
+                if (abs(dij) > 1.0E-8) {
                     pgrad[i][j] =  pAmn[i][j] / dij;
                 }
             }
