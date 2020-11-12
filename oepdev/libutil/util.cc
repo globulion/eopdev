@@ -904,6 +904,10 @@ calculate_de_apsg(std::shared_ptr<psi::Wavefunction> wfn,
 		std::shared_ptr<psi::Matrix> aKL,
 		std::shared_ptr<psi::Matrix> C){
 
+/* Note: This is calculation within the NO basis!
+         Therefore, it involves direct 4-index transformation on the fly
+         and is very expensive. 
+ */
 
   // Initialize derivatives
   int M = C->nrow(); /* MO-SCF */
@@ -1005,12 +1009,147 @@ calculate_de_apsg(std::shared_ptr<psi::Wavefunction> wfn,
   return Gradient;
 }
 
+extern "C" PSI_API
+psi::SharedMatrix
+calculate_de_apsg_new(std::shared_ptr<psi::Wavefunction> wfn,        /* wavefunction */
+		std::shared_ptr<psi::Vector> P,                      /* p-vector (sqrt of NO occupancies) */
+		std::shared_ptr<psi::Matrix> C,                      /* natural orbitals (NOs) in AO basis */
+		std::shared_ptr<psi::Matrix> A_J,                    /* A_J  matrix with row/collumn in NO/AO basis */
+		std::shared_ptr<psi::Matrix> A_LK,                   /* A_KL matrix with row/collumn in NO/AO basis */
+		std::shared_ptr<psi::Matrix> a_J,                    /* a_J  matrix with row/collumn in NO/AO basis */
+		std::shared_ptr<psi::Matrix> a_LK)                   /* a_KL matrix with row/collumn in NO/AO basis */
+{
+
+/* Note: This is calculation within the SCF-MO basis.
+         It makes use of very efficient JK-routines 
+         of Psi4, hence should be more efficient than
+         the above version. */
+
+  // Initialize
+  const int M = C->nrow(); /* AO (non-orthogonal) */
+  const int N = C->ncol(); /* NO (    orthogonal) */
+
+  psi::SharedMatrix Gradient = std::make_shared<psi::Matrix>("APSG EE Gradient", N, N);
+
+  psi::SharedMatrix Q   = std::make_shared<psi::Matrix>("Temp", N, N);
+  psi::SharedVector q   = std::make_shared<psi::Vector>("Temp", N);
+
+  double** pgrad= Gradient->pointer();
+  double** pQ   = Q->pointer();
+  double*  pq   = q->pointer();
+  double*  pP   = P->pointer();
+
+  // Compute generalized J and K matrices in AO basis
+  std::shared_ptr<psi::JK> jk;
+  if (wfn->basisset_exists("BASIS_DF_SCF")) {
+    jk = psi::JK::build_JK(wfn->basisset(), wfn->get_basisset("BASIS_DF_SCF"), wfn->options());
+  } else {
+    jk = psi::JK::build_JK(wfn->basisset(), psi::BasisSet::zero_ao_basis_set(), wfn->options());
+  }
+
+  jk->set_memory(psi::Process::environment.get_memory() / 8L); 
+  jk->initialize();
+//jk->print_header();
+  
+  std::vector<psi::SharedMatrix>& Cl = jk->C_left();
+  std::vector<psi::SharedMatrix>& Cr = jk->C_right();
+
+  const std::vector<psi::SharedMatrix>& J = jk->J();
+  const std::vector<psi::SharedMatrix>& K = jk->K();
+
+  /* Assume: 
+     for each n in N:
+       1st element: A_LK  
+       2nd element: a_LK 
+       3rd element: A_J
+       4th element: a_J 
+   */
+
+  psi::SharedMatrix I = std::make_shared<psi::Matrix>("", M, M); I->identity();
+
+  for (int n=0; n<N; ++n) {
+       psi::SharedVector v_A_LK = A_LK->get_row(0, n);
+       psi::SharedVector v_a_LK = a_LK->get_row(0, n);
+       psi::SharedVector v_A_J  = A_J ->get_row(0, n);
+       psi::SharedVector v_a_J  = a_J ->get_row(0, n);
+
+       psi::SharedMatrix A_lk = I->clone(); A_lk->set_diagonal(v_A_LK);
+       psi::SharedMatrix a_lk = I->clone(); a_lk->set_diagonal(v_a_LK);
+       psi::SharedMatrix A_j  = I->clone(); A_j ->set_diagonal(v_A_J );
+       psi::SharedMatrix a_j  = I->clone(); a_j ->set_diagonal(v_a_J );
+
+       psi::SharedMatrix A_lk_= psi::Matrix::triplet(C, A_lk, C, false, false, true );
+       psi::SharedMatrix a_lk_= psi::Matrix::triplet(C, a_lk, C, false, false, true );
+       psi::SharedMatrix A_j_ = psi::Matrix::triplet(C, A_j , C, false, false, true );
+       psi::SharedMatrix a_j_ = psi::Matrix::triplet(C, a_j , C, false, false, true );
+
+    // psi::SharedMatrix A_lk = I->clone(); A_lk->set_diagonal(A_LK->get_row(0, n));
+    // psi::SharedMatrix a_lk = I->clone(); a_lk->set_diagonal(a_LK->get_row(0, n));
+    // psi::SharedMatrix A_j  = I->clone(); A_j ->set_diagonal(A_J ->get_row(0, n));
+    // psi::SharedMatrix a_j  = I->clone(); a_j ->set_diagonal(a_J ->get_row(0, n));
+
+       psi::SharedMatrix I_lk = I->clone();
+       psi::SharedMatrix i_lk = I->clone();
+       psi::SharedMatrix I_j  = I->clone();
+       psi::SharedMatrix i_j  = I->clone();
+
+       Cl.push_back(A_lk_);
+       Cl.push_back(a_lk_);
+       Cl.push_back(A_j_ );
+       Cl.push_back(a_j_ );
+
+       Cr.push_back(I_lk);
+       Cr.push_back(i_lk);
+       Cr.push_back(I_j );
+       Cr.push_back(i_j );
+
+  }
+  jk->compute();
+
+  // Populate Q matrix and q vector in NO basis //
+  for (int ni=0; ni<N; ++ni) {
+       psi::SharedMatrix K_LK = psi::Matrix::triplet(C, K[4*ni+0], C, true, false, false);
+       psi::SharedMatrix k_LK = psi::Matrix::triplet(C, K[4*ni+1], C, true, false, false);
+       psi::SharedMatrix J_J  = psi::Matrix::triplet(C, J[4*ni+2], C, true, false, false);
+       psi::SharedMatrix j_J  = psi::Matrix::triplet(C, J[4*ni+3], C, true, false, false);
+
+       pq[ni] = k_LK->get(ni,ni) + j_J->get(ni,ni);
+
+       for (int nj=0; nj<N; ++nj) {
+          if (ni!=nj) {
+              pQ[ni][nj] = K_LK->get(ni,nj) + J_J->get(ni,nj);
+          }
+       }
+  }
+
+  // Finish with the derivative (compute in NO basis)
+  psi::SharedMatrix QT = Q->transpose(); //QT->transpose_this();
+  Q->subtract(QT);
+  Q->scale(2.0);
+
+  for (int ni=0; ni<N; ++ni) {
+       pgrad[ni][ni] = pq[ni];
+       for (int nj=0; nj<N; ++nj) {
+            if (ni!=nj) {
+                double dp_ij =  pP[ni] - pP[nj];
+                if (abs(dp_ij) > 1.0E-8) {
+                    pgrad[ni][nj] =  pQ[ni][nj] / dp_ij;
+                }
+            }
+       }
+  }
+  jk->finalize();
+
+  return Gradient;
+}
+
+
 
 extern "C" PSI_API
 psi::SharedMatrix calculate_unitary_uo_2(psi::SharedVector Q, int n) {
 
   double* P = Q->pointer();
-  oepdev::UnitaryOptimizer_2 optimizer(P, n, 1.0e-6, 200, false);
+  oepdev::UnitaryOptimizer_2 optimizer(P, n, 1.0e-8, 200, false);
 
   bool success_max = optimizer.maximize();
   psi::SharedMatrix X_max = optimizer.X();
@@ -1020,7 +1159,7 @@ psi::SharedMatrix calculate_unitary_uo_2(psi::SharedVector Q, int n) {
 extern "C" PSI_API
 psi::SharedMatrix calculate_unitary_uo_2_1(psi::SharedMatrix P, psi::SharedVector p) {
 
-  oepdev::UnitaryOptimizer_2_1 optimizer(P, p, 1.0e-6, 200, false);
+  oepdev::UnitaryOptimizer_2_1 optimizer(P, p, 1.0e-8, 200, false);
 
   bool success_max = optimizer.maximize();
   psi::SharedMatrix X_max = optimizer.X();

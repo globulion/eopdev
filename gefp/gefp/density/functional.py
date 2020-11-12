@@ -1047,14 +1047,14 @@ class APSG_XCFunctional(XCFunctional):
           if G_i >= 0:
             I_G_i = self._geminal_idx[G_i]
 
-            phase_i = 1.0 if i == I_G_i[0] else -1.0
+            phase_i =+1.0 if i == I_G_i[0] else -1.0
 
             for j in range(n.size):
               G_j = self.geminal_index(j)
               if G_j >= 0:
                  I_G_j = self._geminal_idx[G_j]
 
-                 phase_j = 1.0 if j == I_G_j[0] else -1.0
+                 phase_j =+1.0 if j == I_G_j[0] else -1.0
 
                  if G_i != G_j:
                     f_J[i,j]+= p[i] * ns[j]
@@ -1065,7 +1065,8 @@ class APSG_XCFunctional(XCFunctional):
         f_L *= 2.0
         f_J *= 4.0
         f_K *= 2.0
-        return f_J.T, f_K.T, f_L.T
+       #return f_J.T, f_K.T, f_L.T
+        return f_J  , f_K  , f_L  
 
 
 
@@ -1121,18 +1122,28 @@ class APSG_XCFunctional(XCFunctional):
        # A_J  /= 4.0
        # a_J  /= 4.0
 
-        psi_AJ  = psi4.core.Matrix.from_array(A_J      , "")                                                                              
-        psi_AKL = psi4.core.Matrix.from_array(A_KL     , "")
-        psi_aJ  = psi4.core.Matrix.from_array( a_J      , "")
-        psi_aKL = psi4.core.Matrix.from_array(a_KL     , "")
-        psi_c   = psi4.core.Matrix.from_array(c        , "")
-        psi_p   = psi4.core.Vector.from_array(p        , "")
-                                                                                                                                          
         JP= oepdev.calculate_JK_r(self._wfn, self._ints, psi4.core.Matrix.from_array(P2, ""))[0].to_array(dense=True)
 
         if 1:
-           gradient   = oepdev.calculate_de_apsg(self._wfn, self._ints, psi_p, psi_AJ, psi_AKL, psi_aJ, psi_aKL, psi_c).to_array(dense=True)
-           gradient   = c @ gradient @ c.T
+          #psi_AJ  = psi4.core.Matrix.from_array(A_J      , "")
+          #psi_AKL = psi4.core.Matrix.from_array(A_KL     , "")
+          #psi_aJ  = psi4.core.Matrix.from_array(a_J.T    , "")
+          #psi_aKL = psi4.core.Matrix.from_array(a_KL.T   , "")
+          #psi_c   = psi4.core.Matrix.from_array(c        , "")
+          #psi_p   = psi4.core.Vector.from_array(p        , "")
+          #gradient= oepdev.calculate_de_apsg(self._wfn, self._ints, psi_p, psi_AJ, psi_AKL, psi_aJ, psi_aKL, psi_c).to_array(dense=True)
+
+           C = self._Ca @ c
+           psi_AJ  = psi4.core.Matrix.from_array(A_J  , "") 
+           psi_AKL = psi4.core.Matrix.from_array(A_KL , "")
+           psi_aJ  = psi4.core.Matrix.from_array(a_J  , "")
+           psi_aKL = psi4.core.Matrix.from_array(a_KL , "")
+           psi_C   = psi4.core.Matrix.from_array(C        , "")
+           psi_p   = psi4.core.Vector.from_array(p        , "")
+
+           gradient= oepdev.calculate_de_apsg_new(self._wfn, psi_p, psi_C, psi_AJ, psi_AKL, psi_aJ, psi_aKL).to_array(dense=True)
+
+           gradient= c @ gradient @ c.T
 
         else:
            C = self._Ca @ c
@@ -1149,11 +1160,13 @@ class APSG_XCFunctional(XCFunctional):
                g_mn[i,i] = g_mm[i]
                for j in range(i):
                  d_ij = p[i] - p[j]
-                 if abs(d_ij) > 1.e-20:
+                 if abs(d_ij) > 1.e-10:
                    g_mn[i,j] = 2./d_ij * t_mn[i,j]
                    g_mn[j,i] = g_mn[i,j]
 
            gradient = c @ g_mn @ c.T
+       #gradient[numpy.where(abs(gradient) > 100.0)] = 0.0
+       #print(" Max grad = %14.5f"  % abs(gradient.max()))
           
 
         gradient_H = JP @ P

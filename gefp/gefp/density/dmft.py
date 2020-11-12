@@ -381,7 +381,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
            # [2] Starting energy
            self._current_energy = self._minimizer(x_0)
            self._E_old = self._current_energy
-           if verbose: print(" @DMFT Iter %2d. E = %14.8f Na = %14.4f" % (self._iteration, 
+           if verbose: print(" @DMFT Iter %4d. E = %14.8f Na= %14.4f" % (self._iteration, 
                                self._E_old, self._current_density.matrix().trace()))
                                                                                              
            # [3] First iteration
@@ -392,7 +392,7 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
                                                                                              
            self._current_energy = self._minimizer(self._x_old_1)
            self._E_new = self._current_energy
-           if verbose: print(" @DMFT Iter %2d. E = %14.8f Na = %14.4f" % (self._iteration, 
+           if verbose: print(" @DMFT Iter %4d. E = %14.8f Na= %14.4f" % (self._iteration, 
                                self._E_new, self._current_density.matrix().trace()))
 
         # [4] Further iterations
@@ -417,14 +417,15 @@ class DMFT(ABC, ElectronCorrelation, OEProp):
                   self._current_energy = self._minimizer(x_new)
                   self._E_new = self._current_energy
                   ntrial += 1
-                  print(" Trial = %3d scale = %14.4f" % (ntrial, self._gscale))
+                  if ntrial > 35:
+                     print(" Trial = %3d scale = %14.4f" % (ntrial, self._gscale))
                   if ntrial > 45:
                      stop    = True
                      success = False
                      break
-                  self._gscale *= 0.2
+                  self._gscale *= 0.1
               
-            if verbose: print(" @DMFT Iter %2d. E = %14.8f Na = %14.4f" % (self._iteration, 
+            if verbose: print(" @DMFT Iter %4d. E = %14.8f Na= %14.4f" % (self._iteration, 
                                 self._E_new, self._current_density.matrix().trace()))
                                                                                   
             # [4.3] Converged?
@@ -1164,6 +1165,7 @@ class DMFT_ProjP(DMFT_MO):
            p, c = self._density_projector.compute(p, c, perfect_pairing=False)
            if self._do_perfect_pairing:
               p, c = self._perfect_pairing(p, c)
+
        #p, c = self._density_projector.compute(p, c, False)
        #K = (p*p).sum() ; print(K)
        #if (abs(K - self._np) < 0.0001) and self._do_perfect_pairing:

@@ -310,6 +310,15 @@ calculate_de_apsg(std::shared_ptr<psi::Wavefunction> wfn,
 		std::shared_ptr<psi::Matrix> aJ,
 		std::shared_ptr<psi::Matrix> aKL,
 		std::shared_ptr<psi::Matrix> C);
+extern "C" PSI_API
+psi::SharedMatrix
+calculate_de_apsg_new(std::shared_ptr<psi::Wavefunction> wfn, 
+		std::shared_ptr<psi::Vector> p,
+		std::shared_ptr<psi::Matrix> C,
+		std::shared_ptr<psi::Matrix> AJ,
+		std::shared_ptr<psi::Matrix> AKL,
+		std::shared_ptr<psi::Matrix> aJ,
+		std::shared_ptr<psi::Matrix> aKL);
 
 extern "C" PSI_API
 psi::SharedMatrix calculate_unitary_uo_2(psi::SharedVector Q, int n);

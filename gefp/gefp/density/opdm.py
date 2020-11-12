@@ -575,7 +575,7 @@ class Pset_DensityProjection(DensityProjection):
            #g_0 = self.__construct_g_from_p(po)
             b = [0.0, numpy.pi/2.]
             bounds = [b for i in range(self._np)]
-            options = {'disp': True, 'maxiter':2000, 'ftol': TOL}
+            options = {'disp': False, 'maxiter':2000, 'ftol': TOL}
             R = scipy.optimize.minimize(obj, g_0, args=(Po, po.size), 
                                              method='slsqp', tol=TOL, bounds=bounds, options=options)
             g = R.x
@@ -613,7 +613,7 @@ class Pset_DensityProjection(DensityProjection):
         c_uno = c_new[:,(2*self._np):]
         c_new = numpy.concatenate((c_occ, c_vir, c_uno), axis=1)
 
-        print(p_new**2)
+       #print(p_new**2)
         return p_new, c_new
 
 
