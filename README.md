@@ -1,5 +1,5 @@
 *****
-![alt text](https://github.com/globulion/oepdev/raw/master/doc/images/toc.png "Logo Title Text 1")
+![alt text](https://github.com/globulion/eopdev/tree/bb_public_eopdev/doc/images/toc.png "Logo Title Text 1")
 *****
 
 EOP-Dev
