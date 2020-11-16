@@ -1,5 +1,5 @@
 *****
-![alt text](https://github.com/globulion/eopdev/tree/bb_public_eopdev/doc/images/toc.png "Logo Title Text 1")
+![alt text](https://github.com/globulion/eopdev/raw/bb_public_eopdev/doc/images/toc.png "Logo Title Text 1")
 *****
 
 EOP-Dev
@@ -22,10 +22,10 @@ or the configuration interaction with singles theory is considered.
 In particular, the plugin tests the models of:
 
 *******
-  1. the Pauli exchange-repulsion interaction energy    (Project II ) 
-  2. the charge-transfer interaction energy             (Project I  ) 
-  3. the polarization of electronic density             (Project III)
-  4. the excitation energy transfer couplings           (Project I  )
+  1. the charge-transfer interaction energy             (Project I  ) 
+  2. the excitation energy transfer couplings           (Project I  )
+  3. the Pauli exchange-repulsion interaction energy    (Project II ) 
+  4. the polarization of electronic density             (Project III)
 
 *******
 
@@ -35,7 +35,7 @@ Places to go:
  * [EOP-Dev Code](https://github.com/globulion/eopdev)
  * [Current Issues](https://github.com/globulion/eopdev/issues)
 
-This wikipages will be updated soon.
+This wikipages might be updated in the future.
 
 *****
 
