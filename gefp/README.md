@@ -1,4 +1,4 @@
-GEFP-OEP
+GEFP-EOP
 ========
 
 GEFP Project
@@ -6,8 +6,8 @@ GEFP Project
 The package is designed for quantum chemistry calculations
 Currently, the implemented methods are:
 
-* Density Matrix Functional Theory
 * Density-Based decomposition of Mandado and Hermida-Ramon
+* Reduced Variational Scheme of Fink et. al
    
 The tutorial is under preparation. 
 
@@ -18,7 +18,7 @@ Installation prerequisites:
 - NumPy module for Python, 1.16.3 or newer
 - SciPy module for Python, 1.2.1 or newer
 - Psi4 1.2.0 or newer
-- OEP-Dev 1.0.3 or newer
+- EOP-Dev 1.0.3 or newer
 
 To install the GEFP package type the following commands:
 ```

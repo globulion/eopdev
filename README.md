@@ -2,10 +2,10 @@
 ![alt text](https://github.com/globulion/oepdev/raw/master/doc/images/toc.png "Logo Title Text 1")
 *****
 
-OEP-Dev
+EOP-Dev
 =======
 
-Generalized One-Electron Potentials: Development Platform.
+Generalized Effective One-Electron Potentials: Development Platform.
 
 Contact: Bartosz Błasiak (blasiak.bartosz@gmail.com)
 
@@ -13,7 +13,7 @@ Overview
 --------
 
 Test various models of the intermolecular interaction
-that is based on the application of the **One-Electron Potentials (OEP's)**
+that is based on the application of the **Effective One-electron Potentials (EOP's)**
 technique.
 
 Currently, the interaction between two molecules 
@@ -32,8 +32,8 @@ In particular, the plugin tests the models of:
 against reference solutions (exact or other approximations). 
 
 Places to go:
- * [OEP-Dev Code](https://github.com/globulion/oepdev)
- * [Current Issues](https://github.com/globulion/oepdev/issues)
+ * [EOP-Dev Code](https://github.com/globulion/eopdev)
+ * [Current Issues](https://github.com/globulion/eopdev/issues)
 
 This wikipages will be updated soon.
 
