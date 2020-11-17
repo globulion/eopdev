@@ -4,8 +4,6 @@
  * oepdev by Bartosz Błasiak (email: blasiak.bartosz@gmail.com)
  *
  * Copyright (c) 2017 Bartosz Błasiak.
- * NOTE: oepdev is not open-source and cannot be redistributed, copied and downloaded
- * without a written consent of the Project Administrator.
  * 
  * oepdev is a plugin to:
  *

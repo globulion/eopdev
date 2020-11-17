@@ -2,8 +2,6 @@
 # @BEGIN LICENSE
 #
 # oepdev by Bartosz Błasiak (email: blasiak.bartosz@gmail.com).
-# oepdev copy, use and redistribution not allowed without written 
-# consent of the Project Administrator.
 #
 # oepdev: A plugin to:
 #
