@@ -13,6 +13,8 @@ Generalized Effective One-Electron Potentials: Development Platform.
 
 **Contact**: Bartosz Błasiak (blasiak.bartosz@gmail.com)
 
+**Web**: \verb+www.polonez@pwr.edu.pl+
+
 Overview
 --------
 

@@ -1,5 +1,7 @@
-#     Copyright © 2012, Bartosz Błasiak (blasiak.bartosz@gmail.com)
-#  
+# License
+
+##    Copyright © 2020, Bartosz Błasiak (blasiak.bartosz@gmail.com)
+## 
                   GNU LESSER GENERAL PUBLIC LICENSE
                        Version 2.1, February 1999
 
