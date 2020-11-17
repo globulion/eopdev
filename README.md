@@ -13,33 +13,30 @@ Generalized Effective One-Electron Potentials: Development Platform.
 
 **Contact**: Bartosz Błasiak (blasiak.bartosz@gmail.com)
 
-**Web**: \verb+www.polonez@pwr.edu.pl+
 
 Overview
 --------
 
-Test various models of the intermolecular interaction
-that is based on the application of the **Effective One-electron Potentials (EOP's)**
-technique.
+Develop and test custom **Effective One-electron Potentials (EOP's)**
+for fragment-based methods of Quantum Chemistry of extended molecular
+aggregates.
 
-Currently, the interaction between two molecules 
-described by the Hartree-Fock-Roothaan-Hall theory 
-or the configuration interaction with singles theory is considered. 
-In particular, the plugin tests the models of:
+EOPDev is a Psi4 plugin with extensive Python 3 interface. 
+Currently, a few efficient methods that utilize EOP's and related approaches
+are implemented and tested:
 
 *******
-  1. the charge-transfer interaction energy             (Project I  ) 
-  2. the excitation energy transfer couplings           (Project I  )
-  3. the Pauli exchange-repulsion interaction energy    (Project II ) 
-  4. the polarization of electronic density             (Project III)
-
+  1. Short-range components of interaction energy at Hartree-Fock level
+  2. Excitation energy transfer couplings at CIS level
+  3. Polarization of electronic density in non-uniform electric fields at any level
 *******
 
 against reference solutions (exact or other approximations). 
 
 Places to go:
- * [EOP-Dev Code](https://github.com/globulion/eopdev)
+ * [EOPDev Code](https://github.com/globulion/eopdev)
  * [Current Issues](https://github.com/globulion/eopdev/issues)
+ * [Project Website](http://www.polonez.pwr.edu.pl)
 
 This wikipages might be updated in the future.
 
