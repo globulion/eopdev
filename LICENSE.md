@@ -1,3 +1,6 @@
+License
+=======
+
 #     Copyright © 2012, Bartosz Błasiak (blasiak.bartosz@gmail.com)
 #  
                   GNU LESSER GENERAL PUBLIC LICENSE

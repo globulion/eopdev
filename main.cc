@@ -101,7 +101,6 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
     // ==> Determine what to do <== //
     std::string o_task          = options.get_str  ("OEPDEV_TARGET"        );
     bool        o_local         = options.get_bool ("OEPDEV_LOCALIZE"      );
-    bool        o_enable_trial  = options.get_bool ("OEPDEV_ENABLE_TRIAL"  );
     int         o_print         = options.get_int  ("PRINT"                );
 
     // ==> Create OEP's <==
@@ -210,43 +209,6 @@ SharedWavefunction oepdev(SharedWavefunction ref_wfn, Options& options)
 
     } else 
            throw PSIEXCEPTION("Incorrect target for oepdev program!\n");
-
-
-
-        /* Below there are a few tests needed to develop Initial Version of the Plugin.                                                      
-         * At the end of the process, all functionalities of the plugin should be using only:
-         *  - the WavefunctionUnion object
-         *  - the Options object.
-         * Therefore, these tests shall be removed once particular functionalities
-         * will be developed during the Project. This means that the includes and typedefs 
-         * at the top of `main.cc` shall be removed.
-         */
-        if (o_enable_trial) {
-
-        //// Create some OEP's
-        //SharedOEPotential oep_cou = oepdev::OEPotential::build("ELECTROSTATIC ENERGY", scf_1, options);
-        //SharedOEPotential oep_rep = oepdev::OEPotential::build("REPULSION ENERGY", scf_1, primary_1, options);
-        //SharedOEPotential oep_eet = oepdev::OEPotential::build("EET COUPLING", scf_1, options);
-        //                                                                                                                                     
-        //oep_cou->write_cube("V", "oep");
-        //                                                                                                                                     
-        //// Compute potentials
-        //if (false) {
-        //SharedField3D potential_cube = oepdev::ScalarField3D::build("ELECTROSTATIC", 60, 60, 60, 10.0, 10.0, 10.0, scf_1, options);
-        //SharedField3D potential_random = oepdev::ScalarField3D::build("ELECTROSTATIC", 50000, 10.0, scf_1, options);
-        //                                                                                                                                     
-        //potential_cube->print();
-        //potential_random->print();
-        //potential_random->compute();
-        //                                                                                                                                     
-        //oepdev::ESPSolver esp(potential_random);
-        //esp.compute();
-        //esp.charges()->print();
-        ////std::shared_ptr<oepdev::CubeDistribution3D> di = std::dynamic_pointer_cast<oepdev::CubeDistribution3D>(potential->distribution());
-        ////di->print_header();
-        ////potential->write_cube_file("pot");
-        //}
-        } // End of trial
 
     return ref_wfn;
 }
