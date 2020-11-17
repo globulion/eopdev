@@ -51,7 +51,9 @@ This project is carried out under POLONEZ programme which has received funding f
 Horizon 2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement No.
 665778 (H2020-MSCA-COFUND). 
 
-<center><img src="https://europa.eu/european-union/sites/europaeu/files/docs/body/flag_yellow_high.jpg" width="40"></center>
+<p align="center">
+<img src="https://europa.eu/european-union/sites/europaeu/files/docs/body/flag_yellow_high.jpg" width="40">
+</p>
 
 
 *****
