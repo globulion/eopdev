@@ -2,12 +2,16 @@
 ![alt text](https://github.com/globulion/eopdev/raw/bb_public_eopdev/doc/images/toc.png "Logo Title Text 1")
 *****
 
-EOP-Dev
-=======
+EOPDev
+======
 
 Generalized Effective One-Electron Potentials: Development Platform.
 
-Contact: Bartosz Błasiak (blasiak.bartosz@gmail.com)
+**Author**: Bartosz Błasiak
+
+**Contributors**: Marta Chołuj, Joanna D. Bednarska, Robert W. Góra
+
+**Contact**: Bartosz Błasiak (blasiak.bartosz@gmail.com)
 
 Overview
 --------
@@ -36,6 +40,16 @@ Places to go:
  * [Current Issues](https://github.com/globulion/eopdev/issues)
 
 This wikipages might be updated in the future.
+
+Funding
+-------
+
+This project is funded by National Science Centre, Poland (grant no. 2016/23/P/ST4/01720) within the POLONEZ 3 fellowship.
+This project is carried out under POLONEZ programme which has received funding from the European Union’s
+Horizon 2020 research and innovation programme under the Marie Skłodowska-Curie grant agreement No.
+665778 (MSCA-COFUND).
+
+![alt text](https://europa.eu/european-union/sites/europaeu/files/docs/body/flag_yellow_high.jpg)
 
 *****
 
