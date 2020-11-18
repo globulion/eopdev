@@ -25,7 +25,6 @@ set {
     oepdev_test_name              cphf
     oepdev_test_mode              monomer
     oepdev_localize               False
-    oepdev_enable_trial           False
     # ==> CPHF <== #
     cphf_diis                     True
     cphf_diis_dim                 8

@@ -91,7 +91,6 @@ set {
     oepdev_test_name              ct_energy_oep_based_ol
     oepdev_test_mode              dimer
     oepdev_localize               False
-    oepdev_enable_trial           False
     oepdev_basis_guess            True
     wfn_union_localizer           boys
     solver_ct_localizer           boys

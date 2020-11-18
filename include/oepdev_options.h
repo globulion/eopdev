@@ -45,9 +45,6 @@ int read_options(std::string name, Options& options)
         /*- Whether localize MO's or not -*/
         options.add_bool   ("OEPDEV_LOCALIZE"       , false                      );
 
-        /*- Whether enable trial tests in main.cc or not -*/
-        options.add_bool   ("OEPDEV_ENABLE_TRIAL"   , false                      );
-
         /*- Which OEP to build? -*/
         options.add_str    ("OEPDEV_OEP_BUILD_TYPE" , "ELECTROSTATIC_ENERGY"     );
 

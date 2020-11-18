@@ -1,25 +1,25 @@
 /** 
- *  @defgroup OEPDEV_OEPS The Generalized One-Electron Potentials Library
+ *  @defgroup OEPDEV_EOPS The Generalized One-Electron Potentials Library
  *  @brief
  *  Implements the goal of this project: The Generalized One-Electron Potentials
- *  (OEP's). You will find here OEP's for computation of Pauli repulsion energy,
+ *  (EOPs). You will find here EOPs for computation of Pauli repulsion energy,
  *  charge-transfer energy and others. The routines for the generalized density fitting
  *  are also implemented here. Located at `oepdev/liboep`.
  */
 
 /**
- *  @defgroup OEPDEV_SOLVERS The OEPDev Solver Library
+ *  @defgroup OEPDEV_SOLVERS The EOPDev Solver Library
  *  @brief 
  *  Implementations of various solvers for molecular properties
  *  as a functions of unperturbed monomeric wavefunctions.
- *  This is the place all target OEP-based models are implemented
+ *  This is the place all target EOP-based models are implemented
  *  and compared with benchmark and competitor models. Located at `oepdev/libsolver`.
  */
 
 /**
  *  @defgroup OEPDEV_GEFP The Generalized Effective Fragment Potentials Library
  *  @brief
- *  Implements the GEFP method, the far goal of the OEPDev project.
+ *  Implements the GEFP method, the far goal of the EOPDev project.
  *  Here you will find the containers for GEFP parameters, the density matrix
  *  susceptibility tensors and GEFP solvers. Located at `oepdev/libgefp`.
  *
@@ -30,7 +30,7 @@
  *    - the `GenEffPar` - Generalized Effective Parameters
  *    - the `GenEffParFactory` - Generalized Effective Parameters Factory
  *  Fragments can contain multiple types of parameters, e.g., ethylene fragment
- *  can have EFP2, OEP-EFP2 as well as OEP-EET parameters. Fragments can
+ *  can have EFP2, EOP-EFP2 as well as EOP-EET parameters. Fragments can
  *  be superimposed on target structures and the class contain methods that evaluate
  *  properties based on the fragments in the system.
  */
@@ -42,7 +42,7 @@
  *  two-body electron repulsion integrals via utilizing the McMurchie-Davidson recurrence scheme.
  *  Located at `oepdev/libints` and `oepdev/libpsi`.
  *
- *  Here, we define the primitive Gaussian type functions (GTO's)
+ *  Here, we define the primitive Gaussian type functions (GTOs)
  *  \f{align*}{
  *    \phi_i({\bf r}) &\equiv x_A^{n_1} y_A^{l_1} z_A^{m_1} e^{-\alpha_1r_A^2} \\
  *    \phi_j({\bf r}) &\equiv x_B^{n_2} y_B^{l_2} z_B^{m_2} e^{-\alpha_2r_B^2} \\
@@ -52,7 +52,7 @@
  *  is the centre of the GTO, \f$\alpha_1\f$ its exponent, whereas \f$n_1,l_1,m_1\f$
  *  the Cartesian angular momenta, with the total angular momentum \f$\theta_1 = n_1+l_1+m_1\f$.
  *
- *  In OEPDev implementations, the following definition shall be in use:
+ *  In EOPDev implementations, the following definition shall be in use:
  *  \f{align*}{
  *     {\bf P} &\equiv \frac{\alpha_1{\bf A} + \alpha_2{\bf B}}{\alpha_1+\alpha_2} \\
  *     {\bf Q} &\equiv \frac{\alpha_3{\bf C} + \alpha_4{\bf D}}{\alpha_3+\alpha_4} \\
@@ -61,7 +61,7 @@
  *     \alpha_Q &\equiv \alpha_3+\alpha_4 \\
  *     \alpha_R &\equiv \alpha_1+\alpha_2+\alpha_3
  *  \f}
- *  The unnormalized products of primitive GTO's are denoted here as
+ *  The unnormalized products of primitive GTOs are denoted here as
  *  \f{align*}{
  *   [ij]  &\equiv \phi_i({\bf r}) \phi_j({\bf r}) \\
  *   [ijk] &\equiv \phi_i({\bf r}) \phi_j({\bf r}) \phi_k({\bf r})
@@ -116,14 +116,14 @@
  *   d_0^{00}  &= 1\\
  *   d_0^{000} &= 1
  *  \f}
- *  By using the above formalisms, it is strightforward to express the doublet of primitive GTO's
+ *  By using the above formalisms, it is strightforward to express the doublet of primitive GTOs
  *  as 
  *  \f[
  *   [ij] = E_{ij} \sum_{N=0}^{n_1+n_2} \sum_{L=0}^{l_1+l_2} \sum_{M=0}^{m_1+m_2}
  *          d_N^{n_1n_2} d_L^{l_1l_2} d_M^{m_1m_2}
  *          \Lambda_N(x_P)\Lambda_L(y_P)\Lambda_M(z_P)e^{-\alpha_Pr_P^2}
  *  \f]
- *  Analogously, the triplet of primitive GTO's is given by
+ *  Analogously, the triplet of primitive GTOs is given by
  *  \f[
  *   [ijk] = E_{ijk} \sum_{N=0}^{n_1+n_2+n_3} \sum_{L=0}^{l_1+l_2+l+3} \sum_{M=0}^{m_1+m_2+m_3}
  *          d_N^{n_1n_2n_3} d_L^{l_1l_2l_3} d_M^{m_1m_2m_3}
@@ -141,7 +141,7 @@
  *  \f}
  *  \section libints_s3 One-Body Integrals over Hermite Functions
  *  The fundamental Hermite integrals that appear during computations
- *  of any kind of one-body integrals over GTO's are as follows
+ *  of any kind of one-body integrals over GTOs are as follows
  *  \f[
  *    \left[ NLM \vert \Theta(1) \right] \equiv
  *    \int d{\bf r}_1 \Theta({\bf r}_1) 
@@ -173,7 +173,7 @@
  *
  *  \section libints_s4 Two-Body Integrals over Hermite Functions
  *  The fundamental Hermite integrals that appear during computations
- *  of any kind of two-electron integrals over GTO's are as follows
+ *  of any kind of two-electron integrals over GTOs are as follows
  *  \f[
  *    \left[ N_1L_2M_2 \vert N_2L_2M_2\right] \equiv
  *    \iint d{\bf r}_1 d{\bf r}_2 
@@ -234,7 +234,7 @@
  *   R_{0,L+1,M,j} &= bR_{0,L,M,j+1} + LR_{0,L-1,M,j+1} \\
  *   R_{N+1,L,M,j} &= aR_{N,L,M,j+1} + NR_{N-1,L,M,j+1} \\
  *  \f}
- *  This scheme is implemented in OEPDev.
+ *  This scheme is implemented in EOPDev.
  */
 
 /**
@@ -252,14 +252,14 @@
 /**
  *  @defgroup OEPDEV_DFT The Density Functional Theory Library
  *  @brief
- *  Implements the OEPDev ab initio DFT methods. Located at `oepdev/libdft`.
+ *  Implements the EOPDev ab initio DFT methods. Located at `oepdev/libdft`.
  *  Currently, this library is empty.
  */
 
 /**
- *  @defgroup OEPDEV_UTILITIES The OEPDev Utilities
+ *  @defgroup OEPDEV_UTILITIES The EOPDev Utilities
  *  @brief
- *  Contains utility functions such as printing OEPDev preambule 
+ *  Contains utility functions such as printing EOPDev preambule 
  *  to the output file, class for wavefunction union, DIIS converger,
  *  CPHF Solver, SCF solver for external electrostatic perturbations, and others.
  *  You will also find here various iterators to go through orbital shells
@@ -267,7 +267,7 @@
  */
 
 /**
- *  @defgroup OEPDEV_TESTS The OEPDev Testing Platform Library
+ *  @defgroup OEPDEV_TESTS The EOPDev Testing Platform Library
  *  @brief
  *  Testing platform at C++ level of code. You should add more tests
  *  here when developing new functionalities, theories or models.

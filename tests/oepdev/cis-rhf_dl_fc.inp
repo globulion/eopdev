@@ -57,7 +57,6 @@ set {
     oepdev_test_name              cis_rhf_dl
     oepdev_test_mode              monomer
     oepdev_localize               False
-    oepdev_enable_trial           False
     # --> OEPDEV CIS Routine Specification <-- #
     cis_type                      davidson_liu
     cis_schwartz_cutoff           1.0e-5
