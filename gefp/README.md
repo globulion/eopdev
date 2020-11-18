@@ -9,7 +9,7 @@ Currently, the implemented methods are:
 * Density-Based decomposition of Mandado and Hermida-Ramon
 * Reduced Variational Scheme of Fink et. al
    
-The tutorial is under preparation. 
+This wikipages might be updated in the future.
 
 ### Installation ###
 
@@ -18,7 +18,7 @@ Installation prerequisites:
 - NumPy module for Python, 1.16.3 or newer
 - SciPy module for Python, 1.2.1 or newer
 - Psi4 1.2.0 or newer
-- EOP-Dev 1.0.3 or newer
+- EOPDev 1.0.0 or newer
 
 To install the GEFP package type the following commands:
 ```

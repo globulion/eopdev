@@ -34,7 +34,7 @@
 """Plugin docstring.
 
 """
-__version__ = '1.0.2-alpha'
+__version__ = '1.0.0'
 __author__  = 'Bartosz Błasiak'
 
 # Load Python modules
