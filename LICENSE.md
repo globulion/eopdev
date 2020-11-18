@@ -1,5 +1,3 @@
-# License
-
 ##    Copyright © 2020, Bartosz Błasiak (blasiak.bartosz@gmail.com)
 ## 
                   GNU LESSER GENERAL PUBLIC LICENSE

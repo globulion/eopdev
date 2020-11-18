@@ -23,15 +23,13 @@ aggregates.
 
 EOPDev is a Psi4 plugin with extensive Python 3 interface. 
 Currently, a few efficient methods that utilize EOP's and related approaches
-are implemented and tested:
+are implemented and tested against reference solutions:
 
 *******
   1. Short-range components of interaction energy at Hartree-Fock level
   2. Excitation energy transfer couplings at CIS level
   3. Polarization of electronic density in non-uniform electric fields at any level
 *******
-
-against reference solutions (exact or other approximations). 
 
 Places to go:
  * [EOPDev Code](https://github.com/globulion/eopdev)

@@ -1,18 +1,6 @@
-diff -Naur psi4-1.2.1/CMakeLists.txt psi4-1.2.1-psiapi_extend-for-oepdev/CMakeLists.txt
---- psi4-1.2.1/CMakeLists.txt	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/CMakeLists.txt	2020-07-15 12:43:57.223759454 +0200
-@@ -84,7 +84,7 @@
- option(ENABLE_ambit "Enables the ambit tensor library" OFF)
- option(ENABLE_CheMPS2 "Enables CheMPS2 for DMRG (requires HDF5)" OFF)
- option(ENABLE_dkh "Enables DKH integrals (requires Fortran)" OFF)
--option(ENABLE_libefp "Enables LIBEFP for fragments" OFF)
-+option(ENABLE_libefp "Enables LIBEFP for fragments" ON)
- option(ENABLE_erd "Enables use of ERD instead of Libint (requires Fortran)" OFF)
- option(ENABLE_simint "Enables use of SIMINT two-electron integral library" OFF)
- option(ENABLE_gdma "Enables Stone's GDMA multipole code (requires Fortran)" OFF)
-diff -Naur psi4-1.2.1/psi4/driver/procrouting/proc.py psi4-1.2.1-psiapi_extend-for-oepdev/psi4/driver/procrouting/proc.py
+diff -Naur psi4-1.2.1/psi4/driver/procrouting/proc.py psi4-1.2.1_changed/psi4/driver/procrouting/proc.py
 --- psi4-1.2.1/psi4/driver/procrouting/proc.py	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/driver/procrouting/proc.py	2020-07-15 12:43:56.995741148 +0200
++++ psi4-1.2.1_changed/psi4/driver/procrouting/proc.py	2020-11-18 11:59:18.406886107 +0100
 @@ -2301,7 +2301,7 @@
          aux_basis = core.BasisSet.build(ref_wfn.molecule(), "DF_BASIS_CC",
                                              core.get_global_option("DF_BASIS_CC"),
@@ -22,9 +10,9 @@ diff -Naur psi4-1.2.1/psi4/driver/procrouting/proc.py psi4-1.2.1-psiapi_extend-f
  
      # Ensure IWL files have been written
      proc_util.check_iwl_file_from_scf_type(core.get_global_option('SCF_TYPE'), ref_wfn)
-diff -Naur psi4-1.2.1/psi4/share/psi4/databases/A24_hcn_bb.py psi4-1.2.1-psiapi_extend-for-oepdev/psi4/share/psi4/databases/A24_hcn_bb.py
+diff -Naur psi4-1.2.1/psi4/share/psi4/databases/A24_hcn_bb.py psi4-1.2.1_changed/psi4/share/psi4/databases/A24_hcn_bb.py
 --- psi4-1.2.1/psi4/share/psi4/databases/A24_hcn_bb.py	1970-01-01 01:00:00.000000000 +0100
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/share/psi4/databases/A24_hcn_bb.py	2020-07-15 12:43:57.043745000 +0200
++++ psi4-1.2.1_changed/psi4/share/psi4/databases/A24_hcn_bb.py	2020-11-18 11:59:18.482886575 +0100
 @@ -0,0 +1,650 @@
 +#
 +# @BEGIN LICENSE
@@ -676,9 +664,530 @@ diff -Naur psi4-1.2.1/psi4/share/psi4/databases/A24_hcn_bb.py psi4-1.2.1-psiapi_
 +    GEOS['%s-%s-monoB-unCP' % (dbse, rxn)] = GEOS['%s-%s-dimer' % (dbse, rxn)].extract_fragments(2)
 +    GEOS['%s-%s-monoA-CP'   % (dbse, rxn)] = GEOS['%s-%s-dimer' % (dbse, rxn)].extract_fragments(1, 2)
 +    GEOS['%s-%s-monoB-CP'   % (dbse, rxn)] = GEOS['%s-%s-dimer' % (dbse, rxn)].extract_fragments(2, 1)
-diff -Naur psi4-1.2.1/psi4/src/psi4/ccenergy/ccwave.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/ccenergy/ccwave.h
+diff -Naur psi4-1.2.1/psi4/share/psi4/databases/CHB15.py psi4-1.2.1_changed/psi4/share/psi4/databases/CHB15.py
+--- psi4-1.2.1/psi4/share/psi4/databases/CHB15.py	1970-01-01 01:00:00.000000000 +0100
++++ psi4-1.2.1_changed/psi4/share/psi4/databases/CHB15.py	2020-11-18 11:59:18.474886526 +0100
+@@ -0,0 +1,517 @@
++#
++# @BEGIN LICENSE
++#
++# Psi4: an open-source quantum chemistry software package
++#
++# Copyright (c) 2007-2018 The Psi4 Developers.
++#
++# The copyrights for code used from other parties are included in
++# the corresponding files.
++#
++# This file is part of Psi4.
++#
++# Psi4 is free software; you can redistribute it and/or modify
++# it under the terms of the GNU Lesser General Public License as published by
++# the Free Software Foundation, version 3.
++#
++# Psi4 is distributed in the hope that it will be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU Lesser General Public License for more details.
++#
++# You should have received a copy of the GNU Lesser General Public License along
++# with Psi4; if not, write to the Free Software Foundation, Inc.,
++# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
++#
++# ------------------------------------------------
++# Author of this file: Bartosz Błasiak
++#                      Gundelfingen, 05 Aug 2020
++# ------------------------------------------------
++#
++# @END LICENSE
++#
++
++"""
++| Database of interaction energies for small charged hydrogen bonded complexes.
++| Geometries from <Reference>.
++| Reference interaction energies from Rezac and Hobza, JCTC (in press).
++| Ref.: J. Rezac, P. Hobza, J. Chem. Theory Comput. 2012, 8, 141-151
++
++
++- **cp**  ``'off'`` <erase this comment and after unless on is a valid option> || ``'on'``
++
++- **rlxd** ``'off'`` <erase this comment and after unless on is valid option> || ``'on'``
++
++
++- **benchmark**
++
++  - ``'<benchmark_name>'`` <Reference>.
++  - |dl| ``'<default_benchmark_name>'`` |dr| <Reference>.
++
++- **subset**
++
++  - ``'all'`` all 15 molecules in the database
++
++"""
++import re
++import qcdb
++
++# <<< CHB15 Database Module >>>
++dbse = 'CHB15'
++
++# <<< Database Members >>>
++HRXN = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
++HRXN_SM = []
++HRXN_LG = []
++
++# <<< Chemical Systems Involved >>>
++RXNM = {}     # reaction matrix of reagent contributions per reaction
++ACTV = {}     # order of active reagents per reaction
++ACTV_CP = {}  # order of active reagents per counterpoise-corrected reaction
++ACTV_SA = {}  # order of active reagents for non-supermolecular calculations
++for rxn in HRXN:
++
++    RXNM[   '%s-%s' % (dbse, rxn)] = {'%s-%s-dimer'      % (dbse, rxn) : +1,
++                                      '%s-%s-monoA-CP'   % (dbse, rxn) : -1,
++                                      '%s-%s-monoB-CP'   % (dbse, rxn) : -1,
++                                      '%s-%s-monoA-unCP' % (dbse, rxn) : -1,
++                                      '%s-%s-monoB-unCP' % (dbse, rxn) : -1 }
++
++    ACTV_SA['%s-%s' % (dbse, rxn)] = ['%s-%s-dimer'      % (dbse, rxn) ]
++
++    ACTV_CP['%s-%s' % (dbse, rxn)] = ['%s-%s-dimer'      % (dbse, rxn),
++                                      '%s-%s-monoA-CP'   % (dbse, rxn),
++                                      '%s-%s-monoB-CP'   % (dbse, rxn) ]
++
++    ACTV[   '%s-%s' % (dbse, rxn)] = ['%s-%s-dimer'      % (dbse, rxn),
++                                      '%s-%s-monoA-unCP' % (dbse, rxn),
++                                      '%s-%s-monoB-unCP' % (dbse, rxn) ]
++
++# <<< Reference Values [kcal/mol] from Rezac and Hobza dx.doi.org/10.1021/ct400057w >>>
++BIND = {}
++BIND['%s-%s'            % (dbse, 1  )] =  0.000 
++BIND['%s-%s'            % (dbse, 2  )] =  0.000 
++BIND['%s-%s'            % (dbse, 3  )] =  0.000 
++BIND['%s-%s'            % (dbse, 4  )] =  0.000 
++BIND['%s-%s'            % (dbse, 5  )] =  0.000 
++BIND['%s-%s'            % (dbse, 6  )] =  0.000 
++BIND['%s-%s'            % (dbse, 7  )] =  0.000 
++BIND['%s-%s'            % (dbse, 8  )] =  0.000 
++BIND['%s-%s'            % (dbse, 9  )] =  0.000 
++BIND['%s-%s'            % (dbse, 10 )] =  0.000 
++BIND['%s-%s'            % (dbse, 11 )] =  0.000 
++BIND['%s-%s'            % (dbse, 12 )] =  0.000 
++BIND['%s-%s'            % (dbse, 13 )] =  0.000 
++BIND['%s-%s'            % (dbse, 14 )] =  0.000 
++BIND['%s-%s'            % (dbse, 15 )] =  0.000 
++
++# <<< Comment Lines >>>
++names = ["carboxyl_mNH2",         # 1
++         "carboxyl_mOH",          # 2
++         "carboxyl_wat",          # 3
++         "gua_fmdh",              # 4              
++         "gua_mNH2",              # 5 
++         "gua_mOH",               # 6
++         "gua_wat",               # 7
++         "hip_fmdh",              # 8
++         "hip_mNH2",              # 9
++         "hip_mOH",               # 10
++         "hip_wat",               # 11
++         "mNH3_fmdh",             # 12
++         "mNH3_mNH2",             # 13
++         "mNH3_mOH",              # 14
++         "mNH3_wat"]              # 15
++
++TAGL = {}
++for i, name in enumerate(names):
++    TAGL['%s-%s'            % (dbse, i+1)] = """ %s """ % name
++    TAGL['%s-%s-dimer'      % (dbse, i+1)] = """ Dimer %s """ % name
++    TAGL['%s-%s-monoA-CP'   % (dbse, i+1)] = """ Monomer A %s """ % name 
++    TAGL['%s-%s-monoB-CP'   % (dbse, i+1)] = """ Monomer B %s """ % name
++    TAGL['%s-%s-monoA-unCP' % (dbse, i+1)] = """ Monomer A %s """ % name
++    TAGL['%s-%s-monoB-unCP' % (dbse, i+1)] = """ Monomer B %s """ % name
++
++# <<< Geometry Specification Strings >>>
++GEOS = {}
++
++# carboxyl_mNH2
++GEOS['%s-%s-dimer' % (dbse, '1')] = qcdb.Molecule("""
++-1 1
++C   -1.067681101  -0.271098200   0.098425590    
++C    0.361871421   0.290569279  -0.103737259    
++O    1.279845864  -0.562993045  -0.089531722    
++O    0.451018532   1.538347265  -0.258903660    
++H   -1.274226455  -1.017247821  -0.669620680    
++H   -1.122005113  -0.781585539   1.060825043    
++H   -1.819051732   0.515321513   0.058342297    
++--
++0 1
++H    2.358591571   2.032036918  -0.577059564    
++N    3.325234668   2.378226272  -0.618915071    
++C    4.203764407   1.272238900  -0.244130768    
++H    5.247634052   1.596828130  -0.264891127    
++H    3.997944581   0.831075775   0.736038541    
++H    4.088828419   0.471128339  -0.970243143    
++H    3.366565887   3.073767217   0.116943522  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# carboxyl_mOH
++GEOS['%s-%s-dimer' % (dbse, '2')] = qcdb.Molecule("""
++-1 1
++C   -1.006215463  -0.203566404   0.039323585    
++C    0.487100228   0.185923820  -0.030061282    
++O    1.301564189  -0.757785383   0.052857808    
++O    0.724973696   1.422331940  -0.159634962    
++H   -1.223648142  -0.940991754  -0.733559633    
++H   -1.208099576  -0.678638500   0.999935449    
++H   -1.654410613   0.661570766  -0.082684221    
++--
++0 1
++H    2.323552151   1.971306366  -0.246411344    
++O    3.242038147   2.349020688  -0.304495292    
++C    4.120013665   1.257459426  -0.234121540    
++H    5.142912972   1.638285367  -0.294028876    
++H    4.022512629   0.692111931   0.697386417    
++H    3.976696841   0.542589358  -1.049974871  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# carboxyl_wat
++GEOS['%s-%s-dimer' % (dbse, '3')] = qcdb.Molecule("""
++-1 1
++C   -0.808438821  -0.243062083   0.038574485    
++C    0.533554652   0.513743610  -0.070281243    
++O    1.560611869  -0.214420190  -0.027568739    
++O    0.465298866   1.764998179  -0.183236969    
++H   -0.854283812  -1.014973034  -0.729785233    
++H   -1.656064871   0.431570596  -0.062379061    
++H   -0.857515936  -0.748947615   1.003461116    
++--
++0 1
++H    2.420729014   2.348323562  -0.279518048    
++O    3.332761822   2.015770751  -0.268681517    
++H    3.075886493   1.082062820  -0.178457540  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# gua_fmdh
++GEOS['%s-%s-dimer' % (dbse, '4')] = qcdb.Molecule("""
++1 1
++C   -0.105081656   0.282413741   0.022074441    
++N   -0.785227591  -0.820652291  -0.288990507    
++N   -0.745585479   1.421570007   0.253246903    
++N    1.219250263   0.252146159   0.103458752    
++H   -1.744037401   1.479987848   0.172685895    
++H    1.727462291  -0.601259621  -0.038822645    
++H    1.721470076   1.097144758   0.339497536  
++H   -0.216089211   2.249292326   0.491002112    
++H   -1.787472355  -0.815092404  -0.340300985    
++H   -0.312365218  -1.684834579  -0.480883846    
++--
++0 1
++O    1.602569103   3.050868682   0.808678982    
++C    2.224226383   4.058749214   1.099297255    
++H    3.315952442   4.050092152   1.175259403    
++H    1.711178461   5.005655912   1.293917723  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# gua_mNH2
++GEOS['%s-%s-dimer' % (dbse, '5')] = qcdb.Molecule("""
++1 1
++C   -0.022632781   0.158889311  -0.003491152    
++N   -1.034258337  -0.697533791   0.152948303    
++N   -0.072073363   1.381821873   0.487979803    
++N    1.062328053  -0.233142965  -0.675554069    
++H   -0.920522620   1.713004355   0.912119915    
++H    1.204431006  -1.196369662  -0.918176231    
++H    1.826844953   0.406007458  -0.798617863    
++H   -1.049138495  -1.576370701  -0.331757120    
++H    0.758041219   2.014066447   0.417577832    
++H   -1.851470832  -0.438033553   0.674514141    
++--
++0 1
++N    2.136801513   3.149948876   0.362090548    
++C    1.629375355   4.251371630   1.207893294    
++H    2.372571515   3.530476168  -0.548121952    
++H    2.329470033   5.077982821   1.310170076    
++H    0.708278821   4.636038784   0.777439086    
++H    1.407495363   3.866068655   2.199747335    
++H    3.019205595   2.833474292   0.749409056  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# gua_mOH
++GEOS['%s-%s-dimer' % (dbse, '6')] = qcdb.Molecule("""
++1 1
++C   -0.081972325   0.353680588   0.028076102    
++N   -0.781386068  -0.780045332  -0.011075941    
++N   -0.700530775   1.527575229   0.063558364    
++N    1.245079059   0.328413353   0.036872021    
++H   -1.701484618   1.589975232   0.033190952    
++H    1.750062669  -0.538343991   0.016503262    
++H    1.745755146   1.209639567   0.055791883    
++H   -0.322300090  -1.672024252  -0.041041434    
++H   -0.137793105   2.370660847   0.078458926    
++H   -1.784932170  -0.770876464  -0.005828173    
++--
++0 1
++O    1.662952247   3.184748790   0.158770895    
++C    2.081912462   3.852481778   1.365617693    
++H    1.981926316   3.707541256  -0.584132688    
++H    3.165794687   3.907782802   1.424027822    
++H    1.658082817   4.851495416   1.425337117    
++H    1.711514317   3.260194559   2.195510760  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# gua_wat
++GEOS['%s-%s-dimer' % (dbse, '7')] = qcdb.Molecule("""
++1 1
++C   -0.071100547   0.351296503   0.027408194    
++N   -0.894833573  -0.694824870  -0.016588211    
++N   -0.552894884   1.582189052   0.148368366    
++N    1.242556704   0.176740483  -0.048607484    
++H   -1.539110307   1.749324362   0.227945668    
++H    1.640248335  -0.737740076  -0.159997553    
++H    0.091723707   2.360878453   0.177288781    
++H   -0.541272484  -1.630581091  -0.099062272    
++H   -1.890242352  -0.573671076   0.026661967  
++H    1.848157063   0.985745123  -0.011055350    
++--
++0 1
++O    2.018670957   3.007993255   0.136861195    
++H    2.419466865   3.415761631   0.911181729    
++H    2.349723896   3.533314917  -0.598704323  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# hip_fmdh
++GEOS['%s-%s-dimer' % (dbse, '8')] = qcdb.Molecule("""
++1 1
++C    4.992080318   5.502206312   0.460294537    
++C    4.142932018   5.064052621   1.440422070    
++N    4.048348407   6.071858981   2.363217606    
++C    4.803200065   7.101898305   1.985225154    
++N    5.381732667   6.764409591   0.827845316    
++H    3.615689853   4.134288605   1.542678623    
++H    3.490538328   6.073564561   3.229990672    
++H    5.336891356   5.028852818  -0.439807530    
++H    6.011779025   7.360007188   0.309997930    
++H    4.923000524   8.029870783   2.513374890    
++--
++0 1
++O    2.771227219   6.581015579   4.736846747    
++C    2.031585673   6.290675285   5.660647292    
++H    1.521615021   5.322491983   5.706176359    
++H    1.853805525   6.994950386   6.478785336  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# hip_mNH2 
++GEOS['%s-%s-dimer' % (dbse, '9')] = qcdb.Molecule("""
++1 1 
++C    4.999742982   5.656478915   0.500699101    
++C    4.164862142   5.017473257   1.379027829    
++N    3.939509304   5.868794127   2.428963225    
++C    4.608365297   6.999915738   2.218084680    
++N    5.256490848   6.884805521   1.050371362    
++H    3.728431744   4.037328478   1.328268100    
++H    3.316944545   5.657789713   3.312404450    
++H    4.631794200   7.858375587   2.863794077    
++H    5.416541405   5.343987339  -0.438462413    
++H    5.844006700   7.599873278   0.647217331    
++--
++0 1
++N    2.360413089   5.321240076   4.545257334    
++H    2.684644328   4.503728539   5.051765441    
++C    0.977807410   5.081780014   4.078478631    
++H    0.620679571   5.964248669   3.555286665    
++H    0.976672511   4.249143917   3.380678467    
++H    0.289084969   4.854400601   4.888818694    
++H    2.348465955   6.064511230   5.236002027  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# hip_mOH
++GEOS['%s-%s-dimer' % (dbse, '10')] = qcdb.Molecule("""
++1 1
++C    5.149867812   5.781166695   0.454915895    
++C    4.310331875   4.996348260   1.199035769    
++N    3.949484344   5.726378549   2.300513163    
++C    4.535679925   6.921018621   2.255243186    
++N    5.268418880   6.964890399   1.136262329    
++H    3.954151378   3.997818400   1.027940865    
++H    3.315215265   5.411421924   3.069161162    
++H    4.439502186   7.706358470   2.982065199    
++H    5.654340822   5.595095678  -0.474727925    
++H    5.822762606   7.757809794   0.847037700    
++--
++0 1
++O    2.287274462   4.997059418   4.277698675    
++H    2.537181293   4.540754240   5.086349443    
++C    0.852612058   5.085444264   4.230014684    
++H    0.600364555   5.592921938   3.305190746  
++H    0.401774603   4.096692297   4.227095080    
++H    0.472893936   5.665090054   5.066954029  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# hip_wat 
++GEOS['%s-%s-dimer' % (dbse, '11')] = qcdb.Molecule("""
++1 1
++C    5.082425230   5.694110213   0.467816815    
++C    4.219648710   4.994294021   1.267596178    
++N    3.928118405   5.797286100   2.338420520    
++C    4.577383461   6.954219633   2.222006001    
++N    5.282709241   6.901057178   1.086603578    
++H    3.803644392   4.010622797   1.155484436    
++H    5.553083545   5.435055031  -0.462004958    
++H    4.542504567   7.778104465   2.910688070    
++H    5.872413711   7.646727047   0.745823201    
++H    3.300294311   5.554620966   3.125722341    
++--
++0 1
++O    2.273799414   5.176654089   4.427454544    
++H    2.504832168   4.716982810   5.239367142    
++H    1.322383844   5.303900651   4.477382132  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# mNH3_fmdh
++GEOS['%s-%s-dimer' % (dbse, '12')] = qcdb.Molecule("""
++1 1
++C    0.687364580  -0.177705402   0.322869765    
++N   -0.735021639   0.201185335   0.055690011    
++H   -1.380118913  -0.452570111   0.496181898    
++H   -0.945342769   1.128728697   0.420157622    
++H   -0.914689681   0.199140171  -0.968987117    
++H    0.856655158  -1.164072485  -0.091484742    
++H    1.326952365   0.545866029  -0.167734951    
++H    0.859676716  -0.176826300   1.392473464    
++--
++0 1
++O   -0.688387552  -0.006827961  -2.671205700    
++C   -1.151543972   0.108573219  -3.793715602    
++H   -0.570905471  -0.192905158  -4.669883563    
++H   -2.154311482   0.514294330  -3.962474775  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# mNH3_mNH2
++GEOS['%s-%s-dimer' % (dbse, '13')] = qcdb.Molecule("""
++1 1
++C    0.744768151  -0.082282053  -0.019173554    
++N   -0.728438635   0.112146543   0.091161198    
++H   -1.127753599  -0.526162012   0.776374088    
++H   -0.947980520   1.055774181   0.403402411    
++H   -1.224663286  -0.064847586  -0.881903869    
++H    0.932732220  -1.093480816  -0.362003654    
++H    1.212925665   0.074803757   0.945875964    
++H    1.132071711   0.628965038  -0.739788431    
++--
++0 1
++N   -1.869193765  -0.320933795  -2.339816000    
++C   -1.024136456   0.203286382  -3.437481685    
++H   -2.039293972  -1.308126579  -2.505594757    
++H   -1.464672792   0.048252935  -4.419381823    
++H   -0.870277928   1.269094010  -3.293172401    
++H   -0.057160632  -0.291250085  -3.411849851    
++H   -2.786883617   0.109107046  -2.404975756  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# mNH3_mOH
++GEOS['%s-%s-dimer' % (dbse, '14')] = qcdb.Molecule("""
++1 1
++C    0.687041485  -0.021348442   0.158244910    
++N   -0.796548184   0.105617965   0.039344613    
++H   -1.270243847  -0.509648168   0.698373151    
++H   -1.103958172   1.055158108   0.241676877  
++H   -1.110658397  -0.147584181  -0.934324277    
++H    0.958993985  -1.044759456  -0.070634654    
++H    0.990678267   0.235706496   1.166097459    
++H    1.144634560   0.652587758  -0.556167114  
++--
++0 1  
++O   -1.407504631  -0.585095302  -2.489010770    
++C   -1.068005632   0.161392585  -3.674026593    
++H   -1.997797922  -1.300085292  -2.745755652    
++H   -1.953332227   0.608017004  -4.117664846    
++H   -0.388154864   0.949189504  -3.367554340    
++H   -0.566848884  -0.475482436  -4.397112815  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++# mNH3_wat
++GEOS['%s-%s-dimer' % (dbse, '15')] = qcdb.Molecule("""
++1 1
++C    0.729910353  -0.067791535   0.057095373    
++N   -0.757044007   0.087897962   0.041272775    
++H   -1.200812907  -0.569235636   0.680770653    
++H   -1.033508938   1.024135700   0.332440612    
++H   -1.137879313  -0.081658460  -0.916293500    
++H    1.155255605   0.657321778  -0.626319371    
++H    1.094665015   0.102560205   1.062985612    
++H    0.969275613  -1.072917859  -0.268483642    
++--
++0 1
++O   -1.621902384  -0.405938406  -2.518774555    
++H   -1.424849813   0.103890660  -3.310162799    
++H   -2.253608383  -1.070520461  -2.809529101  
++units angstrom
++symmetry c1
++no_reorient
++no_com
++""")
++
++
++# <<< Derived Geometry Strings >>>
++for rxn in HRXN:
++    GEOS['%s-%s-monoA-unCP' % (dbse, rxn)] = GEOS['%s-%s-dimer' % (dbse, rxn)].extract_fragments(1)
++    GEOS['%s-%s-monoB-unCP' % (dbse, rxn)] = GEOS['%s-%s-dimer' % (dbse, rxn)].extract_fragments(2)
++    GEOS['%s-%s-monoA-CP'   % (dbse, rxn)] = GEOS['%s-%s-dimer' % (dbse, rxn)].extract_fragments(1, 2)
++    GEOS['%s-%s-monoB-CP'   % (dbse, rxn)] = GEOS['%s-%s-dimer' % (dbse, rxn)].extract_fragments(2, 1)
+diff -Naur psi4-1.2.1/psi4/src/psi4/ccenergy/ccwave.h psi4-1.2.1_changed/psi4/src/psi4/ccenergy/ccwave.h
 --- psi4-1.2.1/psi4/src/psi4/ccenergy/ccwave.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/ccenergy/ccwave.h	2020-07-15 12:43:57.087748533 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/ccenergy/ccwave.h	2020-11-18 11:59:18.526886846 +0100
 @@ -33,6 +33,9 @@
  #include "MOInfo.h"
  #include "Params.h"
@@ -699,9 +1208,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/ccenergy/ccwave.h psi4-1.2.1-psiapi_extend-f
  {
  public:
      CCEnergyWavefunction(std::shared_ptr<Wavefunction> reference_wavefunction, Options &options);
-diff -Naur psi4-1.2.1/psi4/src/psi4/libciomr/libciomr.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libciomr/libciomr.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libciomr/libciomr.h psi4-1.2.1_changed/psi4/src/psi4/libciomr/libciomr.h
 --- psi4-1.2.1/psi4/src/psi4/libciomr/libciomr.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libciomr/libciomr.h	2020-07-15 12:43:57.095749176 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libciomr/libciomr.h	2020-11-18 11:59:18.538886919 +0100
 @@ -58,7 +58,7 @@
  
  void flin(double **a,double *b,int in,int im,double *det);
@@ -711,9 +1220,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libciomr/libciomr.h psi4-1.2.1-psiapi_extend
  double ** init_matrix(size_t rows, size_t cols) ;
  
  void lubksb(double **a,int n,int *indx,double *b);
-diff -Naur psi4-1.2.1/psi4/src/psi4/libcubeprop/csg.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libcubeprop/csg.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libcubeprop/csg.h psi4-1.2.1_changed/psi4/src/psi4/libcubeprop/csg.h
 --- psi4-1.2.1/psi4/src/psi4/libcubeprop/csg.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libcubeprop/csg.h	2020-07-15 12:43:57.095749176 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libcubeprop/csg.h	2020-11-18 11:59:18.538886919 +0100
 @@ -41,7 +41,7 @@
  class RKSFunctions;
  class BlockOPoints;
@@ -723,9 +1232,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libcubeprop/csg.h psi4-1.2.1-psiapi_extend-f
     protected:
      // => Input Specification <= //
  
-diff -Naur psi4-1.2.1/psi4/src/psi4/libdpd/dpd.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libdpd/dpd.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libdpd/dpd.h psi4-1.2.1_changed/psi4/src/psi4/libdpd/dpd.h
 --- psi4-1.2.1/psi4/src/psi4/libdpd/dpd.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libdpd/dpd.h	2020-07-15 12:43:57.099749497 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libdpd/dpd.h	2020-11-18 11:59:18.542886944 +0100
 @@ -525,12 +525,12 @@
  extern dpd_gbl dpd_main;
  extern PSI_API DPD* global_dpd_;
@@ -741,9 +1250,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libdpd/dpd.h psi4-1.2.1-psiapi_extend-for-oe
  extern long int PSI_API dpd_memfree(void);
  extern void dpd_memset(long int memory);
  
-diff -Naur psi4-1.2.1/psi4/src/psi4/libdpd/dpdmospace.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libdpd/dpdmospace.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libdpd/dpdmospace.h psi4-1.2.1_changed/psi4/src/psi4/libdpd/dpdmospace.h
 --- psi4-1.2.1/psi4/src/psi4/libdpd/dpdmospace.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libdpd/dpdmospace.h	2020-07-15 12:43:57.099749497 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libdpd/dpdmospace.h	2020-11-18 11:59:18.542886944 +0100
 @@ -38,7 +38,7 @@
  
  std::vector<std::string> dpd_split(const std::string &indices);
@@ -753,9 +1262,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libdpd/dpdmospace.h psi4-1.2.1-psiapi_extend
    protected:
      // name of the space
      char label_;
-diff -Naur psi4-1.2.1/psi4/src/psi4/libfunctional/superfunctional.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libfunctional/superfunctional.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libfunctional/superfunctional.h psi4-1.2.1_changed/psi4/src/psi4/libfunctional/superfunctional.h
 --- psi4-1.2.1/psi4/src/psi4/libfunctional/superfunctional.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libfunctional/superfunctional.h	2020-07-15 12:43:57.099749497 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libfunctional/superfunctional.h	2020-11-18 11:59:18.542886944 +0100
 @@ -59,7 +59,7 @@
   * E(-D) is an empirical dispersion correction of some form
   *
@@ -765,9 +1274,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libfunctional/superfunctional.h psi4-1.2.1-p
  
  protected:
  
-diff -Naur psi4-1.2.1/psi4/src/psi4/libiwl/iwl.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libiwl/iwl.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libiwl/iwl.h psi4-1.2.1_changed/psi4/src/psi4/libiwl/iwl.h
 --- psi4-1.2.1/psi4/src/psi4/libiwl/iwl.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libiwl/iwl.h	2020-07-15 12:43:57.099749497 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libiwl/iwl.h	2020-11-18 11:59:18.542886944 +0100
 @@ -61,7 +61,7 @@
  void iwl_buf_fetch(struct iwlbuf *Buf);
  void iwl_buf_put(struct iwlbuf *Buf);
@@ -777,9 +1286,21 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libiwl/iwl.h psi4-1.2.1-psiapi_extend-for-oe
                int printflg, std::string out);
  
  void iwl_buf_init(struct iwlbuf *Buf, int intape, double cutoff,
-diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/fjt.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/fjt.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/efpmultipolepotential.h psi4-1.2.1_changed/psi4/src/psi4/libmints/efpmultipolepotential.h
+--- psi4-1.2.1/psi4/src/psi4/libmints/efpmultipolepotential.h	2018-07-25 04:11:25.000000000 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libmints/efpmultipolepotential.h	2020-11-18 11:59:18.546886969 +0100
+@@ -80,7 +80,7 @@
+  *     19    |      XYZ       |    6/15
+  *
+  */
+-class EFPMultipolePotentialInt : public OneBodyAOInt
++class PSI_API EFPMultipolePotentialInt : public OneBodyAOInt
+ {
+     // OS Recursion for this type of potential integral
+     ObaraSaikaTwoCenterEFPRecursion mvi_recur_;
+diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/fjt.h psi4-1.2.1_changed/psi4/src/psi4/libmints/fjt.h
 --- psi4-1.2.1/psi4/src/psi4/libmints/fjt.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/fjt.h	2020-07-15 12:43:57.103749818 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libmints/fjt.h	2020-11-18 11:59:18.546886969 +0100
 @@ -61,7 +61,7 @@
  class CorrelationFactor;
  
@@ -798,9 +1319,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/fjt.h psi4-1.2.1-psiapi_extend-for-
      static double relative_zero_;
  public:
      static const int max_interp_order = 8;
-diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/gshell.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/gshell.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/gshell.h psi4-1.2.1_changed/psi4/src/psi4/libmints/gshell.h
 --- psi4-1.2.1/psi4/src/psi4/libmints/gshell.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/gshell.h	2020-07-15 12:43:57.103749818 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libmints/gshell.h	2020-11-18 11:59:18.546886969 +0100
 @@ -32,6 +32,7 @@
  #include <cstdio>
  #include <vector>
@@ -827,9 +1348,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/gshell.h psi4-1.2.1-psiapi_extend-f
  {
  protected:
      /// Angular momentum
-diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/multipoles.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/multipoles.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/multipoles.h psi4-1.2.1_changed/psi4/src/psi4/libmints/multipoles.h
 --- psi4-1.2.1/psi4/src/psi4/libmints/multipoles.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/multipoles.h	2020-07-15 12:43:57.103749818 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libmints/multipoles.h	2020-11-18 11:59:18.546886969 +0100
 @@ -43,7 +43,7 @@
   *  \brief Computes arbitrary-order multipole integrals.
   *
@@ -839,9 +1360,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/multipoles.h psi4-1.2.1-psiapi_exte
  {
      //! Obara and Saika recursion object to be used.
      ObaraSaikaTwoCenterMIRecursion mi_recur_;
-diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/multipolesymmetry.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/multipolesymmetry.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/multipolesymmetry.h psi4-1.2.1_changed/psi4/src/psi4/libmints/multipolesymmetry.h
 --- psi4-1.2.1/psi4/src/psi4/libmints/multipolesymmetry.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/multipolesymmetry.h	2020-07-15 12:43:57.103749818 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libmints/multipolesymmetry.h	2020-11-18 11:59:18.546886969 +0100
 @@ -106,7 +106,7 @@
      std::vector<SharedMatrix > create_matrices(const std::string& basename);
  };
@@ -851,9 +1372,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/multipolesymmetry.h psi4-1.2.1-psia
  {
      // The order of the multipole (dipole=1, quadrupole=2, etc...)
      int order_;
-diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/oeprop.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/oeprop.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/oeprop.h psi4-1.2.1_changed/psi4/src/psi4/libmints/oeprop.h
 --- psi4-1.2.1/psi4/src/psi4/libmints/oeprop.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/oeprop.h	2020-07-15 12:43:57.103749818 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libmints/oeprop.h	2020-11-18 11:59:18.546886969 +0100
 @@ -35,6 +35,7 @@
  #include <string>
  
@@ -880,9 +1401,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/oeprop.h psi4-1.2.1-psiapi_extend-f
  
  protected:
      /// Common initialization
-diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/onebody.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/onebody.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/onebody.h psi4-1.2.1_changed/psi4/src/psi4/libmints/onebody.h
 --- psi4-1.2.1/psi4/src/psi4/libmints/onebody.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/onebody.h	2020-07-15 12:43:57.103749818 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libmints/onebody.h	2020-11-18 11:59:18.546886969 +0100
 @@ -52,7 +52,7 @@
   *  \class OneBodyInt
   *  \brief Basis class for all one-electron integrals.
@@ -892,9 +1413,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/onebody.h psi4-1.2.1-psiapi_extend-
  {
  protected:
      std::shared_ptr<BasisSet> bs1_;
-diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/potential.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/potential.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/potential.h psi4-1.2.1_changed/psi4/src/psi4/libmints/potential.h
 --- psi4-1.2.1/psi4/src/psi4/libmints/potential.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libmints/potential.h	2020-07-15 12:43:57.103749818 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libmints/potential.h	2020-11-18 11:59:18.546886969 +0100
 @@ -47,7 +47,7 @@
   *  \brief Computes potential integrals.
   * Use an IntegralFactory to create this object.
@@ -904,9 +1425,21 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libmints/potential.h psi4-1.2.1-psiapi_exten
  {
      /// Computes integrals between two shell objects.
      void compute_pair(const GaussianShell&, const GaussianShell&);
-diff -Naur psi4-1.2.1/psi4/src/psi4/libscf_solver/hf.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libscf_solver/hf.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libqt/invert.cc psi4-1.2.1_changed/psi4/src/psi4/libqt/invert.cc
+--- psi4-1.2.1/psi4/src/psi4/libqt/invert.cc	2018-07-25 04:11:25.000000000 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libqt/invert.cc	2020-11-18 11:59:18.550886993 +0100
+@@ -41,7 +41,7 @@
+ #include "psi4/libpsi4util/PsiOutStream.h"
+ namespace psi {
+ 
+-#define SMALL_DET 1.0E-10
++#define SMALL_DET 1.0E-400
+ 
+ /*!
+ ** INVERT_MATRIX(): The function takes the inverse of a matrix using the
+diff -Naur psi4-1.2.1/psi4/src/psi4/libscf_solver/hf.h psi4-1.2.1_changed/psi4/src/psi4/libscf_solver/hf.h
 --- psi4-1.2.1/psi4/src/psi4/libscf_solver/hf.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libscf_solver/hf.h	2020-07-15 12:43:57.107750139 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libscf_solver/hf.h	2020-11-18 11:59:18.550886993 +0100
 @@ -45,7 +45,7 @@
  class PSIO;
  namespace scf {
@@ -916,9 +1449,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libscf_solver/hf.h psi4-1.2.1-psiapi_extend-
  protected:
  
      /// The kinetic energy matrix
-diff -Naur psi4-1.2.1/psi4/src/psi4/libscf_solver/rhf.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libscf_solver/rhf.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libscf_solver/rhf.h psi4-1.2.1_changed/psi4/src/psi4/libscf_solver/rhf.h
 --- psi4-1.2.1/psi4/src/psi4/libscf_solver/rhf.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libscf_solver/rhf.h	2020-07-15 12:43:57.107750139 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libscf_solver/rhf.h	2020-11-18 11:59:18.550886993 +0100
 @@ -36,7 +36,7 @@
  
  namespace scf {
@@ -928,9 +1461,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libscf_solver/rhf.h psi4-1.2.1-psiapi_extend
  protected:
  
      // Temporary matrices
-diff -Naur psi4-1.2.1/psi4/src/psi4/libscf_solver/rohf.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libscf_solver/rohf.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/libscf_solver/rohf.h psi4-1.2.1_changed/psi4/src/psi4/libscf_solver/rohf.h
 --- psi4-1.2.1/psi4/src/psi4/libscf_solver/rohf.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libscf_solver/rohf.h	2020-07-15 12:43:57.107750139 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libscf_solver/rohf.h	2020-11-18 11:59:18.550886993 +0100
 @@ -35,7 +35,7 @@
  
  namespace psi { namespace scf {
@@ -940,9 +1473,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libscf_solver/rohf.h psi4-1.2.1-psiapi_exten
  protected:
      SharedMatrix moFeff_;
      SharedMatrix soFeff_;
-diff -Naur psi4-1.2.1/psi4/src/psi4/libtrans/integraltransform.cc psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libtrans/integraltransform.cc
+diff -Naur psi4-1.2.1/psi4/src/psi4/libtrans/integraltransform.cc psi4-1.2.1_changed/psi4/src/psi4/libtrans/integraltransform.cc
 --- psi4-1.2.1/psi4/src/psi4/libtrans/integraltransform.cc	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/libtrans/integraltransform.cc	2020-07-15 12:43:57.107750139 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/libtrans/integraltransform.cc	2020-11-18 11:59:18.554887018 +0100
 @@ -278,6 +278,7 @@
      cacheFiles_ = init_int_array(PSIO_MAXUNIT);
      cacheList_ = init_int_matrix(numIndexArrays, numIndexArrays);
@@ -951,9 +1484,9 @@ diff -Naur psi4-1.2.1/psi4/src/psi4/libtrans/integraltransform.cc psi4-1.2.1-psi
      dpd_init(myDPDNum_, nirreps_, memory_, 0, cacheFiles_, cacheList_, nullptr, numSpaces, spaceArray_);
  
      // We have to redefine the MO coefficients for a UHF-like treatment
-diff -Naur psi4-1.2.1/psi4/src/psi4/optking/mem.h psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/optking/mem.h
+diff -Naur psi4-1.2.1/psi4/src/psi4/optking/mem.h psi4-1.2.1_changed/psi4/src/psi4/optking/mem.h
 --- psi4-1.2.1/psi4/src/psi4/optking/mem.h	2018-07-25 04:11:25.000000000 +0200
-+++ psi4-1.2.1-psiapi_extend-for-oepdev/psi4/src/psi4/optking/mem.h	2020-07-15 12:43:57.111750460 +0200
++++ psi4-1.2.1_changed/psi4/src/psi4/optking/mem.h	2020-11-18 11:59:18.554887018 +0100
 @@ -33,12 +33,14 @@
  #ifndef _opt_mem_h_
  #define _opt_mem_h_

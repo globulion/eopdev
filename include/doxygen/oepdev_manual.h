@@ -96,14 +96,15 @@ multidimensional spectroscopy and so on. In particular:
 
  - the EOP-based models of Pauli repulsion energy and charge-transfer (CT) energy
    could be used to improve the computational performance of the second generation effective fragment
-   potential method (EFP2). At present, the CT term is very time consuming and due to this reasons
-   it is not used in many of applications of EFP2 to perform molecular dynamics 
+   potential method (EFP2). Particularly, the EFP2 CT term is relatively time consuming and due to this reason
+   it is sometimes omitted in the applications of EFP2 to perform molecular dynamics 
    simulations.\cite OEP-1.2020
  - the EOP-based model of EET couplings could significantly improve modelling of energy transfer
    in the light harvesting complexes. At present, short-range phenomena (Dexter mechanisms of EET)
-   are very difficult to efficiently and quantitatively asses when performing statistical averaging
+   are very difficult to efficiently and quantitatively evaluate when performing statistical averaging
    and applying to large molecular aggregates. Such Dexter effects could be computed by using EOP's
-   in much more efficient manner without loosing high accuracy of parent TDFI-TI method.\cite OEP-2.2020
+   in much more efficient manner without loosing high accuracy of state-of-the-art methods such as
+   TDFI-TI method.\cite OEP-2.2020
  - the density matrix polarization (DMS) tensors could be used in new generation fragment-based *ab initio*
    molecular dynamics protocols that rigorously take into consideration electron correlation effects.\cite Blasiak.JCP.2018
 
@@ -119,13 +120,13 @@ the EOPDev platform is developed.
 Accurate and efficient *ab initio* \ref pimplementedmodels "models"
 based on EOP's are implemented in the EOPDev code, along with
 the state-of-the-art benchmark and competiting methods. 
-Written entirely in C++, 
+Written in C++ with an extensive Python interface, 
 EOPDev is a plugin to Psi4 quantum chemistry package. Therefore,
 compilation and running the EOPDev code is straightforward and follows
 the API interface similar to the one used in Psi4 with 
 just a few \ref pprogramming "specific programing conventions".
 The detailed discussion about using the EOPDev code
-can be found in \ref advanced "advanced usage section". 
+can be found in \ref advanced "usage section". 
 \note The `OEP' abbreviation, rather than the `EOP',
       is used throughout the code. It is because the earlier versions
       of EOPDev utilized the former abbreviation consecutively for the shared libraries,
@@ -551,10 +552,11 @@ helps in producing self-maintaining code and is much easier to use. Use:
 
 // --------------------------------------------------------------------------
 
-/*! \page advanced Advanced Usage
+/*! \page advanced Usage
     \tableofcontents
 
-    This section is addressed for advanced users. Make sure you have first read \ref intro "the introduction"
+    EOPDev is addressed for developers. Make sure you have first read \ref intro "the introduction"
+    and are familiar with the EOP-based ERI elimination technique
     before proceeding.
 
 \section padvinstall Installation
