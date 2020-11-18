@@ -564,7 +564,7 @@ helps in producing self-maintaining code and is much easier to use. Use:
 \subsection spadvpreppsi Preparing Psi4
 
 EOPDev is a Psi4 plugin. It requires 
-  - Psi4, version 1.2.1 (git commit `7a58e8c`). Has to be modified (see below).
+  - Psi4, version 1.2.1 (git commit `406f4de`). Has to be modified (see below).
   - Eigen3, any version.
 
 \note
