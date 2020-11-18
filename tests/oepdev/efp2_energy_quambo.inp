@@ -32,7 +32,6 @@ set {
     cphf_localize                 True
     efp2_ct_no_octupoles          True
     efp2_ct_potential_ints        dmtp
-    oepdev_enable_trial           False
     dmtp_conver                   R5
     wfn_union_localizer           boys
     solver_ct_localizer           boys

@@ -48,7 +48,6 @@ set {
     oepdev_test_name              scf_perturb
     oepdev_test_mode              monomer
     oepdev_localize               False
-    oepdev_enable_trial           False
     # ==> General Psi4 Options <== #
     scf_type                      direct 
     guess                         core

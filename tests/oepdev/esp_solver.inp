@@ -25,7 +25,6 @@ set {
     oepdev_test_name              esp_solver
     oepdev_test_mode              monomer
     oepdev_localize               False
-    oepdev_enable_trial           False
     esp_vdw_radius_c              3.0
     esp_vdw_radius_h              4.0
     esp_vdw_radius_n              2.4

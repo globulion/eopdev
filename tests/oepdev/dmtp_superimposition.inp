@@ -53,7 +53,6 @@ set {
     oepdev_test_name              dmtp_superimposition
     oepdev_test_mode              dimer
     oepdev_localize               False
-    oepdev_enable_trial           False
     # ==> General Psi4 Options <== #
     scf_type                      direct 
     guess                         core

@@ -27,7 +27,6 @@ set {
     oepdev_test_name              rep_energy_benchmark_efp2
     oepdev_test_mode              dimer
     oepdev_localize               True
-    oepdev_enable_trial           False
     wfn_union_localizer           boys
     solver_ct_localizer           boys
     oepdev_localizer_maxiter      1000

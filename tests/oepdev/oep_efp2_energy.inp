@@ -36,7 +36,6 @@ set {
     df_basis_oep                  aug-cc-pVDZ-jkfit
     df_basis_int                  aug-cc-pVDZ-jkfit
     oepdev_df_type                single
-    oepdev_enable_trial           False
     oepdev_localizer_maxiter      1000
     efp2_with_vvo                 False
     quambo_acbs                   True

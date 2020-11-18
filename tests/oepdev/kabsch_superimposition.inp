@@ -34,7 +34,6 @@ set {
     oepdev_test_mode              dimer
     oepdev_localize               False
     cphf_localize                 False
-    oepdev_enable_trial           False
     # ==> General Psi4 Options <== #
     basis                         sto-3g
     scf_type                      pk

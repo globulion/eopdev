@@ -27,7 +27,6 @@ set {
     oepdev_test_name              rep_energy_benchmark_murrell_etal
     oepdev_test_mode              dimer
     oepdev_localize               False
-    oepdev_enable_trial           False
     oepdev_use_vvo                False
     quambo_acbs                   True
     # ==> General Psi4 Options <== #
