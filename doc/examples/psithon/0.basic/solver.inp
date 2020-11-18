@@ -61,7 +61,6 @@ set {
     oepdev_target                 solver
     oepdev_solver_type            repulsion_energy
     oepdev_localize               True
-    oepdev_enable_trial           False
     # ==> General Psi4 Options <== #
     scf_type                      direct 
     guess                         core

@@ -19,7 +19,6 @@ set {
     # ==> OEPDEV Routine Specification <== #
     oepdev_target                 DMATPOL
     oepdev_localize               False
-    oepdev_enable_trial           False
     # ==> CPHF <== #
     cphf_diis                     True
     cphf_diis_dim                 8

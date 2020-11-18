@@ -19,7 +19,6 @@ set {
     oepdev_target                 oep_build
     oepdev_oep_build_type         repulsion_energy
     oepdev_localize               False
-    oepdev_enable_trial           False
     # ==> General Psi4 Options <== #
     scf_type                      direct 
     guess                         core
