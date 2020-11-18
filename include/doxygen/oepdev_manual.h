@@ -590,7 +590,7 @@ Try to organise your creations in objects having special relationships and data 
 helps in producing self-maintaining code and is much easier to use. Use: 
  - **factory design** for creating objects
  - **container design** for designing data structures
- - **polymorphysm** when dealing with various flavours of one particular feature in the data structure
+ - **polymorphism** when dealing with various flavours of one particular feature in the data structure
  
  > *Note:* In Psi4, factories are frequently implemented as static methods of the base classes, 
  > for example `psi::BasisSet::build` static method. It can be followed when building object factories 

@@ -174,17 +174,17 @@
  *  \section libints_s4 Two-Body Integrals over Hermite Functions
  *  The fundamental Hermite integrals that appear during computations
  *  of any kind of two-electron integrals over GTOs are as follows
- *  \f[
+ *  \f{multline*}{
  *    \left[ N_1L_2M_2 \vert N_2L_2M_2\right] \equiv
  *    \iint d{\bf r}_1 d{\bf r}_2 
  *    \Lambda_{N_1}(x_{1P};\alpha_P)
  *    \Lambda_{L_1}(y_{1P};\alpha_P)
- *    \Lambda_{M_1}(z_{1P};\alpha_P)
+ *    \Lambda_{M_1}(z_{1P};\alpha_P) \\ \times
  *    \Lambda_{N_2}(x_{2Q};\alpha_Q)
  *    \Lambda_{L_2}(y_{2Q};\alpha_Q)
  *    \Lambda_{M_2}(z_{2Q};\alpha_Q)
  *    e^{-\alpha_Pr^2_{1P}-\alpha_Qr^2_{2Q}}
- *  \f]
+ *  \f}
  *  The above formula dramatically reduces to the following
  *  \f[
  *    \left[ N_1L_2M_2 \vert N_2L_2M_2\right] = \lambda(-)^{N2+L2+M2} R_{N1+N2,L1+L2,M1+M2}

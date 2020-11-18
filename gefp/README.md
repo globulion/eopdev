@@ -1,9 +1,10 @@
 GEFP-EOP
 ========
 
-GEFP Project
+Implements routines for generalized effective fragments (GEFP) 
+and effective one-electron potential (EOP) from Python level.
 
-The package is designed for quantum chemistry calculations
+The package is designed for quantum chemistry calculations.
 Currently, the implemented methods are:
 
 * Density-Based Decomposition Scheme of Mandado and Hermida-Ramón [1]
@@ -20,10 +21,14 @@ Installation prerequisites:
 - Psi4 1.2.0 or newer
 - EOPDev 1.0.0 or newer
 
-To install the GEFP package type the following commands:
+To install the GEFP package type one of the following commands:
 ```
+# administrator priviledges
 sudo python setup.py install
+# local installation
+python setup.py install --user
 ```
+
 
 References
 ----------
