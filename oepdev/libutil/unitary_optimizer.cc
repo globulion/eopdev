@@ -1330,50 +1330,45 @@ void UnitaryOptimizer_2::form_next_X_(const std::string& opt) // override (can b
 }
 Fourier5 UnitaryOptimizer_2::get_fourier_(int I, int J) // override
 {
-  //// Initialize
-  //double a0 = 0.0, a1 = 0.0, a2 = 0.0, 
-  //                 b1 = 0.0, b2 = 0.0;
-  //// P-contribution
-  //for (int i = 0; i < n_; ++i) {
-  //     for (int j = 0; j < n_; ++j) {
-  //          for (int k = 0; k < n_; ++k) {
-  //               double p = P_[IDX3(i,j,k)];
-  //               double A =   (KroneckerDelta_(I,j)*KroneckerDelta_(J,i) - KroneckerDelta_(I,i)*KroneckerDelta_(J,j)) * (1.0-KroneckerDelta_(i,j));
-  //               double B =   -KroneckerDelta_(i,j)*(KroneckerDelta_(I,j)+KroneckerDelta_(J,i));
-  //               double C =    KroneckerDelta_(i,k)*(1.0-KroneckerDelta_(I,k))*(1.0-KroneckerDelta_(J,i));
-  //               double D =    KroneckerDelta_(i,k)*(KroneckerDelta_(I,k)+KroneckerDelta_(J,i));
-  //               double E =   -KroneckerDelta_(I,i)*KroneckerDelta_(J,k)*(1.0-KroneckerDelta_(i,k));
-  //               double F =    KroneckerDelta_(I,k)*KroneckerDelta_(J,i)*(1.0-KroneckerDelta_(i,k));
-  //               double G =    (1.0-KroneckerDelta_(i,k))*(KroneckerDelta_(I,k)*KroneckerDelta_(J,i) - KroneckerDelta_(I,i)*KroneckerDelta_(J,k));
-  //               double H =   -KroneckerDelta_(i,k)*(KroneckerDelta_(I,k)+KroneckerDelta_(J,i));
-  //               double II=    KroneckerDelta_(i,j)*(1.0-KroneckerDelta_(I,j))*(1.0-KroneckerDelta_(J,i));
-  //               double JJ=    KroneckerDelta_(i,j)*(KroneckerDelta_(I,j)+KroneckerDelta_(J,i));
-  //               double K =   -KroneckerDelta_(I,i)*KroneckerDelta_(J,j)*(1.0-KroneckerDelta_(i,j));
-  //               double L =    KroneckerDelta_(I,j)*KroneckerDelta_(J,i)*(1.0-KroneckerDelta_(i,j));
+  // Initialize
+  double a0 = 0.0, a1 = 0.0, a2 = 0.0, 
+                   b1 = 0.0, b2 = 0.0;
+  // P-contribution
+  for (int i = 0; i < n_; ++i) {
+       for (int j = 0; j < n_; ++j) {
+            for (int k = 0; k < n_; ++k) {
+                 double p = P_[IDX3(i,j,k)];
+                 double A =   (KroneckerDelta_(I,j)*KroneckerDelta_(J,i) - KroneckerDelta_(I,i)*KroneckerDelta_(J,j)) * (1.0-KroneckerDelta_(i,j));
+                 double B =   -KroneckerDelta_(i,j)*(KroneckerDelta_(I,j)+KroneckerDelta_(J,i));
+                 double C =    KroneckerDelta_(i,k)*(1.0-KroneckerDelta_(I,k))*(1.0-KroneckerDelta_(J,i));
+                 double D =    KroneckerDelta_(i,k)*(KroneckerDelta_(I,k)+KroneckerDelta_(J,i));
+                 double E =   -KroneckerDelta_(I,i)*KroneckerDelta_(J,k)*(1.0-KroneckerDelta_(i,k));
+                 double F =    KroneckerDelta_(I,k)*KroneckerDelta_(J,i)*(1.0-KroneckerDelta_(i,k));
+                 double G =    (1.0-KroneckerDelta_(i,k))*(KroneckerDelta_(I,k)*KroneckerDelta_(J,i) - KroneckerDelta_(I,i)*KroneckerDelta_(J,k));
+                 double H =   -KroneckerDelta_(i,k)*(KroneckerDelta_(I,k)+KroneckerDelta_(J,i));
+                 double II=    KroneckerDelta_(i,j)*(1.0-KroneckerDelta_(I,j))*(1.0-KroneckerDelta_(J,i));
+                 double JJ=    KroneckerDelta_(i,j)*(KroneckerDelta_(I,j)+KroneckerDelta_(J,i));
+                 double K =   -KroneckerDelta_(I,i)*KroneckerDelta_(J,j)*(1.0-KroneckerDelta_(i,j));
+                 double L =    KroneckerDelta_(I,j)*KroneckerDelta_(J,i)*(1.0-KroneckerDelta_(i,j));
 
-  //               a0 += p * (A*D+G*JJ+B*(E+F)+H*(K+L)) / 2.0;
-  //               a1 += p * (A*C+G*II);
-  //               a2 += p * (A*D+G*JJ-B*(E+F)-H*(K+L)) / 2.0;
-  //               b1 += p * (B*C+H*II);
-  //               b2 += p * (H*JJ+B*D+G*(K+L)+A*(E+F)) / 2.0;
-  //          }
-  //     }
-  //}
+                 a0 += p * (A*D+G*JJ+B*(E+F)+H*(K+L)) / 2.0;
+                 a1 += p * (A*C+G*II);
+                 a2 += p * (A*D+G*JJ-B*(E+F)-H*(K+L)) / 2.0;
+                 b1 += p * (B*C+H*II);
+                 b2 += p * (H*JJ+B*D+G*(K+L)+A*(E+F)) / 2.0;
+            }
+       }
+  }
 
-  // Save
+  //Save
+  Fourier5 fourier = {a0, a1, a2, b1, b2};
   //double a22 = P_[IDX3(J,I,J)] + P_[IDX3(J,J,I)] - P_[IDX3(I,J,I)] - P_[IDX3(I,I,J)];
   //double b22 = P_[IDX3(I,J,J)] + P_[IDX3(J,J,I)] - P_[IDX3(I,I,I)] - P_[IDX3(J,J,J)];
-  //double a11 = 0.0;
-  //cout << "a1 = " << a1 << " " << a11 << endl;
+  //cout << "a0 = " << a0 << " " << 0.0 << endl;
+  //cout << "a1 = " << a1 << " " << 0.0 << endl;
   //cout << "a2 = " << a2 << " " << a22 << endl;
   //cout << "b1 = " << b1 << " " << 0.0 << endl;
   //cout << "b2 = " << b2 << " " << b22 << endl;
-
-  double a2 = P_[IDX3(J,I,J)] + P_[IDX3(J,J,I)] - P_[IDX3(I,J,I)] - P_[IDX3(I,I,J)];
-  double b2 = P_[IDX3(I,J,J)] + P_[IDX3(J,J,I)] - P_[IDX3(I,I,I)] - P_[IDX3(J,J,J)];
-
-  Fourier5 fourier = {0.0, 0.0, a2, 0.0, b2};
-
   // Return
   return fourier;
 }

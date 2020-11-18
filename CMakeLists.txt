@@ -38,7 +38,7 @@ project(oepdev
 	       LANGUAGES CXX)
 set (OEPDEV_AUTHORS         "Bartosz Błasiak")
 set (OEPDEV_DESCRIPTION     "Elimination of Electron Repulsion Integrals from Fragment-Based Methods of Quantum Chemistry")
-set (OEPDEV_URL             "")
+set (OEPDEV_URL             "www.polonez.pwr.edu.pl")
 set (OEPDEV_LICENSE         "LGPL-2.1")
 find_package(psi4 1.2 REQUIRED)
 

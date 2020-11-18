@@ -209,34 +209,6 @@ double average_moment(std::shared_ptr<psi::Vector> moment);
 extern "C" PSI_API
 std::vector<std::shared_ptr<psi::Matrix>> calculate_JK(std::shared_ptr<psi::Wavefunction> wfn, std::shared_ptr<psi::Matrix> C);
 
-/** \brief Compute the IDF exchange-correlation energy.
- *
- *  TODO
- *  Provide matrices in AO basis!
- */
-extern "C" PSI_API
-double calculate_idf_alpha_xc_energy(
-  std::shared_ptr<psi::Wavefunction> wfn, 
-  std::vector<double> w,
-  psi::SharedMatrix D,
-  std::vector<psi::SharedMatrix> Al,
-  std::vector<psi::SharedMatrix> Bl);
-
-/** \brief Compute the IDF exchange-correlation energy.
- *
- *  TODO
- *  Provide matrices in AO basis!
- */
-extern "C" PSI_API
-double calculate_idf_xc_energy(
-  std::shared_ptr<psi::Wavefunction> wfn, 
-  std::shared_ptr<psi::Matrix> D,
-  std::vector<std::shared_ptr<psi::Matrix>> f,
-  std::vector<std::shared_ptr<psi::Matrix>> g,
-  std::shared_ptr<psi::Vector> w, // weights from Gauss-Legendre quadrature
-  std::shared_ptr<psi::Vector> o, // omega values from Gauss-Legendre quadrature
-  double N, double aN, double xiN, double AN, double wnorm);
-
 
 extern "C" PSI_API
 std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_ints(std::shared_ptr<psi::Wavefunction> wfn, 
@@ -259,98 +231,6 @@ std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_r(std::shared_ptr<psi::Wa
 extern "C" PSI_API
 std::vector<std::shared_ptr<psi::Matrix>> calculate_JK_rb(std::shared_ptr<psi::Wavefunction> wfn, 
 		std::shared_ptr<psi::IntegralTransform> tr, std::shared_ptr<psi::Matrix> Dij);
-
-
-/** \brief Compute the derivative of exchange-correlation energy wrt the density matrix in MO-A basis. 
- *
- *  Reads the existing MO ERI's.
- *  @param wfn    - Wavefunction object
- *  @param tr     - IntegralTransform object
- *  @param C      - Transformation matrix MO-B::MO-A (columns are MO-A basis)
- *  @param A      - Vector of matrices A^(n)_{bd}
- *  @return       - derivative matrix in MO-A basis
- *
- */
-extern "C" PSI_API
-std::shared_ptr<psi::Matrix> calculate_der_D(std::shared_ptr<psi::Wavefunction> wfn, 
-		std::shared_ptr<psi::IntegralTransform> tr, 
-		std::shared_ptr<psi::Matrix> C,
-		std::vector<std::shared_ptr<psi::Matrix>> A);
-
-/** \brief Compute the exchange-correlation energy from ERI in MO-SCF basis. 
- *
- *  Reads the existing MO ERI's.
- *  @param wfn    - Wavefunction object
- *  @param tr     - IntegralTransform object
- *  @param f      - f_ij matrix in MO-NEW basis
- *  @param C      - Transformation matrix MO-SCF::MO-NEW (columns are MO-A basis)
- *  @return       - Exchange-correlation energy
- *
- */
-extern "C" PSI_API
-double calculate_e_xc(std::shared_ptr<psi::Wavefunction> wfn, 
-		std::shared_ptr<psi::IntegralTransform> tr, 
-		std::shared_ptr<psi::Matrix> f,
-		std::shared_ptr<psi::Matrix> C);
-
-extern "C" PSI_API
-double calculate_e_apsg(std::shared_ptr<psi::Wavefunction> wfn, 
-		std::shared_ptr<psi::IntegralTransform> tr, 
-		std::shared_ptr<psi::Matrix> fJ,
-		std::shared_ptr<psi::Matrix> fK,
-		std::shared_ptr<psi::Matrix> C);
-
-extern "C" PSI_API
-psi::SharedMatrix
-calculate_de_apsg(std::shared_ptr<psi::Wavefunction> wfn, 
-		std::shared_ptr<psi::IntegralTransform> tr, 
-		std::shared_ptr<psi::Vector> n,
-		std::shared_ptr<psi::Matrix> AJ,
-		std::shared_ptr<psi::Matrix> AKL,
-		std::shared_ptr<psi::Matrix> aJ,
-		std::shared_ptr<psi::Matrix> aKL,
-		std::shared_ptr<psi::Matrix> C);
-extern "C" PSI_API
-psi::SharedMatrix
-calculate_de_apsg_new(std::shared_ptr<psi::Wavefunction> wfn, 
-		std::shared_ptr<psi::Vector> p,
-		std::shared_ptr<psi::Matrix> C,
-		std::shared_ptr<psi::Matrix> AJ,
-		std::shared_ptr<psi::Matrix> AKL,
-		std::shared_ptr<psi::Matrix> aJ,
-		std::shared_ptr<psi::Matrix> aKL);
-
-extern "C" PSI_API
-psi::SharedMatrix calculate_unitary_uo_2(psi::SharedVector Q, int n);
-extern "C" PSI_API
-psi::SharedMatrix calculate_unitary_uo_2_1(psi::SharedMatrix P, psi::SharedVector p);
-
-
-/** \brief Compute the contracted derivative of power of a square and symmetric matrix.
- *
- *  The contracted matrix derivative is defined here as
- *  \f[
- *    {\bf D} = \frac{d {\bf A}^\gamma}{\bf A} : {\mathbb{I}}
- *  \f]
- *  where \f$ {\mathbb{I}} \f$ is the identity matrix.
- *  The derivative, which is the fourth-rank tensor, is computed by 
- *  the forward 2-centre finite difference formula,
- *  \f[
- *    f' = \left( f(h) - f(0) \right) / h
- *  \f]
- *  \notes 
- *    * if \f$ \gamma \f$ is non-integer, input matrix has to be positive-definite.
- *
- *  @param A      - Matrix
- *  @param g      - Power
- *  @param step   - Differentiation step \f$ h \f$
- *  @return       - Contracted derivative (matrix)
- *
- */
-extern "C" PSI_API
-std::shared_ptr<psi::Matrix>
-matrix_power_derivative(std::shared_ptr<psi::Matrix> A,
-              		double g, double step);
 
 
 /** \brief Compute the Effective DFI Potential Matrix Due To Electrons. 

@@ -25,16 +25,6 @@ void export_util(py::module &m) {
     m.def("calculate_JK_r", &oepdev::calculate_JK_r, "Calculate J and K matrices in MO basis", py::return_value_policy::take_ownership);
     m.def("calculate_JK_rb", &oepdev::calculate_JK_rb, "Calculate J and K matrices in MO basis with integral sign set to -1", py::return_value_policy::take_ownership);
     m.def("calculate_JK_ints", &oepdev::calculate_JK_ints, "Calculate J and K integral matrices in MO basis", py::return_value_policy::take_ownership);
-    m.def("calculate_der_D", &oepdev::calculate_der_D, "Calculate derivatives of E_XC wrt D in MO basis", py::return_value_policy::take_ownership);
-    m.def("calculate_unitary_uo_2", &oepdev::calculate_unitary_uo_2, "", py::return_value_policy::take_ownership);
-    m.def("calculate_unitary_uo_2_1", &oepdev::calculate_unitary_uo_2_1, "", py::return_value_policy::take_ownership);
-    m.def("calculate_e_xc", &oepdev::calculate_e_xc, "Calculate exchange-correlation energy");
-    m.def("calculate_e_apsg", &oepdev::calculate_e_apsg, "Calculate APSG energy");
-    m.def("calculate_de_apsg", &oepdev::calculate_de_apsg, "Calculate APSG energy gradient", py::return_value_policy::take_ownership);
-    m.def("calculate_de_apsg_new", &oepdev::calculate_de_apsg_new, "Calculate APSG energy gradient", py::return_value_policy::take_ownership);
-    m.def("calculate_idf_xc_energy", &oepdev::calculate_idf_xc_energy, "Calculate exchange-correlation energy of the IDF functional");
-    m.def("calculate_idf_alpha_xc_energy", &oepdev::calculate_idf_alpha_xc_energy, "Calculate exchange-correlation energy of the IDF functional");
-    m.def("matrix_power_derivative", &oepdev::matrix_power_derivative, "Calculate derivative of matrix power", py::return_value_policy::take_ownership);
     m.def("calculate_DFI_Vel_JK", &oepdev::calculate_DFI_Vel_JK, "Compute DFI electronic interaction matrix with J and K contributions", py::return_value_policy::take_ownership);
     m.def("calculate_DFI_Vel_J", &oepdev::calculate_DFI_Vel_J, "Compute DFI electronic interaction matrix with J contribution only", py::return_value_policy::take_ownership);
     m.def("calculate_OEP_basisopt_V", &oepdev::calculate_OEP_basisopt_V, "Calculate V matrix for OEP auxiliary basis set optimization", py::return_value_policy::take_ownership);
