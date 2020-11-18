@@ -43,19 +43,19 @@ molecular aggregates such as interacting chromophores
 and molecules solvated by water and other solvents. 
 Indeed, one of the important difficulties encountered in Quantum Chemistry
 of large systems is the need of evaluation of special kind of numbers
-known as *electron repulsion integrals*, or in short, ERI's. In a typical
-calculation, the amount of ERI's can be as high as tens or even hundreds of millions (!)
+known as *electron repulsion integrals*, or in short, ERIs. In a typical
+calculation, the amount of ERIs can be as high as tens or even hundreds of millions (!)
 that unfortunately prevents from application of conventional methods when the number of particles
-in question is too large. In the Project, the complicated expressions involving ERI's 
+in question is too large. In the Project, the complicated expressions involving ERIs 
 shall be greatly simplified to reduce the computational costs as much as possible
 while introducing no or minor approximations to the original theories.
 
 \section resprojmeth Research Project Methodology
 
 In this Project the new theoretical protocol based on the 
-effective one-electron potentials (EOP's) is developed. 
+effective one-electron potentials (EOPs) is developed. 
 The main principle is to rewrite arbitrary sum of functions \f$ f \f$ 
-of electron repulsion integrals (ERI's) by defining \ref poepdesign "EOP's"
+of electron repulsion integrals (ERIs) by defining \ref poepdesign "EOPs"
 according to the following general prescription:
 \f{align*}{
 \sum_f f\left[ 
@@ -84,10 +84,10 @@ in fragment-based *ab initio* molecular dynamics protocols of new generation.
 
 \section impact Expected Impact on the Development of Science, Civilization and Society
 
-The proposed EOP's are expected to significantly develop 
+The proposed EOPs are expected to significantly develop 
 the fragment-based methods that are widely used 
 in physical chemistry and modelling of biologically 
-important systems. Owing to universality of EOP's, 
+important systems. Owing to universality of EOPs, 
 they could find applications in many branches of chemical science: 
 *non-empirical* molecular dynamics, short-range
 resonance energy transfer in photosynthesis,
@@ -102,14 +102,14 @@ multidimensional spectroscopy and so on. In particular:
  - the EOP-based model of EET couplings could significantly improve modelling of energy transfer
    in the light harvesting complexes. At present, short-range phenomena (Dexter mechanisms of EET)
    are very difficult to efficiently and quantitatively evaluate when performing statistical averaging
-   and applying to large molecular aggregates. Such Dexter effects could be computed by using EOP's
+   and applying to large molecular aggregates. Such Dexter effects could be computed by using EOPs
    in much more efficient manner without loosing high accuracy of state-of-the-art methods such as
    TDFI-TI method.\cite OEP-2.2020
  - the density matrix polarization (DMS) tensors could be used in new generation fragment-based *ab initio*
    molecular dynamics protocols that rigorously take into consideration electron correlation effects.\cite Blasiak.JCP.2018
 
 Therefore, we believe that the application of
-EOP's could have an indirect impact on 
+EOPs could have an indirect impact on 
 the design of novel drugs and materials for industry.
 
 \section oepdevcode The EOPDev Code
@@ -118,7 +118,7 @@ To pursue the above challenges in the field of computational
 quantum chemistry of extended molecular aggregates,
 the EOPDev platform is developed.
 Accurate and efficient *ab initio* \ref pimplementedmodels "models"
-based on EOP's are implemented in the EOPDev code, along with
+based on EOPs are implemented in the EOPDev code, along with
 the state-of-the-art benchmark and competiting methods. 
 Written in C++ with an extensive Python interface, 
 EOPDev is a plugin to Psi4 quantum chemistry package. Therefore,
@@ -146,6 +146,33 @@ can be found in \ref advanced "usage section".
 
 EOP (One-Electron Potential) is associated with certain quantum one-electron operator 
 \f$ \hat{v}^A\f$ that defines the ability of molecule \f$ A \f$ to interact in a particular way with other molecules. 
+It can be shown that for a two-fragment system composed of fragments *A* and *B*
+\f[
+\sum_t \mathscr{F}_t 
+\left[ 
+ \left(BX \vert AA\right)
+\right]
++
+\sum_s
+ (B \vert \hat{o}_s^A \vert X )
+=
+\sum_{ij\in X} 
+(B \vert\hat{v}^A\vert i )
+\left[{\bf S}^{-1}\right]_{ij} 
+\left( j \vert X \right)
+\f]
+where \f$ S_{ij} = \left(i \vert j \right) \f$, 
+\f$ \mathscr{F}_t \f$ is a certain linear functional
+of ERIs of type \f$ \left(BX \vert AA\right) \f$,
+\f$ \hat{o}_s^A \f$ is a one-electron operator associated with molecule \f$ A \f$,
+and *X* = *A* or *B*. \cite OEP-1.2020
+Such elimination of ERIs is possible when either Coulomb-like or overlap-like interfragment
+ERIs are of importance. It is also possible to approximate the exchange-like
+ERIs and incorporate them into EOPs. \cite OEP-2.2020
+The above design offers subtantial gain of efficiency, since
+complicated contractions over ERIs are effectively removed and replaced
+by summations over one-electron integrals (OEIs).
+
 Technically, EOP can be understood as a __container object__ (associated with the molecule in question)
 that stores the information about the above mentioned quantum operator. 
 Here, it is assumed that similar EOP
@@ -153,11 +180,8 @@ object is also defined for all other molecules in a molecular aggregate.
 
 In case of interaction between molecules \f$ A \f$ and \f$ B \f$,
 EOP object of molecule \f$ A \f$ interacts directly with wavefunction object
-of the molecule \f$ B \f$. Defining a 
- * Solver class that handles such interaction 
- * Wavefunction class and
- * EOP class
-
+of the molecule \f$ B \f$. By defining a (i) Solver class that handles such interaction,
+(ii) Wavefunction class, and (iii) EOP class,
 the universal design of EOP-based approaches can be established and developed.
 
 > **Important:**
@@ -166,11 +190,11 @@ the universal design of EOP-based approaches can be established and developed.
 >  However, in the current version of the project, only HF wavefunctions are considered.
 >
 
-\section soepclasses EOP Classes
+\section soepclasses Classes of EOPs
 
-There are many types of EOP’s, but the underlying principle is the same and independent of the
-type of intermolecular interaction. Therefore, the EOP’s should be implemented by using a multi-level class design.
-In turn, this design depends on the way EOP’s enter the mathematical expressions, i.e., on the types
+There are many types of EOPs, but the underlying principle is the same and independent of the
+type of intermolecular interaction. Therefore, the EOPs should be implemented by using a multi-level class design.
+In turn, this design depends on the way EOPs enter the mathematical expressions, i.e., on the types
 of matrix elements of the one-electron effective operator \f$ \hat{v}^A \f$.
 
 \subsection ssoepunification Structure of possible EOP-based expressions and their unification
@@ -197,6 +221,9 @@ that differ in their dimensionality. Examples are given below:
 
 In the formulae above, the EOP-part (stored by EOP instances) and
 the Solver-part (to be computed by the Solver) are separated.
+For illustrative purpose, distributed charge approximation is assumed for the DMTP form
+in this table. Note however, that higher multipoles can be also used
+for better accuracy.
 It is apparent that all EOP-parts have the form of 2- or 3-index arrays
 with different class of axes (molecular orbitals, primary/auxiliary basis, atomic space). 
 Therefore, they can be uniquely defined by a unified *tensor object* 
@@ -213,18 +240,15 @@ possibly putting them into a `std::vector` container in case there is more than 
 \note Currently, the second possibility is used, i.e., matrices. For more complex data structures,
       other types of custom objects are defined.
 
-*/
-
-//----------------------------------------------------------------------------------
-
-/*!\page pdensityfitting Density-fitting Specialized for EOP’s
-   \tableofcontents
+\section pdensityfitting Density-fitting Specialized for EOPs
 
 To get the ab-initio representation of a EOP, one can use a procedure similar to
 the typical density fitting or resolution of identity, both of which are nowadays widely used 
-to compute electron-repulsion integrals (ERI’s) more efficiently. 
+to compute electron-repulsion integrals (ERIs) more efficiently. More detailed
+derivation and discussion of the results from this section can by found in
+the work of \cite OEP-1.2020.
 
-\section sdensfitcompl Fitting in Complete Space
+\subsection sdensfitcompl Fitting in Complete Space
 
 An arbitrary one-electron potential of molecule *A* acting on any state vector 
 associated with molecule *A* can be expanded in an *auxiliary space* centered 
@@ -290,13 +314,13 @@ and the Solver-part (subject to be computed by solver
 on the fly) are separated. This then forms a basis for fragment-based 
 approach to solve Quantum Chemistry problems related to the extended molecular aggregates.
 
-\section sdensfitincompl Fitting in Incomplete Space
+\subsection sdensfitincompl Fitting in Incomplete Space
 
 Density fitting scheme from previous section has practical disadvantage of a nearly-complete basis set
 being usually very large (spanned by large amount of basis set vectors). Any non-complete basis set
 won't work in the previous example. Since most of basis sets used in quantum chemistry do not form a complete
 set, it is beneficial to design a modified scheme in which it is possible to obtain the **effective** 
-matrix elements of the EOP operator in a **incomplete** auxiliary space. This can be achieved by minimizing 
+matrix elements of the EOP operator in an **incomplete** auxiliary space. This can be achieved by minimizing 
 the following objective function
 \f[
  Z[\{G^{(i)}_\xi\}] = \iint d{\bf r}_1 d{\bf r}_2
@@ -320,12 +344,36 @@ where
 \f}
 The symbol \f$ \vert\vert \f$ is to denote the operator \f$ r_{12}^{-1}\f$ and double integration over \f$ {\bf r}_1 \f$
 and \f$ {\bf r}_2 \f$. Thus, in order to use this generalized density fitting scheme
-one must to compute two-centre electron repulsion integrals (implemented in ERI_1_1). 
+one must to compute two-centre electron repulsion integrals (implemented in oepdev::ERI_1_1). 
 
-\section sdensfitincomplalt Fitting in Incomplete Space - Alternative Approach
+\subsection sdensfitincomplalt Fitting in Incomplete Space - Alternative Approach
 
-TODO
-
+The above method of density fitting of EOPs in incomplete space
+might be still relatively costly since it requires two-centre ERIs.
+However, there exists alternative approach which requires only overlap integrals.
+The EOP matrix is then given by
+\f[
+ {\bf G}_{\rm m}^\dagger = {\bf T}_{\rm mX} {\bf S}^{-1}_{\rm XX'} {\bf T}_{\rm mX}^\dagger {\bf S}_{\rm ma} {\bf G}_{\rm a}^\dagger
+\f]
+where \f$ {\bf G}_{\rm a} \f$ and \f$ {\bf G}_{\rm m} \f$ are the EOP matrices
+in complete and incomplete basis, respectively. The auxiliary matrices
+read
+\f{align*}{
+ {\bf T}_{\rm mX} &= {\bf S}^{-1}_{\rm mm} {\bf S}_{\rm ma} {\bf T}_{\rm aX} {\bf S}^{-1}_{\rm XX'} \\
+ {\bf S}^{-1}_{\rm XX'} &= \left( {\bf T}_{\rm aX}^\dagger {\bf S}_{\rm am} {\bf S}^{-1}_{\rm mm} {\bf S}_{\rm ma} {\bf T}_{\rm aX} \right)^{\frac{1}{2}} \\
+ {\bf T}_{\rm aX} &= {\bf S}^{-1}_{\rm aa} \mathscr{Q} {\bf U}_{\rm aX}
+\f}
+The similarity transformation matrix \f$ {\bf T}_{\rm aX} \f$ is obtained
+from the eigenvectors of the co-variance matrix, i.e.,
+\f[
+ {\bf C}_{\rm aa} = {\bf S}^{\frac{1}{2}}_{\rm aa} {\bf G}_{\rm a}^\dagger {\bf G}_{\rm a} {\bf S}^{\frac{1}{2}}_{\rm aa} 
+  = {\bf U}_{\rm aX} {\bf g}_{\rm XX} {\bf U}_{\rm aX}^\dagger
+\f]
+The operator \f$ \mathscr{Q} \f$ selects only eigenvectors \f$ {\bf U}_{\rm aX} \f$
+associated with the non-vanishing eigenvalues stored in the diagonal matrix \f$ {\bf g}_{\rm XX}\f$.
+In practice, the number of such eigenvalues is bounded by the number of rows in EOP matrix, i.e.,
+the number of states on which the EOP operator acts. Thus, substantial reduction of the
+basis set size is achieved which further reduces computational cost.
 */
 
 //--------------------------------------------------------------------------------------------
@@ -548,6 +596,19 @@ helps in producing self-maintaining code and is much easier to use. Use:
  > for example `psi::BasisSet::build` static method. It can be followed when building object factories 
  > in EOPDev too.
 
+\section stestst Implement Tests
+
+When a computer code is updated by new features such as methods or algorithms,
+it becomes important to monitor its performance in order to ensure that it works correctly.
+To achieve this goal, a testing platform should be established, which
+contains a set of tests producing certain outputs and compare them with benchmark outputs.
+In EOPDev, `ctest` functionality is used as a testing platform for the C++ level code.
+Everytime you implement new feature in the code, it is very recommended to
+immediately supplement the testing platform with a new test.
+Remember to design tests carefully so that they address all potentially vulnerable
+aspects of added functionalities and a valid reference output can also be defined.
+See the tests in `oepdev/libtest` as well as `tests/oepdev` directories.
+
 */
 
 // --------------------------------------------------------------------------
@@ -690,8 +751,8 @@ or not.
 \subsubsection OEPotential
 
 It is a container and computer class of EOP. Among others, the most important public method
-is `OEPotential::compute` which computes all the EOP's (by iterating over all possible EOP types
-within a chosen EOP subclass or category). EOP's can be extracted by `OEPotential::oep` method, for instance.
+is `OEPotential::compute` which computes all the EOPs (by iterating over all possible EOP types
+within a chosen EOP subclass or category). EOPs can be extracted by `OEPotential::oep` method, for instance.
 From protected attributes, each OEPotential instance stores blocks of the LCAO-MO matrices associated with the
 occupied (`cOcc_`) and virtual (`cVir_`) MO's. It also contains the pointers to the primary, auxiliary and intermediate
 basis sets (`primary_`, `auxiliary_` and `intermediate_`, accordingly). Usage example:
@@ -706,7 +767,7 @@ and `RepulsionEnergyOEPotential` are fully operative, while the rest is under de
 
 \subsubsection GeneralizedDensityFit
 
-Implements the density fitting schemes for EOP's.
+Implements the density fitting schemes for EOPs.
 
 \subsection ssclassesmgefp GEFP Module
 
@@ -735,34 +796,34 @@ fragment-based methods.
 This is the main solver which as for now assumes molecular dimers (or bi-fragment systems).
 It is based on a union of wavefunctions of unperturbed monomers, `WavefunctionUnion`.
 
-\section sprog Developing EOP's
+\section sprog Developing EOPs
 
 \note This section is for illustrative purpose. The small details of
       the objects such as `OEPType` and others can change over the years due to
       development of the EOPDev code. However, the overal programing scheme
       remains unchanged and valid.
 
-EOP's are implemented in a suitable subclass of the `OEPotential` base.
-Due to the fact that EOP's can be density-based or DMTP-based, the classes 
+EOPs are implemented in a suitable subclass of the `OEPotential` base.
+Due to the fact that EOPs can be density-based or DMTP-based, the classes 
 `GeneralizedDensityFit` as well as `ESPSolver` are usually necessary in the implementations. 
-Handling the one-electron integrals (OEI's) and the two-electron integrals (ERI's) 
+Handling the one-electron integrals (OEIs) and the two-electron integrals (ERIs) 
 in AO basis is implemented in `IntegralFactory`. In particular, 
 potential integrals evaluated at arbitrary centres can be accessed
 by using the `PotentialInt` instances.
-Useful iterators for looping over AO ERI's the `ShellCombinationsIterator`
-and `AOIntegralsIterator` classes. Transformations of OEI's to MO basis
+Useful iterators for looping over AO ERIs the `ShellCombinationsIterator`
+and `AOIntegralsIterator` classes. Transformations of OEIs to MO basis
 can be easily achieved by transforming AO integral matrices by `cOcc_` and `cVir_`
 members of `OEPotential` instances, e.g., by using the `psi::Matrix::doublet` or `psi::Matrix::triplet`
-static methods. Transformations of ERI's to MO basis can be performed by using
+static methods. Transformations of ERIs to MO basis can be performed by using
 the `psi4/libtrans/integraltransform.h` library.
 
-It is recommended that the implementation of all the new EOP's follows the following steps:
+It is recommended that the implementation of all the new EOPs follows the following steps:
 
  1. **Write the class framework.** 
     This includes choosing a proper name of a OEPotential subclass, 
     sketching the constructors and a destructor, and all the necessary methods.
  2. **Implement EOP types.** Each type of EOP is implemented, including the 3D
-    vector field in case DMTP-based EOP's are of use.
+    vector field in case DMTP-based EOPs are of use.
  3. **Update base factory method**. Add appropriate entries in the `OEPotential::build`
     static factory method.
 
@@ -776,10 +837,10 @@ to maintain the convention used so far. The template for the header file definit
 class SampleOEPotential : public OEPotential 
 {
   public:
-    // Purely DMTP-based EOP's
+    // Purely DMTP-based EOPs
     SampleOEPotential(SharedWavefunction wfn, Options& options);
 
-    // GDF-based EOP's
+    // GDF-based EOPs
     SampleOEPotential(SharedWavefunction wfn, SharedBasisSet auxiliary, SharedBasisSet intermediate, Options& options);
 
     // Necessary destructor
@@ -854,11 +915,11 @@ void SampleOEPotential::compute_murrell_etal_s1()
 
 Implementation of the inner body of `compute` method requires populating the members of `oepTypes_` with
 data. This means, that for each EOP type there has to be a specific implementation of EOP parameters.
-GDF-based EOP's need to create the `psi::Matrix` with EOP parameters and put them into `oepTypes_`.
-In the case of DMTP-based EOP's `compute_3D` method has to be additionally implemented before `compute`
+GDF-based EOPs need to create the `psi::Matrix` with EOP parameters and put them into `oepTypes_`.
+In the case of DMTP-based EOPs `compute_3D` method has to be additionally implemented before `compute`
 is fully functional. To implement `compute_3D`, `OEPotential::make_oeps3d` method is of high
 relevance: it creates `OEPotential3D<T>` instances, where `T` is the EOP subclass. These instances
-are `Field3D` objects that define EOP's in 3D Euclidean space. For example,
+are `Field3D` objects that define EOPs in 3D Euclidean space. For example,
 \code{.cpp}
 void SampleOEPotential::compute_otto_ladik_s2() 
 {
@@ -907,6 +968,14 @@ void SampleOEPotential::compute_3D(const std::string& oepType, const double& x, 
 Note that `make_oeps3d` is not overridable and is fully defined in the base. Do not call 
 `OEPotential3D` constructors in the OEPotential subclass (it can be done only from the level of the abstract base
 where all the pointers are dynamically converted to an appropriate data type due to polymorphism)!
+
+\section sexamples Examples
+
+Exemplary demos of using the EOPDev code in C++ level can be found in the
+\ref stestst "testing platform". Additional examples can also be found in `doc/examples`
+directory. However, the latter examples might not fully compile since they are only
+for illustrative purposes as the code constantly develops. They are constantly updated
+as much as possible.
 
 
 */
