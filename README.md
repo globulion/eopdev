@@ -35,7 +35,6 @@ Places to go:
  * [EOPDev Code](https://github.com/globulion/eopdev)
  * [Current Issues](https://github.com/globulion/eopdev/issues)
  * [Project Website](http://www.polonez.pwr.edu.pl)
- * [Installation]()
 
 This wikipages might be updated in the future.
 

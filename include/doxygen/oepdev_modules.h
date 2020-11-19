@@ -1,5 +1,5 @@
 /** 
- *  @defgroup OEPDEV_EOPS The Generalized One-Electron Potentials Library
+ *  @defgroup OEPDEV_OEPS The Generalized One-Electron Potentials Library
  *  @brief
  *  Implements the goal of this project: The Generalized One-Electron Potentials
  *  (EOPs). You will find here EOPs for computation of Pauli repulsion energy,

@@ -18,18 +18,18 @@ energetic and dynamical properties of **extended molecular systems** efficiently
 accurately, 
 \cite Warshel.Levitt.JMolBiol.1976 
 \cite Senn.Thiel.Angew.2009 
-\cite Demerdash.Yap.T-Head-Gordon.AnnuRevPhysChem.2014 
+\cite Demerdash.Yap.T-Head-Gordon.ARPC.2014 
 \cite Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012
 there exist particularly difficult cases in which 
 modelling is still challenging: 
 
   - describing electronic transitions in solution or 
     when coupled with other electronic transition 
-    via resonance energy transfer, \cite Barbati.JACS.2014 Szabla.Sponer.Jiri.Gora.JPCL.2015 Bednarska.Zalesny.Tian.Murugan.Agren.Bartkowiak.Molecules.2017 Jedrzejewska.Grabarz.Bartkowiak.Osmialowski.SpectChimActA.2018
+    via resonance energy transfer, \cite Barbati.JACS.2014 \cite Szabla.Sponer.Jiri.Gora.JPCL.2015 \cite Bednarska.Zalesny.etal.Molecules.2017 \cite Jedrzejewska.Grabarz.etal.SCAA.2018
   - performing molecular dynamics 
     at very high level of theory including dynamic electron correlation, \cite Curchod.Martinez.ChemRev.2018
   - vibrational frequency calculations of particular normal mode in 
-    condensed phases \cite Blasiak.Londergan.Webb.Cho.ACR.2017 Xu.Blasiak.Cho.Layfield.Londergan.JPCL.2018 Lewis.Gruenke.Oliver.Ballottari.Bassi.Fleming.JPCL.2016
+    condensed phases \cite Blasiak.Londergan.Webb.Cho.ACR.2017 \cite Xu.Blasiak.Cho.Layfield.Londergan.JPCL.2018 \cite Lewis.Gruenke.etal.JPCL.2016
  
 and so on. The reason behind (sometimes prohibitively) 
 high costs of fully *ab initio* calculations in the above areas 
@@ -38,12 +38,26 @@ rather then (conceptually more straightforward) electronic densities and potenti
 On the other hand, 
 it has been pointed out before
 that the one-electron density 
-distributions are of particular importance in chemistry. \cite Kohn.Sham.PhysRev.1965 Holas.March.PhysRevA.1991
+distributions are of particular importance in chemistry. 
+\cite Kohn.Sham.PhysRev.1965 
+\cite Holas.March.PhysRevA.1991
 Thus, it can be 
 utilized as a means of developing a general model that 
 re-expresses the physics of intermolecular interactions in terms 
 of effective one-electron functions that are easier to handle 
-in practice. \cite Roothaan.RevModPhys.1951 Hohenberg.Kohn.PhysRev.1964 Kohn.Sham.PhysRev.1965 Otto.Ladik.ChemPhys.1975 Holas.March.PhysRevA.1991 Weber.Thiel.TCA.2000 Neese.JCP.2005 Cisneros.Andres.Piquemal.Darden.JCP.2005 Piquemal.Cisneros.Reinhardt.Gresh.Darden.JCP.2006 Li.Gordon.Jensen.JCP.2006 Blasiak.Lee.Cho.JCP.2013 Blasiak.Maj.Cho.Gora.JCTC.2015
+in practice. 
+\cite Roothaan.RevModPhys.1951 
+\cite Hohenberg.Kohn.PhysRev.1964 
+\cite Kohn.Sham.PhysRev.1965 
+\cite Otto.Ladik.ChemPhys.1975 
+\cite Holas.March.PhysRevA.1991 
+\cite Weber.Thiel.TCA.2000 
+\cite Neese.JCP.2005 
+\cite Cisneros.Andres.Piquemal.Darden.JCP.2005 
+\cite Piquemal.Cisneros.etal.JCP.2006 
+\cite Li.Gordon.Jensen.JCP.2006 
+\cite Blasiak.Lee.Cho.JCP.2013 
+\cite Blasiak.Maj.Cho.Gora.JCTC.2015
 
 This Project focuses on finding a unified way to simplify various
 fragment-based approaches
@@ -79,17 +93,9 @@ according to the following general prescription:
 where \f$ A \f$ and \f$ B \f$ denote different molecules 
 and \f$ \phi_i \f$ is the \f$ i \f$-th molecular orbital
 or basis function. Here,
-\f$ v_{kl}^B \f$ denotes the \ref poeptypes *ab initio* "EOP matrix element". The technique described above 
-will be applied to simplify expressions for 
- - short-range excitation 
-   energy transfer couplings between chlorophyll subunits of reaction centres 
-   in photosynthesis
- - Pauli interaction repulsion energy 
- - charge-transfer interaction energy
- - electric field-induced charge density polarization of molecules. 
-
-The above developments might be used 
-in fragment-based *ab initio* molecular dynamics protocols of new generation. 
+\f$ v_{kl}^B \f$ denotes the \ref poeptypes *ab initio* "EOP matrix element". 
+The above technique might be used 
+in fragment-based *ab initio* methods including molecular dynamics protocols of new generation. 
 
 \section impact Expected Impact on the Development of Science, Civilization and Society
 
@@ -394,13 +400,17 @@ basis set size is achieved which further reduces computational cost.
 List of most important models implemented in the EOPDev project is given below.
 Among the interaction energy models are the
 second generation of the effective potential method 
-(EFP2) \cite EFP2.2013 \cite Li.Gordon.Jensen.JCP.2006 \cite Xu.Gordon.JCP.2013,
-perturbation theories of Murrel et al.\cite Murrell.1965, Otto and Ladik \cite Otto.Ladik.ChemPhys.1975
+(EFP2) 
+\cite EFP2.2013 
+\cite Li.Gordon.Jensen.JCP.2006 
+\cite Xu.Gordon.JCP.2013,
+perturbation theories of Murrel et al.
+\cite Murrell.1965, Otto and Ladik \cite Otto.Ladik.ChemPhys.1975
 and Hayes and Stone \cite Hayes.Stone.MolPhys.1984, 
 density decomposition scheme (DDS) \cite Mandado.Hermida-Ramon.JCTC.2011, 
 reduced variational space (RVS) method \cite Stevens.Fink.CPL.1987.
 Among the excitation energy transfer (EET) coupling methods are
-the TrCAMM method\cite Blasiak.Maj.Cho.Gora.JCTC.2015
+the TrCAMM method \cite Blasiak.Maj.Cho.Gora.JCTC.2015
 and the transfer integral (TI) method \cite TDFI-TI.2012.
 
 
@@ -440,7 +450,8 @@ benchmark models `OEPDevSolver::compute_benchmark`.
 /*! \page pprogramming Contributing to EOPDev
     \tableofcontents
 
-EOPDev is a plugin to Psi4. Therefore it should follow the programming etiquette of Psi4. Also,
+EOPDev is a plugin to [Psi4](https://github.com/psi4/psi4/releases/tag/v1.2.1). 
+Therefore it should follow the programming etiquette of Psi4. Also,
 EOPDev has additional programming tips to make the code more versatile and easy to develop further.
 Here, I emphasise on most important aspects regarding the proposed **programming rules**.
 
@@ -634,8 +645,8 @@ See the tests in `oepdev/libtest` as well as `tests/oepdev` directories.
 \subsection spadvpreppsi Preparing Psi4
 
 EOPDev is a Psi4 plugin. It requires 
-  - Psi4, version 1.2.1 (git commit `406f4de`). Has to be modified (see below).
-  - Eigen3, any version.
+  -[Psi4, version 1.2.1] (https://github.com/psi4/psi4/releases/tag/v1.2.1) (git commit `406f4de`). Has to be modified (see below).
+  -[Eigen3](https://eigen.tuxfamily.org/dox), any version.
 
 \note
  Before compiling, make sure EFP is enabled in `CMakeLists.txt` (now it is not
@@ -693,6 +704,43 @@ After compilation is successful, run `ctest` to check if the code works fine.
  is not exposed and requires `PSI_API` (change M1 and perhaps M2 too). Such change requires
  Psi4 rebuild and recompilation of EOPDev code. In any case, please contact me and report
  new undefined symbol (blasiak.bartosz@gmail.com).
+
+\subsection sinstallsteps Step-By-Step Installation
+
+To summarize, follow these steps:
+
+  1. **Modify Psi4.** Create a copy of your Psi4 source, and in the directory 
+     containing the main directory of Psi4 run
+     \code{.sh}
+     ./${EOPDEV_PATH}/misc/patch/run_patch-psi4-1.2.1_git.406f4de
+     \endcode
+     where `EOPDEV_PATH` variable denotes here your local source directory of EOPDev.
+     Subsequently, compile the modified Psi4.
+  2. **Install Eigen3**. Set the path to Eigen3:
+     \code{.sh}
+     export EIGEN3_INCLUDE_DIR=/your_path_to_eigen3
+     \endcode
+     and add it to your `.bash.rc` file. 
+  3. **Install EOPDev**. Go to your EOPDev source directory and run
+     \code{.sh}
+     ./compile
+     ./create_doc
+     evince ${EOPDEV_PATH}/doc/doxygen/latex/refman.pdf
+     \endcode
+     The first script installs the EOPDev plugin. The second generates the HTML and \LaTeX documentations
+     on your computer (e.g., see `refman.pdf` for documentation
+     in PDF format). Generation of the documentation is optional but highly recommended.
+  4. **Install GEFP Python Package**. Run the following commands:
+     \code{.sh}
+     cd ${EOPDEV_PATH}/gefp
+     python setup.py install
+     \endcode
+     Administrative priviledges might be necessary. Although installing GEFP is not necessary,
+     it contains quite a few useful Python implementations of various quantum chemistry
+     methods or handling with molecule and wavefunction objects. In particular, GEFP
+     contains efficient and fully automatized implementation 
+     of the \ref sdensfitincomplalt "extended density fitting of EOPs".
+     
 
 
 \section padvcodestr EOPDev Code Structure
