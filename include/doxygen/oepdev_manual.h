@@ -455,7 +455,7 @@ Therefore it should follow the programming etiquette of Psi4. Also,
 EOPDev has additional programming tips to make the code more versatile and easy to develop further.
 Here, I emphasise on most important aspects regarding the proposed **programming rules**.
 
-\section scontrmain Main routine and libraries
+\section scontrmain Main Routine and Libraries
 
 EOPDev has only *one* source file in the plugin base directory, i.e., `main.cc`. This is the main
 driver routine that handles the functionality of the whole EOP testing platform: specifies options for 
@@ -480,7 +480,7 @@ Things to remember:
      If you want to add graphics, put it in the `images` directory.
 
 
-\section sheader Header files in libraries
+\section sheader Header Files in Libraries
 
 Header files are handy in obtaining a quick glimpse of the functionality within certain library. Each library
 directory should contain at least one header file in EOPDev. However, header files can be problematic if not managed properly. 
@@ -511,7 +511,7 @@ Things to remember:
       For instance, all classes and functions in `oepdev` module are implemented within the namespace of the same label.
       Considering addition of other local namespaces within a module can also be useful in certain cases.
 
-\section senviron Environmental variables
+\section senviron Environmental Variables
 
 Defining the set of intrinsic environmental variables can help in code management 
 and conditional compilation. The EOPDev environmental variables are defined in
@@ -523,7 +523,7 @@ OEPDEV_XXXX
 \endcode
 where `XXXX` is the descriptive name of variable.
 
-\section sdocumentation Documenting the code
+\section sdocumentation Documenting the Code
 
 Code has to be documented (at best at a time it is being created). The place for documentation 
 is always in header files. Additional documentation can be also placed in source files. Leaving a chunk of code
@@ -544,7 +544,7 @@ Things to remember:
       a one-liner documentation (starting from `///`).
    4. **Do not be afraid of long names in the code**. Self-documenting code is a bless!
 
-\section snaming Naming conventions
+\section snaming Naming Conventions
 
 Naming is important because it helps to create more readable and clear self-documented code. 
 
@@ -570,7 +570,7 @@ Some loose suggestions:
       * good name: `DIISManager`, bad name: `DIIS`.
       * good name: `EETCouplingSolver`, bad name: `EETSolver`, very bad: `EET`.
      
-\section stime Track timing when evaluating the code
+\section stime Track Timing When Evaluating the Code
 
 It is useful to track time elapsed for performing a particular task
 by a computer. For this, use for example `psi::timer_on` and `psi::timer_off` functions defined in `psi4/libqt/qt.h`.
@@ -585,7 +585,7 @@ psi::timer_off("EOP    E(Paul) Murrell-etal S1  ");
 To maintain the printout in a neat form, the timing associated with the EOPDev code 
 can be generated via `misc/python/timing.py` utility script.
 
-\section memclean Clean memory between independent jobs
+\section memclean Clean Memory Between Independent Jobs
 
 If you use scratch disk space to store integrals, clean the scratch in between
 independent calculations. From C++ level invoke
