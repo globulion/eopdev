@@ -39,18 +39,11 @@ using SharedQUAMBOData = std::shared_ptr<QUAMBOData>;
 
 /** \brief The Quasiatomic Minimal Basis Set Molecular Orbitals (QUAMBO)
  *
- *  TODO
- *  
- *  # Calculation Algorithm.
- *  TODO
- *
- *
  *  References: 
  * 
- *   [1] W. C. Lu, C. Z. Wang, M.W. Schmidt, L. Bytautas, K. M. Ho, K. Reudenberg, 
- *       J. Chem. Phys. 120, 2629 (2004) [original QUAMBO paper]
- *   [2] P. Xu, M. S. Gordon, J. Chem. Phys. 139, 194104 (2013) [application 
- *       of QUAMBO in EFP2 CT term]
+ *   [[1]](https://aip.scitation.org/doi/10.1063/1.1638731) W. C. Lu, C. Z. Wang, M.W. Schmidt, L. Bytautas, K. M. Ho, K. Reudenberg, *J. Chem. Phys.* **120**, 2629 (2004). [original QUAMBO paper]
+ *
+ *   [[2]](https://aip.scitation.org/doi/10.1063/1.4829509) P. Xu, M. S. Gordon, *J. Chem. Phys.* **139**, 194104 (2013). [application of QUAMBO in EFP2 CT term]
  * 
  */
 class QUAMBO

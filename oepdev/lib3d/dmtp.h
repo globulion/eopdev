@@ -330,7 +330,8 @@ class DMTPole : public std::enable_shared_from_this<DMTPole>
      *            {\boldsymbol{\Theta}}_{\rm old} 
      *            \right)
      *            \otimes {\boldsymbol \Delta}^{(2)}
-     *              \right]
+     *              \right] \\
+     *       & \qquad\qquad\qquad\qquad\quad
      *        - \sum_{\mathscr{P}_3} \mathscr{P}_3 \left[ 
      *            \left(
      *            q_{\rm old} {\bf r}_{\rm old}^3 +

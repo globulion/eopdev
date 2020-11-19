@@ -185,7 +185,7 @@ using SharedOEPotential        = std::shared_ptr<OEPotential>;
  *  <tr><td> `EET V CT-M CM-1`  <td> Overlap-corrected H_34 matrix element in Mulliken approximation (cm-1)
  * <tr><td colspan=2> <center><strong><i>OEP-Based TI/CIS Model</i></strong></center>
  *  <tr><td> `EET V OEP:COUL CM-1` <td> Overlap-corrected Coulomb (Forster) coupling (TrCAMM; cm-1)
- *  <tr><td> `EET V OEP:EXCH CM-1` <td> Overlap-corrected exchange (Dexter) coupling (Mulliken approximation of AO ERI's; cm-1)
+ *  <tr><td> `EET V OEP:EXCH CM-1` <td> Overlap-corrected exchange (Dexter) coupling (Mulliken approximation of AO ERIs; cm-1)
  *  <tr><td> `EET V OEP:OVRL CM-1` <td> Remaining overlap correction to direct coupling (cm-1)
  *  <tr><td> `EET V0 OEP:ET1 CM-1`       <td> Overlap-uncorrected H_13 matrix element (cm-1)
  *  <tr><td> `EET V0 OEP:ET2 CM-1`       <td> Overlap-uncorrected H_24 matrix element (cm-1)
@@ -243,7 +243,7 @@ class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
   
    // <--- Computers ---> //
 
-   /**\brief Compute property by using OEP's
+   /**\brief Compute property by using OEPs
     * 
     *  Each solver object has one `DEFAULT` OEP-based method. 
     *  @param method - flavour of OEP model
@@ -350,17 +350,17 @@ class OEPDevSolver : public std::enable_shared_from_this<OEPDevSolver>
  * by ESP charges. In order to achieve symmetric expression, the interaction
  * is computed twice (ESP of A interacting with density matrix and nuclear charges of B and vice versa)
  * and then divided by 2. Thus,
- * \f[
+ * \f{multline*}{
  *     E^{\rm Coul} \approx \frac{1}{2} 
- *                          \left[
+ *                          \Bigg[
  *                          \sum_{x\in A}\sum_{y\in B} \frac{Z_xq_y}{\lvert {\bf r}_x - {\bf r}_y\rvert}
  *                        + \sum_{y\in B}\sum_{\mu    \nu   \in A} q_y V_{\mu    \nu   }^{(y)} 
- *                          \left(D_{\mu    \nu   }^{(\alpha)} + D_{\mu    \nu   }^{(\beta)}\right)
+ *                          \left(D_{\mu    \nu   }^{(\alpha)} + D_{\mu    \nu   }^{(\beta)}\right) \\
  *                        + \sum_{y\in B}\sum_{x\in A} \frac{q_xZ_y}{\lvert {\bf r}_x - {\bf r}_y\rvert}
  *                        + \sum_{x\in A}\sum_{\lambda\sigma\in B} q_x V_{\lambda\sigma}^{(x)} 
  *                          \left(D_{\lambda\sigma}^{(\alpha)} + D_{\lambda\sigma}^{(\beta)}\right)
- *                        \right]
- * \f]
+ *                        \Bigg]
+ * \f}
  * If the basis set is large and the number of ESP centres \f$ q_{x(y)} \f$ is sufficient,
  * the sum of first two contributions equals the sum of the latter two contributions.
  *
@@ -414,7 +414,7 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * for each of the above provided methods.
  * In the formulae across, it is assumed that the orbitals are real.
  * The Coulomb notation for 
- * electron repulsion integrals (ERI's) is adopted; i.e,
+ * electron repulsion integrals (ERIs) is adopted; i.e,
  * \f[
  *  (ac \vert bd) = \iint d{\bf r}_1 d{\bf r}_2 
  *   \phi_a({\bf r}_1) \phi_c({\bf r}_1) \frac{1}{r_{12}} \phi_b({\bf r}_2) \phi_d({\bf r}_2)
@@ -427,10 +427,10 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  *    
  * For a closed-shell system, equation of Hayes and Stone (1984)
  * becomes
- * \f[
+ * \f{multline*}{
  *    E^{\rm Rep} = 2\sum_{kl} 
                     \left( V^A_{kl} + V^B_{kl} + T_{kl} \right) 
-                    \left[ [{\bf S}^{-1}]_{lk} - \delta_{lk} \right]
+                    \left[ [{\bf S}^{-1}]_{lk} - \delta_{lk} \right] \\
                 +   \sum_{klmn} 
                     (kl \vert mn) 
                     \left\{ 
@@ -439,7 +439,7 @@ class ElectrostaticEnergySolver : public OEPDevSolver
       2\delta_{kl} \delta_{mn} +
        \delta_{kn} \delta_{lm}
                     \right\}
- * \f]
+ * \f}
  * where \f$ {\bf S} \f$ is the overlap matrix between the doubly-occupied
  * orbitals.
  * The exact, pure exchange energy is for a closed shell case given as
@@ -537,15 +537,15 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  *                 \right\}
  * \f]
  * whereas the second-order term is
- * \f[
- *    E^{\rm Rep}(\mathcal{O}(S^2)) = 2\sum_{a\in A} \sum_{b\in B} S_{ab} \left\{
+ * \f{multline*}{
+ *    E^{\rm Rep}(\mathcal{O}(S^2)) = 2\sum_{a\in A} \sum_{b\in B} S_{ab} \Bigg\{
  *                  \sum_{c\in A} S_{bc}
  *                \left[ V_{ac}^B + 2\sum_{d\in B} (ac \vert dd) \right]
  *           +      \sum_{d\in B} S_{ad}
- *                \left[ V_{bd}^A + 2\sum_{x\in A} (bd \vert cc) \right]
+ *                \left[ V_{bd}^A + 2\sum_{x\in A} (bd \vert cc) \right] \\
  *                - \sum_{c\in A} \sum_{d\in B} S_{cd} (ac \vert bd)
- *         \right\}
- * \f] 
+ *         \Bigg\}
+ * \f}
  * Thus derived repulsion energy is invariant with respect to transformation of molecular
  * orbitals, similarly as Hayes-Stone's method and density-based method.
  * By using OEP technique, the above theory can be exactly re-cast *without* any further approximations.
@@ -628,7 +628,7 @@ class ElectrostaticEnergySolver : public OEPDevSolver
  * # OEP-Based Methods
  *
  * The Murrell et al's theory of Pauli repulsion for S-1 term
- * and the Otto-Ladik's theory for S-2 term is here re-cast by introducing OEP's.
+ * and the Otto-Ladik's theory for S-2 term is here re-cast by introducing OEPs.
  * The S-1 term is expressed via DF-OEP, whereas the S-2 term via ESP-OEP.
  *
  * ## S-1 term (Murrell et al.)
@@ -736,7 +736,7 @@ class RepulsionEnergySolver : public OEPDevSolver
  * for each of the above provided methods.
  * In the formulae across, it is assumed that the orbitals are real.
  * The Coulomb notation for 
- * electron repulsion integrals (ERI's) is adopted; i.e,
+ * electron repulsion integrals (ERIs) is adopted; i.e,
  * \f[
  *  (ac \vert bd) = \iint d{\bf r}_1 d{\bf r}_2 
  *   \phi_a({\bf r}_1) \phi_c({\bf r}_1) \frac{1}{r_{12}} \phi_b({\bf r}_2) \phi_d({\bf r}_2)
@@ -800,7 +800,7 @@ class RepulsionEnergySolver : public OEPDevSolver
  * # OEP-Based Methods
  * ## OEP-Based Otto-Ladik's theory
  * 
- * After introducing OEP's, the original Otto-Ladik's theory is reformulated *without*
+ * After introducing OEPs, the original Otto-Ladik's theory is reformulated *without*
  * approximation as
  * \f[
  *   E^{\rm A^+B^-} \approx 
@@ -897,7 +897,7 @@ class ChargeTransferEnergySolver : public OEPDevSolver
  * for each of the above provided methods.
  * In the formulae across, it is assumed that the orbitals are real.
  * The Coulomb notation for 
- * electron repulsion integrals (ERI's) is adopted; i.e,
+ * electron repulsion integrals (ERIs) is adopted; i.e,
  * \f[
  *  (ac \vert bd) = \iint d{\bf r}_1 d{\bf r}_2 
  *   \phi_a({\bf r}_1) \phi_c({\bf r}_1) \frac{1}{r_{12}} \phi_b({\bf r}_2) \phi_d({\bf r}_2)
@@ -1043,11 +1043,11 @@ class ChargeTransferEnergySolver : public OEPDevSolver
  *
  * ## Mulliken approximated exchange-like contributions.
  * 
- * Exchange and CT contributions require ERI's of type (AB,AB). It is instructive to 
- * approximate these contributions in terms of the Coulomb-like ERI's for the sake of testing of OEP-based approximations
+ * Exchange and CT contributions require ERIs of type (AB,AB). It is instructive to 
+ * approximate these contributions in terms of the Coulomb-like ERIs for the sake of testing of OEP-based approximations
  * which are given in the next Section.
  * 
- * Application of the Mullipen approximation
+ * Application of the Mulliken approximation
  * \f[
  *  ( ij | kl ) \approx \frac{1}{4} S_{ij}S_{kl} \left[ 
  *      ( ii | kk ) + ( jj | kk ) + ( ii | ll ) + ( jj | ll )\right]
@@ -1066,13 +1066,13 @@ class ChargeTransferEnergySolver : public OEPDevSolver
  *   \left[ r^A_{HL} + r^B_{HL} + \rho^A_H \odot \rho^B_L + \rho^A_L \odot \rho^B_H\right]
  * \f}
  * The former can be rewritten in a more convenient to implement formula:
- * \f[
+ * \f{multline*}{
  *  V^{{\rm Exch},(0)} \approx -\frac{1}{4} \sum_{\mu\in A} \sum_{\nu\in B}
  *   ( \mu\mu | \sigma\sigma ) 
  *   [{\bf P}^A {\bf s}^{AB}]_{\mu\sigma} [{\bf P}^B {\bf s}^{BA}]_{\sigma\mu} 
- * -\frac{1}{8} \sum_{\mu\nu\in A} P_{\nu\mu}^A ( \mu\mu | \nu\nu ) [{\bf s}^{AB} {\bf P}^B {\bf s}^{BA} ]_{\mu\nu}
+ * -\frac{1}{8} \sum_{\mu\nu\in A} P_{\nu\mu}^A ( \mu\mu | \nu\nu ) [{\bf s}^{AB} {\bf P}^B {\bf s}^{BA} ]_{\mu\nu} \\
  * -\frac{1}{8} \sum_{\sigma\lambda\in B} P_{\lambda\sigma}^B ( \lambda\lambda | \sigma\sigma ) [{\bf s}^{BA} {\bf P}^A {\bf s}^{AB} ]_{\sigma\lambda}
- * \f]
+ * \f}
  * In the CT term, 
  * \f{align*}{
  *  r^A_{HL} &\equiv \rho^A_H \odot \rho^A_L \\
@@ -1086,12 +1086,102 @@ class ChargeTransferEnergySolver : public OEPDevSolver
  *
  * 
  * # OEP-Based Methods
- * TODO
+ *
+ * OEP method of interfragment ERI elimination applied to the direct Coulombic coupling
+ * yields the TrCAMM coupling. 
+ * Direct exchange coupling requires using the Mulliken approximation.
+ * The TI contributions can be treated after certain fragmentation 
+ * of the Fock operator of a dimer is assumed. In that case,
+ * OEP method yields the complete TI/CIS model. \cite OEP-2.2020
+ *
  * ## OEP-Based TI/CIS theory
  *
- * After introducing OEP's, the original TI/CIS theory by Fujimoto is reformulated *without*
- * approximation as
- * TODO
+ * Application of the OEP method yields the following expressions for the off-diagonal Hamiltonian matrix
+ * elements:
+ * \f{align*}{
+ *  V^{{\rm ET1},(0)} &= t_{H\rightarrow L}^A 
+ *     \left\{ \sum_{\zeta\in A}S^{AB}_{\zeta L}V^{A;{\rm ET}}_{\zeta;{\rm HL}}
+ *            +\sum_{\eta \in B}S^{BA}_{\eta  L}V^{B;{\rm ET}}_{\eta ;{\rm  L}}
+ *     \right\}\\
+ *  V^{{\rm ET2},(0)} &= t_{H\rightarrow L}^B 
+ *     \left\{ \sum_{\zeta\in A}S^{AB}_{\zeta L}V^{A;{\rm ET}}_{\zeta;{\rm  L}}
+ *            +\sum_{\eta \in B}S^{BA}_{\eta  L}V^{B;{\rm ET}}_{\eta ;{\rm HL}}
+ *     \right\}\\
+ *  V^{{\rm HT1},(0)} &= t_{H\rightarrow L}^A 
+ *     \left\{ \sum_{\zeta\in A}S^{AB}_{\zeta H}V^{A;{\rm HT}}_{\zeta;{\rm HL}}
+ *            +\sum_{\eta \in B}S^{BA}_{\eta  H}V^{B;{\rm HT}}_{\eta ;{\rm  H}}
+ *     \right\}\\
+ *  V^{{\rm HT2},(0)} &= t_{H\rightarrow L}^B 
+ *     \left\{ \sum_{\zeta\in A}S^{AB}_{\zeta H}V^{A;{\rm HT}}_{\zeta;{\rm  H}}
+ *            +\sum_{\eta \in B}S^{BA}_{\eta  H}V^{B;{\rm HT}}_{\eta ;{\rm HL}}
+ *     \right\}\\
+ *  V^{{\rm CT },(0)} &= \frac{1}{2}S_{HL}^{AB}S_{LH}^{AB} 
+ *  \left\{
+ *    r_{HL}^A + r_{HL}^B + \frac{1}{\vert{\bf r}_H^A-{\bf r}_H^B\vert}
+ *   + \sum_{x\in A}\sum_{y\in B} \frac{q_{x;L}^Aq_{y,L}^B}{\vert{\bf r}_x-{\bf r}_y\vert}
+ *  \right\} \\
+ *  & \qquad\qquad
+ *  -\frac{1}{4}S_{HH}^{AB}S_{LL}^{AB}
+ *  \left\{
+ *    r_{HL}^A + r_{HL}^B - \sum_{y\in B} \frac{q_{y;L}^B}{\vert{\bf r}_H^A-{\bf r}_y\vert}
+ *                        - \sum_{x\in A} \frac{q_{x;L}^A}{\vert{\bf r}_H^B-{\bf r}_x\vert}
+ *  \right\} 
+ * \f}
+ * where the charge centroids are given by \f$ {\bf r}_Y^X \equiv \left( Y^X\vert\hat{\bf r}\vert Y^X\right)\f$.
+ * The OEP matrices can be written in a density fitting form utilizing a nearly-complete auxiliary basis set
+ * as
+ * \f[
+ * V^{X;{\rm M}}_{\zeta ;{\rm N}} = \sum_{\eta\in X} \left[{\bf S}^{-1}\right]_{\zeta\eta}
+ *      a^{X;{\rm M}}_{\eta ;{\rm N}}
+ * \f]
+ * for N = H, L or HL and M = ET1, ET2, HT1 or HT2, respectively.
+ * The explicit formulae for the auxiliary vectors **a** are as follows:
+ * \f{align*}{
+ *   a^{X;{\rm ET}}_{\alpha ;{\rm  L}} &= \sum_\beta C_{\beta L}^X Q_{\alpha\beta}^X \\
+ *   a^{X;{\rm ET}}_{\alpha ;{\rm HL}} &= a^{X;{\rm ET}}_{\alpha ;{\rm  L}}
+ *           + \sum_{\beta\gamma\delta} (\alpha\beta\vert\gamma\delta) 
+ *           \left\{ 2C_{\beta H}^XC_{\gamma L}^X - C_{\beta L}^XC_{\gamma H}^X\right\} C_{\delta H}^X \\
+ *   a^{X;{\rm HT}}_{\alpha ;{\rm  H}} &=-\sum_\beta C_{\beta H}^X Q_{\alpha\beta}^X \\
+ *   a^{X;{\rm HT}}_{\alpha ;{\rm HL}} &= a^{X;{\rm HT}}_{\alpha ;{\rm  H}}
+ *           + \sum_{\beta\gamma\delta} (\alpha\beta\vert\gamma\delta) 
+ *           \left\{ 2C_{\beta L}^XC_{\gamma H}^X - C_{\beta H}^XC_{\gamma L}^X\right\} C_{\delta L}^X 
+ * \f}
+ * The auxiliary matrix **Q** can be found by inverting the following matrix equation
+ * \f[
+ * \sum_\beta C_{\beta Y}^X Q_{\alpha\beta}^X = \sum_\beta  C_{\beta Y}^X 
+ *      \left\{ \frac{1}{2} T_{\alpha\beta} + V^X_{{\rm nuc};\alpha\beta}\right\}
+ *     + \sum_{\beta\gamma\delta} (\alpha\beta\vert\gamma\delta)
+ *  \left\{ P_{\delta\gamma}^{X(g)} C_{\beta Y}^X - \frac{1}{2} P_{\beta\gamma}^{X(g)} C_{\delta Y}^X\right\}
+ * \f]
+ * The matrices **C** are the LCAO-MO matrices in primary AO basis.
+ * 
+ * ## Direct exchange
+ *
+ * Neglecting interfragment ERIs from the Mulliken-approximated direct exchange coupling 
+ * results in the following expression:
+ * \f[
+ *  V^{{\rm Exch},(0)} \approx 
+ * -\frac{1}{8} \sum_{\mu\nu\in A} P_{\nu\mu}^A ( \mu\mu | \nu\nu ) [{\bf s}^{AB} {\bf P}^B {\bf s}^{BA} ]_{\mu\nu} 
+ * -\frac{1}{8} \sum_{\sigma\lambda\in B} P_{\lambda\sigma}^B ( \lambda\lambda | \sigma\sigma ) [{\bf s}^{BA} {\bf P}^A {\bf s}^{AB} ]_{\sigma\lambda}
+ * \f]
+ * which enables implementing it within the EFP methodology. Note that here, the ERIs \f$ ( \mu\mu | \nu\nu ) \f$
+ * refer only to one fragment, therefore they consitute a two-index EFP parameters which are relatively
+ * inexpensive to handle.
+ * 
+ * The OEP-based model also approximates the diagonal Hamiltonian matrix elements.
+ * The environmental contributions are usually small and are neglected here. The HOMO-LUMO interaction
+ * is approximated by using the DMTP approximation. Hence, the diagonal Hamiltonian matrix elements read approximately:
+ * \f{align*}{
+ *  \Big< \Phi_1 \Big| \mathscr{H} -E_{0} \Big| \Phi_1 \Big> &\equiv E_1 \cong E^A_{e\rightarrow g}  \\
+ *  \Big< \Phi_2 \Big| \mathscr{H} -E_{0} \Big| \Phi_2 \Big> &\equiv E_2 \cong E^B_{e\rightarrow g}  \\
+ *  \Big< \Phi_3 \Big| \mathscr{H} -E_{0} \Big| \Phi_3 \Big> &\equiv E_3 \cong 
+ *  -\varepsilon_H^A + \varepsilon_L^B - \rho_H^A \odot \rho_L^B \\
+ *  \Big< \Phi_4 \Big| \mathscr{H} -E_{0} \Big| \Phi_4 \Big> &\equiv E_4 \cong 
+ *   \varepsilon_L^A - \varepsilon_H^B - \rho_L^A \odot \rho_H^B   
+ * \f}
+ * where the `\f$ \odot \f$' symbol is treated via the CAMM expansion, \cite Sokalski.Poirier.CPL.1983
+ * or the LMTP expansion \cite Etchebest.Lavery.Pullman.TheorChimActa.1982
+ * truncated on charges.
  */
 
 class EETCouplingSolver : public OEPDevSolver

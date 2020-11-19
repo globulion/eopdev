@@ -257,14 +257,8 @@ class DoubleGeneralizedDensityFit : public GeneralizedDensityFit
  * \f[
  *  {\bf G}_{\rm i} = {\bf S}_{\rm ii}^{-1} \cdot {\bf V}_{\rm i}
  * \f]
- * In the above equations,
- * TODO
- *
- * The spatial form of the potential operator \f$ \hat{v} \f$ can be expressed by
- * \f[
- *    v({\bf r}) \equiv  \int d{\bf r}' \frac{\rho({\bf r}')}{\vert {\bf r}' - {\bf r} \vert}
- * \f]
- * with \f$ \rho({\bf r}) \f$ being the effective one-electron density associated with \f$ \hat{v} \f$.
+ * See \ref sdensfitincomplalt "density fitting of OEPs" for more details regarding the matrices involved
+ * in the above expressions.
  * 
  */
 class OverlapGeneralizedDensityFit : public GeneralizedDensityFit

@@ -11,30 +11,39 @@ or closely bound electronic chromophores.
 Studying such molecular aggregates requires rigorous and accurate quantum 
 chemistry methods, the cost of which grows very fast with the number 
 of electrons. 
+\cite Xu.Guidez.Bertoni.Gordon.JCP.2018 
+\cite Tomasi.Mennucci.Cammi.ChemRev.2005
 Despite many methodologies have been devised to describe 
 energetic and dynamical properties of **extended molecular systems** efficiently and 
-accurately, there exist particularly difficult cases in which 
+accurately, 
+\cite Warshel.Levitt.JMolBiol.1976 
+\cite Senn.Thiel.Angew.2009 
+\cite Demerdash.Yap.T-Head-Gordon.AnnuRevPhysChem.2014 
+\cite Gordon.Fedorov.Pruitt.Slipchenko.ChemRev.2012
+there exist particularly difficult cases in which 
 modelling is still challenging: 
 
-  - describing electronic transitions in solution or
-  - when coupled with other electronic transition via resonance energy transfer, 
+  - describing electronic transitions in solution or 
+    when coupled with other electronic transition 
+    via resonance energy transfer, \cite Barbati.JACS.2014 Szabla.Sponer.Jiri.Gora.JPCL.2015 Bednarska.Zalesny.Tian.Murugan.Agren.Bartkowiak.Molecules.2017 Jedrzejewska.Grabarz.Bartkowiak.Osmialowski.SpectChimActA.2018
   - performing molecular dynamics 
-    at very high level of theory including dynamic electron correlation, 
+    at very high level of theory including dynamic electron correlation, \cite Curchod.Martinez.ChemRev.2018
   - vibrational frequency calculations of particular normal mode in 
-    condensed phases
+    condensed phases \cite Blasiak.Londergan.Webb.Cho.ACR.2017 Xu.Blasiak.Cho.Layfield.Londergan.JPCL.2018 Lewis.Gruenke.Oliver.Ballottari.Bassi.Fleming.JPCL.2016
  
 and so on. The reason behind (sometimes prohibitively) 
 high costs of fully *ab initio* calculations in the above areas 
 is the complexity of mathematical models often based on wave functions 
-rather then (conceptually more straightforward) electronic densities. 
+rather then (conceptually more straightforward) electronic densities and potentials.  
 On the other hand, 
 it has been pointed out before
 that the one-electron density 
-distributions are of particular importance in chemistry. It can be 
-thus utilized as a means of developing a general model that 
+distributions are of particular importance in chemistry. \cite Kohn.Sham.PhysRev.1965 Holas.March.PhysRevA.1991
+Thus, it can be 
+utilized as a means of developing a general model that 
 re-expresses the physics of intermolecular interactions in terms 
 of effective one-electron functions that are easier to handle 
-in practice.
+in practice. \cite Roothaan.RevModPhys.1951 Hohenberg.Kohn.PhysRev.1964 Kohn.Sham.PhysRev.1965 Otto.Ladik.ChemPhys.1975 Holas.March.PhysRevA.1991 Weber.Thiel.TCA.2000 Neese.JCP.2005 Cisneros.Andres.Piquemal.Darden.JCP.2005 Piquemal.Cisneros.Reinhardt.Gresh.Darden.JCP.2006 Li.Gordon.Jensen.JCP.2006 Blasiak.Lee.Cho.JCP.2013 Blasiak.Maj.Cho.Gora.JCTC.2015
 
 This Project focuses on finding a unified way to simplify various
 fragment-based approaches
