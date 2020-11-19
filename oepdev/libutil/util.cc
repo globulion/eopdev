@@ -22,8 +22,6 @@ void preambule(void) {
       outfile->Printf("                From Fragment-Based Methods of Quantum Chemistry             \n");
       outfile->Printf("                                  Version 1.0.0                              \n");
       outfile->Printf("                                                                             \n");
-      outfile->Printf("                                Git: Rev {203ae6c}                           \n");
-      outfile->Printf("                                                                             \n");
       outfile->Printf("    -------------------------------------------------------------------------\n");
       outfile->Printf("                                                                             \n");
       outfile->Printf("    Bartosz Błasiak                                                          \n");
