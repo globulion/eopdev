@@ -740,7 +740,12 @@ To summarize, follow these steps:
      methods or handling with molecule and wavefunction objects. In particular, GEFP
      contains efficient and fully automatized implementation 
      of the \ref sdensfitincomplalt "extended density fitting of EOPs".
-     
+  5. **Test**. Run the tests:
+     \code{.sh}
+     cd ${EOPDEV_PATH}
+     ctest
+     \endcode
+     If any of the tests do not work, resolve possible compilation issues (including Psi4). 
 
 
 \section padvcodestr EOPDev Code Structure
