@@ -1,9 +1,6 @@
 ## Welcome to EOPDev
 
 Develop and test custom Effective One-electron Potentials (EOPs) for fragment-based methods of Quantum Chemistry of extended molecular aggregates.
-*****
-![alt text](https://github.com/globulion/eopdev/raw/bb_public_eopdev/doc/images/toc.png "Logo Title Text 1")
-*****
 
 ### Description
 
