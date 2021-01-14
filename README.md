@@ -61,4 +61,4 @@ References
 
 [[2]](https://doi.org/10.1002/jcc.26462) B. Błasiak, J. D. Bednarska, M. Chołuj, R. W. Góra, W. Bartkowiak, "Ab Initio Effective One-Electron Potential Operators: Applications for Charge-Transfer Energy in Effective Fragment Potentials", *J. Comput. Chem.*; 1-14 (2020).
 
-[[3]](https://doi.org/10.1039/D0CP04636A) B. Błasiak, W. Bartkowiak, R. W. Góra, "An Effective Potential for Frenkel Excitons", * Phys. Chem. Chem. Phys.* (2020).
+[[3]](https://doi.org/10.1039/D0CP04636A) B. Błasiak, W. Bartkowiak, R. W. Góra, "An Effective Potential for Frenkel Excitons", *Phys. Chem. Chem. Phys.* (2020).
